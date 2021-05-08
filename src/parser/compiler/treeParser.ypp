@@ -568,7 +568,7 @@ bool pred;
 %token TOK_BISON_VEC_PACK_FIX_TRUNC_EXPR TOK_BISON_VEC_EXTRACTEVEN_EXPR TOK_BISON_VEC_EXTRACTODD_EXPR TOC_BISON_VEC_INTERLEAVEHIGH_EXPR
 %token TOC_BISON_VEC_INTERLEAVELOW_EXPR
 %token TOK_BISON_VEC_NEW_EXPR TOK_BISON_OVERLOAD TOK_BISON_REINTERPRET_CAST_EXPR TOK_BISON_TEMPLATE_ID_EXPR
-%token TOK_BISON_THROW_EXPR TOK_BISON_TRY_BLOCK TOK_BISON_ARROW_EXPR TOK_BISON_HANDLER
+%token TOK_BISON_THROW_EXPR TOK_BISON_TRY_BLOCK TOK_BISON_ALIGNOF_EXPR TOK_BISON_ARROW_EXPR TOK_BISON_HANDLER
 %token TOK_BISON_BASELINK TOK_BISON_NAME TOK_BISON_TYPE TOK_BISON_SRCP
 %token TOK_BISON_ARG TOK_BISON_BODY TOK_BISON_STRG TOK_BISON_LNGT
 %token TOK_BISON_SIZE TOK_BISON_ALGN TOK_BISON_RETN TOK_BISON_PRMS
@@ -884,6 +884,7 @@ bool pred;
       | wtemplate_id_expr
       | wthrow_expr
       | wtry_block
+      | walignof_expr
       | warrow_expr
       | wbaselink
       | whandler
@@ -1423,6 +1424,9 @@ bool pred;
 
   //throw_expr:     TOK_BISON_THROW_EXPR^ unary_expr;
   wthrow_expr : TOK_BISON_THROW_EXPR{CTN(throw_expr)}  wunary_expr;
+
+  //alignof_expr:     TOK_BISON_ALIGNOF_EXPR^ unary_expr;
+  walignof_expr : TOK_BISON_ALIGNOF_EXPR{CTN(alignof_expr)}  wunary_expr;
 
   //arrow_expr:     TOK_BISON_ARROW_EXPR^ unary_expr;
   warrow_expr : TOK_BISON_ARROW_EXPR{CTN(arrow_expr)}  wunary_expr;

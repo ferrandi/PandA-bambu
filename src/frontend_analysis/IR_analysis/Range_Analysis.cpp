@@ -750,6 +750,7 @@ namespace
                // Unary case
                case addr_expr_K:
                case paren_expr_K:
+               case alignof_expr_K:
                case arrow_expr_K:
                case buffer_ref_K:
                case card_expr_K:
@@ -2888,6 +2889,7 @@ RangeRef UnaryOpNode::eval() const
          }
          case addr_expr_K:
          case paren_expr_K:
+         case alignof_expr_K:
          case arrow_expr_K:
          case bit_not_expr_K:
          case buffer_ref_K:
@@ -3068,6 +3070,7 @@ RangeRef UnaryOpNode::eval() const
          }
          case addr_expr_K:
          case paren_expr_K:
+         case alignof_expr_K:
          case arrow_expr_K:
          case buffer_ref_K:
          case card_expr_K:

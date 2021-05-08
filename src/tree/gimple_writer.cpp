@@ -169,6 +169,7 @@ void GimpleWriter::operator()(const unary_expr* obj, unsigned int& mask)
          os << ">";
          break;
       }
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -1445,6 +1446,28 @@ void GimpleWriter::operator()(const template_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->decl_node::visit(this);
+   os << "template_decl (";
+   if(obj->name)
+   {
+      obj->name->visit(this);
+   }
+   if(obj->rslt)
+   {
+      //   obj->rslt->visit(this);
+   }
+   if(obj->inst)
+   {
+      obj->inst->visit(this);
+   }
+   if(obj->spcs)
+   {
+      obj->spcs->visit(this);
+   }
+   if(obj->prms)
+   {
+      obj->prms->visit(this);
+   }
+   os << ")";
 }
 
 void GimpleWriter::operator()(const template_parm_index* obj, unsigned int& mask)

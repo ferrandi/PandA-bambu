@@ -520,6 +520,18 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because is a division by a non constant");
          return FunctionFrontendFlowStep_Movable::UNMOVABLE;
       }
+      case abs_expr_K:
+      {
+         if(conservative)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No");
+            return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+         }
+         else
+         {
+            return FunctionFrontendFlowStep_Movable::MOVABLE;
+         }
+      }
       case catch_expr_K:
       case ceil_div_expr_K:
       case ceil_mod_expr_K:
@@ -590,7 +602,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case tree_vec_K:
       case CASE_QUATERNARY_EXPRESSION:
       case CASE_TYPE_NODES:
-      case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case buffer_ref_K:
       case card_expr_K:

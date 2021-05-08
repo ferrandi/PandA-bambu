@@ -2724,6 +2724,7 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
     case REALPART_EXPR:
     case IMAGPART_EXPR:
     case VIEW_CONVERT_EXPR:
+    case ALIGNOF_EXPR:
       /* These nodes are unary, but do not have code class `1'.  */
       serialize_child ("op", TREE_OPERAND (t, 0));
       break;

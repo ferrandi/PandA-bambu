@@ -277,6 +277,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case paren_expr_K:
                   break;
                case addr_expr_K:
+               case alignof_expr_K:
                case arrow_expr_K:
                case bit_not_expr_K:
                case buffer_ref_K:
@@ -400,6 +401,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case CASE_TYPE_NODES:
                case abs_expr_K:
                case addr_expr_K:
+               case alignof_expr_K:
                case arrow_expr_K:
                case bit_not_expr_K:
                case buffer_ref_K:
