@@ -1757,11 +1757,15 @@ begin
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="insertvalue_expr_FU in1 in2 in3" VERILOG_PROVIDED="assign out1 = (in1 &gt;&gt; in2);" VHDL_PROVIDED=
-"begin
-  process(in1, in2)
+          <NP_functionality LIBRARY="insertvalue_expr_FU in1 in2 in3" VERILOG_PROVIDED="reg [BITSIZE_in1-1:0] temp;
+          always@(*) begin
+            temp = in1;
+            temp[BITSIZE_in2+in3-1 -: BITSIZE_in2] = in2;
+          end
+          assign out1 = temp;" VHDL_PROVIDED="begin
+  process(in1, in2, in3)
   begin
-    out1 &lt;= resize(shift_right(in1, to_integer(unsigned(in2))), BITSIZE_out1);
+    out1 &lt;= in1(BITSIZE_in1-1 downto BITSIZE_in2 + in3) &amp;&amp; in2 &amp;&amp; in1(in3-1 downto 0);
   end process;
 "/>
         </component_o>
