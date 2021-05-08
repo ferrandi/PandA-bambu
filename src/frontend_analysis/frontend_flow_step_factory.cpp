@@ -152,7 +152,6 @@
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
 #include "fanout_opt.hpp"
-#include "function_parm_mask.hpp"
 #endif
 #if HAVE_ZEBU_BUILT
 #include "FunctionPointerCallGraphComputation.hpp"
@@ -194,7 +193,6 @@
 #if HAVE_BAMBU_BUILT
 #include "lut_transformation.hpp"
 #endif
-#include "mem_cg_ext.hpp"
 #include "memory_data_flow_analysis.hpp"
 #if HAVE_BAMBU_BUILT
 #include "NI_SSA_liveness.hpp"
@@ -584,7 +582,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
-      case FUNCTION_PARM_MASK:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
@@ -599,7 +596,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
 #endif
-      case MEM_CG_EXT:
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:
 #endif
@@ -675,10 +671,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       {
          return DesignFlowStepRef(new FindMaxCFGTransformations(AppM, design_flow_manager.lock(), parameters));
       }
-      case FUNCTION_PARM_MASK:
-      {
-         return DesignFlowStepRef(new function_parm_mask(AppM, design_flow_manager.lock(), parameters));
-      }
 #endif
       case(FUNCTION_ANALYSIS):
       {
@@ -708,10 +700,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
          return DesignFlowStepRef(new ipa_point_to_analysis(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
-      case MEM_CG_EXT:
-      {
-         return DesignFlowStepRef(new mem_cg_ext(AppM, design_flow_manager.lock(), parameters));
-      }
       case PARM2SSA:
       {
          return DesignFlowStepRef(new parm2ssa(AppM, design_flow_manager.lock(), parameters));
@@ -1556,7 +1544,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
-      case FUNCTION_PARM_MASK:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
@@ -1571,7 +1558,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
 #endif
-      case MEM_CG_EXT:
       case PARM2SSA:
 #if HAVE_ZEBU_BUILT
       case(POINTED_DATA_EVALUATION):

@@ -88,14 +88,13 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, CALLED_FUNCTIONS));
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -177,9 +176,9 @@ void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0
          const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
          auto utype = tree_man->create_default_unsigned_integer_type();
          auto zeroVal = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), GET_INDEX_NODE(utype));
-         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema, ga_schema;
+         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
          ne_schema[TOK(TOK_TYPE)] = STR(type_index);
-         ne_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          ne_schema[TOK(TOK_OP)] = STR(zeroVal->index);
          const auto ne_id = TM->new_tree_node_id();
          TM->create_tree_node(ne_id, nop_expr_K, ne_schema);
@@ -204,7 +203,7 @@ void dead_code_elimination::kill_vdef(const tree_managerRef TM, tree_nodeRef vde
 {
    const auto gimple_nop_id = TM->new_tree_node_id();
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-   gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
    GetPointer<ssa_name>(GET_NODE(vdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
 }

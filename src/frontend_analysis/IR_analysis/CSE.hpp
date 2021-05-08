@@ -95,9 +95,6 @@ class CSE : public FunctionFrontendFlowStep
    /// tree manager
    const tree_managerRef TM;
 
-   /// The statement list
-   statement_list* sl;
-
    /// when true PHI_OPT step has to restart
    bool restart_phi_opt;
 
@@ -107,7 +104,7 @@ class CSE : public FunctionFrontendFlowStep
    using CSE_tuple_key_type = std::pair<enum kind, std::vector<unsigned int>>;
 
    /// check if the statement has an equivalent in the unique table
-   tree_nodeRef hash_check(tree_nodeRef tn, vertex bb, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table);
+   tree_nodeRef hash_check(tree_nodeRef tn, vertex bb, const statement_list* sl, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table);
 
    /// check if the gimple assignment is a load, store or a memcpy/memset
    bool check_loads(const gimple_assign* ga, unsigned int right_part_index, tree_nodeRef right_part);

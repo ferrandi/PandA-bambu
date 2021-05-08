@@ -43,7 +43,7 @@ float expf(float x) /* wrapper expf */
    z = __hide_ieee754_expf(x);
    if(_LIB_VERSION == _IEEE_)
       return z;
-   if(__finitef(x))
+   if(finitef(x))
    {
       if(x > o_threshold)
       {

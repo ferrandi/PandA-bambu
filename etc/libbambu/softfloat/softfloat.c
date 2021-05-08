@@ -41,6 +41,35 @@ these four paragraphs for those parts of this code that are retained.
 #define COND_EXPR_MACRO32(cond, a, b) ((((__bits32)((((__sbits32)(cond)) << 31) >> 31)) & (a)) | ((~((__bits32)((((__sbits32)(cond)) << 31) >> 31))) & (b)))
 #define COND_EXPR_MACRO64(cond, a, b) ((((__bits64)((((__sbits64)(cond)) << 63) >> 63)) & (a)) | ((~((__bits64)((((__sbits64)(cond)) << 63) >> 63))) & (b)))
 
+#define IEEE32_FRAC_BITS 23
+#define IEEE32_EXP_BITS 8
+#define IEEE32_EXP_BIAS -127
+#define IEEE64_FRAC_BITS 52
+#define IEEE64_EXP_BITS 11
+#define IEEE64_EXP_BIAS -1023
+#define IEEE_SIGN -1
+#define IEEE_ROUNDING 1
+#define IEEE_NAN 1
+#define IEEE_ONE 1
+#ifdef NO_SUBNORMALS
+#define IEEE_SUBNORM 0
+#else
+#define IEEE_SUBNORM 1
+#endif
+#define IEEE_SIGN -1
+
+#define IEEE32_EXTRACT_FRAC IEEE32_FRAC_BITS
+#define IEEE32_EXTRACT_EXP IEEE32_EXP_BITS, IEEE32_FRAC_BITS
+#define IEEE32_EXTRACT_SIGN IEEE32_EXP_BITS, IEEE32_FRAC_BITS, IEEE_SIGN
+#define IEEE32_SPEC_ARGS IEEE32_EXP_BITS, IEEE32_FRAC_BITS, IEEE32_EXP_BIAS, IEEE_ROUNDING, IEEE_NAN, IEEE_ONE, IEEE_SUBNORM, IEEE_SIGN
+#define IEEE32_PACK IEEE32_EXP_BITS, IEEE32_FRAC_BITS
+
+#define IEEE64_EXTRACT_FRAC IEEE64_FRAC_BITS
+#define IEEE64_EXTRACT_EXP IEEE64_EXP_BITS, IEEE64_FRAC_BITS
+#define IEEE64_EXTRACT_SIGN IEEE64_EXP_BITS, IEEE64_FRAC_BITS, IEEE_SIGN
+#define IEEE64_SPEC_ARGS IEEE64_EXP_BITS, IEEE64_FRAC_BITS, IEEE64_EXP_BIAS, IEEE_ROUNDING, IEEE_NAN, IEEE_ONE, IEEE_SUBNORM, IEEE_SIGN
+#define IEEE64_PACK IEEE64_EXP_BITS, IEEE64_FRAC_BITS
+
 /// specific functions for the division
 #include "div_utilities"
 /// generic macros used to control bitsize of data
@@ -201,27 +230,27 @@ static __FORCE_INLINE __int64 __roundAndPackInt64(__flag zSign, __bits64 absZ0, 
 | Returns the fraction bits of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __bits32 __extractFloat32Frac(__float32 a)
+static __FORCE_INLINE __bits32 __extractFloat32Frac(__float32 a, __bits8 __frac_bits)
 {
-   return a & 0x007FFFFF;
+   return a & ((1U << __frac_bits) - 1);
 }
 
 /*----------------------------------------------------------------------------
 | Returns the exponent bits of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int16 __extractFloat32Exp(__float32 a)
+static __FORCE_INLINE __bits32 __extractFloat32Exp(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits)
 {
-   return (a >> 23) & 0xFF;
+   return (a >> __frac_bits) & ((1U << __exp_bits) - 1);
 }
 
 /*----------------------------------------------------------------------------
 | Returns the sign bit of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __extractFloat32Sign(__float32 a)
+static __FORCE_INLINE __flag __extractFloat32Sign(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits8 __sign)
 {
-   return a >> 31;
+   return __sign == -1 ? (a >> (__exp_bits + __frac_bits)) : __sign;
 }
 
 /*----------------------------------------------------------------------------
@@ -231,14 +260,13 @@ static __FORCE_INLINE __flag __extractFloat32Sign(__float32 a)
 | `zSigPtr', respectively.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void __normalizeFloat32Subnormal(__bits32 aSig, __int16* zExpPtr, __bits32* zSigPtr)
-{
-   __int8 shiftCount;
-
-   shiftCount = __countLeadingZeros32(aSig) - 8;
-   *zSigPtr = aSig << shiftCount;
-   *zExpPtr = 1 - shiftCount;
-}
+#define __normalizeFloat32Subnormal(aSig, zExp, zSig, __frac_bits)     \
+   {                                                                   \
+      __int8 __shiftCount;                                             \
+      __shiftCount = __countLeadingZeros32(aSig) - (31 - __frac_bits); \
+      zSig = aSig << __shiftCount;                                     \
+      zExp = 1 - __shiftCount;                                         \
+   }
 
 /*----------------------------------------------------------------------------
 | Packs the sign `zSign', exponent `zExp', and significand `zSig' into a
@@ -251,9 +279,9 @@ static __FORCE_INLINE void __normalizeFloat32Subnormal(__bits32 aSig, __int16* z
 | significand.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __packFloat32(__flag zSign, __int16 zExp, __bits32 zSig)
+static __FORCE_INLINE __float32 __packFloat32(__flag zSign, __bits32 zExp, __bits32 zSig, __bits8 __exp_bits, __bits8 __frac_bits)
 {
-   return (((__bits32)zSign) << 31) + (((__bits32)zExp) << 23) + zSig;
+   return (((__bits32)zSign) << (__exp_bits + __frac_bits)) + (zExp << __frac_bits) + zSig;
 }
 
 /*----------------------------------------------------------------------------
@@ -278,19 +306,19 @@ static __FORCE_INLINE __float32 __packFloat32(__flag zSign, __int16 zExp, __bits
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __roundAndPackFloat32(__flag zSign, __int16 zExp, __bits32 zSig)
+static __FORCE_INLINE __float32 __roundAndPackFloat32(__flag zSign, __int32 zExp, __bits32 zSig, __bits8 __exp_bits, __bits8 __frac_bits, __flag __nan, __flag __subnorm)
 {
    __int8 roundingMode;
    __flag roundNearestEven;
-   __int8 roundIncrement, roundBits;
+   __int32 roundIncrement, roundBits;
    __flag isTiny;
+   __bits8 __ext_bits = (30 - __frac_bits);
+   __int32 __exp_max = ((1 << __exp_bits) - 1);
 
    roundingMode = __float_rounding_mode;
    roundNearestEven = (roundingMode == float_round_nearest_even);
-#ifdef NO_PARAMETRIC
-   roundIncrement = 0x40;
-#else
-   roundIncrement = 0x40;
+   roundIncrement = 1 << (__ext_bits - 1);
+#ifndef NO_PARAMETRIC
    if(!roundNearestEven)
    {
       if(roundingMode == float_round_to_zero)
@@ -299,7 +327,7 @@ static __FORCE_INLINE __float32 __roundAndPackFloat32(__flag zSign, __int16 zExp
       }
       else
       {
-         roundIncrement = 0x7F;
+         roundIncrement = ((1 << __ext_bits) - 1);
          if(zSign)
          {
             if(roundingMode == float_round_up)
@@ -313,37 +341,40 @@ static __FORCE_INLINE __float32 __roundAndPackFloat32(__flag zSign, __int16 zExp
       }
    }
 #endif
-   roundBits = zSig & 0x7F;
-   if(0xFD <= (__bits16)zExp)
+   roundBits = zSig & ((1 << __ext_bits) - 1);
+   if((__exp_max - (__nan ? 2 : 1)) <= (__bits32)zExp)
    {
-      if((0xFD < zExp) || ((zExp == 0xFD) && ((__sbits32)(zSig + roundIncrement) < 0)))
+      if(((__exp_max - (__nan ? 2 : 1)) < zExp) || ((zExp == (__exp_max - (__nan ? 2 : 1))) && ((__sbits32)(zSig + roundIncrement) < 0)))
       {
          __float_raise(float_flag_overflow | float_flag_inexact);
-         return __packFloat32(zSign, 0xFF, 0) - (roundIncrement == 0);
+         return ((((__bits32)zSign) << (__exp_bits + __frac_bits)) | (__exp_max << __frac_bits) | (((__bits32)!__nan << __frac_bits) - !__nan)) - (roundIncrement == 0);
       }
       if(zExp < 0)
       {
-#ifdef NO_SUBNORMALS
-         return __packFloat32(zSign, 0, 0);
-#else
-         isTiny = (__float_detect_tininess == float_tininess_before_rounding) || (zExp < -1) || (zSig + roundIncrement < 0x80000000);
-         __shift32RightJamming(zSig, -zExp, &zSig);
-         zExp = 0;
-         roundBits = zSig & 0x7F;
-         if(isTiny && roundBits)
-            __float_raise(float_flag_underflow);
-#endif
+         if(__subnorm)
+         {
+            isTiny = (__float_detect_tininess == float_tininess_before_rounding) || (zExp < -1) || (zSig + roundIncrement < 0x80000000);
+            __shift32RightJamming(zSig, -zExp, &zSig);
+            zExp = 0;
+            roundBits = zSig & ((1 << __ext_bits) - 1);
+            if(isTiny && roundBits)
+               __float_raise(float_flag_underflow);
+         }
+         else
+         {
+            return ((__bits32)zSign) << (__exp_bits + __frac_bits); // __packFloat32(zSign, 0, 0, IEEE32_PACK);
+         }
       }
    }
 #ifndef NO_PARAMETRIC
    if(roundBits)
       __float_exception_flags |= float_flag_inexact;
 #endif
-   zSig = (zSig + roundIncrement) >> 7;
-   zSig &= ~(((roundBits ^ 0x40) == 0) & roundNearestEven);
+   zSig = (zSig + roundIncrement) >> __ext_bits;
+   zSig &= ~(((roundBits ^ (1 << (__ext_bits - 1))) == 0) & roundNearestEven);
    if(zSig == 0)
       zExp = 0;
-   return __packFloat32(zSign, zExp, zSig);
+   return __packFloat32(zSign, zExp, zSig, __exp_bits, __frac_bits);
 }
 
 /*----------------------------------------------------------------------------
@@ -355,39 +386,39 @@ static __FORCE_INLINE __float32 __roundAndPackFloat32(__flag zSign, __int16 zExp
 | floating-point exponent.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __normalizeRoundAndPackFloat32(__flag zSign, __int16 zExp, __bits32 zSig)
+static __FORCE_INLINE __float32 __normalizeRoundAndPackFloat32(__flag zSign, __int16 zExp, __bits32 zSig, __bits8 __exp_bits, __bits8 __frac_bits, __flag __nan, __flag __subnorm)
 {
    __int8 shiftCount;
 
    shiftCount = __countLeadingZeros32(zSig) - 1;
-   return __roundAndPackFloat32(zSign, zExp - shiftCount, zSig << shiftCount);
+   return __roundAndPackFloat32(zSign, zExp - shiftCount, zSig << shiftCount, __exp_bits, __frac_bits, __nan, __subnorm);
 }
 
 /*----------------------------------------------------------------------------
 | Returns the fraction bits of the double-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __bits64 __extractFloat64Frac(__float64 a)
+static __FORCE_INLINE __bits64 __extractFloat64Frac(__float64 a, __bits8 __frac_bits)
 {
-   return a & LIT64(0x000FFFFFFFFFFFFF);
+   return a & ((1ULL << __frac_bits) - 1ULL);
 }
 
 /*----------------------------------------------------------------------------
 | Returns the exponent bits of the double-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int16 __extractFloat64Exp(__float64 a)
+static __FORCE_INLINE __bits32 __extractFloat64Exp(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits)
 {
-   return (a >> 52) & 0x7FF;
+   return (a >> __frac_bits) & ((1ULL << __exp_bits) - 1ULL);
 }
 
 /*----------------------------------------------------------------------------
 | Returns the sign bit of the double-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __extractFloat64Sign(__float64 a)
+static __FORCE_INLINE __flag __extractFloat64Sign(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits8 __sign)
 {
-   return a >> 63;
+   return __sign == -1 ? (a >> (__exp_bits + __frac_bits)) : __sign;
 }
 
 /*----------------------------------------------------------------------------
@@ -397,14 +428,13 @@ static __FORCE_INLINE __flag __extractFloat64Sign(__float64 a)
 | `zSigPtr', respectively.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void __normalizeFloat64Subnormal(__bits64 aSig, __int16* zExpPtr, __bits64* zSigPtr)
-{
-   __int8 shiftCount;
-
-   shiftCount = __countLeadingZeros64(aSig) - 11;
-   *zSigPtr = aSig << shiftCount;
-   *zExpPtr = 1 - shiftCount;
-}
+#define __normalizeFloat64Subnormal(aSig, zExp, zSig, __frac_bits)     \
+   {                                                                   \
+      __int8 __shiftCount;                                             \
+      __shiftCount = __countLeadingZeros32(aSig) - (63 - __frac_bits); \
+      zSig = aSig << __shiftCount;                                     \
+      zExp = 1 - __shiftCount;                                         \
+   }
 
 /*----------------------------------------------------------------------------
 | Packs the sign `zSign', exponent `zExp', and significand `zSig' into a
@@ -417,9 +447,9 @@ static __FORCE_INLINE void __normalizeFloat64Subnormal(__bits64 aSig, __int16* z
 | significand.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __packFloat64(__flag zSign, __int16 zExp, __bits64 zSig)
+static __FORCE_INLINE __float64 __packFloat64(__flag zSign, __bits64 zExp, __bits64 zSig, __bits8 __exp_bits, __bits8 __frac_bits)
 {
-   return (((__bits64)zSign) << 63) + (((__bits64)zExp) << 52) + zSig;
+   return (((__bits64)zSign) << (__exp_bits + __frac_bits)) + (zExp << __frac_bits) + zSig;
 }
 
 /*----------------------------------------------------------------------------
@@ -444,16 +474,19 @@ static __FORCE_INLINE __float64 __packFloat64(__flag zSign, __int16 zExp, __bits
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __roundAndPackFloat64(__flag zSign, __int16 zExp, __bits64 zSig)
+static __FORCE_INLINE __float64 __roundAndPackFloat64(__flag zSign, __int32 zExp, __bits64 zSig, __bits8 __exp_bits, __bits8 __frac_bits, __flag __nan, __flag __subnorm)
 {
    __int8 roundingMode;
    __flag roundNearestEven;
-   __int16 roundIncrement, roundBits;
+   __int64 roundIncrement, roundBits;
    __flag isTiny;
+   __bits8 __ext_bits = (62 - __frac_bits);
+   __int32 __exp_max = ((1LL << __exp_bits) - 1);
 
    roundingMode = __float_rounding_mode;
    roundNearestEven = (roundingMode == float_round_nearest_even);
-   roundIncrement = 0x200;
+   roundIncrement = 1ULL << (__ext_bits - 1);
+#ifndef NO_PARAMETRIC
    if(!roundNearestEven)
    {
       if(roundingMode == float_round_to_zero)
@@ -462,50 +495,64 @@ static __FORCE_INLINE __float64 __roundAndPackFloat64(__flag zSign, __int16 zExp
       }
       else
       {
-         roundIncrement = 0x3FF;
+         roundIncrement = (1ULL << __ext_bits) - 1;
          if(zSign)
          {
             if(roundingMode == float_round_up)
+            {
                roundIncrement = 0;
+            }
          }
          else
          {
             if(roundingMode == float_round_down)
+            {
                roundIncrement = 0;
+            }
          }
       }
    }
-   roundBits = zSig & 0x3FF;
-   if(0x7FD <= (__bits16)zExp)
+#endif
+   roundBits = zSig & ((1ULL << __ext_bits) - 1);
+   if((__exp_max - (__nan ? 2 : 1)) <= (__bits32)zExp)
    {
-      if((0x7FD < zExp) || ((zExp == 0x7FD) && ((__sbits64)(zSig + roundIncrement) < 0)))
+      if(((__exp_max - (__nan ? 2 : 1)) < zExp) || ((zExp == (__exp_max - (__nan ? 2 : 1))) && ((__sbits64)(zSig + roundIncrement) < 0)))
       {
          __float_raise(float_flag_overflow | float_flag_inexact);
-         return __packFloat64(zSign, 0x7FF, 0) - (roundIncrement == 0);
+         return ((((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((__bits64)__exp_max) << __frac_bits) | (((__bits64)!__nan << __frac_bits) - !__nan)) - (roundIncrement == 0);
       }
       if(zExp < 0)
       {
-#ifdef NO_SUBNORMALS
-         return __packFloat32(zSign, 0, 0);
-#else
-         isTiny = (__float_detect_tininess == float_tininess_before_rounding) || (zExp < -1) || (zSig + roundIncrement < LIT64(0x8000000000000000));
-         __shift64RightJamming(zSig, -zExp, &zSig);
-         zExp = 0;
-         roundBits = zSig & 0x3FF;
-         if(isTiny && roundBits)
-            __float_raise(float_flag_underflow);
-#endif
+         if(__subnorm)
+         {
+            isTiny = (__float_detect_tininess == float_tininess_before_rounding) || (zExp < -1) || (zSig + roundIncrement < LIT64(0x8000000000000000));
+            __shift64RightJamming(zSig, -zExp, &zSig);
+            zExp = 0;
+            roundBits = zSig & ((1ULL << __ext_bits) - 1);
+            if(isTiny && roundBits)
+            {
+               __float_raise(float_flag_underflow);
+            }
+         }
+         else
+         {
+            return ((__bits64)zSign) << (__exp_bits + __frac_bits); // __packFloat64(zSign, 0, 0, IEEE32_PACK);
+         }
       }
    }
 #ifndef NO_PARAMETRIC
    if(roundBits)
+   {
       __float_exception_flags |= float_flag_inexact;
+   }
 #endif
-   zSig = (zSig + roundIncrement) >> 10;
-   zSig &= ~(((roundBits ^ 0x200) == 0) & roundNearestEven);
+   zSig = (zSig + roundIncrement) >> __ext_bits;
+   zSig &= ~(((roundBits ^ (1ULL << (__ext_bits - 1))) == 0) & roundNearestEven);
    if(zSig == 0)
+   {
       zExp = 0;
-   return __packFloat64(zSign, zExp, zSig);
+   }
+   return __packFloat64(zSign, zExp, zSig, __exp_bits, __frac_bits);
 }
 
 /*----------------------------------------------------------------------------
@@ -517,12 +564,12 @@ static __FORCE_INLINE __float64 __roundAndPackFloat64(__flag zSign, __int16 zExp
 | floating-point exponent.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __normalizeRoundAndPackFloat64(__flag zSign, __int16 zExp, __bits64 zSig)
+static __FORCE_INLINE __float64 __normalizeRoundAndPackFloat64(__flag zSign, __int16 zExp, __bits64 zSig, __bits8 __exp_bits, __bits8 __frac_bits, __flag __nan, __flag __subnorm)
 {
    __int8 shiftCount;
 
    shiftCount = __countLeadingZeros64(zSig) - 1;
-   return __roundAndPackFloat64(zSign, zExp - shiftCount, zSig << shiftCount);
+   return __roundAndPackFloat64(zSign, zExp - shiftCount, zSig << shiftCount, __exp_bits, __frac_bits, __nan, __subnorm);
 }
 
 #ifdef FLOATX80
@@ -1060,16 +1107,51 @@ static __FORCE_INLINE __float128 __normalizeRoundAndPackFloat128(__flag zSign, _
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __int32_to_float32(__int32 a)
+static __FORCE_INLINE __float32 __Int32ToFloat32(__int32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag zSign;
+   __int32 __exp_int = 29 - __exp_bias;
 
    if(a == 0)
       return 0;
+
+   if(((1 << __exp_bits) - 1) < (31 - __exp_bias))
+   {
+      // TODO: fix __exp_int and a to comply with lower exponent
+   }
+
+   if(__sign == 1 && a > 0)
+   {
+      return 0;
+   }
+   if(__sign == 0 && a < 0)
+   {
+      return 0;
+   }
    if(a == (__sbits32)0x80000000)
-      return __packFloat32(1, 0x9E, 0);
+   {
+      if(__exp_int + 2 >= __subnorm && ((((__exp_int + 2) >> __exp_bits) & ((1 << (32 - __exp_bits)) - 1)) == 0))
+         return (1 << (__exp_bits + __frac_bits)) | (((__exp_int + 2) & ((1 << __exp_bits) - 1)) << __frac_bits); // __packFloat32(1, 0x9E, 0, IEEE32_PACK); -2^31
+      else
+         return (1 << (__exp_bits + __frac_bits)) | (((1 << __exp_bits) - 1) << __frac_bits) | (((__bits32)!__nan << __frac_bits) - !__nan);
+   }
    zSign = (a < 0);
-   return __normalizeRoundAndPackFloat32(zSign, 0x9C, zSign ? -a : a);
+   return __normalizeRoundAndPackFloat32(zSign, __exp_int, zSign ? -a : a, __exp_bits, __frac_bits, __nan, __subnorm); // 2^30 * a
+}
+
+__float32 __int32_to_float32(__int32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Int32ToFloat32(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+__float32 __int16_to_float32(__int16 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Int32ToFloat32(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+__float32 __int8_to_float32(__int8 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Int32ToFloat32(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -1078,24 +1160,36 @@ static __FORCE_INLINE __float32 __int32_to_float32(__int32 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __uint32_to_float32(__uint32 a_orig)
+static __FORCE_INLINE __float32 __UInt32ToFloat32(__uint32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag zSign;
    __uint64 absA;
    __int8 shiftCount;
+   __bits8 __shift_fix = 30 - __frac_bits;
+   __int32 __exp_int = 29 - __exp_bias;
 
-   if(a_orig == 0)
+   if(__sign == 1)
+   {
+      return 0;
+   }
+
+   if(((1 << __exp_bits) - 1) < (31 - __exp_bias))
+   {
+      // TODO: fix __exp_int and a to comply with lower exponent
+   }
+
+   if(a == 0)
       return 0;
    zSign = 0;
-   absA = a_orig;
-   shiftCount = __countLeadingZeros64(absA) - 40;
-   if(0 <= shiftCount)
+   absA = a;
+   shiftCount = __countLeadingZeros64(absA) - (63 - __frac_bits);
+   if(shiftCount >= 0)
    {
-      return __packFloat32(zSign, 0x95 - shiftCount, absA << shiftCount);
+      return __packFloat32(zSign, (__exp_int - __shift_fix) - shiftCount, absA << shiftCount, __exp_bits, __frac_bits);
    }
    else
    {
-      shiftCount += 7;
+      shiftCount += __shift_fix;
       if(shiftCount < 0)
       {
          __shift64RightJamming(absA, -shiftCount, &absA);
@@ -1104,8 +1198,23 @@ static __FORCE_INLINE __float32 __uint32_to_float32(__uint32 a_orig)
       {
          absA <<= shiftCount;
       }
-      return __roundAndPackFloat32(zSign, 0x9C - shiftCount, absA);
+      return __roundAndPackFloat32(zSign, __exp_int - shiftCount, absA, __exp_bits, __frac_bits, __nan, __subnorm);
    }
+}
+
+__float32 __uint32_to_float32(__uint32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __UInt32ToFloat32(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+__float32 __uint16_to_float32(__uint16 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __UInt32ToFloat32(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+__float32 __uint8_to_float32(__uint8 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __UInt32ToFloat32(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -1114,32 +1223,42 @@ static __FORCE_INLINE __float32 __uint32_to_float32(__uint32 a_orig)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __int32_to_float64(__int32 a)
+__float64 __int32_to_float64(__int32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag zSign;
    __uint32 absA;
    __int8 shiftCount;
    __bits64 zSig;
+   __int32 __exp_int = __frac_bits - 1 - __exp_bias;
 
    if(a == 0)
       return 0;
    zSign = (a < 0);
    absA = zSign ? -a : a;
-   shiftCount = __countLeadingZeros32(absA) + 21;
+   shiftCount = __countLeadingZeros32(absA) + (__frac_bits - 31);
    zSig = absA;
-   return __packFloat64(zSign, 0x432 - shiftCount, zSig << shiftCount);
+   if(shiftCount < 0 && __frac_bits < 31)
+   {
+      return __packFloat64(zSign, __exp_int - shiftCount, zSig >> -shiftCount, __exp_bits, __frac_bits);
+   }
+   return __packFloat64(zSign, __exp_int - shiftCount, zSig << shiftCount, __exp_bits, __frac_bits);
 }
 
-static __FORCE_INLINE __float64 __uint32_to_float64(__uint32 absA)
+__float64 __uint32_to_float64(__uint32 absA, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __int8 shiftCount;
    __bits64 zSig;
+   __int32 __exp_int = __frac_bits - 1 - __exp_bias;
 
    if(absA == 0)
       return 0;
-   shiftCount = __countLeadingZeros32(absA) + 21;
+   shiftCount = __countLeadingZeros32(absA) + (__frac_bits - 31);
    zSig = absA;
-   return __packFloat64(0, 0x432 - shiftCount, zSig << shiftCount);
+   if(shiftCount < 0 && __frac_bits < 31)
+   {
+      return __packFloat64(0, __exp_int - shiftCount, zSig >> -shiftCount, __exp_bits, __frac_bits);
+   }
+   return __packFloat64(0, __exp_int - shiftCount, zSig << shiftCount, __exp_bits, __frac_bits);
 }
 
 #ifdef FLOATX80
@@ -1151,7 +1270,7 @@ static __FORCE_INLINE __float64 __uint32_to_float64(__uint32 absA)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __int32_to_floatx80(__int32 a)
+__floatx80 __int32_to_floatx80_ieee(__int32 a)
 {
    __flag zSign;
    __uint32 absA;
@@ -1177,7 +1296,7 @@ static __FORCE_INLINE __floatx80 __int32_to_floatx80(__int32 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __int32_to_float128(__int32 a)
+__float128 __int32_to_float128_ieee(__int32 a)
 {
    __flag zSign;
    __uint32 absA;
@@ -1201,24 +1320,26 @@ static __FORCE_INLINE __float128 __int32_to_float128(__int32 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __int64_to_float32(__int64 a)
+__float32 __int64_to_float32(__int64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag zSign;
    __uint64 absA;
    __int8 shiftCount;
+   __bits8 __shift_fix = 30 - __frac_bits;
+   __int32 __exp_int = 29 - __exp_bias;
 
    if(a == 0)
       return 0;
    zSign = (a < 0);
    absA = zSign ? -a : a;
-   shiftCount = __countLeadingZeros64(absA) - 40;
-   if(0 <= shiftCount)
+   shiftCount = __countLeadingZeros64(absA) - (63 - __frac_bits);
+   if(shiftCount >= 0)
    {
-      return __packFloat32(zSign, 0x95 - shiftCount, absA << shiftCount);
+      return __packFloat32(zSign, ((__exp_int - __shift_fix) - shiftCount) & ((1 << __exp_bits) - 1), absA << shiftCount, __exp_bits, __frac_bits);
    }
    else
    {
-      shiftCount += 7;
+      shiftCount += __shift_fix;
       if(shiftCount < 0)
       {
          __shift64RightJamming(absA, -shiftCount, &absA);
@@ -1227,24 +1348,26 @@ static __FORCE_INLINE __float32 __int64_to_float32(__int64 a)
       {
          absA <<= shiftCount;
       }
-      return __roundAndPackFloat32(zSign, 0x9C - shiftCount, absA);
+      return __roundAndPackFloat32(zSign, (__exp_int - shiftCount) & ((1 << __exp_bits) - 1), absA, __exp_bits, __frac_bits, __nan, __subnorm);
    }
 }
 
-static __FORCE_INLINE __float32 __uint64_to_float32(__uint64 absA)
+__float32 __uint64_to_float32(__uint64 absA, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __int8 shiftCount;
+   __bits8 __shift_fix = 30 - __frac_bits;
+   __int32 __exp_int = 29 - __exp_bias;
 
    if(absA == 0)
       return 0;
-   shiftCount = __countLeadingZeros64(absA) - 40;
-   if(0 <= shiftCount)
+   shiftCount = __countLeadingZeros64(absA) - (63 - __frac_bits);
+   if(shiftCount >= 0)
    {
-      return __packFloat32(0, 0x95 - shiftCount, absA << shiftCount);
+      return __packFloat32(0, ((__exp_int - __shift_fix) - shiftCount) & ((1 << __exp_bits) - 1), absA << shiftCount, __exp_bits, __frac_bits);
    }
    else
    {
-      shiftCount += 7;
+      shiftCount += __shift_fix;
       if(shiftCount < 0)
       {
          __shift64RightJamming(absA, -shiftCount, &absA);
@@ -1253,7 +1376,7 @@ static __FORCE_INLINE __float32 __uint64_to_float32(__uint64 absA)
       {
          absA <<= shiftCount;
       }
-      return __roundAndPackFloat32(0, 0x9C - shiftCount, absA);
+      return __roundAndPackFloat32(0, (__exp_int - shiftCount) & ((1 << __exp_bits) - 1), absA, __exp_bits, __frac_bits, __nan, __subnorm);
    }
 }
 
@@ -1263,38 +1386,64 @@ static __FORCE_INLINE __float32 __uint64_to_float32(__uint64 absA)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __int64_to_float64(__int64 a)
+__float64 __int64_to_float64(__int64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag zSign;
+   __int32 __exp_int = 61 - __exp_bias;
 
    if(a == 0)
       return 0;
+
+   if((((1 << __exp_bits) - 1) + __exp_bias) < 63)
+   {
+      // TODO: fix __exp_int and a to comply with lower exponent
+   }
+
+   if(__sign == 1 && a > 0)
+   {
+      return 0;
+   }
+   if(__sign == 0 && a < 0)
+   {
+      return 0;
+   }
    if(a == (__sbits64)LIT64(0x8000000000000000))
    {
-      return __packFloat64(1, 0x43E, 0);
+      return (1ULL << (__exp_bits + __frac_bits)) | (((((__bits64)__exp_int) + 2) & ((1ULL << __exp_bits) - 1)) << __frac_bits); // __packFloat64(1, 0x43E, 0, IEEE64_PACK);
    }
    zSign = (a < 0);
-   return __normalizeRoundAndPackFloat64(zSign, 0x43C, zSign ? -a : a);
+   return __normalizeRoundAndPackFloat64(zSign, __exp_int & ((1 << __exp_bits) - 1), zSign ? -a : a, __exp_bits, __frac_bits, __nan, __subnorm);
 }
 
-static __FORCE_INLINE __float64 __uint64_to_float64(__uint64 a)
+__float64 __uint64_to_float64(__uint64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __int16 zExp;
    __bits64 zSig;
+   __int32 __exp_int = 61 - __exp_bias;
+
+   if(__sign == 1)
+   {
+      return 0;
+   }
 
    if(a == 0)
       return 0;
+
+   if((((1 << __exp_bits) - 1) + __exp_bias) < 63)
+   {
+      // TODO: fix __exp_int and a to comply with lower exponent
+   }
    if(a & (__bits64)LIT64(0x8000000000000000))
    {
-      zExp = 0x43D;
+      zExp = __exp_int + 1;
       zSig = a >> 1;
    }
    else
    {
-      zExp = 0x43C;
+      zExp = __exp_int;
       zSig = a;
    }
-   return __normalizeRoundAndPackFloat64(0, zExp, zSig);
+   return __normalizeRoundAndPackFloat64(0, zExp & ((1 << __exp_bits) - 1), zSig, __exp_bits, __frac_bits, __nan, __subnorm);
 }
 
 #ifdef FLOATX80
@@ -1306,7 +1455,7 @@ static __FORCE_INLINE __float64 __uint64_to_float64(__uint64 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __int64_to_floatx80(__int64 a)
+__floatx80 __int64_to_floatx80_ieee(__int64 a)
 {
    __flag zSign;
    __uint64 absA;
@@ -1330,7 +1479,7 @@ static __FORCE_INLINE __floatx80 __int64_to_floatx80(__int64 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __int64_to_float128(__int64 a)
+__float128 __int64_to_float128_ieee(__int64 a)
 {
    __flag zSign;
    __uint64 absA;
@@ -1371,24 +1520,31 @@ static __FORCE_INLINE __float128 __int64_to_float128(__int64 a)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int32 __float32_to_int32(__float32 a)
+__int32 __float32_to_int32(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
-   __int16 aExp, shiftCount;
+   __int32 aExp, shiftCount;
    __bits32 aSig;
    __bits64 aSig64;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   if((aExp == 0xFF) && aSig)
-      aSign = 0;
-   if(aExp)
-      aSig |= 0x00800000;
-   shiftCount = 0xAF - aExp;
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   if(__nan)
+   {
+      if((aExp == ((1 << __exp_bits) - 1)) && aSig)
+      {
+         aSign = 0;
+      }
+   }
+   if(aExp && __one)
+   {
+      aSig |= (1 << __frac_bits);
+   }
+   shiftCount = (48 - __exp_bias) - aExp;
    aSig64 = aSig;
    aSig64 <<= 32;
-   if(0 < shiftCount)
+   if(shiftCount > 0)
       __shift64RightJamming(aSig64, shiftCount, &aSig64);
    return __roundAndPackInt32(aSign, aSig64);
 }
@@ -1403,28 +1559,28 @@ static __FORCE_INLINE __int32 __float32_to_int32(__float32 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int32 __float32_to_int32_round_to_zero(__float32 a)
+__int32 __float32_to_int32_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
-   __int16 aExp, shiftCount;
+   __int32 aExp, shiftCount;
    __bits32 aSig;
    __int32 z;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   shiftCount = aExp - 0x9E;
-   if(0 <= shiftCount)
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   shiftCount = aExp + (__exp_bias - 31);
+   if(shiftCount >= 0)
    {
-      if(a != 0xCF000000)
+      if(a != ((1 << (__exp_bits + __frac_bits)) | (((31 - __exp_bias) & ((1 << __exp_bits) - 1)) << __frac_bits)))
       {
          __float_raise(float_flag_invalid);
-         if(!aSign || ((aExp == 0xFF) && aSig))
+         if(!aSign || ((aExp == ((1 << __exp_bits) - 1)) && aSig && __nan))
             return 0x7FFFFFFF;
       }
       return (__sbits32)0x80000000;
    }
-   else if(aExp <= 0x7E)
+   else if(aExp <= (-1 - __exp_bias))
    {
 #ifndef NO_PARAMETRIC
       if(aExp | aSig)
@@ -1432,7 +1588,7 @@ static __FORCE_INLINE __int32 __float32_to_int32_round_to_zero(__float32 a)
 #endif
       return 0;
    }
-   aSig = (aSig | 0x00800000) << 8;
+   aSig = (aSig | (1 << __frac_bits)) << (31 - __frac_bits);
    z = aSig >> (-shiftCount);
    if((__bits32)(aSig << (shiftCount & 31)))
    {
@@ -1445,22 +1601,22 @@ static __FORCE_INLINE __int32 __float32_to_int32_round_to_zero(__float32 a)
    return z;
 }
 
-static __FORCE_INLINE __uint32 __float32_to_uint32_round_to_zero(__float32 a)
+__uint32 __float32_to_uint32_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
-   __int16 aExp, shiftCount;
+   __int32 aExp, shiftCount;
    __bits32 aSig;
    __uint32 z;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   shiftCount = aExp - 0x9E;
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   shiftCount = aExp + (__exp_bias - 31);
    if(0 <= shiftCount)
    {
       return (__bits32)0x80000000;
    }
-   else if(aExp <= 0x7E)
+   else if(aExp <= (-1 - __exp_bias))
    {
 #ifndef NO_PARAMETRIC
       if(aExp | aSig)
@@ -1468,7 +1624,7 @@ static __FORCE_INLINE __uint32 __float32_to_uint32_round_to_zero(__float32 a)
 #endif
       return 0;
    }
-   aSig = (aSig | 0x00800000) << 8;
+   aSig = (aSig | (1 << __frac_bits)) << (31 - __frac_bits);
    z = aSig >> (-shiftCount);
    if((__bits32)(aSig << (shiftCount & 31)))
    {
@@ -1491,30 +1647,30 @@ static __FORCE_INLINE __uint32 __float32_to_uint32_round_to_zero(__float32 a)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int64 __float32_to_int64(__float32 a)
+__int64 __float32_to_int64(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
    __bits32 aSig;
    __bits64 aSig64, aSigExtra;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   shiftCount = 0xBE - aExp;
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   shiftCount = (63 - __exp_bias) - aExp;
    if(shiftCount < 0)
    {
       __float_raise(float_flag_invalid);
-      if(!aSign || ((aExp == 0xFF) && aSig))
+      if(!aSign || ((aExp == ((1 << __exp_bits) - 1)) && aSig && __nan))
       {
          return LIT64(0x7FFFFFFFFFFFFFFF);
       }
       return (__sbits64)LIT64(0x8000000000000000);
    }
    if(aExp)
-      aSig |= 0x00800000;
+      aSig |= (1 << __frac_bits);
    aSig64 = aSig;
-   aSig64 <<= 40;
+   aSig64 <<= (63 - __frac_bits);
    __shift64ExtraRightJamming(aSig64, 0, shiftCount, &aSig64, &aSigExtra);
    return __roundAndPackInt64(aSign, aSig64, aSigExtra);
 }
@@ -1529,7 +1685,7 @@ static __FORCE_INLINE __int64 __float32_to_int64(__float32 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int64 __float32_to_int64_round_to_zero(__float32 a)
+__int64 __float32_to_int64_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
@@ -1537,23 +1693,23 @@ static __FORCE_INLINE __int64 __float32_to_int64_round_to_zero(__float32 a)
    __bits64 aSig64;
    __int64 z;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   shiftCount = aExp - 0xBE;
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   shiftCount = aExp + (__exp_bias - 63);
    if(0 <= shiftCount)
    {
-      if(a != 0xDF000000)
+      if(a != ((1 << (__exp_bits + __frac_bits)) | (((63 - __exp_bias) & ((1 << __exp_bits) - 1)) << __frac_bits)))
       {
          __float_raise(float_flag_invalid);
-         if(!aSign || ((aExp == 0xFF) && aSig))
+         if(!aSign || ((aExp == ((1 << __exp_bits) - 1)) && aSig && __nan))
          {
             return LIT64(0x7FFFFFFFFFFFFFFF);
          }
       }
       return (__sbits64)LIT64(0x8000000000000000);
    }
-   else if(aExp <= 0x7E)
+   else if(aExp <= (-1 - __exp_bias))
    {
 #ifndef NO_PARAMETRIC
       if(aExp | aSig)
@@ -1561,8 +1717,8 @@ static __FORCE_INLINE __int64 __float32_to_int64_round_to_zero(__float32 a)
 #endif
       return 0;
    }
-   aSig64 = aSig | 0x00800000;
-   aSig64 <<= 40;
+   aSig64 = aSig | (1 << __frac_bits);
+   aSig64 <<= (63 - __frac_bits);
    z = aSig64 >> (-shiftCount);
    if((__bits64)(aSig64 << (shiftCount & 63)))
    {
@@ -1575,7 +1731,7 @@ static __FORCE_INLINE __int64 __float32_to_int64_round_to_zero(__float32 a)
    return z;
 }
 
-static __FORCE_INLINE __uint64 __float32_to_uint64_round_to_zero(__float32 a)
+__uint64 __float32_to_uint64_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
@@ -1583,15 +1739,15 @@ static __FORCE_INLINE __uint64 __float32_to_uint64_round_to_zero(__float32 a)
    __bits64 aSig64;
    __uint64 z;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   shiftCount = aExp - 0xBE;
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   shiftCount = aExp + (__exp_bias - 63);
    if(0 <= shiftCount)
    {
       return (__bits64)LIT64(0x8000000000000000);
    }
-   else if(aExp <= 0x7E)
+   else if(aExp <= (-1 - __exp_bias))
    {
 #ifndef NO_PARAMETRIC
       if(aExp | aSig)
@@ -1599,8 +1755,8 @@ static __FORCE_INLINE __uint64 __float32_to_uint64_round_to_zero(__float32 a)
 #endif
       return 0;
    }
-   aSig64 = aSig | 0x00800000;
-   aSig64 <<= 40;
+   aSig64 = aSig | (1 << __frac_bits);
+   aSig64 <<= (63 - __frac_bits);
    z = aSig64 >> (-shiftCount);
    if((__bits64)(aSig64 << (shiftCount & 63)))
    {
@@ -1620,33 +1776,36 @@ static __FORCE_INLINE __uint64 __float32_to_uint64_round_to_zero(__float32 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __float32_to_float64(__float32 a)
+__float64 __float32_to_float64_ieee(__float32 a, __flag __nan, __flag __subnorm)
 {
    __flag aSign;
    __int16 aExp;
    __bits32 aSig;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   if(aExp == 0xFF)
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   if(aExp == 0xFF && __nan)
    {
       if(aSig)
-         return __commonNaNToFloat64(__float32ToCommonNaN(a));
-      return __packFloat64(aSign, 0x7FF, 0);
+         return __commonNaNToFloat64_ieee(__float32ToCommonNaN_ieee(a));
+      return (((__bits64)aSign) << 63) | 0x7FF0000000000000; // __packFloat64(aSign, 0x7FF, 0, IEEE64_PACK);
    }
    if(aExp == 0)
    {
-#ifdef NO_SUBNORMALS
-      return __packFloat64(aSign, 0, 0);
-#else
-      if(aSig == 0)
-         return __packFloat64(aSign, 0, 0);
-      __normalizeFloat32Subnormal(aSig, &aExp, &aSig);
-#endif
-      --aExp;
+      if(__subnorm)
+      {
+         if(aSig == 0)
+            return ((__bits64)aSign) << 63; // __packFloat64(aSign, 0, 0, IEEE64_PACK);
+         __normalizeFloat32Subnormal(aSig, aExp, aSig, IEEE32_FRAC_BITS);
+         --aExp;
+      }
+      else
+      {
+         return ((__bits64)aSign) << 63; // __packFloat64(aSign, 0, 0, IEEE64_PACK);
+      }
    }
-   return __packFloat64(aSign, aExp + 0x380, ((__bits64)aSig) << 29);
+   return __packFloat64(aSign, aExp + ((__int16)0x380), ((__bits64)aSig) << 29, IEEE64_PACK);
 }
 
 #ifdef FLOATX80
@@ -1658,15 +1817,15 @@ static __FORCE_INLINE __float64 __float32_to_float64(__float32 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __float32_to_floatx80(__float32 a)
+__floatx80 __float32_to_floatx80_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp;
    __bits32 aSig;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    if(aExp == 0xFF)
    {
       if(aSig)
@@ -1698,15 +1857,15 @@ static __FORCE_INLINE __floatx80 __float32_to_floatx80(__float32 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __float32_to_float128(__float32 a)
+__float128 __float32_to_float128_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp;
    __bits32 aSig;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    if(aExp == 0xFF)
    {
       if(aSig)
@@ -1736,7 +1895,7 @@ static __FORCE_INLINE __float128 __float32_to_float128(__float32 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __float32_round_to_int(__float32 a)
+__float32 __float32_round_to_int_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp;
@@ -1744,12 +1903,12 @@ static __FORCE_INLINE __float32 __float32_round_to_int(__float32 a)
    __int8 roundingMode;
    __float32 z;
 
-   aExp = __extractFloat32Exp(a);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
    if(0x96 <= aExp)
    {
-      if((aExp == 0xFF) && __extractFloat32Frac(a))
+      if((aExp == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC))
       {
-         return __propagateFloat32NaN(a, a);
+         return __propagateFloat32NaN_ieee(a, a);
       }
       return a;
    }
@@ -1760,13 +1919,13 @@ static __FORCE_INLINE __float32 __float32_round_to_int(__float32 a)
 #ifndef NO_PARAMETRIC
       __float_exception_flags |= float_flag_inexact;
 #endif
-      aSign = __extractFloat32Sign(a);
+      aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
       switch(__float_rounding_mode)
       {
          case float_round_nearest_even:
-            if((aExp == 0x7E) && __extractFloat32Frac(a))
+            if((aExp == 0x7E) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC))
             {
-               return __packFloat32(aSign, 0x7F, 0);
+               return (((__bits32)aSign) << 31) | 0x3F800000; // __packFloat32(aSign, 0x7F, 0, IEEE32_PACK);
             }
             break;
          case float_round_down:
@@ -1774,7 +1933,7 @@ static __FORCE_INLINE __float32 __float32_round_to_int(__float32 a)
          case float_round_up:
             return aSign ? 0x80000000 : 0x3F800000;
       }
-      return __packFloat32(aSign, 0, 0);
+      return ((__bits32)aSign) << 31; // __packFloat32(aSign, 0, 0, IEEE32_PACK);
    }
    lastBitMask = 1;
    lastBitMask <<= 0x96 - aExp;
@@ -1789,7 +1948,7 @@ static __FORCE_INLINE __float32 __float32_round_to_int(__float32 a)
    }
    else if(roundingMode != float_round_to_zero)
    {
-      if(__extractFloat32Sign(z) ^ (roundingMode == float_round_up))
+      if(__extractFloat32Sign(z, IEEE32_EXTRACT_SIGN) ^ (roundingMode == float_round_up))
       {
          z += roundBitsMask;
       }
@@ -1804,414 +1963,95 @@ static __FORCE_INLINE __float32 __float32_round_to_int(__float32 a)
 
 /*----------------------------------------------------------------------------
 | Returns the result of adding the absolute values of the single-precision
-| floating-point values `a' and `b'.  If `zSign' is 1, the sum is negated
-| before being returned.  `zSign' is ignored if the result is a NaN.
+| floating-point values `a' and `b'.  If `bSign' is 1, the sum is negated
+| before being returned.  `bSign' is ignored if the result is a NaN.
 | The addition is performed according to the IEC/IEEE Standard for Binary
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
-
-static __FORCE_INLINE __float32 __addFloat32Sigs(__float32 a, __float32 b, __flag zSign)
-{
-   __int16 aExp, bExp, zExp;
-   __bits32 aSig, bSig, zSig;
-   __int16 expDiff;
-
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   expDiff = aExp - bExp;
-   aSig <<= 6;
-   bSig <<= 6;
-   if(0 < expDiff)
-   {
-      if(aExp == 0xFF)
-      {
-         if(aSig)
-            return __propagateFloat32NaN(a, b);
-         return a;
-      }
-      if(bExp == 0)
-      {
-         --expDiff;
-      }
-      else
-      {
-         bSig |= 0x20000000;
-      }
-      __shift32RightJamming(bSig, expDiff, &bSig);
-      zExp = aExp;
-   }
-   else if(expDiff < 0)
-   {
-      if(bExp == 0xFF)
-      {
-         if(bSig)
-            return __propagateFloat32NaN(a, b);
-         return __packFloat32(zSign, 0xFF, 0);
-      }
-      if(aExp == 0)
-      {
-         ++expDiff;
-      }
-      else
-      {
-         aSig |= 0x20000000;
-      }
-      __shift32RightJamming(aSig, -expDiff, &aSig);
-      zExp = bExp;
-   }
-   else
-   {
-      if(aExp == 0xFF)
-      {
-         if(aSig | bSig)
-            return __propagateFloat32NaN(a, b);
-         return a;
-      }
-      if(aExp == 0)
-         return __packFloat32(zSign, 0, (aSig + bSig) >> 6);
-      zSig = 0x40000000 + aSig + bSig;
-      zExp = aExp;
-      goto roundAndPack;
-   }
-   aSig |= 0x20000000;
-   zSig = (aSig + bSig) << 1;
-   --zExp;
-   if((__sbits32)zSig < 0)
-   {
-      zSig = aSig + bSig;
-      ++zExp;
-   }
-roundAndPack:
-   return __roundAndPackFloat32(zSign, zExp, zSig);
-}
-
-/*----------------------------------------------------------------------------
-| Returns the result of subtracting the absolute values of the single-
-| precision floating-point values `a' and `b'.  If `zSign' is 1, the
-| difference is negated before being returned.  `zSign' is ignored if the
-| result is a NaN.  The subtraction is performed according to the IEC/IEEE
-| Standard for Binary Floating-Point Arithmetic.
-*----------------------------------------------------------------------------*/
-
-static __FORCE_INLINE __float32 __subFloat32Sigs(__float32 a, __float32 b, __flag zSign)
-{
-   __int16 aExp, bExp, zExp;
-   __bits32 aSig, bSig, zSig;
-   __int16 expDiff;
-
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   expDiff = aExp - bExp;
-   aSig <<= 7;
-   bSig <<= 7;
-   if(0 < expDiff)
-      goto aExpBigger;
-   if(expDiff < 0)
-      goto bExpBigger;
-   if(aExp == 0xFF)
-   {
-      if(aSig | bSig)
-         return __propagateFloat32NaN(a, b);
-      __float_raise(float_flag_invalid);
-      return __float32_default_nan;
-   }
-   if(aExp == 0)
-   {
-      aExp = 1;
-      bExp = 1;
-   }
-   if(bSig < aSig)
-      goto aBigger;
-   if(aSig < bSig)
-      goto bBigger;
-   return __packFloat32(__float_rounding_mode == float_round_down, 0, 0);
-bExpBigger:
-   if(bExp == 0xFF)
-   {
-      if(bSig)
-         return __propagateFloat32NaN(a, b);
-      return __packFloat32(zSign ^ 1, 0xFF, 0);
-   }
-   if(aExp == 0)
-   {
-      ++expDiff;
-   }
-   else
-   {
-      aSig |= 0x40000000;
-   }
-   __shift32RightJamming(aSig, -expDiff, &aSig);
-   bSig |= 0x40000000;
-bBigger:
-   zSig = bSig - aSig;
-   zExp = bExp;
-   zSign ^= 1;
-   goto normalizeRoundAndPack;
-aExpBigger:
-   if(aExp == 0xFF)
-   {
-      if(aSig)
-         return __propagateFloat32NaN(a, b);
-      return a;
-   }
-   if(bExp == 0)
-   {
-      --expDiff;
-   }
-   else
-   {
-      bSig |= 0x40000000;
-   }
-   __shift32RightJamming(bSig, expDiff, &bSig);
-   aSig |= 0x40000000;
-aBigger:
-   zSig = aSig - bSig;
-   zExp = aExp;
-normalizeRoundAndPack:
-   --zExp;
-   return __normalizeRoundAndPackFloat32(zSign, zExp, zSig);
-}
 
 #define FP_CLS_ZERO 0U
 #define FP_CLS_NORMAL 1U
 #define FP_CLS_INF 2U
 #define FP_CLS_NAN 3U
 
-#ifdef SIMPLE_CLZ25
-static __FORCE_INLINE __bits8 __CLZ25(__bits32 v)
-{
-   __bits32 r; // result of log2(v) will go here
-   __bits32 shift;
-   r = (v > 0xFFFF) << 4;
-   v >>= r;
-   shift = (v > 0xFF) << 3;
-   v >>= shift;
-   r |= shift;
-   shift = (v > 0xF) << 2;
-   v >>= shift;
-   r |= shift;
-   shift = (v > 0x3) << 1;
-   v >>= shift;
-   r |= shift;
-   r |= (v >> 1);
-
-   return 24 - r;
-}
-#else
-static __FORCE_INLINE __bits8 __CLZ25(__bits32 v)
-{
-   __bits8 res;
-   count_leading_zero_macro(25, v, res);
-   return res;
-}
-#endif
-
-static __FORCE_INLINE __float32 __addsubFloat32_old(__float32 a, __float32 b, __flag bSign)
-{
-   __bits16 eRc1, eRn0, eRn_0, eRc, eRf0, eRf1, eRf, eRn;
-   __bits32 aSig, bSig, bSigOrig, tmp_swap, fAc1, fBc1, fRc0, fRc1, fRc, fBf1, fBf2_low, fBf2, fAf3, fRf0, fRf0_right, fRf0_t_right, fRf1, fRf_0, fRf, shift_0, fRn_0, fRn, fRr;
-   __int16 expDiff;
-   _Bool expDiffSign, eRnSign;
-   __bits8 aExp, bExp, expDiff8, eRn8;
-   __bits8 a_c, b_c, nZeros, lb;
-   _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal, swap, sAB, aSign, roundc, roundf, eZero, close, sRn, eMax, eMin, eTest0, eTest1, SigDiffSign, sb;
-   __int8 eRf1_correction;
-   aSign = __extractFloat32Sign(a);
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   a_c_zero = aExp == 0 && aSig == 0;
-   a_c_inf = aExp == 0xFF && aSig == 0;
-   a_c_nan = aExp == 0xFF && aSig != 0;
-   a_c_normal = aExp != 0 && aExp != 0xFF;
-   a_c = ((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) | ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
-
-   b_c_zero = bExp == 0 && bSig == 0;
-   b_c_inf = bExp == 0xFF && bSig == 0;
-   b_c_nan = bExp == 0xFF && bSig != 0;
-   b_c_normal = bExp != 0 && bExp != 0xFF;
-   b_c = ((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) | ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
-   expDiff = aExp - bExp;
-   expDiffSign = (expDiff >> 8) & 1;
-   expDiff8 = expDiff;
-   sAB = aSign ^ bSign;
-   swap = (sAB && aSig < bSig && expDiff8 == 0 && expDiffSign == 0 && a_c == b_c) || ((expDiffSign) && a_c == b_c) || a_c < b_c;
-   expDiff8 = (swap ? -expDiff8 : expDiff8);
-   tmp_swap = b;
-   b = swap ? a : b;
-   a = swap ? tmp_swap : a;
-   aSign = swap ? bSign : aSign;
-   close = ((expDiff8 >> 1) == 0) && sAB;
-   aSig = __extractFloat32Frac(a);
-   bSigOrig = __extractFloat32Frac(b);
-   fAc1 = (aSig | 0x00800000) << 1;
-   fAf3 = fAc1 << 2;
-   BIT_RESIZE(fAf3, 27);
-   fBf1 = bSigOrig | 0x00800000;
-   fBc1 = (expDiff8 & 1) ? fBf1 : (fBf1 << 1);
-   fRc0 = fAc1 - fBc1;
-   BIT_RESIZE(fRc0, 26);
-   fRc1 = fRc0;
-   BIT_RESIZE(fRc1, 25);
-   eRc1 = __extractFloat32Exp(a);
-   BIT_RESIZE(eRc1, 9);
-   // nZeros = __CLZ25(fRc1);
-   // shift_0 = fRc1 << nZeros;
-   count_leading_zero_macro_lshift(25, fRc1, nZeros, shift_0);
-   roundc = (fRc1 & 1) & ((fRc1 >> 1) & 1) & ((fRc1 >> 24) & 1);
-   fRn_0 = shift_0 >> 1;
-   eRn0 = eRc1 - nZeros;
-   eZero = (eRn0 >> 8) & 1;
-   eRn_0 = eZero ? 0 : eRn0;
-   fRr = ((fRc1 & ((1 << 24) - 1)) >> 2) + 1;
-   eRc = roundc ? eRc1 + ((fRr >> 22) & 1) : eRn_0;
-   BIT_RESIZE(eRc, 9);
-   fRc = roundc ? ((fRr & ((1 << 22) - 1)) | (1 << 22)) << 1 : fRn_0;
-   BIT_RESIZE(fRc, 24);
-   fBf2 = expDiff8 >= 27 ? 0 : (fBf1 << 3) >> expDiff8;
-   fBf2_low = expDiff8 >= 27 ? fBf1 : (fBf1 << 3) << (27 - expDiff8);
-   BIT_RESIZE(fBf2, 27);
-   BIT_RESIZE(fBf2_low, 27);
-   sb = fBf2_low != 0;
-   fRf0_t_right = (~fBf2) + !sb;
-   fRf0_right = sAB ? fRf0_t_right : fBf2;
-   fRf0 = fAf3 + fRf0_right;
-   BIT_RESIZE(fRf0, 28);
-   eRf0 = eRc1;
-   BIT_RESIZE(eRf0, 9);
-   lb = (fRf0 >> 26) & 3;
-   fRf1 = lb == 1 ? ((fRf0 >> 1) | (fRf0 & 1)) : (lb == 0 ? fRf0 : ((fRf0 >> 2) | ((fRf0 & 2) >> 1) | (fRf0 & 1)));
-   BIT_RESIZE(fRf1, 26);
-   eRf1_correction = lb == 1 ? 0 : (lb == 0 ? -1 : +1);
-   roundf = ((fRf1 & 2) >> 1) & (((fRf1 & 4) >> 2) | (fRf1 & 1) | sb);
-   fRf_0 = (fRf1 >> 2) + roundf;
-   BIT_RESIZE(fRf_0, 25);
-   eRf1 = eRf1_correction + ((fRf_0 >> 24) & 1);
-   BIT_RESIZE(eRf1, 9);
-   eRf = eRf0 + eRf1;
-   BIT_RESIZE(eRf, 9);
-   fRf = ((fRf_0 & (1 << 24)) >> 1) | (fRf_0 & ((1 << 24) - 1));
-   BIT_RESIZE(fRf, 24);
-   eRn = close ? eRc : eRf;
-   eRn8 = eRn & 0xFF;
-   eRnSign = (eRn >> 8) & 1;
-   fRn = close ? fRc : fRf;
-   BIT_RESIZE(fRn, 24);
-   sRn = aSign;
-   eMax = eRn8 == 0xFF;
-   eMin = eRn8 == 0;
-   eTest1 = (eMax & (0 == (eRnSign))) | ((eRnSign) & (((eRn8 >> 7) & 1) == 0));
-   eTest0 = (eMin & (0 == (eRnSign))) | ((eRnSign) & ((eRn8 >> 7) & 1)) | (0 == ((fRn >> 23) & 1));
-
-   if(a_c_normal && b_c_normal)
-   {
-      if(!eTest1 && eTest0)
-         return (sRn & 1) << 31;
-      else if(eTest1 && !eTest0)
-         return __float32_default_nan;
-      else
-         return (sRn << 31) | (eRn8 << 23) | (fRn & ((1 << 23) - 1));
-   }
-   else
-   {
-      if(a_c_inf && b_c_inf)
-      {
-         if(sAB)
-            return __float32_default_nan;
-         else
-            return (sRn & 1) << 31 | 0xFF << 23;
-      }
-      else
-      {
-         if(eRc1 == 0xFF && aSig == 0)
-            return (sRn & 1) << 31 | 0xFF << 23;
-         else if(eRc1 != 0xFF)
-            return (sRn << 31) | ((eRc1 & 255) << 23) | (aSig & ((1 << 23) - 1));
-         else
-            return __float32_default_nan;
-      }
-   }
-}
-
 //#define VOLATILE_DEF volatile
 #define VOLATILE_DEF
 
-static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag bSign)
+static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag bSign, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    VOLATILE_DEF __bits32 aSig, bSig, shift_0;
-   VOLATILE_DEF __bits8 aExp, bExp, expDiff8;
-   VOLATILE_DEF __bits8 nZeros;
-   VOLATILE_DEF _Bool a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign;
+   VOLATILE_DEF __bits32 aExp, bExp, expDiff;
+   VOLATILE_DEF __bits8 nZeros, __exp_shift, __nzeros_bits;
+   VOLATILE_DEF _Bool a_c_zero, b_c_zero, a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign;
    VOLATILE_DEF __bits32 abs_a, abs_b;
    VOLATILE_DEF __bits32 fA, fB, fB_shifted;
-#ifndef NO_ROUNDING
+   VOLATILE_DEF __bits64 fB_shift;
    VOLATILE_DEF _Bool sb, LSB_bit, Guard_bit, Round_bit, Sticky_bit, round;
-   VOLATILE_DEF __bits32 fB_shifted_low, fBleft_shifted;
-#endif
-   VOLATILE_DEF _Bool ge_32;
+   VOLATILE_DEF __bits32 fB_shifted_low;
+   VOLATILE_DEF _Bool ge_frac_bits;
    VOLATILE_DEF _Bool tmp_sign;
-   VOLATILE_DEF __bits8 tmp_exp;
+   VOLATILE_DEF __bits32 tmp_exp;
    VOLATILE_DEF __bits32 tmp_sig;
    VOLATILE_DEF _Bool subnormal_exp_correction;
    VOLATILE_DEF __bits32 fB_shifted1;
    VOLATILE_DEF __bits32 fR0;
    VOLATILE_DEF _Bool R_c_zero;
-   VOLATILE_DEF __bits8 RExp0, RExp1;
+   VOLATILE_DEF __bits32 RExp0, RExp1;
    VOLATILE_DEF __bits32 RSig0, RSig1, RSig2, RSig3;
    VOLATILE_DEF __bits32 RExp0RSig1, Rrounded;
-   VOLATILE_DEF _Bool overflow_to_infinite;
-   VOLATILE_DEF _Bool aExp255, bExp255;
+   VOLATILE_DEF _Bool overflow_to_infinite, saturation;
+   VOLATILE_DEF _Bool aExpMax, bExpMax;
+   VOLATILE_DEF __bits8 __frac_shift, __frac_full, __frac_almost;
 
-#ifdef NO_ROUNDING
-#define FRAC_SHIFT 0
-#define FRAC_FULL_BW 25
-#define FRAC_ALMOST_BW 24
-#else
-#define FRAC_SHIFT 2
-#define FRAC_FULL_BW 27
-#define FRAC_ALMOST_BW 26
-#endif
+   __frac_shift = __rounding ? 2 : 0;
+   __frac_almost = __frac_bits + __frac_shift + 1;
+   __frac_full = __frac_almost + 1;
 
-   aSign = __extractFloat32Sign(a);
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   bSig = __extractFloat32Frac(b, __frac_bits);
+   bExp = __extractFloat32Exp(b, __exp_bits, __frac_bits);
    _Bool aSig_null = aSig == 0;
    _Bool bSig_null = bSig == 0;
    _Bool aExp_null = aExp == 0;
    _Bool bExp_null = bExp == 0;
-   aExp255 = aExp == 0xFF;
-   a_c_nan = aExp255 && !aSig_null;
-   a_c_normal = !aExp_null /*&& !aExp255*/; /// not really needed the second condition
-   bExp255 = bExp == 0xFF;
-   b_c_nan = bExp255 && !bSig_null;
-   b_c_normal = !bExp_null /*&& !bExp255*/; /// not really needed the second condition
+   aExpMax = aExp == ((1 << __exp_bits) - 1);
+   a_c_zero = aExp_null && aSig_null;
+   a_c_zero = __subnorm ? aExp_null : a_c_zero;
+   a_c_nan = aExpMax && !aSig_null;
+   a_c_nan = __nan ? a_c_nan : 0;
+   a_c_normal = !a_c_zero /*&& !aExp255*/; /// not really needed the second condition
+   a_c_normal = __one ? a_c_normal : 0;
+   bExpMax = bExp == ((1 << __exp_bits) - 1);
+   b_c_zero = bExp_null && bSig_null;
+   b_c_zero = __subnorm ? bExp_null : b_c_zero;
+   b_c_nan = bExpMax && !bSig_null;
+   b_c_nan = __nan ? b_c_nan : 0;
+   b_c_normal = !b_c_zero /*&& !bExp255*/; /// not really needed the second condition
+   b_c_normal = __one ? b_c_normal : 0;
    sAB = aSign ^ bSign;
 
-   abs_a = a;
-   BIT_RESIZE(abs_a, 31);
-   abs_b = b;
-   BIT_RESIZE(abs_b, 31);
+   abs_a = a & ((1 << (__exp_bits + __frac_bits)) - 1);
+   abs_b = b & ((1 << (__exp_bits + __frac_bits)) - 1);
 
    swap = (a_c_nan == b_c_nan && abs_a < abs_b) || a_c_nan < b_c_nan;
 
-#ifdef NO_SUBNORMALS
-   subnormal_exp_correction = 0;
-#else
    subnormal_exp_correction = (aExp_null && !aSig_null) ^ (bExp_null && !bSig_null);
-#endif
 
    tmp_exp = bExp;
    bExp = swap ? aExp : bExp;
    aExp = swap ? tmp_exp : aExp;
 
-   expDiff8 = aExp - bExp - subnormal_exp_correction;
+   if(__subnorm)
+   {
+      expDiff = aExp - bExp - subnormal_exp_correction;
+   }
+   else
+   {
+      expDiff = aExp - bExp;
+   }
+   expDiff = expDiff & ((1 << __exp_bits) - 1);
 
    tmp_sig = bSig;
    bSig = swap ? aSig : bSig;
@@ -2225,77 +2065,93 @@ static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag
    b_c_normal = swap ? a_c_normal : b_c_normal;
    a_c_normal = swap ? tmp_c_normal : a_c_normal;
 
-   fA = (aSig | (((__bits32)a_c_normal) << 23)) << FRAC_SHIFT;
-   fB = (bSig | (((__bits32)b_c_normal) << 23)) << FRAC_SHIFT;
+   fA = (aSig | (((__bits32)(a_c_normal)) << __frac_bits)) << __frac_shift;
+   fB = (bSig | (((__bits32)(b_c_normal)) << __frac_bits)) << __frac_shift;
 
-   ge_32 = SELECT_BIT(expDiff8, 5) | SELECT_BIT(expDiff8, 6) | SELECT_BIT(expDiff8, 7);
-#ifdef NO_ROUNDING
-   fB_shifted = fB >> VAL_RESIZE((expDiff8 | (__bits32)(((((__sbits32)ge_32) << 31) >> 31))), 5);
-#else
-   __bits64 fB_shift = ((__bits64)fB) << 32;
-   fB_shift = fB_shift >> VAL_RESIZE((expDiff8 | (__bits32)(((((__sbits32)ge_32) << 31) >> 31))), 5);
-   fB_shifted = fB_shift >> 32;
-   fBleft_shifted = fB_shift;
+   __exp_shift = (__frac_bits > 1 ? (__frac_bits > 2 ? (__frac_bits > 4 ? (__frac_bits > 8 ? (__frac_bits > 16 ? 5 : 4) : 3) : 2) : 1) : 0);
+   ge_frac_bits = (expDiff >> __exp_shift) != 0;
+   expDiff = (expDiff | (__bits32)(((((__sbits32)ge_frac_bits) << 31) >> 31))) & ((1ULL << __exp_shift) - 1);
+   if(__rounding)
+   {
+      fB_shifted_low = fB & (~((~(0ULL)) << expDiff));
+   }
+   fB_shifted = fB >> expDiff;
+   fB_shifted = fB_shifted & ((1 << __frac_almost) - 1);
 
-   fB_shifted_low = fBleft_shifted;
-#endif
-   BIT_RESIZE(fB_shifted, FRAC_ALMOST_BW);
-
-#ifndef NO_ROUNDING
-   sb = fB_shifted_low != 0;
-#endif
    fB_shifted1 = ((__bits32)((((__sbits32)sAB) << 31) >> 31)) ^ fB_shifted;
-   BIT_RESIZE(fB_shifted1, FRAC_FULL_BW);
+   fB_shifted1 = fB_shifted1 & ((1 << __frac_full) - 1);
 
-#ifdef NO_ROUNDING
-   fR0 = fA + fB_shifted1 + sAB;
-#else
+   sb = fB_shifted_low != 0;
+   sb = __rounding ? sb : 0;
    fR0 = fA + fB_shifted1 + (sAB && (!sb));
-#endif
-   BIT_RESIZE(fR0, FRAC_FULL_BW);
-   count_leading_zero_macro_lshift(FRAC_FULL_BW, fR0, nZeros, shift_0);
 
-   R_c_zero = nZeros == VAL_RESIZE((~0ULL), 5);
-   overflow_to_infinite = aExp == 254 && (fR0 >> FRAC_ALMOST_BW) & 1;
+   fR0 = fR0 & ((1 << __frac_full) - 1);
+   count_leading_zero_lshift64_runtime_macro(__frac_full, fR0, nZeros, shift_0);
 
-#ifdef NO_SUBNORMALS
-   R_c_zero = R_c_zero || aExp < nZeros;
-   RExp0 = R_c_zero ? 0 : aExp - nZeros + 1;
-   RSig0 = shift_0;
-#else
-   RExp0 = R_c_zero || aExp < nZeros ? ((aExp_null) && (bExp_null) && nZeros == 1) : aExp - nZeros + 1;
-   RSig0 = aExp < nZeros ? ((aExp_null) && (bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
-#endif
-#ifndef NO_ROUNDING
-   LSB_bit = SELECT_BIT(RSig0, 3);
-   Guard_bit = SELECT_BIT(RSig0, 2);
-   Round_bit = SELECT_BIT(RSig0, 1);
-   Sticky_bit = SELECT_BIT(RSig0, 0) | sb;
-   round = Guard_bit & (LSB_bit | Round_bit | Sticky_bit);
-#endif
+   __nzeros_bits = RUNTIME_CEIL_LOG2(__frac_full);
+   R_c_zero = nZeros == ((1 << __nzeros_bits) - 1);
+   overflow_to_infinite = aExp == ((1 << __exp_bits) - (__nan ? 2 : 1)) && (fR0 >> __frac_almost) & 1;
 
-   RSig1 = VAL_RESIZE(RSig0 >> (FRAC_SHIFT + 1), 23);
+   if(__subnorm)
+   {
+      RExp0 = R_c_zero || aExp < nZeros ? ((aExp_null) && (bExp_null) && nZeros == 1) : aExp - nZeros + 1;
+      RSig0 = aExp < nZeros ? ((aExp_null) && (bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
+   }
+   else
+   {
+      R_c_zero = R_c_zero || aExp < nZeros;
+      RExp0 = R_c_zero ? 0 : aExp - nZeros + 1;
+      RSig0 = shift_0;
+   }
+   RExp0 = RExp0 & ((1 << __exp_bits) - 1);
 
-   RExp0RSig1 = (((__bits32)RExp0) << 23) | RSig1;
+   if(__rounding)
+   {
+      LSB_bit = SELECT_BIT(RSig0, 3);
+      Guard_bit = SELECT_BIT(RSig0, 2);
+      Round_bit = SELECT_BIT(RSig0, 1);
+      Sticky_bit = SELECT_BIT(RSig0, 0) | sb;
+      round = Guard_bit & (LSB_bit | Round_bit | Sticky_bit);
+   }
 
-#ifdef NO_ROUNDING
-   Rrounded = RExp0RSig1;
-#else
-   Rrounded = RExp0RSig1 + round;
-#endif
+   RSig1 = (RSig0 >> (__frac_shift + 1)) & ((1 << __frac_bits) - 1);
 
-   RExp1 = aExp255 || bExp255 ? 0xFF : VAL_RESIZE(Rrounded >> 23, 8);
+   RExp0RSig1 = (RExp0 << __frac_bits) | RSig1;
 
-   RSig2 = R_c_zero || aExp255 || bExp255 || overflow_to_infinite ? 0 : VAL_RESIZE(Rrounded, 23);
+   if(__rounding)
+   {
+      Rrounded = RExp0RSig1 + round;
+   }
+   else
+   {
+      Rrounded = RExp0RSig1;
+   }
 
+   if(__nan)
+   {
+      RExp1 = aExpMax || bExpMax ? ((1 << __exp_bits) - 1) : ((Rrounded >> __frac_bits) & ((1 << __exp_bits) - 1));
+      RSig2 = R_c_zero || aExpMax || bExpMax || overflow_to_infinite ? 0 : (Rrounded & ((1 << __frac_bits) - 1));
+   }
+   else
+   {
+      RExp1 = overflow_to_infinite ? ((1 << __exp_bits) - 1) : ((Rrounded >> __frac_bits) & ((1 << __exp_bits) - 1));
+      RSig2 = (overflow_to_infinite ? (__bits32)((((__sbits32)!R_c_zero) << 31) >> 31) : Rrounded) & ((1 << __frac_bits) - 1);
+   }
    aSign = aSign && (!R_c_zero || !sAB);
 
+   if(__nan)
+   {
 #ifdef NO_SIGNALLING
-   RSig3 = (((__bits32)(a_c_nan || b_c_nan || (sAB && aExp255 && bExp255))) << 22) | RSig2;
+      RSig3 = (((__bits32)(a_c_nan || b_c_nan || (sAB && aExpMax && bExpMax))) << (__frac_bits - 1)) | RSig2;
 #else
-   RSig3 = a_c_nan || b_c_nan || (sAB && aExp255 && bExp255) ? 1 << 22 | (aSig & ((1 << 22) - 1)) : RSig2;
+      RSig3 = a_c_nan || b_c_nan || (sAB && aExpMax && bExpMax) ? (1 << (__frac_bits - 1)) | (aSig & ((1 << (__frac_bits - 1)) - 1)) : RSig2;
 #endif
-   return (((__bits32)aSign) << 31) | (((__bits32)RExp1) << 23) | RSig3;
+   }
+   else
+   {
+      RSig3 = RSig2;
+   }
+   return (((__bits32)aSign) << (__exp_bits + __frac_bits)) | (RExp1 << __frac_bits) | RSig3;
 }
 
 /*----------------------------------------------------------------------------
@@ -2304,24 +2160,10 @@ static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __float32_add(__float32 a, __float32 b)
+__float32 __float32_add(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-#ifndef DEFAULT
-   __flag bSign = __extractFloat32Sign(b);
-   return __addsubFloat32(a, b, bSign);
-#else
-   __flag aSign, bSign;
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
-   if(aSign == bSign)
-   {
-      return __addFloat32Sigs(a, b, aSign);
-   }
-   else
-   {
-      return __subFloat32Sigs(a, b, aSign);
-   }
-#endif
+   __flag bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign);
+   return __addsubFloat32(a, b, bSign, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -2330,24 +2172,10 @@ static __FORCE_INLINE __float32 __float32_add(__float32 a, __float32 b)
 | for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __float32_sub(__float32 a, __float32 b)
+__float32 __float32_sub(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-#ifndef DEFAULT
-   __flag bSign = __extractFloat32Sign(b) ^ 1;
-   return __addsubFloat32(a, b, bSign);
-#else
-   __flag aSign, bSign;
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
-   if(aSign == bSign)
-   {
-      return __subFloat32Sigs(a, b, aSign);
-   }
-   else
-   {
-      return __addFloat32Sigs(a, b, aSign);
-   }
-#endif
+   __flag bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign) ^ 1;
+   return __addsubFloat32(a, b, bSign, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -2358,153 +2186,119 @@ static __FORCE_INLINE __float32 __float32_sub(__float32 a, __float32 b)
 typedef unsigned int SF_USItype __attribute__((mode(SI)));
 typedef unsigned int SF_UDItype __attribute__((mode(DI)));
 
-static __FORCE_INLINE __float32 __float32_mul(__float32 a, __float32 b)
+__float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    VOLATILE_DEF __flag aSign, bSign, zSign;
-   VOLATILE_DEF __int16 aExp, bExp, zExp;
+   VOLATILE_DEF __bits32 aExp, bExp;
+   VOLATILE_DEF __flag aExpMax, bExpMax;
    VOLATILE_DEF __bits32 aSig, bSig;
-   VOLATILE_DEF __bits64 zSig64;
    VOLATILE_DEF __bits32 zSig;
-   VOLATILE_DEF __bits32 zSigminus1;
-
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   bSign = __extractFloat32Sign(b);
-   zSign = aSign ^ bSign;
-
-#ifndef DEFAULT
    VOLATILE_DEF __bits8 a_c, b_c, z_c;
    VOLATILE_DEF _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
-   a_c_zero = aExp == 0 && aSig == 0;
-   a_c_inf = aExp == 0xFF && aSig == 0;
-   a_c_nan = aExp == 0xFF && aSig != 0;
-   a_c_normal = aExp != 0 && aExp != 0xFF;
-   a_c = ((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) | ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+   VOLATILE_DEF __bits32 expSum, expPostNorm;
+   VOLATILE_DEF SF_UDItype sigProd, sigProdExt;
+   VOLATILE_DEF _Bool norm, expSigOvf0, expSigOvf2;
+   VOLATILE_DEF _Bool sticky, guard, round, expSigOvf1;
+   VOLATILE_DEF __bits32 expSig, expSigPostRound;
+   VOLATILE_DEF __bits8 excPostNorm;
+   VOLATILE_DEF __bits8 __frac_mul, __frac_full, __frac_almost;
 
-   b_c_zero = bExp == 0 && bSig == 0;
-   b_c_inf = bExp == 0xFF && bSig == 0;
-   b_c_nan = bExp == 0xFF && bSig != 0;
-   b_c_normal = bExp != 0 && bExp != 0xFF;
-   b_c = ((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) | ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
+   if(__sign == 1)
+   {
+      // Negative numbers multiplication result is always out of negative numbers domain
+      return __nan ? __float_nan(__exp_bits, __frac_bits, __sign) : 0;
+   }
+
+   __frac_almost = __frac_bits + 1;
+   __frac_full = __frac_bits + 2;
+   __frac_mul = __frac_bits + __frac_bits + 1;
+
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   bSig = __extractFloat32Frac(b, __frac_bits);
+   bExp = __extractFloat32Exp(b, __exp_bits, __frac_bits);
+   bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign);
+   zSign = aSign ^ bSign;
+
+   aExpMax = aExp == ((1U << __exp_bits) - 1);
+   a_c_zero = (aExp == 0) && (aSig == 0);
+   a_c_zero = __subnorm ? (aExp == 0) : a_c_zero;
+   a_c_inf = aExpMax && aSig == 0;
+   a_c_inf = __nan ? a_c_inf : 0;
+   a_c_nan = aExpMax && aSig != 0;
+   a_c_nan = __nan ? a_c_nan : 0;
+   a_c_normal = !a_c_zero && !aExpMax;
+   a_c_normal = __nan ? a_c_normal : !a_c_zero;
+   a_c = /*((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) |*/ ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+
+   bExpMax = bExp == ((1U << __exp_bits) - 1);
+   b_c_zero = (bExp == 0) && (bSig == 0);
+   b_c_zero = __subnorm ? (bExp == 0) : b_c_zero;
+   b_c_inf = bExpMax && bSig == 0;
+   b_c_inf = __nan ? b_c_inf : 0;
+   b_c_nan = bExpMax && bSig != 0;
+   b_c_nan = __nan ? b_c_nan : 0;
+   b_c_normal = !b_c_zero && !bExpMax;
+   b_c_normal = __nan ? b_c_normal : !b_c_zero;
+   b_c = /*((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) |*/ ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
 
    z_c = ((a_c >> 1 | b_c >> 1) << 1) | (((a_c >> 1) & (a_c & 1)) | ((b_c >> 1) & (b_c & 1)) | ((a_c & 1) & (b_c & 1)) | (1 & (~(a_c >> 1)) & ((~a_c) & 1) & (b_c >> 1)) | (1 & (~(b_c >> 1)) & ((~b_c) & 1) & (a_c >> 1)));
-#else
 
-   if(aExp == 0xFF || bExp == 0xFF || bExp == 0 || aExp == 0)
+   expSum = aExp + bExp + __exp_bias;
+
+   aSig = (aSig | (((__bits32)__one) << __frac_bits));
+   bSig = (bSig | (((__bits32)__one) << __frac_bits));
+   sigProd = (SF_UDItype)(SF_USItype)(aSig) * (SF_USItype)(bSig);
+   norm = (sigProd >> (__frac_mul)) & 1;
+   expPostNorm = expSum + norm;
+   // expPostNorm &= (1U << (__exp_bits + 1) - 1);
+   sigProdExt = sigProd << !norm;
+   sigProdExt = (sigProdExt & ((1ULL << __frac_mul) - 1)) << 1;
+   expSig = (expPostNorm << __frac_bits) | ((sigProdExt >> __frac_full) & ((1U << __frac_bits) - 1));
+   if((__exp_bits + __frac_bits) < 30)
    {
-      if(aExp == 0xFF)
-      {
-         if(aSig || ((bExp == 0xFF) && bSig))
-         {
-            return __propagateFloat32NaN(a, b);
-         }
-         if((bExp | bSig) == 0)
-         {
-            __float_raise(float_flag_invalid);
-            return __float32_default_nan;
-         }
-         return __packFloat32(zSign, 0xFF, 0);
-      }
-      if(bExp == 0xFF)
-      {
-         if(bSig)
-            return __propagateFloat32NaN(a, b);
-         if((aExp | aSig) == 0)
-         {
-            __float_raise(float_flag_invalid);
-            return __float32_default_nan;
-         }
-         return __packFloat32(zSign, 0xFF, 0);
-      }
-      if(aExp == 0)
-      {
-#ifdef NO_SUBNORMALS
-         return __packFloat32(zSign, 0, 0);
-#else
-         if(aSig == 0)
-            return __packFloat32(zSign, 0, 0);
-         __normalizeFloat32Subnormal(aSig, &aExp, &aSig);
-#endif
-      }
-      if(bExp == 0)
-      {
-#ifdef NO_SUBNORMALS
-         return __packFloat32(zSign, 0, 0);
-#else
-         if(bSig == 0)
-            return __packFloat32(zSign, 0, 0);
-         __normalizeFloat32Subnormal(bSig, &bExp, &bSig);
-#endif
-      }
+      expSig = expSig & ((1U << (__exp_bits + __frac_bits + 2)) - 1);
    }
-#endif
+   expSigOvf0 = (expPostNorm >> (__exp_bits + 1)) & 1;
 
-#ifndef DEFAULT
+   if(__rounding)
    {
-      VOLATILE_DEF __bits16 expSumPreSub = aExp + bExp;
-      VOLATILE_DEF __bits16 bias = 127;
-      VOLATILE_DEF __bits16 expSum = expSumPreSub - bias;
-      VOLATILE_DEF __bits16 expPostNorm;
-      VOLATILE_DEF SF_UDItype sigProd, sigProdExt;
-      VOLATILE_DEF _Bool norm, expSigOvf0, expSigOvf2;
-#ifndef NO_ROUNDING
-      VOLATILE_DEF _Bool sticky, guard, round, expSigOvf1;
-#endif
-      VOLATILE_DEF __bits32 expSig, expSigPostRound;
-      VOLATILE_DEF __bits8 excPostNorm;
-      aSig = (aSig | 0x00800000);
-      bSig = (bSig | 0x00800000);
-      sigProd = (SF_UDItype)(SF_USItype)(aSig) * (SF_USItype)(bSig);
-      norm = (sigProd >> 47) & 1;
-      expPostNorm = expSum + norm;
-      sigProdExt = norm ? (sigProd & ((1ULL << 47) - 1)) << 1 : (sigProd & ((1ULL << 46) - 1)) << 2;
-      expSig = (expPostNorm << 23) | ((sigProdExt >> 25) & ((1 << 23) - 1));
-      expSigOvf0 = (expPostNorm >> 9) & 1;
-#ifndef NO_ROUNDING
-      sticky = (sigProdExt >> 24) & 1;
-      guard = (sigProdExt & ((1 << 24) - 1)) != 0;
-      round = sticky & ((guard & !((sigProdExt >> 25) & 1)) | ((sigProdExt >> 25) & 1));
+      sticky = (sigProdExt >> __frac_almost) & 1;
+      guard = (sigProdExt & ((1 << __frac_almost) - 1)) != 0;
+      round = sticky & (guard | ((sigProdExt >> __frac_full) & 1));
       expSigPostRound = expSig + round;
-      expSigOvf1 = round & (expSig == ((__bits32)-1));
+      if((__exp_bits + __frac_bits) == 31)
+      {
+         expSigOvf1 = round & (expSig == ((__bits32)-1));
+      }
+      else
+      {
+         expSigOvf1 = round & (expSigPostRound >> (__exp_bits + __frac_bits + 1));
+      }
       expSigOvf2 = expSigOvf0 ^ expSigOvf1;
-#else
+   }
+   else
+   {
       expSigPostRound = expSig;
       expSigOvf2 = expSigOvf0;
-#endif
-      excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> 31) & 1);
-      zSig = (((__bits32)zSign) << 31) | (expSigPostRound & ((1U << 31) - 1));
-      if(z_c == FP_CLS_NORMAL)
-         z_c = excPostNorm == 0 ? FP_CLS_NORMAL : (excPostNorm == 1 ? FP_CLS_INF : FP_CLS_ZERO);
+   }
+   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> (__exp_bits + __frac_bits)) & 1) | ((expSigPostRound >> __frac_bits) & ((1U << __exp_bits) - 1)) == ((1U << __exp_bits) - 1);
+   zSig = (((__bits32)zSign) << (__exp_bits + __frac_bits)) | (expSigPostRound & ((1U << (__exp_bits + __frac_bits)) - 1));
+   if(z_c == FP_CLS_NORMAL)
+      z_c = ((excPostNorm == 1) << 1) | (excPostNorm == 0);
 
-      if(z_c == FP_CLS_NORMAL)
-         return zSig;
-      else if(z_c == FP_CLS_ZERO)
-         return __packFloat32(zSign, 0, 0);
-      else if(z_c == FP_CLS_NAN)
-         return __float32_default_nan;
-      else
-         return __packFloat32(zSign, 0xFF, 0);
-   }
-#else
-   zExp = aExp + bExp - 0x7F;
-   aSig = (aSig | 0x00800000) << 7;
-   bSig = (bSig | 0x00800000) << 8;
-   zSig = _umulh32(aSig, bSig);
-   //__shift64RightJamming( ( (__bits64) aSig ) * bSig, 32, &zSig64 );
-   // zSig = zSig64;
-   if(0 <= (__sbits32)(zSig << 1))
-   {
-      zSig <<= 1;
-      --zExp;
-   }
-   return __roundAndPackFloat32(zSign, zExp, zSig);
-#endif
+   if(z_c == FP_CLS_NORMAL)
+      return zSig;
+   else if(z_c == FP_CLS_ZERO)
+      return ((__bits32)zSign) << (__exp_bits + __frac_bits);
+   else if(z_c == FP_CLS_NAN && __nan)
+      return __float_nan(__exp_bits, __frac_bits, __sign);
+   else
+      return ((__bits32)zSign) << (__exp_bits + __frac_bits) | (((1U << __exp_bits) - 1) << __frac_bits) | (__nan ? 0 : ((1U << __frac_bits) - 1));
 }
 
-__float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
+__float32 __float32_muladd_ieee(__float32 uiA, __float32 uiB, __float32 uiC)
 {
    _Bool signA;
    __int16 expA;
@@ -2528,15 +2322,15 @@ __float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
 
    /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-   signA = __extractFloat32Sign(uiA);
-   expA = __extractFloat32Exp(uiA);
-   sigA = __extractFloat32Frac(uiA);
-   signB = __extractFloat32Sign(uiB);
-   expB = __extractFloat32Exp(uiB);
-   sigB = __extractFloat32Frac(uiB);
-   signC = __extractFloat32Sign(uiC);
-   expC = __extractFloat32Exp(uiC);
-   sigC = __extractFloat32Frac(uiC);
+   signA = __extractFloat32Sign(uiA, IEEE32_EXTRACT_SIGN);
+   expA = __extractFloat32Exp(uiA, IEEE32_EXTRACT_EXP);
+   sigA = __extractFloat32Frac(uiA, IEEE32_EXTRACT_FRAC);
+   signB = __extractFloat32Sign(uiB, IEEE32_EXTRACT_SIGN);
+   expB = __extractFloat32Exp(uiB, IEEE32_EXTRACT_EXP);
+   sigB = __extractFloat32Frac(uiB, IEEE32_EXTRACT_FRAC);
+   signC = __extractFloat32Sign(uiC, IEEE32_EXTRACT_SIGN);
+   expC = __extractFloat32Exp(uiC, IEEE32_EXTRACT_EXP);
+   sigC = __extractFloat32Frac(uiC, IEEE32_EXTRACT_FRAC);
    signProd = signA ^ signB;
    /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -2572,7 +2366,7 @@ __float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
          goto zeroProd;
       __int8 nZeros;
       __bits32 shift_0;
-      count_leading_zero_macro_lshift(24, sigA, nZeros, shift_0);
+      count_leading_zero_lshift_macro(24, sigA, nZeros, shift_0);
       expA = 1 - nZeros;
       sigA = shift_0;
    }
@@ -2582,7 +2376,7 @@ __float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
          goto zeroProd;
       __int8 nZeros;
       __bits32 shift_0;
-      count_leading_zero_macro_lshift(24, sigB, nZeros, shift_0);
+      count_leading_zero_lshift_macro(24, sigB, nZeros, shift_0);
       expB = 1 - nZeros;
       sigB = shift_0;
    }
@@ -2608,7 +2402,7 @@ __float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
       }
       __int8 nZeros;
       __bits32 shift_0;
-      count_leading_zero_macro_lshift(24, sigC, nZeros, shift_0);
+      count_leading_zero_lshift_macro(24, sigC, nZeros, shift_0);
       expC = 1 - nZeros;
       sigC = shift_0;
    }
@@ -2684,18 +2478,18 @@ __float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
       }
    }
 roundPack:
-   return __roundAndPackFloat32(signZ, expZ, sigZ);
+   return __roundAndPackFloat32(signZ, expZ, sigZ, IEEE32_PACK, IEEE_NAN, IEEE_SUBNORM);
    /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
 propagateNaN_ABC:
-   uiZ = __propagateFloat32NaN(uiA, uiB);
+   uiZ = __propagateFloat32NaN_ieee(uiA, uiB);
    goto propagateNaN_ZC;
    /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
 infProdArg:
    if(magBits)
    {
-      uiZ = __packFloat32(signProd, 0xFF, 0);
+      uiZ = (((__bits32)signProd) << 31) | 0x7F800000; // __packFloat32(signProd, 0xFF, 0, IEEE32_PACK);
       if(expC != 0xFF)
          goto uiZ;
       if(sigC)
@@ -2706,7 +2500,7 @@ infProdArg:
    __float_raise(float_flag_invalid);
    uiZ = 0xFFC00000;
 propagateNaN_ZC:
-   uiZ = __propagateFloat32NaN(uiZ, uiC);
+   uiZ = __propagateFloat32NaN_ieee(uiZ, uiC);
    goto uiZ;
    /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -2715,7 +2509,7 @@ zeroProd:
    if(!(expC | sigC) && (signProd != signC))
    {
    completeCancellation:
-      uiZ = __packFloat32((__float_rounding_mode == float_round_down), 0, 0);
+      uiZ = ((__bits32)(__float_rounding_mode == float_round_down)) << 31; // __packFloat32((__float_rounding_mode == float_round_down), 0, 0, IEEE32_PACK);
    }
 uiZ:
    return uiZ;
@@ -2726,94 +2520,110 @@ uiZ:
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-#ifndef UNROLL_FACTOR_F32_DIV
-#define UNROLL_FACTOR_F32_DIV 1
-#endif
-
-#define LOOP_BODY_F32_DIV(z, n, data)                  \
-   current_sel = (((current >> 22) & 15) << 1) | MsbB; \
-   q_i0 = (0xF1FFFF6C >> current_sel) & 1;             \
-   q_i1 = (0xFE00FFD0 >> current_sel) & 1;             \
-   q_i2 = SELECT_BIT(current_sel, 4);                  \
-   nq_i2 = !q_i2;                                      \
-   /*q_i = tableR4[current_sel];*/                     \
-   q_i = (q_i2 << 2) | (q_i1 << 1) | q_i0;             \
-   positive |= (q_i1 << 1) | q_i0;                     \
-   positive <<= 2;                                     \
-   negative |= q_i2 << 1;                              \
-   negative <<= 2;                                     \
-   switch(q_i)                                         \
-   {                                                   \
-      case 1:                                          \
-         w = nbSig;                                    \
-         break;                                        \
-      case 7:                                          \
-         w = bSig;                                     \
-         break;                                        \
-      case 2:                                          \
-         w = nbSigx2;                                  \
-         break;                                        \
-      case 6:                                          \
-         w = bSigx2;                                   \
-         break;                                        \
-      case 3:                                          \
-         w = nbSigx3;                                  \
-         break;                                        \
-      case 5:                                          \
-         w = bSigx3;                                   \
-         break;                                        \
-      default: /*case 0: case 4:*/                     \
-         w = 0;                                        \
-         break;                                        \
-   }                                                   \
-   current = (current << 1) + w;                       \
-   BIT_RESIZE(current, 25);                            \
+#define LOOP_BODY_F32_DIV(z, n, data)                               \
+   current_sel = (((current >> (__frac_p3 - 4)) & 15) << 1) | MsbB; \
+   q_i0 = (0xF1FFFF6C >> current_sel) & 1;                          \
+   q_i1 = (0xFE00FFD0 >> current_sel) & 1;                          \
+   q_i2 = SELECT_BIT(current_sel, 4);                               \
+   nq_i2 = !q_i2;                                                   \
+   /*q_i = tableR4[current_sel];*/                                  \
+   q_i = (q_i2 << 2) | (q_i1 << 1) | q_i0;                          \
+   positive |= (q_i1 << 1) | q_i0;                                  \
+   positive <<= 2;                                                  \
+   negative |= q_i2 << 1;                                           \
+   negative <<= 2;                                                  \
+   switch(q_i)                                                      \
+   {                                                                \
+      case 1:                                                       \
+         w = nbSig;                                                 \
+         break;                                                     \
+      case 7:                                                       \
+         w = bSig;                                                  \
+         break;                                                     \
+      case 2:                                                       \
+         w = nbSigx2;                                               \
+         break;                                                     \
+      case 6:                                                       \
+         w = bSigx2;                                                \
+         break;                                                     \
+      case 3:                                                       \
+         w = nbSigx3;                                               \
+         break;                                                     \
+      case 5:                                                       \
+         w = bSigx3;                                                \
+         break;                                                     \
+      default: /*case 0: case 4:*/                                  \
+         w = 0;                                                     \
+         break;                                                     \
+   }                                                                \
+   current = (current << 1) + w;                                    \
+   current = current & ((1 << (__frac_p3 - 1)) - 1);                \
    current <<= 1;
 
-static __FORCE_INLINE __float32 __float32_divSRT4(__float32 a, __float32 b)
+#define FLOAT32_SRT4_UNROLL 1
+
+__float32 __float32_divSRT4(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    // static const __bits8 tableR4[]= {0, 0, 1, 1, 2, 1, 3, 2, 3, 3, 3, 3, 3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 7};
+   VOLATILE_DEF __bits8 a_c, b_c, z_c;
+   VOLATILE_DEF _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
    VOLATILE_DEF _Bool aSign, bSign, zSign, q_i2, q_i1, q_i0, nq_i2;
-   VOLATILE_DEF _Bool MsbB = SELECT_BIT(b, 22), correction;
-   VOLATILE_DEF __int16 aExp, bExp, zExp;
+   VOLATILE_DEF _Bool MsbB = (b >> (__frac_bits - 1)) & 1, correction;
+   VOLATILE_DEF __int32 aExp, bExp, zExp;
    VOLATILE_DEF __bits32 aSig, bSig, nbSig, bSigx2, nbSigx2, zSig1, zSig0;
    VOLATILE_DEF __bits32 zExpSig;
    VOLATILE_DEF __bits32 bSigx3, nbSigx3, current, w, positive = 0, negative = 0;
    VOLATILE_DEF __bits8 current_sel, q_i, index;
-#ifndef NO_ROUNDING
    VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, round;
-#endif
+   VOLATILE_DEF _Bool MSB1zExp, MSB0zExp, MSBzExp, ovfCond;
+   VOLATILE_DEF __bits8 __frac_p3, __div_it, __div_bits, __div_waste;
+   VOLATILE_DEF _Bool __frac_odd;
+   __frac_p3 = __rounding ? (__frac_bits + 3) : (__frac_bits + 1);
+   __frac_odd = __frac_p3 & 1;
+   __div_it = __frac_p3 / (FLOAT32_SRT4_UNROLL * 2);
+   __div_it = (__frac_p3 % (FLOAT32_SRT4_UNROLL * 2)) != 0 ? (__div_it + 1) : __div_it;
+   __div_bits = __div_it * FLOAT32_SRT4_UNROLL * 2;
+   __div_waste = __div_bits - __frac_p3 - __frac_odd;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   bSign = __extractFloat32Sign(b);
+   if(__sign == 1)
+   {
+      // Negative numbers division result is always out of negative numbers domain
+      return __nan ? __float_nan(__exp_bits, __frac_bits, __sign) : 0;
+   }
+
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   bSig = __extractFloat32Frac(b, __frac_bits);
+   bExp = __extractFloat32Exp(b, __exp_bits, __frac_bits);
+   bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign);
    zSign = aSign ^ bSign;
+   _Bool aExpMax = aExp == ((1 << __exp_bits) - 1);
+   _Bool bExpMax = bExp == ((1 << __exp_bits) - 1);
    _Bool aExp_null = aExp == 0;
    _Bool bExp_null = bExp == 0;
-   __bits8 a_c, b_c, z_c;
-   _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
-#ifndef NO_SUBNORMALS
-   a_c_zero = aExp_null && aSig == 0;
-#else
-   a_c_zero = aExp_null;
-#endif
-   a_c_inf = aExp == 0xFF && aSig == 0;
-   a_c_nan = aExp == 0xFF && aSig != 0;
-   a_c_normal = aExp != 0xFF && !a_c_zero;
-   a_c = ((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) | ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+   _Bool aSig_null = aSig == 0;
+   _Bool bSig_null = bSig == 0;
 
-#ifndef NO_SUBNORMALS
-   b_c_zero = bExp_null && bSig == 0;
-#else
-   b_c_zero = bExp_null;
-#endif
-   b_c_inf = bExp == 0xFF && bSig == 0;
-   b_c_nan = bExp == 0xFF && bSig != 0;
-   b_c_normal = bExp != 0xFF && !b_c_zero;
-   b_c = ((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) | ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
+   a_c_zero = aExp_null && aSig_null;
+   a_c_zero = __subnorm ? aExp_null : a_c_zero;
+   a_c_inf = aExpMax && aSig_null;
+   a_c_inf = __nan ? a_c_inf : 0;
+   a_c_nan = aExpMax && !aSig_null;
+   a_c_nan = __nan ? a_c_nan : 0;
+   a_c_normal = !aExpMax && !a_c_zero;
+   a_c_normal = __nan ? a_c_normal : !a_c_zero;
+   a_c = /*((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) |*/ ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+
+   b_c_zero = bExp_null && bSig_null;
+   b_c_zero = __subnorm ? bExp_null : b_c_zero;
+   b_c_inf = bExpMax && bSig_null;
+   b_c_inf = __nan ? b_c_inf : 0;
+   b_c_nan = bExpMax && !bSig_null;
+   b_c_nan = __nan ? b_c_nan : 0;
+   b_c_normal = !bExpMax && !b_c_zero;
+   b_c_normal = __nan ? b_c_normal : !b_c_zero;
+   b_c = /*((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) |*/ ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
    /*
    00 00 11
    00 01 00
@@ -2854,122 +2664,147 @@ static __FORCE_INLINE __float32 __float32_divSRT4(__float32 a, __float32 b)
    z_c = ((a_c >> 1 | (1 & (~(b_c >> 1)) & (~(b_c & 1))) | (1 & (b_c >> 1) & b_c)) << 1) |
          ((1 & (a_c >> 1) & a_c) | (1 & (b_c >> 1) & b_c) | (1 & (a_c >> 1) & (b_c >> 1)) | (1 & a_c & b_c) | (1 & (~(a_c >> 1)) & (~(a_c & 1)) & (~(b_c >> 1)) & (~(b_c & 1))));
 
-#ifndef NO_SUBNORMALS
-   if(aExp_null && !a_c_zero)
+   if(__subnorm)
    {
-      unsigned int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift(23, aSig, subnormal_lz, mshifted);
-      aExp = -subnormal_lz;
-      aSig = SELECT_RANGE(mshifted, 21, 0) << 1;
+      if(aExp_null && !aSig_null)
+      {
+         unsigned int subnormal_lz, mshifted;
+         count_leading_zero_lshift_runtime_macro(__frac_bits, aSig, subnormal_lz, mshifted);
+         aExp = -subnormal_lz;
+         aSig = (mshifted << 1) & ((1 << __frac_bits) - 1);
+      }
+      if(bExp_null && !bSig_null)
+      {
+         unsigned int subnormal_lz, mshifted;
+         count_leading_zero_lshift_runtime_macro(__frac_bits, bSig, subnormal_lz, mshifted);
+         bExp = -subnormal_lz;
+         bSig = (mshifted << 1) & ((1 << __frac_bits) - 1);
+      }
    }
-   if(bExp_null && !b_c_zero)
-   {
-      unsigned int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift(23, bSig, subnormal_lz, mshifted);
-      bExp = -subnormal_lz;
-      bSig = SELECT_RANGE(mshifted, 21, 0) << 1;
-   }
-#endif
 
-   aSig = aSig | 0x00800000U;
-   bSig = bSig | 0x00800000U;
+   aSig = aSig | (1U << __frac_bits);
+   bSig = bSig | (1U << __frac_bits);
    nbSig = -bSig;
-   bSigx2 = bSig * 2;
+   bSigx2 = bSig << 1;
    nbSigx2 = -bSigx2;
    bSigx3 = bSigx2 + bSig;
    nbSigx3 = -bSigx3;
    current = aSig;
-   for(index = 0; index < (13 / UNROLL_FACTOR_F32_DIV); ++index)
+   for(index = 0; index < __div_it; ++index)
    {
-      BOOST_PP_REPEAT(UNROLL_FACTOR_F32_DIV, LOOP_BODY_F32_DIV, index);
+      BOOST_PP_REPEAT(FLOAT32_SRT4_UNROLL, LOOP_BODY_F32_DIV, index);
    }
-   BOOST_PP_REPEAT(BOOST_PP_MOD(13, UNROLL_FACTOR_F32_DIV), LOOP_BODY_F32_DIV, index);
-   if(current != 0)
+   if(__div_waste > 1)
    {
-      positive |= 2;
-      negative |= SELECT_BIT(current, 25) << 1;
+      positive >>= __div_waste;
+      negative >>= __div_waste;
    }
+
+   positive |= (current != 0) << 1;
+   negative |= (current >> (__frac_p3 - 2)) & 2;
+
    negative <<= 1;
-   BIT_RESIZE(negative, 28);
+   negative = negative & ((1 << (__frac_p3 + 2)) - 1);
    zSig0 = positive - negative;
-   zSig0 >>= 1;
-   BIT_RESIZE(zSig0, 27);
-   correction = SELECT_BIT(zSig0, 26);
-   if(correction)
-      zSig1 = SELECT_RANGE(zSig0, 25, 2) << 1 | (SELECT_BIT(zSig0, 1)) | (SELECT_BIT(zSig0, 0));
+   zSig0 = (__frac_odd) ? ((zSig0 >> 2) | ((zSig0 >> 1) & 1)) : (zSig0 >> 1);
+   zSig0 = zSig0 & ((1 << (__frac_p3 + 1)) - 1);
+   correction = (zSig0 >> __frac_p3) & 1;
+   zSig1 = (zSig0 >> correction) | (zSig0 & 1);
+   zSig1 = zSig1 & ((1 << (__frac_p3 - 1)) - 1);
+   if(__rounding)
+   {
+      LSB_bit = SELECT_BIT(zSig1, 2);
+      Guard_bit = SELECT_BIT(zSig1, 1);
+      Round_bit = SELECT_BIT(zSig1, 0);
+      round = Guard_bit & (LSB_bit | Round_bit);
+   }
+
+   if(__exp_bias & 1)
+   {
+      zExp = aExp - bExp + ((~__exp_bias) | correction); // ~__exp_bias = -1 - __exp_bias
+   }
    else
-      zSig1 = SELECT_RANGE(zSig0, 24, 0);
-#ifndef NO_ROUNDING
-   LSB_bit = SELECT_BIT(zSig1, 2);
-   Guard_bit = SELECT_BIT(zSig1, 1);
-   Round_bit = SELECT_BIT(zSig1, 0);
-   round = Guard_bit & (LSB_bit | Round_bit);
-#endif
-   zExp = aExp - bExp + (0x7E | correction);
-   _Bool MSB1zExp = SELECT_BIT(zExp, 9);
-   _Bool MSB0zExp = SELECT_BIT(zExp, 8);
-   BIT_RESIZE(zExp, 9);
-#ifndef NO_ROUNDING
-   zExpSig = ((((__bits32)zExp) << 23) | (zSig1 >> 2)) + round;
-#else
-   zExpSig = ((((__bits32)zExp) << 23) | (zSig1 >> 2));
-#endif
-   _Bool MSBzExp = SELECT_BIT(zExpSig, 31);
-   _Bool ovfCond = ((((MSB0zExp & ((~MSBzExp) & 1)) & 1) ^ MSB1zExp) & 1);
+   {
+      zExp = aExp - bExp - __exp_bias - !correction;
+   }
+   MSB1zExp = zExp >> (__exp_bits + 1);
+   MSB0zExp = zExp >> __exp_bits;
+   zExp = zExp & ((1 << (__exp_bits + 1)) - 1);
+   if(__rounding)
+   {
+      zExpSig = ((zExp << __frac_bits) | (zSig1 >> 2)) + round;
+   }
+   else
+   {
+      zExpSig = (zExp << __frac_bits) | zSig1;
+   }
+   MSBzExp = zExpSig >> (__exp_bits + __frac_bits);
+   ovfCond = ((((MSB0zExp & ((~MSBzExp) & 1)) & 1) ^ MSB1zExp) & 1);
    if(z_c == FP_CLS_NORMAL)
    {
       if(ovfCond)
-         return __packFloat32(zSign, 0, 0);
-      else if(SELECT_BIT(zExpSig, 31) || zExp == 255)
-         return __packFloat32(zSign, 0xFF, 0);
+         return ((__bits32)zSign) << (__exp_bits + __frac_bits);
+      else if(MSBzExp || ((zExp == ((1 << __exp_bits) - 1)) && __nan))
+         return (((__bits32)zSign) << (__exp_bits + __frac_bits)) | (((1 << __exp_bits) - 1) << __frac_bits) | (__nan ? 0 : ((1 << __frac_bits) - 1));
       else
-         return (zSign << 31) | SELECT_RANGE(zExpSig, 30, 0);
+         return (((__bits32)zSign) << (__exp_bits + __frac_bits)) | (zExpSig & ((1U << (__exp_bits + __frac_bits)) - 1));
    }
    else if(z_c == FP_CLS_ZERO)
-      return __packFloat32(zSign, 0, 0);
+      return ((__bits32)zSign) << (__exp_bits + __frac_bits);
    else if(z_c == FP_CLS_NAN)
-      return ((a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero)) << 31 | 0x7FC00000 | (a_c_nan ? aSig : (b_c_nan ? bSig : 0));
+      return ((__bits32)(a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero)) << (__exp_bits + __frac_bits) | (__nan ? ((((1 << __exp_bits) - 1) << __frac_bits) | (1 << (__frac_bits - 1)) | (a_c_nan ? aSig : (b_c_nan ? bSig : 0))) : 0);
    else
-      return __packFloat32(zSign, 0xFF, 0);
+      return (((__bits32)zSign) << (__exp_bits + __frac_bits)) | (((1 << __exp_bits) - 1) << __frac_bits) | (__nan ? 0 : ((1 << __frac_bits) - 1));
 }
-static __FORCE_INLINE __float32 __float32_divG(__float32 a, __float32 b)
-{
-   __flag aSign, bSign, zSign;
-   __int16 aExp, bExp, zExp;
-   __bits32 aSig, bSig, aSigInitial, bSigInitial, zSig;
-   __bits32 c5, c4, c3, c2, c1, c0, shft, p1, bSigsqr1, bSigsqr2, p2, p3, p, ga0, gb0, ga1, gb1, rem0, rem, rnd;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   bSign = __extractFloat32Sign(b);
+__float32 __float32_divG(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   VOLATILE_DEF __bits8 a_c, b_c, z_c;
+   VOLATILE_DEF _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
+   VOLATILE_DEF __flag aSign, bSign, zSign;
+   VOLATILE_DEF __int32 aExp, bExp, zExp;
+   VOLATILE_DEF __bits32 aSig, bSig, aSigInitial, bSigInitial, zSig;
+   VOLATILE_DEF __bits32 c5, c4, c3, c2, c1, c0, shft, p1, bSigsqr1, bSigsqr2, p2, p3, p, ga0, gb0, ga1, gb1, rem0, rem, rnd;
+
+   if(__sign == 1)
+   {
+      // Negative numbers division result is always out of negative numbers domain
+      return __nan ? __float_nan(__exp_bits, __frac_bits, __sign) : 0;
+   }
+
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   bSig = __extractFloat32Frac(b, __frac_bits);
+   bExp = __extractFloat32Exp(b, __exp_bits, __frac_bits);
+   bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign);
    zSign = aSign ^ bSign;
-#ifndef DEFAULT
-   __bits8 a_c, b_c, z_c;
+   _Bool aExpMax = aExp == ((1 << __exp_bits) - 1);
+   _Bool bExpMax = bExp == ((1 << __exp_bits) - 1);
    _Bool aExp_null = aExp == 0;
    _Bool bExp_null = bExp == 0;
-   _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
-#ifndef NO_SUBNORMALS
-   a_c_zero = aExp_null && aSig == 0;
-#else
-   a_c_zero = aExp_null;
-#endif
-   a_c_inf = aExp == 0xFF && aSig == 0;
-   a_c_nan = aExp == 0xFF && aSig != 0;
-   a_c_normal = aExp != 0xFF && !a_c_zero;
-   a_c = ((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) | ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+   _Bool aSig_null = aSig == 0;
+   _Bool bSig_null = bSig == 0;
 
-#ifndef NO_SUBNORMALS
-   b_c_zero = bExp_null && bSig == 0;
-#else
-   b_c_zero = bExp_null;
-#endif
-   b_c_inf = bExp == 0xFF && bSig == 0;
-   b_c_nan = bExp == 0xFF && bSig != 0;
-   b_c_normal = bExp != 0xFF && !b_c_zero;
-   b_c = ((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) | ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
+   a_c_zero = aExp_null && aSig_null;
+   a_c_zero = __subnorm ? aExp_null : a_c_zero;
+   a_c_inf = aExpMax && aSig_null;
+   a_c_inf = __nan ? a_c_inf : 0;
+   a_c_nan = aExpMax && !aSig_null;
+   a_c_nan = __nan ? a_c_nan : 0;
+   a_c_normal = !aExpMax && !a_c_zero;
+   a_c_normal = __nan ? a_c_normal : !a_c_zero;
+   a_c = /*((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) |*/ ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+
+   b_c_zero = bExp_null && bSig_null;
+   b_c_zero = __subnorm ? bExp_null : b_c_zero;
+   b_c_inf = bExpMax && bSig_null;
+   b_c_inf = __nan ? b_c_inf : 0;
+   b_c_nan = bExpMax && !bSig_null;
+   b_c_nan = __nan ? b_c_nan : 0;
+   b_c_normal = !bExpMax && !b_c_zero;
+   b_c_normal = __nan ? b_c_normal : !b_c_zero;
+   b_c = /*((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) |*/ ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
    /*
    00 00 11
    00 01 00
@@ -3010,108 +2845,35 @@ static __FORCE_INLINE __float32 __float32_divG(__float32 a, __float32 b)
    z_c = ((a_c >> 1 | (1 & (~(b_c >> 1)) & (~(b_c & 1))) | (1 & (b_c >> 1) & b_c)) << 1) |
          ((1 & (a_c >> 1) & a_c) | (1 & (b_c >> 1) & b_c) | (1 & (a_c >> 1) & (b_c >> 1)) | (1 & a_c & b_c) | (1 & (~(a_c >> 1)) & (~(a_c & 1)) & (~(b_c >> 1)) & (~(b_c & 1))));
 
-#ifndef NO_SUBNORMALS
-   if(aExp_null && !a_c_zero)
+   if(__subnorm)
    {
-      unsigned int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift(23, aSig, subnormal_lz, mshifted);
-      aExp = -subnormal_lz;
-      aSig = SELECT_RANGE(mshifted, 21, 0) << 1;
+      if(aExp_null && !aSig_null)
+      {
+         unsigned int subnormal_lz, mshifted;
+         count_leading_zero_lshift_runtime_macro(__frac_bits, aSig, subnormal_lz, mshifted);
+         aExp = -subnormal_lz;
+         aSig = (mshifted << 1) & ((1 << __frac_bits) - 1);
+      }
+      if(bExp_null && !bSig_null)
+      {
+         unsigned int subnormal_lz, mshifted;
+         count_leading_zero_lshift_runtime_macro(__frac_bits, bSig, subnormal_lz, mshifted);
+         bExp = -subnormal_lz;
+         bSig = (mshifted << 1) & ((1 << __frac_bits) - 1);
+      }
    }
    aSigInitial = aSig;
-   if(bExp_null && !b_c_zero)
-   {
-      unsigned int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift(23, bSig, subnormal_lz, mshifted);
-      bExp = -subnormal_lz;
-      bSig = SELECT_RANGE(mshifted, 21, 0) << 1;
-   }
    bSigInitial = bSig;
-#endif
-#else
-
-   if(aExp == 0xFF || bExp == 0xFF || bExp == 0 || aExp == 0)
-   {
-      if(aExp == 0xFF)
-      {
-         if(aSig)
-            return __propagateFloat32NaN(a, b);
-         if(bExp == 0xFF)
-         {
-            if(bSig)
-               return __propagateFloat32NaN(a, b);
-            __float_raise(float_flag_invalid);
-            return __float32_default_nan;
-         }
-         return __packFloat32(zSign, 0xFF, 0);
-      }
-      if(bExp == 0xFF)
-      {
-         if(bSig)
-            return __propagateFloat32NaN(a, b);
-         return __packFloat32(zSign, 0, 0);
-      }
-      if(bExp == 0)
-      {
-         if(bSig == 0)
-         {
-            if((aExp | aSig) == 0)
-            {
-               __float_raise(float_flag_invalid);
-               return __float32_default_nan;
-            }
-            __float_raise(float_flag_divbyzero);
-            return __packFloat32(zSign, 0xFF, 0);
-         }
-#ifdef NO_SUBNORMALS
-         return __packFloat32(zSign, 0xFF, 0);
-#else
-         __normalizeFloat32Subnormal(bSig, &bExp, &bSig);
-#endif
-      }
-      if(aExp == 0)
-      {
-#ifdef NO_SUBNORMALS
-         return __packFloat32(zSign, 0, 0);
-#else
-         if(aSig == 0)
-            return __packFloat32(zSign, 0, 0);
-         __normalizeFloat32Subnormal(aSig, &aExp, &aSig);
-#endif
-      }
-   }
-#endif
-#ifndef DEFAULT
-#if 1
    GOLDSCHMIDT_MANTISSA_DIVISION();
-#else
-   FLIP_MANTISSA_DIVISION();
-#endif
    if(z_c == FP_CLS_NORMAL)
-      return __roundAndPackFloat32(zSign, zExp, zSig);
+      return __roundAndPackFloat32(zSign, zExp, zSig, __exp_bits, __frac_bits, __nan, __subnorm);
    else if(z_c == FP_CLS_ZERO)
-      return __packFloat32(zSign, 0, 0);
+      return ((__bits32)zSign) << (__exp_bits + __frac_bits);
    else if(z_c == FP_CLS_NAN)
-      return ((a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero)) << 31 | 0x7FC00000 | (a_c_nan ? aSigInitial : (b_c_nan ? bSigInitial : 0));
+      return ((__bits32)(a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero)) << (__exp_bits + __frac_bits) |
+             (__nan ? ((((1 << __exp_bits) - 1) << __frac_bits) | (1 << (__frac_bits - 1)) | (a_c_nan ? aSigInitial : (b_c_nan ? bSigInitial : 0))) : 0);
    else
-      return __packFloat32(zSign, 0xFF, 0);
-#else
-   /* Original SoftFloat mantissa division*/
-   zExp = aExp - bExp + 0x7D;
-   aSig = (aSig | 0x00800000) << 7;
-   bSig = (bSig | 0x00800000) << 8;
-   if(bSig <= (aSig + aSig))
-   {
-      aSig >>= 1;
-      ++zExp;
-   }
-   zSig = (((__bits64)aSig) << 32) / bSig;
-   if((zSig & 0x3F) == 0)
-   {
-      zSig |= ((__bits64)bSig * zSig != ((__bits64)aSig) << 32);
-   }
-   return __roundAndPackFloat32(zSign, zExp, zSig);
-#endif
+      return (((__bits32)zSign) << (__exp_bits + __frac_bits)) | (((1 << __exp_bits) - 1) << __frac_bits) | (__nan ? 0 : ((1 << __frac_bits) - 1));
 }
 
 /*----------------------------------------------------------------------------
@@ -3119,194 +2881,194 @@ static __FORCE_INLINE __float32 __float32_divG(__float32 a, __float32 b)
 | with respect to the corresponding value `b'.  The operation is performed
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
-
-static __FORCE_INLINE __float32 __float32_rem(__float32 a, __float32 b)
-{
-   __flag aSign, bSign, zSign;
-   __int16 aExp, bExp, expDiff;
-   __bits32 aSig, bSig;
-   __bits32 q;
-   __bits64 aSig64, bSig64, q64;
-   __bits32 alternateASig;
-   __sbits32 sigMean;
-
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   bSign = __extractFloat32Sign(b);
-   if(aExp == 0xFF)
-   {
-      if(aSig || ((bExp == 0xFF) && bSig))
-      {
-         return __propagateFloat32NaN(a, b);
-      }
-      __float_raise(float_flag_invalid);
-      return __float32_default_nan;
-   }
-   if(bExp == 0xFF)
-   {
-      if(bSig)
-         return __propagateFloat32NaN(a, b);
-      return a;
-   }
-   if(bExp == 0)
-   {
-      if(bSig == 0)
-      {
-         __float_raise(float_flag_invalid);
-         return __float32_default_nan;
-      }
-#ifdef NO_SUBNORMALS
-      return __float32_default_nan;
-#else
-      __normalizeFloat32Subnormal(bSig, &bExp, &bSig);
-#endif
-   }
-   if(aExp == 0)
-   {
-#ifdef NO_SUBNORMALS
-      return a;
-#else
-      if(aSig == 0)
-         return a;
-      __normalizeFloat32Subnormal(aSig, &aExp, &aSig);
-#endif
-   }
-   expDiff = aExp - bExp;
-   aSig |= 0x00800000;
-   bSig |= 0x00800000;
-   if(expDiff < 32)
-   {
-      aSig <<= 8;
-      bSig <<= 8;
-      if(expDiff < 0)
-      {
-         if(expDiff < -1)
-            return a;
-         aSig >>= 1;
-      }
-      q = (bSig <= aSig);
-      if(q)
-         aSig -= bSig;
-      if(0 < expDiff)
-      {
-         q = (((__bits64)aSig) << 32) / bSig;
-         q >>= 32 - expDiff;
-         bSig >>= 2;
-         aSig = ((aSig >> 1) << (expDiff - 1)) - bSig * q;
-      }
-      else
-      {
-         aSig >>= 2;
-         bSig >>= 2;
-      }
-   }
-   else
-   {
-      if(bSig <= aSig)
-         aSig -= bSig;
-      aSig64 = ((__bits64)aSig) << 40;
-      bSig64 = ((__bits64)bSig) << 40;
-      expDiff -= 64;
-      while(0 < expDiff)
-      {
-         q64 = __estimateDiv128To64(aSig64, 0, bSig64);
-         q64 = (2 < q64) ? q64 - 2 : 0;
-         aSig64 = -((bSig * q64) << 38);
-         expDiff -= 62;
-      }
-      expDiff += 64;
-      q64 = __estimateDiv128To64(aSig64, 0, bSig64);
-      q64 = (2 < q64) ? q64 - 2 : 0;
-      q = q64 >> (64 - expDiff);
-      bSig <<= 6;
-      aSig = ((aSig64 >> 33) << (expDiff - 1)) - bSig * q;
-   }
-   do
-   {
-      alternateASig = aSig;
-      ++q;
-      aSig -= bSig;
-   } while(0 <= (__sbits32)aSig);
-   sigMean = aSig + alternateASig;
-   if((sigMean < 0) || ((sigMean == 0) && (q & 1)))
-   {
-      aSig = alternateASig;
-   }
-   zSign = ((__sbits32)aSig < 0);
-   if(zSign)
-      aSig = -aSig;
-   return __normalizeRoundAndPackFloat32(aSign ^ zSign, bExp, aSig);
-}
+///   UNUSED
+//    __float32 __float32_rem_ieee(__float32 a, __float32 b)
+//    {
+//       __flag aSign, bSign, zSign;
+//       __int16 aExp, bExp, expDiff;
+//       __bits32 aSig, bSig;
+//       __bits32 q;
+//       __bits64 aSig64, bSig64, q64;
+//       __bits32 alternateASig;
+//       __sbits32 sigMean;
+//
+//       aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+//       aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+//       aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+//       bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
+//       bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
+//       bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
+//       if(aExp == 0xFF)
+//       {
+//          if(aSig || ((bExp == 0xFF) && bSig))
+//          {
+//             return __propagateFloat32NaN_ieee(a, b);
+//          }
+//          __float_raise(float_flag_invalid);
+//          return __float32_default_nan;
+//       }
+//       if(bExp == 0xFF)
+//       {
+//          if(bSig)
+//             return __propagateFloat32NaN_ieee(a, b);
+//          return a;
+//       }
+//       if(bExp == 0)
+//       {
+//          if(bSig == 0)
+//          {
+//             __float_raise(float_flag_invalid);
+//             return __float32_default_nan;
+//          }
+//    #ifdef NO_SUBNORMALS
+//          return __float32_default_nan;
+//    #else
+//          __normalizeFloat32Subnormal(bSig, bExp, bSig, IEEE32_FRAC_BITS);
+//    #endif
+//       }
+//       if(aExp == 0)
+//       {
+//    #ifdef NO_SUBNORMALS
+//          return a;
+//    #else
+//          if(aSig == 0)
+//             return a;
+//          __normalizeFloat32Subnormal(aSig, aExp, aSig, IEEE32_FRAC_BITS);
+//    #endif
+//       }
+//       expDiff = aExp - bExp;
+//       aSig |= 0x00800000;
+//       bSig |= 0x00800000;
+//       if(expDiff < 32)
+//       {
+//          aSig <<= 8;
+//          bSig <<= 8;
+//          if(expDiff < 0)
+//          {
+//             if(expDiff < -1)
+//                return a;
+//             aSig >>= 1;
+//          }
+//          q = (bSig <= aSig);
+//          if(q)
+//             aSig -= bSig;
+//          if(0 < expDiff)
+//          {
+//             q = (((__bits64)aSig) << 32) / bSig;
+//             q >>= 32 - expDiff;
+//             bSig >>= 2;
+//             aSig = ((aSig >> 1) << (expDiff - 1)) - bSig * q;
+//          }
+//          else
+//          {
+//             aSig >>= 2;
+//             bSig >>= 2;
+//          }
+//       }
+//       else
+//       {
+//          if(bSig <= aSig)
+//             aSig -= bSig;
+//          aSig64 = ((__bits64)aSig) << 40;
+//          bSig64 = ((__bits64)bSig) << 40;
+//          expDiff -= 64;
+//          while(0 < expDiff)
+//          {
+//             q64 = __estimateDiv128To64(aSig64, 0, bSig64);
+//             q64 = (2 < q64) ? q64 - 2 : 0;
+//             aSig64 = -((bSig * q64) << 38);
+//             expDiff -= 62;
+//          }
+//          expDiff += 64;
+//          q64 = __estimateDiv128To64(aSig64, 0, bSig64);
+//          q64 = (2 < q64) ? q64 - 2 : 0;
+//          q = q64 >> (64 - expDiff);
+//          bSig <<= 6;
+//          aSig = ((aSig64 >> 33) << (expDiff - 1)) - bSig * q;
+//       }
+//       do
+//       {
+//          alternateASig = aSig;
+//          ++q;
+//          aSig -= bSig;
+//       } while(0 <= (__sbits32)aSig);
+//       sigMean = aSig + alternateASig;
+//       if((sigMean < 0) || ((sigMean == 0) && (q & 1)))
+//       {
+//          aSig = alternateASig;
+//       }
+//       zSign = ((__sbits32)aSig < 0);
+//       if(zSign)
+//          aSig = -aSig;
+//       return __normalizeRoundAndPackFloat32_ieee(aSign ^ zSign, bExp, aSig);
+//    }
 
 /*----------------------------------------------------------------------------
 | Returns the square root of the single-precision floating-point value `a'.
 | The operation is performed according to the IEC/IEEE Standard for Binary
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
-
-static __FORCE_INLINE __float32 __float32_sqrt(__float32 a)
-{
-   __flag aSign;
-   __int16 aExp, zExp;
-   __bits32 aSig, zSig;
-   __bits64 rem, term;
-
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   if(aExp == 0xFF)
-   {
-      if(aSig)
-         return __propagateFloat32NaN(a, 0);
-      if(!aSign)
-         return a;
-      __float_raise(float_flag_invalid);
-      return __float32_default_nan;
-   }
-   if(aSign)
-   {
-      if((aExp | aSig) == 0)
-         return a;
-      __float_raise(float_flag_invalid);
-      return __float32_default_nan;
-   }
-   if(aExp == 0)
-   {
-#ifdef NO_SUBNORMALS
-      return 0;
-#else
-      if(aSig == 0)
-         return 0;
-      __normalizeFloat32Subnormal(aSig, &aExp, &aSig);
-#endif
-   }
-   zExp = ((aExp - 0x7F) >> 1) + 0x7E;
-   aSig = (aSig | 0x00800000) << 8;
-   zSig = __estimateSqrt32(aExp, aSig) + 2;
-   if((zSig & 0x7F) <= 5)
-   {
-      if(zSig < 2)
-      {
-         zSig = 0x7FFFFFFF;
-         goto roundAndPack;
-      }
-      aSig >>= aExp & 1;
-      term = ((__bits64)zSig) * zSig;
-      rem = (((__bits64)aSig) << 32) - term;
-      while((__sbits64)rem < 0)
-      {
-         --zSig;
-         rem += (((__bits64)zSig) << 1) | 1;
-      }
-      zSig |= (rem != 0);
-   }
-   __shift32RightJamming(zSig, 1, &zSig);
-roundAndPack:
-   return __roundAndPackFloat32(0, zExp, zSig);
-}
+///   UNUSED
+//    __float32 __float32_sqrt(__float32 a)
+//    {
+//       __flag aSign;
+//       __int16 aExp, zExp;
+//       __bits32 aSig, zSig;
+//       __bits64 rem, term;
+//
+//       aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+//       aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+//       aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+//       if(aExp == 0xFF)
+//       {
+//          if(aSig)
+//             return __propagateFloat32NaN_ieee(a, 0);
+//          if(!aSign)
+//             return a;
+//          __float_raise(float_flag_invalid);
+//          return __float32_default_nan;
+//       }
+//       if(aSign)
+//       {
+//          if((aExp | aSig) == 0)
+//             return a;
+//          __float_raise(float_flag_invalid);
+//          return __float32_default_nan;
+//       }
+//       if(aExp == 0)
+//       {
+//    #ifdef NO_SUBNORMALS
+//          return 0;
+//    #else
+//          if(aSig == 0)
+//             return 0;
+//          __normalizeFloat32Subnormal(aSig, aExp, aSig, IEEE32_FRAC_BITS);
+//    #endif
+//       }
+//       zExp = ((aExp - 0x7F) >> 1) + 0x7E;
+//       aSig = (aSig | 0x00800000) << 8;
+//       zSig = __estimateSqrt32(aExp, aSig) + 2;
+//       if((zSig & 0x7F) <= 5)
+//       {
+//          if(zSig < 2)
+//          {
+//             zSig = 0x7FFFFFFF;
+//             goto roundAndPack;
+//          }
+//          aSig >>= aExp & 1;
+//          term = ((__bits64)zSig) * zSig;
+//          rem = (((__bits64)aSig) << 32) - term;
+//          while((__sbits64)rem < 0)
+//          {
+//             --zSig;
+//             rem += (((__bits64)zSig) << 1) | 1;
+//          }
+//          zSig |= (rem != 0);
+//       }
+//       __shift32RightJamming(zSig, 1, &zSig);
+//    roundAndPack:
+//       return __roundAndPackFloat32(0, zExp, zSig, IEEE32_PACK, IEEE_NAN);
+//    }
 
 /*----------------------------------------------------------------------------
 | Returns 1 if the single-precision floating-point value `a' is equal to
@@ -3314,17 +3076,39 @@ roundAndPack:
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float32_eq(__float32 a, __float32 b)
+#define BIT_MASK32(var, msbpp) (var & (((__bits32)0xFFFFFFFFU) >> (32 - (msbpp))))
+
+static __FORCE_INLINE __flag __Float32EQ(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(__nan)
    {
-      if(__float32_is_signaling_nan(a) || __float32_is_signaling_nan(b))
+      if(((__extractFloat32Exp(a, __exp_bits, __frac_bits) == ((1 << __exp_bits) - 1)) && __extractFloat32Frac(a, __frac_bits)) || ((__extractFloat32Exp(b, __exp_bits, __frac_bits) == ((1 << __exp_bits) - 1)) && __extractFloat32Frac(b, __frac_bits)))
       {
-         __float_raise(float_flag_invalid);
+         if(__float32_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign) || __float32_is_signaling_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign))
+         {
+            __float_raise(float_flag_invalid);
+         }
+         return 0;
       }
-      return 0;
    }
-   return (a == b) || ((__bits32)((a | b) << 1) == 0);
+   if(__sign == -1)
+   {
+      return (BIT_MASK32(a, __exp_bits + __frac_bits + 1) == BIT_MASK32(b, __exp_bits + __frac_bits + 1)) || (BIT_MASK32((a | b), __exp_bits + __frac_bits) == 0);
+   }
+   else
+   {
+      return BIT_MASK32(a, __exp_bits + __frac_bits) == BIT_MASK32(b, __exp_bits + __frac_bits);
+   }
+}
+
+__flag __float32_eq(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float32EQ(a, b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+__flag __float32_ltgt_quiet(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return !__Float32EQ(a, b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -3334,20 +3118,34 @@ static __FORCE_INLINE __flag __float32_eq(__float32 a, __float32 b)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float32_le(__float32 a, __float32 b)
+static __FORCE_INLINE __flag __Float32LE(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __flag __nan, __sbits8 __sign)
 {
    __flag aSign, bSign;
 
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(__nan)
    {
-      __float_raise(float_flag_invalid);
-      return 0;
+      if(((__extractFloat32Exp(a, __exp_bits, __frac_bits) == ((1 << __exp_bits) - 1)) && __extractFloat32Frac(a, __frac_bits)) || ((__extractFloat32Exp(b, __exp_bits, __frac_bits) == ((1 << __exp_bits) - 1)) && __extractFloat32Frac(b, __frac_bits)))
+      {
+         __float_raise(float_flag_invalid);
+         return 0;
+      }
    }
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign);
    if(aSign != bSign)
-      return aSign || ((__bits32)((a | b) << 1) == 0);
-   return (a == b) || (aSign ^ (a < b));
+      return aSign || (BIT_MASK32((a | b), __exp_bits + __frac_bits) == 0);
+   return (BIT_MASK32(a, __exp_bits + __frac_bits + (__sign == -1)) == BIT_MASK32(b, __exp_bits + __frac_bits + (__sign == -1))) ||
+          (aSign ^ (BIT_MASK32(a, __exp_bits + __frac_bits + (__sign == -1)) < BIT_MASK32(b, __exp_bits + __frac_bits + (__sign == -1))));
+}
+
+__flag __float32_le(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float32LE(a, b, __exp_bits, __frac_bits, __nan, __sign);
+}
+
+__flag __float32_ge(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float32LE(b, a, __exp_bits, __frac_bits, __nan, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -3356,20 +3154,31 @@ static __FORCE_INLINE __flag __float32_le(__float32 a, __float32 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float32_lt(__float32 a, __float32 b)
+static __FORCE_INLINE __flag __Float32LT(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __flag __nan, __sbits8 __sign)
 {
    __flag aSign, bSign;
 
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(((__extractFloat32Exp(a, __exp_bits, __frac_bits) == ((1 << __exp_bits) - 1)) && __extractFloat32Frac(a, __frac_bits)) || ((__extractFloat32Exp(b, __exp_bits, __frac_bits) == ((1 << __exp_bits) - 1)) && __extractFloat32Frac(b, __frac_bits)))
    {
       __float_raise(float_flag_invalid);
       return 0;
    }
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign);
    if(aSign != bSign)
-      return aSign && ((__bits32)((a | b) << 1) != 0);
-   return (a != b) && (aSign ^ (a < b));
+      return aSign && (BIT_MASK32((a | b), __exp_bits + __frac_bits) != 0);
+   return (BIT_MASK32(a, __exp_bits + __frac_bits + (__sign == -1)) != BIT_MASK32(b, __exp_bits + __frac_bits + (__sign == -1))) &&
+          (aSign ^ (BIT_MASK32(a, __exp_bits + __frac_bits + (__sign == -1)) < BIT_MASK32(b, __exp_bits + __frac_bits + (__sign == -1))));
+}
+
+__flag __float32_lt(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float32LT(a, b, __exp_bits, __frac_bits, __nan, __sign);
+}
+
+__flag __float32_gt(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float32LT(b, a, __exp_bits, __frac_bits, __nan, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -3379,9 +3188,9 @@ static __FORCE_INLINE __flag __float32_lt(__float32 a, __float32 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float32_eq_signaling(__float32 a, __float32 b)
+__flag __float32_eq_signaling_ieee(__float32 a, __float32 b)
 {
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
       __float_raise(float_flag_invalid);
       return 0;
@@ -3396,21 +3205,21 @@ static __FORCE_INLINE __flag __float32_eq_signaling(__float32 a, __float32 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float32_le_quiet(__float32 a, __float32 b)
+__flag __float32_le_quiet_ieee(__float32 a, __float32 b)
 {
    __flag aSign, bSign;
    __int16 aExp, bExp;
 
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
-      if(__float32_is_signaling_nan(a) || __float32_is_signaling_nan(b))
+      if(__float32_is_signaling_nan(a, IEEE32_SPEC_ARGS) || __float32_is_signaling_nan(b, IEEE32_SPEC_ARGS))
       {
          __float_raise(float_flag_invalid);
       }
       return 0;
    }
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    if(aSign != bSign)
       return aSign || ((__bits32)((a | b) << 1) == 0);
    return (a == b) || (aSign ^ (a < b));
@@ -3423,20 +3232,20 @@ static __FORCE_INLINE __flag __float32_le_quiet(__float32 a, __float32 b)
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float32_lt_quiet(__float32 a, __float32 b)
+__flag __float32_lt_quiet_ieee(__float32 a, __float32 b)
 {
    __flag aSign, bSign;
 
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
-      if(__float32_is_signaling_nan(a) || __float32_is_signaling_nan(b))
+      if(__float32_is_signaling_nan(a, IEEE32_SPEC_ARGS) || __float32_is_signaling_nan(b, IEEE32_SPEC_ARGS))
       {
          __float_raise(float_flag_invalid);
       }
       return 0;
    }
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    if(aSign != bSign)
       return aSign && ((__bits32)((a | b) << 1) != 0);
    return (a != b) && (aSign ^ (a < b));
@@ -3452,20 +3261,27 @@ static __FORCE_INLINE __flag __float32_lt_quiet(__float32 a, __float32 b)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int32 __float64_to_int32(__float64 a)
+__int32 __float64_to_int32(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
-   __int16 aExp, shiftCount;
+   __int32 aExp, shiftCount;
    __bits64 aSig;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
-   if((aExp == 0x7FF) && aSig)
-      aSign = 0;
+   aSig = __extractFloat64Frac(a, __frac_bits);
+   aExp = __extractFloat64Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
+   if(__nan)
+   {
+      if((aExp == ((1ULL << __exp_bits) - 1)) && aSig)
+      {
+         aSign = 0;
+      }
+   }
    if(aExp)
-      aSig |= LIT64(0x0010000000000000);
-   shiftCount = 0x42C - aExp;
+   {
+      aSig |= (1ULL << __frac_bits);
+   }
+   shiftCount = (45 - __exp_bias) - aExp;
    if(0 < shiftCount)
       __shift64RightJamming(aSig, shiftCount, &aSig);
    return __roundAndPackInt32(aSign, aSig);
@@ -3481,23 +3297,23 @@ static __FORCE_INLINE __int32 __float64_to_int32(__float64 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int32 __float64_to_int32_round_to_zero(__float64 a)
+__int32 __float64_to_int32_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
-   __int16 aExp, shiftCount;
+   __int32 aExp, shiftCount;
    __bits64 aSig, savedASig;
    __int32 z;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
-   if(0x41E < aExp)
+   aSig = __extractFloat64Frac(a, __frac_bits);
+   aExp = __extractFloat64Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
+   if(aExp > (31 - __exp_bias))
    {
-      if((aExp == 0x7FF) && aSig)
+      if((aExp == ((1ULL << __exp_bits) - 1)) && aSig && __nan)
          aSign = 0;
       goto invalid;
    }
-   else if(aExp < 0x3FF)
+   else if(aExp < -__exp_bias)
    {
 #ifndef NO_PARAMETRIC
       if(aExp || aSig)
@@ -3505,10 +3321,17 @@ static __FORCE_INLINE __int32 __float64_to_int32_round_to_zero(__float64 a)
 #endif
       return 0;
    }
-   aSig |= LIT64(0x0010000000000000);
-   shiftCount = 0x433 - aExp;
+   aSig |= (1ULL << __frac_bits);
+   shiftCount = (__frac_bits - __exp_bias) - aExp;
    savedASig = aSig;
-   aSig >>= shiftCount;
+   if(shiftCount < 0 && __frac_bits < 30)
+   {
+      aSig <<= -shiftCount;
+   }
+   else
+   {
+      aSig >>= shiftCount;
+   }
    z = aSig;
    if(aSign)
       z = -z;
@@ -3518,33 +3341,45 @@ static __FORCE_INLINE __int32 __float64_to_int32_round_to_zero(__float64 a)
       __float_raise(float_flag_invalid);
       return aSign ? (__sbits32)0x80000000 : 0x7FFFFFFF;
    }
-   if((aSig << shiftCount) != savedASig)
+   if(shiftCount < 0 && __frac_bits < 30)
    {
+      if((aSig >> -shiftCount) != savedASig)
+      {
 #ifndef NO_PARAMETRIC
-      __float_exception_flags |= float_flag_inexact;
+         __float_exception_flags |= float_flag_inexact;
 #endif
+      }
+   }
+   else
+   {
+      if((aSig << shiftCount) != savedASig)
+      {
+#ifndef NO_PARAMETRIC
+         __float_exception_flags |= float_flag_inexact;
+#endif
+      }
    }
    return z;
 }
 
-static __FORCE_INLINE __uint32 __float64_to_uint32_round_to_zero(__float64 a)
+__uint32 __float64_to_uint32_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
-   __int16 aExp, shiftCount;
+   __int32 aExp, shiftCount;
    __bits64 aSig, savedASig;
    __uint32 z;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
-   if(0x41E < aExp)
+   aSig = __extractFloat64Frac(a, __frac_bits);
+   aExp = __extractFloat64Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
+   if(aExp > (31 - __exp_bias))
    {
-      if((aExp == 0x7FF) && aSig)
+      if((aExp == ((1ULL << __exp_bits) - 1)) && aSig)
          aSign = 0;
       __float_raise(float_flag_invalid);
       return 0x80000000;
    }
-   else if(aExp < 0x3FF)
+   else if(aExp < -__exp_bias)
    {
 #ifndef NO_PARAMETRIC
       if(aExp || aSig)
@@ -3552,18 +3387,37 @@ static __FORCE_INLINE __uint32 __float64_to_uint32_round_to_zero(__float64 a)
 #endif
       return 0;
    }
-   aSig |= LIT64(0x0010000000000000);
-   shiftCount = 0x433 - aExp;
+   aSig |= (1ULL << __frac_bits);
+   shiftCount = (__frac_bits - __exp_bias) - aExp;
    savedASig = aSig;
-   aSig >>= shiftCount;
+   if(shiftCount < 0 && __frac_bits < 30)
+   {
+      aSig <<= -shiftCount;
+   }
+   else
+   {
+      aSig >>= shiftCount;
+   }
    z = aSig;
    if(aSign)
       z = -z;
-   if((aSig << shiftCount) != savedASig)
+   if(shiftCount < 0 && __frac_bits < 30)
    {
+      if((aSig >> -shiftCount) != savedASig)
+      {
 #ifndef NO_PARAMETRIC
-      __float_exception_flags |= float_flag_inexact;
+         __float_exception_flags |= float_flag_inexact;
 #endif
+      }
+   }
+   else
+   {
+      if((aSig << shiftCount) != savedASig)
+      {
+#ifndef NO_PARAMETRIC
+         __float_exception_flags |= float_flag_inexact;
+#endif
+      }
    }
    return z;
 }
@@ -3578,24 +3432,24 @@ static __FORCE_INLINE __uint32 __float64_to_uint32_round_to_zero(__float64 a)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int64 __float64_to_int64(__float64 a)
+__int64 __float64_to_int64(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
    __bits64 aSig, aSigExtra;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
+   aSig = __extractFloat64Frac(a, __frac_bits);
+   aExp = __extractFloat64Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
    if(aExp)
-      aSig |= LIT64(0x0010000000000000);
-   shiftCount = 0x433 - aExp;
+      aSig |= (1ULL << __frac_bits);
+   shiftCount = (__frac_bits - __exp_bias) - aExp;
    if(shiftCount <= 0)
    {
-      if(0x43E < aExp)
+      if(aExp > (63 - __exp_bias))
       {
          __float_raise(float_flag_invalid);
-         if(!aSign || ((aExp == 0x7FF) && (aSig != LIT64(0x0010000000000000))))
+         if(!aSign || ((aExp == ((1ULL << __exp_bits) - 1)) && (aSig != (1ULL << __frac_bits))))
          {
             return LIT64(0x7FFFFFFFFFFFFFFF);
          }
@@ -3621,27 +3475,27 @@ static __FORCE_INLINE __int64 __float64_to_int64(__float64 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int64 __float64_to_int64_round_to_zero(__float64 a)
+__int64 __float64_to_int64_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
-   __int16 aExp, shiftCount;
+   __int32 aExp, shiftCount;
    __bits64 aSig;
    __int64 z;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
+   aSig = __extractFloat64Frac(a, __frac_bits);
+   aExp = __extractFloat64Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
    if(aExp)
-      aSig |= LIT64(0x0010000000000000);
-   shiftCount = aExp - 0x433;
+      aSig |= (1ULL << __frac_bits);
+   shiftCount = aExp + (__exp_bias - __frac_bits);
    if(0 <= shiftCount)
    {
-      if(0x43E <= aExp)
+      if(aExp >= (63 - __exp_bias))
       {
-         if(a != LIT64(0xC3E0000000000000))
+         if(a != ((1ULL << (__exp_bits + __frac_bits)) | (((63 + __exp_bias) & ((1ULL << __exp_bits) - 1)) << __frac_bits)))
          {
             __float_raise(float_flag_invalid);
-            if(!aSign || ((aExp == 0x7FF) && (aSig != LIT64(0x0010000000000000))))
+            if(!aSign || ((aExp == ((1ULL << __exp_bits) - 1)) && (aSig != (1ULL << __frac_bits))))
             {
                return LIT64(0x7FFFFFFFFFFFFFFF);
             }
@@ -3652,7 +3506,7 @@ static __FORCE_INLINE __int64 __float64_to_int64_round_to_zero(__float64 a)
    }
    else
    {
-      if(aExp < 0x3FE)
+      if(aExp < (-1 - __exp_bias))
       {
 #ifndef NO_PARAMETRIC
          if(aExp | aSig)
@@ -3673,22 +3527,22 @@ static __FORCE_INLINE __int64 __float64_to_int64_round_to_zero(__float64 a)
    return z;
 }
 
-static __FORCE_INLINE __uint64 __float64_to_uint64_round_to_zero(__float64 a)
+__uint64 __float64_to_uint64_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
    __bits64 aSig;
    __uint64 z;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
+   aSig = __extractFloat64Frac(a, __frac_bits);
+   aExp = __extractFloat64Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
    if(aExp)
-      aSig |= LIT64(0x0010000000000000);
-   shiftCount = aExp - 0x433;
+      aSig |= (1ULL << __frac_bits);
+   shiftCount = aExp + (__exp_bias - __frac_bits);
    if(0 <= shiftCount)
    {
-      if(0x43E <= aExp)
+      if(aExp >= (63 - __exp_bias))
       {
          return (__bits64)LIT64(0x8000000000000000);
       }
@@ -3696,7 +3550,7 @@ static __FORCE_INLINE __uint64 __float64_to_uint64_round_to_zero(__float64 a)
    }
    else
    {
-      if(aExp < 0x3FE)
+      if(aExp < (-1 - __exp_bias))
       {
 #ifndef NO_PARAMETRIC
          if(aExp | aSig)
@@ -3716,6 +3570,7 @@ static __FORCE_INLINE __uint64 __float64_to_uint64_round_to_zero(__float64 a)
       z = -z;
    return z;
 }
+
 /*----------------------------------------------------------------------------
 | Returns the result of converting the double-precision floating-point value
 | `a' to the single-precision floating-point format.  The conversion is
@@ -3723,21 +3578,21 @@ static __FORCE_INLINE __uint64 __float64_to_uint64_round_to_zero(__float64 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __float64_to_float32(__float64 a)
+__float32 __float64_to_float32_ieee(__float64 a, __flag __nan, __flag __subnorm)
 {
    __flag aSign;
    __int16 aExp;
    __bits64 aSig;
    __bits32 zSig;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
-   if(aExp == 0x7FF)
+   aSig = __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC);
+   aExp = __extractFloat64Exp(a, IEEE64_EXTRACT_EXP);
+   aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
+   if(aExp == 0x7FF && __nan)
    {
       if(aSig)
-         return __commonNaNToFloat32(__float64ToCommonNaN(a));
-      return __packFloat32(aSign, 0xFF, 0);
+         return __commonNaNToFloat32_ieee(__float64ToCommonNaN_ieee(a));
+      return (((__bits32)aSign) << 31) | 0x7F800000; // __packFloat32(aSign, 0xFF, 0, IEEE32_PACK);
    }
    __shift64RightJamming(aSig, 22, &aSig);
    zSig = aSig;
@@ -3746,7 +3601,7 @@ static __FORCE_INLINE __float32 __float64_to_float32(__float64 a)
       zSig |= 0x40000000;
       aExp -= 0x381;
    }
-   return __roundAndPackFloat32(aSign, aExp, zSig);
+   return __roundAndPackFloat32(aSign, aExp, zSig, IEEE32_PACK, __nan, __subnorm);
 }
 
 #ifdef FLOATX80
@@ -3758,15 +3613,15 @@ static __FORCE_INLINE __float32 __float64_to_float32(__float64 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __float64_to_floatx80(__float64 a)
+__floatx80 __float64_to_floatx80_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp;
    __bits64 aSig;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
+   aSig = __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC);
+   aExp = __extractFloat64Exp(a, IEEE64_EXTRACT_EXP);
+   aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
    if(aExp == 0x7FF)
    {
       if(aSig)
@@ -3793,15 +3648,15 @@ static __FORCE_INLINE __floatx80 __float64_to_floatx80(__float64 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __float64_to_float128(__float64 a)
+__float128 __float64_to_float128_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp;
    __bits64 aSig, zSig0, zSig1;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
+   aSig = __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC);
+   aExp = __extractFloat64Exp(a, IEEE64_EXTRACT_EXP);
+   aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
    if(aExp == 0x7FF)
    {
       if(aSig)
@@ -3828,7 +3683,7 @@ static __FORCE_INLINE __float128 __float64_to_float128(__float64 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __float64_round_to_int(__float64 a)
+__float64 __float64_round_to_int_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp;
@@ -3836,12 +3691,12 @@ static __FORCE_INLINE __float64 __float64_round_to_int(__float64 a)
    __int8 roundingMode;
    __float64 z;
 
-   aExp = __extractFloat64Exp(a);
+   aExp = __extractFloat64Exp(a, IEEE64_EXTRACT_EXP);
    if(0x433 <= aExp)
    {
-      if((aExp == 0x7FF) && __extractFloat64Frac(a))
+      if((aExp == 0x7FF) && __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC))
       {
-         return __propagateFloat64NaN(a, a);
+         return __propagateFloat64NaN_ieee(a, a);
       }
       return a;
    }
@@ -3852,13 +3707,13 @@ static __FORCE_INLINE __float64 __float64_round_to_int(__float64 a)
 #ifndef NO_PARAMETRIC
       __float_exception_flags |= float_flag_inexact;
 #endif
-      aSign = __extractFloat64Sign(a);
+      aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
       switch(__float_rounding_mode)
       {
          case float_round_nearest_even:
-            if((aExp == 0x3FE) && __extractFloat64Frac(a))
+            if((aExp == 0x3FE) && __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC))
             {
-               return __packFloat64(aSign, 0x3FF, 0);
+               return (((__bits64)aSign) << 63) | 0x3FF0000000000000; // __packFloat64(aSign, 0x3FF, 0, IEEE64_PACK);
             }
             break;
          case float_round_down:
@@ -3866,7 +3721,7 @@ static __FORCE_INLINE __float64 __float64_round_to_int(__float64 a)
          case float_round_up:
             return aSign ? LIT64(0x8000000000000000) : LIT64(0x3FF0000000000000);
       }
-      return __packFloat64(aSign, 0, 0);
+      return ((__bits64)aSign) << 63; // __packFloat64(aSign, 0, 0, IEEE64_PACK);
    }
    lastBitMask = 1;
    lastBitMask <<= 0x433 - aExp;
@@ -3881,7 +3736,7 @@ static __FORCE_INLINE __float64 __float64_round_to_int(__float64 a)
    }
    else if(roundingMode != float_round_to_zero)
    {
-      if(__extractFloat64Sign(z) ^ (roundingMode == float_round_up))
+      if(__extractFloat64Sign(z, IEEE64_EXTRACT_SIGN) ^ (roundingMode == float_round_up))
       {
          z += roundBitsMask;
       }
@@ -3902,383 +3757,81 @@ static __FORCE_INLINE __float64 __float64_round_to_int(__float64 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __addFloat64Sigs(__float64 a, __float64 b, __flag zSign)
-{
-   __int16 aExp, bExp, zExp;
-   __bits64 aSig, bSig, zSig;
-   __int16 expDiff;
-
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   bSig = __extractFloat64Frac(b);
-   bExp = __extractFloat64Exp(b);
-   expDiff = aExp - bExp;
-   aSig <<= 9;
-   bSig <<= 9;
-   if(0 < expDiff)
-   {
-      if(aExp == 0x7FF)
-      {
-         if(aSig)
-            return __propagateFloat64NaN(a, b);
-         return a;
-      }
-      if(bExp == 0)
-      {
-         --expDiff;
-      }
-      else
-      {
-         bSig |= LIT64(0x2000000000000000);
-      }
-      __shift64RightJamming(bSig, expDiff, &bSig);
-      zExp = aExp;
-   }
-   else if(expDiff < 0)
-   {
-      if(bExp == 0x7FF)
-      {
-         if(bSig)
-            return __propagateFloat64NaN(a, b);
-         return __packFloat64(zSign, 0x7FF, 0);
-      }
-      if(aExp == 0)
-      {
-         ++expDiff;
-      }
-      else
-      {
-         aSig |= LIT64(0x2000000000000000);
-      }
-      __shift64RightJamming(aSig, -expDiff, &aSig);
-      zExp = bExp;
-   }
-   else
-   {
-      if(aExp == 0x7FF)
-      {
-         if(aSig | bSig)
-            return __propagateFloat64NaN(a, b);
-         return a;
-      }
-      if(aExp == 0)
-         return __packFloat64(zSign, 0, (aSig + bSig) >> 9);
-      zSig = LIT64(0x4000000000000000) + aSig + bSig;
-      zExp = aExp;
-      goto roundAndPack;
-   }
-   aSig |= LIT64(0x2000000000000000);
-   zSig = (aSig + bSig) << 1;
-   --zExp;
-   if((__sbits64)zSig < 0)
-   {
-      zSig = aSig + bSig;
-      ++zExp;
-   }
-roundAndPack:
-   return __roundAndPackFloat64(zSign, zExp, zSig);
-}
-
-/*----------------------------------------------------------------------------
-| Returns the result of subtracting the absolute values of the double-
-| precision floating-point values `a' and `b'.  If `zSign' is 1, the
-| difference is negated before being returned.  `zSign' is ignored if the
-| result is a NaN.  The subtraction is performed according to the IEC/IEEE
-| Standard for Binary Floating-Point Arithmetic.
-*----------------------------------------------------------------------------*/
-
-static __FORCE_INLINE __float64 __subFloat64Sigs(__float64 a, __float64 b, __flag zSign)
-{
-   __int16 aExp, bExp, zExp;
-   __bits64 aSig, bSig, zSig;
-   __int16 expDiff;
-
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   bSig = __extractFloat64Frac(b);
-   bExp = __extractFloat64Exp(b);
-   expDiff = aExp - bExp;
-   aSig <<= 10;
-   bSig <<= 10;
-   if(0 < expDiff)
-      goto aExpBigger;
-   if(expDiff < 0)
-      goto bExpBigger;
-   if(aExp == 0x7FF)
-   {
-      if(aSig | bSig)
-         return __propagateFloat64NaN(a, b);
-      __float_raise(float_flag_invalid);
-      return __float64_default_nan;
-   }
-   if(aExp == 0)
-   {
-      aExp = 1;
-      bExp = 1;
-   }
-   if(bSig < aSig)
-      goto aBigger;
-   if(aSig < bSig)
-      goto bBigger;
-   return __packFloat64(__float_rounding_mode == float_round_down, 0, 0);
-bExpBigger:
-   if(bExp == 0x7FF)
-   {
-      if(bSig)
-         return __propagateFloat64NaN(a, b);
-      return __packFloat64(zSign ^ 1, 0x7FF, 0);
-   }
-   if(aExp == 0)
-   {
-      ++expDiff;
-   }
-   else
-   {
-      aSig |= LIT64(0x4000000000000000);
-   }
-   __shift64RightJamming(aSig, -expDiff, &aSig);
-   bSig |= LIT64(0x4000000000000000);
-bBigger:
-   zSig = bSig - aSig;
-   zExp = bExp;
-   zSign ^= 1;
-   goto normalizeRoundAndPack;
-aExpBigger:
-   if(aExp == 0x7FF)
-   {
-      if(aSig)
-         return __propagateFloat64NaN(a, b);
-      return a;
-   }
-   if(bExp == 0)
-   {
-      --expDiff;
-   }
-   else
-   {
-      bSig |= LIT64(0x4000000000000000);
-   }
-   __shift64RightJamming(bSig, expDiff, &bSig);
-   aSig |= LIT64(0x4000000000000000);
-aBigger:
-   zSig = aSig - bSig;
-   zExp = aExp;
-normalizeRoundAndPack:
-   --zExp;
-   return __normalizeRoundAndPackFloat64(zSign, zExp, zSig);
-}
-
-static __FORCE_INLINE __bits8 __CLZ54(__bits64 v)
-{
-   __bits8 res;
-   count_leading_zero_macro(54, v, res);
-   return res;
-}
-
-static __FORCE_INLINE __float64 __addsubFloat64_old(__float64 a, __float64 b, __flag bSign)
-{
-   __bits16 eRc1, eRn0, eRn_0, eRc, eRf0, eRf1, eRf, eRn;
-   __bits64 aSig, bSig, bSigOrig, tmp_swap, fAc1, fBc1, fRc0, fRc1, fRc, fBf1, fBf2_low, fBf2, fAf3, fRf0, fRf0_right, fRf0_t_right, fRf1, fRf_0, fRf, shift_0, fRn_0, fRn, fRr;
-   __int16 expDiff;
-   _Bool expDiffSign, eRnSign;
-   __bits16 aExp, bExp, expDiff8, eRn8;
-   __bits8 a_c, b_c, nZeros, lb;
-   _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal, swap, sAB, aSign, roundc, roundf, eZero, close, sRn, eMax, eMin, eTest0, eTest1, SigDiffSign, sb;
-   __int16 eRf1_correction;
-   aSign = __extractFloat64Sign(a);
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   bSig = __extractFloat64Frac(b);
-   bExp = __extractFloat64Exp(b);
-   a_c_zero = aExp == 0 && aSig == 0;
-   a_c_inf = aExp == 0x7FF && aSig == 0;
-   a_c_nan = aExp == 0x7FF && aSig != 0;
-   a_c_normal = aExp != 0 && aExp != 0x7FF;
-   a_c = ((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) | ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
-
-   b_c_zero = bExp == 0 && bSig == 0;
-   b_c_inf = bExp == 0x7FF && bSig == 0;
-   b_c_nan = bExp == 0x7FF && bSig != 0;
-   b_c_normal = bExp != 0 && bExp != 0x7FF;
-   b_c = ((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) | ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
-
-   expDiff = aExp - bExp;
-   expDiffSign = (expDiff >> 12) & 1;
-   expDiff8 = expDiff;
-   swap = ((expDiffSign) && a_c == b_c) || a_c < b_c;
-   expDiff8 = (swap ? -expDiff8 : expDiff8);
-   tmp_swap = b;
-   b = swap ? a : b;
-   a = swap ? tmp_swap : a;
-   sAB = aSign ^ bSign;
-   aSign = swap ? bSign : aSign;
-   close = ((expDiff8 >> 1) == 0) && sAB;
-   aSig = __extractFloat64Frac(a);
-   bSigOrig = __extractFloat64Frac(b);
-   fAc1 = (aSig | 0x0010000000000000) << 1;
-   fAf3 = fAc1 << 2;
-   BIT_RESIZE(fAf3, 56);
-   fBf1 = bSigOrig | 0x0010000000000000;
-   fBc1 = (expDiff8 & 1) ? fBf1 : (fBf1 << 1);
-   fRc0 = fAc1 - fBc1;
-   BIT_RESIZE(fRc0, 55);
-   SigDiffSign = (fRc0 >> 54) & 1;
-   fRc1 = SigDiffSign ? -fRc0 : fRc0;
-   BIT_RESIZE(fRc1, 54);
-   eRc1 = __extractFloat64Exp(a);
-   BIT_RESIZE(eRc1, 12);
-   // nZeros = __CLZ54(fRc1);
-   // shift_0 = fRc1 << nZeros;
-   count_leading_zero_macro_lshift(54, fRc1, nZeros, shift_0);
-   roundc = (fRc1 & 1) & ((fRc1 >> 1) & 1) & ((fRc1 >> 53) & 1);
-   fRn_0 = shift_0 >> 1;
-   eRn0 = eRc1 - nZeros;
-   eZero = (eRn0 >> 11) & 1;
-   eRn_0 = eZero ? 0 : eRn0;
-   fRr = ((fRc1 & (1ULL << 53) - 1) >> 2) + 1; // (1<<53) = 0x0020000000000000
-   eRc = roundc ? eRc1 + ((fRr >> 51) & 1) : eRn_0;
-   BIT_RESIZE(eRc, 12);
-   fRc = roundc ? ((fRr & ((1ULL << 51) - 1)) | (1ULL << 51)) << 1 : fRn_0; // (1<<51) = 0x0008000000000000
-   BIT_RESIZE(fRc, 53);
-   fBf2 = expDiff8 >= 56 ? 0 : (fBf1 << 3) >> expDiff8;
-   fBf2_low = expDiff8 >= 56 ? fBf1 : (fBf1 << 3) << (56 - expDiff8);
-   BIT_RESIZE(fBf2, 56);
-   BIT_RESIZE(fBf2_low, 56);
-   sb = fBf2_low != 0;
-   fRf0_t_right = (~fBf2) + !sb;
-   fRf0_right = sAB ? fRf0_t_right : fBf2;
-   fRf0 = fAf3 + fRf0_right;
-   BIT_RESIZE(fRf0, 57);
-   eRf0 = eRc1;
-   BIT_RESIZE(eRf0, 12);
-   lb = (fRf0 >> 55) & 3;
-   fRf1 = lb == 1 ? ((fRf0 >> 1) | (fRf0 & 1)) : (lb == 0 ? fRf0 : ((fRf0 >> 2) | ((fRf0 & 2) >> 1) | (fRf0 & 1)));
-   BIT_RESIZE(fRf1, 55);
-   eRf1_correction = lb == 1 ? 0 : (lb == 0 ? -1 : +1);
-   roundf = ((fRf1 & 2) >> 1) & (((fRf1 & 4) >> 2) | (fRf1 & 1) | sb);
-   fRf_0 = (fRf1 >> 2) + roundf;
-   BIT_RESIZE(fRf_0, 54);
-   eRf1 = eRf1_correction + ((fRf_0 >> 53) & 1);
-   BIT_RESIZE(eRf1, 12);
-   eRf = eRf0 + eRf1;
-   BIT_RESIZE(eRf, 12);
-   fRf = ((fRf_0 & (1ULL << 53)) >> 1) | (fRf_0 & ((1ULL << 53) - 1)); // (1<<53) = 0x0020000000000000
-   BIT_RESIZE(fRf, 53);
-   eRn = close ? eRc : eRf;
-   BIT_RESIZE(eRn, 12);
-   eRn8 = eRn & 0x7FF;
-   BIT_RESIZE(eRn8, 12);
-   eRnSign = (eRn >> 11) & 1;
-   fRn = close ? fRc : fRf;
-   BIT_RESIZE(fRn, 53);
-   sRn = (((~close) & 1) | (fRc1 != 0)) & (aSign ^ (close & SigDiffSign));
-   eMax = eRn8 == 0x7FF;
-   eMin = eRn8 == 0;
-   eTest1 = (eMax & (0 == (eRnSign))) | ((eRnSign) & (((eRn8 >> 11) & 1) == 0));
-   eTest0 = (eMin & (0 == (eRnSign))) | ((eRnSign) & ((eRn8 >> 11) & 1)) | (0 == ((fRn >> 52) & 1));
-
-   if(a_c_normal && b_c_normal)
-   {
-      if(!eTest1 && eTest0)
-         return ((__bits64)(sRn & 1)) << 63;
-      else if(eTest1 && !eTest0)
-         return __float64_default_nan;
-      else
-         return (((__bits64)sRn) << 63) | (((__bits64)eRn8) << 52) | (fRn & ((1ULL << 52) - 1)); // 1<<52 = 0x0010000000000000
-   }
-   else
-   {
-      if(a_c_inf && b_c_inf)
-      {
-         if(sAB)
-            return __float64_default_nan;
-         else
-            return ((__bits64)(sRn & 1)) << 63 | ((__bits64)0x7FF) << 52;
-      }
-      else
-      {
-         if(eRc1 == 0x7FF && aSig == 0)
-            return ((__bits64)(sRn & 1)) << 63 | ((__bits64)0x7FF) << 52;
-         else if(eRc1 != 0x7FF)
-            return (((__bits64)sRn) << 63) | (((__bits64)(eRc1 & 0x7ff)) << 52) | (aSig & ((1ULL << 52) - 1)); // 1<<52 = 0x0010000000000000
-         else
-            return __float64_default_nan;
-      }
-   }
-}
-
-static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag bSign)
+static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag bSign, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    VOLATILE_DEF __bits64 aSig, bSig, shift_0;
-   VOLATILE_DEF __bits16 aExp, bExp, expDiff11;
+   VOLATILE_DEF __bits64 aExp, bExp, expDiff;
    VOLATILE_DEF __bits16 nZeros;
-   VOLATILE_DEF _Bool a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign;
+   VOLATILE_DEF _Bool a_c_zero, b_c_zero, a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign;
    VOLATILE_DEF __bits64 abs_a, abs_b;
    VOLATILE_DEF __bits64 fA, fB, fB_shifted;
-#ifndef NO_ROUNDING
    VOLATILE_DEF __bits64 fB_shifted_low, fBleft_shifted;
    VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, Sticky_bit, round, sb;
-#endif
-   VOLATILE_DEF _Bool ge_64;
+   VOLATILE_DEF _Bool ge_frac_bits;
    VOLATILE_DEF _Bool tmp_sign;
-   VOLATILE_DEF __bits16 tmp_exp;
+   VOLATILE_DEF __bits64 tmp_exp;
    VOLATILE_DEF __bits64 tmp_sig;
    VOLATILE_DEF _Bool subnormal_exp_correction;
    VOLATILE_DEF __bits64 fB_shifted1;
    VOLATILE_DEF __bits64 fR0;
    VOLATILE_DEF _Bool R_c_zero;
-   VOLATILE_DEF __bits16 RExp0, RExp1;
+   VOLATILE_DEF __bits64 RExp0, RExp1;
    VOLATILE_DEF __bits64 RSig0, RSig1, RSig2, RSig3;
    VOLATILE_DEF __bits64 RExp0RSig1, Rrounded;
-   VOLATILE_DEF _Bool overflow_to_infinite;
-   VOLATILE_DEF _Bool aExp2047, bExp2047;
+   VOLATILE_DEF _Bool overflow_to_infinite, saturation;
+   VOLATILE_DEF _Bool aExpMax, bExpMax;
+   VOLATILE_DEF __bits8 __frac_shift, __frac_full, __frac_almost, __exp_shift, __nzeros_bits;
 
-#ifdef NO_ROUNDING
-#define FRAC_SHIFT 0
-#define FRAC_FULL_BW 54
-#define FRAC_ALMOST_BW 53
-#else
-#define FRAC_SHIFT 2
-#define FRAC_FULL_BW 56
-#define FRAC_ALMOST_BW 55
-#endif
+   __frac_shift = __rounding ? 2 : 0;
+   __frac_almost = __frac_bits + __frac_shift + 1;
+   __frac_full = __frac_almost + 1;
 
-   aSign = __extractFloat64Sign(a);
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   bSig = __extractFloat64Frac(b);
-   bExp = __extractFloat64Exp(b);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
+   aSig = __extractFloat64Frac(a, __frac_bits);
+   aExp = __extractFloat64Exp(a, __exp_bits, __frac_bits);
+   bSig = __extractFloat64Frac(b, __frac_bits);
+   bExp = __extractFloat64Exp(b, __exp_bits, __frac_bits);
    _Bool aSig_null = aSig == 0;
    _Bool bSig_null = bSig == 0;
    _Bool aExp_null = aExp == 0;
    _Bool bExp_null = bExp == 0;
-   aExp2047 = aExp == 0x7FF;
-   a_c_nan = aExp2047 && !aSig_null;
-   a_c_normal = !aExp_null /*&& !aExp2047*/; /// not really needed the second condition
-   bExp2047 = bExp == 0x7FF;
-   b_c_nan = bExp2047 && !bSig_null;
-   b_c_normal = !bExp_null /*&& !bExp2047*/; /// not really needed the second condition
+   aExpMax = aExp == ((1ULL << __exp_bits) - 1);
+   a_c_zero = aExp_null && aSig_null;
+   a_c_zero = __subnorm ? aExp_null : a_c_zero;
+   a_c_nan = aExpMax && !aSig_null;
+   a_c_nan = __nan ? a_c_nan : 0;
+   a_c_normal = !a_c_zero /*&& !aExpMax*/; /// not really needed the second condition
+   a_c_normal = __one ? a_c_normal : 0;
+   bExpMax = bExp == ((1ULL << __exp_bits) - 1);
+   b_c_zero = bExp_null && bSig_null;
+   b_c_zero = __subnorm ? bExp_null : b_c_zero;
+   b_c_nan = bExpMax && !bSig_null;
+   b_c_nan = __nan ? b_c_nan : 0;
+   b_c_normal = !b_c_zero /*&& !bExpMax*/; /// not really needed the second condition
+   b_c_normal = __one ? b_c_normal : 0;
 
    sAB = aSign ^ bSign;
 
-   abs_a = a;
-   BIT_RESIZE(abs_a, 63);
-   abs_b = b;
-   BIT_RESIZE(abs_b, 63);
+   abs_a = a & ((1ULL << (__exp_bits + __frac_bits)) - 1);
+   abs_b = b & ((1ULL << (__exp_bits + __frac_bits)) - 1);
 
    swap = (a_c_nan == b_c_nan && abs_a < abs_b) || a_c_nan < b_c_nan;
 
-#ifdef NO_SUBNORMALS
-   subnormal_exp_correction = 0;
-#else
    subnormal_exp_correction = (aExp_null && !aSig_null) ^ (bExp_null && !bSig_null);
-#endif
 
    tmp_exp = bExp;
-   bExp = COND_EXPR_MACRO32(swap, aExp, bExp);
-   aExp = COND_EXPR_MACRO32(swap, tmp_exp, aExp);
+   bExp = COND_EXPR_MACRO64(swap, aExp, bExp);
+   aExp = COND_EXPR_MACRO64(swap, tmp_exp, aExp);
 
-   expDiff11 = aExp - bExp - subnormal_exp_correction;
+   if(__subnorm)
+   {
+      expDiff = aExp - bExp - subnormal_exp_correction;
+   }
+   else
+   {
+      expDiff = aExp - bExp;
+   }
+   expDiff = expDiff & ((1ULL << __exp_bits) - 1);
 
    tmp_sig = bSig;
    bSig = COND_EXPR_MACRO64(swap, aSig, bSig);
@@ -4292,87 +3845,95 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
    b_c_normal = swap ? a_c_normal : b_c_normal;
    a_c_normal = swap ? tmp_c_normal : a_c_normal;
 
-   fA = (aSig | (((__bits64)a_c_normal) << 52)) << FRAC_SHIFT;
-   fB = (bSig | (((__bits64)b_c_normal) << 52)) << FRAC_SHIFT;
+   fA = (aSig | (((__bits64)a_c_normal) << __frac_bits)) << __frac_shift;
+   fB = (bSig | (((__bits64)b_c_normal) << __frac_bits)) << __frac_shift;
 
-   ge_64 = SELECT_BIT(expDiff11, 6) | SELECT_BIT(expDiff11, 7) | SELECT_BIT(expDiff11, 8) | SELECT_BIT(expDiff11, 9) | SELECT_BIT(expDiff11, 10);
+   __exp_shift = (__frac_bits > 1 ? (__frac_bits > 2 ? (__frac_bits > 4 ? (__frac_bits > 8 ? (__frac_bits > 16 ? (__frac_bits > 32 ? 6 : 5) : 4) : 3) : 2) : 1) : 0);
+   ge_frac_bits = (expDiff >> __exp_shift) != 0;
+   expDiff = (expDiff | (__bits32)(((((__sbits32)ge_frac_bits) << 31) >> 31))) & ((1ULL << __exp_shift) - 1);
 
-#ifndef NO_ROUNDING
-   fBleft_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 5), fB << 32, 0);
-   fB_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 5), fB >> 32, fB);
-   fBleft_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 4), (fB_shifted << 48) | (fBleft_shifted >> 16), fBleft_shifted);
-   fB_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 4), fB_shifted >> 16, fB_shifted);
-   fBleft_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 3), (fB_shifted << 56) | (fBleft_shifted >> 8), fBleft_shifted);
-   fB_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 3), fB_shifted >> 8, fB_shifted);
-   fBleft_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 2), (fB_shifted << 60) | (fBleft_shifted >> 4), fBleft_shifted);
-   fB_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 2), fB_shifted >> 4, fB_shifted);
-   fBleft_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 1), (fB_shifted << 62) | (fBleft_shifted >> 2), fBleft_shifted);
-   fB_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 1), fB_shifted >> 2, fB_shifted);
-   fBleft_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 0), (fB_shifted << 63) | (fBleft_shifted >> 1), fBleft_shifted);
-   fB_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 0), fB_shifted >> 1, fB_shifted);
-#else
-   fB_shifted = fB >> VAL_RESIZE((expDiff11 | (__bits32)(((((__sbits32)ge_64) << 31) >> 31))), 6);
-#endif
+   if(__rounding)
+   {
+      fB_shifted_low = fB & (~((~(0ULL)) << expDiff));
+   }
+   fB_shifted = fB >> expDiff;
+   fB_shifted = fB_shifted & ((1ULL << __frac_almost) - 1);
 
-   // fB_shifted = COND_EXPR_MACRO64(ge_64, 0, fB_shifted);
-   BIT_RESIZE(fB_shifted, FRAC_ALMOST_BW);
-
-#ifndef NO_ROUNDING
-   fB_shifted_low = fBleft_shifted;
-   sb = fB_shifted_low != 0;
-#endif
    fB_shifted1 = ((__bits64)((((__sbits64)sAB) << 63) >> 63)) ^ fB_shifted;
-   BIT_RESIZE(fB_shifted1, FRAC_FULL_BW);
+   fB_shifted1 = fB_shifted1 & ((1ULL << __frac_full) - 1);
 
-#ifdef NO_ROUNDING
-   fR0 = fA + fB_shifted1 + sAB;
-#else
+   sb = fB_shifted_low != 0;
+   sb = __rounding ? sb : 0;
    fR0 = fA + fB_shifted1 + (sAB && (!sb));
-#endif
-   BIT_RESIZE(fR0, FRAC_FULL_BW);
-   count_leading_zero_macro_lshift64(FRAC_FULL_BW, fR0, nZeros, shift_0);
 
-   R_c_zero = nZeros == VAL_RESIZE((~0ULL), 6);
-   overflow_to_infinite = aExp == 2046 && (fR0 >> FRAC_ALMOST_BW) & 1;
+   fR0 = fR0 & ((1ULL << __frac_full) - 1);
+   count_leading_zero_lshift64_runtime_macro(__frac_full, fR0, nZeros, shift_0);
 
-#ifdef NO_SUBNORMALS
-   R_c_zero = R_c_zero || aExp < nZeros;
-   RExp0 = R_c_zero ? 0 : aExp - nZeros + 1;
-   RSig0 = shift_0;
-#else
-   RExp0 = R_c_zero || aExp < nZeros ? ((aExp_null) && (bExp_null) && nZeros == 1) : aExp - nZeros + 1;
-   RSig0 = aExp < nZeros ? ((aExp_null) && (bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
-#endif
-#ifndef NO_ROUNDING
-   LSB_bit = SELECT_BIT(RSig0, 3);
-   Guard_bit = SELECT_BIT(RSig0, 2);
-   Round_bit = SELECT_BIT(RSig0, 1);
-   Sticky_bit = SELECT_BIT(RSig0, 0) | sb;
-   round = Guard_bit & (LSB_bit | Round_bit | Sticky_bit);
-#endif
+   __nzeros_bits = RUNTIME_CEIL_LOG2(__frac_full);
+   R_c_zero = nZeros == ((1ULL << __nzeros_bits) - 1);
+   overflow_to_infinite = aExp == ((1ULL << __exp_bits) - (__nan ? 2 : 1)) && (fR0 >> __frac_almost) & 1;
 
-   RSig1 = VAL_RESIZE(RSig0 >> (FRAC_SHIFT + 1), 52);
+   if(__subnorm)
+   {
+      RExp0 = R_c_zero || aExp < nZeros ? ((aExp_null) && (bExp_null) && nZeros == 1) : aExp - nZeros + 1;
+      RSig0 = aExp < nZeros ? ((aExp_null) && (bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
+   }
+   else
+   {
+      R_c_zero = R_c_zero || aExp < nZeros;
+      RExp0 = R_c_zero ? 0 : aExp - nZeros + 1;
+      RSig0 = shift_0;
+   }
+   RExp0 = RExp0 & ((1ULL << __exp_bits) - 1);
 
-   RExp0RSig1 = (((__bits64)RExp0) << 52) | RSig1;
+   if(__rounding)
+   {
+      LSB_bit = SELECT_BIT(RSig0, 3);
+      Guard_bit = SELECT_BIT(RSig0, 2);
+      Round_bit = SELECT_BIT(RSig0, 1);
+      Sticky_bit = SELECT_BIT(RSig0, 0) | sb;
+      round = Guard_bit & (LSB_bit | Round_bit | Sticky_bit);
+   }
 
-#ifdef NO_ROUNDING
-   Rrounded = RExp0RSig1;
-#else
-   Rrounded = RExp0RSig1 + round;
-#endif
+   RSig1 = (RSig0 >> (__frac_shift + 1)) & ((1ULL << __frac_bits) - 1);
 
-   RExp1 = aExp2047 || bExp2047 ? 0x7FF : VAL_RESIZE(Rrounded >> 52, 11);
+   RExp0RSig1 = (RExp0 << __frac_bits) | RSig1;
 
-   RSig2 = R_c_zero || aExp2047 || bExp2047 || overflow_to_infinite ? 0 : VAL_RESIZE(Rrounded, 52);
+   if(__rounding)
+   {
+      Rrounded = RExp0RSig1 + round;
+   }
+   else
+   {
+      Rrounded = RExp0RSig1;
+   }
+
+   if(__nan)
+   {
+      RExp1 = aExpMax || bExpMax ? ((1ULL << __exp_bits) - 1) : ((Rrounded >> __frac_bits) & ((1ULL << __exp_bits) - 1));
+      RSig2 = R_c_zero || aExpMax || bExpMax || overflow_to_infinite ? 0 : (Rrounded & ((1ULL << __frac_bits) - 1));
+   }
+   else
+   {
+      RExp1 = overflow_to_infinite ? ((1ULL << __exp_bits) - 1) : ((Rrounded >> __frac_bits) & ((1ULL << __exp_bits) - 1));
+      RSig2 = (overflow_to_infinite ? (__bits64)((((__sbits64)!R_c_zero) << 63) >> 63) : Rrounded) & ((1ULL << __frac_bits) - 1);
+   }
 
    aSign = aSign && (!R_c_zero || !sAB);
 
+   if(__nan)
+   {
 #ifdef NO_SIGNALLING
-   RSig3 = (((__bits64)(a_c_nan || b_c_nan || (sAB && aExp2047 && bExp2047))) << 51) | RSig2;
+      RSig3 = (((__bits64)(a_c_nan || b_c_nan || (sAB && aExpMax && bExpMax))) << (__frac_bits - 1)) | RSig2;
 #else
-   RSig3 = a_c_nan || b_c_nan || (sAB && aExp2047 && bExp2047) ? 1ULL << 51 | (aSig & ((1ULL << 51) - 1)) : RSig2;
+      RSig3 = a_c_nan || b_c_nan || (sAB && aExpMax && bExpMax) ? ((1ULL << (__frac_bits - 1)) | (aSig & ((1ULL << (__frac_bits - 1)) - 1))) : RSig2;
 #endif
-   return (((__bits64)aSign) << 63) | (((__bits64)RExp1) << 52) | RSig3;
+   }
+   else
+   {
+      RSig3 = RSig2;
+   }
+   return (((__bits64)aSign) << (__exp_bits + __frac_bits)) | (RExp1 << __frac_bits) | RSig3;
 }
 
 /*----------------------------------------------------------------------------
@@ -4381,25 +3942,10 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __float64_add(__float64 a, __float64 b)
+__float64 __float64_add(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-#ifndef DEFAULT
-   __flag bSign = __extractFloat64Sign(b);
-   return __addsubFloat64(a, b, bSign);
-#else
-   __flag aSign, bSign;
-
-   aSign = __extractFloat64Sign(a);
-   bSign = __extractFloat64Sign(b);
-   if(aSign == bSign)
-   {
-      return __addFloat64Sigs(a, b, aSign);
-   }
-   else
-   {
-      return __subFloat64Sigs(a, b, aSign);
-   }
-#endif
+   __flag bSign = __extractFloat64Sign(b, __exp_bits, __frac_bits, __sign);
+   return __addsubFloat64(a, b, bSign, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -4408,25 +3954,10 @@ static __FORCE_INLINE __float64 __float64_add(__float64 a, __float64 b)
 | for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __float64_sub(__float64 a, __float64 b)
+__float64 __float64_sub(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-#ifndef DEFAULT
-   __flag bSign = __extractFloat64Sign(b) ^ 1;
-   return __addsubFloat64(a, b, bSign);
-#else
-   __flag aSign, bSign;
-
-   aSign = __extractFloat64Sign(a);
-   bSign = __extractFloat64Sign(b);
-   if(aSign == bSign)
-   {
-      return __subFloat64Sigs(a, b, aSign);
-   }
-   else
-   {
-      return __addFloat64Sigs(a, b, aSign);
-   }
-#endif
+   __flag bSign = __extractFloat64Sign(b, __exp_bits, __frac_bits, __sign) ^ 1;
+   return __addsubFloat64(a, b, bSign, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -4435,216 +3966,203 @@ static __FORCE_INLINE __float64 __float64_sub(__float64 a, __float64 b)
 | for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE SF_UDItype _umul64(SF_UDItype u, SF_UDItype v)
-{
-   SF_UDItype t;
-   SF_USItype u0, u1, v0, v1, k;
-   SF_USItype w0, w1;
-   SF_USItype tlast;
-   u1 = u >> 32;
-   u0 = u;
-   v1 = v >> 32;
-   v0 = v;
-   t = (SF_UDItype)u0 * v0;
-   w0 = t;
-   k = t >> 32;
-   tlast = u1 * v0 + k;
-   w1 = tlast;
-   tlast = u0 * v1 + w1;
-   return (((SF_UDItype)tlast) << 32) | ((SF_UDItype)w0);
-}
-
-static __FORCE_INLINE __float64 __float64_mul(__float64 a, __float64 b)
+__float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign, bSign, zSign;
-   __int16 aExp, bExp, zExp;
+   __flag aExpMax, bExpMax;
+   __bits32 aExp, bExp;
    __bits64 aSig, bSig;
-
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
-   bSig = __extractFloat64Frac(b);
-   bExp = __extractFloat64Exp(b);
-   bSign = __extractFloat64Sign(b);
-   zSign = aSign ^ bSign;
-
-#ifndef DEFAULT
    __bits8 a_c, b_c, z_c;
    _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
-   a_c_zero = aExp == 0 && aSig == 0;
-   a_c_inf = aExp == 0x7FF && aSig == 0;
-   a_c_nan = aExp == 0x7FF && aSig != 0;
-   a_c_normal = aExp != 0 && aExp != 0x7FF;
-   a_c = ((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) | ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+   __bits32 expSum, expPostNorm;
+   _Bool norm, expSigOvf0, expSigOvf2;
+   _Bool sticky, guard, round, expSigOvf1;
+   __bits64 expSig, expSigPostRound, zSig;
+   __bits64 excPostNorm;
+   __bits64 u1, u0, v1, v0, k0, k1, k2, k3, k4, k5, k6, k7, res_2K_0, res_full_2K;
+   __bits64 sigProdHigh, sigProdLow, sigProdExtHigh, sigProdExtLow;
+   SF_UDItype sigProd, sigProdExt;
+   __bits8 __frac_mul, __frac_full, __frac_almost, __k_bits;
+   __frac_almost = __frac_bits + 1;
+   __frac_full = __frac_almost + 1;
+   __frac_mul = __frac_bits + __frac_bits + 1;
+   __k_bits = __frac_almost > 38 ? (__frac_almost - 30) : (__frac_almost - 15);
 
-   b_c_zero = bExp == 0 && bSig == 0;
-   b_c_inf = bExp == 0x7FF && bSig == 0;
-   b_c_nan = bExp == 0x7FF && bSig != 0;
-   b_c_normal = bExp != 0 && bExp != 0x7FF;
-   b_c = ((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) | ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
+   if(__sign == 1)
+   {
+      return __nan ? __float_nan(__exp_bits, __frac_bits, __sign) : 0;
+   }
+
+   aSig = __extractFloat64Frac(a, __frac_bits);
+   aExp = __extractFloat64Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
+   bSig = __extractFloat64Frac(b, __frac_bits);
+   bExp = __extractFloat64Exp(b, __exp_bits, __frac_bits);
+   bSign = __extractFloat64Sign(b, __exp_bits, __frac_bits, __sign);
+   zSign = aSign ^ bSign;
+
+   aExpMax = aExp == ((1ULL << __exp_bits) - 1);
+   a_c_zero = (aExp == 0) && (aSig == 0);
+   a_c_zero = __subnorm ? (aExp == 0) : a_c_zero;
+   a_c_inf = aExpMax && aSig == 0;
+   a_c_inf = __nan ? a_c_inf : 0;
+   a_c_nan = aExpMax && aSig != 0;
+   a_c_nan = __nan ? a_c_nan : 0;
+   a_c_normal = !a_c_zero && !aExpMax;
+   a_c_normal = __nan ? a_c_normal : !a_c_zero;
+   a_c = /*((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) |*/ ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+
+   bExpMax = bExp == ((1ULL << __exp_bits) - 1);
+   b_c_zero = (bExp == 0) && (bSig == 0);
+   b_c_zero = __subnorm ? (bExp == 0) : b_c_zero;
+   b_c_inf = bExpMax && bSig == 0;
+   b_c_inf = __nan ? b_c_inf : 0;
+   b_c_nan = bExpMax && bSig != 0;
+   b_c_nan = __nan ? b_c_nan : 0;
+   b_c_normal = !b_c_zero && !bExpMax;
+   b_c_normal = __nan ? b_c_normal : !b_c_zero;
+   b_c = /*((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) |*/ ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
 
    z_c = ((a_c >> 1 | b_c >> 1) << 1) | (((a_c >> 1) & (a_c & 1)) | ((b_c >> 1) & (b_c & 1)) | ((a_c & 1) & (b_c & 1)) | (1 & (~(a_c >> 1)) & ((~a_c) & 1) & (b_c >> 1)) | (1 & (~(b_c >> 1)) & ((~b_c) & 1) & (a_c >> 1)));
 
-#else
+   expSum = aExp + bExp + ((__bits32)__exp_bias);
 
-   if(aExp == 0x7FF || bExp == 0x7FF || bExp == 0 || aExp == 0)
+   aSig = (aSig | (((__bits64)__one) << __frac_bits));
+   bSig = (bSig | (((__bits64)__one) << __frac_bits));
+
+   if(__frac_almost > 32)
    {
-      if(aExp == 0x7FF)
+#if 0
+      // start multi-part multiplication __frac_almostx__frac_almost=>2*__frac_almost
+      // karatsuba
+      // u = 2^K*u1+u0; //__frac_almost-bit -> u1=(__frac_almost-__k_bits)bit u0=__k_bits-bit
+      // v = 2^K*v1+v0; //__frac_almost-bit -> v1=(__frac_almost-__k_bits)bit v0=__k_bits-bit
+      // k0=u1*v1;      // k0=2*(__frac_almost-__k_bits)bit
+      // k1=u0*v0;      // k1=2*__k_bits-bit
+      // k3=u0+u1;      // k3=1+(__frac_almost-__k_bits)bit
+      // k4=v0+v1;      // k4=1+(__frac_almost-__k_bits)bit
+      // k5=k3*k4;      // k5=2*(1+(__frac_almost-__k_bits)))bit
+      // k6=k5-k0-k1;   // k6=1+(2*(1+(__frac_almost-__k_bits))))bit
+
+      u0 = aSig & ((1ULL << __k_bits) - 1);
+      u1 = (aSig >> __k_bits) & ((1ULL << (__frac_almost - __k_bits)) - 1);
+      v0 = bSig & ((1ULL << __k_bits) - 1);
+      v1 = (bSig >> __k_bits) & ((1ULL << (__frac_almost - __k_bits)) - 1);
+      k0 = u1 * v1;
+      k1 = u0 * v0;
+      k3 = u0 + u1;
+      k4 = v0 + v1;
+      k5 = k3 * k4;
+      k6 = k5 - k0 - k1;
+      k7 = (k1 >> __k_bits) + k6;
+      res_2K_0 = (k1 & ((1ULL << __k_bits) - 1)) | ((k7 & ((1ULL << __k_bits) - 1)) << __k_bits);
+      res_full_2K = (k7 >> __k_bits) + k0;
+
+      if((2 * __k_bits) == __frac_full)
       {
-         if(aSig || ((bExp == 0x7FF) && bSig))
-         {
-            return __propagateFloat64NaN(a, b);
-         }
-         if((bExp | bSig) == 0)
-         {
-            __float_raise(float_flag_invalid);
-            return __float64_default_nan;
-         }
-         return __packFloat64(zSign, 0x7FF, 0);
+         sigProdLow = res_2K_0;
+         sigProdHigh = res_full_2K;
       }
-      if(bExp == 0x7FF)
+      else if((2 * __k_bits) < __frac_full)
       {
-         if(bSig)
-            return __propagateFloat64NaN(a, b);
-         if((aExp | aSig) == 0)
-         {
-            __float_raise(float_flag_invalid);
-            return __float64_default_nan;
-         }
-         return __packFloat64(zSign, 0x7FF, 0);
+         sigProdLow = ((res_full_2K & ((1ULL << (__frac_full - 2 * __k_bits)) - 1)) << (2 * __k_bits)) | res_2K_0;
+         sigProdHigh = res_full_2K >> (__frac_full - 2 * __k_bits);
       }
-      if(aExp == 0)
+      else
       {
-#ifdef NO_SUBNORMALS
-         return __packFloat64(zSign, 0, 0);
+         sigProdLow = res_2K_0 & ((1ULL << __frac_full) - 1);
+         sigProdHigh = (res_full_2K << (2 * __k_bits - __frac_full)) | ((res_2K_0 >> __frac_full) & ((1ULL << (2 * __k_bits - __frac_full)) - 1));
+      }
 #else
-         if(aSig == 0)
-            return __packFloat64(zSign, 0, 0);
-         __normalizeFloat64Subnormal(aSig, &aExp, &aSig);
+      __bits64 u0, u1, v1, v0, ts, ks, k, t, w1, w2, w3, w_0, w_1;
+      __bits8 __low_high = __frac_bits - (__frac_mul - 63);
+      u0 = aSig >> 32;
+      u1 = aSig & 0xFFFFFFFF;
+      v0 = bSig >> 32;
+      v1 = bSig & 0xFFFFFFFF;
+      t = u1 * v1;
+      w3 = t & 0xFFFFFFFF;
+      k = t >> 32;
+      t = u0 * v1 + k;
+      w2 = t & 0xFFFFFFFF;
+      w1 = t >> 32;
+      ts = u1 * v0 + w2;
+      ks = ts >> 32;
+      w_0 = u0 * v0 + w1 + ks;
+      w_1 = (ts << 32) + w3;
+      sigProdLow = w_1 & ((1ULL << (64 - __low_high)) - 1);
+      sigProdHigh = ((w_0 << __low_high) | ((w_1 >> (64 - __low_high)) & ((1ULL << __low_high) - 1))) & ((1ULL << __frac_bits) - 1);
 #endif
-      }
-      if(bExp == 0)
-      {
-#ifdef NO_SUBNORMALS
-         return __packFloat64(zSign, 0, 0);
-#else
-         if(bSig == 0)
-            return __packFloat64(zSign, 0, 0);
-         __normalizeFloat64Subnormal(bSig, &bExp, &bSig);
-#endif
-      }
+
+      norm = (sigProdHigh >> (__frac_bits - 1)) & 1;
+      expPostNorm = expSum + norm;
+
+      sigProdExtLow = ((sigProdLow << 1) << !norm) & ((1ULL << __frac_full) - 1);
+      sigProdLow = ((sigProdLow >> __frac_bits) & 3) >> norm;
+      sigProdHigh = sigProdHigh << !norm;
+      sigProdExtHigh = ((sigProdHigh << 1) | sigProdLow) & ((1ULL << __frac_bits) - 1);
+      expSig = (((__bits64)expPostNorm) << __frac_bits) | sigProdExtHigh;
    }
-#endif
+   else
+   {
+      sigProd = (SF_UDItype)(SF_USItype)(aSig) * (SF_USItype)(bSig);
+      norm = (sigProd >> __frac_mul) & 1;
+      expPostNorm = expSum + norm;
+      sigProdExt = sigProd << !norm;
+      sigProdExt = (sigProdExt & ((1ULL << __frac_mul) - 1)) << 1;
+      expSig = (((__bits64)expPostNorm) << __frac_bits) | ((sigProdExt >> __frac_full) & ((1ULL << __frac_bits) - 1));
+   }
+   if((__exp_bits + __frac_bits) < 62)
+   {
+      expSig = expSig & ((1ULL << (__exp_bits + __frac_bits + 2)) - 1);
+   }
+   expSigOvf0 = (expPostNorm >> (__exp_bits + 1)) & 1;
 
-#ifndef DEFAULT
+   if(__rounding)
+   {
+      if(__frac_almost > 32)
+      {
+         sticky = (sigProdExtLow >> __frac_almost) & 1;
+         guard = (sigProdExtLow & ((1ULL << __frac_almost) - 1)) != 0;
+         round = sticky & (guard | (sigProdExtHigh & 1));
+      }
+      else
+      {
+         sticky = (sigProdExt >> __frac_almost) & 1;
+         guard = (sigProdExt & ((1ULL << __frac_almost) - 1)) != 0;
+         round = sticky & (guard | ((sigProdExt >> __frac_full) & 1));
+      }
 
-   __bits16 expSumPreSub = aExp + bExp;
-   __bits16 bias = 1023;
-   __bits16 expSum = expSumPreSub - bias;
-   __bits16 expPostNorm;
-   _Bool norm, expSigOvf0, expSigOvf2;
-#ifndef NO_ROUNDING
-   _Bool sticky, guard, round, expSigOvf1;
-#endif
-   __bits64 expSig, expSigPostRound, zSig;
-   __bits8 excPostNorm;
+      expSigPostRound = expSig + round;
+      if((__exp_bits + __frac_bits) == 63)
+      {
+         expSigOvf1 = round & (expSig == ((__bits64)-1));
+      }
+      else
+      {
+         expSigOvf1 = round & (expSigPostRound >> (__exp_bits + __frac_bits + 1));
+      }
+      expSigOvf2 = expSigOvf0 ^ expSigOvf1;
+   }
+   else
+   {
+      expSigPostRound = expSig;
+      expSigOvf2 = expSigOvf0;
+   }
 
-   __bits64 sigProdHigh_52, sigProdLow_54, sigProdExtHigh_52, sigProdExtLow_54;
-   aSig = (aSig | 0x0010000000000000);
-   bSig = (bSig | 0x0010000000000000);
-
-#if 1
-   // start multi-part multiplication 53x53=>106
-   // karatsuba
-   // u = 2^27*u1+u0; //53bit -> u1=(53-K)bit u0=Kbit
-   // v = 2^27*v1+v0; //53bit -> v1=(53-K)bit v0=Kbit
-   // k0=u1*v1; // k0=2*(53-K)bit
-   // k1=u0*v0; // k1=2*Kbit
-   // k3=u0+u1; // k3=1+(max(K,53-K))bit
-   // k4=v0+v1; // k4=1+(max(K,53-K))bit
-   // k5=k3*k4; // k5=2*(1+(max(K,53-K)))bit
-   // u*v = 2^54*k0 + k1    + 2^27*(k5 - k0 - k1);
-   //       ^105:2*K   ^2*K-1:0   ^2*(1+(max(K,53-K)))-1:K
-   // possible values for K=[31:22]
-#define KARATSUBA_BITS 23
-   __bits64 u1, u0, v1, v0, k0, k1, k2, k3, k4, k5, k6, k7, res_2K_0, res_106_2K;
-   u0 = aSig & ((1ULL << KARATSUBA_BITS) - 1);
-   u1 = (aSig >> KARATSUBA_BITS) & ((1ULL << (53 - KARATSUBA_BITS)) - 1);
-   v0 = bSig & ((1ULL << KARATSUBA_BITS) - 1);
-   v1 = (bSig >> KARATSUBA_BITS) & ((1ULL << (53 - KARATSUBA_BITS)) - 1);
-   k0 = u1 * v1;
-   k1 = u0 * v0;
-   k3 = u0 + u1;
-   k4 = v0 + v1;
-   k5 = k3 * k4;
-   k6 = k5 - k0 - k1;
-   k7 = (k1 >> KARATSUBA_BITS) + k6;
-   res_2K_0 = (k1 & ((1ULL << KARATSUBA_BITS) - 1)) | ((k7 & ((1ULL << KARATSUBA_BITS) - 1)) << KARATSUBA_BITS);
-   res_106_2K = (k7 >> KARATSUBA_BITS) + k0;
-#if KARATSUBA_BITS == 27
-   sigProdLow_54 = res_2K_0;
-   sigProdHigh_52 = res_106_2K;
-#elif KARATSUBA_BITS < 27
-   sigProdLow_54 = ((res_106_2K & ((1ULL << (54 - 2 * KARATSUBA_BITS)) - 1)) << (2 * KARATSUBA_BITS)) | res_2K_0;
-   sigProdHigh_52 = res_106_2K >> (54 - 2 * KARATSUBA_BITS);
-#else
-   sigProdLow_54 = res_2K_0 & ((1ULL << 54) - 1);
-   sigProdHigh_52 = (res_106_2K << (2 * KARATSUBA_BITS - 54)) | ((res_2K_0 >> 54) & ((1ULL << (2 * KARATSUBA_BITS - 54)) - 1));
-#endif
-#else
-   __bits64 sigProdHigh, sigProdLow;
-   sigProdHigh = _umulh64(aSig, bSig);
-   sigProdLow = _umul64(aSig, bSig);
-   sigProdLow_54 = sigProdLow & ((1ULL << 54) - 1);
-   sigProdHigh_52 = ((sigProdHigh << 10) | ((sigProdLow >> 54) & ((1ULL << 10) - 1))) & ((1ULL << 52) - 1);
-#endif
-   norm = (sigProdHigh_52 >> (51)) & 1;
-   expPostNorm = expSum + norm;
-   sigProdExtHigh_52 = (norm ? (sigProdHigh_52 << 1) | ((sigProdLow_54 >> 53) & 1) : (sigProdHigh_52 << 2) | ((sigProdLow_54 >> 52) & 3)) & ((1ULL << 52) - 1);
-   sigProdExtLow_54 = (norm ? sigProdLow_54 << 1 : sigProdLow_54 << 2) & ((1ULL << 54) - 1);
-   expSig = (((__bits64)expPostNorm) << 52) | sigProdExtHigh_52;
-   expSigOvf0 = (expPostNorm >> 12) & 1;
-#ifndef NO_ROUNDING
-   sticky = (sigProdExtLow_54 >> 53) & 1;
-   guard = (sigProdExtLow_54 & ((1ULL << 53) - 1)) != 0;
-   round = sticky & ((guard & !(sigProdExtHigh_52 & 1)) | (sigProdExtHigh_52 & 1));
-
-   expSigPostRound = expSig + round;
-   expSigOvf1 = round & (expSig == ((__bits64)-1));
-   expSigOvf2 = expSigOvf0 ^ expSigOvf1;
-#else
-   expSigPostRound = expSig;
-   expSigOvf2 = expSigOvf0;
-#endif
-   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> 63) & 1);
-   zSig = (((__bits64)zSign) << 63) | (expSigPostRound & ((1ULL << 63) - 1));
+   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> (__exp_bits + __frac_bits)) & 1) | ((expSigPostRound >> __frac_bits) & ((1ULL << __exp_bits) - 1)) == ((1ULL << __exp_bits) - 1);
+   zSig = (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (expSigPostRound & ((1ULL << (__exp_bits + __frac_bits)) - 1));
    if(z_c == FP_CLS_NORMAL)
-      z_c = excPostNorm == 0 ? FP_CLS_NORMAL : (excPostNorm == 1 ? FP_CLS_INF : FP_CLS_ZERO);
+      z_c = ((excPostNorm == 1) << 1) | (excPostNorm == 0);
 
    if(z_c == FP_CLS_NORMAL)
       return zSig;
    else if(z_c == FP_CLS_ZERO)
-      return __packFloat64(zSign, 0, 0);
-   else if(z_c == FP_CLS_NAN)
-      return __float64_default_nan;
+      return ((__bits64)zSign) << (__exp_bits + __frac_bits); // __packFloat64(zSign, 0, 0, __exp_bits, __frac_bits);
+   else if(z_c == FP_CLS_NAN && __nan)
+      return __float_nan(__exp_bits, __frac_bits, __sign);
    else
-      return __packFloat64(zSign, 0x7FF, 0);
-
-#else
-
-   __bits64 zSig0, zSig1;
-   zExp = aExp + bExp - 0x3FF;
-   aSig = (aSig | LIT64(0x0010000000000000)) << 10;
-   bSig = (bSig | LIT64(0x0010000000000000)) << 11;
-   __mul64To128(aSig, bSig, &zSig0, &zSig1);
-   zSig0 |= (zSig1 != 0);
-   if(0 <= (__sbits64)(zSig0 << 1))
-   {
-      zSig0 <<= 1;
-      --zExp;
-   }
-   return __roundAndPackFloat64(zSign, zExp, zSig0);
-#endif
+      return (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((1ULL << __exp_bits) - 1) << __frac_bits) | (__nan ? 0ULL : ((1ULL << __frac_bits) - 1));
 }
 
 /*----------------------------------------------------------------------------
@@ -4653,325 +4171,290 @@ static __FORCE_INLINE __float64 __float64_mul(__float64 a, __float64 b)
 | the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-#ifndef UNROLL_FACTOR_F64_DIV
-#define UNROLL_FACTOR_F64_DIV 1
-#endif
-
-#define LOOP_BODY_F64_DIV(z, n, data)                  \
-   current_sel = (((current >> 51) & 15) << 1) | MsbB; \
-   q_i0 = (0xF1FFFF6C >> current_sel) & 1;             \
-   q_i1 = (0xFE00FFD0 >> current_sel) & 1;             \
-   q_i2 = SELECT_BIT(current_sel, 4);                  \
-   nq_i2 = !q_i2;                                      \
-   /*q_i = tableR4[current_sel];*/                     \
-   q_i = (q_i2 << 2) | (q_i1 << 1) | q_i0;             \
-   positive |= (q_i1 << 1) | q_i0;                     \
-   positive <<= 2;                                     \
-   negative |= q_i2 << 1;                              \
-   negative <<= 2;                                     \
-   switch(q_i)                                         \
-   {                                                   \
-      case 1:                                          \
-         w = nbSig;                                    \
-         break;                                        \
-      case 7:                                          \
-         w = bSig;                                     \
-         break;                                        \
-      case 2:                                          \
-         w = nbSigx2;                                  \
-         break;                                        \
-      case 6:                                          \
-         w = bSigx2;                                   \
-         break;                                        \
-      case 3:                                          \
-         w = nbSigx3;                                  \
-         break;                                        \
-      case 5:                                          \
-         w = bSigx3;                                   \
-         break;                                        \
-      default: /*case 0: case 4:*/                     \
-         w = 0;                                        \
-         break;                                        \
-   }                                                   \
-   current = (current << 1) + w;                       \
-   BIT_RESIZE(current, 54);                            \
+#define LOOP_BODY_F64_DIV(z, n, data)                               \
+   current_sel = (((current >> (__frac_p3 - 4)) & 15) << 1) | MsbB; \
+   q_i0 = (0xF1FFFF6C >> current_sel) & 1;                          \
+   q_i1 = (0xFE00FFD0 >> current_sel) & 1;                          \
+   q_i2 = SELECT_BIT(current_sel, 4);                               \
+   nq_i2 = !q_i2;                                                   \
+   /*q_i = tableR4[current_sel];*/                                  \
+   q_i = (q_i2 << 2) | (q_i1 << 1) | q_i0;                          \
+   positive |= (q_i1 << 1) | q_i0;                                  \
+   positive <<= 2;                                                  \
+   negative |= q_i2 << 1;                                           \
+   negative <<= 2;                                                  \
+   switch(q_i)                                                      \
+   {                                                                \
+      case 1:                                                       \
+         w = nbSig;                                                 \
+         break;                                                     \
+      case 7:                                                       \
+         w = bSig;                                                  \
+         break;                                                     \
+      case 2:                                                       \
+         w = nbSigx2;                                               \
+         break;                                                     \
+      case 6:                                                       \
+         w = bSigx2;                                                \
+         break;                                                     \
+      case 3:                                                       \
+         w = nbSigx3;                                               \
+         break;                                                     \
+      case 5:                                                       \
+         w = bSigx3;                                                \
+         break;                                                     \
+      default: /*case 0: case 4:*/                                  \
+         w = 0;                                                     \
+         break;                                                     \
+   }                                                                \
+   current = (current << 1) + w;                                    \
+   current = current & ((1ULL << (__frac_p3 - 1)) - 1);             \
    current <<= 1;
 
-static __FORCE_INLINE __float64 __float64_divSRT4(__float64 a, __float64 b)
+#define FLOAT64_SRT4_UNROLL 1
+
+__float64 __float64_divSRT4(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
+   VOLATILE_DEF __bits8 a_c, b_c, z_c;
+   VOLATILE_DEF _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
    VOLATILE_DEF _Bool aSign, bSign, zSign, q_i2, q_i1, q_i0, nq_i2;
-   VOLATILE_DEF _Bool MsbB = SELECT_BIT(b, 51), correction;
-   VOLATILE_DEF __int16 aExp, bExp, zExp;
+   VOLATILE_DEF _Bool MsbB = (b >> (__frac_bits - 1)) & 1, correction;
+   VOLATILE_DEF __int32 aExp, bExp, zExp;
    VOLATILE_DEF __bits64 aSig, bSig, nbSig, bSigx2, nbSigx2, zSig1, zSig0;
    VOLATILE_DEF __bits64 zExpSig;
    VOLATILE_DEF __bits64 bSigx3, nbSigx3, current, w, positive = 0, negative = 0;
    VOLATILE_DEF __bits8 current_sel, q_i, index;
-#ifndef NO_ROUNDING
    VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, round;
-#endif
+   VOLATILE_DEF _Bool MSB1zExp, MSB0zExp, MSBzExp, ovfCond;
+   VOLATILE_DEF __bits8 __frac_p3, __div_it, __div_bits, __div_waste;
+   VOLATILE_DEF _Bool __frac_odd;
+   __frac_p3 = __rounding ? (__frac_bits + 3) : (__frac_bits + 1);
+   __frac_odd = __frac_p3 & 1;
+   __div_it = __frac_p3 / (FLOAT64_SRT4_UNROLL * 2);
+   __div_it = (__frac_p3 % (FLOAT64_SRT4_UNROLL * 2)) != 0 ? (__div_it + 1) : __div_it;
+   __div_bits = __div_it * FLOAT64_SRT4_UNROLL * 2;
+   __div_waste = __div_bits - __frac_p3 - __frac_odd;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
-   bSig = __extractFloat64Frac(b);
-   bExp = __extractFloat64Exp(b);
-   bSign = __extractFloat64Sign(b);
+   if(__sign == 1)
+   {
+      // Negative numbers division result is always out of negative numbers domain
+      return __nan ? __float_nan(__exp_bits, __frac_bits, __sign) : 0ULL;
+   }
+
+   aSig = __extractFloat64Frac(a, __frac_bits);
+   aExp = __extractFloat64Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
+   bSig = __extractFloat64Frac(b, __frac_bits);
+   bExp = __extractFloat64Exp(b, __exp_bits, __frac_bits);
+   bSign = __extractFloat64Sign(b, __exp_bits, __frac_bits, __sign);
    zSign = aSign ^ bSign;
    _Bool aExp_null = aExp == 0;
    _Bool bExp_null = bExp == 0;
-   __bits8 a_c, b_c, z_c;
-   _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
-#ifndef NO_SUBNORMALS
-   a_c_zero = aExp_null && aSig == 0;
-#else
-   a_c_zero = aExp_null;
-#endif
-   a_c_inf = aExp == 0x7FF && aSig == 0;
-   a_c_nan = aExp == 0x7FF && aSig != 0;
-   a_c_normal = aExp != 0x7FF && !a_c_zero;
-   a_c = ((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) | ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+   _Bool aExpMax = aExp == ((1ULL << __exp_bits) - 1);
+   _Bool bExpMax = bExp == ((1ULL << __exp_bits) - 1);
+   _Bool aSig_null = aSig == 0;
+   _Bool bSig_null = bSig == 0;
 
-#ifndef NO_SUBNORMALS
-   b_c_zero = bExp_null && bSig == 0;
-#else
-   b_c_zero = bExp_null;
-#endif
-   b_c_inf = bExp == 0x7FF && bSig == 0;
-   b_c_nan = bExp == 0x7FF && bSig != 0;
-   b_c_normal = bExp != 0x7FF && !b_c_zero;
-   b_c = ((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) | ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
+   a_c_zero = aExp_null && aSig_null;
+   a_c_zero = __subnorm ? aExp_null : a_c_zero;
+   a_c_inf = aExpMax && aSig_null;
+   a_c_inf = __nan ? a_c_inf : 0;
+   a_c_nan = aExpMax && !aSig_null;
+   a_c_nan = __nan ? a_c_nan : 0;
+   a_c_normal = !aExpMax && !a_c_zero;
+   a_c_normal = __nan ? a_c_normal : !a_c_zero;
+   a_c = /*((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) |*/ ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+
+   b_c_zero = bExp_null && bSig_null;
+   b_c_zero = __subnorm ? bExp_null : b_c_zero;
+   b_c_inf = bExpMax && bSig_null;
+   b_c_inf = __nan ? b_c_inf : 0;
+   b_c_nan = bExpMax && !bSig_null;
+   b_c_nan = __nan ? b_c_nan : 0;
+   b_c_normal = !bExpMax && !b_c_zero;
+   b_c_normal = __nan ? b_c_normal : !b_c_zero;
+   b_c = /*((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) |*/ ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
 
    z_c = ((a_c >> 1 | (1 & (~(b_c >> 1)) & (~(b_c & 1))) | (1 & (b_c >> 1) & b_c)) << 1) |
          ((1 & (a_c >> 1) & a_c) | (1 & (b_c >> 1) & b_c) | (1 & (a_c >> 1) & (b_c >> 1)) | (1 & a_c & b_c) | (1 & (~(a_c >> 1)) & (~(a_c & 1)) & (~(b_c >> 1)) & (~(b_c & 1))));
 
-#ifndef NO_SUBNORMALS
-   if(aExp_null && !a_c_zero)
+   if(__subnorm)
    {
-      unsigned long long int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift(52, aSig, subnormal_lz, mshifted);
-      aExp = -subnormal_lz;
-      aSig = SELECT_RANGE(mshifted, 50, 0) << 1;
+      if(aExp_null && !aSig_null)
+      {
+         unsigned long long int subnormal_lz, mshifted;
+         count_leading_zero_lshift_runtime_macro(__frac_bits, aSig, subnormal_lz, mshifted);
+         aExp = -subnormal_lz;
+         aSig = (mshifted << 1) & ((1ULL << __frac_bits) - 1);
+      }
+      if(bExp_null && !bSig_null)
+      {
+         unsigned long long int subnormal_lz, mshifted;
+         count_leading_zero_lshift_runtime_macro(__frac_bits, bSig, subnormal_lz, mshifted);
+         bExp = -subnormal_lz;
+         bSig = (mshifted << 1) & ((1ULL << __frac_bits) - 1);
+      }
    }
-   if(bExp_null && !b_c_zero)
-   {
-      unsigned long long int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift(52, bSig, subnormal_lz, mshifted);
-      bExp = -subnormal_lz;
-      bSig = SELECT_RANGE(mshifted, 50, 0) << 1;
-   }
-#endif
-   aSig = aSig | LIT64(0x0010000000000000);
-   bSig = bSig | LIT64(0x0010000000000000);
+
+   aSig = aSig | (1ULL << __frac_bits);
+   bSig = bSig | (1ULL << __frac_bits);
    nbSig = -bSig;
-   bSigx2 = bSig * 2;
+   bSigx2 = bSig << 1;
    nbSigx2 = -bSigx2;
    bSigx3 = bSigx2 + bSig;
    nbSigx3 = -bSigx3;
    current = aSig;
-   for(index = 0; index < (28 / UNROLL_FACTOR_F64_DIV); ++index)
+   for(index = 0; index < __div_it; ++index)
    {
-      BOOST_PP_REPEAT(UNROLL_FACTOR_F64_DIV, LOOP_BODY_F64_DIV, index);
+      BOOST_PP_REPEAT(FLOAT64_SRT4_UNROLL, LOOP_BODY_F64_DIV, index);
    }
-   BOOST_PP_REPEAT(BOOST_PP_MOD(28, UNROLL_FACTOR_F64_DIV), LOOP_BODY_F64_DIV, index);
-   if(current != 0)
+   if(__div_waste > 1)
    {
-      positive |= 2;
-      negative |= SELECT_BIT(current, 54) << 1;
+      positive >>= __div_waste;
+      negative >>= __div_waste;
    }
+
+   positive |= (current != 0) << 1;
+   negative |= (current >> (__frac_p3 - 2)) & 2;
+
    negative <<= 1;
-   BIT_RESIZE(negative, 58);
+   negative = negative & ((1ULL << (__frac_p3 + 2)) - 1);
    zSig0 = positive - negative;
    zSig0 >>= 1;
-   _Bool ZSig0LSB = SELECT_BIT(zSig0, 0);
-   zSig0 = (zSig0 >> 1) | ZSig0LSB;
-   BIT_RESIZE(zSig0, 56);
-   correction = SELECT_BIT(zSig0, 55);
-   if(correction)
-      zSig1 = SELECT_RANGE(zSig0, 54, 2) << 1 | (SELECT_BIT(zSig0, 1)) | (SELECT_BIT(zSig0, 0));
+   zSig0 = (__frac_odd) ? ((zSig0 >> 1) | (zSig0 & 1)) : zSig0;
+   zSig0 = zSig0 & ((1ULL << (__frac_p3 + 1)) - 1);
+   correction = (zSig0 >> __frac_p3) & 1;
+   zSig1 = (zSig0 >> correction) | (zSig0 & 1);
+   zSig1 = zSig1 & ((1ULL << (__frac_p3 - 1)) - 1);
+   if(__rounding)
+   {
+      LSB_bit = SELECT_BIT(zSig1, 2);
+      Guard_bit = SELECT_BIT(zSig1, 1);
+      Round_bit = SELECT_BIT(zSig1, 0);
+      round = Guard_bit & (LSB_bit | Round_bit);
+   }
+
+   if(__exp_bias & 1)
+   {
+      zExp = aExp - bExp + ((~__exp_bias) | correction); // ~__exp_bias = -1 - __exp_bias
+   }
    else
-      zSig1 = SELECT_RANGE(zSig0, 53, 0);
-#ifndef NO_ROUNDING
-   LSB_bit = SELECT_BIT(zSig1, 2);
-   Guard_bit = SELECT_BIT(zSig1, 1);
-   Round_bit = SELECT_BIT(zSig1, 0);
-   round = Guard_bit & (LSB_bit | Round_bit);
-#endif
-   zExp = aExp - bExp + (0x3FE | correction);
-   _Bool MSB1zExp = SELECT_BIT(zExp, 12);
-   _Bool MSB0zExp = SELECT_BIT(zExp, 11);
-   BIT_RESIZE(zExp, 12);
-#ifndef NO_ROUNDING
-   zExpSig = ((((__bits64)zExp) << 52) | (zSig1 >> 2)) + round;
-#else
-   zExpSig = ((((__bits64)zExp) << 52) | (zSig1 >> 2));
-#endif
-   _Bool MSBzExp = SELECT_BIT(zExpSig, 63);
-   _Bool ovfCond = ((((MSB0zExp & ((~MSBzExp) & 1)) & 1) ^ MSB1zExp) & 1);
+   {
+      zExp = aExp - bExp - __exp_bias - !correction;
+   }
+   MSB1zExp = zExp >> (__exp_bits + 1);
+   MSB0zExp = zExp >> __exp_bits;
+   zExp = zExp & ((1ULL << (__exp_bits + 1)) - 1);
+   if(__rounding)
+   {
+      zExpSig = ((((__bits64)zExp) << __frac_bits) | (zSig1 >> 2)) + round;
+   }
+   else
+   {
+      zExpSig = (((__bits64)zExp) << __frac_bits) | zSig1;
+   }
+   MSBzExp = zExpSig >> (__exp_bits + __frac_bits);
+   ovfCond = ((((MSB0zExp & ((~MSBzExp) & 1)) & 1) ^ MSB1zExp) & 1);
    if(z_c == FP_CLS_NORMAL)
    {
       if(ovfCond)
-         return __packFloat64(zSign, 0, 0);
-      else if(SELECT_BIT(zExpSig, 63) || zExp == 2047)
-         return __packFloat64(zSign, 0x7FF, 0);
+         return ((__bits64)zSign) << ((__exp_bits + __frac_bits));
+      else if(MSBzExp || ((zExp == ((1ULL << __exp_bits) - 1)) && __nan))
+         return (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((1ULL << __exp_bits) - 1) << __frac_bits) | (__nan ? 0ULL : ((1ULL << __frac_bits) - 1));
       else
-         return (((__bits64)zSign) << 63) | SELECT_RANGE(zExpSig, 62, 0);
+         return (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (zExpSig & ((1ULL << (__exp_bits + __frac_bits)) - 1));
    }
    else if(z_c == FP_CLS_ZERO)
-      return __packFloat64(zSign, 0, 0);
+      return ((__bits64)zSign) << ((__exp_bits + __frac_bits));
    else if(z_c == FP_CLS_NAN)
-      return ((__bits64)((a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero))) << 63 | 0x7FF8000000000000 | (a_c_nan ? aSig : (b_c_nan ? bSig : 0));
+      return (((__bits64)(a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero)) << (__exp_bits + __frac_bits)) |
+             (__nan ? ((((1ULL << __exp_bits) - 1) << __frac_bits) | (1ULL << (__frac_bits - 1)) | (a_c_nan ? aSig : (b_c_nan ? bSig : 0))) : (0ULL));
    else
-      return __packFloat64(zSign, 0x7FF, 0);
+      return (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((1ULL << __exp_bits) - 1) << __frac_bits) | (__nan ? 0ULL : ((1ULL << __frac_bits) - 1));
 }
 
-static __FORCE_INLINE __float64 __float64_divG(__float64 a, __float64 b)
+__float64 __float64_divG(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-   __flag aSign, bSign, zSign;
-   __int16 aExp, bExp, zExp;
-   __bits64 aSig, bSig, zSig;
-   __bits64 term0, term1;
-   __bits64 c5, c4, c3, c2, c1, c0, shft, p1, bSigsqr1, bSigsqr2, p2, p3, p, ga0, gb0, ga1, gb1, rem0, rem, rnd;
+   VOLATILE_DEF __bits8 a_c, b_c, z_c;
+   VOLATILE_DEF _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
+   VOLATILE_DEF __flag aSign, bSign, zSign;
+   VOLATILE_DEF __int16 aExp, bExp, zExp;
+   VOLATILE_DEF __bits64 aSig, bSig, aSigInitial, bSigInitial, zSig;
+   VOLATILE_DEF __bits64 term0, term1;
+   VOLATILE_DEF __bits64 c5, c4, c3, c2, c1, c0, shft, p1, bSigsqr1, bSigsqr2, p2, p3, p, ga0, gb0, ga1, gb1, rem0, rem, rnd;
 
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
-   bSig = __extractFloat64Frac(b);
-   bExp = __extractFloat64Exp(b);
-   bSign = __extractFloat64Sign(b);
+   if(__sign == 1)
+   {
+      // Negative numbers division result is always out of negative numbers domain
+      return __nan ? __float_nan(__exp_bits, __frac_bits, __sign) : 0ULL;
+   }
+
+   aSig = __extractFloat64Frac(a, __frac_bits);
+   aExp = __extractFloat64Exp(a, __exp_bits, __frac_bits);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
+   bSig = __extractFloat64Frac(b, __frac_bits);
+   bExp = __extractFloat64Exp(b, __exp_bits, __frac_bits);
+   bSign = __extractFloat64Sign(b, __exp_bits, __frac_bits, __sign);
    zSign = aSign ^ bSign;
-#ifndef DEFAULT
-   __bits8 a_c, b_c, z_c;
    _Bool aExp_null = aExp == 0;
    _Bool bExp_null = bExp == 0;
-   _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
-#ifndef NO_SUBNORMALS
-   a_c_zero = aExp_null && aSig == 0;
-#else
-   a_c_zero = aExp_null;
-#endif
-   a_c_inf = aExp == 0x7FF && aSig == 0;
-   a_c_nan = aExp == 0x7FF && aSig != 0;
-   a_c_normal = aExp != 0x7FF && !a_c_zero;
-   a_c = ((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) | ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+   _Bool aExpMax = aExp == ((1ULL << __exp_bits) - 1);
+   _Bool bExpMax = bExp == ((1ULL << __exp_bits) - 1);
+   _Bool aSig_null = aSig == 0;
+   _Bool bSig_null = bSig == 0;
 
-#ifndef NO_SUBNORMALS
-   b_c_zero = bExp_null && bSig == 0;
-#else
-   b_c_zero = bExp_null;
-#endif
-   b_c_inf = bExp == 0x7FF && bSig == 0;
-   b_c_nan = bExp == 0x7FF && bSig != 0;
-   b_c_normal = bExp != 0x7FF && !b_c_zero;
-   b_c = ((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) | ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
+   a_c_zero = aExp_null && aSig_null;
+   a_c_zero = __subnorm ? a_c_zero : aExp_null;
+   a_c_inf = aExpMax && aSig_null;
+   a_c_inf = __nan ? a_c_inf : 0;
+   a_c_nan = aExpMax && !aSig_null;
+   a_c_nan = __nan ? a_c_nan : 0;
+   a_c_normal = !aExpMax && !a_c_zero;
+   a_c_normal = __nan ? a_c_normal : !a_c_zero;
+   a_c = /*((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) |*/ ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
+
+   b_c_zero = bExp_null && bSig_null;
+   b_c_zero = __subnorm ? b_c_zero : bExp_null;
+   b_c_inf = bExpMax && bSig_null;
+   b_c_inf = __nan ? b_c_inf : 0;
+   b_c_nan = bExpMax && !bSig_null;
+   b_c_nan = __nan ? b_c_nan : 0;
+   b_c_normal = !bExpMax && !b_c_zero;
+   b_c_normal = __nan ? b_c_normal : !b_c_zero;
+   b_c = /*((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) |*/ ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
 
    z_c = ((a_c >> 1 | (1 & (~(b_c >> 1)) & (~(b_c & 1))) | (1 & (b_c >> 1) & b_c)) << 1) |
          ((1 & (a_c >> 1) & a_c) | (1 & (b_c >> 1) & b_c) | (1 & (a_c >> 1) & (b_c >> 1)) | (1 & a_c & b_c) | (1 & (~(a_c >> 1)) & (~(a_c & 1)) & (~(b_c >> 1)) & (~(b_c & 1))));
 
-#ifndef NO_SUBNORMALS
-   if(aExp_null && !a_c_zero)
+   if(__subnorm)
    {
-      unsigned long long int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift(52, aSig, subnormal_lz, mshifted);
-      aExp = -subnormal_lz;
-      aSig = SELECT_RANGE(mshifted, 50, 0) << 1;
-   }
-   if(bExp_null && !b_c_zero)
-   {
-      unsigned long long int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift(52, bSig, subnormal_lz, mshifted);
-      bExp = -subnormal_lz;
-      bSig = SELECT_RANGE(mshifted, 50, 0) << 1;
-   }
-#endif
-#else
-
-   if(aExp == 0x7FF || bExp == 0x7FF || bExp == 0 || aExp == 0)
-   {
-      if(aExp == 0x7FF)
+      if(aExp_null && !a_c_zero)
       {
-         if(aSig)
-            return __propagateFloat64NaN(a, b);
-         if(bExp == 0x7FF)
-         {
-            if(bSig)
-               return __propagateFloat64NaN(a, b);
-            __float_raise(float_flag_invalid);
-            return __float64_default_nan;
-         }
-         return __packFloat64(zSign, 0x7FF, 0);
+         unsigned long long int subnormal_lz, mshifted;
+         count_leading_zero_lshift_runtime_macro(__frac_bits, aSig, subnormal_lz, mshifted);
+         aExp = -subnormal_lz;
+         aSig = (mshifted << 1) & ((1ULL << __frac_bits) - 1);
       }
-      if(bExp == 0x7FF)
+      if(bExp_null && !b_c_zero)
       {
-         if(bSig)
-            return __propagateFloat64NaN(a, b);
-         return __packFloat64(zSign, 0, 0);
-      }
-      if(bExp == 0)
-      {
-         if(bSig == 0)
-         {
-            if((aExp | aSig) == 0)
-            {
-               __float_raise(float_flag_invalid);
-               return __float64_default_nan;
-            }
-            __float_raise(float_flag_divbyzero);
-            return __packFloat64(zSign, 0x7FF, 0);
-         }
-#ifdef NO_SUBNORMALS
-         return __packFloat64(zSign, 0x7FF, 0);
-#else
-         __normalizeFloat64Subnormal(bSig, &bExp, &bSig);
-#endif
-      }
-      if(aExp == 0)
-      {
-#ifdef NO_SUBNORMALS
-         return __packFloat64(zSign, 0, 0);
-#else
-         if(aSig == 0)
-            return __packFloat64(zSign, 0, 0);
-         __normalizeFloat64Subnormal(aSig, &aExp, &aSig);
-#endif
+         unsigned long long int subnormal_lz, mshifted;
+         count_leading_zero_lshift_runtime_macro(__frac_bits, bSig, subnormal_lz, mshifted);
+         bExp = -subnormal_lz;
+         bSig = (mshifted << 1) & ((1ULL << __frac_bits) - 1);
       }
    }
-#endif
-#ifndef DEFAULT
+   aSigInitial = aSig;
+   bSigInitial = bSig;
    GOLDSCHMIDT_MANTISSA_DIVISION_64();
    if(z_c == FP_CLS_NORMAL)
-      return __roundAndPackFloat64(zSign, zExp, zSig);
+      return __roundAndPackFloat64(zSign, zExp, zSig, __exp_bits, __frac_bits, __nan, __subnorm);
    else if(z_c == FP_CLS_ZERO)
-      return __packFloat64(zSign, 0, 0);
+      return ((__bits64)zSign) << ((__exp_bits + __frac_bits));
    else if(z_c == FP_CLS_NAN)
-      return ((__bits64)((a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero))) << 63 | 0x7FF8000000000000 | (a_c_nan ? aSig : (b_c_nan ? bSig : 0));
+      return (((__bits64)(a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero)) << (__exp_bits + __frac_bits)) |
+             (__nan ? ((((1ULL << __exp_bits) - 1) << __frac_bits) | (1ULL << (__frac_bits - 1)) | (a_c_nan ? aSigInitial : (b_c_nan ? bSigInitial : 0))) : (0ULL));
    else
-      return __packFloat64(zSign, 0x7FF, 0);
-#else
-   /*On this part it just comments out old code*/
-   zExp = aExp - bExp + 0x3FD;
-   aSig = (aSig | LIT64(0x0010000000000000)) << 10;
-   bSig = (bSig | LIT64(0x0010000000000000)) << 11;
-   if(bSig <= (aSig + aSig))
-   {
-      aSig >>= 1;
-      ++zExp;
-   }
-   zSig = __estimateDiv128To64(aSig, 0, bSig);
-   if((zSig & 0x1FF) <= 2)
-   {
-      __bits64 rem0, rem1;
-      __mul64To128(bSig, zSig, &term0, &term1);
-      __sub128(aSig, 0, term0, term1, &rem0, &rem1);
-      while((__sbits64)rem0 < 0)
-      {
-         --zSig;
-         __add128(rem0, rem1, 0, bSig, &rem0, &rem1);
-      }
-      zSig |= (rem1 != 0);
-   }
-   return __roundAndPackFloat64(zSign, zExp, zSig);
-
-#endif
+      return (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((1ULL << __exp_bits) - 1) << __frac_bits) | (__nan ? 0ULL : ((1ULL << __frac_bits) - 1));
 }
 
 /*----------------------------------------------------------------------------
@@ -4979,161 +4462,161 @@ static __FORCE_INLINE __float64 __float64_divG(__float64 a, __float64 b)
 | with respect to the corresponding value `b'.  The operation is performed
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
-
-static __FORCE_INLINE __float64 __float64_rem(__float64 a, __float64 b)
-{
-   __flag aSign, bSign, zSign;
-   __int16 aExp, bExp, expDiff;
-   __bits64 aSig, bSig;
-   __bits64 q, alternateASig;
-   __sbits64 sigMean;
-
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
-   bSig = __extractFloat64Frac(b);
-   bExp = __extractFloat64Exp(b);
-   bSign = __extractFloat64Sign(b);
-   if(aExp == 0x7FF)
-   {
-      if(aSig || ((bExp == 0x7FF) && bSig))
-      {
-         return __propagateFloat64NaN(a, b);
-      }
-      __float_raise(float_flag_invalid);
-      return __float64_default_nan;
-   }
-   if(bExp == 0x7FF)
-   {
-      if(bSig)
-         return __propagateFloat64NaN(a, b);
-      return a;
-   }
-   if(bExp == 0)
-   {
-      if(bSig == 0)
-      {
-         __float_raise(float_flag_invalid);
-         return __float64_default_nan;
-      }
-      __normalizeFloat64Subnormal(bSig, &bExp, &bSig);
-   }
-   if(aExp == 0)
-   {
-      if(aSig == 0)
-         return a;
-      __normalizeFloat64Subnormal(aSig, &aExp, &aSig);
-   }
-   expDiff = aExp - bExp;
-   aSig = (aSig | LIT64(0x0010000000000000)) << 11;
-   bSig = (bSig | LIT64(0x0010000000000000)) << 11;
-   if(expDiff < 0)
-   {
-      if(expDiff < -1)
-         return a;
-      aSig >>= 1;
-   }
-   q = (bSig <= aSig);
-   if(q)
-      aSig -= bSig;
-   expDiff -= 64;
-   while(0 < expDiff)
-   {
-      q = __estimateDiv128To64(aSig, 0, bSig);
-      q = (2 < q) ? q - 2 : 0;
-      aSig = -((bSig >> 2) * q);
-      expDiff -= 62;
-   }
-   expDiff += 64;
-   if(0 < expDiff)
-   {
-      q = __estimateDiv128To64(aSig, 0, bSig);
-      q = (2 < q) ? q - 2 : 0;
-      q >>= 64 - expDiff;
-      bSig >>= 2;
-      aSig = ((aSig >> 1) << (expDiff - 1)) - bSig * q;
-   }
-   else
-   {
-      aSig >>= 2;
-      bSig >>= 2;
-   }
-   do
-   {
-      alternateASig = aSig;
-      ++q;
-      aSig -= bSig;
-   } while(0 <= (__sbits64)aSig);
-   sigMean = aSig + alternateASig;
-   if((sigMean < 0) || ((sigMean == 0) && (q & 1)))
-   {
-      aSig = alternateASig;
-   }
-   zSign = ((__sbits64)aSig < 0);
-   if(zSign)
-      aSig = -aSig;
-   return __normalizeRoundAndPackFloat64(aSign ^ zSign, bExp, aSig);
-}
+///   UNUSED
+//    __float64 __float64_rem_ieee(__float64 a, __float64 b)
+//    {
+//       __flag aSign, bSign, zSign;
+//       __int16 aExp, bExp, expDiff;
+//       __bits64 aSig, bSig;
+//       __bits64 q, alternateASig;
+//       __sbits64 sigMean;
+//
+//       aSig = __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC);
+//       aExp = __extractFloat64Exp(a, IEEE64_EXTRACT_EXP);
+//       aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
+//       bSig = __extractFloat64Frac(b, IEEE64_EXTRACT_FRAC);
+//       bExp = __extractFloat64Exp(b, IEEE64_EXTRACT_EXP);
+//       bSign = __extractFloat64Sign(b, IEEE64_EXTRACT_SIGN);
+//       if(aExp == 0x7FF)
+//       {
+//          if(aSig || ((bExp == 0x7FF) && bSig))
+//          {
+//             return __propagateFloat64NaN_ieee(a, b);
+//          }
+//          __float_raise(float_flag_invalid);
+//          return __float64_default_nan;
+//       }
+//       if(bExp == 0x7FF)
+//       {
+//          if(bSig)
+//             return __propagateFloat64NaN_ieee(a, b);
+//          return a;
+//       }
+//       if(bExp == 0)
+//       {
+//          if(bSig == 0)
+//          {
+//             __float_raise(float_flag_invalid);
+//             return __float64_default_nan;
+//          }
+//          __normalizeFloat64Subnormal(bSig, bExp, bSig, IEEE64_FRAC_BITS);
+//       }
+//       if(aExp == 0)
+//       {
+//          if(aSig == 0)
+//             return a;
+//          __normalizeFloat64Subnormal(aSig, aExp, aSig, IEEE64_FRAC_BITS);
+//       }
+//       expDiff = aExp - bExp;
+//       aSig = (aSig | LIT64(0x0010000000000000)) << 11;
+//       bSig = (bSig | LIT64(0x0010000000000000)) << 11;
+//       if(expDiff < 0)
+//       {
+//          if(expDiff < -1)
+//             return a;
+//          aSig >>= 1;
+//       }
+//       q = (bSig <= aSig);
+//       if(q)
+//          aSig -= bSig;
+//       expDiff -= 64;
+//       while(0 < expDiff)
+//       {
+//          q = __estimateDiv128To64(aSig, 0, bSig);
+//          q = (2 < q) ? q - 2 : 0;
+//          aSig = -((bSig >> 2) * q);
+//          expDiff -= 62;
+//       }
+//       expDiff += 64;
+//       if(0 < expDiff)
+//       {
+//          q = __estimateDiv128To64(aSig, 0, bSig);
+//          q = (2 < q) ? q - 2 : 0;
+//          q >>= 64 - expDiff;
+//          bSig >>= 2;
+//          aSig = ((aSig >> 1) << (expDiff - 1)) - bSig * q;
+//       }
+//       else
+//       {
+//          aSig >>= 2;
+//          bSig >>= 2;
+//       }
+//       do
+//       {
+//          alternateASig = aSig;
+//          ++q;
+//          aSig -= bSig;
+//       } while(0 <= (__sbits64)aSig);
+//       sigMean = aSig + alternateASig;
+//       if((sigMean < 0) || ((sigMean == 0) && (q & 1)))
+//       {
+//          aSig = alternateASig;
+//       }
+//       zSign = ((__sbits64)aSig < 0);
+//       if(zSign)
+//          aSig = -aSig;
+//       return __normalizeRoundAndPackFloat64_ieee(aSign ^ zSign, bExp, aSig);
+//    }
 
 /*----------------------------------------------------------------------------
 | Returns the square root of the double-precision floating-point value `a'.
 | The operation is performed according to the IEC/IEEE Standard for Binary
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
-
-static __FORCE_INLINE __float64 __float64_sqrt(__float64 a)
-{
-   __flag aSign;
-   __int16 aExp, zExp;
-   __bits64 aSig, zSig, doubleZSig;
-   __bits64 rem0, rem1, term0, term1;
-   __float64 z;
-
-   aSig = __extractFloat64Frac(a);
-   aExp = __extractFloat64Exp(a);
-   aSign = __extractFloat64Sign(a);
-   if(aExp == 0x7FF)
-   {
-      if(aSig)
-         return __propagateFloat64NaN(a, a);
-      if(!aSign)
-         return a;
-      __float_raise(float_flag_invalid);
-      return __float64_default_nan;
-   }
-   if(aSign)
-   {
-      if((aExp | aSig) == 0)
-         return a;
-      __float_raise(float_flag_invalid);
-      return __float64_default_nan;
-   }
-   if(aExp == 0)
-   {
-      if(aSig == 0)
-         return 0;
-      __normalizeFloat64Subnormal(aSig, &aExp, &aSig);
-   }
-   zExp = ((aExp - 0x3FF) >> 1) + 0x3FE;
-   aSig |= LIT64(0x0010000000000000);
-   zSig = __estimateSqrt32(aExp, aSig >> 21);
-   aSig <<= 9 - (aExp & 1);
-   zSig = __estimateDiv128To64(aSig, 0, zSig << 32) + (zSig << 30);
-   if((zSig & 0x1FF) <= 5)
-   {
-      doubleZSig = zSig << 1;
-      __mul64To128(zSig, zSig, &term0, &term1);
-      __sub128(aSig, 0, term0, term1, &rem0, &rem1);
-      while((__sbits64)rem0 < 0)
-      {
-         --zSig;
-         doubleZSig -= 2;
-         __add128(rem0, rem1, zSig >> 63, doubleZSig | 1, &rem0, &rem1);
-      }
-      zSig |= ((rem0 | rem1) != 0);
-   }
-   return __roundAndPackFloat64(0, zExp, zSig);
-}
+///   UNUSED
+//    __float64 __float64_sqrt(__float64 a)
+//    {
+//       __flag aSign;
+//       __int16 aExp, zExp;
+//       __bits64 aSig, zSig, doubleZSig;
+//       __bits64 rem0, rem1, term0, term1;
+//       __float64 z;
+//
+//       aSig = __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC);
+//       aExp = __extractFloat64Exp(a, IEEE64_EXTRACT_EXP);
+//       aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
+//       if(aExp == 0x7FF)
+//       {
+//          if(aSig)
+//             return __propagateFloat64NaN_ieee(a, a);
+//          if(!aSign)
+//             return a;
+//          __float_raise(float_flag_invalid);
+//          return __float64_default_nan;
+//       }
+//       if(aSign)
+//       {
+//          if((aExp | aSig) == 0)
+//             return a;
+//          __float_raise(float_flag_invalid);
+//          return __float64_default_nan;
+//       }
+//       if(aExp == 0)
+//       {
+//          if(aSig == 0)
+//             return 0;
+//          __normalizeFloat64Subnormal(aSig, aExp, aSig, IEEE64_FRAC_BITS);
+//       }
+//       zExp = ((aExp - 0x3FF) >> 1) + 0x3FE;
+//       aSig |= LIT64(0x0010000000000000);
+//       zSig = __estimateSqrt32(aExp, aSig >> 21);
+//       aSig <<= 9 - (aExp & 1);
+//       zSig = __estimateDiv128To64(aSig, 0, zSig << 32) + (zSig << 30);
+//       if((zSig & 0x1FF) <= 5)
+//       {
+//          doubleZSig = zSig << 1;
+//          __mul64To128(zSig, zSig, &term0, &term1);
+//          __sub128(aSig, 0, term0, term1, &rem0, &rem1);
+//          while((__sbits64)rem0 < 0)
+//          {
+//             --zSig;
+//             doubleZSig -= 2;
+//             __add128(rem0, rem1, zSig >> 63, doubleZSig | 1, &rem0, &rem1);
+//          }
+//          zSig |= ((rem0 | rem1) != 0);
+//       }
+//       return __roundAndPackFloat64(0, zExp, zSig, IEEE64_PACK, IEEE_NAN);
+//    }
 
 /*----------------------------------------------------------------------------
 | Returns 1 if the double-precision floating-point value `a' is equal to the
@@ -5141,17 +4624,39 @@ static __FORCE_INLINE __float64 __float64_sqrt(__float64 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float64_eq(__float64 a, __float64 b)
+#define BIT_MASK64(var, msbpp) (var & (((__bits64)0xFFFFFFFFFFFFFFFFULL) >> (64 - (msbpp))))
+
+static __FORCE_INLINE __flag __Float64EQ(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-   if(((__extractFloat64Exp(a) == 0x7FF) && __extractFloat64Frac(a)) || ((__extractFloat64Exp(b) == 0x7FF) && __extractFloat64Frac(b)))
+   if(__nan)
    {
-      if(__float64_is_signaling_nan(a) || __float64_is_signaling_nan(b))
+      if(((__extractFloat64Exp(a, __exp_bits, __frac_bits) == ((1ULL << __exp_bits) - 1)) && __extractFloat64Frac(a, __frac_bits)) || ((__extractFloat64Exp(b, __exp_bits, __frac_bits) == ((1ULL << __exp_bits) - 1)) && __extractFloat64Frac(b, __frac_bits)))
       {
-         __float_raise(float_flag_invalid);
+         if(__float64_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign) || __float64_is_signaling_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign))
+         {
+            __float_raise(float_flag_invalid);
+         }
+         return 0;
       }
-      return 0;
    }
-   return (a == b) || ((__bits64)((a | b) << 1) == 0);
+   if(__sign == -1)
+   {
+      return (BIT_MASK64(a, __exp_bits + __frac_bits + 1) == BIT_MASK64(b, __exp_bits + __frac_bits + 1)) || (BIT_MASK64((a | b), __exp_bits + __frac_bits) == 0);
+   }
+   else
+   {
+      return BIT_MASK64(a, __exp_bits + __frac_bits + 1) == BIT_MASK64(b, __exp_bits + __frac_bits + 1);
+   }
+}
+
+__flag __float64_eq(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float64EQ(a, b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+__flag __float64_ltgt_quiet(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return !__Float64EQ(a, b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -5161,20 +4666,34 @@ static __FORCE_INLINE __flag __float64_eq(__float64 a, __float64 b)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float64_le(__float64 a, __float64 b)
+static __FORCE_INLINE __flag __Float64LE(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __flag __nan, __sbits8 __sign)
 {
    __flag aSign, bSign;
 
-   if(((__extractFloat64Exp(a) == 0x7FF) && __extractFloat64Frac(a)) || ((__extractFloat64Exp(b) == 0x7FF) && __extractFloat64Frac(b)))
+   if(__nan)
    {
-      __float_raise(float_flag_invalid);
-      return 0;
+      if(((__extractFloat64Exp(a, __exp_bits, __frac_bits) == ((1ULL << __exp_bits) - 1)) && __extractFloat64Frac(a, __frac_bits)) || ((__extractFloat64Exp(b, __exp_bits, __frac_bits) == ((1ULL << __exp_bits) - 1)) && __extractFloat64Frac(b, __frac_bits)))
+      {
+         __float_raise(float_flag_invalid);
+         return 0;
+      }
    }
-   aSign = __extractFloat64Sign(a);
-   bSign = __extractFloat64Sign(b);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
+   bSign = __extractFloat64Sign(b, __exp_bits, __frac_bits, __sign);
    if(aSign != bSign)
-      return aSign || ((__bits64)((a | b) << 1) == 0);
-   return (a == b) || (aSign ^ (a < b));
+      return aSign || (BIT_MASK64((a | b), __exp_bits + __frac_bits) == 0);
+   return (BIT_MASK64(a, __exp_bits + __frac_bits + (__sign == -1)) == BIT_MASK64(b, __exp_bits + __frac_bits + (__sign == -1))) ||
+          (aSign ^ (BIT_MASK64(a, __exp_bits + __frac_bits + (__sign == -1)) < BIT_MASK64(b, __exp_bits + __frac_bits + (__sign == -1))));
+}
+
+__flag __float64_le(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float64LE(a, b, __exp_bits, __frac_bits, __nan, __sign);
+}
+
+__flag __float64_ge(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float64LE(b, a, __exp_bits, __frac_bits, __nan, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -5183,20 +4702,34 @@ static __FORCE_INLINE __flag __float64_le(__float64 a, __float64 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float64_lt(__float64 a, __float64 b)
+static __FORCE_INLINE __flag __Float64LT(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __flag __nan, __sbits8 __sign)
 {
    __flag aSign, bSign;
 
-   if(((__extractFloat64Exp(a) == 0x7FF) && __extractFloat64Frac(a)) || ((__extractFloat64Exp(b) == 0x7FF) && __extractFloat64Frac(b)))
+   if(__nan)
    {
-      __float_raise(float_flag_invalid);
-      return 0;
+      if(((__extractFloat64Exp(a, __exp_bits, __frac_bits) == ((1ULL << __exp_bits) - 1)) && __extractFloat64Frac(a, __frac_bits)) || ((__extractFloat64Exp(b, __exp_bits, __frac_bits) == ((1ULL << __exp_bits) - 1)) && __extractFloat64Frac(b, __frac_bits)))
+      {
+         __float_raise(float_flag_invalid);
+         return 0;
+      }
    }
-   aSign = __extractFloat64Sign(a);
-   bSign = __extractFloat64Sign(b);
+   aSign = __extractFloat64Sign(a, __exp_bits, __frac_bits, __sign);
+   bSign = __extractFloat64Sign(b, __exp_bits, __frac_bits, __sign);
    if(aSign != bSign)
-      return aSign && ((__bits64)((a | b) << 1) != 0);
-   return (a != b) && (aSign ^ (a < b));
+      return aSign && (BIT_MASK64((a | b), __exp_bits + __frac_bits) != 0);
+   return (BIT_MASK64(a, __exp_bits + __frac_bits + (__sign == -1)) != BIT_MASK64(b, __exp_bits + __frac_bits + (__sign == -1))) &&
+          (aSign ^ (BIT_MASK64(a, __exp_bits + __frac_bits + (__sign == -1)) < BIT_MASK64(b, __exp_bits + __frac_bits + (__sign == -1))));
+}
+
+__flag __float64_lt(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float64LT(a, b, __exp_bits, __frac_bits, __nan, __sign);
+}
+
+__flag __float64_gt(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float64LT(b, a, __exp_bits, __frac_bits, __nan, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -5206,9 +4739,9 @@ static __FORCE_INLINE __flag __float64_lt(__float64 a, __float64 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float64_eq_signaling(__float64 a, __float64 b)
+__flag __float64_eq_signaling_ieee(__float64 a, __float64 b)
 {
-   if(((__extractFloat64Exp(a) == 0x7FF) && __extractFloat64Frac(a)) || ((__extractFloat64Exp(b) == 0x7FF) && __extractFloat64Frac(b)))
+   if(((__extractFloat64Exp(a, IEEE64_EXTRACT_EXP) == 0x7FF) && __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC)) || ((__extractFloat64Exp(b, IEEE64_EXTRACT_EXP) == 0x7FF) && __extractFloat64Frac(b, IEEE64_EXTRACT_FRAC)))
    {
       __float_raise(float_flag_invalid);
       return 0;
@@ -5223,21 +4756,21 @@ static __FORCE_INLINE __flag __float64_eq_signaling(__float64 a, __float64 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float64_le_quiet(__float64 a, __float64 b)
+__flag __float64_le_quiet_ieee(__float64 a, __float64 b)
 {
    __flag aSign, bSign;
    __int16 aExp, bExp;
 
-   if(((__extractFloat64Exp(a) == 0x7FF) && __extractFloat64Frac(a)) || ((__extractFloat64Exp(b) == 0x7FF) && __extractFloat64Frac(b)))
+   if(((__extractFloat64Exp(a, IEEE64_EXTRACT_EXP) == 0x7FF) && __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC)) || ((__extractFloat64Exp(b, IEEE64_EXTRACT_EXP) == 0x7FF) && __extractFloat64Frac(b, IEEE64_EXTRACT_FRAC)))
    {
-      if(__float64_is_signaling_nan(a) || __float64_is_signaling_nan(b))
+      if(__float64_is_signaling_nan(a, IEEE64_SPEC_ARGS) || __float64_is_signaling_nan(b, IEEE64_SPEC_ARGS))
       {
          __float_raise(float_flag_invalid);
       }
       return 0;
    }
-   aSign = __extractFloat64Sign(a);
-   bSign = __extractFloat64Sign(b);
+   aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
+   bSign = __extractFloat64Sign(b, IEEE64_EXTRACT_SIGN);
    if(aSign != bSign)
       return aSign || ((__bits64)((a | b) << 1) == 0);
    return (a == b) || (aSign ^ (a < b));
@@ -5250,20 +4783,20 @@ static __FORCE_INLINE __flag __float64_le_quiet(__float64 a, __float64 b)
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float64_lt_quiet(__float64 a, __float64 b)
+__flag __float64_lt_quiet_ieee(__float64 a, __float64 b)
 {
    __flag aSign, bSign;
 
-   if(((__extractFloat64Exp(a) == 0x7FF) && __extractFloat64Frac(a)) || ((__extractFloat64Exp(b) == 0x7FF) && __extractFloat64Frac(b)))
+   if(((__extractFloat64Exp(a, IEEE64_EXTRACT_EXP) == 0x7FF) && __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC)) || ((__extractFloat64Exp(b, IEEE64_EXTRACT_EXP) == 0x7FF) && __extractFloat64Frac(b, IEEE64_EXTRACT_FRAC)))
    {
-      if(__float64_is_signaling_nan(a) || __float64_is_signaling_nan(b))
+      if(__float64_is_signaling_nan(a, IEEE64_SPEC_ARGS) || __float64_is_signaling_nan(b, IEEE64_SPEC_ARGS))
       {
          __float_raise(float_flag_invalid);
       }
       return 0;
    }
-   aSign = __extractFloat64Sign(a);
-   bSign = __extractFloat64Sign(b);
+   aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
+   bSign = __extractFloat64Sign(b, IEEE64_EXTRACT_SIGN);
    if(aSign != bSign)
       return aSign && ((__bits64)((a | b) << 1) != 0);
    return (a != b) && (aSign ^ (a < b));
@@ -5281,7 +4814,7 @@ static __FORCE_INLINE __flag __float64_lt_quiet(__float64 a, __float64 b)
 | overflows, the largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int32 __floatx80_to_int32(__floatx80 a)
+__int32 __floatx80_to_int32_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -5309,7 +4842,7 @@ static __FORCE_INLINE __int32 __floatx80_to_int32(__floatx80 a)
 | sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int32 __floatx80_to_int32_round_to_zero(__floatx80 a)
+__int32 __floatx80_to_int32_round_to_zero_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -5360,7 +4893,7 @@ static __FORCE_INLINE __int32 __floatx80_to_int32_round_to_zero(__floatx80 a)
 | overflows, the largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int64 __floatx80_to_int64(__floatx80 a)
+__int64 __floatx80_to_int64_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -5400,7 +4933,7 @@ static __FORCE_INLINE __int64 __floatx80_to_int64(__floatx80 a)
 | sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int64 __floatx80_to_int64_round_to_zero(__floatx80 a)
+__int64 __floatx80_to_int64_round_to_zero_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -5447,7 +4980,7 @@ static __FORCE_INLINE __int64 __floatx80_to_int64_round_to_zero(__floatx80 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __floatx80_to_float32(__floatx80 a)
+__float32 __floatx80_to_float32_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -5462,7 +4995,7 @@ static __FORCE_INLINE __float32 __floatx80_to_float32(__floatx80 a)
       {
          return __commonNaNToFloat32(__floatx80ToCommonNaN(a));
       }
-      return __packFloat32(aSign, 0xFF, 0);
+      return (((__bits32)aSign) << 31) | 0x7F800000; // __packFloat32(aSign, 0xFF, 0, IEEE32_PACK);
    }
    __shift64RightJamming(aSig, 33, &aSig);
    if(aExp || aSig)
@@ -5477,7 +5010,7 @@ static __FORCE_INLINE __float32 __floatx80_to_float32(__floatx80 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __floatx80_to_float64(__floatx80 a)
+__float64 __floatx80_to_float64_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -5492,7 +5025,7 @@ static __FORCE_INLINE __float64 __floatx80_to_float64(__floatx80 a)
       {
          return __commonNaNToFloat64(__floatx80ToCommonNaN(a));
       }
-      return __packFloat64(aSign, 0x7FF, 0);
+      return (((__bits64)aSign) << 63) | LIT64(0x7FF0000000000000); // __packFloat64(aSign, 0x7FF, 0, IEEE64_PACK);
    }
    __shift64RightJamming(aSig, 1, &zSig);
    if(aExp || aSig)
@@ -5509,7 +5042,7 @@ static __FORCE_INLINE __float64 __floatx80_to_float64(__floatx80 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __floatx80_to_float128(__floatx80 a)
+__float128 __floatx80_to_float128_ieee(__floatx80 a)
 {
    __flag aSign;
    __int16 aExp;
@@ -5535,7 +5068,7 @@ static __FORCE_INLINE __float128 __floatx80_to_float128(__floatx80 a)
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __floatx80_round_to_int(__floatx80 a)
+__floatx80 __floatx80_round_to_int_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -5764,7 +5297,7 @@ normalizeRoundAndPack:
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 floatx80_add(__floatx80 a, __floatx80 b)
+__floatx80 floatx80_add_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign;
 
@@ -5786,7 +5319,7 @@ static __FORCE_INLINE __floatx80 floatx80_add(__floatx80 a, __floatx80 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __floatx80_sub(__floatx80 a, __floatx80 b)
+__floatx80 __floatx80_sub_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign;
 
@@ -5808,7 +5341,7 @@ static __FORCE_INLINE __floatx80 __floatx80_sub(__floatx80 a, __floatx80 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __floatx80_mul(__floatx80 a, __floatx80 b)
+__floatx80 __floatx80_mul_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, zExp;
@@ -5874,7 +5407,7 @@ static __FORCE_INLINE __floatx80 __floatx80_mul(__floatx80 a, __floatx80 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __floatx80_div(__floatx80 a, __floatx80 b)
+__floatx80 __floatx80_div_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, zExp;
@@ -5966,7 +5499,7 @@ static __FORCE_INLINE __floatx80 __floatx80_div(__floatx80 a, __floatx80 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __floatx80_rem(__floatx80 a, __floatx80 b)
+__floatx80 __floatx80_rem_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, expDiff;
@@ -6072,7 +5605,7 @@ static __FORCE_INLINE __floatx80 __floatx80_rem(__floatx80 a, __floatx80 b)
 | for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __floatx80_sqrt(__floatx80 a)
+__floatx80 __floatx80_sqrt(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp, zExp;
@@ -6151,7 +5684,7 @@ static __FORCE_INLINE __floatx80 __floatx80_sqrt(__floatx80 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __floatx80_eq(__floatx80 a, __floatx80 b)
+__flag __floatx80_eq_ieee(__floatx80 a, __floatx80 b)
 {
    if(((__extractFloatx80Exp(a) == 0x7FFF) && (__bits64)(__extractFloatx80Frac(a) << 1)) || ((__extractFloatx80Exp(b) == 0x7FFF) && (__bits64)(__extractFloatx80Frac(b) << 1)))
    {
@@ -6171,7 +5704,7 @@ static __FORCE_INLINE __flag __floatx80_eq(__floatx80 a, __floatx80 b)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __floatx80_le(__floatx80 a, __floatx80 b)
+static __FORCE_INLINE __flag _Floatx80LE(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign;
 
@@ -6189,6 +5722,16 @@ static __FORCE_INLINE __flag __floatx80_le(__floatx80 a, __floatx80 b)
    return aSign ? __le128(b.high, b.low, a.high, a.low) : __le128(a.high, a.low, b.high, b.low);
 }
 
+__flag __floatx80_le_ieee(__floatx80 a, __floatx80 b)
+{
+   return _Floatx80LE(a, b);
+}
+
+__flag __floatx80_ge_ieee(__floatx80 a, __floatx80 b)
+{
+   return _Floatx80LE(b, a);
+}
+
 /*----------------------------------------------------------------------------
 | Returns 1 if the extended double-precision floating-point value `a' is
 | less than the corresponding value `b', and 0 otherwise.  The comparison
@@ -6196,7 +5739,7 @@ static __FORCE_INLINE __flag __floatx80_le(__floatx80 a, __floatx80 b)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __floatx80_lt(__floatx80 a, __floatx80 b)
+static __FORCE_INLINE __flag __Floatx80LT(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign;
 
@@ -6214,6 +5757,16 @@ static __FORCE_INLINE __flag __floatx80_lt(__floatx80 a, __floatx80 b)
    return aSign ? __lt128(b.high, b.low, a.high, a.low) : __lt128(a.high, a.low, b.high, b.low);
 }
 
+__flag __floatx80_lt_ieee(__floatx80, __floatx80)
+{
+   return __Floatx80LT(a, b);
+}
+
+__flag __floatx80_gt_ieee(__floatx80 a, __floatx80 b)
+{
+   return __Floatx80LT(b, a);
+}
+
 /*----------------------------------------------------------------------------
 | Returns 1 if the extended double-precision floating-point value `a' is equal
 | to the corresponding value `b', and 0 otherwise.  The invalid exception is
@@ -6221,7 +5774,7 @@ static __FORCE_INLINE __flag __floatx80_lt(__floatx80 a, __floatx80 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __floatx80_eq_signaling(__floatx80 a, __floatx80 b)
+__flag __floatx80_eq_signaling_ieee(__floatx80 a, __floatx80 b)
 {
    if(((__extractFloatx80Exp(a) == 0x7FFF) && (__bits64)(__extractFloatx80Frac(a) << 1)) || ((__extractFloatx80Exp(b) == 0x7FFF) && (__bits64)(__extractFloatx80Frac(b) << 1)))
    {
@@ -6238,7 +5791,7 @@ static __FORCE_INLINE __flag __floatx80_eq_signaling(__floatx80 a, __floatx80 b)
 | to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __floatx80_le_quiet(__floatx80 a, __floatx80 b)
+__flag __floatx80_le_quiet_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign;
 
@@ -6266,7 +5819,7 @@ static __FORCE_INLINE __flag __floatx80_le_quiet(__floatx80 a, __floatx80 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __floatx80_lt_quiet(__floatx80 a, __floatx80 b)
+__flag __floatx80_lt_quiet_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign;
 
@@ -6301,7 +5854,7 @@ static __FORCE_INLINE __flag __floatx80_lt_quiet(__floatx80 a, __floatx80 b)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int32 __float128_to_int32(__float128 a)
+__int32 __float128_to_int32_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -6332,7 +5885,7 @@ static __FORCE_INLINE __int32 __float128_to_int32(__float128 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int32 __float128_to_int32_round_to_zero(__float128 a)
+__int32 __float128_to_int32_round_to_zero_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -6386,7 +5939,7 @@ static __FORCE_INLINE __int32 __float128_to_int32_round_to_zero(__float128 a)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int64 __float128_to_int64(__float128 a)
+__int64 __float128_to_int64_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -6429,7 +5982,7 @@ static __FORCE_INLINE __int64 __float128_to_int64(__float128 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int64 __float128_to_int64_round_to_zero(__float128 a)
+__int64 __float128_to_int64_round_to_zero_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -6497,7 +6050,7 @@ static __FORCE_INLINE __int64 __float128_to_int64_round_to_zero(__float128 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float32 __float128_to_float32(__float128 a)
+__float32 __float128_to_float32_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -6514,7 +6067,7 @@ static __FORCE_INLINE __float32 __float128_to_float32(__float128 a)
       {
          return __commonNaNToFloat32(__float128ToCommonNaN(a));
       }
-      return __packFloat32(aSign, 0xFF, 0);
+      return (((__bits32)aSign) << 31) | 0x7F800000; // __packFloat32(aSign, 0xFF, 0, IEEE32_PACK);
    }
    aSig0 |= (aSig1 != 0);
    __shift64RightJamming(aSig0, 18, &aSig0);
@@ -6534,7 +6087,7 @@ static __FORCE_INLINE __float32 __float128_to_float32(__float128 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __float128_to_float64(__float128 a)
+__float64 __float128_to_float64_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -6550,7 +6103,7 @@ static __FORCE_INLINE __float64 __float128_to_float64(__float128 a)
       {
          return __commonNaNToFloat64(__float128ToCommonNaN(a));
       }
-      return __packFloat64(aSign, 0x7FF, 0);
+      return (((__bits64)aSign) << 63) | LIT64(0x7FF0000000000000); //  __packFloat64(aSign, 0x7FF, 0, IEEE64_PACK);
    }
    __shortShift128Left(aSig0, aSig1, 14, &aSig0, &aSig1);
    aSig0 |= (aSig1 != 0);
@@ -6571,7 +6124,7 @@ static __FORCE_INLINE __float64 __float128_to_float64(__float128 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __floatx80 __float128_to_floatx80(__float128 a)
+__floatx80 __float128_to_floatx80_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -6612,7 +6165,7 @@ static __FORCE_INLINE __floatx80 __float128_to_floatx80(__float128 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __float128_round_to_int(__float128 a)
+__float128 __float128_round_to_int_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -6912,7 +6465,7 @@ normalizeRoundAndPack:
 | for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __float128_add(__float128 a, __float128 b)
+__float128 __float128_add_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign;
 
@@ -6934,7 +6487,7 @@ static __FORCE_INLINE __float128 __float128_add(__float128 a, __float128 b)
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __float128_sub(__float128 a, __float128 b)
+__float128 __float128_sub_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign;
 
@@ -6956,7 +6509,7 @@ static __FORCE_INLINE __float128 __float128_sub(__float128 a, __float128 b)
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __float128_mul(__float128 a, __float128 b)
+__float128 __float128_mul_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, zExp;
@@ -7028,7 +6581,7 @@ static __FORCE_INLINE __float128 __float128_mul(__float128 a, __float128 b)
 | the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __float128_div(__float128 a, __float128 b)
+__float128 __float128_div_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, zExp;
@@ -7124,7 +6677,7 @@ static __FORCE_INLINE __float128 __float128_div(__float128 a, __float128 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __float128_rem(__float128 a, __float128 b)
+__float128 __float128_rem_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, expDiff;
@@ -7240,7 +6793,7 @@ static __FORCE_INLINE __float128 __float128_rem(__float128 a, __float128 b)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float128 __float128_sqrt(__float128 a)
+__float128 __float128_sqrt(__float128 a)
 {
    __flag aSign;
    __int32 aExp, zExp;
@@ -7319,7 +6872,7 @@ static __FORCE_INLINE __float128 __float128_sqrt(__float128 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float128_eq(__float128 a, __float128 b)
+__flag __float128_eq_ieee(__float128 a, __float128 b)
 {
    if(((__extractFloat128Exp(a) == 0x7FFF) && (__extractFloat128Frac0(a) | __extractFloat128Frac1(a))) || ((__extractFloat128Exp(b) == 0x7FFF) && (__extractFloat128Frac0(b) | __extractFloat128Frac1(b))))
    {
@@ -7339,7 +6892,7 @@ static __FORCE_INLINE __flag __float128_eq(__float128 a, __float128 b)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float128_le(__float128 a, __float128 b)
+static __FORCE_INLINE __flag _Float128LE(__float128 a, __float128 b)
 {
    __flag aSign, bSign;
 
@@ -7357,13 +6910,23 @@ static __FORCE_INLINE __flag __float128_le(__float128 a, __float128 b)
    return aSign ? __le128(b.high, b.low, a.high, a.low) : __le128(a.high, a.low, b.high, b.low);
 }
 
+__flag __float128_le_ieee(__float128, __float128)
+{
+   return _Float128LE(a, b);
+}
+
+__flag __float128_ge_ieee(__float128 a, __float128 b)
+{
+   return _Float128LE(b, a);
+}
+
 /*----------------------------------------------------------------------------
 | Returns 1 if the quadruple-precision floating-point value `a' is less than
 | the corresponding value `b', and 0 otherwise.  The comparison is performed
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float128_lt(__float128 a, __float128 b)
+static __FORCE_INLINE __flag _Float128LT(__float128 a, __float128 b)
 {
    __flag aSign, bSign;
 
@@ -7381,6 +6944,16 @@ static __FORCE_INLINE __flag __float128_lt(__float128 a, __float128 b)
    return aSign ? __lt128(b.high, b.low, a.high, a.low) : __lt128(a.high, a.low, b.high, b.low);
 }
 
+__flag __float128_lt_ieee(__float128 a, __float128 b)
+{
+   return _Float128LT(a, b);
+}
+
+__flag __float128_gt_ieee(__float128 a, __float128 b)
+{
+   return _Float128LT(b, a);
+}
+
 /*----------------------------------------------------------------------------
 | Returns 1 if the quadruple-precision floating-point value `a' is equal to
 | the corresponding value `b', and 0 otherwise.  The invalid exception is
@@ -7388,7 +6961,7 @@ static __FORCE_INLINE __flag __float128_lt(__float128 a, __float128 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float128_eq_signaling(__float128 a, __float128 b)
+__flag __float128_eq_signaling_ieee(__float128 a, __float128 b)
 {
    if(((__extractFloat128Exp(a) == 0x7FFF) && (__extractFloat128Frac0(a) | __extractFloat128Frac1(a))) || ((__extractFloat128Exp(b) == 0x7FFF) && (__extractFloat128Frac0(b) | __extractFloat128Frac1(b))))
    {
@@ -7405,7 +6978,7 @@ static __FORCE_INLINE __flag __float128_eq_signaling(__float128 a, __float128 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float128_le_quiet(__float128 a, __float128 b)
+__flag __float128_le_quiet_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign;
 
@@ -7433,7 +7006,7 @@ static __FORCE_INLINE __flag __float128_le_quiet(__float128 a, __float128 b)
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float128_lt_quiet(__float128 a, __float128 b)
+__flag __float128_lt_quiet_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign;
 

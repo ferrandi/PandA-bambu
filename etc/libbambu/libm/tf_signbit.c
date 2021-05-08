@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2021 Politecnico di Milano
+ *              Copyright (C) 2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,40 +31,30 @@
  *
  */
 /**
- * @file mem_cg_ext.hpp
+ * @file tf_signbit.c
+ * @brief
  *
- * Created on: July 18, 2016
- *
- * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
- * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
  *
  */
 
-#ifndef MEM_CG_EXT_HPP
-#define MEM_CG_EXT_HPP
+/**
+ * Return nonzero value if number is negative.
+ */
 
-#include "application_frontend_flow_step.hpp"
+#include "math_privatetf.h"
 
-class mem_cg_ext : public ApplicationFrontendFlowStep
+int __signbit(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
- protected:
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
- public:
-   mem_cg_ext(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
-
-   ~mem_cg_ext() override;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status Exec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
-};
-
-#endif
+   if(__sign == -1)
+   {
+      return (x >> (__exp_bits + __frac_bits)) & 1ULL;
+   }
+   else
+   {
+      return __sign;
+   }
+}

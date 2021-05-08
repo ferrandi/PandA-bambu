@@ -52,7 +52,7 @@ float scalbf(float x, float fn) /* wrapper scalbf */
    z = __hide_ieee754_scalbf(x, fn);
    if(_LIB_VERSION == _IEEE_)
       return z;
-   if(!(__finitef(z) || isnan(z)) && __finitef(x))
+   if(!(finitef(z) || isnanf(z)) && finitef(x))
    {
       /* scalbf overflow; SVID also returns +-HUGE_VAL */
       exc.type = OVERFLOW;
@@ -91,7 +91,7 @@ float scalbf(float x, float fn) /* wrapper scalbf */
       return exc.retval;
    }
 #ifndef _SCALB_INT
-   if(!__finitef(fn))
+   if(!finitef(fn))
       errno = ERANGE;
 #endif
    return z;

@@ -40,7 +40,7 @@ float lgammaf_r(float x, int* signgamp) /* wrapper lgammaf_r */
    y = __hide_ieee754_lgammaf_r(x, signgamp);
    if(_LIB_VERSION == _IEEE_)
       return y;
-   if(!__finitef(y) && __finitef(x))
+   if(!finitef(y) && finitef(x))
    {
 #ifndef HUGE_VAL
 #define HUGE_VAL inf

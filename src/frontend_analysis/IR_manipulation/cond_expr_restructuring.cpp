@@ -320,7 +320,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          {
             std::swap(first_value, second_value);
          }
-         cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
          cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_ce->op0->index);
          cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(first_value->index);
@@ -347,7 +347,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
 
          /// Create the assign
          const auto gimple_node_id = TM->new_tree_node_id();
-         gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
@@ -370,7 +370,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                lut_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(DefaultUnsignedLongLongInt));
                auto boolType = tree_man->create_boolean_type();
                tree_nodeRef op2, op3, op4, op5, op6, op7, op8;
-               const std::string srcp_default = "<built-in>:0:0";
+               const std::string srcp_default = BUILTIN_SRCP;
                tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, first_ce->op0, op2, op3, op4, op5, op6, op7, op8, srcp_default);
                auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), new_op1, block.first, srcp_default);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT NOT " + STR(lut_ga));
@@ -415,7 +415,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             lut_constant_node = TM->CreateUniqueIntegerCst(lut_val, GET_INDEX_NODE(DefaultUnsignedLongLongInt));
             auto boolType = tree_man->create_boolean_type();
             tree_nodeRef op3, op4, op5, op6, op7, op8;
-            const std::string srcp_default = "<built-in>:0:0";
+            const std::string srcp_default = BUILTIN_SRCP;
             tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, second_ce->op0, first_ce->op0, op3, op4, op5, op6, op7, op8, srcp_default);
             auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), new_op1, block.first, srcp_default);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT STD " + STR(lut_ga));
@@ -427,7 +427,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          /// Inserting last cond expr
          cond_expr_schema.clear();
          const auto root_cond_expr_id = TM->new_tree_node_id();
-         cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
          cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(and_first_cond->index);
          cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(first_operand_of_second ? second_ce->op1->index : second_ce->op2->index);
@@ -436,7 +436,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
 
          /// Create the assign
          const auto root_gimple_node_id = TM->new_tree_node_id();
-         gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(first_ga->op0->index);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(root_cond_expr_id);

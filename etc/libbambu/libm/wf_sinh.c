@@ -40,7 +40,7 @@ float sinhf(float x) /* wrapper sinhf */
    z = __hide_ieee754_sinhf(x);
    if(_LIB_VERSION == _IEEE_)
       return z;
-   if(!__finitef(z) && __finitef(x))
+   if(!finitef(z) && finitef(x))
    {
       /* sinhf(finite) overflow */
 #ifndef HUGE_VAL

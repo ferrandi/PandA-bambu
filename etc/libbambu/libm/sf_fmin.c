@@ -16,9 +16,9 @@
 
 float fminf(float x, float y)
 {
-   if(__fpclassifyf(x) == FP_NAN)
+   if(fpclassifyf(x) == FP_NAN)
       return y;
-   if(__fpclassifyf(y) == FP_NAN)
+   if(fpclassifyf(y) == FP_NAN)
       return x;
 
    return x < y ? x : y;

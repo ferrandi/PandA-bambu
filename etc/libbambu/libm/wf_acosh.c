@@ -39,7 +39,7 @@ float acoshf(float x) /* wrapper acoshf */
    float z;
    struct exception exc;
    z = __hide_ieee754_acoshf(x);
-   if(_LIB_VERSION == _IEEE_ || isnan(x))
+   if(_LIB_VERSION == _IEEE_ || isnanf(x))
       return z;
    if(x < (float)1.0)
    {

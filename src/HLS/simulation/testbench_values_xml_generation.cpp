@@ -89,6 +89,7 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp"
 #include "utility.hpp"
+#include <boost/regex.hpp>
 
 void TestbenchValuesXMLGeneration::Initialize()
 {
@@ -172,8 +173,13 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       mem.push_back(ma.second);
    }
 
+   std::string fname;
+   tree_helper::get_mangled_fname(GetPointer<const function_decl>(TM->CGetTreeNode(function_id)), fname);
+   const auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
+   const auto& DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
+
    HLSMgr->RSim->simulationArgSignature.clear();
-   const auto function_parameters = behavioral_helper->get_parameters();
+   const auto& function_parameters = behavioral_helper->get_parameters();
    for(const auto& function_parameter : function_parameters)
    {
       const auto function_parameter_name = behavioral_helper->PrintVariable(function_parameter);
@@ -199,6 +205,17 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       for(const auto& l : mem)
       {
          std::string param = behavioral_helper->PrintVariable(l);
+         const auto is_interface = std::find(function_parameters.begin(), function_parameters.end(), l) != function_parameters.end();
+         std::string argTypename = "";
+         if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end() && is_interface)
+         {
+            THROW_ASSERT(DesignInterfaceArgsTypename_it->second.count(param), "Parameter should be present in design interface.");
+            argTypename = DesignInterfaceArgsTypename_it->second.at(param) + " ";
+            if(argTypename.find("fixed") == std::string::npos)
+            {
+               argTypename = "";
+            }
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
          if(param[0] == '"')
          {
@@ -209,7 +226,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          std::string test_v = "0";
 
          /// Initialization of memory variables which are not pointer parameters
-         if(mem_vars.find(l) != mem_vars.end() and std::find(function_parameters.begin(), function_parameters.end(), l) == function_parameters.end())
+         if(mem_vars.find(l) != mem_vars.end() && !is_interface)
          {
             if(v_idx > 0 && is_memory)
             {
@@ -222,6 +239,11 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          else if(curr_test_vector.find(param) != curr_test_vector.end())
          {
             test_v = curr_test_vector.find(param)->second;
+            if(argTypename.find("fixed") != std::string::npos)
+            {
+               test_v = FixedPointReinterpret(test_v, argTypename);
+               std::cout << "   " << test_v << std::endl;
+            }
          }
 
          /// Retrieve the space to be reserved in memory
@@ -233,10 +255,9 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
             }
             else
             {
-               THROW_ASSERT(tree_helper::is_a_pointer(TM, l), "");
-               unsigned int base_type = tree_helper::get_type_index(TM, l);
-               tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-               return HLSMgr->RSim->param_mem_size.find(v_idx)->second.find(l)->second;
+               THROW_ASSERT(HLSMgr->RSim->param_mem_size.count(v_idx), "");
+               THROW_ASSERT(HLSMgr->RSim->param_mem_size.at(v_idx).count(l), "");
+               return HLSMgr->RSim->param_mem_size.at(v_idx).at(l);
             }
          }();
 
@@ -282,16 +303,16 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    for(const auto& curr_test_vector : HLSMgr->RSim->test_vectors)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization of parameters");
-      for(const auto& function_parameter : behavioral_helper->get_parameters())
+      for(const auto& function_parameter : function_parameters)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering parameter " + STR(TM->CGetTreeNode(function_parameter)));
-         unsigned int type_id = behavioral_helper->get_type(function_parameter);
-         std::string type = behavioral_helper->print_type(type_id);
-         std::string param = behavioral_helper->PrintVariable(function_parameter);
-         if(behavioral_helper->is_a_pointer(function_parameter))
+         unsigned int type_id = tree_helper::get_type_index(TM, function_parameter);
+         const auto type = behavioral_helper->print_type(type_id);
+         const auto param = behavioral_helper->PrintVariable(function_parameter);
+         if(tree_helper::is_a_pointer(TM, function_parameter))
          {
             // std::cerr << v_idx << " " << function_parameter << std::endl;
-            auto memory_addr = STR(HLSMgr->RSim->param_address.at(v_idx).at(function_parameter));
+            const auto memory_addr = STR(HLSMgr->RSim->param_address.at(v_idx).at(function_parameter));
             output_stream << "//parameter: " + behavioral_helper->PrintVariable(function_parameter) << " value: " << memory_addr << std::endl;
             output_stream << "p" << ConvertInBinary(memory_addr, 32, false, false) << std::endl;
          }
@@ -304,25 +325,39 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered parameter " + STR(TM->CGetTreeNode(function_parameter)));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing expected content of pointer parameters at the end of the execution");
-      for(const auto& function_parameter : behavioral_helper->get_parameters())
+      for(const auto& function_parameter : function_parameters)
       {
-         if(behavioral_helper->is_a_pointer(function_parameter))
+         if(tree_helper::is_a_pointer(TM, function_parameter))
          {
-            std::string param = behavioral_helper->PrintVariable(function_parameter);
-            const auto expected_values = [&]() -> std::string {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering parameter " + STR(TM->CGetTreeNode(function_parameter)));
+            const auto param = behavioral_helper->PrintVariable(function_parameter);
+            auto expected_values = [&]() -> std::string {
+               std::string ctv;
                if(curr_test_vector.find(param + ":output") != curr_test_vector.end())
                {
-                  return curr_test_vector.at(param + ":output");
+                  ctv = curr_test_vector.at(param + ":output");
                }
                else
                {
-                  return curr_test_vector.at(param);
+                  ctv = curr_test_vector.at(param);
                }
+               if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end())
+               {
+                  THROW_ASSERT(DesignInterfaceArgsTypename_it->second.count(param), "Parameter should be present in design interface.");
+                  const auto argTypename = DesignInterfaceArgsTypename_it->second.at(param) + " ";
+                  if(argTypename.find("fixed") != std::string::npos)
+                  {
+                     return FixedPointReinterpret(ctv, argTypename);
+                  }
+               }
+               return ctv;
             }();
             const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(
                 new MemoryInitializationWriter(output_stream, TM, behavioral_helper, all_reserved_mem_bytes.at(v_idx).at(function_parameter), TM->CGetTreeNode(function_parameter), TestbenchGeneration_MemoryType::OUTPUT_PARAMETER, parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parsing expected output for " + param + ": " + expected_values);
             c_initialization_parser->Parse(c_initialization_parser_functor, expected_values);
             output_stream << "e" << std::endl;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered parameter " + STR(TM->CGetTreeNode(function_parameter)));
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written expected content of pointer parameters at the end of the execution");
