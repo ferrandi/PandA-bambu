@@ -776,9 +776,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             else
             {
                unsigned int port_type = tree_helper::get_type_index(TreeM, portInst->get_typeRef()->treenode);
-               auto pt_node = TreeM->CGetTreeNode(port_type);
-               auto ptd_node = tree_helper::CGetPointedType(pt_node);
-               unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, portInst->get_typeRef()->treenode));
+               unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, port_type);
                if(tree_helper::is_an_array(TreeM, pt_type_index))
                {
                   pt_type_index = tree_helper::get_array_basetype(TreeM, pt_type_index)->index;
