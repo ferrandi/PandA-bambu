@@ -289,12 +289,12 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "\n");
    PP(os, "\n");
    PP(os, "#define SIMULATION_MAX " + STR(2 * parameters->getOption<long long int>(OPT_max_sim_cycles)) + "ULL\n\n");
-   PP(os, "static vluint64_t CLOCK_PERIOD = 1000*" + boost::lexical_cast<std::string>(target_period) + ";\n");
+   PP(os, "static vluint64_t CLOCK_PERIOD = 2;\n");
    PP(os, "static vluint64_t HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
    PP(os, "\n");
    PP(os, "vluint64_t main_time = 0;\n");
    PP(os, "\n");
-   PP(os, "double sc_time_stamp ()  {return main_time/1000.0;}\n");
+   PP(os, "double sc_time_stamp ()  {return main_time;}\n");
    PP(os, "\n");
    PP(os, "int main (int argc, char **argv, char **env)\n");
    PP(os, "{\n");
@@ -1679,7 +1679,14 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
    {
       half_target_period_string += ".0";
    }
-   writer->write("`define HALF_CLOCK_PERIOD " + half_target_period_string + "\n\n");
+   if(parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
+   {
+      writer->write("`define HALF_CLOCK_PERIOD 1\n\n");
+   }
+   else
+   {
+      writer->write("`define HALF_CLOCK_PERIOD " + half_target_period_string + "\n\n");
+   }
    writer->write("`define CLOCK_PERIOD (2*`HALF_CLOCK_PERIOD)\n\n");
    if(parameters->getOption<std::string>(OPT_bram_high_latency) != "" && parameters->getOption<std::string>(OPT_bram_high_latency) == "_3")
    {
