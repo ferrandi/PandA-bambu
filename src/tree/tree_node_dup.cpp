@@ -106,6 +106,8 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn)
          CREATE_TREE_NODE_CASE_BODY(array_ref, node_id)
       case array_type_K:
          RET_NODE_ID_CASE_BODY(array_type, node_id)
+      case alignof_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(alignof_expr, node_id)
       case arrow_expr_K:
          CREATE_TREE_NODE_CASE_BODY(arrow_expr, node_id)
       case gimple_asm_K:

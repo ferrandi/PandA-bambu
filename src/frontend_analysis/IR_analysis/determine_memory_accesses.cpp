@@ -853,6 +853,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case tree_list_K:
                      case tree_vec_K:
                      case abs_expr_K:
+                     case alignof_expr_K:
                      case arrow_expr_K:
                      case bit_not_expr_K:
                      case buffer_ref_K:
@@ -1075,6 +1076,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case tree_list_K:
                      case tree_vec_K:
                      case abs_expr_K:
+                     case alignof_expr_K:
                      case arrow_expr_K:
                      case bit_not_expr_K:
                      case buffer_ref_K:

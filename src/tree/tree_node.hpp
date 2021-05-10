@@ -361,6 +361,7 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
 #define CASE_UNARY_EXPRESSION       \
    abs_expr_K:                      \
    case addr_expr_K:                \
+   case alignof_expr_K:             \
    case arrow_expr_K:               \
    case bit_not_expr_K:             \
    case buffer_ref_K:               \
@@ -407,6 +408,7 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  */
 #define CASE_NON_ADDR_UNARY_EXPRESSION \
    abs_expr_K:                         \
+   case alignof_expr_K:                \
    case arrow_expr_K:                  \
    case bit_not_expr_K:                \
    case buffer_ref_K:                  \
@@ -1570,6 +1572,11 @@ struct array_type : public type_node
       GETID(domn)
    };
 };
+
+/**
+ * This struct represent alignof_expr
+ */
+CREATE_TREE_NODE_CLASS(alignof_expr, unary_expr);
 
 /**
  * This struct represent arrow_expr

@@ -2772,7 +2772,9 @@ static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_n
       getBuiltinFieldTypes(GET_NODE(vt->elts), listOfTypes, already_visited);
    }
    else
+   {
       listOfTypes.push_back(type);
+   }
 }
 
 static bool same_size_fields(const tree_nodeConstRef& t)
@@ -2782,7 +2784,7 @@ static bool same_size_fields(const tree_nodeConstRef& t)
    getBuiltinFieldTypes(t, listOfTypes, already_visited);
    THROW_ASSERT(!listOfTypes.empty(), "at least one type is expected");
    auto sizeFlds = 0u;
-   for(auto fldType : listOfTypes)
+   for(const auto& fldType : listOfTypes)
    {
       if(!sizeFlds)
          sizeFlds = tree_helper::Size(fldType);
@@ -3669,6 +3671,7 @@ static unsigned int check_for_simple_pointer_arithmetic(const tree_nodeRef& node
       case ternary_mm_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -4169,6 +4172,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef& TM, const u
       case ternary_mm_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -4451,6 +4455,7 @@ bool tree_helper::is_fully_resolved(const tree_managerConstRef& TM, const unsign
       case ternary_mm_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -5096,6 +5101,7 @@ std::string tree_helper::op_symbol(const tree_node* op)
       case min_expr_K:
          return "";
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case assert_expr_K:
       case binfo_K:
@@ -6252,6 +6258,12 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
          res += print_type(TM, GET_INDEX_NODE(tt->name), global, print_qualifiers);
          break;
       }
+      case template_decl_K:
+      {
+         auto* td = GetPointer<template_decl>(node_type);
+         res += print_type(TM, GET_INDEX_NODE(td->name), global, print_qualifiers);
+         break;
+      }
       case binfo_K:
       case block_K:
       case call_expr_K:
@@ -6275,7 +6287,6 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
       case target_mem_ref461_K:
       case type_argument_pack_K:
       case translation_unit_decl_K:
-      case template_decl_K:
       case using_decl_K:
       case tree_vec_K:
       case var_decl_K:
@@ -6305,7 +6316,9 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
       case CASE_QUATERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
+      {
          THROW_UNREACHABLE("Type not yet supported " + boost::lexical_cast<std::string>(original_type) + " " + node_type->get_kind_text() + " " + boost::lexical_cast<std::string>(var));
+      }
    }
    if(!skip_var_printing)
    {
@@ -6857,6 +6870,7 @@ bool tree_helper::is_packed_access(const tree_managerConstRef& TreeM, unsigned i
       case ternary_mm_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -7520,6 +7534,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case reference_type_K:
       case vector_type_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:

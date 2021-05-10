@@ -513,6 +513,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
       case using_decl_K:
       case type_decl_K:
       case identifier_node_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case reference_expr_K:
       case abs_expr_K:
@@ -1013,6 +1014,7 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       case var_decl_K:
       case template_decl_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -1965,6 +1967,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   case tree_list_K:
                   case tree_vec_K:
                   case addr_expr_K:
+                  case alignof_expr_K:
                   case arrow_expr_K:
                   case bit_not_expr_K:
                   case buffer_ref_K:
@@ -3287,6 +3290,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case tree_vec_K:
             case abs_expr_K:
             case addr_expr_K:
+            case alignof_expr_K:
             case arrow_expr_K:
             case bit_not_expr_K:
             case buffer_ref_K:
@@ -3384,6 +3388,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                case tree_vec_K:
                case abs_expr_K:
                case addr_expr_K:
+               case alignof_expr_K:
                case arrow_expr_K:
                case bit_not_expr_K:
                case buffer_ref_K:
@@ -4653,6 +4658,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case save_expr_K:
       case vtable_ref_K:
       case with_cleanup_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case buffer_ref_K:
       case card_expr_K:
@@ -5242,6 +5248,7 @@ bool BehavioralHelper::is_a_constant(unsigned int obj) const
       case type_decl_K:
       case var_decl_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -5471,6 +5478,7 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
             case tree_vec_K:
             case abs_expr_K:
             case addr_expr_K:
+            case alignof_expr_K:
             case arrow_expr_K:
             case bit_not_expr_K:
             case buffer_ref_K:

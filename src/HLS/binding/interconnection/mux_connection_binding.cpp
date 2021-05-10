@@ -1167,6 +1167,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             break;
          }
          case abs_expr_K:
+         case alignof_expr_K:
          case arrow_expr_K:
          case bit_not_expr_K:
          case buffer_ref_K:
@@ -2220,6 +2221,7 @@ void mux_connection_binding::create_connections()
                   case bit_ior_concat_expr_K:
                   case abs_expr_K:
                   case addr_expr_K:
+                  case alignof_expr_K:
                   case arrow_expr_K:
                   case bit_not_expr_K:
                   case buffer_ref_K:

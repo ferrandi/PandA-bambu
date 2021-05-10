@@ -74,7 +74,7 @@ void remove_escaped(std::string& ioString);
 
 std::string TrimSpaces(const std::string& value);
 
-std::string string_demangle(std::string input);
+std::string string_demangle(const std::string& input);
 
 /**
  * Function with print number in desired format
@@ -160,6 +160,8 @@ std::string convert_fp_to_string(std::string num, unsigned int precision);
  * @param unsigned_type is true if the type of the number is unsigned
  */
 std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type, const bool unsigned_type);
+
+std::string FixedPointReinterpret(const std::string& FP_vector, const std::string& fp_typename);
 
 unsigned int ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed);
 #endif
