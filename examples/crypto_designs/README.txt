@@ -19,3 +19,9 @@ Xilinx Virtex 7 1887slices 529.8Mbit/s 406MHz (directory keccak_V7_2ns)
 These results have been obtained with PandA framework 0.9.5 and GCC version 6.0.0.
 
 Along with this example comes another one showing how it is possible to build an Autotools based project for the high-level synthesis with bambu: directory crypto_designs/multi-keccak.
+
+===================================================
+
+New results obtained with PandA framework 0.9.7-dev and Clang version 11.
+Altera Cyclone II 6818LEs 2844Mbit/s 180MHz 
+Xilinx Virtex 7 1634slices 6930Mbit/s 333MHz 
