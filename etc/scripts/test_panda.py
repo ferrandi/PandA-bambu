@@ -480,7 +480,7 @@ parser.add_argument("--bambu", help="The bambu executable (default=/opt/panda/bi
 parser.add_argument("--spider", help="The spider executable (default=/opt/panda/bin/spider)", default="/opt/panda/bin/spider")
 parser.add_argument("--spider-style", help="The spider table style relative to the spider executable (default=../lib/latex_format_bambu_results.xml)", default="../lib/latex_format_bambu_results.xml")
 parser.add_argument("--zebu", help="The zebu executable (default=/opt/panda/bin/zebu)", default="/opt/panda/bin/zebu")
-parser.add_argument('-t', "--timeout", help="Timeout for tool execution (default=60m)", default="60m")
+parser.add_argument('-t', "--timeout", help="Timeout for tool execution (default=75m)", default="75m")
 parser.add_argument('-a', "--args", help="A set of arguments to be passed to the tool", nargs='*', action='append')
 parser.add_argument('-c', "--commonargs", help="A set of arguments to be passed to the tool", nargs='*', action='append')
 parser.add_argument("--table", help="Print the results in tex format", default="results.tex")

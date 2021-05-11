@@ -129,7 +129,7 @@ void iota(UINT64 *A, unsigned int indexRound)
 }
 
 
-void kekka_coproc(UINT64 *A)
+void kekka_coproc(UINT64 A[25])
 {
     unsigned int i;
     for(i=0;i<nrRounds;i++) { 
