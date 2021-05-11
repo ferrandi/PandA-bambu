@@ -1762,14 +1762,15 @@ begin
             temp = in1;
             temp[BITSIZE_in2+in3-1 -: BITSIZE_in2] = in2;
           end
-          assign out1 = temp;" VHDL_PROVIDED="
-  begin
-  process (in1, in2, in3) 
-    variable temp : std_logic_vector (31 downto 0);
-  begin 
-    temp := in1;
-    temp (7 + to_integer(unsigned(in3)) downto to_integer(unsigned(in3))) := in2;
-  end process;"/>
+          assign out1 = temp;" VHDL_PROVIDED=
+  "begin
+    process (in1, in2, in3) 
+      variable temp : std_logic_vector (BITSIZE_in0 - 1 downto 0);
+    begin 
+      temp := in1;
+      temp (BITSIZE_in1 - 1 + to_integer(unsigned(in3)) downto to_integer(unsigned(in3))) := in2;
+    end process;
+  "/>
         </component_o>
       </circuit>
     </cell>
