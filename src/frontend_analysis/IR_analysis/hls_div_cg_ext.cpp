@@ -107,23 +107,24 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
-
-         break;
-      }
       case DEPENDENCE_RELATIONSHIP:
       {
-         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          }
+         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
+         {
+            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
+         }
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -132,7 +133,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+               if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+               {
+                  relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+               }
                break;
             }
             case DesignFlowStep_Status::SKIPPED:
@@ -148,7 +152,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             default:
                THROW_UNREACHABLE("");
          }
-
          break;
       }
       default:
@@ -402,9 +405,9 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   bool CEunsignedp = tree_helper::is_unsigned(TreeM, GET_INDEX_NODE(callExpr));
                   if(CEunsignedp != unsignedp)
                   {
-                     std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema, ga_schema;
+                     std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
                      ne_schema[TOK(TOK_TYPE)] = STR(expr_type_index);
-                     ne_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                     ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                      ne_schema[TOK(TOK_OP)] = STR(callExpr->index);
                      const auto ne_id = TreeM->new_tree_node_id();
                      TreeM->create_tree_node(ne_id, nop_expr_K, ne_schema);
@@ -446,9 +449,9 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                      bool CEunsignedp = tree_helper::is_unsigned(TreeM, GET_INDEX_NODE(callExpr));
                      if(CEunsignedp != unsignedp)
                      {
-                        std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema, ga_schema;
+                        std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
                         ne_schema[TOK(TOK_TYPE)] = STR(expr_type_index);
-                        ne_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                        ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         ne_schema[TOK(TOK_OP)] = STR(callExpr->index);
                         const auto ne_id = TreeM->new_tree_node_id();
                         TreeM->create_tree_node(ne_id, nop_expr_K, ne_schema);

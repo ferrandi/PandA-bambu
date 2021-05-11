@@ -656,30 +656,40 @@ namespace clang
                      }
                   }
                   auto argType = ND->getType();
-                  // argType->dump (llvm::errs() );
-                  if(isa<DecayedType>(argType))
+                  auto manageArray = [&] (const ConstantArrayType* CA, bool setInterfaceType)
                   {
-                     auto DT = cast<DecayedType>(argType);
-                     if(DT->getOriginalType()->isConstantArrayType())
+                     auto OrigTotArraySize = CA->getSize();
+                     std::string Dimensions;
+                     if(!setInterfaceType)
                      {
-                        auto CA = cast<ConstantArrayType>(DT->getOriginalType());
-                        auto OrigTotArraySize = CA->getSize();
-                        std::string Dimensions;
-                        while(CA->getElementType()->isConstantArrayType())
-                        {
-                           CA = cast<ConstantArrayType>(CA->getElementType());
-                           auto n_el = CA->getSize();
-                           Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
-                           OrigTotArraySize *=n_el;
-                        }
-                        auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " *";
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString() + (Dimensions ==  "" ? " *" : " (*)"+Dimensions);
-                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                        Dimensions = "[" + OrigTotArraySize.toString(10, false) + "]";
+                     }
+                     while(CA->getElementType()->isConstantArrayType())
+                     {
+                        CA = cast<ConstantArrayType>(CA->getElementType());
+                        auto n_el = CA->getSize();
+                        Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
+                        OrigTotArraySize *=n_el;
+                     }
+                     auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
+                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " *";
+                     ParamTypeNameOrig = paramTypeRemTD.getAsString() + (Dimensions ==  "" ? " *" : " (*)"+Dimensions);
+                     if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                        ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                     if(setInterfaceType)
+                     {
                         interfaceType = "array";
                         arraySize = OrigTotArraySize.toString(10, false);
                         assert(arraySize != "0");
+                     }
+                  };
+                  //argType->dump ();
+                  if(isa<DecayedType>(argType))
+                  {
+                     auto DT = cast<DecayedType>(argType);
+                     if(DT->getOriginalType().IgnoreParens()->isConstantArrayType())
+                     {
+                        manageArray(llvm::cast<ConstantArrayType>(DT->getOriginalType().IgnoreParens()), true);
                      }
                      else
                      {
@@ -715,11 +725,38 @@ namespace clang
                   }
                   else if(argType->isPointerType() || argType->isReferenceType())
                   {
-                     auto paramTypeRemTD = RemoveTypedef(argType);
-                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD);
-                     ParamTypeNameOrig = paramTypeRemTD.getAsString();
-                     if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                        ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                     if(auto PT = llvm::dyn_cast<PointerType>(argType))
+                     {
+                        if(auto CA = llvm::dyn_cast<ConstantArrayType>(PT->getPointeeType().IgnoreParens()))
+                        {
+                           manageArray(CA, false);
+                        }
+                        else
+                        {
+                           auto paramTypeRemTD = RemoveTypedef(PT->getPointeeType());
+                           ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " *";
+                           ParamTypeNameOrig = paramTypeRemTD.getAsString() + " *";
+                           if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                              ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                        }
+                     }
+                     else if(auto RT = dyn_cast<ReferenceType>(argType))
+                     {
+                        auto paramTypeRemTD = RemoveTypedef(RT->getPointeeType());
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " &";
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString() + " &";
+                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                     }
+                     else
+                     {
+                        auto paramTypeRemTD = RemoveTypedef(argType);
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD);
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString();
+                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+
+                     }
                      interfaceType = "ptrdefault";
                      if(UDIT_p)
                      {

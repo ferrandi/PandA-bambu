@@ -2293,7 +2293,7 @@ void mux_connection_binding::create_connections()
                      THROW_ASSERT(cefn && cefn->get_kind() == addr_expr_K, "expected a function");
 #ifndef NDEBUG
                      auto* fd = GetPointer<function_decl>(GET_NODE(GetPointer<addr_expr>(cefn)->op));
-                     THROW_ASSERT(fd && (tree_helper::print_function_name(TreeM, fd) == "memcpy" || tree_helper::print_function_name(TreeM, fd) == "__internal_bambu_memcpy"), "expected a memcpy call");
+                     THROW_ASSERT(fd && (tree_helper::print_function_name(TreeM, fd) == "memcpy" || tree_helper::print_function_name(TreeM, fd) == MEMCPY), "expected a memcpy call");
 #endif
                      const std::vector<tree_nodeRef>& args = ce->args;
                      unsigned int num = 0;
@@ -2387,7 +2387,7 @@ void mux_connection_binding::create_connections()
                      THROW_ASSERT(cefn && cefn->get_kind() == addr_expr_K, "expected a function");
 #ifndef NDEBUG
                      auto* fd = GetPointer<function_decl>(GET_NODE(GetPointer<addr_expr>(cefn)->op));
-                     THROW_ASSERT(fd && (tree_helper::print_function_name(TreeM, fd) == "memset" || tree_helper::print_function_name(TreeM, fd) == "__internal_bambu_memset"), "expected a memcpy call");
+                     THROW_ASSERT(fd && (tree_helper::print_function_name(TreeM, fd) == "memset" || tree_helper::print_function_name(TreeM, fd) == MEMSET), "expected a memcpy call");
 #endif
                      const std::vector<tree_nodeRef>& args = ce->args;
                      unsigned int num = 0;

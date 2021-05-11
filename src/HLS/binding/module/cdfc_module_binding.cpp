@@ -1006,7 +1006,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    {
       std::vector<vertex> c2s;
       c2s.reserve(boost::num_vertices(*fdfg));
-      CustomUnorderedMap<vertex, cdfc_vertex> s2c;
+      CustomOrderedMap<vertex, cdfc_vertex> s2c;
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Creating the cdfc for the module binding...");
       connection_relation con_rel;
@@ -1633,7 +1633,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       /// partition vertices for clique covering or bind the easy functional units
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---partition vertices for clique covering or bind the easy functional units");
       std::map<unsigned int, unsigned int> numModule;
-      std::map<unsigned int, CustomUnorderedSet<cdfc_vertex>, cdfc_resource_ordering_functor> partitions(r_functor);
+      std::map<unsigned int, CustomOrderedSet<cdfc_vertex>, cdfc_resource_ordering_functor> partitions(r_functor);
       for(const auto& fu_cv : candidate_vertices)
       {
          fu_unit = fu_cv.first;

@@ -40,7 +40,7 @@ float hypotf(float x, float y) /* wrapper hypotf */
    z = __hide_ieee754_hypotf(x, y);
    if(_LIB_VERSION == _IEEE_)
       return z;
-   if((!__finitef(z)) && __finitef(x) && __finitef(y))
+   if((!finitef(z)) && finitef(x) && finitef(y))
    {
       /* hypotf(finite,finite) overflow */
 #ifndef HUGE_VAL

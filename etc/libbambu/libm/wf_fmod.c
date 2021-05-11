@@ -38,7 +38,7 @@ float fmodf(float x, float y) /* wrapper fmodf */
    float z;
    struct exception exc;
    z = __hide_ieee754_fmodf(x, y);
-   if(_LIB_VERSION == _IEEE_ || isnan(y) || isnan(x))
+   if(_LIB_VERSION == _IEEE_ || isnanf(y) || isnanf(x))
       return z;
    if(y == (float)0.0)
    {

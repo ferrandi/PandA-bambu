@@ -100,7 +100,7 @@ struct cdfc_graph_vertex_selector
 {
  public:
    using vertex_descriptor = typename boost::graph_traits<Graph>::vertex_descriptor;
-   using SET_container = CustomUnorderedSet<vertex_descriptor>;
+   using SET_container = CustomOrderedSet<vertex_descriptor>;
    /// constructor
    cdfc_graph_vertex_selector() : all(true), support(nullptr)
    {

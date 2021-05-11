@@ -38,7 +38,7 @@ float gammaf(float x)
    y = __hide_ieee754_lgammaf_r(x, &signgam);
    if(_LIB_VERSION == _IEEE_)
       return y;
-   if(!__finitef(y) && __finitef(x))
+   if(!finitef(y) && finitef(x))
    {
 #ifndef HUGE_VAL
 #define HUGE_VAL inf

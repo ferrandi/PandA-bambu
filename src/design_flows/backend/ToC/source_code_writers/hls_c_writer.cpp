@@ -223,6 +223,27 @@ void HLSCWriter::WriteTestbenchHelperFunctions()
    if(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy))
    {
       // Builtin floating point checkers
+      indented_output_stream->Append("typedef union view_convert32 {\n");
+      indented_output_stream->Append("unsigned int bits;\n");
+      indented_output_stream->Append("float fp32;\n");
+      indented_output_stream->Append("};\n\n");
+      indented_output_stream->Append("typedef union view_convert64 {\n");
+      indented_output_stream->Append("unsigned long long bits;\n");
+      indented_output_stream->Append("double fp64;\n");
+      indented_output_stream->Append("};\n\n");
+      indented_output_stream->Append("float _Int32_ViewConvert(unsigned int i)\n");
+      indented_output_stream->Append("{\n");
+      indented_output_stream->Append("union view_convert32 vc;\n");
+      indented_output_stream->Append("vc.bits = i;\n");
+      indented_output_stream->Append("return vc.fp32;\n");
+      indented_output_stream->Append("}\n\n");
+      indented_output_stream->Append("double _Int64_ViewConvert(unsigned long long i)\n");
+      indented_output_stream->Append("{\n");
+      indented_output_stream->Append("union view_convert64 vc;\n");
+      indented_output_stream->Append("vc.bits = i;\n");
+      indented_output_stream->Append("return vc.fp64;\n");
+      indented_output_stream->Append("}\n");
+      indented_output_stream->Append("\n\n");
       indented_output_stream->Append("unsigned char _FPs32Mismatch_(float c, float e, float max_ulp)\n");
       indented_output_stream->Append("{\n");
       indented_output_stream->Append("unsigned int binary_c = *((unsigned int*)&c);\n");

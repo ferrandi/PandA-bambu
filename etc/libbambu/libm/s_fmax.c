@@ -16,11 +16,10 @@
 
 double fmax(double x, double y)
 {
-   if(__fpclassify(x) == FP_NAN)
+   if(fpclassify(x) == FP_NAN)
       return y;
-   if(__fpclassify(y) == FP_NAN)
+   if(fpclassify(y) == FP_NAN)
       return x;
 
    return x > y ? x : y;
 }
-

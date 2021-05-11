@@ -322,7 +322,8 @@
 #define OPT_SOFT_FLOAT (1 + OPT_SKIP_PIPE_PARAMETER)
 #define OPT_SOFTFLOAT_SUBNORMAL (1 + OPT_SOFT_FLOAT)
 #define OPT_SOFTFLOAT_NOROUNDING (1 + OPT_SOFTFLOAT_SUBNORMAL)
-#define OPT_SOFT_FP (1 + OPT_SOFTFLOAT_NOROUNDING)
+#define OPT_SOFTFLOAT_NOEXCEPTION (1 + OPT_SOFTFLOAT_NOROUNDING)
+#define OPT_SOFT_FP (1 + OPT_SOFTFLOAT_NOEXCEPTION)
 #define OPT_STG (1 + OPT_SOFT_FP)
 #define OPT_SPECULATIVE (1 + OPT_STG)
 #define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_SPECULATIVE)
@@ -339,8 +340,9 @@
 #define OPT_VISUALIZER (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
 #define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
-#define OPT_MASK (1 + OPT_RANGE_ANALYSIS_MODE)
-#define OPT_PARALLEL_BACKEND (1 + OPT_MASK)
+#define OPT_FP_FORMAT (1 + OPT_RANGE_ANALYSIS_MODE)
+#define OPT_PROPAGATE_FP_FORMAT (1 + OPT_FP_FORMAT)
+#define OPT_PARALLEL_BACKEND (1 + OPT_PROPAGATE_FP_FORMAT)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -812,6 +814,21 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --max-ulp\n"
       << "        Define the maximal ULP (Unit in the last place, i.e., is the spacing\n"
       << "        between floating-point numbers) accepted.\n\n"
+      << "    --fp-format\n"
+      << "        Define arbitrary precision floating-point format by type or by function.\n"
+      << "        <func_name>*<exp_bits>*<frac_bits>*<exp_bias>*<round>*<nan>*<one>*<sub>*<sign>* (use comma separated list for multiple definitions)\n"
+      << "           func_name - Set arbitrary floating-point format for a specific function\n"
+      << "                       (Arbitrary floating-point format will apply to specified function only, use --propaget-fp-format to extend it to called functions)"
+      << "            exp_bits - Number of bits used by the exponent\n"
+      << "           frac_bits - Number of bits used by the fractional value\n"
+      << "            exp_bias - Bias applied to the unsigned value represented by the exponent bits\n"
+      << "             round   - Floating-point operations for this type will include rounding (default=1)\n"
+      << "              nan    - Floating-point operations for this type can result in NaN/Inf/-Inf (default=1)\n"
+      << "              one    - Floating-point representation will exploit hidden-one convention (default=1)\n"
+      << "              sub    - Floating-point representation will exploit subnormals (default=0)\n"
+      << "           sign_bit  - Set sign bit to a fixed value (1 or 0) or leave it data dependant (default=U)\n\n"
+      << "    --propagate-fp-format\n"
+      << "        Propagate user-defined floating-point format to called function when possible\n\n"
       << "    --hls-div=<method>\n"
       << "        Perform the high-level synthesis of integer division and modulo\n"
       << "        operations starting from a C library based implementation or a HDL component:\n"
@@ -1186,6 +1203,7 @@ int BambuParameter::Exec()
 #endif
       {"softfloat-subnormal", no_argument, nullptr, OPT_SOFTFLOAT_SUBNORMAL},
       {"softfloat-norounding", no_argument, nullptr, OPT_SOFTFLOAT_NOROUNDING},
+      {"softfloat-noexception", no_argument, nullptr, OPT_SOFTFLOAT_NOEXCEPTION},
       {"libm-std-rounding", no_argument, nullptr, OPT_LIBM_STD_ROUNDING},
       {"soft-fp", no_argument, nullptr, OPT_SOFT_FP},
       {"hls-div", optional_argument, nullptr, OPT_HLS_DIV},
@@ -1257,7 +1275,8 @@ int BambuParameter::Exec()
       {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
       {"range-analysis-mode", optional_argument, nullptr, OPT_RANGE_ANALYSIS_MODE},
-      {"mask", optional_argument, nullptr, OPT_MASK},
+      {"fp-format", optional_argument, nullptr, OPT_FP_FORMAT},
+      {"propagate-fp-format", optional_argument, nullptr, OPT_PROPAGATE_FP_FORMAT},
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
@@ -2004,8 +2023,12 @@ int BambuParameter::Exec()
          }
          case OPT_SOFTFLOAT_NOROUNDING:
          {
-            setOption(OPT_softfloat_subnormal, false);
             setOption(OPT_softfloat_norounding, true);
+            break;
+         }
+         case OPT_SOFTFLOAT_NOEXCEPTION:
+         {
+            setOption(OPT_softfloat_noexception, true);
             break;
          }
          case OPT_LIBM_STD_ROUNDING:
@@ -2354,9 +2377,14 @@ int BambuParameter::Exec()
             setOption(OPT_range_analysis_mode, optarg);
             break;
          }
-         case OPT_MASK:
+         case OPT_FP_FORMAT:
          {
-            setOption(OPT_mask, optarg);
+            setOption(OPT_fp_format, optarg);
+            break;
+         }
+         case OPT_PROPAGATE_FP_FORMAT:
+         {
+            setOption(OPT_propagate_fp_format, true);
             break;
          }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
@@ -3575,10 +3603,6 @@ void BambuParameter::CheckParameters()
       {
          add_bambu_library("softfloat_subnormals");
       }
-      else if(isOption(OPT_softfloat_norounding) && getOption<bool>(OPT_softfloat_norounding))
-      {
-         add_bambu_library("softfloat_norounding");
-      }
       else
       {
          add_bambu_library("softfloat");
@@ -4193,7 +4217,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_no_return_zero, false);
    setOption(OPT_bitvalue_ipa, true);
    setOption(OPT_range_analysis_mode, "");
-   setOption(OPT_mask, "");
+   setOption(OPT_fp_format, "");
+   setOption(OPT_propagate_fp_format, false);
    setOption(OPT_parallel_backend, false);
 
 #if HAVE_HOST_PROFILING_BUILT

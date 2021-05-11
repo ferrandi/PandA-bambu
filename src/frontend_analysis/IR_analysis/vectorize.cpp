@@ -960,7 +960,7 @@ void Vectorize::AddGuards()
          /// Create the phi
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_phi_schema;
          const auto gimple_phi_id = TM->new_tree_node_id();
-         gimple_phi_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_phi_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_phi_schema[TOK(TOK_TYPE)] = STR(boolean_type->index);
          gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
          gimple_phi_schema[TOK(TOK_SCPE)] = STR(function_id);
@@ -1210,7 +1210,7 @@ void Vectorize::FixPhis()
             }();
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema, ssa_schema;
             const auto cond_expr_id = TM->new_tree_node_id();
-            cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+            cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
             cond_expr_schema[TOK(TOK_TYPE)] = STR(type->index);
             THROW_ASSERT(guards.find(source_id) != guards.end(), "");
             cond_expr_schema[TOK(TOK_OP0)] = STR(guards.find(source_id)->second->index);
@@ -1240,7 +1240,7 @@ void Vectorize::FixPhis()
 
             /// Create the assign
             const auto gimple_node_id = TM->new_tree_node_id();
-            gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+            gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
             gimple_assign_schema[TOK(TOK_TYPE)] = STR(type->index);
             gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
             gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);

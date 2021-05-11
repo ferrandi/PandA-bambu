@@ -192,20 +192,17 @@ namespace llvm
 #undef DEFTREECODE
 #undef DEFGSCODE
 
-#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                                                                                                                                        \
-   ((TYPE) == tcc_unary ? GIMPLE_UNARY_RHS :                                                                                                                                                                                         \
-                          ((TYPE) == tcc_binary || (TYPE) == tcc_comparison) ?                                                                                                                                                       \
-                          GIMPLE_BINARY_RHS :                                                                                                                                                                                        \
-                          ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ?                                                                                                                         \
-                          GIMPLE_SINGLE_RHS :                                                                                                                                                                                        \
-                          (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?                                                                                                         \
-                          GIMPLE_BINARY_RHS :                                                                                                                                                                                        \
-                          GT(SYM) == GT(TRUTH_NOT_EXPR) ?                                                                                                                                                                            \
-                          GIMPLE_UNARY_RHS :                                                                                                                                                                                         \
-                          (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) || \
-                           GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) || GT(SYM) == GT(FMA_EXPR)) ?                                                                              \
-                          GIMPLE_TERNARY_RHS :                                                                                                                                                                                       \
-                          (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) || GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ? GIMPLE_SINGLE_RHS : GIMPLE_INVALID_RHS),
+#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                                                                                                                                                  \
+   ((TYPE) == tcc_unary                                                                              ? GIMPLE_UNARY_RHS :                                                                                                                      \
+    ((TYPE) == tcc_binary || (TYPE) == tcc_comparison)                                               ? GIMPLE_BINARY_RHS :                                                                                                                     \
+    ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference)                 ? GIMPLE_SINGLE_RHS :                                                                                                                     \
+    (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ? GIMPLE_BINARY_RHS :                                                                                                                     \
+    GT(SYM) == GT(TRUTH_NOT_EXPR)                                                                    ? GIMPLE_UNARY_RHS :                                                                                                                      \
+    (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) || GT(SYM) == GT(VEC_COND_EXPR) || \
+     GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) || GT(SYM) == GT(FMA_EXPR)) ?                                                                                                                                              \
+                                                                                                                                                                                        GIMPLE_TERNARY_RHS :                                   \
+    (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) || GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ? GIMPLE_SINGLE_RHS :                                    \
+                                                                                                                                                                                        GIMPLE_INVALID_RHS),
 #define END_OF_BASE_TREE_CODES GIMPLE_INVALID_RHS,
 #define DEFGSCODE(SYM, NAME, GSSCODE) GIMPLE_INVALID_RHS,
    const DumpGimpleRaw::gimple_rhs_class DumpGimpleRaw::gimple_rhs_class_table[] = {
@@ -234,6 +231,24 @@ namespace llvm
 #include "gcc/builtins.def"
    };
 #undef DEF_BUILTIN
+
+   std::string DumpGimpleRaw::getName(const llvm::GlobalObject* fd)
+   {
+      const std::string name = fd->getName().data();
+      const auto name_finite_pos = name.find("_finite");
+      if(name_finite_pos != std::string::npos && (name_finite_pos + strlen("_finite")) == name.size())
+      {
+         if(name.size() > (2 + strlen("_finite")))
+         {
+            const auto name_nofinite = name.substr(2, name_finite_pos - 2);
+            if(builtinsNames.find(std::string("__builtin_") + name_nofinite) != builtinsNames.end() || builtinsNames.find(name_nofinite) != builtinsNames.end())
+            {
+               return name_nofinite;
+            }
+         }
+      }
+      return name;
+   }
 
    static std::string getDemangled(const std::string& declname)
    {
@@ -533,9 +548,9 @@ namespace llvm
       if(TREE_CODE(t) == GT(LABEL_DECL))
          return false;
       const llvm::GlobalObject* llvm_obj = reinterpret_cast<const llvm::GlobalObject*>(t);
-      if(!llvm_obj->getName().empty())
+      if(!getName(llvm_obj).empty())
       {
-         std::string declname = std::string(llvm_obj->getName());
+         std::string declname = getName(llvm_obj);
          int status;
          char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
          if(status == 0)
@@ -558,9 +573,9 @@ namespace llvm
          return DECL_ASSEMBLER_NAME(ov->orig);
       }
       const llvm::GlobalObject* llvm_obj = reinterpret_cast<const llvm::GlobalObject*>(t);
-      if(!llvm_obj->getName().empty())
+      if(!getName(llvm_obj).empty())
       {
-         std::string declname = std::string(llvm_obj->getName());
+         std::string declname = getName(llvm_obj);
          if(identifierTable.find(declname) == identifierTable.end())
             identifierTable.insert(declname);
          const void* dn = identifierTable.find(declname)->c_str();
@@ -650,9 +665,9 @@ namespace llvm
          case llvm::Intrinsic::fmuladd:
          {
             if(fd->getReturnType()->isFloatTy())
-               return "__float32_muladdif";
+               return "__float32_muladd";
             else if(fd->getReturnType()->isDoubleTy())
-               return "__float64_muladdif";
+               return "__float64_muladd";
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
          }
@@ -707,7 +722,7 @@ namespace llvm
             declname = getIntrinsicName(fd);
          else
          {
-            declname = std::string(llvm_obj->getName());
+            declname = getName(fd);
             int status;
             char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
             if(status == 0)
@@ -762,7 +777,7 @@ namespace llvm
       }
       else if(llvm_obj->hasName())
       {
-         std::string declname = std::string(llvm_obj->getName());
+         std::string declname = std::string(llvm_obj->getName().data());
          if(identifierTable.find(declname) == identifierTable.end())
             identifierTable.insert(declname);
          const void* dn = identifierTable.find(declname)->c_str();
@@ -1255,7 +1270,7 @@ namespace llvm
          auto ty = store.getValueOperand()->getType();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         std::string funName = store.getFunction()->getName().data();
+         std::string funName = getName(store.getFunction());
          auto demangled = getDemangled(funName);
          bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
          if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter)
@@ -2038,7 +2053,7 @@ namespace llvm
          auto ty = load.getType();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         std::string funName = load.getFunction()->getName().data();
+         std::string funName = getName(load.getFunction());
          auto demangled = getDemangled(funName);
          bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
 
@@ -2438,7 +2453,7 @@ namespace llvm
          if(fd->isIntrinsic())
             declname = getIntrinsicName(fd);
          else
-            declname = std::string(fd->getName());
+            declname = std::string(getName(fd));
          if(builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() || builtinsNames.find(declname) != builtinsNames.end())
             return true;
       }
@@ -3075,7 +3090,7 @@ namespace llvm
    {
       const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
       bool nameAreKnown = false;
-      if(fd->hasName() && fun2params->find(fd->getName().data()) != fun2params->end() && fun2params->find(fd->getName().data())->second.size() == fd->arg_size())
+      if(fd->hasName() && fun2params->find(getName(fd)) != fun2params->end() && fun2params->find(getName(fd))->second.size() == fd->arg_size())
       {
          nameAreKnown = true;
       }
@@ -3086,7 +3101,7 @@ namespace llvm
       {
          res.push_back(assignCodeAuto(&par));
          if(nameAreKnown)
-            argNameTable[&par] = fun2params->find(fd->getName().data())->second[par_index];
+            argNameTable[&par] = fun2params->find(getName(fd))->second[par_index];
          ++par_index;
       }
       return res;
@@ -4657,13 +4672,14 @@ namespace llvm
          if(fd->isIntrinsic())
             declname = getIntrinsicName(fd);
          else
-            declname = std::string(fd->getName());
+            declname = std::string(getName(fd));
          if(declname == "acos" or declname == "acosh" or declname == "asin" or declname == "asinh" or declname == "atan" or declname == "atanh" or declname == "atan2" or declname == "cbrt" or declname == "ceil" or declname == "copysign" or
             declname == "cos" or declname == "cosh" or declname == "erf" or declname == "erfc" or declname == "exp" or declname == "exp2" or declname == "expm1" or declname == "fabs" or declname == "fdim" or declname == "floor" or declname == "fma" or
             declname == "fmax" or declname == "fmin" or declname == "fmod" or declname == "frexp" or declname == "hypot" or declname == "ilogb" or declname == "ldexp" or declname == "lgamma" or declname == "llrint" or declname == "llround" or
             declname == "log" or declname == "log10" or declname == "log1p" or declname == "log2" or declname == "logb" or declname == "lrint" or declname == "lround" or declname == "modf" or declname == "nan" or declname == "nearbyint" or
             declname == "nextafter" or declname == "nexttoward" or declname == "pow" or declname == "remainder" or declname == "remquo" or declname == "rint" or declname == "round" or declname == "scalbln" or declname == "scalbn" or declname == "sin" or
-            declname == "sinh" or declname == "sincos" or declname == "sqrt" or declname == "tan" or declname == "tanh" or declname == "tgamma" or declname == "trunc" or declname == "isinf" or declname == "isnan")
+            declname == "sinh" or declname == "sincos" or declname == "sqrt" or declname == "tan" or declname == "tanh" or declname == "tgamma" or declname == "trunc" or declname == "isinf" or declname == "isinf_sign" or declname == "isnan" or
+            declname == "isnormal" or declname == "isfinite" or declname == "huge_val")
             return "/usr/include/math.h";
          else if(declname == "cabs" or declname == "cacos" or declname == "cacosh" or declname == "carg" or declname == "casin" or declname == "casinh" or declname == "catan" or declname == "catanh" or declname == "ccos" or declname == "ccosh" or
                  declname == "cexp" or declname == "cimag" or declname == "clog" or declname == "conj" or declname == "cpow" or declname == "cproj" or declname == "creal" or declname == "csin" or declname == "csinh" or declname == "csqrt" or
@@ -5144,8 +5160,8 @@ namespace llvm
    {
       assert(TREE_CODE(obj) == GT(FUNCTION_DECL));
       const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(obj);
-      stream << "\n;; Function " << fd->getName() << "(" << fd->getName() << ")\n\n";
-      stream << ";; " << fd->getName() << "(";
+      stream << "\n;; Function " << getName(fd) << "(" << getName(fd) << ")\n\n";
+      stream << ";; " << getName(fd) << "(";
       stream << ")\n";
    }
 
@@ -5539,7 +5555,7 @@ namespace llvm
 #if __clang_major__ != 4
          const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
 #endif
-         auto fname = std::string(currFuncIterator->getName());
+         auto fname = std::string(getName(&F));
          llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
          for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
          {
@@ -6042,8 +6058,8 @@ namespace llvm
       auto currFuncIterator = M.getFunctionList().begin();
       while(currFuncIterator != M.getFunctionList().end())
       {
-         auto fname = std::string(currFuncIterator->getName());
          auto& F = *currFuncIterator;
+         auto fname = std::string(getName(&F));
 #if __clang_major__ >= 10
          llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
 #endif
@@ -6211,7 +6227,8 @@ namespace llvm
       auto currFuncIterator = M.getFunctionList().begin();
       while(currFuncIterator != M.getFunctionList().end())
       {
-         auto fname = std::string(currFuncIterator->getName());
+         auto& F = *currFuncIterator;
+         auto fname = std::string(getName(&F));
          for(auto& BB : currFuncIterator->getBasicBlockList())
          {
             auto curInstIterator = BB.getInstList().begin();
@@ -6297,7 +6314,7 @@ namespace llvm
             llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
 #endif
 #ifdef DEBUG_RA
-            llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << F.getName() << "\n";
+            llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << getName(&F) << "\n";
 #endif
             std::list<llvm::Instruction*> deadList;
             for(auto& BB : F.getBasicBlockList())
@@ -6757,13 +6774,13 @@ namespace llvm
             if(fun.isIntrinsic())
             {
 #if PRINT_DBG_MSG
-               llvm::errs() << "Function intrinsic skipped: " << fun.getName() << "|" << ValueTyNames[fun.getValueID()] << "\n";
+               llvm::errs() << "Function intrinsic skipped: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n";
 #endif
             }
             else
             {
 #if PRINT_DBG_MSG
-               llvm::errs() << "Found function: " << fun.getName() << "|" << ValueTyNames[fun.getValueID()] << "\n";
+               llvm::errs() << "Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n";
 #endif
                SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
             }
