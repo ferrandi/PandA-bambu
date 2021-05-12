@@ -112,7 +112,9 @@ const char* verilog_writer::tokenNames[] = {
 
 void verilog_writer::write_comment(const std::string& comment_string)
 {
+   indented_output_stream->disable_counting();
    indented_output_stream->Append("// " + comment_string);
+   indented_output_stream->enable_counting();
 }
 
 std::string verilog_writer::type_converter(structural_type_descriptorRef Type)
