@@ -981,7 +981,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          {
             std::string ip_cores = np->get_NP_functionality(NP_functionality::IP_COMPONENT);
             std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
-            for(auto ip_core : ip_cores_list)
+            for(const auto& ip_core : ip_cores_list)
             {
                std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
                if(ip_core_vec.size() < 1 or ip_core_vec.size() > 2)
