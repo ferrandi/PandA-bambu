@@ -79,7 +79,6 @@
 /// Utility include
 #include "boost/graph/topological_sort.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "simple_indent.hpp"
 
 StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS, const ParameterConstRef _Param)
     : state_transition_graphs_collection(

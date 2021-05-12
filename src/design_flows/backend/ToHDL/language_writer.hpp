@@ -52,7 +52,6 @@
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "refcount.hpp"
-#include "simple_indent.hpp"
 
 #include <list>
 #include <map>
