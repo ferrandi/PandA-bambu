@@ -1023,7 +1023,7 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
 }
 
 /**
- * Given two bb linked by a forwarding edge, this method tries to move
+ * Given two bb linked by a forwarding edge, this method tries to
  * overlap the execution of the last state of the bb ending the cycle
  * with the execution of the first state of the bb that begins the cycle.
  */
@@ -1064,6 +1064,16 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       if(stg->CGetStateInfo(cstate)->is_duplicated)
       {
          return;
+      }
+   }
+   bool first_state_cannot_be_duplicated = false;
+   BOOST_FOREACH(EdgeDescriptor oedge, boost::out_edges(first_state[bbEndingCycle], *stg))
+   {
+      vertex cstate = boost::target(oedge, *stg);
+      if(stg->CGetStateInfo(cstate)->is_dummy)
+      {
+         first_state_cannot_be_duplicated = true;
+         break;
       }
    }
    // std::cerr << "considering this last state " << stg->CGetStateInfo(lastst)->name << std::endl;
@@ -1279,10 +1289,6 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       }
    }
 
-   /********************************************************
-    If I arrive here, it is possible to move the last state
-    *********************************************************/
-
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "compute which variables are defined and used");
    /*
     compute which variables are defined and used by the operations that will be
@@ -1370,6 +1376,11 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       {
          return;
       }
+      /// check if first state duplication is required
+      if(in_degree_following_Bb[bbVertex] > 1 && first_state_cannot_be_duplicated)
+      {
+         return;
+      }
    }
 
    for(auto bbVertex : followingBb)
@@ -1390,6 +1401,9 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
          }
       }
    }
+   /********************************************************
+    If I arrive here, it is possible to move the last state
+    *********************************************************/
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "One state can be moved!");
 
    /*
