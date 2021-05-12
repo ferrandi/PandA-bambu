@@ -661,6 +661,14 @@ class tree_manipulation
     * @return the tree reindex of the created node
     */
    tree_nodeRef CreateVectorBooleanType(const unsigned int number_of_elements) const;
+
+   /**
+    * @brief CloneFunction duplicates a function
+    * @param tn is the tree reindex of the function decl
+    * @param funNameSuffix is the suffix added to function_decl newly created
+    * @return tree_reindex of the new function decl
+    */
+   tree_nodeRef CloneFunction(const tree_nodeRef& tn, const std::string& funNameSuffix);
 };
 
 using tree_manipulationRef = refcount<tree_manipulation>;

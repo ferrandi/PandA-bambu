@@ -445,8 +445,7 @@ void addInfoFor(OperandRef Op, PredicateBase* PB, CustomSet<OperandRef>& OpsToRe
 bool isCompare(const struct binary_expr* condition)
 {
    auto c_type = condition->get_kind();
-   return c_type == eq_expr_K || c_type == ne_expr_K || c_type == ltgt_expr_K || c_type == uneq_expr_K || c_type == gt_expr_K || c_type == lt_expr_K || c_type == ge_expr_K || c_type == le_expr_K || c_type == unlt_expr_K || c_type == ungt_expr_K ||
-          c_type == unle_expr_K || c_type == unge_expr_K;
+   return c_type == eq_expr_K || c_type == ne_expr_K || c_type == ltgt_expr_K || c_type == gt_expr_K || c_type == lt_expr_K || c_type == ge_expr_K || c_type == le_expr_K;
 }
 
 tree_nodeRef branchOpRecurse(tree_nodeRef op, tree_nodeRef stmt = nullptr)
@@ -1332,10 +1331,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         if(parameters->getOption<int>(OPT_gcc_openmp_simd))
-         {
-            relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));
-         }
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

@@ -33,7 +33,8 @@
 // we use IEEE LIBM and _IEEE_MODE
 #define _IEEE_LIBM
 
-typedef union {
+typedef union
+{
    float value;
    unsigned int u_value;
 } ieee_float_shape_type;
@@ -253,8 +254,13 @@ extern float erff(float);
 extern float erfcf(float);
 extern float gammaf(float);
 extern float hypotf(float, float);
+extern int fpclassifyf(float);
+extern int finitef(float);
+extern int isinff(float);
+extern int isinf_signf(float);
 extern int isnanf(float);
-extern int __finitef(float);
+extern int isnormal(float);
+extern int signbitf(float);
 extern float j0f(float);
 extern float j1f(float);
 extern float jnf(int, float);
@@ -285,6 +291,11 @@ extern float significandf(float);
  * Functions callable from C, intended to support IEEE arithmetic.
  */
 extern float copysignf(float, float);
+extern float nanf(const char*);
+extern float nansf(const char*);
+extern float inff(void);
+extern float infinityf(const char*);
+extern float huge_valf(void);
 extern int ilogbf(float);
 extern float rintf(float);
 extern float scalbnf(float, int);

@@ -461,80 +461,96 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       /// check if we need to add a check for floating operation correctness
       if(g_as_node)
       {
-         tree_nodeRef rhs = GET_NODE(g_as_node->op1);
+         const auto rhs = GET_CONST_NODE(g_as_node->op1);
          if(rhs->get_kind() == call_expr_K || rhs->get_kind() == aggr_init_expr_K)
          {
             indented_output_stream->Append("//" + oper->get_name() + "\n");
-            const OpNodeInfoConstRef node_info = instrGraph->CGetOpNodeInfo(statement);
+            const auto node_info = instrGraph->CGetOpNodeInfo(statement);
             THROW_ASSERT(not node_info->called.empty(), "rhs of gimple_assign node " + STR(st_tn_id) + " is a call_expr but does not actually call a function");
             THROW_ASSERT(node_info->called.size() == 1, "rhs of gimple_assign node " + STR(st_tn_id) + " is a call_expr but calls more than a function");
             const unsigned int called_id = *node_info->called.begin();
-            const BehavioralHelperConstRef BHC = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
+            const auto BHC = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
             if(BHC->has_implementation() and BHC->function_has_to_be_printed(called_id))
             {
-               auto* ce = GetPointer<call_expr>(rhs);
-               const std::vector<tree_nodeRef>& actual_args = ce->args;
-               tree_nodeRef op0 = GET_NODE(ce->fn);
+               const auto ce = GetPointerS<const call_expr>(rhs);
+               const auto& actual_args = ce->args;
+               const auto op0 = GET_CONST_NODE(ce->fn);
                if(op0->get_kind() == addr_expr_K && (actual_args.size() == 1 || actual_args.size() == 2))
                {
-                  auto* ue = GetPointer<unary_expr>(op0);
-                  tree_nodeRef fn = GET_NODE(ue->op);
+                  const auto ue = GetPointerS<const unary_expr>(op0);
+                  const auto fn = GET_CONST_NODE(ue->op);
                   THROW_ASSERT(fn->get_kind() == function_decl_K, "tree node not currently supported " + fn->get_kind_text());
-                  auto* fd = GetPointer<function_decl>(fn);
+                  const auto* fd = GetPointerS<const function_decl>(fn);
                   if(fd)
                   {
-                     std::map<std::string, std::pair<unsigned int, std::string>> basic_unary_operations_relation = {
-                         {"__int32_to_float32if", {0, "(float)(int)"}},
-                         {"__int32_to_float64if", {1, "(double)(int)"}},
-                         {"__uint32_to_float32if", {0, "(float)"}},
-                         {"__uint32_to_float64if", {1, "(double)"}},
-                         {"__int64_to_float32if", {0, "(float)(long long int)"}},
-                         {"__int64_to_float64if", {1, "(double)(long long int)"}},
-                         {"__uint64_to_float32if", {0, "(float)"}},
-                         {"__uint64_to_float64if", {1, "(double)"}},
-                         {"__float32_to_int32_round_to_zeroif", {2, "(int)"}},
-                         {"__float32_to_int64_round_to_zeroif", {2, "(long long int)"}},
-                         {"__float32_to_uint32_round_to_zeroif", {2, "(unsigned int)"}},
-                         {"__float32_to_uint64_round_to_zeroif", {2, "(unsigned long long int)"}},
-                         {"__float64_to_int32_round_to_zeroif", {2, "(int)"}},
-                         {"__float64_to_int64_round_to_zeroif", {2, "(long long int)"}},
-                         {"__float64_to_uint32_round_to_zeroif", {2, "(unsigned int)"}},
-                         {"__float64_to_uint64_round_to_zeroif", {2, "(unsigned long long int)"}},
+                     // FIXME: soft_float_cg_ext is performing floating-point lowering to unsigned int/long long, thus this piece of code should be updated accordingly
+                     static const std::map<std::string, std::pair<unsigned int, std::string>> basic_unary_operations_relation = {
+                         {"__int32_to_float32e8m23b_127rnh", {0, "(float)(int)"}},
+                         {"__int8_to_float32e8m23b_127rnh", {0, "(float)(int)"}},
+                         {"__int16_to_float32e8m23b_127rnh", {0, "(float)(int)"}},
+                         {"__int32_to_float64e11m52b_1023rnh", {1, "(double)(int)"}},
+                         {"__uint32_to_float32e8m23b_127rnh", {0, "(float)"}},
+                         {"__uint8_to_float32e8m23b_127rnh", {0, "(float)"}},
+                         {"__uint16_to_float32e8m23b_127rnh", {0, "(float)"}},
+                         {"__uint32_to_float64e11m52b_1023rnh", {1, "(double)"}},
+                         {"__int64_to_float32e8m23b_127rnh", {0, "(float)(long long int)"}},
+                         {"__int64_to_float64e11m52b_1023rnh", {1, "(double)(long long int)"}},
+                         {"__uint64_to_float32e8m23b_127rnh", {0, "(float)"}},
+                         {"__uint64_to_float64e11m52b_1023rnh", {1, "(double)"}},
+                         {"__float64_to_float32_ieee", {2, "(float)"}},
+                         {"__float32_to_float64_ieee", {3, "(double)"}},
+                         {"__float32_to_int32_round_to_zeroe8m23b_127rnh", {4, "(int)"}},
+                         {"__float32_to_int64_round_to_zeroe8m23b_127rnh", {5, "(long long int)"}},
+                         {"__float32_to_uint32_round_to_zeroe8m23b_127rnh", {4, "(unsigned int)"}},
+                         {"__float32_to_uint64_round_to_zeroe8m23b_127rnh", {5, "(unsigned long long int)"}},
+                         {"__float64_to_int32_round_to_zeroe11m52b_1023rnh", {4, "(int)"}},
+                         {"__float64_to_int64_round_to_zeroe11m52b_1023rnh", {5, "(long long int)"}},
+                         {"__float64_to_uint32_round_to_zeroe11m52b_1023rnh", {4, "(unsigned int)"}},
+                         {"__float64_to_uint64_round_to_zeroe11m52b_1023rnh", {5, "(unsigned long long int)"}},
                      };
-                     std::map<std::string, std::pair<bool, std::string>> basic_binary_operations_relation = {
-                         {"__float32_addif", {false, "+"}}, {"__float64_addif", {true, "+"}}, {"__float32_subif", {false, "-"}}, {"__float64_subif", {true, "-"}}, {"__float32_mulif", {false, "*"}}, {"__float64_mulif", {true, "*"}},
-                         {"__float32_divif", {false, "/"}}, {"__float64_divif", {true, "/"}}, {"__float32_leif", {false, "<="}}, {"__float64_leif", {true, "<="}}, {"__float32_ltif", {false, "<"}},  {"__float64_ltif", {true, "<"}},
-                         {"__float32_geif", {false, ">="}}, {"__float64_geif", {true, ">="}}, {"__float32_gtif", {false, ">"}},  {"__float64_gtif", {true, ">"}},
+                     static const std::map<std::string, std::pair<bool, std::string>> basic_binary_operations_relation = {
+                         {"__float32_adde8m23b_127rnh", {false, "+"}},         {"__float64_adde11m52b_1023rnh", {true, "+"}},         {"__float32_sube8m23b_127rnh", {false, "-"}},     {"__float64_sube11m52b_1023rnh", {true, "-"}},
+                         {"__float32_mule8m23b_127rnh", {false, "*"}},         {"__float64_mule11m52b_1023rnh", {true, "*"}},         {"__float32_divSRT4e8m23b_127rnh", {false, "/"}}, {"__float32_divGe8m23b_127rnh", {false, "/"}},
+                         {"__float64_divSRT4e11m52b_1023rnh", {true, "/"}},    {"__float64_divGe11m52b_1023rnh", {true, "/"}},        {"__float32_lee8m23b_127rnh", {false, "<="}},     {"__float64_lee11m52b_1023rnh", {true, "<="}},
+                         {"__float32_lte8m23b_127rnh", {false, "<"}},          {"__float64_lte11m52b_1023rnh", {true, "<"}},          {"__float32_gee8m23b_127rnh", {false, ">="}},     {"__float64_gee11m52b_1023rnh", {true, ">="}},
+                         {"__float32_gte8m23b_127rnh", {false, ">"}},          {"__float64_gte11m52b_1023rnh", {true, ">"}},          {"__float32_eqe8m23b_127rnh", {false, "=="}},     {"__float64_eqe11m52b_1023rnh", {true, "=="}},
+                         {"__float32_ltgt_quiete8m23b_127rnh", {false, "!="}}, {"__float64_ltgt_quiete11m52b_1023rnh", {true, "!="}},
                      };
-                     std::string var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
-                     if(basic_unary_operations_relation.find(oper->get_name()) != basic_unary_operations_relation.end())
+                     const auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
+                     const auto unary_op_relation = basic_unary_operations_relation.find(oper->get_name());
+                     const auto binary_op_relation = basic_binary_operations_relation.find(oper->get_name());
+                     if(unary_op_relation != basic_unary_operations_relation.end())
                      {
-                        std::string computation = "(" + basic_unary_operations_relation.find(oper->get_name())->second.second + var1 + ")";
-                        std::string check_string0 = var_name + "==" + computation;
-                        if(basic_unary_operations_relation.find(oper->get_name())->second.first < 2)
+                        const std::string view_convert = (unary_op_relation->second.first & 1) ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
+                        const std::string in_view_convert = (unary_op_relation->second.first & 2) ? ((~unary_op_relation->second.first & 1) ? "_Int64_ViewConvert" : "_Int32_ViewConvert") : "";
+                        if(unary_op_relation->second.first < 4)
                         {
-                           std::string check_string1 =
-                               (basic_unary_operations_relation.find(oper->get_name())->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") + std::string("(") + computation + ", " + var_name + "," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
-                           indented_output_stream->Append((basic_unary_operations_relation.find(oper->get_name())->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") + std::string("(\"") + check_string0 + "\", " + check_string1 + "," +
-                                                          computation + "," + var_name + "," + var1 + ",0);\n");
+                           const auto computation = "(" + unary_op_relation->second.second + in_view_convert + "(" + var1 + "))";
+                           const auto check_string0 = view_convert + "(" + var_name + ")==" + computation;
+                           const auto check_string1 =
+                               (unary_op_relation->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") + std::string("(") + computation + ", " + view_convert + "(" + var_name + ")," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
+                           indented_output_stream->Append((unary_op_relation->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") + std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + view_convert + "(" +
+                                                          var_name + ")," + in_view_convert + "(" + var1 + "),0);\n");
                         }
                         else
                         {
+                           const auto computation = "(" + unary_op_relation->second.second + view_convert + "(" + var1 + "))";
+                           const auto check_string0 = var_name + "==" + computation;
                            indented_output_stream->Append("if(" + var_name + "!=" + computation +
                                                           ") { printf(\"\\n\\n***********************************************************\\nERROR ON A BASIC FLOATING POINT OPERATION : %s : expected=%d res=%d "
                                                           "a=%a\\n***********************************************************\\n\\n\", \"" +
-                                                          check_string0 + "\", " + computation + ", " + var_name + ", " + var1 + ");\nexit(1);\n}\n");
+                                                          check_string0 + "\", " + computation + ", " + var_name + ", " + view_convert + "(" + var1 + "));\nexit(1);\n}\n");
                         }
                      }
-                     else if(basic_binary_operations_relation.find(oper->get_name()) != basic_binary_operations_relation.end())
+                     else if(binary_op_relation != basic_binary_operations_relation.end())
                      {
-                        std::string var2 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
-                        std::string computation = "(" + var1 + basic_binary_operations_relation.find(oper->get_name())->second.second + var2 + ")";
-                        std::string check_string0 = var_name + "==" + computation;
-                        std::string check_string1 =
-                            (basic_binary_operations_relation.find(oper->get_name())->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") + std::string("(") + computation + ", " + var_name + "," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
-                        indented_output_stream->Append((basic_binary_operations_relation.find(oper->get_name())->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") + std::string("(\"") + check_string0 + "\", " + check_string1 + "," +
-                                                       computation + "," + var_name + "," + var1 + "," + var2 + ");\n");
+                        const auto var2 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
+                        const std::string view_convert = binary_op_relation->second.first ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
+                        const auto computation = "(" + view_convert + "(" + var1 + ")" + binary_op_relation->second.second + view_convert + "(" + var2 + "))";
+                        const auto check_string0 = var_name + "==" + computation;
+                        const auto check_string1 = (binary_op_relation->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") + std::string("(") + computation + ", " + var_name + "," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
+                        indented_output_stream->Append((binary_op_relation->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") + std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + var_name + "," +
+                                                       view_convert + "(" + var1 + ")," + view_convert + "(" + var2 + "));\n");
                      }
                   }
                }

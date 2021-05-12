@@ -101,26 +101,21 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
+         if(parameters->isOption(OPT_bitvalue_ipa) && parameters->getOption<bool>(OPT_bitvalue_ipa))
          {
-            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
             relationships.insert(std::make_pair(BIT_VALUE_IPA, WHOLE_APPLICATION));
          }
          else
          {
             relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          }
-         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
-         relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
-#endif
          /// Following precedence is to reduce invalidation; BIT_VALUE_OPT of called can invalidate DEAD_CODE_ELIMINATION of called and so this
          // relationships.insert(std::make_pair(BIT_VALUE_OPT, CALLED_FUNCTIONS));
          break;
@@ -131,6 +126,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
+               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
                if(restart_dead_code)
                {
                   relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
@@ -156,6 +152,39 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          THROW_UNREACHABLE("");
    }
    return relationships;
+}
+
+bool Bit_Value_opt::HasToBeExecuted() const
+{
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
+   return (bitvalue_version != function_behavior->GetBitValueVersion()) || FunctionFrontendFlowStep::HasToBeExecuted();
+}
+
+void Bit_Value_opt::Initialize()
+{
+}
+
+DesignFlowStep_Status Bit_Value_opt::InternalExec()
+{
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " --------- BIT_VALUE_OPT ----------");
+   const auto TM = AppM->get_tree_manager();
+   const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
+
+   const auto tn = TM->CGetTreeNode(function_id);
+   // tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
+   const auto fd = GetPointerS<const function_decl>(tn);
+   THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
+   auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   THROW_ASSERT(sl, "Body is not a statement_list");
+   /// for each basic block B in CFG do > Consider all blocks successively
+   restart_dead_code = false;
+   modified = false;
+   optimize(sl, TM, IRman);
+   modified ? function_behavior->UpdateBBVersion() : 0;
+   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
 static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
@@ -212,30 +241,30 @@ static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
 
 void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipulationRef IRman)
 {
-   for(auto bb_pair : sl->list_of_bloc)
+   for(const auto& bb_pair : sl->list_of_bloc)
    {
-      blocRef B = bb_pair.second;
-      unsigned int B_id = B->number;
+      const auto B = bb_pair.second;
+      const auto B_id = B->number;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(B_id));
       const auto list_of_stmt = B->CGetStmtList();
       for(const auto& stmt : list_of_stmt)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(stmt)->ToString());
-         if(not AppM->ApplyNewTransformation())
+         if(!AppM->ApplyNewTransformation())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of CFG transformations");
-            continue;
+            break;
          }
-         if(GetPointer<gimple_node>(GET_NODE(stmt))->keep)
+         if(GetPointerS<gimple_node>(GET_NODE(stmt))->keep)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because the statement has been annotated with the keep tag");
             continue;
          }
          if(GET_NODE(stmt)->get_kind() == gimple_assign_K)
          {
-            auto* ga = GetPointer<gimple_assign>(GET_NODE(stmt));
+            auto ga = GetPointerS<gimple_assign>(GET_NODE(stmt));
             unsigned int output_uid = GET_INDEX_NODE(ga->op0);
-            auto* ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
+            auto ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
             if(ssa)
             {
                if(tree_helper::is_real(TM, output_uid))
@@ -243,10 +272,10 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                   auto real_BVO = [&] {
                      if(GET_NODE(ga->op1)->get_kind() == cond_expr_K)
                      {
-                        auto* me = GetPointer<cond_expr>(GET_NODE(ga->op1));
-                        tree_nodeRef op0 = GET_NODE(me->op1);
-                        tree_nodeRef op1 = GET_NODE(me->op2);
-                        tree_nodeRef condition = GET_NODE(me->op0);
+                        const auto me = GetPointerS<cond_expr>(GET_NODE(ga->op1));
+                        const auto op0 = GET_NODE(me->op1);
+                        const auto op1 = GET_NODE(me->op2);
+                        const auto condition = GET_NODE(me->op0);
                         if(op0 == op1)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with equal operands");
@@ -268,7 +297,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                         else if(condition->get_kind() == integer_cst_K)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with constant condition");
-                           auto* ic = GetPointer<integer_cst>(condition);
+                           const auto ic = GetPointerS<integer_cst>(condition);
                            auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                            const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                            for(const auto& use : StmtUses)
@@ -333,12 +362,12 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                      }
                      else if(GET_NODE(ga->op1)->get_kind() == view_convert_expr_K)
                      {
-                        auto vce = GetPointer<view_convert_expr>(GET_NODE(ga->op1));
+                        auto vce = GetPointerS<view_convert_expr>(GET_NODE(ga->op1));
                         if(GetPointer<cst_node>(GET_NODE(vce->op)))
                         {
                            if(GET_NODE(vce->op)->get_kind() == integer_cst_K)
                            {
-                              auto* int_const = GetPointer<integer_cst>(GET_NODE(vce->op));
+                              auto* int_const = GetPointerS<integer_cst>(GET_NODE(vce->op));
                               auto bitwidth_op = BitLatticeManipulator::Size(vce->type);
                               tree_nodeRef val;
                               if(bitwidth_op == 32)
@@ -2757,37 +2786,4 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--BB analyzed " + STR(B_id));
    }
-}
-
-DesignFlowStep_Status Bit_Value_opt::InternalExec()
-{
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " --------- BIT_VALUE_OPT ----------");
-   tree_managerRef TM = AppM->get_tree_manager();
-   tree_manipulationRef IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
-
-   tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   // tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
-   auto* fd = GetPointer<function_decl>(tn);
-   THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   THROW_ASSERT(sl, "Body is not a statement_list");
-   /// for each basic block B in CFG do > Consider all blocks successively
-   restart_dead_code = false;
-   modified = false;
-   optimize(sl, TM, IRman);
-   modified ? function_behavior->UpdateBBVersion() : 0;
-   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
-}
-
-bool Bit_Value_opt::HasToBeExecuted() const
-{
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
-   return (bitvalue_version != function_behavior->GetBitValueVersion()) or FunctionFrontendFlowStep::HasToBeExecuted();
-}
-
-void Bit_Value_opt::Initialize()
-{
 }

@@ -251,7 +251,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
 
          unsigned int gimple_stmt_id = TM->new_tree_node_id();
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-         IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(res));
          IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(def));
          IR_schema[TOK(TOK_ORIG)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(tree_phi));

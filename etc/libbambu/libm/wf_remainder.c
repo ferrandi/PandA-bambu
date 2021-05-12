@@ -38,7 +38,7 @@ float remainderf(float x, float y) /* wrapper remainder */
    float z;
    struct exception exc;
    z = __hide_ieee754_remainderf(x, y);
-   if(_LIB_VERSION == _IEEE_ || isnan(y))
+   if(_LIB_VERSION == _IEEE_ || isnanf(y))
       return z;
    if(y == (float)0.0)
    {

@@ -158,7 +158,7 @@ double hypot(double x, double y) /* wrapper hypot */
    z = __hide_ieee754_hypot(x, y);
    if(_LIB_VERSION == _IEEE_)
       return z;
-   if((!__finite(z)) && __finite(x) && __finite(y))
+   if((!finite(z)) && finite(x) && finite(y))
       return __hide_kernel_standard(x, y, 4); /* hypot overflow */
    else
       return z;

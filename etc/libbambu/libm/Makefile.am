@@ -1,13 +1,13 @@
 #this file is libbambu/libm/Makefile.am
-EXTRA_DIST=math_constants.h math_privatef.h math_private.h ef_rem_pio2.c sf_sin.c sf_cos.c wf_sincos.c sf_tan.c kf_rem_pio2.c erf_lgamma.c COPYING.LIB COPYING.LIBM_PANDA README_PANDA.txt
+EXTRA_DIST=math_constants.h math_privatef.h math_private.h math_privatetf.h ef_rem_pio2.c sf_sin.c sf_cos.c wf_sincos.c sf_tan.c kf_rem_pio2.c erf_lgamma.c COPYING.LIB COPYING.LIBM_PANDA README_PANDA.txt
 
 METASOURCES = AUTO
 CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 AM_CFLAGS=
 pkglib_LIBRARIES = 
-common_libm_src = math_private_kernels.c s_tanh.c s_modf.c s_ilogb.c s_sin.c s_scalbn.c s_common.c s_floor.c s_lfloor.c s_atan.c s_copysign.c s_expm1.c s_significand.c s_frexp.c s_nextafter.c \
- s_log1p.c s_tan.c s_cos.c s_logb.c s_cbrt.c s_ldexp.c s_isnan.c s_isinf.c s_rint.c s_lrint.c s_llrint.c s_finite.c s_erf.c s_asinh.c s_ceil.c s_lceil.c s_nearbyint.c \
+common_libm_src = math_private_kernels.c s_tanh.c s_modf.c s_ilogb.c s_sin.c s_scalbn.c s_common.c s_floor.c s_lfloor.c s_atan.c s_expm1.c s_significand.c s_frexp.c s_nextafter.c \
+ s_log1p.c s_tan.c s_cos.c s_logb.c s_cbrt.c s_ldexp.c s_rint.c s_lrint.c s_llrint.c s_erf.c s_asinh.c s_ceil.c s_lceil.c s_nearbyint.c \
  s_fmin.c s_fmax.c \
  ew_acos.c ew_acosh.c ew_log10.c ew_asin.c ew_sinh.c ew_atanh.c ew_atan2.c ew_cosh.c ew_fmod.c ew_gamma.c ew_hypot.c ew_j0.c ew_remainder.c \
  w_scalb.c w_sincos.c \
@@ -15,15 +15,14 @@ common_libm_src = math_private_kernels.c s_tanh.c s_modf.c s_ilogb.c s_sin.c s_s
  kf_sin.c kf_cos.c kf_tan.c\
  ef_acos.c ef_acosh.c ef_asin.c ef_atan2.c ef_atanh.c ef_cosh.c ef_fmod.c ef_hypot.c ef_j0.c ef_j1.c ef_jn.c \
  ef_log10.c ef_remainder.c ef_scalb.c ef_sinh.c \
- s_signbit.c s_fpclassify.c\
  sf_asinh.c sf_atan.c sf_ceil.c sf_lceil.c sf_erf.c sf_floor.c sf_lfloor.c sf_frexp.c sf_ldexp.c sf_signif.c sf_tanh.c \
- sf_cbrt.c sf_expm1.c sf_fma.c sf_fpclassify.c sf_isinf.c sf_log1p.c sf_lrint.c sf_nan.c sf_pow10.c sf_round.c sf_trunc.c \
- sf_copysign.c sf_fdim.c sf_fmax.c sf_ilogb.c sf_llrint.c sf_log2.c sf_lround.c sf_nearbyint.c sf_remquo.c sf_scalbln.c \
- sf_exp10.c sf_finite.c sf_fmin.c sf_infinity.c sf_isnan.c sf_llround.c sf_logb.c sf_modf.c sf_nextafter.c sf_rint.c sf_scalbn.c \
+ sf_cbrt.c sf_expm1.c sf_fma.c sf_log1p.c sf_lrint.c sf_pow10.c sf_round.c sf_trunc.c \
+ sf_fdim.c sf_fmax.c sf_ilogb.c sf_llrint.c sf_log2.c sf_lround.c sf_nearbyint.c sf_remquo.c sf_scalbln.c \
+ sf_exp10.c sf_fmin.c sf_llround.c sf_logb.c sf_modf.c sf_nextafter.c sf_rint.c sf_scalbn.c \
  wf_acos.c wf_asin.c wf_atanh.c wf_drem.c wf_gamma.c wf_j0.c wf_jn.c wf_log10.c wf_scalb.c wf_sinh.c wf_tgamma.c \
  wf_acosh.c wf_atan2.c wf_cosh.c wf_exp2.c wf_fmod.c wf_hypot.c wf_j1.c wf_lgamma.c wf_remainder.c \
- wrf_gamma.c wrf_lgamma.c sf_signbit.c
-
+ wrf_gamma.c wrf_lgamma.c \
+ tf_copysign.c tf_fpclassify.c tf_inf.c tf_isfinite.c tf_isinf.c tf_isinf_sign.c tf_isnan.c tf_isnormal.c tf_nan.c tf_nans.c tf_signbit.c 
 
 common_libm_src_fr=hotbm_sine_cosine.c hotbm_logf.c hotbm_expf.c poly_sqrtf.c poly_sqrt.c wf_pow_opt.c
 common_libm_src_std=sf_trigon.c wf_log.c ef_log.c wf_exp.c ef_exp.c wf_sqrt.c ef_sqrt.c ew_sqrt.c wf_pow.c ef_pow.c 

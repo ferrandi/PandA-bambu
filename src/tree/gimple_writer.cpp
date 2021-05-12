@@ -713,7 +713,7 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
          }
          else
          {
-            THROW_ERROR(std::string("Node not yet supported: ") + obj->get_kind_text() + STR(obj->algn));
+            THROW_ERROR(std::string("Node not yet supported: ") + obj->get_kind_text() + " with alignment " + STR(obj->algn));
          }
       }
       else if(obj_type == boolean_type_K)

@@ -74,12 +74,12 @@ class short_circuit_taf : public FunctionFrontendFlowStep
    /**
     * Check if a basic block is a merging BB for a short circuit.
     */
-   bool check_merging_candidate(unsigned int& bb1, unsigned int& bb2, unsigned int merging_candidate, bool& bb1_true, bool& bb2_true, std::map<unsigned int, blocRef>& list_of_bloc);
+   bool check_merging_candidate(unsigned int& bb1, unsigned int& bb2, unsigned int merging_candidate, bool& bb1_true, bool& bb2_true, const std::map<unsigned int, blocRef>& list_of_bloc);
 
    /**
     * create the or/and expression required by short circuit collapsing
     */
-   bool create_gimple_cond(unsigned int bb1, unsigned int bb2, bool bb1_true, std::map<unsigned int, blocRef>& list_of_bloc, bool or_type, unsigned int merging_candidate);
+   bool create_gimple_cond(unsigned int bb1, unsigned int bb2, bool bb1_true, const std::map<unsigned int, blocRef>& list_of_bloc, bool or_type, unsigned int merging_candidate);
 
    /**
     * restructure the CFG eliminating all BBs not needed after short circuit collapsing
@@ -87,20 +87,18 @@ class short_circuit_taf : public FunctionFrontendFlowStep
    void restructure_CFG(unsigned int bb1, unsigned int bb2, unsigned int merging_candidate, std::map<unsigned int, blocRef>& list_of_bloc);
 
    /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
-   /**
     * @brief check if phi could create problem to the short circuit collapsing
     * @param curr_bb is the basic block that merge the two or more flows
     * @param list_of_bloc is the list of basic blocks
     * @return true in case the short circuit merging can be performed
     */
-   bool check_phis(unsigned int curr_bb, std::map<unsigned int, blocRef>& list_of_bloc);
+   bool check_phis(unsigned int curr_bb, const std::map<unsigned int, blocRef>& list_of_bloc);
 
-   void fix_multi_way_if(unsigned int curr_bb, std::map<unsigned int, blocRef>& list_of_bloc, unsigned int succ);
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

@@ -109,14 +109,14 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
+         if(parameters->isOption(OPT_bitvalue_ipa) && parameters->getOption<bool>(OPT_bitvalue_ipa))
          {
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_IPA, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(RANGE_ANALYSIS, WHOLE_APPLICATION));
          }
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(RANGE_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
          break;
       }
@@ -233,7 +233,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
             for(auto def_edge : gp->CGetDefEdgesList())
             {
                unsigned int op_node_nid = GET_INDEX_NODE(def_edge.first);
-               gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+               gimple_return_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
                gimple_return_schema[TOK(TOK_OP)] = STR(op_node_nid);
                auto pred_block = sl->list_of_bloc[def_edge.second];
@@ -252,7 +252,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
             for(auto def_edge : gp->CGetDefEdgesList())
             {
                unsigned int op_node_nid = GET_INDEX_NODE(def_edge.first);
-               gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+               gimple_return_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
                if(gr->op)
                {
@@ -278,7 +278,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
             for(auto pred_block_index : bb_block->list_of_pred)
             {
                auto pred_block = sl->list_of_bloc[pred_block_index];
-               gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+               gimple_return_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
                if(gr->op)
                {

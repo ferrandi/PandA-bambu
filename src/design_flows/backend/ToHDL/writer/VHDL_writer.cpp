@@ -97,7 +97,9 @@ VHDL_writer::~VHDL_writer() = default;
 
 void VHDL_writer::write_comment(const std::string& comment_string)
 {
+   indented_output_stream->disable_counting();
    indented_output_stream->Append("-- " + comment_string);
+   indented_output_stream->enable_counting();
 }
 
 std::string VHDL_writer::type_converter(structural_type_descriptorRef Type)

@@ -286,8 +286,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case FIX_STRUCTS_PASSED_BY_VALUE:
          return "FixStructsPassedByValue";
-      case FUNCTION_PARM_MASK:
-         return "FunctionParmMask";
       case FUNCTION_CALL_TYPE_CLEANUP:
          return "FunctionCallTypeCleanup";
 #endif
@@ -357,8 +355,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #endif
       case(MEMORY_DATA_FLOW_ANALYSIS):
          return "MemoryDataFlowAnalysis";
-      case MEM_CG_EXT:
-         return "MemCgExt";
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
          return "MultiWayIf";

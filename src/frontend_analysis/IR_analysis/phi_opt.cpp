@@ -789,7 +789,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       {
          /// Create a nop with virtual operands
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-         gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
          auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(gimple_node_id));
          gn->AddVdef(TM->GetTreeReindex(ssa_node_nid));
@@ -800,7 +800,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       {
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
-         cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
          cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(condition->index);
          cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(true_value);
@@ -809,7 +809,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cond_expr " + TM->get_tree_node_const(cond_expr_id)->ToString());
 
          /// Create the assign
-         gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
@@ -1004,7 +1004,7 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
             const auto gimple_node_id = TM->new_tree_node_id();
             /// Create a nop with virtual operands
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-            gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+            gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
             TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
             auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(gimple_node_id));
             gn->AddVdef(TM->GetTreeReindex(gp->res->index));
@@ -1045,7 +1045,7 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
          const auto gimple_node_id = TM->new_tree_node_id();
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
-         cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
          cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(condition->index);
          cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(true_value);
@@ -1055,7 +1055,7 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cond_expr " + TM->get_tree_node_const(cond_expr_id)->ToString());
 
          /// Create the assign
-         gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(gp->res->index);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
@@ -1233,7 +1233,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       {
          /// Create a nop with virtual operands
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-         gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
          auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(gimple_node_id));
          gn->AddVdef(TM->GetTreeReindex(ssa_node_nid));
@@ -1244,7 +1244,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       {
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
-         cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
          cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_condition.first->index);
          cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(first_value);
@@ -1252,7 +1252,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
          TM->create_tree_node(cond_expr_id, (tree_helper::is_a_vector(TM, type_index) ? vec_cond_expr_K : cond_expr_K), cond_expr_schema);
 
          /// Create the assign
-         gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
@@ -1486,7 +1486,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
             /// Create a nop with virtual operands
             gimple_node_id = TM->new_tree_node_id();
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-            gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+            gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
             TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
             auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(gimple_node_id));
             gn->AddVdef(TM->GetTreeReindex(gp->res->index));
@@ -1534,7 +1534,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       {
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
-         cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
          cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_condition.first->index);
          cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(first_value);
@@ -1543,7 +1543,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
 
          /// Create the assign
          gimple_node_id = TM->new_tree_node_id();
-         gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(gp->res->index);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
@@ -1784,7 +1784,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
 
             /// Create the cond expr
             const auto cond_expr_id = TM->new_tree_node_id();
-            cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+            cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
             cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
             cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(condition->index);
             cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(first_value);
@@ -1793,7 +1793,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
 
             /// Create the assign
             const auto gimple_assign_id = TM->new_tree_node_id();
-            gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+            gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
             gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
             /// Workaround: we need to consider the overhead due to multiplexers associated with the phi; for this reason definition is one of the operands; this is not fully consistent, but it is a temporary assignment
             gimple_assign_schema[TOK(TOK_OP0)] = STR(first_value);

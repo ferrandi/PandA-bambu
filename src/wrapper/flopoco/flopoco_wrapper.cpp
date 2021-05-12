@@ -58,7 +58,6 @@
 /// Standard PandA include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
-#include "simple_indent.hpp"
 #include "utility.hpp"
 
 /// Standard include
