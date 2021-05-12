@@ -272,6 +272,7 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_TEMPLATE_ID_EXPR,
    TOK_THROW_EXPR,
    TOK_TRY_BLOCK,
+   TOK_ALIGNOF_EXPR,
    TOK_ARROW_EXPR,
    TOK_HANDLER,
    TOK_BASELINK,
