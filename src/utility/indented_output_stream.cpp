@@ -50,7 +50,7 @@
 /// Header include
 #include "indented_output_stream.hpp"
 
-#define MAX_CHAR_ON_A_LINE 120
+#define MAX_CHAR_ON_A_LINE 256
 
 /// In global_variables.hpp
 extern size_t indentation;
