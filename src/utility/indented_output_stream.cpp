@@ -50,12 +50,10 @@
 /// Header include
 #include "indented_output_stream.hpp"
 
-#define MAX_CHAR_ON_A_LINE 256
-
 /// In global_variables.hpp
 extern size_t indentation;
 
-IndentedOutputStream::IndentedOutputStream(char o, char c, unsigned int d) : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true), chars_on_a_line(0), counting_disabled(false)
+IndentedOutputStream::IndentedOutputStream(char o, char c, unsigned int d) : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
 {
 }
 
@@ -100,8 +98,6 @@ void IndentedOutputStream::Append(const std::string& str)
       if(*it == '\n')
       {
          output_stream << *it;
-         chars_on_a_line = 0;
-         counting_disabled = false;
          if((it + 1) != it_end)
          {
             if(*(it + 1) != closing_char)
@@ -154,26 +150,12 @@ void IndentedOutputStream::AppendIndent()
    for(unsigned int i = 0; i < indent_spaces; i++)
    {
       output_stream << " ";
-      if(!counting_disabled)
-      {
-         ++chars_on_a_line;
-      }
    }
 }
 
 void IndentedOutputStream::AppendChar(const char& c)
 {
    output_stream << c;
-   if(!counting_disabled)
-   {
-      ++chars_on_a_line;
-      if(c == ' ' && chars_on_a_line > (MAX_CHAR_ON_A_LINE + indent_spaces))
-      {
-         output_stream << '\n';
-         chars_on_a_line = 0;
-         AppendIndent();
-      }
-   }
 }
 
 void IndentedOutputStream::Indent()

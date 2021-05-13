@@ -78,11 +78,6 @@ class IndentedOutputStream
 
    bool is_line_start;
 
-   /// current number of chars in a line
-   unsigned int chars_on_a_line;
-
-   bool counting_disabled;
-
    /**
     * Append the indent spaces
     */
@@ -133,15 +128,6 @@ class IndentedOutputStream
     * @param file_name is the name of the file
     */
    void WriteFile(const std::string& file_name);
-
-   void disable_counting()
-   {
-      counting_disabled = true;
-   }
-   void enable_counting()
-   {
-      counting_disabled = false;
-   }
 };
 using IndentedOutputStreamRef = refcount<IndentedOutputStream>;
 #endif
