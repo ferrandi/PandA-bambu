@@ -208,9 +208,6 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 {
    PM.add(llvm::createGVNPass());
    PM.add(llvm::createGVNHoistPass());
-#if __clang_major__ != 4
-   PM.add(llvm::createGVNSinkPass());
-#endif
    PM.add(llvm::createMergedLoadStoreMotionPass());
    PM.add(llvm::createLowerAtomicPass());
    PM.add(llvm::createPromoteMemoryToRegisterPass());
