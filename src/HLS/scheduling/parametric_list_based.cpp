@@ -386,16 +386,18 @@ void parametric_list_based::CheckSchedulabilityConditions(const CustomUnorderedS
       return;
    }
    compute_starting_ending_time_asap(operations, current_vertex, fu_type, current_cycle, current_starting_time, current_ending_time, current_stage_period, cannotBeChained1, res_binding, schedule, phi_extra_time, setup_hold_time, local_connection_map);
+   bool complex_op = (current_ending_time - current_starting_time) > setup_hold_time;
    bool is_pipelined = HLS->allocation_information->get_initiation_time(fu_type, current_vertex) != 0;
    auto n_cycles = HLS->allocation_information->get_cycles(fu_type, current_vertex, flow_graph);
-   pipeliningCond = is_pipelined and (current_starting_time > current_cycle_starting_time) and ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > (current_cycle_ending_time) || unbounded));
+   pipeliningCond =
+       is_pipelined and (current_starting_time > current_cycle_starting_time) and ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time + (complex_op ? scheduling_mux_margins : 0) > (current_cycle_ending_time) || unbounded));
    if(pipeliningCond)
    {
       return;
    }
    auto curr_vertex_type = GET_TYPE(flow_graph, current_vertex);
    cannotBeChained0 = (current_starting_time >= current_cycle_ending_time) || ((!is_pipelined && !(curr_vertex_type & TYPE_RET) && n_cycles == 0 && current_starting_time > (current_cycle_starting_time)) &&
-                                                                               current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time);
+                                                                               current_ending_time + setup_hold_time + phi_extra_time + (complex_op ? scheduling_mux_margins : 0) > current_cycle_ending_time);
    if(cannotBeChained0)
    {
       return;
@@ -422,12 +424,13 @@ void parametric_list_based::CheckSchedulabilityConditions(const CustomUnorderedS
    {
       return;
    }
-   MultiCond0 = (!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) && current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time;
+   MultiCond0 = (!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
+                current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time + (complex_op ? scheduling_mux_margins : 0) > current_cycle_ending_time;
    if(MultiCond0)
    {
       return;
    }
-   MultiCond1 = current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time && unbounded;
+   MultiCond1 = current_ending_time + setup_hold_time + phi_extra_time + (complex_op ? scheduling_mux_margins : 0) > current_cycle_ending_time && unbounded;
    if(MultiCond1)
    {
       return;
