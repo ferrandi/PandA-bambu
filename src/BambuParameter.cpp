@@ -980,7 +980,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
    os << "    --logical-optimization=<level>\n"
       << "        Enable logic optimization on EPDG:\n"
       << "             1  - enable optimizations based on CONDITIONAL instructions\n"
-      << "                  information\n"<< "                                    --distram-threshold=512\n"
+      << "                  information\n"
       << "             2  - enable optimizations based on ACTIVATION PATH information\n"
       << "             3  - enable CONDITIONAL and ACTIVATION PATH optimizations\n"
       << "             4  - enable DATA_TRANSITIVITY optimizations\n"
