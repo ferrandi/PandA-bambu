@@ -937,11 +937,13 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    -O3  -D'printf(fmt, ...)='\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    --distram-threshold=512\n"
+      << "                                    --disable-function-proxy\n"
       << "             BAMBU-PERFORMANCE-MP - this setup implies:\n"
       << "                                    -O3  -D'printf(fmt, ...)='\n"
       << "                                    --channels-type=MEM_ACC_NN\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    --distram-threshold=512\n"
+      << "                                    --disable-function-proxy\n"
       << "             BAMBU                - this setup implies:\n"
       << "                                    -O0 --channels-type=MEM_ACC_11\n"
       << "                                    --memory-allocation-policy=LSS\n"
@@ -1001,7 +1003,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform host-profiling.\n\n";
 #endif
    os << "    --disable-bitvalue-ipa\n"
-      << "        Disable inter-procedural bitvalue analysis.\n\n";
+      << "        Disable inter-procedural bitvalue analysis.\n";
+   os << "    --disable-function-proxy\n"
+      << "        Disable function proxy. May increase FSMD parallelism.\n\n";
    os << std::endl;
 
    // Checks and debugging options
