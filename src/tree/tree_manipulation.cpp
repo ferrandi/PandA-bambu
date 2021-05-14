@@ -2117,9 +2117,9 @@ tree_nodeRef tree_manipulation::create_function_decl(const std::string& function
    }
    IR_schema.clear();
 
-   const auto function_type_id = create_function_type(returnType, argsT);
+   const auto function_type = create_function_type(returnType, argsT);
    IR_schema[TOK(TOK_NAME)] = boost::lexical_cast<std::string>(function_name_id);
-   IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(function_type_id);
+   IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(GET_INDEX_CONST_NODE(function_type));
    IR_schema[TOK(TOK_SCPE)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(scpe));
    IR_schema[TOK(TOK_SRCP)] = srcp;
    if(with_body)
