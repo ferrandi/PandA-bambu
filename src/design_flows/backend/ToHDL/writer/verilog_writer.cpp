@@ -485,11 +485,12 @@ void verilog_writer::write_module_declaration(const structural_objectRef& cir)
    indented_output_stream->Append("module " + HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) + "(");
    bool first_obj = false;
    /// write IO port declarations respecting the position
+   indented_output_stream->Indent();
    for(unsigned int i = 0; i < mod->get_num_ports(); i++)
    {
       if(first_obj)
       {
-         indented_output_stream->Append(", ");
+         indented_output_stream->Append(",\n");
       }
       else
       {
@@ -497,6 +498,7 @@ void verilog_writer::write_module_declaration(const structural_objectRef& cir)
       }
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, mod->get_positional_port(i)->get_id()));
    }
+   indented_output_stream->Deindent();
    if(HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) == register_AR_NORETIME || GET_TYPE_NAME(cir) == register_AR_NORETIME_INT || GET_TYPE_NAME(cir) == register_AR_NORETIME_UINT || GET_TYPE_NAME(cir) == register_AR_NORETIME_REAL)
    {
       indented_output_stream->Append(")/* synthesis syn_hier = \"hard\"*/;\n");
@@ -654,10 +656,12 @@ void verilog_writer::write_module_instance_begin(const structural_objectRef& cir
       write_module_parametrization(cir);
    }
    indented_output_stream->Append(" " + HDL_manager::convert_to_identifier(this, cir->get_id()) + " (");
+   indented_output_stream->Indent();
 }
 
 void verilog_writer::write_module_instance_end(const structural_objectRef&)
 {
+   indented_output_stream->Deindent();
    indented_output_stream->Append(");\n");
 }
 
@@ -667,7 +671,7 @@ void verilog_writer::write_module_definition_end(const structural_objectRef&)
    indented_output_stream->Append("\nendmodule\n\n");
 }
 
-void verilog_writer::write_vector_port_binding(const structural_objectRef& port, bool& first_port_analyzed)
+void verilog_writer::write_vector_port_binding(const structural_objectRef& port, bool first_port_analyzed)
 {
    THROW_ASSERT(port, "NULL object_bounded received");
    THROW_ASSERT(port->get_kind() == port_vector_o_K, "Expected a port vector, got something of different");
@@ -676,7 +680,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
    {
       if(first_port_analyzed)
       {
-         indented_output_stream->Append(", ");
+         indented_output_stream->Append(",\n");
       }
       indented_output_stream->Append(".");
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, port->get_id()));
@@ -724,7 +728,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
             {
                if(local_first_port_analyzed)
                {
-                  port_binding += ", ";
+                  port_binding += ",\n";
                }
                port_binding += HDL_manager::convert_to_identifier(this, slice->get_id());
                unsigned int max = 0;
@@ -769,7 +773,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
          {
             if(local_first_port_analyzed)
             {
-               port_binding += ", ";
+               port_binding += ",\n";
             }
             if(slice)
             {
@@ -799,7 +803,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
                }
                else if(local_first_port_analyzed)
                {
-                  port_binding += ", ";
+                  port_binding += ",\n";
                }
                slice = null_object;
                msb = std::numeric_limits<unsigned int>::max();
@@ -817,7 +821,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
          {
             if(local_first_port_analyzed)
             {
-               port_binding += ", ";
+               port_binding += ",\n";
             }
             if(slice)
             {
@@ -847,7 +851,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
                }
                else if(local_first_port_analyzed)
                {
-                  port_binding += ", ";
+                  port_binding += ",\n";
                }
                slice = null_object;
                msb = std::numeric_limits<unsigned int>::max();
@@ -860,7 +864,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
       {
          if(local_first_port_analyzed)
          {
-            port_binding += ", ";
+            port_binding += ",\n";
          }
          port_binding += HDL_manager::convert_to_identifier(this, slice->get_id());
          unsigned int max = 0;
@@ -895,19 +899,20 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
 
       if(first_port_analyzed)
       {
-         indented_output_stream->Append(", ");
+         indented_output_stream->Append(",\n");
       }
-      first_port_analyzed = true;
       indented_output_stream->Append(".");
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, port->get_id()));
       indented_output_stream->Append("({");
+      indented_output_stream->Indent();
       indented_output_stream->Append(port_binding);
+      indented_output_stream->Deindent();
       indented_output_stream->Append("})");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Port binding for " + port->get_path() + " not found - looking for single port binding");
    }
 }
 
-void verilog_writer::write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded, bool& first_port_analyzed)
+void verilog_writer::write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded, bool first_port_analyzed)
 {
    if(!object_bounded)
    {
@@ -920,7 +925,7 @@ void verilog_writer::write_port_binding(const structural_objectRef& port, const 
    THROW_ASSERT(object_bounded->get_kind() != port_o_K || object_bounded->get_owner(), "A port has to have always an owner");
    if(first_port_analyzed)
    {
-      indented_output_stream->Append(", ");
+      indented_output_stream->Append(",\n");
    }
    if(port->get_owner()->get_kind() == port_vector_o_K)
    {
@@ -957,7 +962,6 @@ void verilog_writer::write_port_binding(const structural_objectRef& port, const 
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, object_bounded->get_id()));
    }
    indented_output_stream->Append(")");
-   first_port_analyzed = true;
 }
 
 void verilog_writer::write_io_signal_post_fix(const structural_objectRef& port, const structural_objectRef& sig)
@@ -1047,11 +1051,12 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
          if(first_it)
          {
             indented_output_stream->Append(" #(");
+            indented_output_stream->Indent();
             first_it = false;
          }
          else
          {
-            indented_output_stream->Append(", ");
+            indented_output_stream->Append(",\n");
          }
          std::string name = mem_add[0];
          std::string value;
@@ -1080,11 +1085,12 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
          if(first_it)
          {
             indented_output_stream->Append(" #(");
+            indented_output_stream->Indent();
             first_it = false;
          }
          else
          {
-            indented_output_stream->Append(", ");
+            indented_output_stream->Append(",\n");
          }
          const std::string& name = library_parameter.first;
          structural_objectRef obj = library_parameter.second;
@@ -1095,7 +1101,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
             if((type == structural_type_descriptor::VECTOR_INT || type == structural_type_descriptor::VECTOR_UINT || type == structural_type_descriptor::VECTOR_REAL))
             {
                indented_output_stream->Append("." + std::string(BITSIZE_PREFIX + name) + "(" + boost::lexical_cast<std::string>(obj->get_typeRef()->size) + ")");
-               indented_output_stream->Append(", ");
+               indented_output_stream->Append(",\n");
                indented_output_stream->Append("." + std::string(NUM_ELEM_PREFIX + name) + "(" + boost::lexical_cast<std::string>(obj->get_typeRef()->vector_size) + ")");
             }
             else
@@ -1103,7 +1109,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
                indented_output_stream->Append("." + std::string(BITSIZE_PREFIX) + name + "(" + boost::lexical_cast<std::string>(GET_TYPE_SIZE(obj)) + ")");
                if(obj->get_kind() == port_vector_o_K)
                {
-                  indented_output_stream->Append(", ");
+                  indented_output_stream->Append(",\n");
                   unsigned int ports_size = GetPointer<port_o>(obj)->get_ports_size();
                   indented_output_stream->Append("." + std::string(PORTSIZE_PREFIX) + name + "(" + boost::lexical_cast<std::string>(ports_size) + ")");
                }
@@ -1145,6 +1151,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
 
    if(!first_it)
    {
+      indented_output_stream->Deindent();
       indented_output_stream->Append(")");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module generics of " + cir->get_path());
@@ -2025,11 +2032,12 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
          if(first_it)
          {
             indented_output_stream->Append("parameter ");
+            indented_output_stream->Indent();
             first_it = false;
          }
          else
          {
-            indented_output_stream->Append(", ");
+            indented_output_stream->Append(",\n");
          }
          std::string name = mem_add[0];
          std::string value = mem_add[1];
@@ -2056,11 +2064,12 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
          if(first_it)
          {
             indented_output_stream->Append("parameter ");
+            indented_output_stream->Indent();
             first_it = false;
          }
          else
          {
-            indented_output_stream->Append(", ");
+            indented_output_stream->Append(",\n");
          }
          const std::string& name = library_parameter.first;
          structural_objectRef obj = library_parameter.second;
@@ -2109,6 +2118,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
    /// if at least one parameter is used, first_it is true.
    if(!first_it)
    {
+      indented_output_stream->Deindent();
       indented_output_stream->Append(";\n");
    }
 }

@@ -52,7 +52,6 @@
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "refcount.hpp"
-#include "simple_indent.hpp"
 
 #include <list>
 #include <map>
@@ -228,9 +227,9 @@ class language_writer
     * @param port is the port to be bounded.
     * @param top is the component owner of the component that has the port to be bounded.
     */
-   virtual void write_port_binding(const structural_objectRef& port, const structural_objectRef& top, bool& first_port_analyzed) = 0;
+   virtual void write_port_binding(const structural_objectRef& port, const structural_objectRef& top, bool first_port_analyzed) = 0;
 
-   virtual void write_vector_port_binding(const structural_objectRef& port, bool& first_port_analyzed) = 0;
+   virtual void write_vector_port_binding(const structural_objectRef& port, bool first_port_analyzed) = 0;
    /**
     * Write the end part in a module declaration.
     * @param cir is the top component to be declared.
