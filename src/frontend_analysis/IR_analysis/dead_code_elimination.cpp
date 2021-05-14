@@ -418,6 +418,12 @@ bool dead_code_elimination::signature_opt(const tree_managerRef& TM, function_de
    const auto function_v = CGM->GetVertex(function_id);
 
    InEdgeIterator ie, ie_end;
+   tree_manipulationRef tree_man(new tree_manipulation(TM, parameters));
+   std::vector<tree_nodeRef> loa = fd->list_of_args, argsT;
+   arg_eraser(loa, nullptr);
+   std::transform(loa.cbegin(), loa.cend(), std::back_inserter(argsT), [&](const tree_nodeRef& arg) { return TM->GetTreeReindex(tree_helper::get_type_index(TM, GET_INDEX_CONST_NODE(arg))); });
+   const auto ftype = tree_man->create_function_type(GetPointerS<const function_type>(GET_CONST_NODE(fd->type))->retn, argsT);
+   const auto ftype_ptr = tree_man->create_pointer_type(ftype, ALGN_POINTER);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused arguments from call points");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ie++)
@@ -430,16 +436,19 @@ bool dead_code_elimination::signature_opt(const tree_managerRef& TM, function_de
          auto call_rdx = TM->GetTreeReindex(call_id);
          auto call_stmt = GET_NODE(call_rdx);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before erase: " + call_stmt->ToString());
+         tree_nodeRef fn;
          if(call_stmt->get_kind() == gimple_call_K)
          {
             auto gc = GetPointerS<gimple_call>(call_stmt);
             THROW_ASSERT(gc->args.size() == args.size(), "");
+            fn = gc->fn;
             arg_eraser(gc->args, call_rdx);
          }
          else if(call_stmt->get_kind() == gimple_assign_K)
          {
             const auto ga = GetPointerS<const gimple_assign>(call_stmt);
             auto ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+            fn = ce->fn;
             THROW_ASSERT(ce, "Unexpected call expression: " + GET_NODE(ga->op1)->get_kind_text());
             THROW_ASSERT(ce->args.size() == args.size(), "");
             arg_eraser(ce->args, call_rdx);
@@ -447,6 +456,11 @@ bool dead_code_elimination::signature_opt(const tree_managerRef& TM, function_de
          else
          {
             THROW_UNREACHABLE("Call point statement not handled: " + call_stmt->get_kind_text());
+         }
+         auto ae = GetPointer<addr_expr>(GET_NODE(fn));
+         if(ae)
+         {
+            ae->type = ftype_ptr;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After erase: " + call_stmt->ToString());
       }
@@ -458,26 +472,8 @@ bool dead_code_elimination::signature_opt(const tree_managerRef& TM, function_de
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing parameters from function signature");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---Before erase: " + tree_helper::print_type(TM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
-   arg_eraser(fd->list_of_args, nullptr);
-   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-   unsigned int tree_list_node_nid = 0, prev_tree_list_node_nid = 0;
-   for(auto rit = fd->list_of_args.crbegin(); rit != fd->list_of_args.crend(); ++rit)
-   {
-      const auto p_type = tree_helper::get_type_index(TM, GET_INDEX_CONST_NODE(*rit));
-      THROW_ASSERT(p_type, "Parameter type should not be empty: " + GET_CONST_NODE(*rit)->ToString());
-      IR_schema[TOK(TOK_VALU)] = STR(p_type);
-      if(prev_tree_list_node_nid)
-      {
-         IR_schema[TOK(TOK_CHAN)] = STR(prev_tree_list_node_nid);
-      }
-      tree_list_node_nid = TM->new_tree_node_id();
-      TM->create_tree_node(tree_list_node_nid, tree_list_K, IR_schema);
-      IR_schema.clear();
-      prev_tree_list_node_nid = tree_list_node_nid;
-   }
-   const auto parm_list = tree_list_node_nid ? TM->GetTreeReindex(tree_list_node_nid) : tree_nodeRef();
-   THROW_ASSERT(GET_NODE(fd->type)->get_kind() == function_type_K, "Unexpected function_decl type node: " + GET_NODE(fd->type)->get_kind_text());
-   GetPointer<function_type>(GET_NODE(fd->type))->prms = parm_list;
+   fd->list_of_args = loa;
+   fd->type = ftype;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---After erase: " + tree_helper::print_type(TM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Function signature optimization completed");
