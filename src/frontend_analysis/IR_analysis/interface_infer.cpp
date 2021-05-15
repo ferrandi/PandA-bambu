@@ -1544,12 +1544,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
       if(is_top)
       {
          writeVdef.clear();
-         /// load xml interface specification file
-         for(auto source_file : AppM->input_files)
-         {
-            const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-            std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
-            auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".interface.xml";
+         auto parseInterfaceXML = [&](const std::string& XMLfilename) {
             if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
@@ -1686,6 +1681,21 @@ DesignFlowStep_Status interface_infer::InternalExec()
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+            }
+         };
+         if(parameters->isOption(OPT_interface_xml_filename))
+         {
+            parseInterfaceXML(parameters->getOption<std::string>(OPT_interface_xml_filename));
+         }
+         else
+         {
+            /// load xml interface specification file
+            for(auto source_file : AppM->input_files)
+            {
+               const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
+               std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+               auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".interface.xml";
+               parseInterfaceXML(XMLfilename);
             }
          }
 
