@@ -1,14 +1,4 @@
 #!/bin/bash
-$(dirname $0)/test_softfloat_addsub32.sh $@
-return_value=$?
-if test $return_value != 0; then
-   exit $return_value
-fi
-$(dirname $0)/test_softfloat_div32.sh $@
-return_value=$?
-if test $return_value != 0; then
-   exit $return_value
-fi
 $(dirname $0)/test_libm_sinecosine.sh $@
 return_value=$?
 if test $return_value != 0; then

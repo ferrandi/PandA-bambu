@@ -1133,6 +1133,10 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test2/mod_test_c.xml \
 ./bambu_specific_test3.sh\
 ./bambu_specific_test3_list\
+./bambu_specific_test4/ac_fixed1.cpp\
+./bambu_specific_test4/ac_fixed2_tb.cpp\
+./bambu_specific_test4/ac_fixed2_tb.xml\
+./bambu_specific_test4/ac_fixed3.cpp\
 ./bambu_specific_test4/ac_types1.cpp \
 ./bambu_specific_test4/ac_types2.cpp \
 ./bambu_specific_test4/ac_types2_valid.cpp \
