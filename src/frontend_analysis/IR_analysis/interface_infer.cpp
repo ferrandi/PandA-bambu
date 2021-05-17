@@ -109,7 +109,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(IR_LOWERING, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, CALLED_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -165,27 +167,27 @@ interface_infer::interface_infer(const application_managerRef _AppM, unsigned in
 
 interface_infer::~interface_infer() = default;
 
-void interface_infer::Computepar2ssa(statement_list* sl, std::map<unsigned, unsigned>& par2ssa)
+void interface_infer::Computepar2ssa(const statement_list* sl, std::map<unsigned, unsigned>& par2ssa)
 {
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       for(const auto& stmt : block.second->CGetStmtList())
       {
          TreeNodeMap<size_t> used_ssa = tree_helper::ComputeSsaUses(stmt);
          for(const auto& s : used_ssa)
          {
-            const tree_nodeRef ssa_tn = GET_NODE(s.first);
-            const auto* ssa = GetPointer<const ssa_name>(ssa_tn);
-            if(ssa->var != nullptr and GET_NODE(ssa->var)->get_kind() == parm_decl_K)
+            const auto ssa_tn = GET_CONST_NODE(s.first);
+            const auto ssa = GetPointerS<const ssa_name>(ssa_tn);
+            if(ssa->var != nullptr && GET_CONST_NODE(ssa->var)->get_kind() == parm_decl_K)
             {
-               auto par_id = GET_INDEX_NODE(ssa->var);
+               const auto par_id = GET_INDEX_CONST_NODE(ssa->var);
                if(par2ssa.find(par_id) != par2ssa.end())
                {
-                  THROW_ASSERT(par2ssa.find(par_id)->second == GET_INDEX_NODE(s.first), "unexpected condition");
+                  THROW_ASSERT(par2ssa.find(par_id)->second == GET_INDEX_CONST_NODE(s.first), "unexpected condition");
                }
                else
                {
-                  par2ssa[par_id] = GET_INDEX_NODE(s.first);
+                  par2ssa[par_id] = GET_INDEX_CONST_NODE(s.first);
                }
             }
          }
@@ -193,40 +195,40 @@ void interface_infer::Computepar2ssa(statement_list* sl, std::map<unsigned, unsi
    }
 }
 
-void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ssa_name* argSSA, unsigned int destBB, statement_list* sl, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt,
-                                         std::list<tree_nodeRef>& readStmt)
+void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, const ssa_name* argSSA, unsigned int destBB, const statement_list* sl, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern,
+                                         std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt)
 {
    tree_nodeRef readType;
-   for(auto par_use : argSSA->CGetUseStmts())
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---SSA VARIABLE: " + argSSA->ToString() + " with " + STR(argSSA->CGetUseStmts().size()) + " use statements");
+   for(const auto& par_use : argSSA->CGetUseStmts())
    {
-      auto use_stmt = GET_NODE(par_use.first);
-      if(Visited.find(GET_INDEX_NODE(par_use.first)) != Visited.end())
+      const auto use_stmt = GET_CONST_NODE(par_use.first);
+      if(!Visited.insert(GET_INDEX_CONST_NODE(par_use.first)).second)
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---SKIPPED STMT: " + use_stmt->ToString());
          continue;
       }
-      Visited.insert(GET_INDEX_NODE(par_use.first));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---STMT: " + use_stmt->ToString());
-      auto gn = GetPointer<gimple_node>(use_stmt);
-      if(auto ga = GetPointer<gimple_assign>(use_stmt))
+      if(const auto ga = GetPointer<const gimple_assign>(use_stmt))
       {
-         if(GET_NODE(ga->op0)->get_kind() == mem_ref_K)
+         if(GET_CONST_NODE(ga->op0)->get_kind() == mem_ref_K)
          {
-            if(GET_NODE(ga->op1)->get_kind() == mem_ref_K)
+            if(GET_CONST_NODE(ga->op1)->get_kind() == mem_ref_K)
             {
                unkwown_pattern = true;
                THROW_WARNING("Pattern currently not supported: *x=*y; " + use_stmt->ToString());
             }
             else
             {
-               THROW_ASSERT(GET_NODE(ga->op1)->get_kind() == ssa_name_K || GetPointer<cst_node>(GET_NODE(ga->op1)), "unexpected condition");
-               if(GetPointer<cst_node>(GET_NODE(ga->op1)) || GetPointer<ssa_name>(GET_NODE(ga->op1)) != argSSA)
+               THROW_ASSERT(GET_CONST_NODE(ga->op1)->get_kind() == ssa_name_K || GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)), "unexpected condition");
+               if(GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)) || GetPointer<const ssa_name>(GET_CONST_NODE(ga->op1)) != argSSA)
                {
                   isWrite = true;
                   writeStmt.push_back(par_use.first);
                }
             }
          }
-         else if(GET_NODE(ga->op1)->get_kind() == mem_ref_K)
+         else if(GET_CONST_NODE(ga->op1)->get_kind() == mem_ref_K)
          {
             if(ga->vdef)
             {
@@ -236,16 +238,17 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
             }
             else
             {
+               const auto gn = GetPointer<const gimple_node>(use_stmt);
                if(sl->list_of_bloc.find(gn->bb_index)->second->loop_id != 0)
                {
                   canBeMovedToBB2 = false;
                }
                isRead = true;
-               if(readType && GET_INDEX_NODE(GetPointer<mem_ref>(GET_NODE(ga->op1))->type) != GET_INDEX_NODE(readType))
+               if(readType && GET_INDEX_CONST_NODE(GetPointerS<const mem_ref>(GET_CONST_NODE(ga->op1))->type) != GET_INDEX_CONST_NODE(readType))
                {
                   canBeMovedToBB2 = false; /// reading different objects
                }
-               readType = GetPointer<mem_ref>(GET_NODE(ga->op1))->type;
+               readType = GetPointerS<const mem_ref>(GET_CONST_NODE(ga->op1))->type;
                readStmt.push_back(par_use.first);
                if(ga->bb_index == destBB)
                {
@@ -253,26 +256,26 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
                }
             }
          }
-         else if(GET_NODE(ga->op1)->get_kind() == call_expr_K)
+         else if(GET_CONST_NODE(ga->op1)->get_kind() == call_expr_K)
          {
             unkwown_pattern = true;
             canBeMovedToBB2 = false;
             THROW_WARNING("Pattern currently not supported: parameter passed as a parameter to another function " + use_stmt->ToString());
          }
-         else if(GET_NODE(ga->op1)->get_kind() == nop_expr_K || GET_NODE(ga->op1)->get_kind() == view_convert_expr_K || GET_NODE(ga->op1)->get_kind() == ssa_name_K || GET_NODE(ga->op1)->get_kind() == pointer_plus_expr_K ||
-                 GET_NODE(ga->op1)->get_kind() == cond_expr_K)
+         else if(GET_CONST_NODE(ga->op1)->get_kind() == nop_expr_K || GET_CONST_NODE(ga->op1)->get_kind() == view_convert_expr_K || GET_CONST_NODE(ga->op1)->get_kind() == ssa_name_K || GET_CONST_NODE(ga->op1)->get_kind() == pointer_plus_expr_K ||
+                 GET_CONST_NODE(ga->op1)->get_kind() == cond_expr_K)
          {
             canBeMovedToBB2 = false;
-            auto op0SSA = GetPointer<ssa_name>(GET_NODE(ga->op0));
+            const auto op0SSA = GetPointerS<const ssa_name>(GET_CONST_NODE(ga->op0));
             THROW_ASSERT(argSSA, "unexpected condition");
             classifyArgRecurse(Visited, op0SSA, destBB, sl, canBeMovedToBB2, isRead, isWrite, unkwown_pattern, writeStmt, readStmt);
          }
          else
          {
-            THROW_ERROR("Pattern currently not supported: parameter used in a non-supported statement " + use_stmt->ToString() + ":" + GET_NODE(ga->op1)->get_kind_text());
+            THROW_ERROR("Pattern currently not supported: parameter used in a non-supported statement " + use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
          }
       }
-      else if(auto gc = GetPointer<gimple_call>(use_stmt))
+      else if(const auto gc = GetPointer<const gimple_call>(use_stmt))
       {
          canBeMovedToBB2 = false;
          // look for the actual vs formal parameter binding
@@ -280,10 +283,10 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
          bool found = false;
 #endif
          unsigned par_index = 0;
-         for(auto par : gc->args)
+         for(const auto& par : gc->args)
          {
-            auto par_node = GET_NODE(par);
-            auto ssaPar = GetPointer<ssa_name>(par_node);
+            const auto par_node = GET_CONST_NODE(par);
+            const auto ssaPar = GetPointerS<const ssa_name>(par_node);
             if(ssaPar)
             {
                if(argSSA == ssaPar)
@@ -302,30 +305,30 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
          }
          THROW_ASSERT(found, "found: " + argSSA->ToString() + " index=" + STR(par_index));
          THROW_ASSERT(gc->fn, "unexpected condition");
-         auto fn_node = GET_NODE(gc->fn);
+         const auto fn_node = GET_CONST_NODE(gc->fn);
          if(fn_node->get_kind() == addr_expr_K)
          {
-            auto ae = GetPointer<addr_expr>(fn_node);
-            auto ae_op = GET_NODE(ae->op);
+            const auto ae = GetPointerS<const addr_expr>(fn_node);
+            const auto ae_op = GET_CONST_NODE(ae->op);
             if(ae_op->get_kind() == function_decl_K)
             {
-               auto fd2 = GetPointer<function_decl>(ae_op);
+               const auto fd2 = GetPointerS<const function_decl>(ae_op);
                THROW_ASSERT(fd2->body, "unexpected condition");
+               const auto sl2 = GetPointerS<const statement_list>(GET_CONST_NODE(fd2->body));
                std::map<unsigned, unsigned> par2ssa;
-               auto sl2 = GetPointer<statement_list>(GET_NODE(fd2->body));
                Computepar2ssa(sl2, par2ssa);
                unsigned par2_index = 0;
                auto arg_id = 0u;
                std::string pdName_string2;
-               for(auto arg : fd2->list_of_args)
+               for(const auto& arg : fd2->list_of_args)
                {
                   if(par2_index == par_index)
                   {
-                     arg_id = GET_INDEX_NODE(arg);
-                     auto pd = GetPointer<parm_decl>(GET_NODE(arg));
-                     auto pdName = GET_NODE(pd->name);
-                     THROW_ASSERT(GetPointer<identifier_node>(pdName), "unexpected condition");
-                     pdName_string2 = GetPointer<identifier_node>(pdName)->strg;
+                     arg_id = GET_INDEX_CONST_NODE(arg);
+                     const auto pd = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
+                     const auto pdName = GET_CONST_NODE(pd->name);
+                     THROW_ASSERT(GetPointer<const identifier_node>(pdName), "unexpected condition");
+                     pdName_string2 = GetPointerS<const identifier_node>(pdName)->strg;
                      break;
                   }
                   ++par2_index;
@@ -334,15 +337,15 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
                if(par2ssa.find(arg_id) != par2ssa.end())
                {
                   /// propagate design interfaces
-                  auto HLSMgr = GetPointer<HLS_manager>(AppM);
-                  auto par_node = GET_NODE(argSSA->var);
-                  auto pd = GetPointer<parm_decl>(par_node);
-                  auto pdName = GET_NODE(pd->name);
-                  THROW_ASSERT(GetPointer<identifier_node>(pdName), "unexpected condition");
-                  const std::string& pdName_string = GetPointer<identifier_node>(pdName)->strg;
-                  auto fun_node = GET_NODE(pd->scpe);
+                  const auto HLSMgr = GetPointer<HLS_manager>(AppM);
+                  const auto par_node = GET_CONST_NODE(argSSA->var);
+                  const auto pd = GetPointerS<const parm_decl>(par_node);
+                  const auto pdName = GET_CONST_NODE(pd->name);
+                  THROW_ASSERT(GetPointer<const identifier_node>(pdName), "unexpected condition");
+                  const auto& pdName_string = GetPointerS<const identifier_node>(pdName)->strg;
+                  const auto fun_node = GET_CONST_NODE(pd->scpe);
                   THROW_ASSERT(fun_node && fun_node->get_kind() == function_decl_K, "unexpected condition");
-                  auto fd = GetPointer<function_decl>(fun_node);
+                  const auto fd = GetPointerS<const function_decl>(fun_node);
                   std::string fname;
                   tree_helper::get_mangled_fname(fd, fname);
                   if(HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() && HLSMgr->design_interface_arraysize.find(fname)->second.find(pdName_string) != HLSMgr->design_interface_arraysize.find(fname)->second.end())
@@ -368,9 +371,9 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
                      HLSMgr->design_interface_attribute3[fname2][pdName_string2] = HLSMgr->design_interface_attribute3.find(fname)->second.find(pdName_string)->second;
                   }
                   const auto TM = AppM->get_tree_manager();
-                  auto argSSANode = TM->GetTreeReindex(par2ssa.find(arg_id)->second);
-                  auto argSSA2 = GetPointer<ssa_name>(GET_NODE(argSSANode));
-                  THROW_ASSERT(argSSA, "unexpected condition");
+                  const auto argSSANode = TM->CGetTreeNode(par2ssa.find(arg_id)->second);
+                  const auto argSSA2 = GetPointer<const ssa_name>(argSSANode);
+                  THROW_ASSERT(argSSA2, "unexpected condition");
                   classifyArgRecurse(Visited, argSSA2, destBB, sl2, canBeMovedToBB2, isRead, isWrite, unkwown_pattern, writeStmt, readStmt);
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Sub-function done\n");
                }
@@ -401,7 +404,7 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
 void interface_infer::classifyArg(statement_list* sl, tree_nodeRef argSSANode, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt)
 {
    unsigned int destBB = bloc::ENTRY_BLOCK_ID;
-   for(auto bb_succ : sl->list_of_bloc[bloc::ENTRY_BLOCK_ID]->list_of_succ)
+   for(const auto bb_succ : sl->list_of_bloc[bloc::ENTRY_BLOCK_ID]->list_of_succ)
    {
       if(bb_succ == bloc::EXIT_BLOCK_ID)
       {
@@ -417,7 +420,7 @@ void interface_infer::classifyArg(statement_list* sl, tree_nodeRef argSSANode, b
       }
    }
    THROW_ASSERT(destBB != bloc::ENTRY_BLOCK_ID, "unexpected condition");
-   auto argSSA = GetPointer<ssa_name>(GET_NODE(argSSANode));
+   const auto argSSA = GetPointer<const ssa_name>(GET_CONST_NODE(argSSANode));
    THROW_ASSERT(argSSA, "unexpected condition");
    CustomOrderedSet<unsigned> Visited;
    classifyArgRecurse(Visited, argSSA, destBB, sl, canBeMovedToBB2, isRead, isWrite, unkwown_pattern, writeStmt, readStmt);

@@ -96,6 +96,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
          relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, CALLING_FUNCTIONS));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
@@ -394,11 +395,8 @@ bool dead_code_elimination::signature_opt(const tree_managerRef& TM, function_de
          auto ssa = GetPointer<ssa_name>(GET_NODE(*arg_it));
          if(ssa)
          {
-            if(ssa->CGetUseStmts().count(call_stmt))
-            {
-               // This should always be true, but it's not my fault
-               ssa->RemoveUse(call_stmt);
-            }
+            THROW_ASSERT(ssa->CGetUseStmts().count(call_stmt), "");
+            ssa->RemoveUse(call_stmt);
 
             auto gn = GetPointer<gimple_node>(GET_NODE(call_stmt));
             if(tree_helper::is_virtual(TM, ssa->index))
