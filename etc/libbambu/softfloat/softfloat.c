@@ -41,6 +41,9 @@ these four paragraphs for those parts of this code that are retained.
 #define COND_EXPR_MACRO32(cond, a, b) ((((__bits32)((((__sbits32)(cond)) << 31) >> 31)) & (a)) | ((~((__bits32)((((__sbits32)(cond)) << 31) >> 31))) & (b)))
 #define COND_EXPR_MACRO64(cond, a, b) ((((__bits64)((((__sbits64)(cond)) << 63) >> 63)) & (a)) | ((~((__bits64)((((__sbits64)(cond)) << 63) >> 63))) & (b)))
 
+#define IEEE16_FRAC_BITS 10
+#define IEEE16_EXP_BITS 5
+#define IEEE16_EXP_BIAS -15
 #define IEEE32_FRAC_BITS 23
 #define IEEE32_EXP_BITS 8
 #define IEEE32_EXP_BIAS -127
@@ -57,6 +60,12 @@ these four paragraphs for those parts of this code that are retained.
 #define IEEE_SUBNORM 1
 #endif
 #define IEEE_SIGN -1
+
+#define IEEE16_EXTRACT_FRAC IEEE16_FRAC_BITS
+#define IEEE16_EXTRACT_EXP IEEE16_EXP_BITS, IEEE16_FRAC_BITS
+#define IEEE16_EXTRACT_SIGN IEEE16_EXP_BITS, IEEE16_FRAC_BITS, IEEE_SIGN
+#define IEEE16_SPEC_ARGS IEEE16_EXP_BITS, IEEE16_FRAC_BITS, IEEE16_EXP_BIAS, IEEE_ROUNDING, IEEE_NAN, IEEE_ONE, IEEE_SUBNORM, IEEE_SIGN
+#define IEEE16_PACK IEEE16_EXP_BITS, IEEE16_FRAC_BITS
 
 #define IEEE32_EXTRACT_FRAC IEEE32_FRAC_BITS
 #define IEEE32_EXTRACT_EXP IEEE32_EXP_BITS, IEEE32_FRAC_BITS

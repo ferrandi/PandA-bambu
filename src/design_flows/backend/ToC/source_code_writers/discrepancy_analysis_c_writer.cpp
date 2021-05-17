@@ -516,11 +516,11 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                          {"__float32_gte8m23b_127rnh", {false, ">"}},          {"__float64_gte11m52b_1023rnh", {true, ">"}},          {"__float32_eqe8m23b_127rnh", {false, "=="}},     {"__float64_eqe11m52b_1023rnh", {true, "=="}},
                          {"__float32_ltgt_quiete8m23b_127rnh", {false, "!="}}, {"__float64_ltgt_quiete11m52b_1023rnh", {true, "!="}},
                      };
-                     const auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
                      const auto unary_op_relation = basic_unary_operations_relation.find(oper->get_name());
                      const auto binary_op_relation = basic_binary_operations_relation.find(oper->get_name());
-                     if(unary_op_relation != basic_unary_operations_relation.end())
+                     if(unary_op_relation != basic_unary_operations_relation.end() && actual_args.size() >= 1) // There could be no arguments if the function signature has been optimized
                      {
+                        const auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
                         const std::string view_convert = (unary_op_relation->second.first & 1) ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
                         const std::string in_view_convert = (unary_op_relation->second.first & 2) ? ((~unary_op_relation->second.first & 1) ? "_Int64_ViewConvert" : "_Int32_ViewConvert") : "";
                         if(unary_op_relation->second.first < 4)
@@ -542,8 +542,9 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                                                           check_string0 + "\", " + computation + ", " + var_name + ", " + view_convert + "(" + var1 + "));\nexit(1);\n}\n");
                         }
                      }
-                     else if(binary_op_relation != basic_binary_operations_relation.end())
+                     else if(binary_op_relation != basic_binary_operations_relation.end() && actual_args.size() >= 2)
                      {
+                        const auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
                         const auto var2 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
                         const std::string view_convert = binary_op_relation->second.first ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
                         const auto computation = "(" + view_convert + "(" + var1 + ")" + binary_op_relation->second.second + view_convert + "(" + var2 + "))";

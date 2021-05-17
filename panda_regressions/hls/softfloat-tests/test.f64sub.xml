@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<function>
+   <testbench a="0" b="0" />
+   <testbench a="0" b="-0" />
+   <testbench a="-0" b="0" />
+   <testbench a="-0" b="-0" />
+   <testbench a="0" b="2" />
+   <testbench a="0" b="__Inf" />
+   <testbench a="0" b="__Nan" />
+   <testbench a="1.0" b="0" />
+   <testbench a="-1.0" b="0" />
+   <testbench a="2.80382419e-38" b="__Inf" />
+   <testbench a="-2.98781684e-27" b="__Inf" />
+   <testbench a="1.20248473e-14" b="__Nan" />
+   <testbench a="-__Inf" b="0" />
+   <testbench a="__Inf" b="-1.20248473e-14" />
+   <testbench a="__Inf" b="__Inf" />
+   <testbench a="__Inf" b="-__Inf" />
+   <testbench a="-__Inf" b="__Inf" />
+   <testbench a="-__Inf" b="-__Inf" />
+   <testbench a="__Nan" b="0" />
+   <testbench a="__Nan" b="4.37500000e1" />
+   <testbench a="__Nan" b="__Inf" />
+   <testbench a="__Nan" b="__Nan" />
+   <testbench a="1.09582188e-28" b="1.59122077e-28" />
+   <testbench a="4.24071595e-18" b="1.33683058e-17" />
+   <testbench a="-1.12049386e37" b="-3.26877373e37" />
+   <testbench a="-3.13935334e-15" b="-2.68476539e-12" />
+   <testbench a="-1.25626552e8" b="-3.05310273e4" />
+   <testbench a="4.05801293e-29" b="-1.88246306e-29" />
+   <testbench a="7.47637842e15" b="-3.91731994e9" />
+   <testbench a="6.83142920e3" b="5.14747119e3" />
+   <testbench a="3.5" b="2.3" />
+   <testbench a="0x1.34f384p+5" b="-0x1.974852p+1" />
+   <testbench a="2.0794144" b="0.22104143" />
+</function>

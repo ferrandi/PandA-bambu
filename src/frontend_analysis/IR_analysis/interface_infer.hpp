@@ -74,9 +74,9 @@ class interface_infer : public FunctionFrontendFlowStep
     */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   void Computepar2ssa(statement_list* sl, std::map<unsigned, unsigned>& par2ssa);
+   void Computepar2ssa(const statement_list* sl, std::map<unsigned, unsigned>& par2ssa);
 
-   void classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ssa_name* argSSA, unsigned int destBB, statement_list* sl, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt,
+   void classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, const ssa_name* argSSA, unsigned int destBB, const statement_list* sl, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt,
                            std::list<tree_nodeRef>& readStmt);
    void classifyArg(statement_list* sl, tree_nodeRef argSSANode, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt);
    void addGimpleNOPxVirtual(tree_nodeRef origStmt, const tree_managerRef TM, CustomOrderedSet<unsigned>& writeVdef);
