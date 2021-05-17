@@ -2,7 +2,7 @@ softfloat-tests/fdiv.c --benchmark-name=fdiv --simulate --generate-tb=BENCHMARKS
 softfloat-tests/fdiv.c --benchmark-name=fdivG --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fdivG.xml --hls-fpdiv=G
 softfloat-tests/fsum.c --benchmark-name=fsum --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fsum.xml
 softfloat-tests/fsub.c --benchmark-name=fsub --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fsub.xml
-softfloat-tests/fmul.c --benchmark-name=fmul0a --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fmul.xml
+softfloat-tests/fmul.c --benchmark-name=fmul --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fmul.xml
 
 softfloat-tests/f64div.c --benchmark-name=f64div --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64div.xml
 softfloat-tests/f64div.c --benchmark-name=f64divG --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64divG.xml --hls-fpdiv=G
