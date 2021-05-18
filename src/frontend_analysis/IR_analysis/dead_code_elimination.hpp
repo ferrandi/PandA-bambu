@@ -87,6 +87,8 @@ class dead_code_elimination : public FunctionFrontendFlowStep
    unsigned move2emptyBB(const tree_managerRef TM, statement_list* sl, unsigned pred, blocRef bb_pred, unsigned cand_bb_dest, unsigned bb_dest) const;
    void add_gimple_nop(gimple_node* gc, const tree_managerRef TM, tree_nodeRef cur_stmt, blocRef bb);
 
+   bool signature_opt(const tree_managerRef& TM, function_decl* fd) const;
+
  public:
    /**
     * Constructor

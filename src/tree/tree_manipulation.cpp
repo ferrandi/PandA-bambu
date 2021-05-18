@@ -1465,6 +1465,39 @@ tree_nodeRef tree_manipulation::create_integer_type_with_prec(unsigned int prec,
    return TreeM->GetTreeReindex(integer_type_nid);
 }
 
+tree_nodeRef tree_manipulation::create_function_type(const tree_nodeRef& returnType, const std::vector<tree_nodeRef>& argsT) const
+{
+   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
+   unsigned int size_node_nid = this->TreeM->new_tree_node_id();
+   tree_nodeRef bit_size_node = create_bit_size_type();
+   CreateIntegerCst(bit_size_node, SIZE_VALUE_FUNCTION, size_node_nid);
+
+   unsigned int tree_list_node_nid = 0, prev_tree_list_node_nid = 0;
+   for(const auto& par_type : boost::adaptors::reverse(argsT))
+   {
+      tree_list_node_nid = this->TreeM->new_tree_node_id();
+      IR_schema[TOK(TOK_VALU)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(par_type));
+      if(prev_tree_list_node_nid)
+      {
+         IR_schema[TOK(TOK_CHAN)] = boost::lexical_cast<std::string>(prev_tree_list_node_nid);
+      }
+      TreeM->create_tree_node(tree_list_node_nid, tree_list_K, IR_schema);
+      IR_schema.clear();
+      prev_tree_list_node_nid = tree_list_node_nid;
+   }
+
+   auto function_type_id = TreeM->new_tree_node_id();
+   IR_schema[TOK(TOK_SIZE)] = boost::lexical_cast<std::string>(size_node_nid);
+   IR_schema[TOK(TOK_ALGN)] = boost::lexical_cast<std::string>(8);
+   IR_schema[TOK(TOK_RETN)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(returnType));
+   if(tree_list_node_nid)
+   {
+      IR_schema[TOK(TOK_PRMS)] = boost::lexical_cast<std::string>(tree_list_node_nid);
+   }
+   TreeM->create_tree_node(function_type_id, function_type_K, IR_schema);
+   return TreeM->GetTreeReindex(function_type_id);
+}
+
 /// MISCELLANEOUS_OBJ_TREE_NODES
 
 /// SSA_NAME
@@ -2084,37 +2117,9 @@ tree_nodeRef tree_manipulation::create_function_decl(const std::string& function
    }
    IR_schema.clear();
 
-   unsigned int size_node_nid = this->TreeM->new_tree_node_id();
-   tree_nodeRef bit_size_node = create_bit_size_type();
-   CreateIntegerCst(bit_size_node, SIZE_VALUE_FUNCTION, size_node_nid);
-
-   unsigned int tree_list_node_nid = 0, prev_tree_list_node_nid = 0;
-   for(const auto& par_type : boost::adaptors::reverse(argsT))
-   {
-      tree_list_node_nid = this->TreeM->new_tree_node_id();
-      IR_schema[TOK(TOK_VALU)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(par_type));
-      if(prev_tree_list_node_nid)
-      {
-         IR_schema[TOK(TOK_CHAN)] = boost::lexical_cast<std::string>(prev_tree_list_node_nid);
-      }
-      TreeM->create_tree_node(tree_list_node_nid, tree_list_K, IR_schema);
-      IR_schema.clear();
-      prev_tree_list_node_nid = tree_list_node_nid;
-   }
-
-   auto function_type_id = TreeM->new_tree_node_id();
-   IR_schema[TOK(TOK_SIZE)] = boost::lexical_cast<std::string>(size_node_nid);
-   IR_schema[TOK(TOK_ALGN)] = boost::lexical_cast<std::string>(8);
-   IR_schema[TOK(TOK_RETN)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(returnType));
-   if(tree_list_node_nid)
-   {
-      IR_schema[TOK(TOK_PRMS)] = boost::lexical_cast<std::string>(tree_list_node_nid);
-   }
-   TreeM->create_tree_node(function_type_id, function_type_K, IR_schema);
-   IR_schema.clear();
-
+   const auto function_type = create_function_type(returnType, argsT);
    IR_schema[TOK(TOK_NAME)] = boost::lexical_cast<std::string>(function_name_id);
-   IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(function_type_id);
+   IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(GET_INDEX_CONST_NODE(function_type));
    IR_schema[TOK(TOK_SCPE)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(scpe));
    IR_schema[TOK(TOK_SRCP)] = srcp;
    if(with_body)
