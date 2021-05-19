@@ -350,6 +350,15 @@ class tree_manipulation
     */
    tree_nodeRef create_integer_type_with_prec(unsigned int prec, bool unsigned_p) const;
 
+   /**
+    * @brief Create a function type
+    *
+    * @param returnType is the return type
+    * @param argsT is the vector of argument types
+    * @return tree_nodeRef is the tree reindex associated with the function type created
+    */
+   tree_nodeRef create_function_type(const tree_nodeRef& returnType, const std::vector<tree_nodeRef>& argsT) const;
+
    /// MISCELLANEOUS_OBJ_TREE_NODES
 
    /// SSA_NAME
@@ -448,7 +457,8 @@ class tree_manipulation
     * @brief create the declaration of a function without its body
     * @param function_name is the function name
     * @param scpe is the function scope
-    * @param args is the vector of argument types
+    * @param argsT is the vector of argument types
+    * @param returnType is the return type
     * @param srcp is the source references
     * @param with_body when true a stub of the body is created
     * @return is the the tree_reindex associated with the function_decl created.
@@ -661,6 +671,14 @@ class tree_manipulation
     * @return the tree reindex of the created node
     */
    tree_nodeRef CreateVectorBooleanType(const unsigned int number_of_elements) const;
+
+   /**
+    * @brief CloneFunction duplicates a function
+    * @param tn is the tree reindex of the function decl
+    * @param funNameSuffix is the suffix added to function_decl newly created
+    * @return tree_reindex of the new function decl
+    */
+   tree_nodeRef CloneFunction(const tree_nodeRef& tn, const std::string& funNameSuffix);
 };
 
 using tree_manipulationRef = refcount<tree_manipulation>;

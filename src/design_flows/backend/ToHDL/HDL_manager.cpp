@@ -392,7 +392,7 @@ struct find_eq_module
 
 bool HDL_manager::is_fsm(const structural_objectRef& cir) const
 {
-   /// check for a fsm description
+   /// check for a FSM description
    auto* mod_inst = GetPointer<module>(cir);
    THROW_ASSERT(mod_inst, "Expected a component or a channel");
    const NP_functionalityRef& np = mod_inst->get_NP_functionality();
@@ -962,7 +962,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
       else if(is_fsm(cir))
       {
          THROW_ASSERT(np, "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
-         THROW_ASSERT(!(np->exist_NP_functionality(NP_functionality::FSM) and np->exist_NP_functionality(NP_functionality::FSM_CS)), "Cannot exist both fsm and fsm_cs for the same function");
+         THROW_ASSERT(!(np->exist_NP_functionality(NP_functionality::FSM) and np->exist_NP_functionality(NP_functionality::FSM_CS)), "Cannot exist both FSM and fsm_cs for the same function");
          std::string fsm_desc;
          if(np->exist_NP_functionality(NP_functionality::FSM_CS))
          {
@@ -981,7 +981,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          {
             std::string ip_cores = np->get_NP_functionality(NP_functionality::IP_COMPONENT);
             std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
-            for(auto ip_core : ip_cores_list)
+            for(const auto& ip_core : ip_cores_list)
             {
                std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
                if(ip_core_vec.size() < 1 or ip_core_vec.size() > 2)
@@ -1094,7 +1094,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    boost::algorithm::erase_all(fsm_desc, "\n");
 
    std::vector<std::string> SplitVec = SplitString(fsm_desc, ";");
-   THROW_ASSERT(SplitVec.size() > 1, "Expected more than one ';' in the fsm specification (the first is the reset)");
+   THROW_ASSERT(SplitVec.size() > 2, "Expected more than one ';' in the FSM specification (the first is the reset)");
 
    using tokenizer = boost::tokenizer<boost::char_separator<char>>;
    boost::char_separator<char> sep(" ", nullptr);
@@ -1107,19 +1107,45 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    std::string reset_state = convert_to_identifier(writer.get(), *tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reset state: '" << reset_state << "'");
    ++tok_iter;
-   THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong fsm description: expected the reset port name");
+   THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong FSM description: expected the reset port name");
    std::string reset_port = convert_to_identifier(writer.get(), *tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reset port: '" << reset_port << "'");
    ++tok_iter;
-   THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong fsm description: expected the start port name");
+   THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong FSM description: expected the start port name");
    std::string start_port = convert_to_identifier(writer.get(), *tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Start port: '" << start_port << "'");
    ++tok_iter;
-   THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong fsm description: expected the clock port name");
+   THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong FSM description: expected the clock port name");
    std::string clock_port = convert_to_identifier(writer.get(), *tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Clock port: '" << clock_port << "'");
    ++tok_iter;
-   THROW_ASSERT(tok_iter == first_line_tokens.end(), "Wrong fsm description: unexpetcted tokens" + *tok_iter);
+   THROW_ASSERT(tok_iter == first_line_tokens.end(), "Wrong FSM description: unexpetcted tokens" + *tok_iter);
+
+   ++it;
+   /// extract bypass signals
+   std::map<unsigned int, std::map<std::string, std::set<unsigned int>>> bypass_signals;
+   if(!it->empty())
+   {
+      std::vector<std::string> BypassVec = SplitString(*it, ":");
+      for(const auto& assign : BypassVec)
+      {
+         std::vector<std::string> AssignPair = SplitString(assign, "=");
+         THROW_ASSERT(AssignPair.size() == 2, "malformed FSM description " + STR(AssignPair.size()));
+         auto out = boost::lexical_cast<unsigned int>(AssignPair.at(0));
+         std::vector<std::string> inStateVec = SplitString(AssignPair.at(1), ",");
+         for(const auto& inState : inStateVec)
+         {
+            std::vector<std::string> StateInsPair = SplitString(inState, ">");
+            THROW_ASSERT(StateInsPair.size() == 2, "malformed FSM description " + STR(StateInsPair.size()));
+            std::vector<std::string> inVec = SplitString(StateInsPair.at(1), "<");
+            for(const auto& in : inVec)
+            {
+               auto in_val = boost::lexical_cast<unsigned int>(in);
+               bypass_signals[out][StateInsPair.at(0)].insert(in_val);
+            }
+         }
+      }
+   }
 
    ++it;
    auto first = it;
@@ -1184,14 +1210,13 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
          {
             continue;
          }
-         writer->write_transition_output_functions(false, output_index, cir, reset_state, reset_port, start_port, clock_port, first, end, is_yosys);
+         writer->write_transition_output_functions(false, output_index, cir, reset_state, reset_port, start_port, clock_port, first, end, is_yosys, bypass_signals);
       }
    }
    else
    {
-      writer->write_transition_output_functions(true, 0, cir, reset_state, reset_port, start_port, clock_port, first, end, is_yosys);
+      writer->write_transition_output_functions(true, 0, cir, reset_state, reset_port, start_port, clock_port, first, end, is_yosys, bypass_signals);
    }
-
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "FSM writing completed!");
 }
 

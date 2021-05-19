@@ -2497,7 +2497,20 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    unsigned int elmt_bitsize = 0;
    bool is_read_only_correction = false;
    bool is_proxied_correction = false;
+   bool is_a_proxy = false;
    bool is_private_correction = false;
+   bool is_single_variable = false;
+   auto single_var_lambda = [&](unsigned var) -> bool {
+      unsigned int type_index = tree_helper::get_type_index(TreeM, var);
+      if(tree_helper::is_an_array(TreeM, type_index) || tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index))
+      {
+         return false;
+      }
+      else
+      {
+         return true;
+      }
+   };
 
 #if 0
    /// first check for component_timing_alias
@@ -2534,8 +2547,10 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       {
          is_read_only_correction = true;
       }
+      is_single_variable = single_var_lambda(var);
 
       elmt_bitsize = Rmem->get_bram_bitsize();
+
 #if ARRAY_CORRECTION
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
       if(tree_helper::is_an_array(TreeM, type_index))
@@ -2576,6 +2591,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       {
          is_read_only_correction = true;
       }
+      is_single_variable = single_var_lambda(var);
 
       elmt_bitsize = 1;
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
@@ -2612,6 +2628,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Applying memory correction for MEMORY_TYPE_SYNCHRONOUS_SDS and MEMORY_TYPE_SYNCHRONOUS_SDS_BUS");
       unsigned var = get_memory_var(fu);
+      is_single_variable = single_var_lambda(var);
 
       elmt_bitsize = 1;
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
@@ -2646,12 +2663,15 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    }
    else if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN)
    {
+      is_a_proxy = true;
       unsigned var = proxy_memory_units.find(fu)->second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Applying memory correction for PROXY for var:" + STR(var));
       if(Rmem->is_read_only_variable(var))
       {
          is_read_only_correction = true;
       }
+      is_single_variable = single_var_lambda(var);
+
       auto* fu_cur = GetPointer<functional_unit>(current_fu);
       technology_nodeRef op_cur_node = fu_cur->get_operation(operation_name);
       std::string latency_postfix = (memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN) ? "" : get_latency_string(fu_cur->bram_load_latency);
@@ -2853,6 +2873,28 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Applying private correction");
       res_value = res_value + memory_correction_coefficient * (estimate_mux_time(fu) / (mux_time_multiplier * time_multiplier));
+   }
+   if(is_single_variable)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Applying single variable correction");
+      const technology_managerRef TM = HLS_T->get_technology_manager();
+      auto fname = get_fu_name(fu).first;
+      technology_nodeRef f_unit_sv = TM->get_fu(fname, TM->get_library(fname));
+      auto* fu_sv = GetPointer<functional_unit>(f_unit_sv);
+      technology_nodeRef op_sv_node = fu_sv->get_operation(operation_name);
+      auto* op_sv = GetPointer<operation>(op_sv_node);
+      double setup_time = get_setup_hold_time();
+      double cur_sv_exec_time = op_sv->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_sv) : time_m_execution_time(op_sv);
+      if(is_a_proxy || is_proxied_correction)
+      {
+         res_value = cur_sv_exec_time - setup_time;
+      }
+      else
+      {
+         double sv_delay = cur_sv_exec_time - 2 * setup_time;
+         double correction = sv_delay;
+         res_value = res_value + correction;
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Correction is " + STR(res_value));
    return res_value;
@@ -3760,21 +3802,18 @@ void AllocationInformation::Initialize()
    mux_time_multiplier = HLS_T->get_target_device()->has_parameter("mux_time_multiplier") ? HLS_T->get_target_device()->get_parameter<double>("mux_time_multiplier") : 1.0;
    memory_correction_coefficient = HLS_T->get_target_device()->has_parameter("memory_correction_coefficient") ? HLS_T->get_target_device()->get_parameter<double>("memory_correction_coefficient") : 0.7;
 
-   connection_offset = parameters->IsParameter("ConnectionOffset") ? parameters->GetParameter<double>("ConnectionOffset") :
-                                                                     parameters->IsParameter("RelativeConnectionOffset") ?
-                                                                     parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-                                                                     HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ?
-                                                                     HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-                                                                     HLS_T->get_target_device()->has_parameter("ConnectionOffset") ? HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") : NUM_CST_allocation_default_connection_offset;
+   connection_offset = parameters->IsParameter("ConnectionOffset")                           ? parameters->GetParameter<double>("ConnectionOffset") :
+                       parameters->IsParameter("RelativeConnectionOffset")                   ? parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                       HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ? HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                       HLS_T->get_target_device()->has_parameter("ConnectionOffset")         ? HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") :
+                                                                                               NUM_CST_allocation_default_connection_offset;
 
-   output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio") ?
-                                    parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
-                                    HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
-                                                                                                            NUM_CST_allocation_default_output_DSP_connection_ratio * get_setup_hold_time();
-   output_carry_connection_time = parameters->IsParameter("OutputCarryConnectionRatio") ?
-                                      parameters->GetParameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
-                                      HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
-                                                                                                                NUM_CST_allocation_default_output_carry_connection_ratio * get_setup_hold_time();
+   output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio")                   ? parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
+                                HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
+                                                                                                        NUM_CST_allocation_default_output_DSP_connection_ratio * get_setup_hold_time();
+   output_carry_connection_time = parameters->IsParameter("OutputCarryConnectionRatio")                   ? parameters->GetParameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
+                                  HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
+                                                                                                            NUM_CST_allocation_default_output_carry_connection_ratio * get_setup_hold_time();
    fanout_coefficient = parameters->IsParameter("FanOutCoefficient") ? parameters->GetParameter<double>("FanOutCoefficient") : NUM_CST_allocation_default_fanout_coefficent;
    max_fanout_size = parameters->IsParameter("MaxFanOutSize") ? parameters->GetParameter<size_t>("MaxFanOutSize") : NUM_CST_allocation_default_max_fanout_size;
    DSPs_margin = HLS_T->get_target_device()->has_parameter("DSPs_margin") && parameters->getOption<double>(OPT_DSP_margin_combinational) == 1.0 ? HLS_T->get_target_device()->get_parameter<double>("DSPs_margin") :

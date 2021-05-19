@@ -1376,9 +1376,14 @@ DesignFlowStep_Status allocation::InternalExec()
    auto binding_constraints = HLS_C->binding_constraints;
    CustomUnorderedMap<std::string, std::map<unsigned int, unsigned int>> fu_name_to_id;
    CustomOrderedSet<vertex> vertex_analysed;
-   OpVertexSet support_ops(function_behavior->CGetOpGraph(FunctionBehavior::CFG));
-   support_ops.insert(HLS->operations.begin(), HLS->operations.end());
-   const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG, support_ops);
+   auto cfg = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
+   OpVertexSet support_ops(cfg);
+   auto op_graph_size = boost::num_vertices(*cfg);
+   if(op_graph_size != HLS->operations.size())
+   {
+      support_ops.insert(HLS->operations.begin(), HLS->operations.end());
+   }
+   const OpGraphConstRef g = op_graph_size != HLS->operations.size() ? function_behavior->CGetOpGraph(FunctionBehavior::CFG, support_ops) : cfg;
    OpVertexSet vertex_to_analyse(g);
    graph::vertex_iterator v, v_end;
    std::map<std::string, technology_nodeRef> new_fu;

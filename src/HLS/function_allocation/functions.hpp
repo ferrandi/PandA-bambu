@@ -59,7 +59,7 @@ class functions
    /// define where the proxied functions are mapped
    std::map<std::string, unsigned int> proxied_functions;
 
-   /// map where shared functions are allocated
+   /// reverse map of proxied_functions
    std::map<unsigned int, CustomOrderedSet<std::string>> shared_functions;
 
  public:

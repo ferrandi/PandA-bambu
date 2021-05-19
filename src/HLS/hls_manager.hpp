@@ -122,6 +122,8 @@ class HLS_manager : public application_manager
    std::map<std::string, std::map<std::string, std::string>> design_interface_typename;
    /// store the design interface signature coming from an xml file: function_name->typename_signature
    std::map<std::string, std::vector<std::string>> design_interface_typename_signature;
+   /// store the design interface original signature coming from an xml file: function_name->typename_signature
+   std::map<std::string, std::vector<std::string>> design_interface_typename_orig_signature;
    /// store the design interface typename includes coming from an xml file: function_name->parameter_name->interface_typenameinclude
    std::map<std::string, std::map<std::string, std::string>> design_interface_typenameinclude;
    /// store the design interface read references of parameters: function_name->bb_index->parameter_name->list_of_loads

@@ -311,7 +311,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
 
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_phi_schema;
                const auto gimple_phi_id = TM->new_tree_node_id();
-               gimple_phi_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+               gimple_phi_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                gimple_phi_schema[TOK(TOK_TYPE)] = STR(type);
                gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
                gimple_phi_schema[TOK(TOK_SCPE)] = STR(function_id);

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,9 @@
   \file xmg_npn.hpp
   \brief Replace with size-optimum XMGs from NPN
 
+  \author Heinz Riener
+  \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
   \author Zhufei Chu
 */
 
@@ -272,7 +275,7 @@ private:
 
     load_optimal_xmgs( 1 ); //size optimization
 
-    for ( const auto e : opt_xmgs )
+    for ( const auto& e : opt_xmgs )
     {
       class2signal.insert( std::make_pair( e.first, create_xmg_from_str( e.second, signals ) ) );
     }

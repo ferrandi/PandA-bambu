@@ -201,7 +201,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       {
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
          const auto new_tree_node_id = TM->new_tree_node_id();
-         gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          TM->create_tree_node(new_tree_node_id, gimple_nop_K, gimple_nop_schema);
          auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(new_tree_node_id));
          gn->bb_index = block->number;
@@ -691,7 +691,12 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             const unsigned int call_id = GET_INDEX_NODE(temp_node);
             // Creating node of call
             ogc->AddOperation(TM, actual_name, fun_name, bb_index, 0);
-            ogc->add_type(actual_name, TYPE_EXTERNAL);
+            unsigned type_external = TYPE_EXTERNAL;
+            if(fd->writing_memory || fd->reading_memory)
+            {
+               type_external = type_external | TYPE_RW;
+            }
+            ogc->add_type(actual_name, type_external);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---set as TYPE_EXTERNAL operation");
             if(fun_name == "exit" || fun_name == "abort" || fun_name == "__builtin_exit" || fun_name == "__builtin_abort")
             {
@@ -748,7 +753,12 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                const unsigned int call_id = GET_INDEX_NODE(temp_node);
                // Creating node of call
                ogc->AddOperation(TM, actual_name, fun_name, bb_index, ce->index);
-               ogc->add_type(actual_name, TYPE_EXTERNAL);
+               unsigned type_external = TYPE_EXTERNAL;
+               if(fd->writing_memory || fd->reading_memory)
+               {
+                  type_external = type_external | TYPE_RW;
+               }
+               ogc->add_type(actual_name, type_external);
                if(fun_name == "exit" || fun_name == "abort" || fun_name == "__builtin_exit" || fun_name == "__builtin_abort")
                {
                   ogc->add_type(actual_name, TYPE_LAST_OP);

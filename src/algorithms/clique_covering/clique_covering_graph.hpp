@@ -40,7 +40,7 @@
 
 /// Graph includes
 #include <boost/config.hpp>
-#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -50,7 +50,9 @@
 #include <boost/pending/disjoint_sets.hpp>
 #include <boost/version.hpp>
 
+#include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "refcount.hpp"
 
 /// Predicate functor object used to select the proper set of vertices
 template <typename Graph>
@@ -152,7 +154,7 @@ struct edge_compatibility_selector
 };
 
 /// bulk compatibility graph
-using boost_cc_compatibility_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::property<boost::vertex_index_t, std::size_t>, edge_compatibility_selector>;
+using boost_cc_compatibility_graph = boost::adjacency_matrix<boost::undirectedS, boost::property<boost::vertex_index_t, std::size_t>, edge_compatibility_selector>;
 
 /// compatibility graph
 using cc_compatibility_graph = boost::filtered_graph<boost_cc_compatibility_graph, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>, cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>>;

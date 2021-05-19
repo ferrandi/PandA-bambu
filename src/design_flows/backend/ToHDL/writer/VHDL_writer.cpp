@@ -652,10 +652,12 @@ void VHDL_writer::write_module_instance_begin(const structural_objectRef& cir, c
       write_module_parametrization(cir);
    }
    indented_output_stream->Append(" port map (");
+   indented_output_stream->Indent();
 }
 
 void VHDL_writer::write_module_instance_end(const structural_objectRef&)
 {
+   indented_output_stream->Deindent();
    indented_output_stream->Append(");\n");
 }
 
@@ -666,14 +668,14 @@ void VHDL_writer::write_module_definition_end(const structural_objectRef& cir)
    indented_output_stream->Append("\nend " + HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir) + "_arch") + ";\n\n");
 }
 
-void VHDL_writer::write_vector_port_binding(const structural_objectRef& port, bool& first_port_analyzed)
+void VHDL_writer::write_vector_port_binding(const structural_objectRef& port, bool first_port_analyzed)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing vector port binding of " + port->get_id());
    THROW_ASSERT(port, "NULL object_bounded received");
    THROW_ASSERT(port->get_kind() == port_vector_o_K, "Expected a port vector, got something of different");
    if(first_port_analyzed)
    {
-      indented_output_stream->Append(", ");
+      indented_output_stream->Append(",\n");
    }
    const structural_objectRef p_object_bounded = GetPointer<port_o>(port)->find_bounded_object(port->get_owner());
    if(p_object_bounded)
@@ -714,12 +716,13 @@ void VHDL_writer::write_vector_port_binding(const structural_objectRef& port, bo
       }
       else
       {
+         indented_output_stream->Indent();
          for(unsigned int local_port_index = 0; local_port_index < port_vector->get_ports_size(); local_port_index++)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering port " + STR(local_port_index));
             if(local_port_index != 0)
             {
-               indented_output_stream->Append(", ");
+               indented_output_stream->Append(",\n");
             }
             indented_output_stream->Append(port->get_id());
             unsigned int reverse_port_index = port_vector->get_ports_size() - local_port_index - 1;
@@ -771,12 +774,13 @@ void VHDL_writer::write_vector_port_binding(const structural_objectRef& port, bo
                THROW_UNREACHABLE("");
             }
          }
+         indented_output_stream->Deindent();
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written vector port binding of " + port->get_id());
 }
 
-void VHDL_writer::write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded, bool& first_port_analyzed)
+void VHDL_writer::write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded, bool first_port_analyzed)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Write port binding " + port->get_id() + " (" + port->get_typeRef()->get_name() + ") => " + (object_bounded ? object_bounded->get_id() + " (" + object_bounded->get_typeRef()->get_name() + ")" : ""));
@@ -785,7 +789,7 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
    THROW_ASSERT(port->get_owner(), "The port has to have an owner");
    if(first_port_analyzed)
    {
-      indented_output_stream->Append(", ");
+      indented_output_stream->Append(",\n");
    }
    if(port->get_owner()->get_kind() == port_vector_o_K)
    {
@@ -809,7 +813,6 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, port->get_id()) + " => ");
    }
 
-   first_port_analyzed = true;
    if(!object_bounded and GetPointer<port_o>(port)->get_port_direction() == port_o::IN)
    {
       long long int size = GET_TYPE_SIZE(port);
@@ -915,7 +918,6 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
          THROW_UNREACHABLE("Conversion required on port binding: " + port->get_path() + "(" + port->get_typeRef()->get_name() + ") (" + object_bounded->get_id() + "(" + object_bounded->get_typeRef()->get_name() + ")");
       }
    }
-   first_port_analyzed = true;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written port binding " + port->get_id() + " => " + (object_bounded ? object_bounded->get_id() : ""));
 }
 
@@ -1090,11 +1092,12 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
          if(first_it)
          {
             indented_output_stream->Append(" generic map(");
+            indented_output_stream->Indent();
             first_it = false;
          }
          else
          {
-            indented_output_stream->Append(", ");
+            indented_output_stream->Append(",\n");
          }
          std::string name = mem_add[0];
          std::string value;
@@ -1115,20 +1118,18 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
    {
       std::vector<std::pair<std::string, structural_objectRef>> library_parameters;
       mod->get_NP_library_parameters(cir, library_parameters);
-      if(library_parameters.size())
-      {
-         indented_output_stream->Append(" generic map(");
-      }
 
       for(const auto& library_parameter : library_parameters)
       {
          if(first_it)
          {
+            indented_output_stream->Append(" generic map(");
+            indented_output_stream->Indent();
             first_it = false;
          }
          else
          {
-            indented_output_stream->Append(", ");
+            indented_output_stream->Append(",\n");
          }
          const std::string& name = library_parameter.first;
          structural_objectRef obj = library_parameter.second;
@@ -1282,6 +1283,7 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
    }
    if(!first_it)
    {
+      indented_output_stream->Deindent();
       indented_output_stream->Append(")");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module generics of " + cir->get_path());
@@ -1291,12 +1293,12 @@ void VHDL_writer::write_tail(const structural_objectRef&)
 {
 }
 
-void VHDL_writer::write_state_declaration(const structural_objectRef&, const std::list<std::string>& list_of_states, const std::string&, const std::string&, bool one_hot)
+void VHDL_writer::write_state_declaration(const structural_objectRef&, const std::list<std::string>& list_of_states, const std::string&, const std::string& reset_state, bool one_hot)
 {
    auto it_end = list_of_states.end();
    size_t n_states = list_of_states.size();
    unsigned int bitsnumber = language_writer::bitnumber(static_cast<unsigned int>(n_states - 1));
-   /// adjust in case states are not consecutives
+   /// adjust in case states are not consecutive
    unsigned max_value = 0;
    for(auto it = list_of_states.begin(); it != it_end; ++it)
    {
@@ -1323,11 +1325,13 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
       }
       if(one_hot)
       {
-         indented_output_stream->Append("signal present_state, next_state : std_logic_vector(" + STR(max_value) + " downto 0);\n");
+         indented_output_stream->Append("signal present_state : std_logic_vector(" + STR(max_value) + " downto 0) := " + reset_state + ";\n");
+         indented_output_stream->Append("signal next_state : std_logic_vector(" + STR(max_value) + " downto 0);\n");
       }
       else
       {
-         indented_output_stream->Append("signal present_state, next_state : std_logic_vector(" + STR(bitsnumber - 1) + " downto 0);\n");
+         indented_output_stream->Append("signal present_state : std_logic_vector(" + STR(bitsnumber - 1) + " downto 0) := " + reset_state + ";\n");
+         indented_output_stream->Append("signal next_state : std_logic_vector(" + STR(bitsnumber - 1) + " downto 0);\n");
       }
    }
    else
@@ -1402,7 +1406,7 @@ void VHDL_writer::write_present_state_update(const structural_objectRef, const s
 }
 
 void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
-                                                    std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool)
+                                                    std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool, const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing transition output function");
    auto* mod = GetPointer<module>(cir);
@@ -1523,6 +1527,14 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
          indented_output_stream->Append("if(" + start_port + " /= '1') then\n");
          for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
          {
+            if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+            {
+               continue;
+            }
+            if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+            {
+               continue;
+            }
             if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
             {
                auto port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
@@ -1553,7 +1565,6 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
             {
                continue;
             }
-
             std::string port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
             if(default_output[i] != current_output[i])
             {
@@ -1562,9 +1573,39 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                   switch(current_output[i])
                   {
                      case '1':
-                        indented_output_stream->Append(port_name + " <= '" + current_output[i] + "';\n");
+                     {
+                        if(bypass_signals.find(i) == bypass_signals.end() || bypass_signals.find(i)->second.find(present_state) == bypass_signals.find(i)->second.end())
+                        {
+                           indented_output_stream->Append(port_name + " <= '1';\n");
+                        }
+                        else
+                        {
+                           indented_output_stream->Append(port_name + " <= ");
+                           for(const auto& stateIns : bypass_signals.find(i)->second)
+                           {
+                              if(stateIns.first != present_state)
+                              {
+                                 continue;
+                              }
+                              bool first_i = true;
+                              for(const auto& in : stateIns.second)
+                              {
+                                 if(first_i)
+                                 {
+                                    first_i = false;
+                                 }
+                                 else
+                                 {
+                                    indented_output_stream->Append(" or ");
+                                 }
+                                 auto in_port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(in)->get_id());
+                                 indented_output_stream->Append(in_port_name);
+                              }
+                           }
+                           indented_output_stream->Append(";\n");
+                        }
                         break;
-
+                     }
                      case '2':
                         indented_output_stream->Append(port_name + " <= 'X';\n");
                         break;
@@ -1702,6 +1743,14 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
             }
             for(unsigned int i2 = 0; i2 < mod->get_out_port_size(); i2++)
             {
+               if(mod->get_out_port(i2)->get_id() == PRESENT_STATE_PORT_NAME)
+               {
+                  continue;
+               }
+               if(mod->get_out_port(i2)->get_id() == NEXT_STATE_PORT_NAME)
+               {
+                  continue;
+               }
                if(transition_outputs[i2] != '-')
                {
                   std::string port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i2)->get_id());
@@ -1711,9 +1760,42 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                      {
                         indented_output_stream->Append(port_name + " <= 'X';\n");
                      }
+                     else if(transition_outputs[i2] == '1')
+                     {
+                        if(bypass_signals.find(i2) == bypass_signals.end() || bypass_signals.find(i2)->second.find(present_state) == bypass_signals.find(i2)->second.end())
+                        {
+                           indented_output_stream->Append(port_name + " <= '1';\n");
+                        }
+                        else
+                        {
+                           indented_output_stream->Append(port_name + " <= ");
+                           for(const auto& stateIns : bypass_signals.find(i2)->second)
+                           {
+                              if(stateIns.first != present_state)
+                              {
+                                 continue;
+                              }
+                              bool first_i = true;
+                              for(const auto& in : stateIns.second)
+                              {
+                                 if(first_i)
+                                 {
+                                    first_i = false;
+                                 }
+                                 else
+                                 {
+                                    indented_output_stream->Append(" or ");
+                                 }
+                                 auto in_port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(in)->get_id());
+                                 indented_output_stream->Append(in_port_name);
+                              }
+                           }
+                           indented_output_stream->Append(";\n");
+                        }
+                     }
                      else
                      {
-                        indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
+                        indented_output_stream->Append(port_name + " <= '0';\n");
                      }
                   }
                }
@@ -1743,6 +1825,14 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
    indented_output_stream->Append("when others =>\n");
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
+      if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+      {
+         continue;
+      }
+      if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+      {
+         continue;
+      }
       if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
       {
          auto port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
@@ -1847,9 +1937,8 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
       mod->get_NP_library_parameters(cir, library_parameters);
       if(library_parameters.size() and first_it)
       {
-         indented_output_stream->Append("generic(");
+         indented_output_stream->Append("generic(\n");
       }
-
       for(const auto& library_parameter : library_parameters)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering parameter " + library_parameter.first);
@@ -1859,9 +1948,8 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
          }
          else
          {
-            indented_output_stream->Append(";");
+            indented_output_stream->Append(";\n");
          }
-         indented_output_stream->Append("\n");
          const std::string& name = library_parameter.first;
          structural_objectRef obj = library_parameter.second;
          if(obj)

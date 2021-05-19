@@ -52,9 +52,10 @@
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "refcount.hpp"
-#include "simple_indent.hpp"
 
 #include <list>
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -226,9 +227,9 @@ class language_writer
     * @param port is the port to be bounded.
     * @param top is the component owner of the component that has the port to be bounded.
     */
-   virtual void write_port_binding(const structural_objectRef& port, const structural_objectRef& top, bool& first_port_analyzed) = 0;
+   virtual void write_port_binding(const structural_objectRef& port, const structural_objectRef& top, bool first_port_analyzed) = 0;
 
-   virtual void write_vector_port_binding(const structural_objectRef& port, bool& first_port_analyzed) = 0;
+   virtual void write_vector_port_binding(const structural_objectRef& port, bool first_port_analyzed) = 0;
    /**
     * Write the end part in a module declaration.
     * @param cir is the top component to be declared.
@@ -282,10 +283,11 @@ class language_writer
     * @param clock_port is the clock port.
     * @param first if the first iterator of the state table.
     * @param end if the end iterator of the state table.
-    * @param n_states is the number of states.
+    * @param is_yosys is true when the transition table is meant for YOSYS.
     */
    virtual void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
-                                                  std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys) = 0;
+                                                  std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys,
+                                                  const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals) = 0;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.

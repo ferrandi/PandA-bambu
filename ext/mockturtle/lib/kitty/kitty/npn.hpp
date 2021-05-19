@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2020  EPFL
+ * Copyright (C) 2017-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -406,6 +406,40 @@ void sifting_npn_canonization_loop( TT& npn, uint32_t& phase, std::vector<uint8_
     forward = !forward;
   }
 }
+template<typename TT>
+void sifting_p_canonization_loop( TT& p, uint32_t& phase, std::vector<uint8_t>& perm )
+{
+  (void)phase;
+  auto improvement = true;
+  auto forward = true;
+
+  const auto n = p.num_vars();
+
+  while ( improvement )
+  {
+    improvement = false;
+
+    for ( int i = forward ? 0 : n - 2; forward ? i < static_cast<int>( n - 1 ) : i >= 0; forward ? ++i : --i )
+    {
+      auto local_improvement = false;
+
+      const auto next_t = swap( p, i, i + 1 );
+      if ( next_t < p )
+      {
+        p = next_t;
+        std::swap( perm[i], perm[i + 1] );
+        local_improvement = true;
+      }
+
+      if ( local_improvement )
+      {
+        improvement = true;
+      }
+    }
+    forward = !forward;
+  }
+
+}
 } /* namespace detail */
 /*! \endcond */
 
@@ -464,6 +498,46 @@ std::tuple<TT, uint32_t, std::vector<uint8_t>> sifting_npn_canonization( const T
     phase = best_phase;
     npn = best_npn;
   }
+
+  return std::make_tuple( npn, phase, perm );
+}
+
+/*! \brief Sifting P heuristic
+
+  The algorithm will always consider two adjacent variables and try all possible
+  transformations on these two.  It will try once in forward direction and once
+  in backward direction.  It will try for the regular function.
+
+  The function returns a P configuration which contains the necessary
+  transformations to obtain the representative.  It is a tuple of
+
+  - the P representative
+  - input negations and output negation, which is 0 in this case
+  - input permutation to apply
+
+  \param tt Truth table
+  \return NPN configuration
+*/
+template<typename TT>
+std::tuple<TT, uint32_t, std::vector<uint8_t>> sifting_p_canonization( const TT& tt )
+{
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
+  const auto num_vars = tt.num_vars();
+
+  /* initialize permutation and phase */
+  std::vector<uint8_t> perm( num_vars );
+  std::iota( perm.begin(), perm.end(), 0u );
+  uint32_t phase{0u};
+
+  if ( num_vars < 2u )
+  {
+    return std::make_tuple( tt, phase, perm );
+  }
+
+  auto npn = tt;
+
+  detail::sifting_p_canonization_loop( npn, phase, perm );
 
   return std::make_tuple( npn, phase, perm );
 }

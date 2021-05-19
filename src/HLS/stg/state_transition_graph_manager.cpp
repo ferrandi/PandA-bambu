@@ -79,7 +79,6 @@
 /// Utility include
 #include "boost/graph/topological_sort.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "simple_indent.hpp"
 
 StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS, const ParameterConstRef _Param)
     : state_transition_graphs_collection(
@@ -277,7 +276,7 @@ void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, str
    const auto& SM = HLS->datapath;
    const auto& circuit = SM->get_circ();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding :multi-unbounded controllers");
-   for(auto state2mu : multi_unbounded_table)
+   for(const auto& state2mu : multi_unbounded_table)
    {
       auto mu = state2mu.second;
       std::string name = mu->get_string();

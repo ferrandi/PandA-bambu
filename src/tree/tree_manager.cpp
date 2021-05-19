@@ -164,6 +164,7 @@ const tree_nodeConstRef tree_manager::CGetTreeNode(const unsigned int i) const
 {
    THROW_ASSERT(i > 0 and i < last_node_id, "(C) Expected a positive index less than the total number of tree nodes (" + STR(i) + ") (" + STR(last_node_id) + ")");
    THROW_ASSERT(tree_nodes.find(i) != tree_nodes.end(), "Tree node " + STR(i) + " does not exist");
+   THROW_ASSERT(tree_nodes.find(i)->second, "Tree node " + STR(i) + " is empty");
    return tree_nodes.find(i)->second;
 }
 
@@ -701,7 +702,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
 
                         // Create a new node, the copy of the definition of ssa_name
                         IR_schema.clear();
-                        IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                        IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(tree_reindexRef_sn));
                         IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(gm->op1));
                         if(gm->orig)
@@ -944,7 +945,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
          {
             THROW_ASSERT(gn->bb_index, stmt->ToString() + " is not in a basic block");
             const auto used_ssas = tree_helper::ComputeSsaUses(old_node);
-            for(auto used_ssa : used_ssas)
+            for(const auto& used_ssa : used_ssas)
             {
                for(decltype(used_ssa.second) counter = 0; counter < used_ssa.second; counter++)
                {
@@ -952,7 +953,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
                }
             }
             const auto new_used_ssas = tree_helper::ComputeSsaUses(new_node);
-            for(auto new_used_ssa : new_used_ssas)
+            for(const auto& new_used_ssa : new_used_ssas)
             {
                for(decltype(new_used_ssa.second) counter = 0; counter < new_used_ssa.second; counter++)
                {
@@ -970,7 +971,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             {
                GetPointer<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
             }
-            if(gp and gp->res->index == old_node->index)
+            if(gp and gp->res->index == old_node->index && !GetPointer<cst_node>(GET_CONST_NODE(new_node)))
             {
                THROW_ASSERT(GET_CONST_NODE(new_node)->get_kind() == ssa_name_K, GET_CONST_NODE(new_node)->get_kind_text());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level, "---Setting " + STR(stmt) + " as new define statement of " + STR(new_node));
@@ -1013,7 +1014,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       case gimple_assign_K:
       {
          auto* gm = GetPointer<gimple_assign>(curr_tn);
-         RecursiveReplaceTreeNode(gm->op0, old_node, new_node, stmt, true);
+         RecursiveReplaceTreeNode(gm->op0, old_node, new_node, stmt, GET_NODE(new_node)->get_kind() == ssa_name_K);
          RecursiveReplaceTreeNode(gm->op1, old_node, new_node, stmt, false);
          std::vector<tree_nodeRef>& uses = gm->use_set->variables;
          std::vector<tree_nodeRef>::iterator use, use_end = uses.end();

@@ -348,7 +348,9 @@ bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_
    auto TM = HLS_mgr->get_tree_manager();
    auto isInt1 = tree_helper::is_int(TM, var1);
    auto isInt2 = tree_helper::is_int(TM, var2);
+   auto isReal1 = tree_helper::is_real(TM, var1);
+   auto isReal2 = tree_helper::is_real(TM, var2);
    auto size1 = tree_helper::size(TM, var1);
    auto size2 = tree_helper::size(TM, var2);
-   return isInt1 == isInt2 && (isInt1 && isInt2 ? size1 == size2 : resize_to_1_8_16_32_64_128_256_512(size1) == resize_to_1_8_16_32_64_128_256_512(size2));
+   return isInt1 == isInt2 && isReal1 == isReal2 && (((isInt1 && isInt2) || (isReal1 && isReal2)) ? size1 == size2 : resize_to_1_8_16_32_64_128_256_512(size1) == resize_to_1_8_16_32_64_128_256_512(size2));
 }

@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(mockturtle LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(MOCKTURTLE_CXX_STANDARD "17" CACHE STRING "C++ standard")
+set(CMAKE_CXX_STANDARD ${MOCKTURTLE_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Options
@@ -10,6 +11,7 @@ option(MOCKTURTLE_TEST "Build tests" OFF)
 option(MOCKTURTLE_EXPERIMENTS "Build experiments" OFF)
 option(BILL_Z3 "Enable Z3 interface for bill library" OFF)
 option(ENABLE_COVERAGE "Enable coverage reporting for gcc/clang" OFF)
+option(ENABLE_MATPLOTLIB "Enable matplotlib library in experiments" OFF)
 
 if(UNIX)
   # show quite some warnings (but remove some intentionally)

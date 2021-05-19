@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,7 +27,9 @@
   \file cut_enumeration.hpp
   \brief Cut enumeration
 
+  \author Heinz Riener
   \author Mathias Soeken
+  \author Sahand Kashani-Akhavan
 */
 
 #pragma once
@@ -296,6 +298,7 @@ public:
         st( st ),
         cuts( cuts )
   {
+    assert( ps.cut_limit < cuts.max_cut_num && "cut_limit exceeds the compile-time limit for the maximum number of cuts" );
   }
 
 public:

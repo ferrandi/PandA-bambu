@@ -36,7 +36,8 @@
       <cmd name="set_global_assignment -name SYNCHRONIZATION_REGISTER_CHAIN_LENGTH 10"/>
 
       <cmd name="set_global_assignment -name NUMBER_OF_PATHS_TO_REPORT 100000"/>
-      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS 1"/>
+      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS 1" condition="!${__parallel_backend__}"/>
+      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL" condition="${__parallel_backend__}"/>
       <cmd name="create_base_clock -fmax ${__clk_freq__} -target ${__clk_name__} ${__clk_name__}"/>
       <cmd name="${__sources_macro_list__}"/>
       <cmd name="source ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>
@@ -68,7 +69,8 @@
       <cmd name="set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON"/>
       <cmd name="set_global_assignment -name AUTO_RAM_TO_LCELL_CONVERSION ON"/>
       <cmd name="set_global_assignment -name SYNCHRONIZATION_REGISTER_CHAIN_LENGTH 10"/>
-      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS 1"/>
+      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS 1" condition="!${__parallel_backend__}"/>
+      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL" condition="${__parallel_backend__}"/>
       <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT EXTRA"/>
       <cmd name="set_global_assignment -name OPTIMIZE_HOLD_TIMING &quot;IO PATHS AND MINIMUM TPD PATHS&quot;"/>
 

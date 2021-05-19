@@ -52,6 +52,9 @@ class fun_dominator_allocation : public function_allocation
    /// True if this step has yet been executed
    bool already_executed;
 
+   /// list of trivial function that does not require to be proxied
+   static const std::set<std::string> simple_functions;
+
  public:
    /**
     * Constructor

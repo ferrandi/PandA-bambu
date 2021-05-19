@@ -1,4 +1,5 @@
 Shannon and Davio decomposition
+-------------------------------
 
 **Header:** ``mockturtle/algorithms/decomposition.hpp``
 

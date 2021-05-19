@@ -178,7 +178,6 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 DesignFlowStep_Status add_library::InternalExec()
 {
    const auto* const add_library_specialization = GetPointer<const AddLibrarySpecialization>(hls_flow_step_specialization);
-   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
    THROW_ASSERT(HLS->top, "Top has not been set");
@@ -221,7 +220,7 @@ DesignFlowStep_Status add_library::InternalExec()
       auto* op = GetPointer<operation>(fu->get_operation(function_name));
       op->time_m = time_model::create_model(device->get_type(), parameters);
       op->primary_inputs_registered = HLS->registered_inputs;
-      bool simple_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline();
+      bool simple_pipeline = FB->is_simple_pipeline();
       /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
       if(HLS->STG and HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
       {
@@ -279,25 +278,16 @@ DesignFlowStep_Status add_library::InternalExec()
          if(max_cycles > 1)
          {
             op->time_m->set_stage_period(call_delay);
-            /// FIXME: identification of pipelined functions is disabled since liveness analysis of parameters have not yet been added
-            //         if(false and not HLS->Rfu->has_resource_sharing())
-            //         {
-            //            const ControlStep ii(1);
-            //            op->time_m->set_initiation_time(ii);
-            //         }
-            //         else
+            //+1 prevents chaining of two operations mapped on the same functional unit
+            const ControlStep ii(max_cycles + 1);
+            const ControlStep jj(1);
+            if(not simple_pipeline)
             {
-               //+1 prevents chaining of two operations mapped on the same functional unit
-               const ControlStep ii(max_cycles + 1);
-               const ControlStep jj(1);
-               if(not simple_pipeline)
-               {
-                  op->time_m->set_initiation_time(ii);
-               }
-               else
-               {
-                  op->time_m->set_initiation_time(jj);
-               }
+               op->time_m->set_initiation_time(ii);
+            }
+            else
+            {
+               op->time_m->set_initiation_time(jj);
             }
          }
          else

@@ -400,7 +400,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set, con
    /// check if __builtin_memcpy has to be synthesized
    if(HLSMgr->Rmem and HLSMgr->Rmem->has_implicit_memcpy())
    {
-      unsigned int memcpy_function_id = TreeM->function_index("__internal_bambu_memcpy");
+      unsigned int memcpy_function_id = TreeM->function_index(MEMCPY);
       functions.insert(memcpy_function_id);
    }
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> steps_to_be_created = ComputeHLSRelationships(relationship_type);

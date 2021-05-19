@@ -6384,3 +6384,15 @@ inline void SimpSolver::garbageCollect()
     to.moveTo(ca);
 }
 } // using namespace Glucose
+
+#undef BITS_LBD
+#ifdef INCREMENTAL
+  #undef BITS_SIZEWITHOUTSEL
+  #undef INCREMENTAL
+#endif
+#undef BITS_REALSIZE
+#undef DYNAMICNBLEVEL
+#undef CONSTANTREMOVECLAUSE
+#undef RATIOREMOVECLAUSES
+#undef LOWER_BOUND_FOR_BLOCKING_RESTART
+#undef coreStatsSize

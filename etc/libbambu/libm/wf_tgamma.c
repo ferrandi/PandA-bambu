@@ -63,7 +63,7 @@ float tgammaf(float x)
    if(_LIB_VERSION == _IEEE_)
       return y;
 
-   if(!__finitef(y) && __finitef(x))
+   if(!finitef(y) && finitef(x))
    {
       if(floorf(x) == x && x <= (float)0.0)
          /* tgammaf pole */

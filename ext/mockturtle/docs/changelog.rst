@@ -1,12 +1,21 @@
 Change Log
 ==========
 
-v0.2 (not yet released)
+v0.3 (not yet released)
 -----------------------
+
+* I/O:
+    - Read GENLIB files using *lorina* (`genlib_reader`) `#421 <https://github.com/lsils/mockturtle/pull/421>`_
+* Algorithms:
+    - Logic resynthesis engines for MIGs (`mig_resyn_engines` `#414 <https://github.com/lsils/mockturtle/pull/414>`_) and AIGs/XAGs (`xag_resyn_engines` `#425 <https://github.com/lsils/mockturtle/pull/425>`_)
+
+v0.2 (February 16, 2021)
+------------------------
 
 * Network interface:
     - `is_function` `#148 <https://github.com/lsils/mockturtle/pull/148>`_
     - `is_nary_and`, `is_nary_or`, `is_nary_xor` `#304 <https://github.com/lsils/mockturtle/pull/304>`_
+    - `substitute_nodes` `#412 <https://github.com/lsils/mockturtle/pull/412>`_
 * Framework for performing quality and performance experiments `#140 <https://github.com/lsils/mockturtle/pull/140>`_
 * Algorithms:
     - CNF generation (`generate_cnf`) `#145 <https://github.com/lsils/mockturtle/pull/145>`_
@@ -30,14 +39,22 @@ v0.2 (not yet released)
     - Collapse network into single node per output network `#309 <https://github.com/lsils/mockturtle/pull/309>`_
     - Generic balancing algorithm `#340 <https://github.com/lsils/mockturtle/pull/340>`_
     - Check functional equivalence (`circuit_validator`) `#346 <https://github.com/lsils/mockturtle/pull/346>`_
+    - Restructured resubstitution framework (`resubstitution`), simulation-guided resubstitution (`sim_resub`) `#373 <https://github.com/lsils/mockturtle/pull/373>`_
+    - Functional reduction (`functional_reduction`) `#380 <https://github.com/lsils/mockturtle/pull/380>`_
+    - Network fuzz testing (`network_fuzz_tester`) `#408 <https://github.com/lsils/mockturtle/pull/408>`_
 * Views:
     - Assign names to signals and outputs (`names_view`) `#181 <https://github.com/lsils/mockturtle/pull/181>`_ `#184 <https://github.com/lsils/mockturtle/pull/184>`_
     - Creates a CNF while creating a network (`cnf_view`) `#274 <https://github.com/lsils/mockturtle/pull/274>`_
+    - Revised window view (`window_view`) `#381 <https://github.com/lsils/mockturtle/pull/381>`_
+    - In-place and out-of-place color view (`color_view`, `out_of_place_color_view`) `#381 <https://github.com/lsils/mockturtle/pull/381>`_
+    - Counting number of buffers and splitters in AQFP technology (`aqfp_view`) `#349 <https://github.com/lsils/mockturtle/pull/349>`_
 * I/O:
     - Write networks to DIMACS files for CNF (`write_dimacs`) `#146 <https://github.com/lsils/mockturtle/pull/146>`_
     - Read BLIF files using *lorina* (`blif_reader`) `#167 <https://github.com/lsils/mockturtle/pull/167>`_
     - Write networks to BLIF files (`write_blif`) `#169 <https://github.com/lsils/mockturtle/pull/169>`_ `#184 <https://github.com/lsils/mockturtle/pull/184>`_
-    - Create circuit from integer index list (`create_from_binary_index_list`) `#259 <https://github.com/lsils/mockturtle/pull/259>`_
+    - Write networks to AIGER files (`write_aiger`) `#379 <https://github.com/lsils/mockturtle/pull/379>`_
+* Utils
+    - Create circuit from integer index list (`encode`, `decode`, `insert`, `to_index_list_string`) `#385 <https://github.com/lsils/mockturtle/pull/385>`_
 * Resynthesis functions:
     - Resynthesis function based on DSD decomposition (`dsd_resynthesis`) `#182 <https://github.com/lsils/mockturtle/pull/182>`_
     - Resynthesis function based on Shannon decomposition (`shannon_resynthesis`) `#185 <https://github.com/lsils/mockturtle/pull/185>`_
@@ -60,6 +77,8 @@ v0.2 (not yet released)
     - Random logic networks for XAGs (`random_logic_generator`) `#366 <https://github.com/lsils/mockturtle/pull/366>`_
 * Properties:
     - Costs based on multiplicative complexity (`multiplicative_complexity` and `multiplicative_complexity_depth`) `#170 <https://github.com/lsils/mockturtle/pull/170>`_
+* Utils:
+    - Computing windows and manipulating cuts (`create_window_impl`, `collect_nodes`, `collect_inputs`, `collect_outputs`, `expand0_towards_tfi`, `expand_towards_tfi`, `expand_towards_tfo`, `levelized_expand_towards_tfo`) `#381 <https://github.com/lsils/mockturtle/pull/381>`_
 
 v0.1 (March 31, 2019)
 ---------------------

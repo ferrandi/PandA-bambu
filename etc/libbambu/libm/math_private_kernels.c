@@ -882,7 +882,7 @@ double __hide_ieee754_scalb(double x, double fn)
 #else
    if(isnan(x) || isnan(fn))
       return x * fn;
-   if(!__finite(fn))
+   if(!finite(fn))
    {
       if(fn > 0.0)
          return x * fn;

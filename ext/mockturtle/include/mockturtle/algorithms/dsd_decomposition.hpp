@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,7 +27,9 @@
   \file dsd_decomposition.hpp
   \brief DSD decomposition
 
+  \author Heinz Riener
   \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once

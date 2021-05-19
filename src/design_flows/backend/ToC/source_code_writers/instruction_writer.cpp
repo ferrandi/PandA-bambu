@@ -68,7 +68,6 @@
 #include "mppb_instruction_writer.hpp"
 #endif
 #include "prettyPrintVertex.hpp"
-#include "simple_indent.hpp"
 
 /// Behavior include
 #include "basic_block.hpp"

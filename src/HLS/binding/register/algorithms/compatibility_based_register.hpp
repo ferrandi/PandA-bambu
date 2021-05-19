@@ -45,7 +45,7 @@
 
 #include "reg_binding_creator.hpp"
 
-#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
 #include <vector>
 
 class compatibility_based_register : public reg_binding_creator
@@ -57,6 +57,9 @@ class compatibility_based_register : public reg_binding_creator
       /// edge weight
       int weight;
 
+      edge_compatibility_property() : weight(0)
+      {
+      }
       /**
        * Constructor with selector
        * @param _weight is the weight to be associated with the edge
@@ -66,12 +69,12 @@ class compatibility_based_register : public reg_binding_creator
       }
    };
 
-   using compatibility_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, edge_compatibility_property>;
+   using compatibility_graph = boost::adjacency_matrix<boost::undirectedS, boost::no_property, edge_compatibility_property>;
    using CG_vertex_descriptor = boost::graph_traits<compatibility_graph>::vertex_descriptor;
    using CG_vertices_size_type = boost::graph_traits<compatibility_graph>::vertices_size_type;
 
    /// compatibility graph
-   compatibility_graph CG;
+   compatibility_graph* CG;
 
    /// ordered vector containing the vertices of the compatibility graph
    std::vector<CG_vertex_descriptor> verts;

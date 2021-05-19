@@ -319,7 +319,7 @@ double gamma(double x)
    y = __hide_ieee754_lgamma_r(x, &signgam);
    if(_LIB_VERSION == _IEEE_)
       return y;
-   if(!__finite(y) && __finite(x))
+   if(!finite(y) && finite(x))
    {
       if(floor(x) == x && x <= 0.0)
          return __hide_kernel_standard(x, x, 41); /* gamma pole */
@@ -343,7 +343,7 @@ double gamma_r(double x, int* signgamp) /* wrapper lgamma_r */
    y = __hide_ieee754_lgamma_r(x, signgamp);
    if(_LIB_VERSION == _IEEE_)
       return y;
-   if(!__finite(y) && __finite(x))
+   if(!(y) && (x))
    {
       if(floor(x) == x && x <= 0.0)
          return __hide_kernel_standard(x, x, 41); /* gamma pole */
@@ -369,7 +369,7 @@ double lgamma(double x)
    y = __hide_ieee754_lgamma_r(x, &signgam);
    if(_LIB_VERSION == _IEEE_)
       return y;
-   if(!__finite(y) && __finite(x))
+   if(!(y) && (x))
    {
       if(floor(x) == x && x <= 0.0)
          return __hide_kernel_standard(x, x, 15); /* lgamma pole */
@@ -393,7 +393,7 @@ double lgamma_r(double x, int* signgamp) /* wrapper lgamma_r */
    y = __hide_ieee754_lgamma_r(x, signgamp);
    if(_LIB_VERSION == _IEEE_)
       return y;
-   if(!__finite(y) && __finite(x))
+   if(!(y) && (x))
    {
       if(floor(x) == x && x <= 0.0)
          return __hide_kernel_standard(x, x, 15); /* lgamma pole */
@@ -449,7 +449,7 @@ double tgamma(double x)
    if(_LIB_VERSION == _IEEE_)
       return y;
 
-   if(!__finite(y) && __finite(x))
+   if(!(y) && (x))
    {
       if(floor(x) == x && x <= 0.0)
          return __hide_kernel_standard(x, x, 41); /* tgamma pole */

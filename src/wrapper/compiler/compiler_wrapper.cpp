@@ -526,7 +526,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                   xml_files.push_back(XMLfilename);
                }
             }
-            for(auto XMLfilename : xml_files)
+            for(const auto& XMLfilename : xml_files)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
                XMLDomParser parser(XMLfilename);
@@ -642,7 +642,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
       else
       {
-         temporary_file_run_o = boost::filesystem::unique_path(GetCurrentPath() + std::string(STR_CST_gcc_obj_file)).string();
+         ;
+         temporary_file_run_o = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).string()).string();
          command += " -o " + temporary_file_run_o;
       }
    }

@@ -338,4 +338,48 @@ TEST_CASE( "Test quality improvement for XMG3 Resubstitution", "[quality]" )
   CHECK( v == std::vector<uint32_t>{{0, 38, 46, 22, 62, 72, 76, 75, 273, 865, 190}} );
 }
 
+TEST_CASE( "Test quality of 6-input windowing for AIG", "[quality]" )
+{
+  std::vector<std::tuple<uint32_t, uint32_t, uint32_t, uint32_t>> const result =
+    {{2, 8, 5, 8},
+     {112, 672, 568, 1537},
+     {110, 500, 466, 1186},
+     {73, 390, 393, 817},
+     {318, 1428, 1314, 3942},
+     {116, 604, 455, 1226},
+     {248, 1328, 631, 2581},
+     {471, 2679, 3546, 6167},
+     {610, 3230, 2633, 8213},
+     {2066, 12237, 8972, 31547},
+     {771, 4093, 4555, 9118}};
+
+  const auto v = foreach_benchmark<aig_network>( [&]( auto& ntk, auto ){
+    fanout_view fntk{ntk};
+    depth_view dntk{fntk};
+    color_view aig{dntk};
+
+    uint32_t num_windows{0};
+    uint32_t num_pis{0};
+    uint32_t num_pos{0};
+    uint32_t num_gates{0};
+
+    create_window_impl windowing( aig );
+    aig.foreach_gate( [&]( aig_network::node const& n ){
+      if ( const auto w = windowing.run( n, 6u, 5u ) )
+      {
+        window_view win( aig, w->inputs, w->outputs, w->nodes );
+        ++num_windows;
+        num_pis += win.num_pis();
+        num_pos += win.num_pos();
+        num_gates += win.num_gates();
+      }
+    });
+
+    // fmt::print( "{{{}, {}, {}, {}}}\n", num_windows, num_pis, num_pos, num_gates );
+    return std::make_tuple( num_windows, num_pis, num_pos, num_gates );
+  });
+
+  CHECK( v == result );
+}
+
 #endif

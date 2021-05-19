@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,13 +27,16 @@
   \file traits.hpp
   \brief Type traits and checkers for the network interface
 
+  \author Heinz Riener
   \author Mathias Soeken
+  \author Max Austin
 */
 
 #pragma once
 
 #include <string>
 #include <type_traits>
+#include <list>
 #include <map>
 
 #include <kitty/dynamic_truth_table.hpp>
@@ -563,6 +566,21 @@ template<class Ntk>
 inline constexpr bool has_substitute_node_v = has_substitute_node<Ntk>::value;
 #pragma endregion
 
+#pragma region has_substitute_nodes
+template<class Ntk, class = void>
+struct has_substitute_nodes : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_substitute_nodes<Ntk, std::void_t<decltype( std::declval<Ntk>().substitute_nodes( std::declval<std::list<std::pair<node<Ntk>, signal<Ntk>>>>() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_substitute_nodes_v = has_substitute_nodes<Ntk>::value;
+#pragma endregion
+
 #pragma region has_replace_in_node
 template<class Ntk, class = void>
 struct has_replace_in_node : std::false_type
@@ -600,7 +618,7 @@ struct has_take_out_node : std::false_type
 };
 
 template<class Ntk>
-struct has_take_out_node<Ntk, std::void_t<decltype( std::declval<Ntk>().take_out_node( std::declval<signal<Ntk>>() ) )>> : std::true_type
+struct has_take_out_node<Ntk, std::void_t<decltype( std::declval<Ntk>().take_out_node( std::declval<node<Ntk>>() ) )>> : std::true_type
 {
 };
 
@@ -1553,6 +1571,21 @@ template<class Ntk, typename T>
 inline constexpr bool has_compute_v = has_compute<Ntk, T>::value;
 #pragma endregion
 
+#pragma region has_compute_inplace
+template<class Ntk, typename T, class = void>
+struct has_compute_inplace : std::false_type
+{
+};
+
+template<class Ntk, typename T>
+struct has_compute_inplace<Ntk, T, std::void_t<decltype( std::declval<Ntk>().compute( std::declval<node<Ntk>>(), std::declval<T&>(), std::begin( std::vector<T>() ), std::end( std::vector<T>() ) ) )>> : std::true_type
+{
+};
+
+template<class Ntk, typename T>
+inline constexpr bool has_compute_inplace_v = has_compute_inplace<Ntk, T>::value;
+#pragma endregion
+
 #pragma region has_has_mapping
 template<class Ntk, class = void>
 struct has_has_mapping : std::false_type
@@ -1928,6 +1961,111 @@ template<class Ntk>
 inline constexpr bool has_has_output_name_v = has_has_output_name<Ntk>::value;
 #pragma endregion
 
+#pragma region has_new_color
+template<class Ntk, class = void>
+struct has_new_color : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_new_color<Ntk, std::void_t<decltype( std::declval<Ntk>().new_color() )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_new_color_v = has_new_color<Ntk>::value;
+#pragma endregion
+
+#pragma region has_current_color
+template<class Ntk, class = void>
+struct has_current_color : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_current_color<Ntk, std::void_t<decltype( std::declval<Ntk>().current_color() )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_current_color_v = has_current_color<Ntk>::value;
+#pragma endregion
+
+#pragma region has_clear_colors
+template<class Ntk, class = void>
+struct has_clear_colors : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_clear_colors<Ntk, std::void_t<decltype( std::declval<Ntk>().clear_colors( uint32_t() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_clear_colors_v = has_clear_colors<Ntk>::value;
+#pragma endregion
+
+#pragma region has_color
+template<class Ntk, class = void>
+struct has_color : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_color<Ntk, std::void_t<decltype( std::declval<Ntk>().color( std::declval<node<Ntk>>() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_color_v = has_color<Ntk>::value;
+#pragma endregion
+
+#pragma region has_paint
+template<class Ntk, class = void>
+struct has_paint : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_paint<Ntk, std::void_t<decltype( std::declval<Ntk>().paint( std::declval<node<Ntk>>() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_paint_v = has_paint<Ntk>::value;
+#pragma endregion
+
+#pragma region has_eval_color
+template<class Ntk, class = void>
+struct has_eval_color : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_eval_color<Ntk, std::void_t<decltype( std::declval<Ntk>().eval_color( std::declval<node<Ntk>>(), std::declval<void( uint32_t )>() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_eval_color_v = has_eval_color<Ntk>::value;
+#pragma endregion
+
+#pragma region has_eval_fanins_color
+template<class Ntk, class = void>
+struct has_eval_fanins_color : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_eval_fanins_color<Ntk, std::void_t<decltype( std::declval<Ntk>().eval_fanins_color( std::declval<node<Ntk>>(), std::declval<void( uint32_t )>() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_eval_fanins_color_v = has_eval_fanins_color<Ntk>::value;
+#pragma endregion
+
 /*! \brief SFINAE based on iterator type (for compute functions).
  */
 template<typename Iterator, typename T>
@@ -1937,5 +2075,8 @@ using iterates_over_t = std::enable_if_t<std::is_same_v<typename Iterator::value
  */
 template<typename Iterator>
 using iterates_over_truth_table_t = std::enable_if_t<kitty::is_truth_table<typename Iterator::value_type>::value, typename Iterator::value_type>;
+
+template<class Iterator, typename T>
+inline constexpr bool iterates_over_v = std::is_same_v<typename Iterator::value_type, T>;
 
 } /* namespace mockturtle */

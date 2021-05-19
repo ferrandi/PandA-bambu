@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,6 +28,7 @@
   \brief Generate random logic networks
 
   \author Heinz Riener
+  \author Mathias Soeken
 */
 
 #pragma once
@@ -42,10 +43,7 @@ namespace mockturtle
 
 /*! \brief Generates a random logic network
  *
- * Generate a random logic network with a fixed number of primary
- * inputs, a fixed number of gates, and an unrestricted number of
- * primary outputs.  After generating primary inputs and gates, all
- * nodes with no fanout become primary outputs.
+ * Generate a random logic network with certain parameters.
  *
  * The constructor takes a vector of construction rules, which are
  * used in the algorithm to build the logic network.
@@ -73,6 +71,13 @@ public:
   {
   }
 
+  /*! \brief Generate network
+   *
+   * Generate a random logic network with a fixed number of primary
+   * inputs, a fixed number of gates, and an unrestricted number of
+   * primary outputs.  After generating primary inputs and gates, all
+   * nodes with no fanout become primary outputs.
+   */
   Ntk generate( uint32_t num_inputs, uint32_t num_gates, uint64_t seed = 0xcafeaffe ) const
   {
     assert( num_inputs > 0 );
@@ -82,7 +87,7 @@ public:
     Ntk ntk;
 
     /* generate constant */
-    fs.emplace_back( ntk.get_constant( 0 ) );
+    fs.emplace_back( ntk.get_constant( false ) );
 
     /* generate pis */
     for ( auto i = 0u; i < num_inputs; ++i )
@@ -129,6 +134,98 @@ public:
 
     assert( ntk.num_pis() == num_inputs );
     assert( ntk.num_gates() == num_gates );
+
+    return ntk;
+  }
+
+  /*! \brief Generate network
+   *
+   * Generate a random logic network with a fixed numbers of primary
+   * inputs, primary outputs, and a suggestion for the structure in
+   * form a list { l_1, ..., l_k }, where k denotes the number of
+   * levels between primary inputs and primary outputs and each l_i, 1
+   * <= 0 <= k, denotes a suggestion for the number of nodes at level
+   * i.  Depending on the parameters some of the nodes in the networks
+   * may be dangling.
+   *
+   * The method updates the argument `num_gates_per_level` with the
+   * actual number of gates at each level.
+   */
+  Ntk generate2( uint32_t num_inputs, uint32_t num_outputs, std::vector<uint32_t> &num_gates_per_level, uint64_t seed = 0xcafeaffe ) const
+  {
+    assert( num_inputs > 0 );
+    assert( num_outputs > 0 );
+    assert( num_gates_per_level.size() >= 0 );
+
+    uint64_t const num_levels{num_gates_per_level.size() + 2u};
+    std::vector<std::vector<signal>> levels( num_levels );
+
+    Ntk ntk;
+
+    /* generate constant */
+    levels[0].emplace_back( ntk.get_constant( false ) );
+
+    /* generate pis */
+    while ( ntk.num_pis() < num_inputs )
+    {
+      levels[0].emplace_back( ntk.create_pi() );
+    }
+
+    /* generate gates */
+    std::default_random_engine generator( seed );
+    std::uniform_int_distribution<uint32_t> rule_dist( 0, _gens.size() - 1u );
+
+    uint64_t gate_counter{ntk.num_gates()};
+    uint64_t curr_level{0u};
+
+    while ( ++curr_level < num_levels )
+    {
+      uint64_t iterations{0};
+      uint64_t const num_expected_gates{curr_level == num_levels - 1 ? num_outputs : num_gates_per_level[curr_level - 1u]};
+      while ( levels[curr_level].size() < num_expected_gates && iterations++ < std::max( uint64_t(3ul*num_expected_gates), uint64_t(50ul) ) )
+      {
+        /* select a rule */
+        auto const rule = _gens.at( rule_dist( generator ) );
+
+        /* select an element */
+        std::uniform_int_distribution<uint32_t> dist( 0, levels[curr_level - 1].size() - 1 );
+        std::vector<signal> args;
+        while ( args.size() < rule.num_args )
+        {
+          bool const s_compl = dist( generator ) & 1;
+          signal const s = levels[curr_level - 1].at( dist( generator ) );
+          args.emplace_back( s_compl ? !s : s );
+        }
+
+        /* apply rule */
+        signal const gate = rule.func( ntk, args );
+        if ( ntk.num_gates() > gate_counter )
+        {
+          levels[curr_level].emplace_back( gate );
+          ++gate_counter;
+        }
+      }
+
+      /* update num_gates_per_level */
+      if ( curr_level < num_levels - 1 )
+      {
+        num_gates_per_level[curr_level - 1u] = levels[curr_level].size();
+      }
+    }
+
+    /* generate pos */
+    for ( auto& po : levels[num_levels - 1] )
+    {
+      ntk.create_po( po );
+    }
+
+    while ( ntk.num_pos() < num_outputs )
+    {
+      ntk.create_po( ntk.get_constant( false ) );
+    }
+
+    assert( ntk.num_pis() == num_inputs );
+    assert( ntk.num_pos() == num_outputs );
 
     return ntk;
   }

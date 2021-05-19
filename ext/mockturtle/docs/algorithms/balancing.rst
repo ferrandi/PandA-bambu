@@ -22,4 +22,4 @@ Rebalancing engines
 
 **Header:** ``mockturtle/algorithms/balancing/sop_balancing.hpp``
 
-.. doxygenstruct:: mockturtle::sop_balancing
+.. doxygenstruct:: mockturtle::sop_rebalancing

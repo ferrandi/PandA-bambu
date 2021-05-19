@@ -157,8 +157,8 @@ struct VHDL_writer : public language_writer
     * @param port is the port to be bounded.
     * @param top is the component owner of the component that has the port to be bounded.
     */
-   void write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded, bool& first_port_analyzed) override;
-   void write_vector_port_binding(const structural_objectRef& port, bool& first_port_analyzed) override;
+   void write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded, bool first_port_analyzed) override;
+   void write_vector_port_binding(const structural_objectRef& port, bool first_port_analyzed) override;
    /**
     * Write the end part in a module declaration.
     * @param cir is the top component to be declared.
@@ -210,7 +210,7 @@ struct VHDL_writer : public language_writer
     * @param n_states is the number of states.
     */
    void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
-                                          std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool) override;
+                                          std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool, const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals) override;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.

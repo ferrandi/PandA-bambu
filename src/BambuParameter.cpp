@@ -322,7 +322,8 @@
 #define OPT_SOFT_FLOAT (1 + OPT_SKIP_PIPE_PARAMETER)
 #define OPT_SOFTFLOAT_SUBNORMAL (1 + OPT_SOFT_FLOAT)
 #define OPT_SOFTFLOAT_NOROUNDING (1 + OPT_SOFTFLOAT_SUBNORMAL)
-#define OPT_SOFT_FP (1 + OPT_SOFTFLOAT_NOROUNDING)
+#define OPT_SOFTFLOAT_NOEXCEPTION (1 + OPT_SOFTFLOAT_NOROUNDING)
+#define OPT_SOFT_FP (1 + OPT_SOFTFLOAT_NOEXCEPTION)
 #define OPT_STG (1 + OPT_SOFT_FP)
 #define OPT_SPECULATIVE (1 + OPT_STG)
 #define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_SPECULATIVE)
@@ -339,7 +340,10 @@
 #define OPT_VISUALIZER (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
 #define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
-#define OPT_MASK (1 + OPT_RANGE_ANALYSIS_MODE)
+#define OPT_FP_FORMAT (1 + OPT_RANGE_ANALYSIS_MODE)
+#define OPT_PROPAGATE_FP_FORMAT (1 + OPT_FP_FORMAT)
+#define OPT_PARALLEL_BACKEND (1 + OPT_PROPAGATE_FP_FORMAT)
+#define OPT_INTERFACE_XML_FILENAME (1 + OPT_PARALLEL_BACKEND)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -423,6 +427,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            NPI      -  (interface to the NPI bus)\n"
 #endif
       << "\n"
+      << "    --interface-xml-filename=<filename>\n"
+      << "        User defined interface file.\n\n"
 #if HAVE_EXPERIMENTAL
       << "    --edk-config <file>\n"
       << "        Specify the configuration file for Xilinx EDK.\n\n"
@@ -515,11 +521,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --register-allocation=<type>\n"
       << "        Set the algorithm used for register allocation. Possible values for the\n"
       << "        <type> argument are the following:\n"
-      << "            WEIGHTED_TS        - solve the weighted clique covering problem by\n"
-      << "                                 exploiting the Tseng&Siewiorek heuristics\n"
-      << "                                 (default)\n"
-      << "            WEIGHTED_COLORING   - use weighted coloring algorithm\n"
+      << "            WEIGHTED_TS         - use weighted clique covering algorithm by\n"
+      << "                                  exploiting the Tseng&Siewiorek heuristics\n"
+      << "                                  (default)\n"
       << "            COLORING            - use simple coloring algorithm\n"
+      << "            WEIGHTED_COLORING   - use weighted coloring algorithm\n"
       << "            CHORDAL_COLORING    - use chordal coloring algorithm\n"
       << "            BIPARTITE_MATCHING  - use bipartite matching algorithm\n"
       << "            TTT_CLIQUE_COVERING - use a weighted clique covering algorithm\n"
@@ -775,6 +781,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --backend-sdc-extensions=file\n"
       << "        Specify a file that will be included in the Synopsys Design Constraints\n"
       << "        file (SDC).\n\n"
+      << "   --parallel-backend\n"
+      << "        when possible enable a parallel synthesis backend"
       << "    --VHDL-library=libraryname\n"
       << "        Specify the library in which the VHDL generated files are compiled.\n\n"
       << "    --device-name=value\n"
@@ -809,6 +817,21 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --max-ulp\n"
       << "        Define the maximal ULP (Unit in the last place, i.e., is the spacing\n"
       << "        between floating-point numbers) accepted.\n\n"
+      << "    --fp-format\n"
+      << "        Define arbitrary precision floating-point format by type or by function.\n"
+      << "        <func_name>*<exp_bits>*<frac_bits>*<exp_bias>*<round>*<nan>*<one>*<sub>*<sign>* (use comma separated list for multiple definitions)\n"
+      << "           func_name - Set arbitrary floating-point format for a specific function\n"
+      << "                       (Arbitrary floating-point format will apply to specified function only, use --propaget-fp-format to extend it to called functions)"
+      << "            exp_bits - Number of bits used by the exponent\n"
+      << "           frac_bits - Number of bits used by the fractional value\n"
+      << "            exp_bias - Bias applied to the unsigned value represented by the exponent bits\n"
+      << "             round   - Floating-point operations for this type will include rounding (default=1)\n"
+      << "              nan    - Floating-point operations for this type can result in NaN/Inf/-Inf (default=1)\n"
+      << "              one    - Floating-point representation will exploit hidden-one convention (default=1)\n"
+      << "              sub    - Floating-point representation will exploit subnormals (default=0)\n"
+      << "           sign_bit  - Set sign bit to a fixed value (1 or 0) or leave it data dependant (default=U)\n\n"
+      << "    --propagate-fp-format\n"
+      << "        Propagate user-defined floating-point format to called function when possible\n\n"
       << "    --hls-div=<method>\n"
       << "        Perform the high-level synthesis of integer division and modulo\n"
       << "        operations starting from a C library based implementation or a HDL component:\n"
@@ -917,11 +940,13 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    -O3  -D'printf(fmt, ...)='\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    --distram-threshold=512\n"
+      << "                                    --disable-function-proxy\n"
       << "             BAMBU-PERFORMANCE-MP - this setup implies:\n"
       << "                                    -O3  -D'printf(fmt, ...)='\n"
       << "                                    --channels-type=MEM_ACC_NN\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    --distram-threshold=512\n"
+      << "                                    --disable-function-proxy\n"
       << "             BAMBU                - this setup implies:\n"
       << "                                    -O0 --channels-type=MEM_ACC_11\n"
       << "                                    --memory-allocation-policy=LSS\n"
@@ -981,7 +1006,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform host-profiling.\n\n";
 #endif
    os << "    --disable-bitvalue-ipa\n"
-      << "        Disable inter-procedural bitvalue analysis.\n\n";
+      << "        Disable inter-procedural bitvalue analysis.\n";
+   os << "    --disable-function-proxy\n"
+      << "        Disable function proxy. May increase FSMD parallelism.\n\n";
    os << std::endl;
 
    // Checks and debugging options
@@ -1183,6 +1210,7 @@ int BambuParameter::Exec()
 #endif
       {"softfloat-subnormal", no_argument, nullptr, OPT_SOFTFLOAT_SUBNORMAL},
       {"softfloat-norounding", no_argument, nullptr, OPT_SOFTFLOAT_NOROUNDING},
+      {"softfloat-noexception", no_argument, nullptr, OPT_SOFTFLOAT_NOEXCEPTION},
       {"libm-std-rounding", no_argument, nullptr, OPT_LIBM_STD_ROUNDING},
       {"soft-fp", no_argument, nullptr, OPT_SOFT_FP},
       {"hls-div", optional_argument, nullptr, OPT_HLS_DIV},
@@ -1193,6 +1221,7 @@ int BambuParameter::Exec()
       {"aligned-access", no_argument, nullptr, OPT_ALIGNED_ACCESS_PARAMETER},
       {"backend-script-extensions", required_argument, nullptr, OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER},
       {"backend-sdc-extensions", required_argument, nullptr, OPT_BACKEND_SDC_EXTENSIONS_PARAMETER},
+      {"parallel-backend", no_argument, nullptr, OPT_PARALLEL_BACKEND},
       {"VHDL-library", required_argument, nullptr, OPT_VHDL_LIBRARY_PARAMETER},
       {"do-not-use-asynchronous-memories", no_argument, nullptr, OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES},
       {"do-not-chain-memories", no_argument, nullptr, OPT_DO_NOT_CHAIN_MEMORIES},
@@ -1224,6 +1253,7 @@ int BambuParameter::Exec()
       {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
       {"pragma-parse", no_argument, nullptr, OPT_PRAGMA_PARSE},
       {"generate-interface", required_argument, nullptr, 0},
+      {"interface-xml-filename", required_argument, nullptr, OPT_INTERFACE_XML_FILENAME},
       {"additional-top", required_argument, nullptr, OPT_ADDITIONAL_TOP},
       {"data-bus-bitsize", required_argument, nullptr, 0},
       {"addr-bus-bitsize", required_argument, nullptr, 0},
@@ -1253,7 +1283,8 @@ int BambuParameter::Exec()
       {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
       {"range-analysis-mode", optional_argument, nullptr, OPT_RANGE_ANALYSIS_MODE},
-      {"mask", optional_argument, nullptr, OPT_MASK},
+      {"fp-format", optional_argument, nullptr, OPT_FP_FORMAT},
+      {"propagate-fp-format", optional_argument, nullptr, OPT_PROPAGATE_FP_FORMAT},
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
@@ -2000,8 +2031,12 @@ int BambuParameter::Exec()
          }
          case OPT_SOFTFLOAT_NOROUNDING:
          {
-            setOption(OPT_softfloat_subnormal, false);
             setOption(OPT_softfloat_norounding, true);
+            break;
+         }
+         case OPT_SOFTFLOAT_NOEXCEPTION:
+         {
+            setOption(OPT_softfloat_noexception, true);
             break;
          }
          case OPT_LIBM_STD_ROUNDING:
@@ -2114,6 +2149,11 @@ int BambuParameter::Exec()
          case OPT_BACKEND_SDC_EXTENSIONS_PARAMETER:
          {
             setOption(OPT_backend_sdc_extensions, optarg);
+            break;
+         }
+         case OPT_PARALLEL_BACKEND:
+         {
+            setOption(OPT_parallel_backend, true);
             break;
          }
          case OPT_VHDL_LIBRARY_PARAMETER:
@@ -2345,9 +2385,14 @@ int BambuParameter::Exec()
             setOption(OPT_range_analysis_mode, optarg);
             break;
          }
-         case OPT_MASK:
+         case OPT_FP_FORMAT:
          {
-            setOption(OPT_mask, optarg);
+            setOption(OPT_fp_format, optarg);
+            break;
+         }
+         case OPT_PROPAGATE_FP_FORMAT:
+         {
+            setOption(OPT_propagate_fp_format, true);
             break;
          }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
@@ -2434,6 +2479,11 @@ int BambuParameter::Exec()
          case INPUT_OPT_DRY_RUN_EVALUATION:
          {
             setOption(OPT_dry_run_evaluation, true);
+            break;
+         }
+         case OPT_INTERFACE_XML_FILENAME:
+         {
+            setOption(OPT_interface_xml_filename, GetPath(optarg));
             break;
          }
          case 0:
@@ -3472,6 +3522,7 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 512);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      setOption(OPT_disable_function_proxy, true);
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE")
    {
@@ -3488,6 +3539,7 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 512);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      setOption(OPT_disable_function_proxy, true);
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-AREA-MP")
    {
@@ -3563,10 +3615,6 @@ void BambuParameter::CheckParameters()
       else if(isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal))
       {
          add_bambu_library("softfloat_subnormals");
-      }
-      else if(isOption(OPT_softfloat_norounding) && getOption<bool>(OPT_softfloat_norounding))
-      {
-         add_bambu_library("softfloat_norounding");
       }
       else
       {
@@ -4182,7 +4230,9 @@ void BambuParameter::SetDefaults()
    setOption(OPT_no_return_zero, false);
    setOption(OPT_bitvalue_ipa, true);
    setOption(OPT_range_analysis_mode, "");
-   setOption(OPT_mask, "");
+   setOption(OPT_fp_format, "");
+   setOption(OPT_propagate_fp_format, false);
+   setOption(OPT_parallel_backend, false);
 
 #if HAVE_HOST_PROFILING_BUILT
    setOption(OPT_exec_argv, STR_CST_string_separator);

@@ -64,6 +64,7 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "var_pp_functor.hpp"
 
 /// STD includes
 #include <fstream>
@@ -88,14 +89,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, CALLED_FUNCTIONS));
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, CALLING_FUNCTIONS));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -177,9 +179,9 @@ void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0
          const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
          auto utype = tree_man->create_default_unsigned_integer_type();
          auto zeroVal = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), GET_INDEX_NODE(utype));
-         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema, ga_schema;
+         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
          ne_schema[TOK(TOK_TYPE)] = STR(type_index);
-         ne_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          ne_schema[TOK(TOK_OP)] = STR(zeroVal->index);
          const auto ne_id = TM->new_tree_node_id();
          TM->create_tree_node(ne_id, nop_expr_K, ne_schema);
@@ -204,7 +206,7 @@ void dead_code_elimination::kill_vdef(const tree_managerRef TM, tree_nodeRef vde
 {
    const auto gimple_nop_id = TM->new_tree_node_id();
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-   gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
    GetPointer<ssa_name>(GET_NODE(vdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
 }
@@ -310,6 +312,172 @@ void dead_code_elimination::add_gimple_nop(gimple_node* gc, const tree_managerRe
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added statement " + GET_NODE(gimple_nop_node_ref)->ToString());
 }
 
+bool dead_code_elimination::signature_opt(const tree_managerRef& TM, function_decl* fd) const
+{
+   const auto& args = fd->list_of_args;
+   std::vector<tree_nodeConstRef> real_parm(args.size(), nullptr);
+   bool binding_completed = false;
+
+   const auto parm_bind = [&](const tree_nodeRef& stmt) -> void {
+      const auto ssa_uses = tree_helper::ComputeSsaUses(stmt);
+      for(const auto& use : ssa_uses)
+      {
+         const auto SSA = GetPointer<const ssa_name>(GET_CONST_NODE(use.first));
+         // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function parameter inside the function body
+         if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K && GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
+         {
+            auto argIt = std::find_if(args.begin(), args.end(), [&](const tree_nodeRef& arg) { return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var); });
+            THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
+            size_t arg_pos = static_cast<size_t>(argIt - args.begin());
+            if(real_parm[arg_pos] != nullptr)
+            {
+               THROW_ASSERT(SSA->index == GET_INDEX_CONST_NODE(real_parm[arg_pos]), "");
+               continue;
+            }
+            THROW_ASSERT(arg_pos < args.size(), "Computed parameter position outside actual parameters number");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter " + STR(arg_pos) + "(" + GET_CONST_NODE(*argIt)->ToString() + ") is binded to ssa variable " + SSA->ToString());
+            real_parm[arg_pos] = use.first;
+            binding_completed = std::find(real_parm.begin(), real_parm.end(), nullptr) == real_parm.end();
+         }
+      }
+   };
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Signature parameter lookup started...");
+   const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
+   for(const auto& bb : sl->list_of_bloc)
+   {
+      for(const auto& phi : bb.second->CGetPhiList())
+      {
+         parm_bind(phi);
+         if(binding_completed)
+         {
+            break;
+         }
+      }
+      if(binding_completed)
+      {
+         break;
+      }
+
+      for(const auto& stmt : bb.second->CGetStmtList())
+      {
+         parm_bind(stmt);
+         if(binding_completed)
+         {
+            break;
+         }
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Signature parameter lookup completed");
+   if(binding_completed)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No unused parameter found");
+      return false;
+   }
+
+   const auto unused_arg_index = [&]() {
+      std::vector<unsigned int> uai;
+      for(auto i = static_cast<unsigned int>(real_parm.size()); i > 0;)
+      {
+         const auto index = --i;
+         if(real_parm.at(index) == nullptr)
+         {
+            uai.push_back(index);
+         }
+      }
+      return uai;
+   }();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unused parameter indexes: " + convert_vector_to_string(unused_arg_index, ", ", false));
+   const auto arg_eraser = [&](std::vector<tree_nodeRef>& arg_list, const tree_nodeRef& call_stmt) {
+      for(const auto& uai : unused_arg_index)
+      {
+         const auto arg_it = arg_list.begin() + uai;
+         auto ssa = GetPointer<ssa_name>(GET_NODE(*arg_it));
+         if(ssa)
+         {
+            THROW_ASSERT(ssa->CGetUseStmts().count(call_stmt), "");
+            ssa->RemoveUse(call_stmt);
+
+            auto gn = GetPointer<gimple_node>(GET_NODE(call_stmt));
+            if(tree_helper::is_virtual(TM, ssa->index))
+            {
+               gn->vuses.erase(*arg_it);
+               if(GET_INDEX_NODE(gn->memuse) == ssa->index)
+               {
+                  gn->memuse = tree_nodeRef();
+               }
+            }
+         }
+         arg_list.erase(arg_it);
+      }
+   };
+   const auto CGM = AppM->CGetCallGraphManager();
+   const auto CG = CGM->CGetCallGraph();
+   const auto function_v = CGM->GetVertex(function_id);
+
+   InEdgeIterator ie, ie_end;
+   tree_manipulationRef tree_man(new tree_manipulation(TM, parameters));
+   std::vector<tree_nodeRef> loa = fd->list_of_args, argsT;
+   arg_eraser(loa, nullptr);
+   std::transform(loa.cbegin(), loa.cend(), std::back_inserter(argsT), [&](const tree_nodeRef& arg) { return TM->GetTreeReindex(tree_helper::get_type_index(TM, GET_INDEX_CONST_NODE(arg))); });
+   const auto ftype = tree_man->create_function_type(GetPointerS<const function_type>(GET_CONST_NODE(fd->type))->retn, argsT);
+   const auto ftype_ptr = tree_man->create_pointer_type(ftype, ALGN_POINTER);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused arguments from call points");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ie++)
+   {
+      const auto caller_id = CGM->get_function(ie->m_source);
+      const auto fei = CG->CGetFunctionEdgeInfo(*ie);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing call points from " + tree_helper::print_function_name(TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+      for(const auto& call_id : fei->direct_call_points)
+      {
+         auto call_rdx = TM->GetTreeReindex(call_id);
+         auto call_stmt = GET_NODE(call_rdx);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before erase: " + call_stmt->ToString());
+         tree_nodeRef fn;
+         if(call_stmt->get_kind() == gimple_call_K)
+         {
+            auto gc = GetPointerS<gimple_call>(call_stmt);
+            THROW_ASSERT(gc->args.size() == args.size(), "");
+            fn = gc->fn;
+            arg_eraser(gc->args, call_rdx);
+         }
+         else if(call_stmt->get_kind() == gimple_assign_K)
+         {
+            const auto ga = GetPointerS<const gimple_assign>(call_stmt);
+            auto ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+            fn = ce->fn;
+            THROW_ASSERT(ce, "Unexpected call expression: " + GET_NODE(ga->op1)->get_kind_text());
+            THROW_ASSERT(ce->args.size() == args.size(), "");
+            arg_eraser(ce->args, call_rdx);
+         }
+         else
+         {
+            THROW_UNREACHABLE("Call point statement not handled: " + call_stmt->get_kind_text());
+         }
+         auto ae = GetPointer<addr_expr>(GET_NODE(fn));
+         if(ae)
+         {
+            ae->type = ftype_ptr;
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After erase: " + call_stmt->ToString());
+      }
+      THROW_ASSERT(fei->indirect_call_points.empty(), "");
+      THROW_ASSERT(fei->function_addresses.empty(), "");
+      AppM->GetFunctionBehavior(caller_id)->UpdateBBVersion();
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing parameters from function signature");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Before erase: " + tree_helper::print_type(TM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
+   fd->list_of_args = loa;
+   fd->type = ftype;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---After erase: " + tree_helper::print_type(TM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Function signature optimization completed");
+   return true;
+}
+
 /// single sweep analysis, block by block, from the bottom to up. Each ssa which is used zero times is eliminated and the uses of the variables used in the assignment are recomputed
 /// multi-way and two way IFs simplified when conditions are constants
 /// gimple_call without side effects are removed
@@ -357,7 +525,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          std::list<tree_nodeRef> stmts_to_be_removed;
          for(auto stmt = stmt_list.rbegin(); stmt != stmt_list.rend(); stmt++)
          {
-            if(not AppM->ApplyNewTransformation())
+            if(!AppM->ApplyNewTransformation())
             {
                break;
             }
@@ -776,13 +944,13 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
          }
-         if(not stmts_to_be_removed.empty())
+         if(!stmts_to_be_removed.empty())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Restart dead code");
             modified = true;
             restart_analysis = true;
          }
-         if(not stmts_to_be_removed.empty())
+         if(!stmts_to_be_removed.empty())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(stmts_to_be_removed.size()) + " dead statements");
             for(auto curr_el : stmts_to_be_removed)
@@ -832,7 +1000,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing phis");
          for(auto phi = phi_list.rbegin(); phi != phi_list.rend(); phi++)
          {
-            if(not AppM->ApplyNewTransformation())
+            if(!AppM->ApplyNewTransformation())
             {
                break;
             }
@@ -852,12 +1020,12 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed phi");
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed phis");
-         if(not phis_to_be_removed.empty())
+         if(!phis_to_be_removed.empty())
          {
             modified = true;
             restart_analysis = true;
          }
-         if(not phis_to_be_removed.empty())
+         if(!phis_to_be_removed.empty())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(phis_to_be_removed.size()) + " dead phis");
             for(auto curr_phi : phis_to_be_removed)
@@ -901,7 +1069,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                }
             }
          }
-         if(not bb_to_remove.empty())
+         if(!bb_to_remove.empty())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(bb_to_remove.size()) + " unreachable BBs");
             for(auto bb : bb_to_remove)
@@ -931,7 +1099,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed phis");
 
-               if(not phis_to_be_removed.empty())
+               if(!phis_to_be_removed.empty())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(phis_to_be_removed.size()) + " dead phis");
                   for(auto curr_phi : phis_to_be_removed)
@@ -1082,7 +1250,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                            /// all vovers become vuse
                            for(auto vo : gn->vovers)
                            {
-                              if(not gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
+                              if(!gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
                               {
                                  gn->vuses.insert(vo);
                                  GetPointer<ssa_name>(GET_NODE(vo))->AddUseStmt(*stmt);
@@ -1098,7 +1266,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      }
                      else if(gn->memdef && is_single_write_memory)
                      {
-                        if(not fdCalled->reading_memory)
+                        if(!fdCalled->reading_memory)
                         {
                            /// fix memdef
                            kill_vdef(TM, gn->memdef);
@@ -1142,7 +1310,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         /// all vovers become vuse
                         for(auto vo : gn->vovers)
                         {
-                           if(not gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
+                           if(!gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
                            {
                               gn->vuses.insert(vo);
                               GetPointer<ssa_name>(GET_NODE(vo))->AddUseStmt(*stmt);
@@ -1158,7 +1326,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                   else if(gn->memdef && is_single_write_memory)
                   {
-                     if(not fdCalled->reading_memory)
+                     if(!fdCalled->reading_memory)
                      {
                         /// fix memdef
                         kill_vdef(TM, gn->memdef);
@@ -1188,7 +1356,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
          auto* gn = GetPointer<gimple_node>(GET_NODE(*stmt));
 
-         if(not gn->vuses.empty() && !is_single_write_memory && GET_NODE(*stmt)->get_kind() != gimple_return_K)
+         if(!gn->vuses.empty() && !is_single_write_memory && GET_NODE(*stmt)->get_kind() != gimple_return_K)
          {
             fd->reading_memory = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory (1)");
@@ -1295,6 +1463,13 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       last_writing_memory[i] = fdCalled->writing_memory;
       last_reading_memory[i] = fdCalled->reading_memory;
    }
+
+   const auto is_root = AppM->CGetCallGraphManager()->GetRootFunctions().count(function_id) || AppM->CGetCallGraphManager()->GetAddressedFunctions().count(function_id);
+   if(!fd->list_of_args.empty() && !is_root)
+   {
+      modified |= signature_opt(TM, fd);
+   }
+
    if(modified)
    {
       function_behavior->UpdateBBVersion();

@@ -547,7 +547,7 @@ void VcdSignalSelection::CrossPropagateAddrSsa(CustomUnorderedMap<unsigned int, 
              */
             if(callid == 0)
             {
-               THROW_ASSERT(HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() == "__internal_bambu_memcpy",
+               THROW_ASSERT(HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() == MEMCPY,
                             "artificial calls to " + HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() + " should not happen");
                continue;
             }

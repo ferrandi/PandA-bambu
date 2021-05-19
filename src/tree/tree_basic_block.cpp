@@ -244,6 +244,43 @@ void bloc::Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, con
    THROW_ASSERT(replaced, STR(old_stmt) + " not found");
 }
 
+void bloc::update_new_stmt(const tree_nodeRef& new_stmt)
+{
+   const auto gn = GetPointer<gimple_node>(GET_NODE(new_stmt));
+   THROW_ASSERT(gn, STR(new_stmt));
+   gn->bb_index = number;
+   if(updated_ssa_uses)
+   {
+      const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
+      for(const auto& use : uses)
+      {
+         for(size_t counter = 0; counter < use.second; counter++)
+         {
+            GetPointerS<ssa_name>(GET_NODE(use.first))->AddUseStmt(new_stmt);
+         }
+      }
+   }
+   if(gn->vdef)
+   {
+      GetPointerS<ssa_name>(GET_NODE(gn->vdef))->SetDefStmt(new_stmt);
+   }
+   const auto ga = GetPointer<gimple_assign>(GET_NODE(new_stmt));
+   if(ga)
+   {
+      const auto sn = GetPointer<ssa_name>(GET_NODE(ga->op0));
+      if(sn)
+      {
+         sn->SetDefStmt(new_stmt);
+      }
+   }
+#if HAVE_BAMBU_BUILT
+   if(schedule)
+   {
+      schedule->UpdateTime(new_stmt->index);
+   }
+#endif
+}
+
 void bloc::PushBefore(const tree_nodeRef new_stmt, const tree_nodeRef existing_stmt)
 {
    THROW_ASSERT(number != ENTRY_BLOCK_ID, "Trying to add " + new_stmt->ToString() + " to entry");
@@ -259,39 +296,7 @@ void bloc::PushBefore(const tree_nodeRef new_stmt, const tree_nodeRef existing_s
    }
    THROW_ASSERT(pos != list_of_stmt.end(), existing_stmt->ToString() + " not found in BB" + STR(number));
    list_of_stmt.insert(pos, new_stmt);
-   auto gn = GetPointer<gimple_node>(GET_NODE(new_stmt));
-   THROW_ASSERT(gn, STR(new_stmt));
-   gn->bb_index = number;
-   if(updated_ssa_uses)
-   {
-      const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
-      for(const auto& use : uses)
-      {
-         for(size_t counter = 0; counter < use.second; counter++)
-         {
-            GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(new_stmt);
-         }
-      }
-   }
-   if(gn->vdef)
-   {
-      GetPointer<ssa_name>(GET_NODE(gn->vdef))->SetDefStmt(new_stmt);
-   }
-   auto ga = GetPointer<gimple_assign>(GET_NODE(new_stmt));
-   if(ga)
-   {
-      auto sn = GetPointer<ssa_name>(GET_NODE(ga->op0));
-      if(sn)
-      {
-         sn->SetDefStmt(new_stmt);
-      }
-   }
-#if HAVE_BAMBU_BUILT
-   if(schedule)
-   {
-      schedule->UpdateTime(new_stmt->index);
-   }
-#endif
+   update_new_stmt(new_stmt);
 }
 
 void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_stmt)
@@ -309,24 +314,7 @@ void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_st
    }
    pos++;
    list_of_stmt.insert(pos, new_stmt);
-   GetPointer<gimple_node>(GET_NODE(new_stmt))->bb_index = number;
-   if(updated_ssa_uses)
-   {
-      const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
-      for(const auto& use : uses)
-      {
-         for(size_t counter = 0; counter < use.second; counter++)
-         {
-            GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(new_stmt);
-         }
-      }
-   }
-#if HAVE_BAMBU_BUILT
-   if(schedule)
-   {
-      schedule->UpdateTime(new_stmt->index);
-   }
-#endif
+   update_new_stmt(new_stmt);
 }
 
 void bloc::ReorderLUTs()
