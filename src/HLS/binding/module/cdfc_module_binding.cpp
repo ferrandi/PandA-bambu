@@ -1365,16 +1365,21 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          double resource_area = allocation_information->compute_normalized_area(fu_s1);
          bool disabling_slack_based_binding =
              ((allocation_information->get_number_channels(fu_s1) >= 1) and (!allocation_information->is_readonly_memory_unit(fu_s1) || (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
-             lib_name == PROXY_LIBRARY || allocation_information->get_number_fu(fu_s1) != INFINITE_UINT;
-         for(auto cv : fu_cv.second)
-         {
-            auto curr_vertex_type = GET_TYPE(sdg, cv);
-            if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
-            {
-               disabling_slack_based_binding = true;
-               break;
-            }
-         }
+             lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY || allocation_information->get_number_fu(fu_s1) != INFINITE_UINT;
+//         for(auto cv : fu_cv.second)
+//         {
+//            auto curr_vertex_type = GET_TYPE(sdg, cv);
+//            if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
+//            {
+//               disabling_slack_based_binding = true;
+//               break;
+//            }
+//            else if((curr_vertex_type & TYPE_EXTERNAL) && allocation_information->get_cycles(fu_s1, cv, sdg) > 1)
+//            {
+//               disabling_slack_based_binding = true;
+//               break;
+//            }
+//         }
          double local_mux_time = (disabling_slack_based_binding ? -std::numeric_limits<double>::infinity() : mux_time);
          unsigned int fu_prec = allocation_information->get_prec(fu_s1);
          bool cond1 = compute_condition1(lib_name, allocation_information, local_mux_time, fu_s1);
@@ -1771,16 +1776,22 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             const CliqueCovering_Algorithm clique_covering_method_used = clique_covering_algorithm;
             std::string res_name = allocation_information->get_fu_name(partition.first).first;
             std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
-            bool disabling_slack_based_binding = disabling_slack_cond0 || lib_name == PROXY_LIBRARY || allocation_information->get_number_fu(partition.first) != INFINITE_UINT;
-            for(auto cv : partition.second)
-            {
-               auto curr_vertex_type = GET_TYPE(sdg, c2s[boost::get(boost::vertex_index, *CG, cv)]);
-               if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
-               {
-                  disabling_slack_based_binding = true;
-                  break;
-               }
-            }
+            bool disabling_slack_based_binding = disabling_slack_cond0 || lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY || allocation_information->get_number_fu(partition.first) != INFINITE_UINT;
+//            for(auto cv : partition.second)
+//            {
+//               auto curr_vertex_type = GET_TYPE(sdg, c2s[boost::get(boost::vertex_index, *CG, cv)]);
+//               if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
+//               {
+//                  disabling_slack_based_binding = true;
+//                  break;
+//               }
+//               else if((curr_vertex_type & TYPE_EXTERNAL) && allocation_information->get_cycles(partition.first, c2s[boost::get(boost::vertex_index, *CG, cv)], sdg) > 1)
+//               {
+//                  disabling_slack_based_binding = true;
+//                  break;
+//               }
+
+//            }
             THROW_ASSERT(lib_name != PROXY_LIBRARY || 1 == allocation_information->get_number_fu(partition.first), "unexpected condition");
 
             /// build the clique covering solver
