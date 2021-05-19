@@ -110,7 +110,7 @@ class tree_helper
     * @param tn is the statement
     * @param uses is where the uses will be stored
     */
-   static void ComputeSsaUses(const tree_nodeRef, TreeNodeMap<size_t>& uses);
+   static void ComputeSsaUses(const tree_nodeRef&, TreeNodeMap<size_t>& uses);
 
  public:
    /// debug level (set by Parameter)
@@ -851,7 +851,7 @@ class tree_helper
     * @param tn is the statement
     * @param ssa_uses is the collection of ssa_name tn uses
     */
-   static void compute_ssa_uses_rec_ptr(const tree_nodeRef& tn, CustomOrderedSet<ssa_name*>& ssa_uses);
+   static void compute_ssa_uses_rec_ptr(const tree_nodeConstRef& tn, CustomOrderedSet<const ssa_name*>& ssa_uses);
 
    /**
     * recursively compute the references to the ssa_name variables used in a statement

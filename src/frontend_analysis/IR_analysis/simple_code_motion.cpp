@@ -242,7 +242,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
-   CustomOrderedSet<ssa_name*> rhs_ssa_uses;
+   CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
    tree_helper::compute_ssa_uses_rec_ptr(ga->op1, rhs_ssa_uses);
    tree_nodeRef right = GET_NODE(ga->op1);
 
@@ -854,7 +854,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             }
 
             /// compute the SSA variables used by stmt
-            CustomOrderedSet<ssa_name*> stmt_ssa_uses;
+            CustomOrderedSet<const ssa_name*> stmt_ssa_uses;
             tree_helper::compute_ssa_uses_rec_ptr(*statement, stmt_ssa_uses);
             for(auto vo : gn->vovers)
             {
@@ -874,10 +874,10 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                }
             }
 
-            const CustomOrderedSet<ssa_name*>::const_iterator ssu_it_end = stmt_ssa_uses.end();
-            for(auto ssu_it = stmt_ssa_uses.begin(); ssu_it != ssu_it_end; ++ssu_it)
+            const auto ssu_it_end = stmt_ssa_uses.cend();
+            for(auto ssu_it = stmt_ssa_uses.cbegin(); ssu_it != ssu_it_end; ++ssu_it)
             {
-               ssa_name* sn = *ssu_it;
+               const auto sn = *ssu_it;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---for variable " + sn->ToString());
                for(auto const& def_stmt : sn->CGetDefStmts())
                {
@@ -1071,7 +1071,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
             /// check if the current uses in dest_bb_index are due only to phis
             bool only_phis = true;
-            for(auto sn : stmt_ssa_uses)
+            for(const auto sn : stmt_ssa_uses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking definition of " + sn->ToString());
                for(auto const& def_stmt : sn->CGetDefStmts())

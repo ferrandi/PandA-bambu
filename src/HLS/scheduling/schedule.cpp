@@ -318,7 +318,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    const auto current_starting_time = starting_times[operation_index];
    const auto current_ending_time = starting_times[operation_index];
 
-   CustomOrderedSet<ssa_name*> rhs_ssa_uses;
+   CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
    const auto tn = TM->get_tree_node_const(operation_index);
    const auto gn = GetPointer<const gimple_node>(tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing ending time of new statement " + STR(gn->index) + ": " + gn->ToString());
@@ -394,7 +394,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    for(const auto ssa_use : rhs_ssa_uses)
    {
       const auto def = ssa_use->CGetDefStmt();
-      const auto def_gn = GetPointer<const gimple_node>(GET_NODE(def));
+      const auto def_gn = GetPointer<const gimple_node>(GET_CONST_NODE(def));
       if(def_gn->get_kind() == gimple_nop_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter");
@@ -585,7 +585,7 @@ FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int stateme
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Latency: " + STR(latency));
 
    double new_ending_time = 0.0;
-   CustomOrderedSet<ssa_name*> rhs_ssa_uses;
+   CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
    tree_helper::compute_ssa_uses_rec_ptr(ga->op1, rhs_ssa_uses);
    for(const auto ssa_use : rhs_ssa_uses)
    {
@@ -1106,7 +1106,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       const auto stmt_tn = TM->get_tree_node_const(last);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Processing " + stmt_tn->ToString());
       const auto gn = GetPointer<const gimple_node>(stmt_tn);
-      CustomOrderedSet<ssa_name*> rhs_ssa_uses;
+      CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
       if(gn->get_kind() == gimple_assign_K)
       {
          tree_helper::compute_ssa_uses_rec_ptr(GetPointer<const gimple_assign>(stmt_tn)->op1, rhs_ssa_uses);
