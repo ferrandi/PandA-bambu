@@ -119,6 +119,7 @@ void HLSCWriter::WriteHeader()
    indented_output_stream->Append("#define __Inf (1.0/0.0)\n");
    indented_output_stream->Append("#define __Nan (0.0/0.0)\n\n");
    indented_output_stream->Append("#ifdef __cplusplus\n");
+   indented_output_stream->Append("#undef printf\n\n");
    indented_output_stream->Append("#include <cstdio>\n\n");
    indented_output_stream->Append("#include <cstdlib>\n\n");
    indented_output_stream->Append("typedef bool _Bool;\n\n");

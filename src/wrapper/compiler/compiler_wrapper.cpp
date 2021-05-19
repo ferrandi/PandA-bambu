@@ -366,7 +366,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
     HAVE_I386_CLANGVVD_COMPILER
       bool flag_cpp;
-      if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+      if(Param->isOption(OPT_input_format) && (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP || Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
       {
          flag_cpp = true;
       }
@@ -1458,7 +1458,7 @@ void CompilerWrapper::SetBambuDefault()
    CompilerWrapper_CompilerTarget compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
    bool flag_cpp;
-   if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+   if(Param->isOption(OPT_input_format) && (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP || Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
    {
       flag_cpp = true;
    }
@@ -2111,7 +2111,7 @@ void CompilerWrapper::SetCompilerDefault()
    }
 #endif
    bool flag_cpp;
-   if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+   if(Param->isOption(OPT_input_format) && (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP || Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
    {
       flag_cpp = true;
    }
@@ -2145,7 +2145,8 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
     HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||               \
     HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    bool flag_cpp;
-   if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP && !Param->isOption(OPT_pretty_print))
+   if(Param->isOption(OPT_input_format) && (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP || Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP) &&
+      !Param->isOption(OPT_pretty_print))
    {
       flag_cpp = true;
    }
@@ -2919,7 +2920,8 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
    bool has_cpp_file = false;
    for(const auto& file_name : file_names)
    {
-      if(Param->GetFileFormat(file_name, false) == Parameters_FileFormat::FF_CPP)
+      auto file_format = Param->GetFileFormat(file_name, false);
+      if(file_format == Parameters_FileFormat::FF_CPP || file_format == Parameters_FileFormat::FF_LLVM_CPP)
       {
          has_cpp_file = true;
       }
