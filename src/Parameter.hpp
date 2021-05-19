@@ -266,6 +266,7 @@ enum class Parameters_FileFormat
    FF_OBJECTIVECPP, /**< (Input/Output) Objective C++ source file */
    FF_FORTRAN,      /**< (Input/Output) Fortran source file */
    FF_LLVM,         /**< (Input/Output) LLVM source bitcode file */
+   FF_LLVM_CPP,     /**< (Input/Output) LLVM source bitcode file generated from c++ source code*/
 #endif
    FF_CSV, /**< (Input) comma separated value */
 #if HAVE_EXPERIMENTAL

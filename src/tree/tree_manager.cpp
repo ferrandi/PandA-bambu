@@ -2632,7 +2632,7 @@ tree_nodeRef tree_manager::CreateUniqueIntegerCst(long long int value, unsigned 
 
 bool tree_manager::is_CPP() const
 {
-   return Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP;
+   return Param->isOption(OPT_input_format) && (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP || Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
 }
 
 bool tree_manager::is_top_function(const function_decl* fd) const

@@ -1412,6 +1412,11 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
       return Parameters_FileFormat::FF_LLVM;
    }
+   if(extension == "LL")
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
+      return Parameters_FileFormat::FF_LLVM_CPP;
+   }
 #endif
    if(extension == "csv")
    {
