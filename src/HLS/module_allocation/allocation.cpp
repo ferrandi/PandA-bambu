@@ -1469,8 +1469,7 @@ DesignFlowStep_Status allocation::InternalExec()
             unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
             auto* gms = GetPointer<gimple_assign>(modify_node);
-            unsigned int left_type_index;
-            tree_nodeRef left_type_node = tree_helper::get_type_node(GET_NODE(gms->op0), left_type_index);
+            const auto left_type_index = tree_helper::CGetType(GET_CONST_NODE(gms->op0))->index;
             if(tree_helper::is_a_complex(TreeM, left_type_index))
             {
                current_fu = get_fu(ASSIGN_VECTOR_BOOL_STD);
@@ -1509,8 +1508,7 @@ DesignFlowStep_Status allocation::InternalExec()
             unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
             auto* gms = GetPointer<gimple_assign>(modify_node);
-            unsigned int left_type_index;
-            tree_nodeRef left_type_node = tree_helper::get_type_node(GET_NODE(gms->op0), left_type_index);
+            const auto left_type_index = tree_helper::CGetType(GET_CONST_NODE(gms->op0))->index;
             if(tree_helper::is_int(TreeM, left_type_index))
             {
                current_fu = get_fu(ASSERT_EXPR_SIGNED_STD);
@@ -1557,11 +1555,9 @@ DesignFlowStep_Status allocation::InternalExec()
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
             auto* gms = GetPointer<gimple_assign>(modify_node);
 
-            unsigned int left_type_index;
-            tree_nodeRef left_type_node = tree_helper::get_type_node(GET_NODE(gms->op0), left_type_index);
+            const auto left_type_index = tree_helper::CGetType(GET_CONST_NODE(gms->op0))->index;
             auto* ne = GetPointer<nop_expr>(GET_NODE(gms->op1));
-            unsigned int right_type_index;
-            tree_nodeRef right_type_node = tree_helper::get_type_node(GET_NODE(ne->op), right_type_index);
+            const auto right_type_index = tree_helper::CGetType(GET_CONST_NODE(ne->op))->index;
 
             bool unsignedR = tree_helper::is_unsigned(TreeM, right_type_index);
             bool unsignedL = tree_helper::is_unsigned(TreeM, left_type_index);
@@ -1634,11 +1630,9 @@ DesignFlowStep_Status allocation::InternalExec()
             // std::cout << CONVERT_EXPR << "->" << modify_tree_index << std::endl;
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
             auto* gms = GetPointer<gimple_assign>(modify_node);
-            unsigned int left_type_index;
-            tree_nodeRef left_type_node = tree_helper::get_type_node(GET_NODE(gms->op0), left_type_index);
+            unsigned int left_type_index = tree_helper::CGetType(GET_CONST_NODE(gms->op0))->index;
             auto* ce = GetPointer<convert_expr>(GET_NODE(gms->op1));
-            unsigned int right_type_index;
-            tree_nodeRef right_type_node = tree_helper::get_type_node(GET_NODE(ce->op), right_type_index);
+            unsigned int right_type_index = tree_helper::CGetType(GET_CONST_NODE(ce->op))->index;
 
             bool unsignedR = tree_helper::is_unsigned(TreeM, right_type_index);
             bool unsignedL = tree_helper::is_unsigned(TreeM, left_type_index);
@@ -1721,8 +1715,7 @@ DesignFlowStep_Status allocation::InternalExec()
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
             auto* gms = GetPointer<gimple_assign>(modify_node);
             auto* vce = GetPointer<view_convert_expr>(GET_NODE(gms->op1));
-            unsigned int right_type_index;
-            tree_nodeRef right_type_node = tree_helper::get_type_node(GET_NODE(vce->op), right_type_index);
+            unsigned int right_type_index = tree_helper::CGetType(GET_NODE(vce->op))->index;
             if(tree_helper::is_int(TreeM, right_type_index))
             {
                current_fu = get_fu(VIEW_CONVERT_STD_INT);

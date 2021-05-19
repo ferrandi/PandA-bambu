@@ -533,8 +533,8 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
 
          tree_nodeRef op0 = GET_NODE(me->op0);
          tree_nodeRef op1 = GET_NODE(me->op1);
-         tree_nodeRef op0_type = tree_helper::get_type_node(op0);
-         tree_nodeRef op1_type = tree_helper::get_type_node(op1);
+         const auto op0_type = tree_helper::CGetType(op0);
+         const auto op1_type = tree_helper::CGetType(op1);
          const CustomOrderedSet<unsigned int>& fun_mem_data = function_behavior->get_function_mem();
 
          const bool load_candidate = tree_helper::IsLoad(TM, curr_tn, fun_mem_data);

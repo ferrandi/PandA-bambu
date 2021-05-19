@@ -2595,8 +2595,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
 
       elmt_bitsize = 1;
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-      tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
-      tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
+      tree_helper::accessed_greatest_bitsize(TreeM->CGetTreeNode(type_index), elmt_bitsize);
 #if ARRAY_CORRECTION
       if(tree_helper::is_an_array(TreeM, type_index))
       {
@@ -2632,8 +2631,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
 
       elmt_bitsize = 1;
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-      tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
-      tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
+      tree_helper::accessed_greatest_bitsize(TreeM->CGetTreeNode(type_index), elmt_bitsize);
 #if ARRAY_CORRECTION
       if(tree_helper::is_an_array(TreeM, type_index))
       {
@@ -2721,8 +2719,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
 
          elmt_bitsize = 1;
          unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-         tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
-         tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
+         tree_helper::accessed_greatest_bitsize(TreeM->CGetTreeNode(type_index), elmt_bitsize);
       }
       else
       {
@@ -3586,13 +3583,12 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
    }
    if(vd)
    {
-      unsigned int type_index;
-      tree_nodeRef array_type_node = tree_helper::get_type_node(var_node, type_index);
-      if(GetPointer<array_type>(array_type_node))
+      const auto array_type_node = tree_helper::CGetType(var_node);
+      if(GetPointer<const array_type>(array_type_node))
       {
          std::vector<unsigned int> dims;
          unsigned int elts_size;
-         tree_helper::get_array_dim_and_bitsize(TM, type_index, dims, elts_size);
+         tree_helper::get_array_dim_and_bitsize(TM, array_type_node->index, dims, elts_size);
          unsigned int meaningful_bits = 0;
          if(vd->bit_values.size() != 0)
          {

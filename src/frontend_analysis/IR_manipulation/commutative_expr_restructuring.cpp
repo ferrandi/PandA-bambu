@@ -143,9 +143,8 @@ bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn
       return false;
    }
    auto opKind = GET_NODE(ga->op1)->get_kind();
-   unsigned int type_index;
-   auto Type = tree_helper::get_type_node(GET_NODE(ga->op0), type_index);
-   if(not GetPointer<integer_type>(Type))
+   auto Type = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
+   if(!GetPointer<const integer_type>(Type))
    {
       return false;
    }

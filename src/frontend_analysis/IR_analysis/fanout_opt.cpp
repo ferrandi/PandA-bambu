@@ -182,8 +182,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(ga->op0));
                if(ssa_defined->CGetNumberUses() > 1)
                {
-                  unsigned assigned_ssa_type_index;
-                  const tree_nodeRef assigned_ssa_type_node = tree_helper::get_type_node(GET_NODE(ga->op0), assigned_ssa_type_index);
+                  const auto assigned_ssa_type_node = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the assigned ssa_name " + STR(GET_NODE(ga->op0)) + " has type " + assigned_ssa_type_node->ToString());
                   bool is_first_stmt = true;
                   std::list<tree_nodeRef> list_of_dest_statements;

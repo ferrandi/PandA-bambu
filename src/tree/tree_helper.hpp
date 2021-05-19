@@ -103,7 +103,7 @@ class tree_helper
     * @param before is true if we are computing types which must be declared before index
     * @return the types to be declared
     */
-   static const CustomUnorderedSet<unsigned int> RecursiveGetTypesToBeDeclared(const tree_managerConstRef TM, const unsigned int index, const bool recursion, const bool without_transformation, const bool before);
+   static CustomUnorderedSet<unsigned int> RecursiveGetTypesToBeDeclared(const tree_managerConstRef& TM, const unsigned int index, const bool recursion, const bool without_transformation, const bool before);
 
    /**
     * recursively compute the references to the ssa_name variables used in a statement
@@ -121,42 +121,42 @@ class tree_helper
     * @param tm is the tree manager
     * @param index is the treenode
     */
-   static unsigned int size(const tree_managerConstRef tm, const unsigned int index);
+   static unsigned int size(const tree_managerConstRef& tm, const unsigned int index);
 
    /**
     * Return the size of a tree object
     * @param tn is the tree object
     * @return the size of the object
     */
-   static unsigned int Size(const tree_nodeConstRef tn);
+   static unsigned int Size(const tree_nodeConstRef& tn);
 
    /**
     * Return the type name of a signal or a port
     * @param tm is the tree manager
     * @param index is the treenode_index
     */
-   static std::string name_type(const tree_managerConstRef tm, const unsigned int index);
+   static std::string name_type(const tree_managerConstRef& tm, const unsigned int index);
 
    /**
     * Return the name of template without parameters. Ex: sc_signal<T> --> sc_signal
     * @param tm is the tree manager
     * @param index is the treenode_index of the class template (is the index of a record_type)
     */
-   static std::string name_tmpl(const tree_managerConstRef tm, const unsigned int index);
+   static std::string name_tmpl(const tree_managerConstRef& tm, const unsigned int index);
 
    /**
     * Return the name of the class.
     * @param tm is the tree manager
     * @param index is the treenode_index of the class (is the index of a record_type)
     */
-   static std::string record_name(const tree_managerConstRef tm, unsigned int index);
+   static std::string record_name(const tree_managerConstRef& tm, unsigned int index);
 
    /**
     * Return the name of the function.
     * @param tm is the tree manager
     * @param index is the treenode_index of the class (is the index of a function_decl)
     */
-   static std::string name_function(const tree_managerConstRef tm, const unsigned int index);
+   static std::string name_function(const tree_managerConstRef& tm, const unsigned int index);
 
    /**
     * Return where a function or a type is defined
@@ -164,19 +164,19 @@ class tree_helper
     * @param index is the index
     * @param is_system stores if function or type has been already recognized as a system one
     */
-   static std::tuple<std::string, unsigned int, unsigned int> get_definition(const tree_managerConstRef tm, const unsigned int index, bool& is_system);
+   static std::tuple<std::string, unsigned int, unsigned int> get_definition(const tree_managerConstRef& tm, const unsigned int index, bool& is_system);
 
    /**
     * Return true if the function index returns a not void type, false otherwise
     * @param index is the treenode_index of the functions
     */
-   static bool has_function_return(const tree_managerConstRef tm, const unsigned int index);
+   static bool has_function_return(const tree_managerConstRef& tm, const unsigned int index);
 
    /**
     * Return a string describing the functino type
     * @param Tree node of the function type
     */
-   static std::string getFunctionTypeString(tree_nodeRef FT);
+   static std::string getFunctionTypeString(const tree_nodeRef& FT);
 
    /**
     * Return the list of tree nodes associated with the variable used by the node t.
@@ -184,7 +184,7 @@ class tree_helper
     * @param t is a tree node (usually a function declaration).
     * @param list_of_variable list of used variables.
     */
-   static void get_used_variables(bool first_level_only, const tree_nodeRef t, CustomUnorderedSet<unsigned int>& list_of_variable);
+   static void get_used_variables(bool first_level_only, const tree_nodeConstRef& t, CustomUnorderedSet<unsigned int>& list_of_variable);
 
    /**
     * Look for inheritance of a class
@@ -192,14 +192,14 @@ class tree_helper
     * @param bcs is the name of the base class
     * @return true if an inheritance is found
     */
-   static bool look_for_binfo_inheritance(binfo* b, const std::string& bcs);
+   static bool look_for_binfo_inheritance(const binfo* b, const std::string& bcs);
 
    /**
     * Given the tree_node of an obj_type_ref return the tree_node of the called function
     * @param tn is the tree node of the obj_type_ref.
     * @return the tree_node of the called function
     */
-   static tree_nodeRef find_obj_type_ref_function(const tree_nodeRef tn);
+   static tree_nodeRef find_obj_type_ref_function(const tree_nodeConstRef& tn);
 
    /**
     * Return the types to be declared before declaring index type
@@ -208,7 +208,7 @@ class tree_helper
     * @param without_transformation specifies if we are not restructuring the code
     * @return the types to be declared
     */
-   static const CustomUnorderedSet<unsigned int> GetTypesToBeDeclaredBefore(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation);
+   static CustomUnorderedSet<unsigned int> GetTypesToBeDeclaredBefore(const tree_managerConstRef& TM, const unsigned int index, const bool without_transformation);
 
    /**
     * Return the types to be declared after declaring index type
@@ -217,7 +217,7 @@ class tree_helper
     * @param without_transformation specifies if we are not restructuring the code
     * @return the types to be declared
     */
-   static const CustomUnorderedSet<unsigned int> GetTypesToBeDeclaredAfter(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation);
+   static CustomUnorderedSet<unsigned int> GetTypesToBeDeclaredAfter(const tree_managerConstRef& TM, const unsigned int index, const bool without_transformation);
 
    /**
     * Return the treenode index of the type of index
@@ -227,21 +227,21 @@ class tree_helper
     * @param is_a_pointer in case the treenode is a pointer return true
     * @param is_a_function in case the treenode is a function_decl return true
     */
-   static unsigned int get_type_index(const tree_managerConstRef TM, const unsigned int index, long long int& vec_size, bool& is_a_pointer, bool& is_a_function);
+   static unsigned int get_type_index(const tree_managerConstRef& TM, const unsigned int index, long long int& vec_size, bool& is_a_pointer, bool& is_a_function);
 
    /**
     * Same as previous but with two parameters.
     * @param TM is the tree_manager
     * @param index is the treenode
     */
-   static unsigned int get_type_index(const tree_managerConstRef TM, const unsigned int index);
+   static unsigned int get_type_index(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
     * Return the return type of a function
     * @param function is the function to be considered
     * @return the tree node of the return type
     */
-   static tree_nodeRef GetFunctionReturnType(const tree_nodeRef function);
+   static tree_nodeConstRef GetFunctionReturnType(const tree_nodeConstRef& function);
 
    /**
     * Return the tree_node index of the pointed type of a pointer object;
@@ -251,13 +251,13 @@ class tree_helper
    static
        /// FIXME: to be remove after substitution with GetPointedType/CGetPointedType
        unsigned int
-       get_pointed_type(const tree_managerConstRef TM, const unsigned int index);
+       get_pointed_type(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
     * Return the pointed type of a pointer object
     * @param pointer is the pointer object
     */
-   static const tree_nodeConstRef CGetPointedType(const tree_nodeConstRef pointer);
+   static tree_nodeConstRef CGetPointedType(const tree_nodeConstRef& pointer);
 
    /**
     * Given an array or a vector return the element type
@@ -265,14 +265,14 @@ class tree_helper
     * @param index is the type of the array
     * @return the type of the element
     */
-   static unsigned int GetElements(const tree_managerConstRef TM, const unsigned int index);
+   static unsigned int GetElements(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
     * Given an array or a vector return the element type
     * @param type is the type of the array
     * @return the type of the element
     */
-   static const tree_nodeConstRef CGetElements(const tree_nodeConstRef type);
+   static tree_nodeConstRef CGetElements(const tree_nodeConstRef& type);
 
    /**
     * Return name of the type
@@ -280,7 +280,7 @@ class tree_helper
     * @param index is the index of the type
     * @return the name of the type
     */
-   static std::string get_type_name(const tree_managerConstRef TM, const unsigned int index);
+   static std::string get_type_name(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
     * Return the tree node of parameter types
@@ -288,13 +288,13 @@ class tree_helper
     * @param ind is the index of the function type
     * @param params is where parameter types are stored
     */
-   static void get_parameter_types(const tree_managerConstRef TM, const unsigned int index, std::list<unsigned int>& params);
+   static void get_parameter_types(const tree_managerConstRef& TM, const unsigned int index, std::list<unsigned int>& params);
 
    /**
     * Return the fields type of a variable of type struct
     * @param type is the struct type
     */
-   static const std::vector<tree_nodeConstRef> CGetFieldTypes(const tree_nodeConstRef type);
+   static std::vector<tree_nodeConstRef> CGetFieldTypes(const tree_nodeConstRef& type);
 
    /**
     * Return the idx element of the fields declared in an union or a record type
@@ -302,16 +302,13 @@ class tree_helper
     * @param ind is the index of the record/union type
     * @param idx is the index of the field decl
     */
-   static unsigned int get_field_idx(const tree_managerConstRef TM, const unsigned int index, unsigned int idx);
+   static unsigned int get_field_idx(const tree_managerConstRef& TM, const unsigned int index, unsigned int idx);
 
    /**
     * Return the treenode of the type of node.
     * @param node is the treenode
     */
-   static unsigned int local_return_index;
-   /// FIXME to be removed after complete substitution with GetType
-   static tree_nodeRef get_type_node(const tree_nodeRef& node, unsigned int& return_index = local_return_index);
-   static const tree_nodeConstRef CGetType(const tree_nodeConstRef node);
+   static tree_nodeConstRef CGetType(const tree_nodeConstRef& node);
 
    /**
     * Return true if variable or type is a system one
@@ -319,7 +316,7 @@ class tree_helper
     * @param index is the index of the treenode corresponding to the decl node or to the type node
     * @return true if variable or type is a system one
     */
-   static bool is_system(const tree_managerConstRef TM, const unsigned int index);
+   static bool is_system(const tree_managerConstRef& TM, const unsigned int index);
 
 #if HAVE_BAMBU_BUILT
    /**
@@ -327,7 +324,7 @@ class tree_helper
     * @param TM is the tree manager
     * @param index is the treenode index
     */
-   static bool IsInLibbambu(const tree_managerConstRef TM, const unsigned int index);
+   static bool IsInLibbambu(const tree_managerConstRef& TM, const unsigned int index);
 #endif
 
    /**
@@ -784,7 +781,7 @@ class tree_helper
     * Return the name of the function in a string
     * @param node is the function_decl
     */
-   static std::string print_function_name(const tree_managerConstRef TM, const function_decl* fd);
+   static std::string print_function_name(const tree_managerConstRef& TM, const function_decl* fd);
 
    /**
     * Print a type and its variable in case var is not zero.
@@ -805,6 +802,8 @@ class tree_helper
     */
    static unsigned int get_formal_ith(const tree_managerConstRef& TM, unsigned int index_obj, unsigned int parm_index);
 
+   static tree_nodeConstRef GetFormalIth(const tree_nodeConstRef& obj, unsigned int parm_index);
+
    static bool is_packed(const tree_managerConstRef& TreeM, unsigned int node_index);
 
    /**
@@ -818,12 +817,12 @@ class tree_helper
    /**
     * return the maximum bitsize associated with the elements accessible through type_node
     */
-   static void accessed_greatest_bitsize(const tree_managerConstRef& TreeM, const tree_nodeRef& type_node, unsigned int type_index, unsigned int& bitsize);
+   static void accessed_greatest_bitsize(const tree_nodeConstRef& type_node, unsigned int& bitsize);
 
    /**
     * return the minimum bitsize associated with the elements accessible through type_node
     */
-   static void accessed_minimum_bitsize(const tree_managerConstRef& TreeM, const tree_nodeRef& type_node, unsigned int type_index, unsigned int& bitsize);
+   static void accessed_minimum_bitsize(const tree_nodeConstRef& type_node, unsigned int& bitsize);
 
    /**
     * Compute the memory (in bytes) to be allocated to store a parameter or a variable

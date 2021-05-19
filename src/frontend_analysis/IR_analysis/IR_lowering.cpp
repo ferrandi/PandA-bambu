@@ -1629,8 +1629,7 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    block.second->PushBefore(ae_ga, *it_los);
 
    tree_nodeRef offset_type = tree_man->create_size_type();
-   unsigned int ar_op1_type_index;
-   tree_helper::get_type_node(GET_NODE(AR->op1), ar_op1_type_index);
+   unsigned int ar_op1_type_index = tree_helper::CGetType(GET_CONST_NODE(AR->op1))->index;
    tree_nodeRef offset_node;
    if(ar_op1_type_index != GET_INDEX_NODE(offset_type))
    {
@@ -1644,13 +1643,12 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    {
       offset_node = AR->op1;
    }
-   unsigned ar_op0_type_index;
-   tree_nodeRef ar_op0_type_node = tree_helper::get_type_node(GET_NODE(AR->op0), ar_op0_type_index);
-   THROW_ASSERT(ar_op0_type_node->get_kind() == array_type_K, "array_type expected: @" + STR(ar_op0_type_index));
-   unsigned int data_bitsize = tree_helper::get_array_data_bitsize(TM, ar_op0_type_index);
+   const auto ar_op0_type_node = tree_helper::CGetType(GET_CONST_NODE(AR->op0));
+   THROW_ASSERT(ar_op0_type_node->get_kind() == array_type_K, "array_type expected: @" + STR(ar_op0_type_node->index));
+   unsigned int data_bitsize = tree_helper::get_array_data_bitsize(TM, ar_op0_type_node->index);
    unsigned int n_byte = compute_n_bytes(data_bitsize);
    std::vector<unsigned int> dims;
-   tree_helper::get_array_dimensions(TM, ar_op0_type_index, dims);
+   tree_helper::get_array_dimensions(TM, ar_op0_type_node->index, dims);
    for(size_t ind = 1; ind < dims.size(); ++ind)
    {
       n_byte *= dims.at(ind);

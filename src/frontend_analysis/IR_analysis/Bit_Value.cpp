@@ -1537,11 +1537,11 @@ void Bit_Value::initialize()
                      auto* ce = GetPointerS<call_expr>(GET_NODE(ga->op1));
                      if(GET_NODE(ce->fn)->get_kind() == addr_expr_K)
                      {
-                        const auto addr_node = GET_NODE(ce->fn);
+                        const auto addr_node = GET_CONST_NODE(ce->fn);
                         const auto* ae = GetPointerS<const addr_expr>(addr_node);
-                        const auto fu_decl_node = GET_NODE(ae->op);
+                        const auto fu_decl_node = GET_CONST_NODE(ae->op);
                         THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
-                        const tree_nodeRef ret_type_node = tree_helper::GetFunctionReturnType(fu_decl_node);
+                        const auto ret_type_node = tree_helper::GetFunctionReturnType(fu_decl_node);
                         if(is_handled_by_bitvalue(ret_type_node->index))
                         {
                            const auto* called_fd = GetPointer<const function_decl>(fu_decl_node);

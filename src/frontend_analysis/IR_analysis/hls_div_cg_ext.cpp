@@ -357,8 +357,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             case trunc_mod_expr_K:
             {
                std::string fu_suffix;
-               unsigned int expr_type_index;
-               tree_nodeRef expr_type = tree_helper::get_type_node(GET_NODE(be->op0), expr_type_index);
+               const auto expr_type = tree_helper::CGetType(GET_CONST_NODE(be->op0));
                unsigned int bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(be->op0)));
                unsigned int bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(be->op1)));
                unsigned int bitsize = std::max(bitsize0, bitsize1);
@@ -393,7 +392,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                         break;
                   }
                   std::string bitsize_str = bitsize == 32 ? "s" : "d";
-                  bool unsignedp = tree_helper::is_unsigned(TreeM, expr_type_index);
+                  bool unsignedp = tree_helper::is_unsigned(TreeM, expr_type->index);
                   std::string fu_name = STR("__") + (unsignedp ? "u" : "") + fu_suffix + bitsize_str + "i3" + ((bitsize0 == 64 && bitsize1 == 32) ? "6432" : "");
                   unsigned int called_function_id = TreeM->function_index(fu_name);
                   THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
@@ -407,7 +406,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   if(CEunsignedp != unsignedp)
                   {
                      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
-                     ne_schema[TOK(TOK_TYPE)] = STR(expr_type_index);
+                     ne_schema[TOK(TOK_TYPE)] = STR(expr_type->index);
                      ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                      ne_schema[TOK(TOK_OP)] = STR(callExpr->index);
                      const auto ne_id = TreeM->new_tree_node_id();
@@ -430,14 +429,13 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             {
                if(use64bitMul)
                {
-                  unsigned int expr_type_index;
-                  tree_nodeRef expr_type = tree_helper::get_type_node(GET_NODE(be->op0), expr_type_index);
+                  const auto expr_type = tree_helper::CGetType(GET_CONST_NODE(be->op0));
                   unsigned int bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(be->op0)));
                   unsigned int bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(be->op1)));
                   unsigned int bitsize = std::max(bitsize0, bitsize1);
                   if(expr_type->get_kind() == integer_type_K && bitsize == 64)
                   {
-                     bool unsignedp = tree_helper::is_unsigned(TreeM, expr_type_index);
+                     bool unsignedp = tree_helper::is_unsigned(TreeM, expr_type->index);
                      std::string fu_name = "__umul64";
                      unsigned int called_function_id = TreeM->function_index(fu_name);
                      THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
@@ -451,7 +449,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                      if(CEunsignedp != unsignedp)
                      {
                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
-                        ne_schema[TOK(TOK_TYPE)] = STR(expr_type_index);
+                        ne_schema[TOK(TOK_TYPE)] = STR(expr_type->index);
                         ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         ne_schema[TOK(TOK_OP)] = STR(callExpr->index);
                         const auto ne_id = TreeM->new_tree_node_id();

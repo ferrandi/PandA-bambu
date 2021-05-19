@@ -400,9 +400,8 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       tree_nodeRef hasreturn_node = GetPointer<gimple_call>(call)->args[1];
       long long int hasreturn_value = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(hasreturn_node)));
       tree_nodeRef addrExpr = GET_NODE(calledFunction);
-      unsigned int type_index;
-      tree_nodeRef Type = tree_helper::get_type_node(addrExpr, type_index);
-      tree_nodeRef functionType = GET_NODE(GetPointer<pointer_type>(Type)->ptd);
+      const auto Type = tree_helper::CGetType(addrExpr);
+      tree_nodeRef functionType = GET_NODE(GetPointer<const pointer_type>(Type)->ptd);
       tree_nodeRef return_type = GetPointer<function_type>(functionType)->retn;
       if(return_type && GET_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
       {

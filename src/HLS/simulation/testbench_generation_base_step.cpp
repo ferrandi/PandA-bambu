@@ -201,8 +201,7 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
    {
       if(tree_helper::is_an_array(TreeM, var) && !tree_helper::is_a_struct(TreeM, var) && !tree_helper::is_an_union(TreeM, var))
       {
-         unsigned int type_index;
-         tree_helper::get_type_node(tn, type_index);
+         unsigned int type_index = tree_helper::CGetType(tn)->index;
          unsigned int data_bitsize = tree_helper::get_array_data_bitsize(TreeM, type_index);
          unsigned int num_elements = tree_helper::get_array_num_elements(TreeM, type_index);
          std::string value;

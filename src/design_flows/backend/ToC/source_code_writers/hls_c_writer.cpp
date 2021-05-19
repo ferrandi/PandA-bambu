@@ -1126,19 +1126,6 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable " + param /*+ " value: " + init_value_copy */ + "\\n\");\n");
                         }
                         tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-                        unsigned int ptd_base_type = 0;
-                        if(pt_node->get_kind() == pointer_type_K)
-                        {
-                           ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
-                        }
-                        else if(pt_node->get_kind() == reference_type_K)
-                        {
-                           ptd_base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
-                        }
-                        else
-                        {
-                           THROW_ERROR("A pointer type is expected");
-                        }
                         tree_nodeRef ptd_base_type_node;
                         if(pt_node->get_kind() == pointer_type_K)
                         {
@@ -1153,11 +1140,11 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                            THROW_ERROR("A pointer type is expected");
                         }
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed base type is " + ptd_base_type_node->get_kind_text());
-                        unsigned int data_bitsize = tree_helper::size(TM, ptd_base_type);
-                        if(behavioral_helper->is_a_struct(ptd_base_type))
+                        unsigned int data_bitsize = tree_helper::Size(ptd_base_type_node);
+                        if(behavioral_helper->is_a_struct(ptd_base_type_node->index))
                         {
                            std::vector<std::string> splitted_fields = SplitString(initial_string, "|");
-                           const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
+                           const auto fields = tree_helper::CGetFieldTypes(ptd_base_type_node);
                            size_t n_values = splitted_fields.size();
                            unsigned int index = 0;
                            for(auto it = fields.begin(); it != fields.end(); ++it, ++index)
@@ -1176,28 +1163,28 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                               printed_bytes += WriteBinaryMemoryInit(binary_string, field_size, bits_offset);
                            }
                         }
-                        else if(behavioral_helper->is_an_union(ptd_base_type))
+                        else if(behavioral_helper->is_an_union(ptd_base_type_node->index))
                         {
                            unsigned int max_bitsize_field = 0;
-                           tree_helper::accessed_greatest_bitsize(TM, ptd_base_type_node, ptd_base_type, max_bitsize_field);
+                           tree_helper::accessed_greatest_bitsize(ptd_base_type_node, max_bitsize_field);
                            binary_string = ConvertInBinary(argTypename + "0", max_bitsize_field, false, false);
                            printed_bytes += WriteBinaryMemoryInit(binary_string, max_bitsize_field, bits_offset);
                         }
-                        else if(behavioral_helper->is_an_array(ptd_base_type))
+                        else if(behavioral_helper->is_an_array(ptd_base_type_node->index))
                         {
-                           unsigned int elmts_type = behavioral_helper->GetElements(ptd_base_type);
+                           unsigned int elmts_type = behavioral_helper->GetElements(ptd_base_type_node->index);
 
                            while(behavioral_helper->is_an_array(elmts_type))
                            {
                               elmts_type = behavioral_helper->GetElements(elmts_type);
                            }
 
-                           data_bitsize = tree_helper::get_array_data_bitsize(TM, ptd_base_type);
+                           data_bitsize = tree_helper::get_array_data_bitsize(TM, ptd_base_type_node->index);
 
                            unsigned int num_elements = 1;
                            if(splitted.size() == 1)
                            {
-                              num_elements = tree_helper::get_array_num_elements(TM, ptd_base_type);
+                              num_elements = tree_helper::get_array_num_elements(TM, ptd_base_type_node->index);
                            }
 
                            indented_output_stream->Append("for (__testbench_index0 = 0; __testbench_index0 < " + STR(num_elements) + "; ++__testbench_index0)\n{\n");
@@ -1208,7 +1195,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                         }
                         else
                         {
-                           binary_string = ConvertInBinary(argTypename + initial_string, data_bitsize, behavioral_helper->is_real(ptd_base_type), behavioral_helper->is_unsigned(ptd_base_type));
+                           binary_string = ConvertInBinary(argTypename + initial_string, data_bitsize, behavioral_helper->is_real(ptd_base_type_node->index), behavioral_helper->is_unsigned(ptd_base_type_node->index));
 
                            if(data_bitsize == 1)
                            {

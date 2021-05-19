@@ -799,8 +799,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         const auto ap_node = GET_NODE(*ap);
                         const auto ap_kind = ap_node->get_kind();
                         THROW_ASSERT(is_handled_by_bitvalue(ap_id), "actual parameter not handled by bitvalue");
-                        THROW_ASSERT(tree_helper::is_int(TM, ap_id) == parm_signed, "function " + caller_name + " calls function " + fu_name + "\nformal param " + STR(pd) + " type = " + STR(tree_helper::CGetType(GET_NODE(pd))) + "\nactual param " +
-                                                                                        STR(ap_node) + " type = " + STR(tree_helper::CGetType(ap_node)) + "\ndifferent signedness!");
+                        THROW_ASSERT(tree_helper::is_int(TM, ap_id) == parm_signed, "function " + caller_name + " calls function " + fu_name + "\nformal param " + STR(pd) + " type = " + tree_helper::CGetType(GET_CONST_NODE(pd))->ToString() +
+                                                                                        "\nactual param " + STR(ap_node) + " type = " + tree_helper::CGetType(ap_node)->ToString() + "\ndifferent signedness!");
                         if(ap_kind == ssa_name_K)
                         {
                            const auto* ssa = GetPointer<const ssa_name>(ap_node);

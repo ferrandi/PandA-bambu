@@ -427,24 +427,23 @@ void memory_allocation::finalize_memory_allocation()
                unsigned int var = std::get<0>(*vr_it);
                if(var && tree_helper::is_a_pointer(TreeM, var))
                {
-                  unsigned int type_index;
-                  const tree_nodeRef var_node = TreeM->get_tree_node_const(var);
-                  const tree_nodeRef type_node = tree_helper::get_type_node(var_node, type_index);
+                  const auto var_node = TreeM->CGetTreeNode(var);
+                  const auto type_node = tree_helper::CGetType(var_node);
                   tree_nodeRef type_node_ptd;
                   if(type_node->get_kind() == pointer_type_K)
                   {
-                     type_node_ptd = GetPointer<pointer_type>(type_node)->ptd;
+                     type_node_ptd = GetPointer<const pointer_type>(type_node)->ptd;
                   }
                   else if(type_node->get_kind() == reference_type_K)
                   {
-                     type_node_ptd = GetPointer<reference_type>(type_node)->refd;
+                     type_node_ptd = GetPointer<const reference_type>(type_node)->refd;
                   }
                   else
                   {
                      THROW_ERROR("A pointer type is expected");
                   }
                   unsigned bitsize = 1;
-                  tree_helper::accessed_greatest_bitsize(TreeM, GET_NODE(type_node_ptd), GET_INDEX_NODE(type_node_ptd), bitsize);
+                  tree_helper::accessed_greatest_bitsize(GET_NODE(type_node_ptd), bitsize);
                   maximum_bus_size = std::max(maximum_bus_size, bitsize);
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size) + " " + TreeM->get_tree_node_const(g->CGetOpNodeInfo(*v)->GetNodeId())->ToString());
                }

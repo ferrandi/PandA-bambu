@@ -1579,9 +1579,9 @@ tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef& op
    return node_ref;
 }
 
-tree_nodeRef tree_manipulation::CreateGimpleAssign(const tree_nodeRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max, const tree_nodeRef& op, unsigned int bb_index, const std::string& srcp) const
+tree_nodeRef tree_manipulation::CreateGimpleAssign(const tree_nodeConstRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max, const tree_nodeRef& op, unsigned int bb_index, const std::string& srcp) const
 {
-   tree_nodeRef ssa_vd = create_ssa_name(tree_nodeRef(), type, min, max);
+   tree_nodeRef ssa_vd = create_ssa_name(tree_nodeConstRef(), type, min, max);
    auto ga = create_gimple_modify_stmt(ssa_vd, op, srcp, bb_index);
    GetPointer<ssa_name>(TreeM->get_tree_node_const(ssa_vd->index))->SetDefStmt(TreeM->GetTreeReindex(ga->index));
    return ga;
@@ -1700,8 +1700,7 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef& ssa_res, const std
    }
    else
    {
-      unsigned ssa_res_type_index;
-      const tree_nodeRef ssa_res_type_node = tree_helper::get_type_node(GET_NODE(list_of_def_edge.begin()->first), ssa_res_type_index);
+      const auto ssa_res_type_node = tree_helper::CGetType(GET_CONST_NODE(list_of_def_edge.begin()->first));
       ssa_res = create_ssa_name(tree_nodeRef(), ssa_res_type_node, tree_nodeRef(), tree_nodeRef(), false, false);
    }
 

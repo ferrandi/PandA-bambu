@@ -344,10 +344,8 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case nop_expr_K:
       {
          auto* ne = GetPointer<nop_expr>(right);
-         unsigned int left_type_index;
-         tree_helper::get_type_node(GET_NODE(ga->op0), left_type_index);
-         unsigned int right_type_index;
-         tree_helper::get_type_node(GET_NODE(ne->op), right_type_index);
+         unsigned int left_type_index = tree_helper::CGetType(GET_CONST_NODE(ga->op0))->index;
+         unsigned int right_type_index = tree_helper::CGetType(GET_CONST_NODE(ne->op))->index;
          bool is_realR = tree_helper::is_real(TM, right_type_index);
          bool is_realL = tree_helper::is_real(TM, left_type_index);
          if(is_realR || is_realL)

@@ -283,8 +283,7 @@ generic_objRef mux_connection_binding::dynamic_multidimensional_array_handler(ar
       base_address_index = GET_INDEX_NODE(ar->op0);
       recursive_indexes_values.push_back(tree_index);
 
-      unsigned int type_index;
-      tree_helper::get_type_node(GET_NODE(ar->op0), type_index);
+      unsigned int type_index = tree_helper::CGetType(GET_NODE(ar->op0))->index;
       tree_helper::get_array_dimensions(TreeM, type_index, dims);
 
       /// starts to create basic components directly linked to the offset calculator
@@ -470,20 +469,19 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          {
             auto* ae = GetPointer<addr_expr>(tn);
             unsigned int node_id = data->CGetOpNodeInfo(op)->GetNodeId();
-            const tree_nodeRef node = TreeM->get_tree_node_const(node_id);
-            auto* gm = GetPointer<gimple_assign>(node);
-            unsigned int return_index;
-            const tree_nodeRef type = tree_helper::get_type_node(GET_NODE(ae->op), return_index);
-            if(type && GetPointer<type_node>(type))
+            const auto node = TreeM->CGetTreeNode(node_id);
+            auto* gm = GetPointer<const gimple_assign>(node);
+            const auto type = tree_helper::CGetType(GET_CONST_NODE(ae->op));
+            if(type && GetPointer<const type_node>(type))
             {
 #if USE_ALIGNMENT_INFO
                if(alignment)
                {
-                  alignment = std::min(alignment, GetPointer<type_node>(type)->algn);
+                  alignment = std::min(alignment, GetPointer<const type_node>(type)->algn);
                }
                else
                {
-                  alignment = GetPointer<type_node>(type)->algn;
+                  alignment = GetPointer<const type_node>(type)->algn;
                }
 #endif
             }
@@ -849,17 +847,17 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
 #if USE_ALIGNMENT_INFO
             if(base_index)
             {
-               tree_nodeRef base_type_n = tree_helper::get_type_node(GET_NODE(tmr->base));
-               auto* pt = GetPointer<pointer_type>(base_type_n);
+               const auto base_type_n = tree_helper::CGetType(GET_CONST_NODE(tmr->base));
+               auto* pt = GetPointer<const pointer_type>(base_type_n);
                if(pt)
                {
-                  auto* ptd_type = GetPointer<type_node>(GET_NODE(pt->ptd));
+                  auto* ptd_type = GetPointer<const type_node>(GET_CONST_NODE(pt->ptd));
                   alignment = std::min(ptd_type->algn, alignment);
                }
                else if(base_type_n->get_kind() == reference_type_K)
                {
-                  auto* rt = GetPointer<reference_type>(base_type_n);
-                  auto* rtd_type = GetPointer<type_node>(GET_NODE(rt->refd));
+                  auto* rt = GetPointer<const reference_type>(base_type_n);
+                  auto* rtd_type = GetPointer<const type_node>(GET_CONST_NODE(rt->refd));
                   alignment = std::min(rtd_type->algn, alignment);
                }
             }
@@ -1939,38 +1937,36 @@ void mux_connection_binding::create_connections()
                unsigned int alignment = 0;
                tree_nodeRef var_node;
                unsigned int size_var;
-               tree_nodeRef tn;
-               unsigned tn_index;
+               tree_nodeConstRef tn;
                unsigned int var_node_idx;
-               unsigned int return_index;
                unsigned int prec = 0;
-               const tree_nodeRef type = tree_helper::get_type_node(GET_NODE(gm->op0), return_index);
+               const auto type = tree_helper::CGetType(GET_NODE(gm->op0));
                if(type && (type->get_kind() == integer_type_K))
                {
-                  prec = GetPointer<integer_type>(type)->prec;
+                  prec = GetPointer<const integer_type>(type)->prec;
                }
                unsigned int algn = 0;
                if(type && (type->get_kind() == integer_type_K))
                {
-                  algn = GetPointer<integer_type>(type)->algn;
+                  algn = GetPointer<const integer_type>(type)->algn;
                }
 #if USE_ALIGNMENT_INFO
-               if(type && GetPointer<type_node>(type))
+               if(type && GetPointer<const type_node>(type))
                {
-                  alignment = GetPointer<type_node>(type)->algn;
+                  alignment = GetPointer<const type_node>(type)->algn;
                }
 #endif
                if(GET_TYPE(data, *op) & TYPE_STORE)
                {
                   size_var = std::get<0>(var_read[0]);
-                  tn = TreeM->get_tree_node_const(size_var);
-                  tn = tree_helper::get_type_node(tn, tn_index);
+                  tn = TreeM->CGetTreeNode(size_var);
+                  tn = tree_helper::CGetType(tn);
                   var_node = GET_NODE(gm->op0);
                   var_node_idx = GET_INDEX_NODE(gm->op0);
 
                   if(size_var)
                   {
-                     const integer_cst* obj_size = GetPointer<integer_cst>(GET_NODE(GetPointer<type_node>(tn)->size));
+                     const integer_cst* obj_size = GetPointer<integer_cst>(GET_NODE(GetPointer<const type_node>(tn)->size));
                      THROW_ASSERT(obj_size, "size is not an integer_cst");
                      long long int IR_var_bitsize = tree_helper::get_integer_cst_value(obj_size);
                      unsigned int var_bitsize;
@@ -2036,16 +2032,15 @@ void mux_connection_binding::create_connections()
                else
                {
                   size_var = HLSMgr->get_produced_value(HLS->functionId, *op);
-                  tn = TreeM->get_tree_node_const(size_var);
-                  tn = tree_helper::get_type_node(tn, tn_index);
+                  tn = TreeM->CGetTreeNode(size_var);
+                  tn = tree_helper::CGetType(tn);
                   var_node = GET_NODE(gm->op1);
                   var_node_idx = GET_INDEX_NODE(gm->op1);
                }
 #ifndef NDEBUG
                if(var_node->get_kind() == ssa_name_K)
                {
-                  unsigned int temp_type_index;
-                  THROW_ASSERT(tree_helper::get_type_node(var_node, temp_type_index)->get_kind() == complex_type_K, "only complex objects are considered");
+                  THROW_ASSERT(tree_helper::CGetType(var_node)->get_kind() == complex_type_K, "only complex objects are considered");
                }
 #endif
                if(gm->predicate)
@@ -2081,7 +2076,7 @@ void mux_connection_binding::create_connections()
                      }
                      else
                      {
-                        const integer_cst* obj_size = GetPointer<integer_cst>(GET_NODE(GetPointer<type_node>(tn)->size));
+                        const integer_cst* obj_size = GetPointer<integer_cst>(GET_NODE(GetPointer<const type_node>(tn)->size));
                         THROW_ASSERT(obj_size, "size is not an integer_cst");
                         long long int IR_var_bitsize = tree_helper::get_integer_cst_value(obj_size);
                         unsigned int var_bitsize;
@@ -2093,7 +2088,7 @@ void mux_connection_binding::create_connections()
                         {
                            var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
                         }
-                        determine_connection(*op, HLS_manager::io_binding_type(GET_INDEX_NODE(GetPointer<type_node>(tn)->size), 0), fu_obj, 2, port_index, data, object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize)));
+                        determine_connection(*op, HLS_manager::io_binding_type(GET_INDEX_NODE(GetPointer<const type_node>(tn)->size), 0), fu_obj, 2, port_index, data, object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize)));
                      }
 
                      break;

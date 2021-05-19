@@ -171,9 +171,9 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                if(!(tree_helper::is_real(TM, ssa_node_id) || tree_helper::is_a_complex(TM, ssa_node_id) || tree_helper::is_a_vector(TM, ssa_node_id)))
                {
                   auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(ga->op0));
-                  unsigned int ssa_defined_size = tree_helper::Size(tree_helper::get_type_node(GET_NODE(ga->op0)));
+                  unsigned int ssa_defined_size = tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(ga->op0)));
                   auto* binop0 = GetPointer<binary_expr>(GET_NODE(ga->op1));
-                  if((ssa_defined->CGetNumberUses() == 1) && (ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op0)))) && (ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op1)))))
+                  if((ssa_defined->CGetNumberUses() == 1) && (ssa_defined_size == tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(binop0->op0)))) && (ssa_defined_size == tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(binop0->op1)))))
                   {
                      auto statement_node = ssa_defined->CGetUseStmts().begin()->first;
                      if(GET_NODE(statement_node)->get_kind() == gimple_assign_K)
@@ -181,7 +181,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                         auto* ga_dest = GetPointer<gimple_assign>(GET_NODE(statement_node));
                         enum kind code_dest0 = GET_NODE(ga_dest->op0)->get_kind();
                         enum kind code_dest1 = GET_NODE(ga_dest->op1)->get_kind();
-                        unsigned int ssa_dest0_size = tree_helper::Size(tree_helper::get_type_node(GET_NODE(ga_dest->op0)));
+                        unsigned int ssa_dest0_size = tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(ga_dest->op0)));
                         if(code_dest0 == ssa_name_K && (code_dest1 == plus_expr_K || code_dest1 == minus_expr_K) && ga_dest->bb_index == B_id && ssa_dest0_size == ssa_defined_size)
                         {
                            tree_manipulationRef IRman(new tree_manipulation(TM, parameters));

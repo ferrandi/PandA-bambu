@@ -750,8 +750,7 @@ bool rebuild_initialization2::look_for_ROMs()
                            {
                               std::vector<unsigned int> dims;
                               unsigned int elts_size;
-                              unsigned int type_index;
-                              tree_nodeRef array_type_node = tree_helper::get_type_node(GET_NODE(vd_node), type_index);
+                              unsigned int type_index = tree_helper::CGetType(GET_CONST_NODE(vd_node))->index;
                               tree_helper::get_array_dim_and_bitsize(TM, type_index, dims, elts_size);
                               if(dims.size() == 1)
                               {

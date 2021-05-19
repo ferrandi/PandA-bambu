@@ -223,9 +223,8 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             /// check for implicit memcpy calls
             tree_nodeRef op0 = GET_NODE(gm->op0);
             tree_nodeRef op1 = GET_NODE(gm->op1);
-            unsigned int op0_type_index, op1_type_index;
-            tree_nodeRef op0_type = tree_helper::get_type_node(op0, op0_type_index);
-            tree_nodeRef op1_type = tree_helper::get_type_node(op1, op1_type_index);
+            const auto op0_type = tree_helper::CGetType(op0);
+            const auto op1_type = tree_helper::CGetType(op1);
 
             bool is_a_vector_bitfield = false;
             if(op1->get_kind() == bit_field_ref_K)
@@ -696,7 +695,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          if(re->op)
          {
             tree_nodeRef res = GET_NODE(re->op);
-            tree_nodeRef res_type = tree_helper::get_type_node(res);
+            const auto res_type = tree_helper::CGetType(res);
             if(res_type->get_kind() == record_type_K || // records have to be allocated
                res_type->get_kind() == union_type_K     // unions have to be allocated
             )
@@ -828,7 +827,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                         FBcalled->add_dynamic_address(formal_par_index);
                         AppM->add_written_object(formal_par_index);
                         tree_nodeRef arg_op = GET_NODE(*arg);
-                        tree_nodeRef arg_op_type = tree_helper::get_type_node(arg_op);
+                        const auto arg_op_type = tree_helper::CGetType(arg_op);
                         if(arg_op_type->get_kind() == record_type_K || // records have to be allocated
                            arg_op_type->get_kind() == union_type_K     // unions have to be allocated
                         )
@@ -1049,7 +1048,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                         FBcalled->add_dynamic_address(formal_par_index);
                         AppM->add_written_object(formal_par_index);
                         tree_nodeRef arg_op = GET_NODE(*arg);
-                        tree_nodeRef arg_op_type = tree_helper::get_type_node(arg_op);
+                        const auto arg_op_type = tree_helper::CGetType(arg_op);
                         if(arg_op_type->get_kind() == record_type_K || // records have to be allocated
                            arg_op_type->get_kind() == union_type_K     // unions have to be allocated
                         )
@@ -1414,8 +1413,8 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          /// check for unaligned accesses
          if(tmr->base)
          {
-            tree_nodeRef type_base = tree_helper::get_type_node(GET_NODE(tmr->base));
-            auto* t_base_ptr = GetPointer<type_node>(type_base);
+            const auto type_base = tree_helper::CGetType(GET_CONST_NODE(tmr->base));
+            auto* t_base_ptr = GetPointer<const type_node>(type_base);
             if(t_base_ptr->algn != 8)
             {
             }

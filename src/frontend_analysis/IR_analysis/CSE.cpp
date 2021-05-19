@@ -509,8 +509,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* s
       {
          const auto ue = GetPointerS<const unary_expr>(right_part);
          ins.push_back(GET_INDEX_CONST_NODE(ue->op));
-         unsigned int type_index;
-         tree_helper::get_type_node(GET_CONST_NODE(ga->op0), type_index);
+         unsigned int type_index = tree_helper::CGetType(GET_CONST_NODE(ga->op0))->index;
          ins.push_back(type_index);
       }
       else if(GetPointer<const unary_expr>(right_part))

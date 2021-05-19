@@ -2476,8 +2476,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                         restart_analysis = true;
                      }
-                     unsigned int op1_type_index;
-                     tree_nodeRef op1_type = tree_helper::get_type_node(GET_NODE(ga->op1), op1_type_index);
+                     const auto op1_type = tree_helper::CGetType(GET_CONST_NODE(ga->op1));
                      auto view_convert_pattern = op1_type->get_kind() == record_type_K && GET_NODE(ga->op1)->get_kind() == view_convert_expr_K;
                      if(!view_convert_pattern && GET_NODE(ga->op1)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ga->op1)) && GET_NODE(ga->op1)->get_kind() != mem_ref_K && GET_NODE(ga->op1)->get_kind() != constructor_K)
                      {
@@ -2932,8 +2931,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else if(code0 == result_decl_K && code1 == ssa_name_K)
                {
-                  unsigned type_index;
-                  tree_nodeRef type_node = tree_helper::get_type_node(GET_NODE(ga->op1), type_index);
+                  const auto type_node = tree_helper::CGetType(GET_CONST_NODE(ga->op1));
                   if(type_node->get_kind() == complex_type_K or type_node->get_kind() == vector_type_K)
                   {
                      auto it_los_next = std::next(it_los);
