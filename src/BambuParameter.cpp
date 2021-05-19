@@ -343,6 +343,7 @@
 #define OPT_FP_FORMAT (1 + OPT_RANGE_ANALYSIS_MODE)
 #define OPT_PROPAGATE_FP_FORMAT (1 + OPT_FP_FORMAT)
 #define OPT_PARALLEL_BACKEND (1 + OPT_PROPAGATE_FP_FORMAT)
+#define OPT_INTERFACE_XML_FILENAME (1 + OPT_PARALLEL_BACKEND)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -426,6 +427,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            NPI      -  (interface to the NPI bus)\n"
 #endif
       << "\n"
+      << "    --interface-xml-filename=<filename>\n"
+      << "        User defined interface file.\n\n"
 #if HAVE_EXPERIMENTAL
       << "    --edk-config <file>\n"
       << "        Specify the configuration file for Xilinx EDK.\n\n"
@@ -1250,6 +1253,7 @@ int BambuParameter::Exec()
       {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
       {"pragma-parse", no_argument, nullptr, OPT_PRAGMA_PARSE},
       {"generate-interface", required_argument, nullptr, 0},
+      {"interface-xml-filename", required_argument, nullptr, OPT_INTERFACE_XML_FILENAME},
       {"additional-top", required_argument, nullptr, OPT_ADDITIONAL_TOP},
       {"data-bus-bitsize", required_argument, nullptr, 0},
       {"addr-bus-bitsize", required_argument, nullptr, 0},
@@ -2475,6 +2479,11 @@ int BambuParameter::Exec()
          case INPUT_OPT_DRY_RUN_EVALUATION:
          {
             setOption(OPT_dry_run_evaluation, true);
+            break;
+         }
+         case OPT_INTERFACE_XML_FILENAME:
+         {
+            setOption(OPT_interface_xml_filename, GetPath(optarg));
             break;
          }
          case 0:

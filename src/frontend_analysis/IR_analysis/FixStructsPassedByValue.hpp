@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file FixStructsPassedByValue.cpp
+ * @file FixStructsPassedByValue.hpp
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
