@@ -818,7 +818,7 @@ void VcdSignalSelection::SelectInternalSignals(CustomUnorderedMap<unsigned int, 
             {
                to_select += "array_" + STR(alloc_info->get_memory_var(fu_type_id)) + "_" + STR(fu_bind->get_index(*op_vi) / alloc_info->get_number_channels(fu_type_id));
             }
-            else if((alloc_info->is_direct_proxy_memory_unit(fu_type_id) and alloc_info->is_proxy_memory_unit(fu_type_id)) or alloc_info->is_indirect_access_memory_unit(fu_type_id))
+            else if((alloc_info->is_direct_proxy_memory_unit(fu_type_id)) or alloc_info->is_indirect_access_memory_unit(fu_type_id))
             {
                to_select += fu_bind->get_fu_name(*op_vi) + "_i" + STR(fu_bind->get_index(*op_vi) / alloc_info->get_number_channels(fu_type_id));
             }
@@ -835,13 +835,13 @@ void VcdSignalSelection::SelectInternalSignals(CustomUnorderedMap<unsigned int, 
                }
                to_select += "_instance";
             }
-            else if(fu_bind->get_operations(fu_type_id, fu_instance_id).size() == 1)
-            {
-               to_select += "fu_" + GET_NAME(op_graph, *op_vi);
-            }
             else if(alloc_info->get_number_channels(fu_type_id) > 0)
             {
                to_select += fu_bind->get_fu_name(*op_vi) + "_i" + STR(fu_bind->get_index(*op_vi) / alloc_info->get_number_channels(fu_type_id));
+            }
+            else if(fu_bind->get_operations(fu_type_id, fu_instance_id).size() == 1)
+            {
+               to_select += "fu_" + GET_NAME(op_graph, *op_vi);
             }
             else
             {
