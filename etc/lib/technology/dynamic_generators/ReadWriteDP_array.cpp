@@ -120,8 +120,8 @@ if(_np_in==9)
 
 if(_np_out==9)
 {
-  std::cout << "assign " << _ports_out[5].name << " = (" << _ports_in[2].name << "[0]) & (|(" << _ports_in[3].name << "[(BITSIZE_" << _ports_in[3].name << "-1)*0+:BITSIZE_" << _ports_in[3].name<<"]));\n";
-  std::cout << "assign " << _ports_out[6].name << " = (" << _ports_in[2].name << "[1]) & (|(" << _ports_in[3].name << "[(BITSIZE_" << _ports_in[3].name << "-1)*1+:BITSIZE_" << _ports_in[3].name<<"]));\n";
+  std::cout << "assign " << _ports_out[5].name << " = (" << _ports_in[2].name << "[0]) & (|(" << _ports_in[3].name << "[(BITSIZE_" << _ports_in[3].name << ")*0+:BITSIZE_" << _ports_in[3].name<<"]));\n";
+  std::cout << "assign " << _ports_out[6].name << " = (" << _ports_in[2].name << "[1]) & (|(" << _ports_in[3].name << "[(BITSIZE_" << _ports_in[3].name << ")*1+:BITSIZE_" << _ports_in[3].name<<"]));\n";
 }
 
 if(_np_out==9)
