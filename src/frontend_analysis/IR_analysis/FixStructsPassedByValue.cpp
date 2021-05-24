@@ -280,7 +280,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
             first_block->PushFront(gimple_call_memcpy);
             // add call to memcpy to the call graph and refresh the reached functions
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updating call graph");
-            AppM->GetCallGraphManager()->AddCallPoint(function_id, memcpy_function_id, gimple_call_memcpy->index, FunctionEdgeInfo::CallType::direct_call);
+            AppM->GetCallGraphManager()->AddCallPoint(function_id, memcpy_function_id, GET_INDEX_CONST_NODE(gimple_call_memcpy), FunctionEdgeInfo::CallType::direct_call);
             changed = true;
          }
 

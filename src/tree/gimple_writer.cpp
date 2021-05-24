@@ -1273,78 +1273,79 @@ void GimpleWriter::operator()(const ssa_name* obj, unsigned int& mask)
 void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
-   const std::map<unsigned int, blocRef>& list_of_block = obj->list_of_bloc;
-   std::map<unsigned int, blocRef>::const_iterator block, block_end = list_of_block.end();
-   for(block = list_of_block.begin(); block != block_end; ++block)
+   for(const auto& block : obj->list_of_bloc)
    {
-      if(block->first == BB_ENTRY or block->first == BB_EXIT)
+      if(block.first == BB_ENTRY || block.first == BB_EXIT)
       {
          continue;
       }
-      if(block->second->CGetStmtList().empty() or GET_NODE(block->second->CGetStmtList().front())->get_kind() != gimple_label_K)
+      if(block.second->CGetStmtList().empty() || GET_CONST_NODE(block.second->CGetStmtList().front())->get_kind() != gimple_label_K)
       {
-         os << "<bb " << block->first << ">:" << std::endl;
+         os << "<bb " << block.first << ">:" << std::endl;
       }
-      for(const auto& phi : block->second->CGetPhiList())
+      for(const auto& phi : block.second->CGetPhiList())
       {
          phi->visit(this);
          os << std::endl;
       }
-      for(const auto& stmt : block->second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
-         const tree_nodeConstRef statement = GET_NODE(stmt);
+         const auto statement = GET_CONST_NODE(stmt);
          /// We print only MEMUSE and MEMDEF as VUSE and VDEF like gcc -fdump-tree-all
-         if(GetPointer<const gimple_node>(statement) and GetPointer<const gimple_node>(statement)->memuse)
+         if(GetPointer<const gimple_node>(statement) && GetPointer<const gimple_node>(statement)->memuse)
          {
             os << "VUSE ";
             GetPointer<const gimple_node>(statement)->memuse->visit(this);
          }
-         if(GetPointer<const gimple_node>(statement) and GetPointer<const gimple_node>(statement)->memdef)
+         if(GetPointer<const gimple_node>(statement) && GetPointer<const gimple_node>(statement)->memdef)
          {
             os << "VDEF ";
             GetPointer<const gimple_node>(statement)->memdef->visit(this);
          }
          stmt->visit(this);
-         if(statement->get_kind() != gimple_cond_K and statement->get_kind() != gimple_label_K and statement->get_kind() != gimple_switch_K and statement->get_kind() != gimple_pragma_K)
+         if(statement->get_kind() != gimple_cond_K && statement->get_kind() != gimple_label_K && statement->get_kind() != gimple_switch_K && statement->get_kind() != gimple_pragma_K)
          {
             os << ";";
          }
          os << std::endl;
       }
-      if(block->second->true_edge and block->second->false_edge)
+      if(block.second->true_edge && block.second->false_edge)
       {
-         os << "    goto <bb " << block->second->true_edge << ">";
-         const blocRef next_true = list_of_block.find(block->second->true_edge)->second;
-         if(next_true->CGetStmtList().size() and GET_NODE(next_true->CGetStmtList().front())->get_kind() == gimple_label_K)
+         os << "    goto <bb " << block.second->true_edge << ">";
+         THROW_ASSERT(obj->list_of_bloc.count(block.second->true_edge), "Could not find BB" + STR(block.second->true_edge));
+         const auto& next_true = obj->list_of_bloc.at(block.second->true_edge);
+         if(next_true->CGetStmtList().size() && GET_CONST_NODE(next_true->CGetStmtList().front())->get_kind() == gimple_label_K)
          {
-            const gimple_label* le = GetPointer<gimple_label>(GET_NODE(next_true->CGetStmtList().front()));
+            const auto le = GetPointer<const gimple_label>(GET_CONST_NODE(next_true->CGetStmtList().front()));
             os << " (";
             le->op->visit(this);
             os << ")";
          }
          os << ";" << std::endl;
          os << "  else" << std::endl;
-         os << "    goto <bb " << block->second->false_edge << ">";
-         const blocRef next_false = list_of_block.find(block->second->false_edge)->second;
-         if(next_false->CGetStmtList().size() and GET_NODE(next_false->CGetStmtList().back())->get_kind() == gimple_label_K)
+         os << "    goto <bb " << block.second->false_edge << ">";
+         THROW_ASSERT(obj->list_of_bloc.count(block.second->false_edge), "Could not find BB" + STR(block.second->false_edge));
+         const auto& next_false = obj->list_of_bloc.at(block.second->false_edge);
+         if(next_false->CGetStmtList().size() && GET_CONST_NODE(next_false->CGetStmtList().back())->get_kind() == gimple_label_K)
          {
-            const gimple_label* le = GetPointer<gimple_label>(GET_NODE(next_false->CGetStmtList().front()));
+            const auto le = GetPointer<const gimple_label>(GET_CONST_NODE(next_false->CGetStmtList().front()));
             os << " (";
             le->op->visit(this);
             os << ")";
          }
          os << ";" << std::endl;
       }
-      else if(block->second->list_of_succ.size() == 1)
+      else if(block.second->list_of_succ.size() == 1)
       {
-         const unsigned int succ_index = *(block->second->list_of_succ.begin());
-         if(succ_index != block->second->number + 1 and succ_index != BB_EXIT)
+         const unsigned int succ_index = block.second->list_of_succ.front();
+         if(succ_index != (block.second->number + 1) && succ_index != BB_EXIT)
          {
             os << "  goto <bb " << succ_index << ">";
-            const blocRef next = list_of_block.find(succ_index)->second;
-            if(next->CGetStmtList().size() and GET_NODE(next->CGetStmtList().back())->get_kind() == gimple_label_K)
+            THROW_ASSERT(obj->list_of_bloc.count(succ_index), "Could not find BB" + STR(succ_index));
+            const auto& next = obj->list_of_bloc.at(succ_index);
+            if(next->CGetStmtList().size() && GET_CONST_NODE(next->CGetStmtList().back())->get_kind() == gimple_label_K)
             {
-               const gimple_label* le = GetPointer<gimple_label>(GET_NODE(next->CGetStmtList().front()));
+               const auto le = GetPointer<const gimple_label>(GET_CONST_NODE(next->CGetStmtList().front()));
                os << " (";
                le->op->visit(this);
                os << ")";

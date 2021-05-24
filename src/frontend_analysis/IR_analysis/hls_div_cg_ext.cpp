@@ -251,7 +251,7 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
                      TreeM->ReplaceTreeNode(*it_los, ue->op, op_vd);
                      unsigned int called_function_id = GET_INDEX_NODE(GetPointer<addr_expr>(GET_NODE(ce->fn))->op);
                      AppM->GetCallGraphManager()->RemoveCallPoint(function_id, called_function_id, ga->index);
-                     AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, op_ga->index, FunctionEdgeInfo::CallType::direct_call);
+                     AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, GET_INDEX_CONST_NODE(op_ga), FunctionEdgeInfo::CallType::direct_call);
                   }
                }
             }
@@ -421,7 +421,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   {
                      changed_call_graph = true;
                   }
-                  AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+                  AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call);
                }
                break;
             }
@@ -464,7 +464,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                      {
                         changed_call_graph = true;
                      }
-                     AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+                     AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call);
                   }
                }
                break;

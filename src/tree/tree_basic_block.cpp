@@ -56,8 +56,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-const unsigned int bloc::ENTRY_BLOCK_ID = 0;
-const unsigned int bloc::EXIT_BLOCK_ID = 1;
+const unsigned int bloc::ENTRY_BLOCK_ID = BB_ENTRY;
+const unsigned int bloc::EXIT_BLOCK_ID = BB_EXIT;
 
 bloc::bloc(unsigned int _number) : removed_phi(0), updated_ssa_uses(false), number(_number), loop_id(0), hpl(0), true_edge(0), false_edge(0)
 {

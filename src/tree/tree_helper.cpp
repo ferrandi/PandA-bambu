@@ -7630,7 +7630,7 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeConstRef& curr_tn, Cus
       {
          const auto ce = GetPointer<const call_expr>(curr_tn);
          compute_ssa_uses_rec_ptr(ce->fn, ssa_uses);
-         for(const auto arg : ce->args)
+         for(const auto& arg : ce->args)
          {
             compute_ssa_uses_rec_ptr(arg, ssa_uses);
          }
@@ -7640,7 +7640,7 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeConstRef& curr_tn, Cus
       {
          const auto ce = GetPointer<const gimple_call>(curr_tn);
          compute_ssa_uses_rec_ptr(ce->fn, ssa_uses);
-         for(const auto arg : ce->args)
+         for(const auto& arg : ce->args)
          {
             compute_ssa_uses_rec_ptr(arg, ssa_uses);
          }
@@ -7737,7 +7737,7 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeConstRef& curr_tn, Cus
       case constructor_K:
       {
          const auto c = GetPointer<const constructor>(curr_tn);
-         for(const auto iv : c->list_of_idx_valu)
+         for(const auto& iv : c->list_of_idx_valu)
          {
             compute_ssa_uses_rec_ptr(iv.second, ssa_uses);
          }
@@ -7963,7 +7963,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       {
          const auto ce = GetPointer<call_expr>(curr_tn);
          ComputeSsaUses(ce->fn, ssa_uses);
-         for(const auto arg : ce->args)
+         for(const auto& arg : ce->args)
          {
             ComputeSsaUses(arg, ssa_uses);
          }
@@ -7973,7 +7973,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       {
          const auto ce = GetPointer<gimple_call>(curr_tn);
          ComputeSsaUses(ce->fn, ssa_uses);
-         for(const auto arg : ce->args)
+         for(const auto& arg : ce->args)
          {
             ComputeSsaUses(arg, ssa_uses);
          }
@@ -8073,7 +8073,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       case constructor_K:
       {
          const auto c = GetPointer<constructor>(curr_tn);
-         for(const auto iv : c->list_of_idx_valu)
+         for(const auto& iv : c->list_of_idx_valu)
          {
             ComputeSsaUses(iv.second, ssa_uses);
          }
@@ -8626,7 +8626,7 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
       case aggr_init_expr_K:
       {
          const auto ce = GetPointer<call_expr>(tn);
-         for(const auto arg : ce->args)
+         for(const auto& arg : ce->args)
          {
             required.emplace_back(GET_INDEX_CONST_NODE(arg), 0);
          }
@@ -8650,7 +8650,7 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
          }
          if(!fd || !tree_helper::is_a_nop_function_decl(fd))
          {
-            for(const auto arg : ce->args)
+            for(const auto& arg : ce->args)
             {
                required.emplace_back(GET_INDEX_CONST_NODE(arg), 0);
             }

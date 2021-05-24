@@ -522,11 +522,11 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
    {
       BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), false, parameters));
       FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
-      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), new_assignment->index, FB, FunctionEdgeInfo::CallType::direct_call);
+      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), GET_INDEX_CONST_NODE(new_assignment), FB, FunctionEdgeInfo::CallType::direct_call);
    }
    else
    {
-      AppM->GetCallGraphManager()->AddCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), new_assignment->index, FunctionEdgeInfo::CallType::direct_call);
+      AppM->GetCallGraphManager()->AddCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), GET_INDEX_CONST_NODE(new_assignment), FunctionEdgeInfo::CallType::direct_call);
    }
 }
 
@@ -602,11 +602,11 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    {
       BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), false, parameters));
       FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
-      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), new_writecall->index, FB, FunctionEdgeInfo::CallType::direct_call);
+      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), GET_INDEX_CONST_NODE(new_writecall), FB, FunctionEdgeInfo::CallType::direct_call);
    }
    else
    {
-      AppM->GetCallGraphManager()->AddCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), new_writecall->index, FunctionEdgeInfo::CallType::direct_call);
+      AppM->GetCallGraphManager()->AddCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), GET_INDEX_CONST_NODE(new_writecall), FunctionEdgeInfo::CallType::direct_call);
    }
 }
 

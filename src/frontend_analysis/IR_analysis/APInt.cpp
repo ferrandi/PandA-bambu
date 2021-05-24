@@ -34,7 +34,7 @@
  * @file APInt.cpp
  * @brief
  *
- * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$

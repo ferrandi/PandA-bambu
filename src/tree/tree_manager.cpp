@@ -278,12 +278,11 @@ void tree_manager::PrintGimple(std::ostream& os, const bool use_uid) const
 {
    GimpleWriter gimple_writer(os, use_uid);
 
-   std::map<unsigned int, tree_nodeRef>::const_iterator function, function_end = function_decl_nodes.end();
-   for(function = function_decl_nodes.begin(); function != function_end; ++function)
+   for(const auto& id_func : function_decl_nodes)
    {
-      if(GetPointer<function_decl>(function->second)->body)
+      if(GetPointer<function_decl>(id_func.second)->body)
       {
-         function->second->visit(&gimple_writer);
+         id_func.second->visit(&gimple_writer);
       }
    }
 }
