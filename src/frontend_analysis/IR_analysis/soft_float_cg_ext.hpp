@@ -35,6 +35,7 @@
  * @brief Step that extends the call graph with the soft-float calls where appropriate.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 #ifndef SOFT_FLOAT_CG_EXT_HPP

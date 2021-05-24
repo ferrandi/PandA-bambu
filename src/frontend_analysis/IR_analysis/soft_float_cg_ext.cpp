@@ -35,6 +35,7 @@
  * @brief Step that extends the call graph with the soft-float calls where appropriate.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 
@@ -47,7 +48,7 @@
 #include "design_flow_step.hpp"
 
 /// frontend_analysis
-#include "symbolic_application_frontend_flow_step.hpp"
+#include "FunctionCallInline.hpp"
 
 /// Behavior include
 #include "application_manager.hpp"
@@ -63,9 +64,6 @@
 
 /// Parameter include
 #include "Parameter.hpp"
-
-/// STD include
-#include <fstream>
 
 /// STL include
 #include "custom_map.hpp"
@@ -1580,12 +1578,12 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
    {
       const auto helper = BehavioralHelperRef(new BehavioralHelper(AppM, called_function_id, true, parameters));
       const auto fb = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
-      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, called_function_id, current_statement->index, fb, FunctionEdgeInfo::CallType::direct_call);
+      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), fb, FunctionEdgeInfo::CallType::direct_call);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call graph updated with call to " + STR(called_function_id));
    }
    else
    {
-      AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+      AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(called_function_id));
    }
 
@@ -1714,7 +1712,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing libm call with templatized version");
                // libm function calls may be replaced with their templatized version if available, avoiding conversion
-               AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fn), current_statement->index);
+               AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fn), GET_INDEX_CONST_NODE(current_statement));
                is_f32 |= !ce->args.empty() && tree_helper::Size(GET_CONST_NODE(ce->args.front())) == 32;
                const auto specFF = _version->ieee_format() ? (is_f32 ? float32FF : float64FF) : _version->userRequired;
                replaceWithCall(specFF, "__" + tf_fname, ce->args, current_statement, ga->op1, current_srcp);
@@ -1923,6 +1921,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                      }
                      THROW_ASSERT(!_version->ieee_format() || outFF, "");
                      replaceWithCall(_version->ieee_format() ? outFF : _version->userRequired, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
+                     FunctionCallInline::inline_call[function_id].insert(GET_INDEX_CONST_NODE(current_statement));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
                      modified = true;
                   }
                   break;
@@ -1971,7 +1971,9 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                         std::vector<tree_nodeRef> args = {ue->op, TreeM->CreateUniqueIntegerCst(inFF->has_nan, bool_type_idx), TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, bool_type_idx)};
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
                         THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
-                        AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+                        AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call);
+                        FunctionCallInline::inline_call[function_id].insert(GET_INDEX_CONST_NODE(current_statement));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
                      }
                      else
                      {
@@ -2080,6 +2082,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   const auto bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
                   const auto fu_name = "__float" + bitsize_str_in + "_to_" + (is_unsigned ? "u" : "") + "int" + bitsize_str_out + "_round_to_zero";
                   replaceWithCall(_version->ieee_format() ? inFF : _version->userRequired, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
+                  FunctionCallInline::inline_call[function_id].insert(GET_INDEX_CONST_NODE(current_statement));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
                   modified = true;
                   break;
                }
