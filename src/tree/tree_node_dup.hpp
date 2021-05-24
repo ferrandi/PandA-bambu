@@ -35,6 +35,7 @@
  * @brief tree node duplication class.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -60,10 +61,25 @@ REF_FORWARD_DECL(bloc);
 
 struct tree_node_dup : public tree_node_mask
 {
-   /// default constructor
-   tree_node_dup(CustomUnorderedMapStable<unsigned int, unsigned int>& _remap, const tree_managerRef _TM) : remap(_remap), TM(_TM), curr_tree_node_ptr(nullptr), curr_bloc(nullptr)
+   /**
+    * @brief Construct a new tree node dup object
+    *
+    * @param _remap is the struture to map old nodes to new one
+    * @param _TM is the tree manager instance
+    * @param _remap_bbi is the base index to renumber duplicated bloc (default = 0, no remapping)
+    * @param _remap_loop_id is the base index to renumber loop ids in blocs (default = 0, no remapping)
+    * @param _use_counting set use counting on nodes after duplication (bloc, gimple_phi) (default = false)
+    */
+   tree_node_dup(CustomUnorderedMapStable<unsigned int, unsigned int>& _remap, const tree_managerRef _TM, unsigned int _remap_bbi = 0, unsigned int _remap_loop_id = 0, bool _use_counting = false)
+       : remap(_remap), use_counting(_use_counting), remap_bbi(_remap_bbi), remap_bb(), remap_loop_id(_remap_loop_id), remap_lid(), TM(_TM), curr_tree_node_ptr(nullptr), curr_bloc(nullptr)
    {
+      if(remap_bbi)
+      {
+         remap_bb.insert(std::make_pair(bloc::ENTRY_BLOCK_ID, bloc::ENTRY_BLOCK_ID));
+         remap_bb.insert(std::make_pair(bloc::EXIT_BLOCK_ID, bloc::EXIT_BLOCK_ID));
+      }
    }
+
    /// tree_node visitors
    BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
    BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)
@@ -72,13 +88,24 @@ struct tree_node_dup : public tree_node_mask
     * Factory method.
     * It duplicates a tree_node when needed according to the source node tn
     * @param tn is the source tree node
+    * @param deep_copy enables duplication of all nodes (ssa_name, *_decl, statement_list)
     * @return the node_id of the created object or of tn.
     */
-   unsigned int create_tree_node(const tree_nodeRef& tn, bool dup_function_decl = false);
+   unsigned int create_tree_node(const tree_nodeRef& tn, bool deep_copy = false);
 
  private:
    /// remap old indexes in new indexes
    CustomUnorderedMapStable<unsigned int, unsigned int>& remap;
+   /// enable use counting on duplicated instances (when possible)
+   const bool use_counting;
+   /// basic block indexes remap base
+   unsigned int remap_bbi;
+   /// remap old basic block indexes in new indexes
+   CustomUnorderedMapStable<unsigned int, unsigned int> remap_bb;
+   /// basic block loop ids remap base
+   unsigned int remap_loop_id;
+   /// remap old basic block loop ids in new ids
+   CustomUnorderedMapStable<unsigned int, unsigned int> remap_lid;
    /// tree manager
    const tree_managerRef TM;
    /// current tree node filled according to the source tree_node
@@ -91,6 +118,10 @@ struct tree_node_dup : public tree_node_mask
    blocRef source_bloc;
    /// enables full nodes duplication
    bool deep_copy;
+
+   unsigned int get_bbi(unsigned int old_bb);
+
+   unsigned int get_loop_id(unsigned int old_loop_id);
 };
 
 #endif

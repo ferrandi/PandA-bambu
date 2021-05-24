@@ -35,6 +35,7 @@
  * @brief tree node duplication class.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -92,10 +93,10 @@
       break;                                           \
    }
 
-unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, bool dup_function_decl)
+unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, bool _deep_copy)
 {
    unsigned int node_id = 0;
-   deep_copy = dup_function_decl;
+   deep_copy = _deep_copy;
    switch(tn->get_kind())
    {
       case abs_expr_K:
@@ -658,6 +659,26 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, bool dup_fu
          THROW_UNREACHABLE("");
    }
    return node_id;
+}
+
+unsigned int tree_node_dup::get_bbi(unsigned int old_bbi)
+{
+   if(remap_bbi)
+   {
+      const auto t = remap_bb.insert(std::make_pair(old_bbi, remap_bbi));
+      return t.second ? remap_bbi++ : t.first->second;
+   }
+   return old_bbi;
+}
+
+unsigned int tree_node_dup::get_loop_id(unsigned int old_loop_id)
+{
+   if(remap_loop_id)
+   {
+      const auto t = remap_lid.insert(std::make_pair(old_loop_id, remap_loop_id));
+      return t.second ? remap_loop_id++ : t.first->second;
+   }
+   return old_loop_id;
 }
 
 void tree_node_dup::operator()(const tree_node* obj, unsigned int&)
@@ -1342,9 +1363,13 @@ void tree_node_dup::operator()(const gimple_phi* obj, unsigned int& mask)
          }
       }
 
-      dynamic_cast<gimple_phi*>(curr_tree_node_ptr)->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(node_id), def_edge.second));
+      dynamic_cast<gimple_phi*>(curr_tree_node_ptr)->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(node_id), get_bbi(def_edge.second)));
    }
    SET_VALUE(virtual_flag, gimple_phi);
+   if(use_counting)
+   {
+      dynamic_cast<gimple_phi*>(curr_tree_node_ptr)->SetSSAUsesComputed();
+   }
 }
 
 void tree_node_dup::operator()(const pointer_type* obj, unsigned int& mask)
@@ -1474,6 +1499,38 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
          dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddDefStmt(def_stmt);
       }
    }
+   for(const auto& use : GetPointer<ssa_name>(source_tn)->CGetUseStmts())
+   {
+      const auto& use_stmt = use.first;
+      if(deep_copy)
+      {
+         unsigned int node_id = GET_INDEX_NODE(use_stmt);
+         const auto rnode = remap.find(node_id);
+         if(rnode != remap.end())
+         {
+            node_id = rnode->second;
+         }
+         else
+         {
+            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
+            tree_nodeRef saved_source_tn = source_tn;
+            node_id = create_tree_node(GET_NODE(use_stmt), deep_copy);
+            curr_tree_node_ptr = saved_curr_tree_node_ptr;
+            source_tn = saved_source_tn;
+         }
+         for(decltype(use.second) u = 0; u < use.second; ++u)
+         {
+            dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddUseStmt(TM->GetTreeReindex(node_id));
+         }
+      }
+      else
+      {
+         for(decltype(use.second) u = 0; u < use.second; ++u)
+         {
+            dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddUseStmt(use_stmt);
+         }
+      }
+   }
    SET_NODE_ID(min, ssa_name);
    SET_NODE_ID(max, ssa_name);
    if(!deep_copy)
@@ -1491,10 +1548,10 @@ void tree_node_dup::operator()(const statement_list* obj, unsigned int& mask)
    auto mend = GetPointer<statement_list>(source_tn)->list_of_bloc.end();
    for(auto i = GetPointer<statement_list>(source_tn)->list_of_bloc.begin(); i != mend; ++i)
    {
-      curr_bloc = new bloc(i->first);
+      curr_bloc = new bloc(get_bbi(i->first));
       source_bloc = i->second;
       curr_bloc->visit(this);
-      THROW_ASSERT(!dynamic_cast<statement_list*>(curr_tree_node_ptr)->list_of_bloc.count(i->first), "Block already present " + STR(i->first));
+      THROW_ASSERT(!dynamic_cast<statement_list*>(curr_tree_node_ptr)->list_of_bloc.count(get_bbi(i->first)), "Block already present " + STR(get_bbi(i->first)));
       dynamic_cast<statement_list*>(curr_tree_node_ptr)->add_bloc(blocRef(curr_bloc));
       curr_bloc = nullptr;
       source_bloc = blocRef();
@@ -1715,11 +1772,11 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
 
    curr_bloc->hpl = source_bloc->hpl;
-   curr_bloc->loop_id = source_bloc->loop_id;
-   curr_bloc->list_of_pred = source_bloc->list_of_pred;
-   curr_bloc->list_of_succ = source_bloc->list_of_succ;
-   curr_bloc->true_edge = source_bloc->true_edge;
-   curr_bloc->false_edge = source_bloc->false_edge;
+   curr_bloc->loop_id = get_loop_id(source_bloc->loop_id);
+   std::transform(source_bloc->list_of_pred.cbegin(), source_bloc->list_of_pred.cend(), std::back_inserter(curr_bloc->list_of_pred), [&](const unsigned int& bbi) { return get_bbi(bbi); });
+   std::transform(source_bloc->list_of_succ.cbegin(), source_bloc->list_of_succ.cend(), std::back_inserter(curr_bloc->list_of_succ), [&](const unsigned int& bbi) { return get_bbi(bbi); });
+   curr_bloc->true_edge = get_bbi(source_bloc->true_edge);
+   curr_bloc->false_edge = get_bbi(source_bloc->false_edge);
    const auto& source_phi_list = source_bloc->CGetPhiList();
    for(const auto& phi : source_phi_list)
    {
@@ -1777,6 +1834,10 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
          node_id = remap.find(node_id)->second;
       }
       curr_bloc->PushBack(TM->GetTreeReindex(node_id));
+   }
+   if(use_counting)
+   {
+      curr_bloc->SetSSAUsesComputed();
    }
 }
 

@@ -57,6 +57,8 @@
  */
 //@{
 enum kind : int;
+struct function_decl;
+REF_FORWARD_DECL(CallGraphManager);
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(tree_node);
@@ -679,6 +681,17 @@ class tree_manipulation
     * @return tree_reindex of the new function decl
     */
    tree_nodeRef CloneFunction(const tree_nodeRef& tn, const std::string& funNameSuffix);
+
+   /**
+    * @brief Execute function call inlining of given call statement (call graph must be recomputed after inlining)
+    *
+    * @param call_stmt call statement to inline
+    * @param block block containing the call statement (list_of_stmts is modified during the call)
+    * @param fd function declaration of the calling function (body->list_of_bloc is modified during the call)
+    * @param CGM call graph manager instance
+    * @return unsigned int exit basic block number where statements after inlined call have been moved
+    */
+   unsigned int InlineFunctionCall(const tree_nodeRef& call_stmt, const blocRef& block, function_decl* fd, const CallGraphManagerRef& CGM);
 };
 
 using tree_manipulationRef = refcount<tree_manipulation>;

@@ -53,6 +53,8 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
 
+#include "call_graph_manager.hpp"
+
 #include "Parameter.hpp"           // for Parameter
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "exceptions.hpp"          // for THROW_ASSERT, THROW_ERROR
@@ -2263,21 +2265,21 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Extracting condition from " + condition->ToString());
 
-   const auto gc = GetPointer<const gimple_cond>(GET_NODE(condition));
+   const auto gc = GetPointer<const gimple_cond>(GET_CONST_NODE(condition));
    THROW_ASSERT(gc, "Trying to extract condition from " + condition->ToString());
-   if(GET_NODE(gc->op0)->get_kind() == ssa_name_K || GetPointer<cst_node>(GET_NODE(gc->op0)) != nullptr)
+   if(GET_NODE(gc->op0)->get_kind() == ssa_name_K || GetPointer<const cst_node>(GET_CONST_NODE(gc->op0)) != nullptr)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition already available as " + gc->op0->ToString());
       return gc->op0;
    }
    else
    {
-      if(block and reuse)
+      if(block && reuse)
       {
          for(const auto& statement : block->CGetStmtList())
          {
-            const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
-            if(ga and ga->op1->index == condition->index)
+            const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(statement));
+            if(ga && ga->op1->index == condition->index)
             {
                return ga->op0;
             }
@@ -2286,12 +2288,12 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
       const auto bt = create_boolean_type();
       const auto type_index = bt->index;
 
-      auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(GET_INDEX_NODE(gc->op0)), 0, BUILTIN_SRCP);
+      const auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(GET_INDEX_CONST_NODE(gc->op0)), 0, BUILTIN_SRCP);
       if(block)
       {
          block->PushBack(ga);
       }
-      auto ret = GetPointer<gimple_assign>(GET_NODE(ga))->op0;
+      const auto ret = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga))->op0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition created is " + ret->ToString());
       return ret;
    }
@@ -2591,4 +2593,176 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
    }
    const unsigned int new_functionDecl = tnd.create_tree_node(GET_NODE(tn), true);
    return TreeM->GetTreeReindex(new_functionDecl);
+}
+
+unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt, const blocRef& block, function_decl* fd, const CallGraphManagerRef& CGM)
+{
+   THROW_ASSERT(call_stmt->get_kind() == tree_reindex_K, "");
+   const auto call_node = GET_CONST_NODE(call_stmt);
+   tree_nodeRef fn;
+   tree_nodeRef ret_val = nullptr;
+   std::vector<tree_nodeRef> const* args;
+   if(call_node->get_kind() == gimple_call_K)
+   {
+      const auto gc = GetPointerS<const gimple_call>(call_node);
+      fn = gc->fn;
+      args = &gc->args;
+   }
+   else if(call_node->get_kind() == gimple_assign_K)
+   {
+      const auto ga = GetPointerS<const gimple_assign>(call_node);
+      const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
+      THROW_ASSERT(ce, "Assign statement does not contain a function call: " + ga->ToString());
+      fn = ce->fn;
+      args = &ce->args;
+      ret_val = ga->op0;
+   }
+   else
+   {
+      THROW_UNREACHABLE("Unsupported call statement: " + call_node->ToString());
+   }
+   if(GET_CONST_NODE(fn)->get_kind() == addr_expr_K)
+   {
+      fn = GetPointerS<const addr_expr>(GET_CONST_NODE(fn))->op;
+   }
+   THROW_ASSERT(GET_CONST_NODE(fn)->get_kind() == function_decl_K, "Call statement should address a function declaration");
+   THROW_ASSERT(CGM->IsCallPoint(fd->index, GET_INDEX_CONST_NODE(fn), call_node->index, FunctionEdgeInfo::CallType::call_any), "Inline call statement should be a call point");
+
+   auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto splitBBI = sl->list_of_bloc.rbegin()->first + 1;
+   const auto splitBB = sl->list_of_bloc[splitBBI] = blocRef(new bloc(splitBBI));
+   splitBB->loop_id = block->loop_id;
+   splitBB->SetSSAUsesComputed();
+   splitBB->schedule = block->schedule;
+
+   std::replace(block->list_of_pred.begin(), block->list_of_pred.end(), block->number, splitBB->number);
+   splitBB->list_of_succ.assign(block->list_of_succ.cbegin(), block->list_of_succ.cend());
+   block->list_of_succ.clear();
+   splitBB->false_edge = block->false_edge;
+   splitBB->true_edge = block->true_edge;
+
+   for(const auto& bbi : splitBB->list_of_succ)
+   {
+      THROW_ASSERT(sl->list_of_bloc.count(bbi), "");
+      const auto& bb = sl->list_of_bloc.at(bbi);
+      for(const auto& phi : bb->CGetPhiList())
+      {
+         auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+         const auto defFrom = std::find_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) { return de.second == block->number; });
+         if(defFrom != gp->CGetDefEdgesList().end())
+         {
+            gp->ReplaceDefEdge(TreeM, *defFrom, {defFrom->first, splitBBI});
+         }
+      }
+   }
+   {
+      auto it = std::find_if(block->CGetStmtList().begin(), block->CGetStmtList().end(), [&](const tree_nodeRef& tn) { return GET_INDEX_CONST_NODE(tn) == GET_INDEX_CONST_NODE(call_stmt); });
+      THROW_ASSERT(it != block->CGetStmtList().end(), "");
+      ++it;
+      while(it != block->CGetStmtList().end())
+      {
+         const auto mv_stmt = *it;
+         ++it;
+         block->RemoveStmt(mv_stmt);
+         splitBB->PushBack(mv_stmt);
+      }
+      block->RemoveStmt(call_stmt);
+   }
+
+   const auto max_loop_id = [&]() {
+      unsigned int mlid = 0;
+      for(const auto& ibb : sl->list_of_bloc)
+      {
+         mlid = std::max(mlid, ibb.second->loop_id);
+         std::replace(ibb.second->list_of_pred.begin(), ibb.second->list_of_pred.end(), block->number, splitBB->number);
+      }
+      return mlid;
+   }();
+   const auto inline_fd = GetPointerS<const function_decl>(GET_CONST_NODE(fn));
+   CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
+   remapping.insert(std::make_pair(inline_fd->index, fd->index));
+   std::for_each(inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(), [&](const tree_nodeRef& tn) { remapping.insert(std::make_pair(GET_INDEX_CONST_NODE(tn), GET_INDEX_CONST_NODE(tn))); });
+   tree_node_dup tnd(remapping, TreeM, splitBBI + 1, max_loop_id + 1, true);
+   const auto dup_sl_id = tnd.create_tree_node(GET_NODE(inline_fd->body), true);
+   const auto dup_sl = GetPointer<const statement_list>(TreeM->CGetTreeNode(dup_sl_id));
+   THROW_ASSERT(dup_sl, "");
+
+   const auto replace_arg_with_param = [&](const tree_nodeRef& stmt) {
+      const auto uses = tree_helper::ComputeSsaUses(stmt);
+      for(const auto& use : uses)
+      {
+         const auto SSA = GetPointer<const ssa_name>(GET_CONST_NODE(use.first));
+         // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function parameter inside the function body
+         if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K && GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
+         {
+            auto argIt = std::find_if(inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(), [&](const tree_nodeRef& arg) { return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var); });
+            THROW_ASSERT(argIt != inline_fd->list_of_args.cend(), "parm_decl associated with ssa_name not found in function parameters");
+            size_t arg_pos = static_cast<size_t>(argIt - inline_fd->list_of_args.cbegin());
+
+            THROW_ASSERT(arg_pos < args->size(), "");
+            TreeM->ReplaceTreeNode(stmt, use.first, args->at(arg_pos));
+         }
+      }
+   };
+
+   std::vector<std::pair<tree_nodeRef, unsigned int>> list_of_def_edge;
+   for(const auto& ibb : dup_sl->list_of_bloc)
+   {
+      if(ibb.first == bloc::ENTRY_BLOCK_ID || ibb.first == bloc::EXIT_BLOCK_ID)
+      {
+         continue;
+      }
+      auto bb = ibb.second;
+      sl->add_bloc(bb);
+      for(auto it = bb->list_of_pred.begin(); it != bb->list_of_pred.end(); ++it)
+      {
+         if(*it == bloc::ENTRY_BLOCK_ID)
+         {
+            *it = block->number;
+            block->list_of_succ.push_back(bb->number);
+         }
+      }
+      for(auto it = bb->list_of_succ.begin(); it != bb->list_of_succ.end(); ++it)
+      {
+         if(*it == bloc::EXIT_BLOCK_ID)
+         {
+            *it = splitBB->number;
+            splitBB->list_of_pred.push_back(bb->number);
+         }
+      }
+      for(const auto& phi : bb->CGetPhiList())
+      {
+         replace_arg_with_param(phi);
+      }
+      for(auto it = bb->CGetStmtList().begin(); it != bb->CGetStmtList().end();)
+      {
+         const auto stmt = *it;
+         ++it;
+         replace_arg_with_param(stmt);
+
+         if(GET_CONST_NODE(stmt)->get_kind() == gimple_return_K)
+         {
+            if(ret_val)
+            {
+               const auto gr = GetPointerS<const gimple_return>(GET_CONST_NODE(stmt));
+               list_of_def_edge.push_back(std::make_pair(gr->op, bb->number));
+            }
+            bb->RemoveStmt(stmt);
+         }
+      }
+   }
+   THROW_ASSERT(block->list_of_succ.size() == 1, "There should be only one entry point.");
+   if(ret_val)
+   {
+      THROW_ASSERT(!list_of_def_edge.empty(), "");
+      tree_nodeRef phi_res;
+      const auto ret_phi = create_phi_node(phi_res, list_of_def_edge, TreeM->GetTreeReindex(fd->index), splitBB->number);
+      auto gp = GetPointer<gimple_phi>(GET_NODE(ret_phi));
+      gp->artificial = true;
+      gp->SetSSAUsesComputed();
+      splitBB->AddPhi(ret_phi);
+      TreeM->ReplaceTreeNode(ret_phi, phi_res, ret_val);
+   }
+   CGM->RemoveCallPoint(fd->index, GET_INDEX_CONST_NODE(fn), call_node->index);
+   return splitBB->number;
 }
