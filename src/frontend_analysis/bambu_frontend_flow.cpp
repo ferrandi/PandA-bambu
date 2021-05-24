@@ -86,6 +86,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CALL_EXPR_FIX, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FIX_STRUCTS_PASSED_BY_VALUE, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FUNCTION_CALL_INLINE, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FUNCTION_CALL_TYPE_CLEANUP, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CHECK_SYSTEM_TYPE, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, WHOLE_APPLICATION));

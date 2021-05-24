@@ -288,6 +288,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "FixStructsPassedByValue";
       case FUNCTION_CALL_TYPE_CLEANUP:
          return "FunctionCallTypeCleanup";
+      case FUNCTION_CALL_INLINE:
+         return "FunctionCallInline";
 #endif
 #if HAVE_ZEBU_BUILT
       case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):

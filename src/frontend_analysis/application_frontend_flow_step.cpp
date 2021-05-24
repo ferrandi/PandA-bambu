@@ -148,6 +148,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case EXTRACT_PATTERNS:
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FUNCTION_CALL_TYPE_CLEANUP:
+      case FUNCTION_CALL_INLINE:
 #endif
 #if HAVE_ZEBU_BUILT
       case GLOBAL_VARIABLES_ANALYSIS:

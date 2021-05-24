@@ -188,6 +188,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    EXTRACT_PATTERNS,
    FIX_STRUCTS_PASSED_BY_VALUE,
    FUNCTION_CALL_TYPE_CLEANUP,
+   FUNCTION_CALL_INLINE,
    FANOUT_OPT,
 #endif
 #if HAVE_ZEBU_BUILT

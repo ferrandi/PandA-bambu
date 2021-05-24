@@ -148,6 +148,7 @@
 #endif
 #if HAVE_BAMBU_BUILT
 #include "FixStructsPassedByValue.hpp"
+#include "FunctionCallInline.hpp"
 #include "FunctionCallTypeCleanup.hpp"
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
@@ -419,6 +420,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case EXTRACT_PATTERNS:
       case FUNCTION_CALL_TYPE_CLEANUP:
+      case FUNCTION_CALL_INLINE:
       case FIX_STRUCTS_PASSED_BY_VALUE:
 #endif
 #if HAVE_ZEBU_BUILT
@@ -821,6 +823,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case EXTRACT_PATTERNS:
       case FUNCTION_CALL_TYPE_CLEANUP:
+      case FUNCTION_CALL_INLINE:
       case FIX_STRUCTS_PASSED_BY_VALUE:
 #endif
 #if HAVE_ZEBU_BUILT
@@ -1185,6 +1188,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case FUNCTION_CALL_TYPE_CLEANUP:
       {
          return DesignFlowStepRef(new FunctionCallTypeCleanup(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
+      case FUNCTION_CALL_INLINE:
+      {
+         return DesignFlowStepRef(new FunctionCallInline(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
 #if HAVE_ZEBU_BUILT
