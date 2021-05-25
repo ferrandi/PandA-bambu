@@ -7781,7 +7781,7 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeConstRef& curr_tn, Cus
             tl_list.push_back(tl);
             tl = tl->chan ? GetPointer<const tree_list>(GET_CONST_NODE(tl->chan)) : nullptr;
          } while(tl);
-         for(auto tl_current0 : tl_list)
+         for(const auto& tl_current0 : tl_list)
          {
             if(tl_current0->purp)
             {
@@ -7797,7 +7797,7 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeConstRef& curr_tn, Cus
       case gimple_multi_way_if_K:
       {
          const auto gmwi = GetPointer<const gimple_multi_way_if>(curr_tn);
-         for(const auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {
