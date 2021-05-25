@@ -1462,7 +1462,14 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
 
    SET_NODE_ID(type, ssa_name);
    SET_NODE_ID(var, ssa_name);
-   SET_VALUE(vers, ssa_name);
+   if(deep_copy)
+   {
+      dynamic_cast<ssa_name*>(curr_tree_node_ptr)->vers = TM->get_next_vers();
+   }
+   else
+   {
+      SET_VALUE(vers, ssa_name);
+   }
    SET_VALUE(orig_vers, ssa_name);
    SET_VALUE(use_set->anything, ssa_name);
    SET_VALUE(use_set->escaped, ssa_name);
