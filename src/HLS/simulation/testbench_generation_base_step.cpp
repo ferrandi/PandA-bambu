@@ -637,7 +637,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            {
                               mem_aggregated += ", ";
                            }
-                           mem_aggregated += "_bambu_testbench_mem_[paddr" + port_name.substr(0, port_name.size() - 1) + "0 + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr + " + port_addr->get_id() + "*" +
+                           mem_aggregated += "_bambu_testbench_mem_[paddr" + port_name.substr(0, port_name.size() - 1) + "0 + " + STR(bitsize <= 8 ? 0 : ((bitsize - bitsize_index) / 8 - 1)) + " - base_addr + " + port_addr->get_id() + "*" +
                                              STR(GetPointer<port_o>(port_addr)->get_port_alignment()) + "]";
                         }
                         mem_aggregated += "}";
