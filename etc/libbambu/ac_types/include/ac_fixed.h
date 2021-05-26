@@ -121,7 +121,7 @@ namespace __AC_NAMESPACE
 
       typedef ac_private::iv<N, false> Base;
 
-      __FORCE_INLINE void bit_adjust()
+      __FORCE_INLINE constexpr void bit_adjust()
       {
          Base::v.template bit_adjust<W, S>();
       }
@@ -152,20 +152,12 @@ namespace __AC_NAMESPACE
          {
             if(overflow)
             {
-#if defined(__clang__)
-#pragma clang loop unroll(full)
-#endif
-               for(auto idx = 0; idx < N - 1; ++idx)
-                  Base::v.set(idx, ~0);
+               loop<int, 0, exclude, N - 1>([&](int idx) { Base::v.set(idx, ~0); });
                Base::v.set(N - 1, (~((unsigned)~0 << ((W - 1) & 31))));
             }
             else if(underflow)
             {
-#if defined(__clang__)
-#pragma clang loop unroll(full)
-#endif
-               for(auto idx = 0; idx < N - 1; ++idx)
-                  Base::v.set(idx, 0);
+               loop<int, 0, exclude, N - 1>([&](int idx) { Base::v.set(idx, 0); });
                Base::v.set(N - 1, ((unsigned)~0 << ((W - 1) & 31)));
                if(O == AC_SAT_SYM)
                   Base::v.set(0, Base::v[0] | 1);
@@ -177,11 +169,7 @@ namespace __AC_NAMESPACE
          {
             if(overflow)
             {
-#if defined(__clang__)
-#pragma clang loop unroll(full)
-#endif
-               for(auto idx = 0; idx < N - 1; ++idx)
-                  Base::v.set(idx, ~0);
+               loop<int, 0, exclude, N - 1>([&](int idx) { Base::v.set(idx, ~0); });
                Base::v.set(N - 1, ~((unsigned)~0 << (W & 31)));
             }
             else if(underflow)
@@ -617,17 +605,35 @@ namespace __AC_NAMESPACE
          ac_int<AC_MAX(I, 1), S> temp = to_ac_int();
          return (ac_int<W1, S1>)temp;
       }
-      __FORCE_INLINE operator bool() const { return !Base::equal_zero(); }
+      __FORCE_INLINE operator bool() const
+      {
+         return !Base::equal_zero();
+      }
 
-      __FORCE_INLINE operator char() const { return (char)to_int(); }
+      __FORCE_INLINE operator char() const
+      {
+         return (char)to_int();
+      }
 
-      __FORCE_INLINE operator signed char() const { return (signed char)to_int(); }
+      __FORCE_INLINE operator signed char() const
+      {
+         return (signed char)to_int();
+      }
 
-      __FORCE_INLINE operator unsigned char() const { return (unsigned char)to_uint(); }
+      __FORCE_INLINE operator unsigned char() const
+      {
+         return (unsigned char)to_uint();
+      }
 
-      __FORCE_INLINE operator short() const { return (short)to_int(); }
+      __FORCE_INLINE operator short() const
+      {
+         return (short)to_int();
+      }
 
-      __FORCE_INLINE operator unsigned short() const { return (unsigned short)to_uint(); }
+      __FORCE_INLINE operator unsigned short() const
+      {
+         return (unsigned short)to_uint();
+      }
       __FORCE_INLINE operator int() const
       {
          return to_int();
@@ -644,8 +650,8 @@ namespace __AC_NAMESPACE
       {
          return to_ulong();
       }
-     __FORCE_INLINE operator Slong() const
-     {
+      __FORCE_INLINE operator Slong() const
+      {
          return to_int64();
       }
       __FORCE_INLINE operator Ulong() const
@@ -660,7 +666,6 @@ namespace __AC_NAMESPACE
       {
          return to_float();
       }
-
 
       __FORCE_INLINE std::string to_string(ac_base_mode base_rep, bool sign_mag = false) const
       {
@@ -1346,7 +1351,7 @@ namespace __AC_NAMESPACE
       template <int W2, bool S2>
       __FORCE_INLINE ac_fixed& set_slc(int umsb, int ulsb, const ac_int<W2, S2>& slc)
       {
-         AC_ASSERT((ulsb + umsb + 1) <= W, "Out of bounds set_slc");
+         AC_ASSERT((ulsb + umsb + 1) <= W, std::string(std::string("Out of bounds set_slc; umsb: ") + std::to_string(umsb) + std::string(" , ulsb: ") + std::to_string(ulsb) + std::string(" , W: ") + std::to_string(W)).c_str());
          Base::set_slc(ulsb, umsb + 1 - ulsb, (ac_int<W2, true>)slc);
          bit_adjust(); // in case sign bit was assigned
          return *this;
@@ -1880,7 +1885,7 @@ namespace __AC_NAMESPACE
    FX_BIN_OP_WITH_INT_2I(<<, C_TYPE, WI, SI, arg1) \
    FX_BIN_OP_WITH_INT(&, C_TYPE, WI, SI, logic)    \
    FX_BIN_OP_WITH_INT(|, C_TYPE, WI, SI, logic)    \
-   FX_BIN_OP_WITH_INT (^, C_TYPE, WI, SI, logic)   \
+   FX_BIN_OP_WITH_INT(^, C_TYPE, WI, SI, logic)    \
                                                    \
    FX_REL_OP_WITH_INT(==, C_TYPE, WI, SI)          \
    FX_REL_OP_WITH_INT(!=, C_TYPE, WI, SI)          \
@@ -1983,7 +1988,7 @@ namespace __AC_NAMESPACE
          FX_BIN_OP_WITH_AC_INT(/, div)
          FX_BIN_OP_WITH_AC_INT(&, logic)
          FX_BIN_OP_WITH_AC_INT(|, logic)
-         FX_BIN_OP_WITH_AC_INT (^, logic)
+         FX_BIN_OP_WITH_AC_INT(^, logic)
 
          FX_REL_OP_WITH_AC_INT(==)
          FX_REL_OP_WITH_AC_INT(!=)
