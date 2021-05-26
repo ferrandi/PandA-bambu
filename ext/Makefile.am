@@ -485,6 +485,23 @@ install-exec-hook:
 	mkdir -p $(DESTDIR)$(libdir); cp -r $(top_srcdir)/ext/GRLIB  $(DESTDIR)$(libdir)
 endif
 
+gcem_dir=$(pkgdatadir)
+gcem_incl_dir=$(pkgdatadir)/gcem_incl
+gcem_incl_quadrature_dir=$(pkgdatadir)/gcem_incl/quadrature
+gcem__DATA = gcem/include/gcem.hpp 
+gcem_incl__DATA = gcem/include/gcem_incl/abs.hpp gcem/include/gcem_incl/asin.hpp gcem/include/gcem_incl/beta.hpp gcem/include/gcem_incl/cosh.hpp gcem/include/gcem_incl/exp.hpp \
+   gcem/include/gcem_incl/find_fraction.hpp gcem/include/gcem_incl/gcd.hpp gcem/include/gcem_incl/incomplete_gamma.hpp gcem/include/gcem_incl/is_inf.hpp gcem/include/gcem_incl/lcm.hpp \
+   gcem/include/gcem_incl/log2.hpp gcem/include/gcem_incl/max.hpp gcem/include/gcem_incl/pow_integral.hpp gcem/include/gcem_incl/signbit.hpp gcem/include/gcem_incl/tanh.hpp gcem/include/gcem_incl/acosh.hpp \
+   gcem/include/gcem_incl/atan2.hpp gcem/include/gcem_incl/binomial_coef.hpp gcem/include/gcem_incl/cos.hpp gcem/include/gcem_incl/expm1.hpp gcem/include/gcem_incl/find_whole.hpp \
+   gcem/include/gcem_incl/gcem_options.hpp gcem/include/gcem_incl/incomplete_gamma_inv.hpp gcem/include/gcem_incl/is_nan.hpp gcem/include/gcem_incl/lgamma.hpp gcem/include/gcem_incl/log_binomial_coef.hpp \
+   gcem/include/gcem_incl/min.hpp gcem/include/gcem_incl/sinh.hpp gcem/include/gcem_incl/tan.hpp gcem/include/gcem_incl/acos.hpp gcem/include/gcem_incl/atanh.hpp gcem/include/gcem_incl/ceil.hpp \
+   gcem/include/gcem_incl/erf.hpp gcem/include/gcem_incl/factorial.hpp gcem/include/gcem_incl/floor.hpp gcem/include/gcem_incl/incomplete_beta.hpp gcem/include/gcem_incl/is_even.hpp gcem/include/gcem_incl/is_odd.hpp \
+   gcem/include/gcem_incl/lmgamma.hpp gcem/include/gcem_incl/log.hpp gcem/include/gcem_incl/neg_zero.hpp gcem/include/gcem_incl/round.hpp gcem/include/gcem_incl/sin.hpp gcem/include/gcem_incl/tgamma.hpp gcem/include/gcem_incl/asinh.hpp \
+   gcem/include/gcem_incl/atan.hpp gcem/include/gcem_incl/copysign.hpp gcem/include/gcem_incl/erf_inv.hpp gcem/include/gcem_incl/find_exponent.hpp gcem/include/gcem_incl/fmod.hpp \
+   gcem/include/gcem_incl/incomplete_beta_inv.hpp gcem/include/gcem_incl/is_finite.hpp gcem/include/gcem_incl/lbeta.hpp gcem/include/gcem_incl/log1p.hpp gcem/include/gcem_incl/mantissa.hpp \
+   gcem/include/gcem_incl/pow.hpp gcem/include/gcem_incl/sgn.hpp gcem/include/gcem_incl/sqrt.hpp gcem/include/gcem_incl/trunc.hpp 
+gcem_incl_quadrature__DATA = gcem/include/gcem_incl/quadrature/gauss_legendre_30.hpp gcem/include/gcem_incl/quadrature/gauss_legendre_50.hpp
+
 noinst_LTLIBRARIES =
 METASOURCES = AUTO
 
