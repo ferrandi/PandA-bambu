@@ -4053,7 +4053,16 @@ typedef signed long long Slong;
             // lsb of int (val&1) is written to bit
             if(d_index < W)
             {
-               d_bv.v.set(d_index >> 5, d_bv.v[d_index >> 5] ^ ((d_bv.v[d_index >> 5] ^ (val << (d_index & 31))) & 1 << (d_index & 31)));
+               //it works even in case value is undefined
+               unsigned pos = d_index >> 5;
+               unsigned value = static_cast<unsigned>(d_bv.v[pos]);
+               unsigned d_index_masked = d_index & 31;
+               unsigned bool_val = val & 1;
+               unsigned mask_0 = 1U << d_index_masked;
+               unsigned mask_0_neg = ~mask_0;
+               value &= mask_0_neg;
+               value |= bool_val << d_index_masked;
+               d_bv.v.set(d_index >> 5, static_cast<int>(value));
                d_bv.bit_adjust(); // in case sign bit was assigned
             }
             return *this;

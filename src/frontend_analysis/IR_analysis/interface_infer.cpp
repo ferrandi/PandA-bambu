@@ -597,6 +597,7 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
 
    sl->list_of_bloc[destBB]->PushBefore(new_writecall, origStmt);
    GetPointer<HLS_manager>(AppM)->design_interface_stores[fname][destBB][argName_string].push_back(GET_INDEX_NODE(new_writecall));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---STORE STMT: " + new_writecall->ToString() + " in function " + fname);
    addGimpleNOPxVirtual(origStmt, TM, writeVdef);
    if(!AppM->GetCallGraphManager()->IsVertex(GET_INDEX_NODE(function_decl_node)))
    {

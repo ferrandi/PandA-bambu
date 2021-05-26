@@ -1869,6 +1869,10 @@ lut_transformation::lut_transformation(const ParameterConstRef Param, const appl
 
 DesignFlowStep_Status lut_transformation::InternalExec()
 {
+   if(parameters->IsParameter("disable-lut-transformation") && parameters->GetParameter<int>("disable-lut-transformation") == 1)
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
 #if HAVE_STDCXX_17
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);

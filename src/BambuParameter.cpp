@@ -2852,7 +2852,7 @@ int BambuParameter::Exec()
       else if(file_type == Parameters_FileFormat::FF_C || file_type == Parameters_FileFormat::FF_OBJECTIVEC || file_type == Parameters_FileFormat::FF_CPP || file_type == Parameters_FileFormat::FF_FORTRAN
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
     HAVE_I386_CLANGVVD_COMPILER
-              || file_type == Parameters_FileFormat::FF_LLVM
+              || file_type == Parameters_FileFormat::FF_LLVM || file_type == Parameters_FileFormat::FF_LLVM_CPP
 #endif
       )
       {

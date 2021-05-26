@@ -64,6 +64,8 @@ bambu_specific_test4/iterative_merge_sort_sum.c --generate-tb=arr="{8,7,6,5,4,3,
 bambu_specific_test4/ac_fixed1.cpp --generate-tb=a={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},b={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},c={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},d={0,0,0,0,0,0,0,0} --top-fname=sum3numbers
 bambu_specific_test4/ac_fixed2_tb.cpp --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/ac_fixed2_tb.xml --top-fname=sum3numbers
 bambu_specific_test4/ac_fixed3.cpp --generate-tb=a=1.1,b=2.2,c=3.3,d={0.0} --top-fname=sum3numbers
+bambu_specific_test4/ex1.cpp --generate-tb="bit_stream={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},a_out={0}" --top-fname=test_func
 bambu_specific_test4/ac_fixed1.cpp --benchmark-name=ac_fixed1-c++17 --generate-tb=a={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},b={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},c={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},d={0,0,0,0,0,0,0,0} --top-fname=sum3numbers --std=c++17
 bambu_specific_test4/ac_fixed2_tb.cpp --benchmark-name=ac_fixed2_tb-c++17 --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/ac_fixed2_tb.xml --top-fname=sum3numbers --std=c++17
 bambu_specific_test4/ac_fixed3.cpp --benchmark-name=ac_fixed3-c++17 --generate-tb=a=1.1,b=2.2,c=3.3,d={0.0} --top-fname=sum3numbers --std=c++17
+bambu_specific_test4/ex1.cpp --benchmark-name=ex1-c++17 --generate-tb="bit_stream={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},a_out={0}" --top-fname=test_func --std=c++17
