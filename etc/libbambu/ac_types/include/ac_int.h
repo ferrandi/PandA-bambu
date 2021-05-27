@@ -89,7 +89,6 @@
 
 #ifndef __AC_INT_H
 #define __AC_INT_H
-#include "../../gcem.hpp"
 
 #define AC_VERSION 3
 #define AC_VERSION_MINOR 7
@@ -192,8 +191,6 @@ __FORCE_INLINE constexpr void loop(F&& f)
 {
 #if defined(__clang__)
 #pragma clang loop unroll(full)
-#else
-#pragma GCC unroll(end - start + (limit == loop_limit::include))
 #endif
    for(T i = start; i < end + (limit == loop_limit::include); ++i)
    {
@@ -206,12 +203,10 @@ __FORCE_INLINE constexpr void loop(F&& f)
 {
 #if defined(__clang__)
 #pragma clang loop unroll(full)
-#else
-#pragma GCC unroll(start - end + (limit == loop_limit::exclude))
 #endif
-   for(T i = start + 1; i > end + (limit == loop_limit::exclude);)
+   for(T i = start; i >= end + (limit == loop_limit::exclude); --i)
    {
-      f(--i);
+      f(i);
    }
 }
 #endif
@@ -262,14 +257,30 @@ typedef signed long long Slong;
 
       // PRIVATE FUNCTIONS in namespace: for implementing ac_int/ac_fixed
 
+      template <typename T, typename std::enable_if<std::is_floating_point<T>::value, bool>::type* = nullptr>
+      constexpr T float_floor(T v) noexcept
+      {
+         constexpr int max_bits = std::numeric_limits<T>::max_exponent == 128 ? 23 : 52;
+         if(v != v || v >= T(1LL << max_bits) || v <= -T(1LL << max_bits))
+         {
+            return v;
+         }
+         else if(T(-1) < v && v < T(1))
+         {
+            return T(0);
+         }
+         const T rnd = T(static_cast<long long int>(v));
+         return rnd - T(rnd != v && v < T(0));
+      }
+
 #ifndef __BAMBU__
       __FORCE_INLINE constexpr double mgc_floor(double d)
       {
-         return gcem::floor<double>(d);
+         return float_floor(d);
       }
       __FORCE_INLINE constexpr float mgc_floor(float d)
       {
-         return gcem::floor<float>(d);
+         return float_floor(d);
       }
 #else
    __FORCE_INLINE double mgc_floor(double d)
@@ -997,14 +1008,20 @@ typedef signed long long Slong;
       template <int N, int START, int N1, bool C1, int Nr, bool Cr>
       __FORCE_INLINE void iv_copy(const iv_base<N1, C1>& op, iv_base<Nr, Cr>& r)
       {
-         loop<int, START, exclude, N>([&](int i) { r.set(i, op[i]); });
+         if(START < N)
+         {
+            loop<int, START, exclude, N>([&](int i) { r.set(i, op[i]); });
+         }
       }
 
       template <int START, int N, int N1, bool C1>
       __FORCE_INLINE bool iv_equal_zero(const iv_base<N1, C1>& op)
       {
          bool retval = true;
-         loop<int, START, exclude, N>([&](int i) { retval &= !op[i]; });
+         if(START < N)
+         {
+            loop<int, START, exclude, N>([&](int i) { retval &= !op[i]; });
+         }
          return retval;
       }
 
@@ -1012,7 +1029,10 @@ typedef signed long long Slong;
       __FORCE_INLINE bool iv_equal_ones(const iv_base<N1, C1>& op)
       {
          bool retval = true;
-         loop<int, START, exclude, N>([&](int i) { retval &= !(~op[i]); });
+         if(START < N)
+         {
+            loop<int, START, exclude, N>([&](int i) { retval &= !(~op[i]); });
+         }
          return retval;
       }
 
@@ -1088,30 +1108,36 @@ typedef signed long long Slong;
             return b ^ (OP1[M1 - 1] < i2);
          bool retval;
          bool invalidate = false;
-         loop<int, M1 - 2, include, M2>([&](int i) {
-            if(!invalidate)
-            {
-               if((unsigned)OP1[i] != (unsigned)ext)
+         if((M1 - 2) >= M2)
+         {
+            loop<int, M1 - 2, include, M2>([&](int i) {
+               if(!invalidate)
                {
-                  retval = b ^ ((unsigned)OP1[i] < (unsigned)ext);
-                  invalidate = true;
+                  if((unsigned)OP1[i] != (unsigned)ext)
+                  {
+                     retval = b ^ ((unsigned)OP1[i] < (unsigned)ext);
+                     invalidate = true;
+                  }
                }
-            }
-         });
+            });
+         }
          if(invalidate)
          {
             return retval;
          }
-         loop<int, M2 - 1, include, 0>([&](int i) {
-            if(!invalidate)
-            {
-               if((unsigned)OP1[i] != (unsigned)OP2[i])
+         if((M2 - 1) >= 0)
+         {
+            loop<int, M2 - 1, include, 0>([&](int i) {
+               if(!invalidate)
                {
-                  retval = b ^ ((unsigned)OP1[i] < (unsigned)OP2[i]);
-                  invalidate = true;
+                  if((unsigned)OP1[i] != (unsigned)OP2[i])
+                  {
+                     retval = b ^ ((unsigned)OP1[i] < (unsigned)OP2[i]);
+                     invalidate = true;
+                  }
                }
-            }
-         });
+            });
+         }
          if(invalidate)
          {
             return retval;
@@ -1122,7 +1148,10 @@ typedef signed long long Slong;
       template <int START, int N, bool C>
       __FORCE_INLINE void iv_extend(iv_base<N, C>& r, int ext)
       {
-         loop<int, START, exclude, N>([&](int i) { r.set(i, ext); });
+         if(START < N)
+         {
+            loop<int, START, exclude, N>([&](int i) { r.set(i, ext); });
+         }
       }
 
       template <int Nr, bool Cr>
@@ -1175,13 +1204,13 @@ typedef signed long long Slong;
             iv_assign_int64(r, (op1.to_int64() * op2.to_int64()));
          else
          {
-            const int M1 = AC_MAX(N1, N2);
-            const int M2 = AC_MIN(N1, N2);
-            const bool M1C1 = N1 >= N2 ? C1 : C2;
-            const bool M2C1 = N1 >= N2 ? C2 : C1;
-            const int T1 = AC_MIN(M2 - 1, Nr);
-            const int T2 = AC_MIN(M1 - 1, Nr);
-            const int T3 = AC_MIN(M1 + M2 - 2, Nr);
+            constexpr int M1 = AC_MAX(N1, N2);
+            constexpr int M2 = AC_MIN(N1, N2);
+            constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
+            constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
+            constexpr int T1 = AC_MIN(M2 - 1, Nr);
+            constexpr int T2 = AC_MIN(M1 - 1, Nr);
+            constexpr int T3 = AC_MIN(M1 + M2 - 2, Nr);
             const iv_base<M1, M1C1> OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
             const iv_base<M2, M2C1> OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
 
@@ -1199,28 +1228,34 @@ typedef signed long long Slong;
                l1 = (unsigned)l2;
                l2 >>= 32;
             });
-            loop<int, T1, exclude, T2>([&](int k) {
-               accumulate(mult_u_s(OP1[k - M2 + 1], OP2[M2 - 1]), l1, l2);
-               loop<int, 0, exclude, M2 - 1>([&](int i) { accumulate(mult_u_u(OP1[k - i], OP2[i]), l1, l2); });
-               l2 += (Ulong)(unsigned)(l1 >> 32);
-               r.set(k, (int)l1);
-               l1 = (unsigned)l2;
-               l2 >>= 32;
-            });
-            loop<int, T2, exclude, T3>([&](int k) {
-               accumulate(mult_u_s(OP1[k - M2 + 1], OP2[M2 - 1]), l1, l2);
-               loop<int, 0, exclude, M2 - 1>([&](int i) {
-                  if(i >= k - T2 + 1)
-                  {
-                     accumulate(mult_u_u(OP1[k - i], OP2[i]), l1, l2);
-                  }
+            if(T1 < T2)
+            {
+               loop<int, T1, exclude, T2>([&](int k) {
+                  accumulate(mult_u_s(OP1[k - M2 + 1], OP2[M2 - 1]), l1, l2);
+                  loop<int, 0, exclude, M2 - 1>([&](int i) { accumulate(mult_u_u(OP1[k - i], OP2[i]), l1, l2); });
+                  l2 += (Ulong)(unsigned)(l1 >> 32);
+                  r.set(k, (int)l1);
+                  l1 = (unsigned)l2;
+                  l2 >>= 32;
                });
-               accumulate(mult_s_u(OP1[M1 - 1], OP2[k - M1 + 1]), l1, l2);
-               l2 += (Ulong)(unsigned)(l1 >> 32);
-               r.set(k, (int)l1);
-               l1 = (unsigned)l2;
-               l2 >>= 32;
-            });
+            }
+            if(T2 < T3)
+            {
+               loop<int, T2, exclude, T3>([&](int k) {
+                  accumulate(mult_u_s(OP1[k - M2 + 1], OP2[M2 - 1]), l1, l2);
+                  loop<int, 0, exclude, M2 - 1>([&](int i) {
+                     if(i >= (k - T2 + 1))
+                     {
+                        accumulate(mult_u_u(OP1[k - i], OP2[i]), l1, l2);
+                     }
+                  });
+                  accumulate(mult_s_u(OP1[M1 - 1], OP2[k - M1 + 1]), l1, l2);
+                  l2 += (Ulong)(unsigned)(l1 >> 32);
+                  r.set(k, (int)l1);
+                  l1 = (unsigned)l2;
+                  l2 >>= 32;
+               });
+            }
             if(Nr >= M1 + M2 - 1)
             {
                accumulate(mult_s_s(OP1[M1 - 1], OP2[M2 - 1]), l1, l2);
@@ -1261,11 +1296,14 @@ typedef signed long long Slong;
          Slong l = carry + (Ulong)(unsigned)op1[START] + (Slong)op2;
          r.set(START, (int)l);
          l >>= 32;
-         loop<int, START + 1, exclude, N>([&](int i) {
-            l += (Ulong)(unsigned)op1[i];
-            r.set(i, (int)l);
-            l >>= 32;
-         });
+         if((START + 1) < (N - 1))
+         {
+            loop<int, START + 1, exclude, N - 1>([&](int i) {
+               l += (Ulong)(unsigned)op1[i];
+               r.set(i, (int)l);
+               l >>= 32;
+            });
+         }
          l += (Slong)op1[N - 1];
          r.set(N - 1, (int)l);
          return (l >> 32) & 1;
@@ -1291,12 +1329,12 @@ typedef signed long long Slong;
             r.set(0, op1[0] + op2[0]);
          else
          {
-            const int M1 = AC_MAX(N1, N2);
-            const int M2 = AC_MIN(N1, N2);
-            const bool M1C1 = N1 >= N2 ? C1 : C2;
-            const bool M2C1 = N1 >= N2 ? C2 : C1;
-            const int T1 = AC_MIN(M2 - 1, Nr);
-            const int T2 = AC_MIN(M1, Nr);
+            constexpr int M1 = AC_MAX(N1, N2);
+            constexpr int M2 = AC_MIN(N1, N2);
+            constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
+            constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
+            constexpr int T1 = AC_MIN(M2 - 1, Nr);
+            constexpr int T2 = AC_MIN(M1, Nr);
             const iv_base<M1, M1C1> OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
             const iv_base<M2, M2C1> OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
 
@@ -1320,11 +1358,14 @@ typedef signed long long Slong;
          Slong l = (Ulong)(unsigned)op1[START] - (Slong)op2 - borrow;
          r.set(START, (int)l);
          l >>= 32;
-         loop<int, START + 1, exclude, N - 1>([&](int i) {
-            l += (Ulong)(unsigned)op1[i];
-            r.set(i, (int)l);
-            l >>= 32;
-         });
+         if((START + 1) < (N - 1))
+         {
+            loop<int, START + 1, exclude, N - 1>([&](int i) {
+               l += (Ulong)(unsigned)op1[i];
+               r.set(i, (int)l);
+               l >>= 32;
+            });
+         }
          l += (Slong)op1[N - 1];
          r.set(N - 1, (int)l);
          return (l >> 32) & 1;
@@ -1344,11 +1385,14 @@ typedef signed long long Slong;
          Slong l = (Slong)op1 - (Ulong)(unsigned)op2[START] - borrow;
          r.set(START, (int)l);
          l >>= 32;
-         loop<int, START + 1, exclude, N - 1>([&](int i) {
-            l -= (Ulong)(unsigned)op2[i];
-            r.set(i, (int)l);
-            l >>= 32;
-         });
+         if((START + 1) < (N - 1))
+         {
+            loop<int, START + 1, exclude, N - 1>([&](int i) {
+               l -= (Ulong)(unsigned)op2[i];
+               r.set(i, (int)l);
+               l >>= 32;
+            });
+         }
          l -= (Slong)op2[N - 1];
          r.set(N - 1, (int)l);
          return (l >> 32) & 1;
@@ -1466,74 +1510,74 @@ typedef signed long long Slong;
             loop<int, 0, include, N>([&](int index) {
                if(index <= n_msi)
                   r1[index] = n[index];
-               loop<int, 2 * N - 1, include, 0>([&](int k) {
-                  if(k <= n_mss && k >= d_mss)
+            });
+            loop<int, 2 * N - 1, include, 0>([&](int k) {
+               if(k <= n_mss && k >= d_mss)
+               {
+                  int k_msi = k >> 1;
+                  bool odd = k & 1;
+                  uw2 r1m1 = k_msi > 0 ? r1[k_msi - 1] : (uw2)0;
+                  uw4 n1 = odd ? (uw4)((r1[k_msi + 1] << w1_length) | (r1[k_msi] >> w1_length)) << w2_length | ((r1[k_msi] << w1_length) | (r1m1 >> w1_length)) : (uw4)r1[k_msi] << w2_length | r1m1;
+                  uw2 q1 = n1 / d1;
+                  if(q1 >> w1_length)
+                     q1--;
+                  AC_ASSERT(!(q1 >> w1_length), "Problem detected in long division algorithm, Please report");
+                  unsigned k2 = k - d_mss;
+                  unsigned k2_i = k2 >> 1;
+                  bool odd_2 = k2 & 1;
+                  uw2 q2 = q1 << (odd_2 ? w1_length : 0);
+                  sw4 l = 0;
+                  for(int j = 0; j <= d_msi; j++)
                   {
-                     int k_msi = k >> 1;
-                     bool odd = k & 1;
-                     uw2 r1m1 = k_msi > 0 ? r1[k_msi - 1] : (uw2)0;
-                     uw4 n1 = odd ? (uw4)((r1[k_msi + 1] << w1_length) | (r1[k_msi] >> w1_length)) << w2_length | ((r1[k_msi] << w1_length) | (r1m1 >> w1_length)) : (uw4)r1[k_msi] << w2_length | r1m1;
-                     uw2 q1 = n1 / d1;
-                     if(q1 >> w1_length)
-                        q1--;
-                     AC_ASSERT(!(q1 >> w1_length), "Problem detected in long division algorithm, Please report");
-                     unsigned k2 = k - d_mss;
-                     unsigned k2_i = k2 >> 1;
-                     bool odd_2 = k2 & 1;
-                     uw2 q2 = q1 << (odd_2 ? w1_length : 0);
-                     sw4 l = 0;
+                     l += r1[k2_i + j];
+                     bool l_sign = l < 0;
+                     sw4 prod = (uw4)(uw2)d[j] * (uw4)q2;
+                     l -= prod;
+                     bool ov1 = (l >= 0) & ((prod < 0) | l_sign);
+                     bool ov2 = (l < 0) & (prod < 0) & l_sign;
+                     r1[k2_i + j] = (uw2)l;
+                     l >>= w2_length;
+                     if(ov1)
+                        l |= ((uw4)-1 << w2_length);
+                     if(ov2)
+                        l ^= ((sw4)1 << w2_length);
+                  }
+                  if(odd_2 | d_mss_odd)
+                  {
+                     l += r1[k2_i + d_msi + 1];
+                     r1[k2_i + d_msi + 1] = (uw2)l;
+                  }
+                  if(l < 0)
+                  {
+                     l = 0;
                      for(int j = 0; j <= d_msi; j++)
                      {
+                        l += (sw4)(uw2)d[j] << (odd_2 ? w1_length : 0);
                         l += r1[k2_i + j];
-                        bool l_sign = l < 0;
-                        sw4 prod = (uw4)(uw2)d[j] * (uw4)q2;
-                        l -= prod;
-                        bool ov1 = (l >= 0) & ((prod < 0) | l_sign);
-                        bool ov2 = (l < 0) & (prod < 0) & l_sign;
                         r1[k2_i + j] = (uw2)l;
                         l >>= w2_length;
-                        if(ov1)
-                           l |= ((uw4)-1 << w2_length);
-                        if(ov2)
-                           l ^= ((sw4)1 << w2_length);
                      }
                      if(odd_2 | d_mss_odd)
-                     {
-                        l += r1[k2_i + d_msi + 1];
-                        r1[k2_i + d_msi + 1] = (uw2)l;
-                     }
-                     if(l < 0)
-                     {
-                        l = 0;
-                        for(int j = 0; j <= d_msi; j++)
-                        {
-                           l += (sw4)(uw2)d[j] << (odd_2 ? w1_length : 0);
-                           l += r1[k2_i + j];
-                           r1[k2_i + j] = (uw2)l;
-                           l >>= w2_length;
-                        }
-                        if(odd_2 | d_mss_odd)
-                           r1[k2_i + d_msi + 1] += (uw2)l;
-                        q1--;
-                     }
-                     if(Q && k2_i < Q)
-                     {
-                        if(odd_2)
-                           q.set(k2_i, q1 << w1_length);
-                        else
-                           q.set(k2_i, q[k2_i] | q1);
-                     }
+                        r1[k2_i + d_msi + 1] += (uw2)l;
+                     q1--;
                   }
-               });
-               if(R)
-               {
-                  int r_msi = AC_MIN(R - 1, n_msi);
-                  for(int j = 0; j <= r_msi; j++)
-                     r.set(j, r1[j]);
-                  for(int j = r_msi + 1; j < R; j++)
-                     r.set(j, 0);
+                  if(Q && k2_i < Q)
+                  {
+                     if(odd_2)
+                        q.set(k2_i, q1 << w1_length);
+                     else
+                        q.set(k2_i, q[k2_i] | q1);
+                  }
                }
             });
+            if(R)
+            {
+               int r_msi = AC_MIN(R - 1, n_msi);
+               for(int j = 0; j <= r_msi; j++)
+                  r.set(j, r1[j]);
+               for(int j = r_msi + 1; j < R; j++)
+                  r.set(j, 0);
+            }
          }
       }
 
@@ -1628,7 +1672,10 @@ typedef signed long long Slong;
       template <int N, int START, int N1, bool C1, int Nr, bool Cr>
       __FORCE_INLINE void iv_bitwise_complement_n(const iv_base<N1, C1>& op, iv_base<Nr, Cr>& r)
       {
-         loop<int, START, exclude, N>([&](int i) { r.set(i, ~op[i]); });
+         if(START < N)
+         {
+            loop<int, START, exclude, N>([&](int i) { r.set(i, ~op[i]); });
+         }
       }
 
       template <int N, bool C, int Nr, bool Cr>
@@ -1783,18 +1830,21 @@ typedef signed long long Slong;
          }
          else
          {
-            const unsigned s31 = B & 31;
-            const int ishift = (((B >> 5) > Nr) ? Nr : (B >> 5));
-            const int M1 = AC_MIN(N + ishift, Nr);
+            constexpr unsigned s31 = B & 31;
+            constexpr int ishift = (((B >> 5) > Nr) ? Nr : (B >> 5));
+            constexpr int M1 = AC_MIN(N + ishift, Nr);
             loop<int, 0, exclude, ishift>([&](int idx) { r.set(idx, 0); });
             if(s31)
             {
                unsigned lw = 0;
-               loop<int, ishift, exclude, M1>([&](int i) {
-                  unsigned hw = op1[i - ishift];
-                  r.set(i, (hw << s31) | (lw >> ((32 - s31) & 31))); // &31 is to quiet compilers
-                  lw = hw;
-               });
+               if(ishift < M1)
+               {
+                  loop<int, ishift, exclude, M1>([&](int i) {
+                     unsigned hw = op1[i - ishift];
+                     r.set(i, (hw << s31) | (lw >> ((32 - s31) & 31))); // &31 is to quiet compilers
+                     lw = hw;
+                  });
+               }
                if(Nr > M1)
                {
                   r.set(M1, (signed)lw >> ((32 - s31) & 31)); // &31 is to quiet compilers
@@ -1803,7 +1853,10 @@ typedef signed long long Slong;
             }
             else
             {
-               loop<int, ishift, exclude, M1>([&](int i) { r.set(i, op1[i - ishift]); });
+               if(ishift < M1)
+               {
+                  loop<int, ishift, exclude, M1>([&](int i) { r.set(i, op1[i - ishift]); });
+               }
                iv_extend<M1>(r, r[M1 - 1] < 0 ? -1 : 0);
             }
          }
@@ -1814,14 +1867,14 @@ typedef signed long long Slong;
       {
          if(!B)
          {
-            const int M1 = AC_MIN(N, Nr);
+            constexpr int M1 = AC_MIN(N, Nr);
             iv_copy<M1, 0>(op1, r);
             iv_extend<M1>(r, r[M1 - 1] < 0 ? ~0 : 0);
          }
          else
          {
-            const unsigned s31 = B & 31;
-            const int ishift = (((B >> 5) > N) ? N : (B >> 5));
+            constexpr unsigned s31 = B & 31;
+            constexpr int ishift = (((B >> 5) > N) ? N : (B >> 5));
             int ext = op1[N - 1] < 0 ? ~0 : 0;
             if(s31 && ishift != N)
             {
@@ -1893,7 +1946,7 @@ typedef signed long long Slong;
          static __FORCE_INLINE int to_str(iv_base<N, C>& v, int w, bool left_just, char* r)
          {
             const char digits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-            const unsigned char B = b == AC_BIN ? 1 : (b == AC_OCT ? 3 : (b == AC_HEX ? 4 : 0));
+            constexpr unsigned char B = b == AC_BIN ? 1 : (b == AC_OCT ? 3 : (b == AC_HEX ? 4 : 0));
             int k = (w + B - 1) / B;
             int n = (w + 31) >> 5;
             int bits = 0;
@@ -2303,19 +2356,25 @@ typedef signed long long Slong;
          __FORCE_INLINE double to_double() const
          {
             double a = v[N - 1];
-            loop<int, N - 2, include, 0>([&](int i) {
-               a *= (Ulong)1 << 32;
-               a += (unsigned)v[i];
-            });
+            if((N - 2) >= 0)
+            {
+               loop<int, N - 2, include, 0>([&](int i) {
+                  a *= (Ulong)1 << 32;
+                  a += (unsigned)v[i];
+               });
+            }
             return a;
          }
          __FORCE_INLINE float to_float() const
          {
             float a = v[N - 1];
-            loop<int, N - 2, include, 0>([&](int i) {
-               a *= (Ulong)1 << 32;
-               a += (unsigned)v[i];
-            });
+            if((N - 2) >= 0)
+            {
+               loop<int, N - 2, include, 0>([&](int i) {
+                  a *= (Ulong)1 << 32;
+                  a += (unsigned)v[i];
+               });
+            }
             return a;
          }
          __FORCE_INLINE constexpr void conv_from_fraction(double d, bool* qb, bool* rbits, bool* o)
@@ -2472,10 +2531,10 @@ typedef signed long long Slong;
          }
 
          template <int N_2, bool C_2>
-         __FORCE_INLINE void set_slc2(unsigned lsb, int WS, const iv<N_2, C_2>& op2)
+         __FORCE_INLINE constexpr void set_slc2(unsigned lsb, int WS, const iv<N_2, C_2>& op2)
          {
             AC_ASSERT((31 + WS) / 32 <= N_2, "Bad usage: WS greater than length of slice");
-            auto N2 = (31 + WS) / 32;
+            const int N2 = (31 + WS) / 32;
             unsigned msb = lsb + WS - 1;
             unsigned lsb_v = lsb >> 5;
             unsigned lsb_b = lsb & 31;
@@ -2497,7 +2556,7 @@ typedef signed long long Slong;
                v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
                loop<int, 1, exclude, N2 - 1>([&](int i) { v.set(lsb_v + i, (op2.v[i] << lsb_b) | (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b))); });
                unsigned t = (op2.v[N2 - 1] << lsb_b) | (((unsigned)op2.v[N2 - 2] >> 1) >> (31 - lsb_b));
-               unsigned m;
+               unsigned m = 0;
                if(static_cast<int>(msb_v - lsb_v) == N2)
                {
                   v.set(msb_v - 1, t);
@@ -4053,7 +4112,7 @@ typedef signed long long Slong;
             // lsb of int (val&1) is written to bit
             if(d_index < W)
             {
-               //it works even in case value is undefined
+               // it works even in case value is undefined
                unsigned pos = d_index >> 5;
                unsigned value = static_cast<unsigned>(d_bv.v[pos]);
                unsigned d_index_masked = d_index & 31;
