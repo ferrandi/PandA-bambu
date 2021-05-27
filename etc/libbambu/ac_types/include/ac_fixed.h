@@ -719,8 +719,12 @@ namespace __AC_NAMESPACE
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       typename rt<W2, I2, S2>::mult operator*(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
+         auto op1_local = *this;
+         op1_local.bit_adjust();
+         auto op2_local = op2;
+         op2_local.bit_adjust();
          typename rt<W2, I2, S2>::mult r;
-         Base::mult(op2, r);
+         op1_local.Base::mult(op2_local, r);
          r.bit_adjust();
          return r;
       }
