@@ -972,6 +972,7 @@ typedef signed long long Slong;
          }
          constexpr int operator[](int x) const
          {
+            x = x & 3;
             return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : (x == 2 ? (int)vb : (x == 2 ? (int)(vb >> 32) : 0)));
          }
          constexpr iv_base() : va(), vb()
@@ -1146,7 +1147,7 @@ typedef signed long long Slong;
       }
 
       template <int START, int N, bool C>
-      __FORCE_INLINE void iv_extend(iv_base<N, C>& r, int ext)
+      __FORCE_INLINE constexpr void iv_extend(iv_base<N, C>& r, int ext)
       {
          if(START < N)
          {
@@ -1819,12 +1820,12 @@ typedef signed long long Slong;
       }
 
       template <int B, int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE void iv_const_shift_l(const iv_base<N, C>& op1, iv_base<Nr, Cr>& r)
+      __FORCE_INLINE constexpr void iv_const_shift_l(const iv_base<N, C>& op1, iv_base<Nr, Cr>& r)
       {
          // B >= 0
          if(!B)
          {
-            const int M1 = AC_MIN(N, Nr);
+            constexpr int M1 = AC_MIN(N, Nr);
             iv_copy<M1, 0>(op1, r);
             iv_extend<M1>(r, r[M1 - 1] < 0 ? -1 : 0);
          }
@@ -1946,7 +1947,7 @@ typedef signed long long Slong;
          static __FORCE_INLINE int to_str(iv_base<N, C>& v, int w, bool left_just, char* r)
          {
             const char digits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-            constexpr unsigned char B = b == AC_BIN ? 1 : (b == AC_OCT ? 3 : (b == AC_HEX ? 4 : 0));
+            const unsigned char B = b == AC_BIN ? 1 : (b == AC_OCT ? 3 : (b == AC_HEX ? 4 : 0));
             int k = (w + B - 1) / B;
             int n = (w + 31) >> 5;
             int bits = 0;
@@ -2365,7 +2366,7 @@ typedef signed long long Slong;
             }
             return a;
          }
-         __FORCE_INLINE float to_float() const
+         __FORCE_INLINE constexpr float to_float() const
          {
             float a = v[N - 1];
             if((N - 2) >= 0)
@@ -2445,7 +2446,7 @@ typedef signed long long Slong;
             iv_shift_r2<true>(v, op2, r.v);
          }
          template <int B, int Nr, bool Cr>
-         __FORCE_INLINE void const_shift_l(iv<Nr, Cr>& r) const
+         __FORCE_INLINE constexpr void const_shift_l(iv<Nr, Cr>& r) const
          {
             iv_const_shift_l<B>(v, r.v);
          }
@@ -2575,7 +2576,7 @@ typedef signed long long Slong;
 
       template <>
       template <>
-      __FORCE_INLINE void iv<1, false>::set_slc(unsigned lsb, int WS, const iv<1, false>& op2)
+      __FORCE_INLINE constexpr void iv<1, false>::set_slc(unsigned lsb, int WS, const iv<1, false>& op2)
       {
          v.set(0, v[0] ^ ((v[0] ^ (op2.v[0] << lsb)) & ((WS == 32 ? ~0u : ((1u << WS) - 1)) << lsb)));
       }
@@ -2604,11 +2605,11 @@ typedef signed long long Slong;
       {
        protected:
          __FORCE_INLINE
-         iv_conv()
+         constexpr iv_conv()
          {
          }
          template <class T>
-         __FORCE_INLINE iv_conv(const T& t) : iv<N, C>(t)
+         __FORCE_INLINE constexpr iv_conv(const T& t) : iv<N, C>(t)
          {
          }
       };
@@ -2628,11 +2629,11 @@ typedef signed long long Slong;
 
        protected:
          __FORCE_INLINE
-         iv_conv()
+         constexpr iv_conv()
          {
          }
          template <class T>
-         __FORCE_INLINE iv_conv(const T& t) : iv<N, C>(t)
+         __FORCE_INLINE constexpr iv_conv(const T& t) : iv<N, C>(t)
          {
          }
       };
@@ -2652,11 +2653,11 @@ typedef signed long long Slong;
 
        protected:
          __FORCE_INLINE
-         iv_conv()
+         constexpr iv_conv()
          {
          }
          template <class T>
-         __FORCE_INLINE iv_conv(const T& t) : iv<N, C>(t)
+         __FORCE_INLINE constexpr iv_conv(const T& t) : iv<N, C>(t)
          {
          }
       };
@@ -3219,7 +3220,7 @@ typedef signed long long Slong;
       friend class ac_fixed;
 
       __FORCE_INLINE
-      ac_int()
+      constexpr ac_int()
       {
 #if !defined(__BAMBU__) && defined(AC_DEFAULT_IN_RANGE)
          bit_adjust();
@@ -3227,71 +3228,71 @@ typedef signed long long Slong;
       }
 
       template <int W2, bool S2>
-      __FORCE_INLINE ac_int(const ac_int<W2, S2>& op)
+      __FORCE_INLINE constexpr ac_int(const ac_int<W2, S2>& op)
       {
          Base::operator=(op);
          bit_adjust();
       }
 
-      __FORCE_INLINE ac_int(bool b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(bool b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(char b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(char b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(signed char b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(signed char b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(unsigned char b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(unsigned char b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(signed short b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(signed short b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(unsigned short b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(unsigned short b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(signed int b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(signed int b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(unsigned int b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(unsigned int b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(signed long b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(signed long b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(unsigned long b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(unsigned long b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(Slong b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(Slong b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(Ulong b) : ConvBase(b)
+      __FORCE_INLINE constexpr ac_int(Ulong b) : ConvBase(b)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(float d) : ConvBase(d)
+      __FORCE_INLINE constexpr ac_int(float d) : ConvBase(d)
       {
          bit_adjust();
       }
-      __FORCE_INLINE ac_int(double d) : ConvBase(d)
+      __FORCE_INLINE constexpr ac_int(double d) : ConvBase(d)
       {
          bit_adjust();
       }
 
       template <size_t N>
-      __FORCE_INLINE ac_int(const char (&str)[N])
+      __FORCE_INLINE constexpr ac_int(const char (&str)[N])
       {
          bit_fill(str);
          bit_adjust();
@@ -3314,8 +3315,8 @@ typedef signed long long Slong;
       {
          if(V == AC_VAL_DC)
          {
-            //ac_int r;
-            //Base::operator=(r);
+            // ac_int r;
+            // Base::operator=(r);
             bit_adjust();
          }
          else if(V == AC_VAL_0 || V == AC_VAL_MIN || V == AC_VAL_QUANTUM)
@@ -4255,31 +4256,7 @@ typedef signed long long Slong;
       }
 
       template <size_t NN>
-      __FORCE_INLINE constexpr void bit_fill_bin(const char (&str)[NN], unsigned start = 0)
-      {
-         ac_int<W, S> res = 0;
-         bool loop_exit = false;
-         loop<int, 0, exclude, NN>([&](int i) {
-            if(!loop_exit && i >= start)
-            {
-               char c = str[i];
-               int h = 0;
-               if(c == '0')
-                  h = 0;
-               else if(c == '1')
-                  h = 1;
-               else
-               {
-                  AC_ASSERT(!c, "Invalid hex digit");
-                  loop_exit = true;
-                  return;
-               }
-               res <<= ac_int<1, false>(1);
-               res |= ac_int<1, false>(h);
-            }
-         });
-         *this = res;
-      }
+      __FORCE_INLINE constexpr void bit_fill_bin(const char (&str)[NN], unsigned start = 0);
 
       template <size_t NN>
       __FORCE_INLINE constexpr void bit_fill_oct(const char (&str)[NN], unsigned start = 0)
@@ -4560,222 +4537,249 @@ typedef signed long long Slong;
    // Specializations for constructors on integers that bypass bit adjusting
    //  and are therefore more efficient
    template <>
-   __FORCE_INLINE ac_int<1, true>::ac_int(bool b)
+   __FORCE_INLINE constexpr ac_int<1, true>::ac_int(bool b)
    {
       v.set(0, b ? -1 : 0);
    }
 
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(bool b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(bool b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(signed char b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(signed char b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(unsigned char b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(unsigned char b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(signed short b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(signed short b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(unsigned short b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(unsigned short b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(signed int b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(signed int b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(unsigned int b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(unsigned int b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(signed long b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(signed long b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(unsigned long b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(unsigned long b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(Ulong b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(Ulong b)
    {
       v.set(0, (int)b & 1);
    }
    template <>
-   __FORCE_INLINE ac_int<1, false>::ac_int(Slong b)
+   __FORCE_INLINE constexpr ac_int<1, false>::ac_int(Slong b)
    {
       v.set(0, (int)b & 1);
    }
 
    template <>
-   __FORCE_INLINE ac_int<8, true>::ac_int(bool b)
+   __FORCE_INLINE constexpr ac_int<8, true>::ac_int(bool b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<8, false>::ac_int(bool b)
+   __FORCE_INLINE constexpr ac_int<8, false>::ac_int(bool b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<8, true>::ac_int(signed char b)
+   __FORCE_INLINE constexpr ac_int<8, true>::ac_int(signed char b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<8, false>::ac_int(unsigned char b)
+   __FORCE_INLINE constexpr ac_int<8, false>::ac_int(unsigned char b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<8, true>::ac_int(unsigned char b)
+   __FORCE_INLINE constexpr ac_int<8, true>::ac_int(unsigned char b)
    {
       v.set(0, (signed char)b);
    }
    template <>
-   __FORCE_INLINE ac_int<8, false>::ac_int(signed char b)
+   __FORCE_INLINE constexpr ac_int<8, false>::ac_int(signed char b)
    {
       v.set(0, (unsigned char)b);
    }
 
    template <>
-   __FORCE_INLINE ac_int<16, true>::ac_int(bool b)
+   __FORCE_INLINE constexpr ac_int<16, true>::ac_int(bool b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<16, false>::ac_int(bool b)
+   __FORCE_INLINE constexpr ac_int<16, false>::ac_int(bool b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<16, true>::ac_int(signed char b)
+   __FORCE_INLINE constexpr ac_int<16, true>::ac_int(signed char b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<16, false>::ac_int(unsigned char b)
+   __FORCE_INLINE constexpr ac_int<16, false>::ac_int(unsigned char b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<16, true>::ac_int(unsigned char b)
+   __FORCE_INLINE constexpr ac_int<16, true>::ac_int(unsigned char b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<16, false>::ac_int(signed char b)
+   __FORCE_INLINE constexpr ac_int<16, false>::ac_int(signed char b)
    {
       v.set(0, (unsigned short)b);
    }
    template <>
-   __FORCE_INLINE ac_int<16, true>::ac_int(signed short b)
+   __FORCE_INLINE constexpr ac_int<16, true>::ac_int(signed short b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<16, false>::ac_int(unsigned short b)
+   __FORCE_INLINE constexpr ac_int<16, false>::ac_int(unsigned short b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<16, true>::ac_int(unsigned short b)
+   __FORCE_INLINE constexpr ac_int<16, true>::ac_int(unsigned short b)
    {
       v.set(0, (signed short)b);
    }
    template <>
-   __FORCE_INLINE ac_int<16, false>::ac_int(signed short b)
+   __FORCE_INLINE constexpr ac_int<16, false>::ac_int(signed short b)
    {
       v.set(0, (unsigned short)b);
    }
 
    template <>
-   __FORCE_INLINE ac_int<32, true>::ac_int(signed int b)
+   __FORCE_INLINE constexpr ac_int<32, true>::ac_int(signed int b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<32, true>::ac_int(unsigned int b)
+   __FORCE_INLINE constexpr ac_int<32, true>::ac_int(unsigned int b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_int<32, false>::ac_int(signed int b)
-   {
-      v.set(0, b);
-      v.set(1, 0);
-   }
-   template <>
-   __FORCE_INLINE ac_int<32, false>::ac_int(unsigned int b)
+   __FORCE_INLINE constexpr ac_int<32, false>::ac_int(signed int b)
    {
       v.set(0, b);
       v.set(1, 0);
    }
-
    template <>
-   __FORCE_INLINE ac_int<32, true>::ac_int(Slong b)
+   __FORCE_INLINE constexpr ac_int<32, false>::ac_int(unsigned int b)
    {
-      v.set(0, (int)b);
-   }
-   template <>
-   __FORCE_INLINE ac_int<32, true>::ac_int(Ulong b)
-   {
-      v.set(0, (int)b);
-   }
-   template <>
-   __FORCE_INLINE ac_int<32, false>::ac_int(Slong b)
-   {
-      v.set(0, (int)b);
-      v.set(1, 0);
-   }
-   template <>
-   __FORCE_INLINE ac_int<32, false>::ac_int(Ulong b)
-   {
-      v.set(0, (int)b);
+      v.set(0, b);
       v.set(1, 0);
    }
 
    template <>
-   __FORCE_INLINE ac_int<64, true>::ac_int(Slong b)
+   __FORCE_INLINE constexpr ac_int<32, true>::ac_int(Slong b)
+   {
+      v.set(0, (int)b);
+   }
+   template <>
+   __FORCE_INLINE constexpr ac_int<32, true>::ac_int(Ulong b)
+   {
+      v.set(0, (int)b);
+   }
+   template <>
+   __FORCE_INLINE constexpr ac_int<32, false>::ac_int(Slong b)
+   {
+      v.set(0, (int)b);
+      v.set(1, 0);
+   }
+   template <>
+   __FORCE_INLINE constexpr ac_int<32, false>::ac_int(Ulong b)
+   {
+      v.set(0, (int)b);
+      v.set(1, 0);
+   }
+
+   template <>
+   __FORCE_INLINE constexpr ac_int<64, true>::ac_int(Slong b)
    {
       v.set(0, (int)b);
       v.set(1, (int)(b >> 32));
    }
    template <>
-   __FORCE_INLINE ac_int<64, true>::ac_int(Ulong b)
+   __FORCE_INLINE constexpr ac_int<64, true>::ac_int(Ulong b)
    {
       v.set(0, (int)b);
       v.set(1, (int)(b >> 32));
    }
    template <>
-   __FORCE_INLINE ac_int<64, false>::ac_int(Slong b)
+   __FORCE_INLINE constexpr ac_int<64, false>::ac_int(Slong b)
    {
       v.set(0, (int)b);
       v.set(1, (int)((Ulong)b >> 32));
       v.set(2, 0);
    }
    template <>
-   __FORCE_INLINE ac_int<64, false>::ac_int(Ulong b)
+   __FORCE_INLINE constexpr ac_int<64, false>::ac_int(Ulong b)
    {
       v.set(0, (int)b);
       v.set(1, (int)(b >> 32));
       v.set(2, 0);
    }
 
+   template <int W, bool S>
+   template <size_t NN>
+   __FORCE_INLINE constexpr void ac_int<W, S>::bit_fill_bin(const char (&str)[NN], unsigned start)
+   {
+      ac_int<W, S> res = 0;
+      bool loop_exit = false;
+      loop<int, 0, exclude, NN>([&](int i) {
+         if(!loop_exit && i >= start)
+         {
+            char c = str[i];
+            int h = 0;
+            if(c == '0')
+               h = 0;
+            else if(c == '1')
+               h = 1;
+            else
+            {
+               AC_ASSERT(!c, "Invalid hex digit");
+               loop_exit = true;
+               return;
+            }
+            res <<= ac_int<1, false>(1);
+            res |= ac_int<1, false>(h);
+         }
+      });
+      *this = res;
+   }
    // Stream --------------------------------------------------------------------
 
    template <int W, bool S>
