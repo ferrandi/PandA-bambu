@@ -273,7 +273,6 @@ typedef signed long long Slong;
          return rnd - T(rnd != v && v < T(0));
       }
 
-#ifndef __BAMBU__
       __FORCE_INLINE constexpr double mgc_floor(double d)
       {
          return float_floor(d);
@@ -282,16 +281,6 @@ typedef signed long long Slong;
       {
          return float_floor(d);
       }
-#else
-   __FORCE_INLINE double mgc_floor(double d)
-   {
-      return 0.0;
-   }
-   __FORCE_INLINE float mgc_floor(float d)
-   {
-      return 0.0f;
-   }
-#endif
 
 #ifdef __BAMBU__
 #define AC_ASSERT(cond, msg)
