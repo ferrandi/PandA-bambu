@@ -152,12 +152,12 @@ namespace __AC_NAMESPACE
          {
             if(overflow)
             {
-               loop<int, 0, exclude, N - 1>([&](int idx) { Base::v.set(idx, ~0); });
+               LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, ~0); });
                Base::v.set(N - 1, (~((unsigned)~0 << ((W - 1) & 31))));
             }
             else if(underflow)
             {
-               loop<int, 0, exclude, N - 1>([&](int idx) { Base::v.set(idx, 0); });
+               LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, 0); });
                Base::v.set(N - 1, ((unsigned)~0 << ((W - 1) & 31)));
                if(O == AC_SAT_SYM)
                   Base::v.set(0, Base::v[0] | 1);
@@ -169,7 +169,7 @@ namespace __AC_NAMESPACE
          {
             if(overflow)
             {
-               loop<int, 0, exclude, N - 1>([&](int idx) { Base::v.set(idx, ~0); });
+               LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, ~0); });
                Base::v.set(N - 1, ~((unsigned)~0 << (W & 31)));
             }
             else if(underflow)

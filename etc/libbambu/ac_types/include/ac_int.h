@@ -185,30 +185,57 @@ __FORCE_INLINE constexpr void loop(F&& f)
    detail::loop<(start > end), T, start>(std::make_integer_sequence<T, range + (limit == loop_limit::include)>{}, std::forward<F>(f));
 }
 
+#define LOOP(ctype, cname, start, limit, end, body) loop<ctype, start, limit, end>([&](ctype cname) { body });
 #else
-template <class T, T start, loop_limit limit, T end, class F, typename std::enable_if<(start <= end), bool>::type* = nullptr>
-__FORCE_INLINE constexpr void loop(F&& f)
-{
-#if defined(__clang__)
-#pragma clang loop unroll(full)
-#endif
-   for(T i = start; i < end + (limit == loop_limit::include); ++i)
-   {
-      f(i);
+#if defined(__VIVADO__)
+#define LOOP(ctype, cname, start, limit, end, body)                                    \
+   if(start <= end)                                                                    \
+   {                                                                                   \
+      for(ctype cname = start; cname < end + (limit == loop_limit::include); ++cname)  \
+      {                                                                                \
+         _Pragma("HLS UNROLL") body                                                    \
+      }                                                                                \
+   }                                                                                   \
+   else                                                                                \
+   {                                                                                   \
+      for(ctype cname = start; cname >= end + (limit == loop_limit::exclude); --cname) \
+      {                                                                                \
+         _Pragma("HLS UNROLL") body                                                    \
+      }                                                                                \
    }
-}
-
-template <class T, T start, loop_limit limit, T end, class F, typename std::enable_if<(start > end), bool>::type* = nullptr>
-__FORCE_INLINE constexpr void loop(F&& f)
-{
-#if defined(__clang__)
-#pragma clang loop unroll(full)
-#endif
-   for(T i = start; i >= end + (limit == loop_limit::exclude); --i)
-   {
-      f(i);
+#elif defined(__clang__)
+#define LOOP(ctype, cname, start, limit, end, body)                                                                       \
+   if(start <= end)                                                                                                       \
+   {                                                                                                                      \
+      _Pragma("clang loop unroll(full)") for(ctype cname = start; cname < end + (limit == loop_limit::include); ++cname)  \
+      {                                                                                                                   \
+         body                                                                                                             \
+      }                                                                                                                   \
+   }                                                                                                                      \
+   else                                                                                                                   \
+   {                                                                                                                      \
+      _Pragma("clang loop unroll(full)") for(ctype cname = start; cname >= end + (limit == loop_limit::exclude); --cname) \
+      {                                                                                                                   \
+         body                                                                                                             \
+      }                                                                                                                   \
    }
-}
+#else
+#define LOOP(ctype, cname, start, limit, end, body)                                    \
+   if(start <= end)                                                                    \
+   {                                                                                   \
+      for(ctype cname = start; cname < end + (limit == loop_limit::include); ++cname)  \
+      {                                                                                \
+         body                                                                          \
+      }                                                                                \
+   }                                                                                   \
+   else                                                                                \
+   {                                                                                   \
+      for(ctype cname = start; cname >= end + (limit == loop_limit::exclude); --cname) \
+      {                                                                                \
+         body                                                                          \
+      }                                                                                \
+   }
+#endif
 #endif
 
 #ifdef __AC_NAMESPACE
@@ -338,11 +365,11 @@ typedef signed long long Slong;
          double d2 = d;
          if(N < 0)
          {
-            loop<int, 0, exclude, -N>([&](int i) { d2 /= (Ulong)1 << 32; });
+            LOOP(int, i, 0, exclude, -N, { d2 /= (Ulong)1 << 32; });
          }
          else
          {
-            loop<int, 0, exclude, N>([&](int i) { d2 *= (Ulong)1 << 32; });
+            LOOP(int, i, 0, exclude, N, { d2 *= (Ulong)1 << 32; });
          }
          return d2;
       }
@@ -384,11 +411,11 @@ typedef signed long long Slong;
          float d2 = d;
          if(N < 0)
          {
-            loop<int, 0, exclude, -N>([&](int i) { d2 /= (Ulong)1 << 32; });
+            LOOP(int, i, 0, exclude, -N, { d2 /= (Ulong)1 << 32; });
          }
          else
          {
-            loop<int, 0, exclude, N>([&](int i) { d2 *= (Ulong)1 << 32; });
+            LOOP(int, i, 0, exclude, N, { d2 *= (Ulong)1 << 32; });
          }
          return d2;
       }
@@ -449,7 +476,7 @@ typedef signed long long Slong;
             if(N > 1)
             {
                set(1, static_cast<int>(l >> 32));
-               loop<int, 2, exclude, N>([&](int i) { set(i, (v[1] < 0) ? ~0 : 0); });
+               LOOP(int, i, 2, exclude, N, { set(i, (v[1] < 0) ? ~0 : 0); });
             }
          }
 
@@ -459,7 +486,7 @@ typedef signed long long Slong;
             if(N > 1)
             {
                set(1, static_cast<int>(l >> 32));
-               loop<int, 2, exclude, N>([&](int i) { set(i, 0); });
+               LOOP(int, i, 2, exclude, N, { set(i, 0); });
             }
          }
          __FORCE_INLINE constexpr void set(int x, int value)
@@ -485,9 +512,9 @@ typedef signed long long Slong;
          __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2>& b)
          {
             constexpr int M = AC_MIN(N, N2);
-            loop<int, 0, exclude, M>([&](int idx) { set(idx, b[idx]); });
+            LOOP(int, idx, 0, exclude, M, { set(idx, b[idx]); });
             auto last = v[M - 1] < 0 ? ~0 : 0;
-            loop<int, M, exclude, N>([&](int idx) { set(idx, last); });
+            LOOP(int, idx, M, exclude, N, { set(idx, last); });
          }
       };
 
@@ -514,7 +541,7 @@ typedef signed long long Slong;
             if(N > 2)
             {
                set(1, static_cast<int>(l >> 32));
-               loop<int, 2, exclude, N>([&](int i) { set(i, (v[1] < 0) ? ~0 : 0); });
+               LOOP(int, i, 2, exclude, N, { set(i, (v[1] < 0) ? ~0 : 0); });
             }
          }
 
@@ -524,7 +551,7 @@ typedef signed long long Slong;
             if(N > 2)
             {
                set(1, static_cast<int>(l >> 32));
-               loop<int, 2, exclude, N - 1>([&](int i) { set(i, 0); });
+               LOOP(int, i, 2, exclude, N - 1, { set(i, 0); });
             }
          }
 
@@ -557,9 +584,9 @@ typedef signed long long Slong;
          __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2>& b)
          {
             constexpr int M = AC_MIN(N - 1, N2);
-            loop<int, 0, exclude, M>([&](int idx) { set(idx, b[idx]); });
+            LOOP(int, idx, 0, exclude, M, { set(idx, b[idx]); });
             auto last = v[M - 1] < 0 ? ~0 : 0;
-            loop<int, M, exclude, N - 1>([&](int idx) { set(idx, last); });
+            LOOP(int, idx, M, exclude, N - 1, { set(idx, last); });
          }
       };
 
@@ -1000,7 +1027,7 @@ typedef signed long long Slong;
       {
          if(START < N)
          {
-            loop<int, START, exclude, N>([&](int i) { r.set(i, op[i]); });
+            LOOP(int, i, START, exclude, N, { r.set(i, op[i]); });
          }
       }
 
@@ -1010,7 +1037,7 @@ typedef signed long long Slong;
          bool retval = true;
          if(START < N)
          {
-            loop<int, START, exclude, N>([&](int i) { retval &= !op[i]; });
+            LOOP(int, i, START, exclude, N, { retval &= !op[i]; });
          }
          return retval;
       }
@@ -1021,7 +1048,7 @@ typedef signed long long Slong;
          bool retval = true;
          if(START < N)
          {
-            loop<int, START, exclude, N>([&](int i) { retval &= !(~op[i]); });
+            LOOP(int, i, START, exclude, N, { retval &= !(~op[i]); });
          }
          return retval;
       }
@@ -1037,14 +1064,14 @@ typedef signed long long Slong;
          const iv_base<M2, M2C1>& OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
 
          bool retval = true;
-         loop<int, 0, exclude, M2>([&](int i) { retval &= OP1[i] == OP2[i]; });
+         LOOP(int, i, 0, exclude, M2, { retval &= OP1[i] == OP2[i]; });
          if(!retval)
          {
             return retval;
          }
          int ext = OP2[M2 - 1] < 0 ? ~0 : 0;
          retval = true;
-         loop<int, M2, exclude, M1>([&](int i) { retval &= OP1[i] == ext; });
+         LOOP(int, i, M2, exclude, M1, { retval &= OP1[i] == ext; });
          return retval;
       }
 
@@ -1096,11 +1123,11 @@ typedef signed long long Slong;
          int i2 = M1 > M2 ? ext : OP2[M1 - 1];
          if(OP1[M1 - 1] != i2)
             return b ^ (OP1[M1 - 1] < i2);
-         bool retval;
+         bool retval = false;
          bool invalidate = false;
          if((M1 - 2) >= M2)
          {
-            loop<int, M1 - 2, include, M2>([&](int i) {
+            LOOP(int, i, M1 - 2, include, M2, {
                if(!invalidate)
                {
                   if((unsigned)OP1[i] != (unsigned)ext)
@@ -1117,7 +1144,7 @@ typedef signed long long Slong;
          }
          if((M2 - 1) >= 0)
          {
-            loop<int, M2 - 1, include, 0>([&](int i) {
+            LOOP(int, i, M2 - 1, include, 0, {
                if(!invalidate)
                {
                   if((unsigned)OP1[i] != (unsigned)OP2[i])
@@ -1140,7 +1167,7 @@ typedef signed long long Slong;
       {
          if(START < N)
          {
-            loop<int, START, exclude, N>([&](int i) { r.set(i, ext); });
+            LOOP(int, i, START, exclude, N, { r.set(i, ext); });
          }
       }
 
@@ -1206,8 +1233,8 @@ typedef signed long long Slong;
 
             Ulong l1 = 0;
             Slong l2 = 0;
-            loop<int, 0, exclude, T1>([&](int k) {
-               loop<int, 0, include, T1>([&](int i) {
+            LOOP(int, k, 0, exclude, T1, {
+               LOOP(int, i, 0, include, T1, {
                   if(i < k + 1)
                   {
                      accumulate(mult_u_u(OP1[k - i], OP2[i]), l1, l2);
@@ -1220,9 +1247,9 @@ typedef signed long long Slong;
             });
             if(T1 < T2)
             {
-               loop<int, T1, exclude, T2>([&](int k) {
+               LOOP(int, k, T1, exclude, T2, {
                   accumulate(mult_u_s(OP1[k - M2 + 1], OP2[M2 - 1]), l1, l2);
-                  loop<int, 0, exclude, M2 - 1>([&](int i) { accumulate(mult_u_u(OP1[k - i], OP2[i]), l1, l2); });
+                  LOOP(int, i, 0, exclude, M2 - 1, { accumulate(mult_u_u(OP1[k - i], OP2[i]), l1, l2); });
                   l2 += (Ulong)(unsigned)(l1 >> 32);
                   r.set(k, (int)l1);
                   l1 = (unsigned)l2;
@@ -1231,9 +1258,9 @@ typedef signed long long Slong;
             }
             if(T2 < T3)
             {
-               loop<int, T2, exclude, T3>([&](int k) {
+               LOOP(int, k, T2, exclude, T3, {
                   accumulate(mult_u_s(OP1[k - M2 + 1], OP2[M2 - 1]), l1, l2);
-                  loop<int, 0, exclude, M2 - 1>([&](int i) {
+                  LOOP(int, i, 0, exclude, M2 - 1, {
                      if(i >= (k - T2 + 1))
                      {
                         accumulate(mult_u_u(OP1[k - i], OP2[i]), l1, l2);
@@ -1264,7 +1291,7 @@ typedef signed long long Slong;
       __FORCE_INLINE constexpr bool iv_uadd_carry(const iv_base<N, C>& op1, bool carry, iv_base<N, C>& r)
       {
          Slong l = carry;
-         loop<int, 0, exclude, N>([&](int i) {
+         LOOP(int, i, 0, exclude, N, {
             l += (Ulong)(unsigned)op1[i];
             r.set(i, (int)l);
             l >>= 32;
@@ -1288,7 +1315,7 @@ typedef signed long long Slong;
          l >>= 32;
          if((START + 1) < (N - 1))
          {
-            loop<int, START + 1, exclude, N - 1>([&](int i) {
+            LOOP(int, i, START + 1, exclude, N - 1, {
                l += (Ulong)(unsigned)op1[i];
                r.set(i, (int)l);
                l >>= 32;
@@ -1304,7 +1331,7 @@ typedef signed long long Slong;
       {
          AC_ASSERT(AC_MIN(N, AC_MIN(N1, AC_MIN(N2, Nr))) == N, "unexpected condition");
          Ulong l = 0;
-         loop<int, 0, exclude, N>([&](int i) {
+         LOOP(int, i, 0, exclude, N, {
             l += (Ulong)(unsigned)op1[i] + (Ulong)(unsigned)op2[i];
             r.set(i, (int)l);
             l >>= 32;
@@ -1350,7 +1377,7 @@ typedef signed long long Slong;
          l >>= 32;
          if((START + 1) < (N - 1))
          {
-            loop<int, START + 1, exclude, N - 1>([&](int i) {
+            LOOP(int, i, START + 1, exclude, N - 1, {
                l += (Ulong)(unsigned)op1[i];
                r.set(i, (int)l);
                l >>= 32;
@@ -1377,7 +1404,7 @@ typedef signed long long Slong;
          l >>= 32;
          if((START + 1) < (N - 1))
          {
-            loop<int, START + 1, exclude, N - 1>([&](int i) {
+            LOOP(int, i, START + 1, exclude, N - 1, {
                l -= (Ulong)(unsigned)op2[i];
                r.set(i, (int)l);
                l >>= 32;
@@ -1393,7 +1420,7 @@ typedef signed long long Slong;
       {
          AC_ASSERT(AC_MIN(N, AC_MIN(N1, AC_MIN(N2, Nr))) == N, "unexpected condition");
          Slong l = 0;
-         loop<int, 0, exclude, N>([&](int i) {
+         LOOP(int, i, 0, exclude, N, {
             l += (Ulong)(unsigned)op1[i] - (Ulong)(unsigned)op2[i];
             r.set(i, (int)l);
             l >>= 32;
@@ -1426,7 +1453,7 @@ typedef signed long long Slong;
       __FORCE_INLINE void iv_neg(const iv_base<N, C>& op1, iv_base<Nr, Cr>& r)
       {
          Slong l = 0;
-         loop<int, 0, exclude, AC_MIN(N, Nr)>([&](int k) {
+         LOOP(int, k, 0, exclude, AC_MIN(N, Nr), {
             l -= (Ulong)(unsigned)op1[k];
             r.set(k, (unsigned)l);
             l >>= 32;
@@ -1458,7 +1485,7 @@ typedef signed long long Slong;
          constexpr int w2_length = 2 * w1_length;
          int d_msi = D - 1; // most significant int for d
          bool loop_finished = false;
-         loop<int, D - 1, exclude, 0>([&](int index) {
+         LOOP(int, index, D - 1, exclude, 0, {
             if(!loop_finished && d_msi > 0 && !d[d_msi])
                d_msi--;
             else
@@ -1472,14 +1499,14 @@ typedef signed long long Slong;
          }
          int n_msi = N - 1; // most significant int for n
          loop_finished = false;
-         loop<int, N - 1, exclude, 0>([&](int index) {
+         LOOP(int, index, N - 1, exclude, 0, {
             if(!loop_finished && n_msi > 0 && !n[n_msi])
                n_msi--;
             else
                loop_finished = true;
          });
-         loop<int, 0, exclude, Q>([&](int i) { q.set(i, 0); });
-         loop<int, 0, exclude, R>([&](int i) { r.set(i, n[i]); });
+         LOOP(int, i, 0, exclude, Q, { q.set(i, 0); });
+         LOOP(int, i, 0, exclude, R, { r.set(i, n[i]); });
          // write most significant "words" into d1
          bool d_mss_odd = (bool)(d[d_msi] >> w1_length);
          int d_mss = 2 * d_msi + d_mss_odd; // index to most significant short (16-bit)
@@ -1497,11 +1524,11 @@ typedef signed long long Slong;
          {
             uw2 r1[N + 1];
             r1[n_msi + 1] = 0;
-            loop<int, 0, include, N>([&](int index) {
+            LOOP(int, index, 0, include, N, {
                if(index <= n_msi)
                   r1[index] = n[index];
             });
-            loop<int, 2 * N - 1, include, 0>([&](int k) {
+            LOOP(int, k, 2 * N - 1, include, 0, {
                if(k <= n_mss && k >= d_mss)
                {
                   int k_msi = k >> 1;
@@ -1664,7 +1691,7 @@ typedef signed long long Slong;
       {
          if(START < N)
          {
-            loop<int, START, exclude, N>([&](int i) { r.set(i, ~op[i]); });
+            LOOP(int, i, START, exclude, N, { r.set(i, ~op[i]); });
          }
       }
 
@@ -1679,7 +1706,7 @@ typedef signed long long Slong;
       template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
       __FORCE_INLINE void iv_bitwise_and_n(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
       {
-         loop<int, 0, exclude, N>([&](int i) { r.set(i, op1[i] & op2[i]); });
+         LOOP(int, i, 0, exclude, N, { r.set(i, op1[i] & op2[i]); });
       }
 
       template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
@@ -1703,7 +1730,7 @@ typedef signed long long Slong;
       template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
       __FORCE_INLINE void iv_bitwise_or_n(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
       {
-         loop<int, 0, exclude, N>([&](int i) { r.set(i, op1[i] | op2[i]); });
+         LOOP(int, i, 0, exclude, N, { r.set(i, op1[i] | op2[i]); });
       }
 
       template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
@@ -1727,7 +1754,7 @@ typedef signed long long Slong;
       template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
       __FORCE_INLINE void iv_bitwise_xor_n(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
       {
-         loop<int, 0, exclude, N>([&](int i) { r.set(i, op1[i] ^ op2[i]); });
+         LOOP(int, i, 0, exclude, N, { r.set(i, op1[i] ^ op2[i]); });
       }
 
       template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
@@ -1757,7 +1784,7 @@ typedef signed long long Slong;
          if(s31 && ishift != Nr)
          {
             unsigned lw = 0;
-            loop<unsigned, 0, exclude, Nr>([&](unsigned i) {
+            LOOP(unsigned, i, 0, exclude, Nr, {
                unsigned hw = (i >= ishift) ? op1[i - ishift] : 0;
                r.set(i, (hw << s31) | (lw >> (32 - s31)));
                lw = hw;
@@ -1765,7 +1792,7 @@ typedef signed long long Slong;
          }
          else
          {
-            loop<unsigned, 0, exclude, Nr>([&](unsigned i) { r.set(i, (i >= ishift) ? op1[i - ishift] : 0); });
+            LOOP(unsigned, i, 0, exclude, Nr, { r.set(i, (i >= ishift) ? op1[i - ishift] : 0); });
          }
       }
 
@@ -1778,7 +1805,7 @@ typedef signed long long Slong;
          if(s31 && ishift != N)
          {
             unsigned lw = (ishift < N) ? op1[ishift] : ext;
-            loop<unsigned, 0, exclude, Nr>([&](unsigned i) {
+            LOOP(unsigned, i, 0, exclude, Nr, {
                unsigned hw = (i + ishift + 1 < N) ? op1[i + ishift + 1] : ext;
                r.set(i, (lw >> s31) | (hw << (32 - s31)));
                lw = hw;
@@ -1786,7 +1813,7 @@ typedef signed long long Slong;
          }
          else
          {
-            loop<unsigned, 0, exclude, Nr>([&](unsigned i) { r.set(i, (i + ishift < N) ? op1[i + ishift] : ext); });
+            LOOP(unsigned, i, 0, exclude, Nr, { r.set(i, (i + ishift < N) ? op1[i + ishift] : ext); });
          }
       }
 
@@ -1823,13 +1850,13 @@ typedef signed long long Slong;
             constexpr unsigned s31 = B & 31;
             constexpr int ishift = (((B >> 5) > Nr) ? Nr : (B >> 5));
             constexpr int M1 = AC_MIN(N + ishift, Nr);
-            loop<int, 0, exclude, ishift>([&](int idx) { r.set(idx, 0); });
+            LOOP(int, idx, 0, exclude, ishift, { r.set(idx, 0); });
             if(s31)
             {
                unsigned lw = 0;
                if(ishift < M1)
                {
-                  loop<int, ishift, exclude, M1>([&](int i) {
+                  LOOP(int, i, ishift, exclude, M1, {
                      unsigned hw = op1[i - ishift];
                      r.set(i, (hw << s31) | (lw >> ((32 - s31) & 31))); // &31 is to quiet compilers
                      lw = hw;
@@ -1845,7 +1872,7 @@ typedef signed long long Slong;
             {
                if(ishift < M1)
                {
-                  loop<int, ishift, exclude, M1>([&](int i) { r.set(i, op1[i - ishift]); });
+                  LOOP(int, i, ishift, exclude, M1, { r.set(i, op1[i - ishift]); });
                }
                iv_extend<M1>(r, r[M1 - 1] < 0 ? -1 : 0);
             }
@@ -1869,7 +1896,7 @@ typedef signed long long Slong;
             if(s31 && ishift != N)
             {
                unsigned lw = (ishift < N) ? op1[ishift] : ext;
-               loop<int, 0, exclude, Nr>([&](int i) {
+               LOOP(int, i, 0, exclude, Nr, {
                   unsigned hw = (i + ishift + 1 < N) ? op1[i + ishift + 1] : ext;
                   r.set(i, (lw >> s31) | (hw << ((32 - s31) & 31))); // &31 is to quiet compilers
                   lw = hw;
@@ -1877,7 +1904,7 @@ typedef signed long long Slong;
             }
             else
             {
-               loop<int, 0, exclude, Nr>([&](int i) { r.set(i, (i + ishift < N) ? op1[i + ishift] : ext); });
+               LOOP(int, i, 0, exclude, Nr, { r.set(i, (i + ishift < N) ? op1[i + ishift] : ext); });
             }
          }
       }
@@ -1890,7 +1917,7 @@ typedef signed long long Slong;
          double dfloor = mgc_floor(d2);
          *o = dfloor != 0.0;
          d2 = d2 - dfloor;
-         loop<int, N - 1, include, 0>([&](int i) {
+         LOOP(int, i, N - 1, include, 0, {
             d2 *= (Ulong)1 << 32;
             unsigned k = (unsigned int)d2;
             r.set(i, b ? ~k : k);
@@ -1914,9 +1941,9 @@ typedef signed long long Slong;
          float dfloor = mgc_floor(d2);
          *o = dfloor != 0.0;
          d2 = d2 - dfloor;
-         loop<int, N - 1, include, 0>([&](int i) {
+         LOOP(int, i, N - 1, include, 0, {
             d2 *= (Ulong)1 << 32;
-            unsigned k = (unsigned int)d2;
+            unsigned int k = static_cast<unsigned int>(d2);
             r.set(i, b ? ~k : k);
             d2 -= k;
          });
@@ -2348,7 +2375,7 @@ typedef signed long long Slong;
             double a = v[N - 1];
             if((N - 2) >= 0)
             {
-               loop<int, N - 2, include, 0>([&](int i) {
+               LOOP(int, i, N - 2, include, 0, {
                   a *= (Ulong)1 << 32;
                   a += (unsigned)v[i];
                });
@@ -2360,7 +2387,7 @@ typedef signed long long Slong;
             float a = v[N - 1];
             if((N - 2) >= 0)
             {
-               loop<int, N - 2, include, 0>([&](int i) {
+               LOOP(int, i, N - 2, include, 0, {
                   a *= (Ulong)1 << 32;
                   a += (unsigned)v[i];
                });
@@ -2506,7 +2533,7 @@ typedef signed long long Slong;
             else
             {
                v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
-               loop<int, 1, exclude, N2 - 1>([&](int i) { v.set(lsb_v + i, (op2.v[i] << lsb_b) | (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b))); });
+               LOOP(int, i, 1, exclude, N2 - 1, { v.set(lsb_v + i, (op2.v[i] << lsb_b) | (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b))); });
                unsigned t = (op2.v[N2 - 1] << lsb_b) | (((unsigned)op2.v[N2 - 2] >> 1) >> (31 - lsb_b));
                unsigned m;
                if(msb_v - lsb_v == N2)
@@ -2544,7 +2571,7 @@ typedef signed long long Slong;
             else
             {
                v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
-               loop<int, 1, exclude, N2 - 1>([&](int i) { v.set(lsb_v + i, (op2.v[i] << lsb_b) | (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b))); });
+               LOOP(int, i, 1, exclude, N2 - 1, { v.set(lsb_v + i, (op2.v[i] << lsb_b) | (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b))); });
                unsigned t = (op2.v[N2 - 1] << lsb_b) | (((unsigned)op2.v[N2 - 2] >> 1) >> (31 - lsb_b));
                unsigned m = 0;
                if(static_cast<int>(msb_v - lsb_v) == N2)
@@ -4229,7 +4256,7 @@ typedef signed long long Slong;
             r ^= Base::v[N - 2];
          if(N > 2)
          {
-            loop<int, 0, exclude, N - 2>([&](int i) { r ^= Base::v[i]; });
+            LOOP(int, i, 0, exclude, N - 2, { r ^= Base::v[i]; });
          }
          if(W > 16)
             r ^= r >> 16;
@@ -4254,7 +4281,8 @@ typedef signed long long Slong;
          // Asserts if anything other than 0-9a-fA-F is encountered
          ac_int<W, S> res = 0;
          bool loop_exit = false;
-         loop<int, 0, exclude, NN>([&](int i) {
+#if __cplusplus >= 201703L
+         LOOP(int, i, 0, exclude, NN, {
             if(!loop_exit && i >= start)
             {
                char c = str[i];
@@ -4267,10 +4295,29 @@ typedef signed long long Slong;
                   loop_exit = true;
                   return;
                }
-               res <<= ac_int<W, false>(3);
-               res |= ac_int<4, false>(h);
+               res <<= (ac_int<W, false>(3));
+               res |= (ac_int<4, false>(h));
             }
          });
+#else
+      LOOP(int, i, 0, exclude, NN, {
+         if(!loop_exit && i >= start)
+         {
+            char c = str[i];
+            int h = 0;
+            if(c >= '0' && c <= '8')
+               h = c - '0';
+            else
+            {
+               AC_ASSERT(!c, "Invalid hex digit");
+               loop_exit = true;
+               continue;
+            }
+            res <<= (ac_int<W, false>(3));
+            res |= (ac_int<4, false>(h));
+         }
+      });
+#endif
          *this = res;
       }
 
@@ -4281,7 +4328,8 @@ typedef signed long long Slong;
          // Asserts if anything other than 0-9a-fA-F is encountered
          ac_int<W, S> res = 0;
          bool loop_exit = false;
-         loop<int, 0, exclude, NN>([&](int i) {
+#if __cplusplus >= 201703L
+         LOOP(int, i, 0, exclude, NN, {
             if(!loop_exit && i >= start)
             {
                char c = str[i];
@@ -4298,10 +4346,33 @@ typedef signed long long Slong;
                   loop_exit = true;
                   return;
                }
-               res <<= ac_int<W, false>(4);
-               res |= ac_int<4, false>(h);
+               res <<= (ac_int<W, false>(4));
+               res |= (ac_int<4, false>(h));
             }
          });
+#else
+      LOOP(int, i, 0, exclude, NN, {
+         if(!loop_exit && i >= start)
+         {
+            char c = str[i];
+            int h = 0;
+            if(c >= '0' && c <= '9')
+               h = c - '0';
+            else if(c >= 'A' && c <= 'F')
+               h = c - 'A' + 10;
+            else if(c >= 'a' && c <= 'f')
+               h = c - 'a' + 10;
+            else
+            {
+               AC_ASSERT(!c, "Invalid hex digit");
+               loop_exit = true;
+               continue;
+            }
+            res <<= (ac_int<W, false>(4));
+            res |= (ac_int<4, false>(h));
+         }
+      });
+#endif
          *this = res;
       }
 
@@ -4320,7 +4391,7 @@ typedef signed long long Slong;
             M = AC_MIN(N0, Na)
          };
          ac_int<M * 32, false> res = 0;
-         loop<int, 0, exclude, M>([&](int i) { res.set_slc(i * 32, ac_int<32>(ivec[bigendian ? M - 1 - i : i])); });
+         LOOP(int, i, 0, exclude, M, { res.set_slc(i * 32, ac_int<32>(ivec[bigendian ? M - 1 - i : i])); });
          *this = res;
       }
    };
@@ -4748,7 +4819,8 @@ typedef signed long long Slong;
    {
       ac_int<W, S> res = 0;
       bool loop_exit = false;
-      loop<int, 0, exclude, NN>([&](int i) {
+#if __cplusplus >= 201703L
+      LOOP(int, i, 0, exclude, NN, {
          if(!loop_exit && i >= start)
          {
             char c = str[i];
@@ -4763,10 +4835,31 @@ typedef signed long long Slong;
                loop_exit = true;
                return;
             }
-            res <<= ac_int<1, false>(1);
-            res |= ac_int<1, false>(h);
+            res <<= (ac_int<1, false>(1));
+            res |= (ac_int<1, false>(h));
          }
       });
+#else
+   LOOP(int, i, 0, exclude, NN, {
+      if(!loop_exit && i >= start)
+      {
+         char c = str[i];
+         int h = 0;
+         if(c == '0')
+            h = 0;
+         else if(c == '1')
+            h = 1;
+         else
+         {
+            AC_ASSERT(!c, "Invalid hex digit");
+            loop_exit = true;
+            continue;
+         }
+         res <<= (ac_int<1, false>(1));
+         res |= (ac_int<1, false>(h));
+      }
+   });
+#endif
       *this = res;
    }
    // Stream --------------------------------------------------------------------
