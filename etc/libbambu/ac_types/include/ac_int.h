@@ -3390,8 +3390,8 @@ typedef signed long long Slong;
       {
          if(V == AC_VAL_DC)
          {
-            ac_int r;
-            Base::operator=(r);
+            //ac_int r;
+            //Base::operator=(r);
             bit_adjust();
          }
          else if(V == AC_VAL_0 || V == AC_VAL_MIN || V == AC_VAL_QUANTUM)
