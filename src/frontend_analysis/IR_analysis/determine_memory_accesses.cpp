@@ -112,6 +112,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, SAME_FUNCTION));
          break;
       }
       default:
