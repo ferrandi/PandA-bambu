@@ -671,10 +671,6 @@ double AllocationInformation::GetStatementArea(const unsigned int statement_inde
             return 0.0;
          }
       }
-      if(ga and ga->orig)
-      {
-         return GetStatementArea(ga->orig->index);
-      }
       const auto gmwi = GetPointer<const gimple_multi_way_if>(TreeM->get_tree_node_const(statement_index));
       if(gmwi)
       {
@@ -794,10 +790,6 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    }
    auto tn = TreeM->get_tree_node_const(index);
    const auto ga = GetPointer<const gimple_assign>(tn);
-   if(ga && ga->orig)
-   {
-      return is_operation_bounded(ga->orig->index);
-   }
 
    /// currently all the operations introduced after the allocation has been performed are bounded
    if(ga)
@@ -1776,12 +1768,6 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1");
             return 1;
          }
-         else if(ga->orig)
-         {
-            const auto ret_value = GetCycleLatency(ga->orig->index);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of original copy is " + STR(ret_value));
-            return ret_value;
-         }
          else if(right->get_kind() == widen_mult_expr_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1: possibly inaccurate");
@@ -1842,15 +1828,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       {
          return operation_index;
       }
-      const auto ga = GetPointer<const gimple_assign>(TreeM->get_tree_node_const(operation_index));
-      if(ga and ga->orig and GET_NODE(ga->orig)->get_kind() != gimple_phi_K)
-      {
-         return ga->orig->index;
-      }
-      else
-      {
-         return operation_index;
-      }
+      return operation_index;
    }();
    /// For the intermediate stage of multi-cycle the latency is the clock cycle
    const unsigned int num_cycles = GetCycleLatency(time_operation_index);
@@ -2289,12 +2267,6 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
          return std::pair<double, double>(0.0, 0.0);
-      }
-      if(ga and ga->orig)
-      {
-         const auto op_execution_time = GetTimeLatency(ga->orig->index, functional_unit_type, stage);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time.first));
-         return op_execution_time;
       }
       THROW_UNREACHABLE("Latency of " + TreeM->get_tree_node_const(operation_index)->ToString() + " cannot be computed");
       return std::pair<double, double>(0.0, 0.0);
@@ -3798,21 +3770,18 @@ void AllocationInformation::Initialize()
    mux_time_multiplier = HLS_T->get_target_device()->has_parameter("mux_time_multiplier") ? HLS_T->get_target_device()->get_parameter<double>("mux_time_multiplier") : 1.0;
    memory_correction_coefficient = HLS_T->get_target_device()->has_parameter("memory_correction_coefficient") ? HLS_T->get_target_device()->get_parameter<double>("memory_correction_coefficient") : 0.7;
 
-   connection_offset = parameters->IsParameter("ConnectionOffset") ? parameters->GetParameter<double>("ConnectionOffset") :
-                                                                     parameters->IsParameter("RelativeConnectionOffset") ?
-                                                                     parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-                                                                     HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ?
-                                                                     HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-                                                                     HLS_T->get_target_device()->has_parameter("ConnectionOffset") ? HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") : NUM_CST_allocation_default_connection_offset;
+   connection_offset = parameters->IsParameter("ConnectionOffset")                           ? parameters->GetParameter<double>("ConnectionOffset") :
+                       parameters->IsParameter("RelativeConnectionOffset")                   ? parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                       HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ? HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                       HLS_T->get_target_device()->has_parameter("ConnectionOffset")         ? HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") :
+                                                                                               NUM_CST_allocation_default_connection_offset;
 
-   output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio") ?
-                                    parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
-                                    HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
-                                                                                                            NUM_CST_allocation_default_output_DSP_connection_ratio * get_setup_hold_time();
-   output_carry_connection_time = parameters->IsParameter("OutputCarryConnectionRatio") ?
-                                      parameters->GetParameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
-                                      HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
-                                                                                                                NUM_CST_allocation_default_output_carry_connection_ratio * get_setup_hold_time();
+   output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio")                   ? parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
+                                HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
+                                                                                                        NUM_CST_allocation_default_output_DSP_connection_ratio * get_setup_hold_time();
+   output_carry_connection_time = parameters->IsParameter("OutputCarryConnectionRatio")                   ? parameters->GetParameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
+                                  HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
+                                                                                                            NUM_CST_allocation_default_output_carry_connection_ratio * get_setup_hold_time();
    fanout_coefficient = parameters->IsParameter("FanOutCoefficient") ? parameters->GetParameter<double>("FanOutCoefficient") : NUM_CST_allocation_default_fanout_coefficent;
    max_fanout_size = parameters->IsParameter("MaxFanOutSize") ? parameters->GetParameter<size_t>("MaxFanOutSize") : NUM_CST_allocation_default_max_fanout_size;
    DSPs_margin = HLS_T->get_target_device()->has_parameter("DSPs_margin") && parameters->getOption<double>(OPT_DSP_margin_combinational) == 1.0 ? HLS_T->get_target_device()->get_parameter<double>("DSPs_margin") :

@@ -299,7 +299,7 @@ void tree_manager::create_tree_node(const unsigned int node_id, enum kind tree_n
 
 unsigned int tree_manager::new_tree_node_id(const unsigned int ask)
 {
-   if(ask and tree_nodes.find(ask) == tree_nodes.end())
+   if(ask && !tree_nodes.count(ask))
    {
       GetTreeReindex(ask);
       return ask;
@@ -704,10 +704,6 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(tree_reindexRef_sn));
                         IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(gm->op1));
-                        if(gm->orig)
-                        {
-                           IR_schema[TOK(TOK_ORIG)] = STR(GET_INDEX_NODE(gm->orig));
-                        }
                         unsigned int gm_index = new_tree_node_id();
                         create_tree_node(gm_index, gimple_assign_K, IR_schema);
                         tree_nodeRef tree_reindexRef_gm = GetTreeReindex(gm_index);

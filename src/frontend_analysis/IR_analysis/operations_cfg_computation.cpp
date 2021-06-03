@@ -644,10 +644,6 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          {
             ogc->AddOperation(TM, actual_name, ASSIGN, bb_index, me->index);
             ogc->add_type(actual_name, TYPE_ASSIGN);
-            if(me->orig)
-            {
-               ogc->add_type(actual_name, TYPE_WAS_GIMPLE_PHI);
-            }
             build_operation_recursive(TM, ogc, me->op1, f_name, bb_index);
          }
          if(me->predicate)

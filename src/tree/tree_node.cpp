@@ -853,7 +853,6 @@ void gimple_assign::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, op0, visit(v));
    VISIT_MEMBER(mask, op1, visit(v));
    VISIT_MEMBER(mask, predicate, visit(v));
-   VISIT_MEMBER(mask, orig, visit(v));
 }
 
 void gimple_nop::visit(tree_node_visitor* const v) const

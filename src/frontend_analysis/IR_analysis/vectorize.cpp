@@ -1829,10 +1829,6 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
          unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
          tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
-         if(ga->orig)
-         {
-            tree_node_schema[TOK(TOK_ORIG)] = STR(ga->orig->index);
-         }
          tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
          tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
          tree_node_schema[TOK(TOK_OP0)] = STR(Transform(ga->op0->index, parallel_degree, 0, new_stmt_list, new_phi_list));
@@ -1955,10 +1951,6 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
                   unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
                   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
-                  if(ga->orig)
-                  {
-                     tree_node_schema[TOK(TOK_ORIG)] = STR(ga->orig->index);
-                  }
                   tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
                   tree_node_schema[TOK(TOK_ADDR)] = STR(ga->temporary_address);
                   tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
@@ -2032,10 +2024,6 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
                   unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
                   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
-                  if(ga->orig)
-                  {
-                     tree_node_schema[TOK(TOK_ORIG)] = STR(ga->orig->index);
-                  }
                   tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
                   tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
                   tree_node_schema[TOK(TOK_OP1)] = STR(constr->index);
@@ -2334,10 +2322,6 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
                unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
                tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
-               if(ga->orig)
-               {
-                  tree_node_schema[TOK(TOK_ORIG)] = STR(ga->orig->index);
-               }
                tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
                tree_node_schema[TOK(TOK_ADDR)] = STR(ga->temporary_address);
                tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);

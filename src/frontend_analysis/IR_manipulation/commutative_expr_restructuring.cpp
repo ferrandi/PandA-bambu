@@ -358,7 +358,6 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->GetTreeReindex(gimple_node_id)));
          /// Set the bit value for the intermediate ssa to correctly update execution time
          GetPointer<ssa_name>(TM->get_tree_node_const(ssa_node_nid))->bit_values = GetPointer<ssa_name>(GET_NODE(first_ga->op0))->bit_values;
-         GetPointer<gimple_assign>(TM->get_tree_node_const(gimple_node_id))->orig = *stmt;
          block.second->PushBefore(TM->GetTreeReindex(gimple_node_id), *stmt);
          new_tree_nodes.push_back(TM->GetTreeReindex(gimple_node_id));
 
@@ -379,7 +378,6 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          gimple_assign_schema[TOK(TOK_OP1)] = STR(root_comm_expr_id);
          TM->create_tree_node(root_gimple_node_id, gimple_assign_K, gimple_assign_schema);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->GetTreeReindex(root_gimple_node_id)));
-         GetPointer<gimple_assign>(TM->get_tree_node_const(root_gimple_node_id))->orig = second_stmt;
          block.second->Replace(*stmt, TM->GetTreeReindex(root_gimple_node_id), true);
          new_tree_nodes.push_back(TM->GetTreeReindex(root_gimple_node_id));
          AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(root_gimple_node_id));

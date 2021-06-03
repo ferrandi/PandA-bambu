@@ -600,12 +600,6 @@ class BehavioralHelper
    virtual bool is_empty_return(unsigned int index) const;
 
    /**
-    * return the nodeID of the original gimple_phi in case the statement comes from a splitted phi node
-    * @param nodeID is the statement nodeID
-    */
-   virtual unsigned int is_coming_from_phi_node(unsigned int nodeID) const;
-
-   /**
     * Print the operations corresponding to the node
     * @param index is the index of the node
     * @param v is the vertex of the operation

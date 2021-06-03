@@ -3034,9 +3034,6 @@ struct gimple_assign : public gimple_node
    /// The predicate
    tree_nodeRef predicate;
 
-   /// in case the statement comes from a phi node split points to the original gimple_phi (PandA extension)
-   tree_nodeRef orig;
-
    bool init_assignment;
 
    bool clobber;

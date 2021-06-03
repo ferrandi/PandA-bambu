@@ -379,7 +379,6 @@ void tree_node_reached::operator()(const gimple_assign* obj, unsigned int& mask)
    CHECK_AND_ADD(obj->op0, gimple_assign::op0);
    CHECK_AND_ADD(obj->op1, gimple_assign::op1);
    CHECK_AND_ADD(obj->predicate, gimple_assign::predicate);
-   CHECK_AND_ADD(obj->orig, gimple_assign::orig);
 }
 
 void tree_node_reached::operator()(const gimple_goto* obj, unsigned int& mask)
@@ -1878,7 +1877,6 @@ void tree_node_index_factory::operator()(const gimple_assign* obj, unsigned int&
    SET_NODE_ID(op0, gimple_assign);
    SET_NODE_ID(op1, gimple_assign);
    SET_NODE_ID(predicate, gimple_assign);
-   SET_NODE_ID(orig, gimple_assign);
    SET_VALUE(init_assignment, gimple_assign);
    SET_VALUE(clobber, gimple_assign);
    SET_VALUE(temporary_address, gimple_assign);

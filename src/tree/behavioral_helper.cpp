@@ -1238,20 +1238,6 @@ std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_funct
    return return_value;
 }
 
-unsigned int BehavioralHelper::is_coming_from_phi_node(unsigned int nodeID) const
-{
-   tree_nodeRef tn = TM->get_tree_node_const(nodeID);
-   auto* gms = GetPointer<gimple_assign>(tn);
-   if(gms && gms->orig)
-   {
-      return GET_INDEX_NODE(gms->orig);
-   }
-   else
-   {
-      return 0;
-   }
-}
-
 bool BehavioralHelper::is_var_args() const
 {
    tree_nodeRef tn = TM->get_tree_node_const(function_index);

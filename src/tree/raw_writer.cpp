@@ -730,7 +730,6 @@ void raw_writer::operator()(const gimple_assign* obj, unsigned int& mask)
    write_when_not_null(STOK(TOK_OP), obj->op0);
    write_when_not_null(STOK(TOK_OP), obj->op1);
    write_when_not_null(STOK(TOK_PREDICATE), obj->predicate);
-   write_when_not_null(STOK(TOK_ORIG), obj->orig);
    if(obj->init_assignment)
    {
       WRITE_TOKEN(os, TOK_INIT);

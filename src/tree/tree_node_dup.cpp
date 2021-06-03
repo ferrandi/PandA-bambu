@@ -1224,7 +1224,6 @@ void tree_node_dup::operator()(const gimple_assign* obj, unsigned int& mask)
    SET_NODE_ID(op0, gimple_assign);
    SET_NODE_ID(op1, gimple_assign);
    SET_NODE_ID(predicate, gimple_assign);
-   SET_NODE_ID(orig, gimple_assign);
    SET_VALUE(init_assignment, gimple_assign);
    SET_VALUE(clobber, gimple_assign);
    SET_VALUE(temporary_address, gimple_assign);

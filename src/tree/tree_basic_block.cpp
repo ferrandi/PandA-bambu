@@ -133,7 +133,7 @@ void bloc::PushBack(const tree_nodeRef statement)
    }
    else
    {
-      auto current_last_stmt = list_of_stmt.back();
+      const auto& current_last_stmt = list_of_stmt.back();
       if(tree_helper::LastStatement(current_last_stmt))
       {
          list_of_stmt.insert(std::prev(list_of_stmt.end()), statement);
@@ -146,9 +146,9 @@ void bloc::PushBack(const tree_nodeRef statement)
    /// This check is necessary since during parsing of statement list statement has not yet been filled
    if((GET_NODE(statement)) && (GetPointer<gimple_node>(GET_NODE(statement))))
    {
-      GetPointer<gimple_node>(GET_NODE(statement))->bb_index = number;
       auto gn = GetPointer<gimple_node>(GET_NODE(statement));
-      if(gn->vdef and GET_NODE(gn->vdef))
+      gn->bb_index = number;
+      if(gn->vdef && GET_NODE(gn->vdef))
       {
          GetPointer<ssa_name>(GET_NODE(gn->vdef))->SetDefStmt(statement);
       }

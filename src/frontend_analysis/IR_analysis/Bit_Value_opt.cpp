@@ -1231,7 +1231,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                            }
                            B->PushBefore(curr_ga, stmt);
-                           GetPointer<gimple_assign>(GET_NODE(curr_ga))->orig = stmt;
                            tree_nodeRef curr_ga_var = GetPointer<gimple_assign>(GET_NODE(curr_ga))->op0;
 #if HAVE_FROM_DISCREPANCY_BUILT
                            /*

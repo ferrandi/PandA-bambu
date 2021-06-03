@@ -1028,7 +1028,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
             }
             else // When intermediate branch BB isn't present, create a new one
             {
-               THROW_ASSERT(static_cast<bool>(BBmap.count(pwe->From)), "UOT??? ");
+               THROW_ASSERT(static_cast<bool>(BBmap.count(pwe->From)), "");
                const auto& FromBB = DT->CGetBBNodeInfo(BBmap.at(pwe->From))->block;
 
                // Create new intermediate BB

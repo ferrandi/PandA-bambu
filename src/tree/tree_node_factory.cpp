@@ -1053,7 +1053,6 @@ void tree_node_factory::operator()(const gimple_assign* obj, unsigned int& mask)
    SET_NODE_ID(TOK_OP0, op0, gimple_assign);
    SET_NODE_ID(TOK_OP1, op1, gimple_assign);
    SET_NODE_ID_OPT(TOK_PREDICATE, predicate, gimple_assign);
-   SET_NODE_ID_OPT(TOK_ORIG, orig, gimple_assign);
    SET_VALUE_OPT(TOK_INIT, init_assignment, gimple_assign, bool);
    SET_VALUE_OPT(TOK_CLOBBER, clobber, gimple_assign, bool);
    SET_VALUE_OPT(TOK_ADDR, temporary_address, gimple_assign, bool);

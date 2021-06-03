@@ -345,7 +345,7 @@ void tree_node_finder::operator()(const gimple_assign* obj, unsigned int& mask)
 {
    tree_node_mask::operator()(obj, mask);
 
-   find_res = find_res && CHECK_TREE_NODE_OPT(TOK_OP, obj->op0) && CHECK_TREE_NODE_OPT(TOK_OP, obj->op1) && CHECK_TREE_NODE_OPT(TOK_PREDICATE, obj->predicate) && CHECK_TREE_NODE_OPT(TOK_ORIG, obj->orig) && CHECK_VALUE_OPT(TOK_INIT, obj->init_assignment) &&
+   find_res = find_res && CHECK_TREE_NODE_OPT(TOK_OP, obj->op0) && CHECK_TREE_NODE_OPT(TOK_OP, obj->op1) && CHECK_TREE_NODE_OPT(TOK_PREDICATE, obj->predicate) && CHECK_VALUE_OPT(TOK_INIT, obj->init_assignment) &&
               CHECK_VALUE_OPT(TOK_CLOBBER, obj->clobber) && CHECK_VALUE_OPT(TOK_ADDR, obj->temporary_address);
 }
 
