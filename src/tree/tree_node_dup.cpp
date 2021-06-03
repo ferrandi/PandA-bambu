@@ -1223,8 +1223,6 @@ void tree_node_dup::operator()(const gimple_assign* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
    SET_NODE_ID(op0, gimple_assign);
    SET_NODE_ID(op1, gimple_assign);
-   ///   SET_NODE_ID(orig,gimple_assign);
-   dynamic_cast<gimple_assign*>(curr_tree_node_ptr)->orig = TM->GetTreeReindex(source_tn->index);
    SET_NODE_ID(predicate, gimple_assign);
    SET_NODE_ID(orig, gimple_assign);
    SET_VALUE(init_assignment, gimple_assign);
@@ -1493,8 +1491,8 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
          }
          else
          {
-            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
-            tree_nodeRef saved_source_tn = source_tn;
+            const auto saved_curr_tree_node_ptr = curr_tree_node_ptr;
+            const auto saved_source_tn = source_tn;
             node_id = create_tree_node(GET_NODE(def_stmt), deep_copy);
             curr_tree_node_ptr = saved_curr_tree_node_ptr;
             source_tn = saved_source_tn;
@@ -1519,8 +1517,8 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
          }
          else
          {
-            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
-            tree_nodeRef saved_source_tn = source_tn;
+            const auto saved_curr_tree_node_ptr = curr_tree_node_ptr;
+            const auto saved_source_tn = source_tn;
             node_id = create_tree_node(GET_NODE(use_stmt), deep_copy);
             curr_tree_node_ptr = saved_curr_tree_node_ptr;
             source_tn = saved_source_tn;
@@ -1538,10 +1536,10 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
          }
       }
    }
-   SET_NODE_ID(min, ssa_name);
-   SET_NODE_ID(max, ssa_name);
    if(!deep_copy)
    {
+      SET_NODE_ID(min, ssa_name);
+      SET_NODE_ID(max, ssa_name);
       SET_VALUE(bit_values, ssa_name);
       SET_VALUE(range, ssa_name);
    }
@@ -1784,8 +1782,8 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
    std::transform(source_bloc->list_of_succ.cbegin(), source_bloc->list_of_succ.cend(), std::back_inserter(curr_bloc->list_of_succ), [&](const unsigned int& bbi) { return get_bbi(bbi); });
    curr_bloc->true_edge = get_bbi(source_bloc->true_edge);
    curr_bloc->false_edge = get_bbi(source_bloc->false_edge);
-   const auto& source_phi_list = source_bloc->CGetPhiList();
-   for(const auto& phi : source_phi_list)
+
+   for(const auto& phi : source_bloc->CGetPhiList())
    {
       unsigned int node_id = GET_INDEX_NODE(phi);
       if(deep_copy)
@@ -1813,10 +1811,9 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
       }
       curr_bloc->AddPhi(TM->GetTreeReindex(node_id));
    }
-   const auto& source_stmt_list = source_bloc->CGetStmtList();
-   for(const auto& stmt : source_stmt_list)
+   for(const auto& stmt : source_bloc->CGetStmtList())
    {
-      unsigned int node_id = GET_INDEX_NODE(stmt);
+      unsigned int node_id = GET_INDEX_CONST_NODE(stmt);
       if(deep_copy)
       {
          const auto rnode = remap.find(node_id);
@@ -1826,9 +1823,9 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
          }
          else
          {
-            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
-            tree_nodeRef saved_source_tn = source_tn;
-            bloc* saved_curr_bloc = curr_bloc;
+            const auto saved_curr_tree_node_ptr = curr_tree_node_ptr;
+            const auto saved_source_tn = source_tn;
+            const auto saved_curr_bloc = curr_bloc;
             node_id = create_tree_node(GET_NODE(stmt), deep_copy);
             curr_tree_node_ptr = saved_curr_tree_node_ptr;
             source_tn = saved_source_tn;
