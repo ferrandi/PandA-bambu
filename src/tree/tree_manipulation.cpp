@@ -2623,7 +2623,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
    }
    if(GET_CONST_NODE(fn)->get_kind() == addr_expr_K)
    {
-      fn = GetPointerS<const addr_expr>(GET_CONST_NODE(fn))->op;
+      fn = GetPointerS<const unary_expr>(GET_CONST_NODE(fn))->op;
    }
    THROW_ASSERT(GET_CONST_NODE(fn)->get_kind() == function_decl_K, "Call statement should address a function declaration");
    THROW_ASSERT(CGM->IsCallPoint(fd->index, GET_INDEX_CONST_NODE(fn), call_node->index, FunctionEdgeInfo::CallType::call_any), "Inline call statement should be a call point");

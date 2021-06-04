@@ -51,6 +51,7 @@
 REF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 CONSTREF_FORWARD_DECL(Parameter);
+CONSTREF_FORWARD_DECL(tree_node);
 
 class FunctionCallInline : public FunctionFrontendFlowStep
 {
@@ -64,9 +65,9 @@ class FunctionCallInline : public FunctionFrontendFlowStep
    /// Set of always inlined functions
    static CustomSet<unsigned int> always_inline;
 
- public:
    static CustomMap<unsigned int, CustomSet<unsigned int>> inline_call;
 
+ public:
    /**
     * Constructor.
     * @param Param is the set of the parameters
@@ -88,5 +89,13 @@ class FunctionCallInline : public FunctionFrontendFlowStep
    DesignFlowStep_Status InternalExec() override;
 
    bool HasToBeExecuted() const override;
+
+   /**
+    * @brief Request inlining for given call statement
+    *
+    * @param call_stmt the call statement to inline
+    * @param caller_id id of the function where the call_stmt is present
+    */
+   static void RequestInlineStmt(const tree_nodeConstRef& call_stmt, unsigned int caller_id);
 };
 #endif

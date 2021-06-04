@@ -1127,384 +1127,85 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    return TreeM->CreateUniqueIntegerCst(static_cast<int64_t>(out_val), GET_INDEX_NODE(tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true)));
 }
 
+#define FLOAT_CAST_FU_NAME "__float_cast"
+
 tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeRef stmt, const tree_nodeRef& ssa, const FloatFormatRef inFF, const FloatFormatRef outFF) const
 {
+   static const auto bool_type_index = tree_man->create_boolean_type()->index;
+   static const auto int_type_index = tree_man->create_default_integer_type()->index;
+
 #if HAVE_ASSERTS
    const auto t_kind = tree_helper::CGetType(GET_CONST_NODE(ssa))->get_kind();
 #endif
    THROW_ASSERT(t_kind == integer_type_K, "Cast rename should be applied on integer variables only. " + tree_node::GetString(t_kind));
    THROW_ASSERT(inFF && outFF, "Interface IO float format must be defined.");
 
-   const auto createStmt = [&](tree_nodeRef op_type, tree_nodeRef op) {
-      if(GET_NODE(op)->get_kind() != gimple_assign_K)
-      {
-         op = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), op, bb->number, BUILTIN_SRCP);
-      }
-      if(stmt == nullptr)
-      {
-         bb->PushFront(op);
-      }
-      else
-      {
-         bb->PushAfter(op, stmt);
-      }
-      stmt = op;
-      return GetPointerS<gimple_assign>(GET_NODE(op))->op0;
+   const auto float_cast_id = TreeM->function_index(FLOAT_CAST_FU_NAME);
+   THROW_ASSERT(float_cast_id, "The library miss this function " FLOAT_CAST_FU_NAME);
+   THROW_ASSERT(AppM->GetFunctionBehavior(float_cast_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+   const auto spec_suffix = inFF->mngl() + "_to_" + outFF->mngl();
+   auto spec_function_id = TreeM->function_index(FLOAT_CAST_FU_NAME + spec_suffix);
+   if(spec_function_id == 0)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Generating specialized version of " FLOAT_CAST_FU_NAME " (" + STR(float_cast_id) + ") with fp format " + spec_suffix);
+      const auto called_func = TreeM->GetTreeReindex(float_cast_id);
+      const auto spec_func = tree_man->CloneFunction(called_func, spec_suffix);
+      spec_function_id = GET_INDEX_CONST_NODE(spec_func);
+      THROW_ASSERT(spec_function_id, "Error cloning function " FLOAT_CAST_FU_NAME " (" + STR(float_cast_id) + ").");
+   }
+   const auto args = {
+       ssa,
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bits), int_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->frac_bits), int_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bias), int_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_rounding), bool_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_nan), bool_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_one), bool_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_subnorm), bool_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->sign == bit_lattice::U ? -1 : (inFF->sign == bit_lattice::ONE ? 1 : 0)), int_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exp_bits), int_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->frac_bits), int_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exp_bias), int_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_rounding), bool_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_nan), bool_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_one), bool_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_subnorm), bool_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->sign == bit_lattice::U ? -1 : (outFF->sign == bit_lattice::ONE ? 1 : 0)), int_type_index),
    };
-
-   const auto bool_type = tree_man->create_boolean_type();
-   const auto bool_type_idx = GET_INDEX_NODE(bool_type);
-   const auto in_type = GetPointerS<ssa_name>(GET_NODE(ssa))->type;
-   THROW_ASSERT(tree_helper::Size(GET_NODE(in_type)) == static_cast<unsigned int>(static_cast<uint8_t>(inFF->sign == bit_lattice::U) + inFF->exp_bits + inFF->frac_bits),
-                "Input type size " + STR(tree_helper::Size(GET_NODE(in_type))) + "bits with fp format " + inFF->mngl());
-   const auto in_type_idx = GET_INDEX_NODE(in_type);
+   const auto float_cast_call = tree_man->CreateCallExpr(TreeM->GetTreeReindex(spec_function_id), args, BUILTIN_SRCP);
    const auto out_type = tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true);
-   const auto out_type_idx = GET_INDEX_NODE(out_type);
-   const auto needed_bits = [](int i) -> unsigned int {
-      int bits;
-      if(i > 0)
-      {
-         bits = 32 - __builtin_clz(static_cast<unsigned int>(i));
-      }
-      else
-      {
-         i = -i;
-         bits = 32 - __builtin_clz(static_cast<unsigned int>(i)) + ((i & (i - 1)) != 0);
-      }
-      return static_cast<unsigned int>(bits);
-   };
-   const auto exp_bits_diff = inFF->exp_bits > outFF->exp_bits ? (inFF->exp_bits - outFF->exp_bits) : (outFF->exp_bits - inFF->exp_bits);
-   const unsigned int exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits) + (exp_bits_diff == 1), static_cast<unsigned int>(outFF->exp_bits) + (exp_bits_diff == 1), needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
-   const auto exp_type = tree_man->create_integer_type_with_prec(exp_type_size, true);
-   const auto exp_type_idx = GET_INDEX_NODE(exp_type);
-
-   // Apply fractional bits mask
-   const auto fracAnd = tree_man->create_binary_operation(in_type, ssa, TreeM->CreateUniqueIntegerCst((1LL << inFF->frac_bits) - 1, in_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-   auto Frac = createStmt(in_type, fracAnd);
-
-   // Right shift input value
-   const auto expRShift = tree_man->create_binary_operation(in_type, ssa, TreeM->CreateUniqueIntegerCst(inFF->frac_bits, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
-   auto Exp = createStmt(in_type, expRShift);
-
-   // Apply exponent bits mask
-   const auto expAnd = tree_man->create_binary_operation(in_type, Exp, TreeM->CreateUniqueIntegerCst((1LL << inFF->exp_bits) - 1, in_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-   Exp = createStmt(in_type, expAnd);
-
-   // Compute out exponent bits
-   tree_nodeRef FExp;
-   tree_nodeRef ExpOverflow;
-   const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
-   const auto rangeDiff = ((1 << outFF->exp_bits) - !outFF->has_subnorm) - ((1 << inFF->exp_bits) - !inFF->has_subnorm);
-   if((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias))
+   const auto cast_stmt = tree_man->CreateGimpleAssign(out_type, tree_nodeConstRef(), tree_nodeConstRef(), float_cast_call, bb->number, BUILTIN_SRCP);
+   if(stmt == nullptr)
    {
-      THROW_ASSERT(!inFF->has_subnorm && !outFF->has_subnorm, "Subnormal value propagation not yet supported");
-      // Cast exp bits to shrinked type
-      const auto expCast = tree_man->CreateNopExpr(Exp, exp_type, tree_nodeRef(), tree_nodeRef());
-      FExp = createStmt(exp_type, expCast);
-
-      // Fix exponent for new encoding
-      const auto expAdd = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(biasDiff, exp_type_idx), BUILTIN_SRCP, plus_expr_K);
-      FExp = createStmt(exp_type, expAdd);
-
-      tree_nodeRef ExpUnderflow;
-      if(biasDiff < 0 || biasDiff > rangeDiff)
-      {
-         // Shift right fixed exponent
-         const auto shiftFExp = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(outFF->exp_bits, exp_type_idx), BUILTIN_SRCP, rshift_expr_K);
-         ExpOverflow = createStmt(exp_type, shiftFExp);
-
-         // Mask overflow bits
-         const auto andShiftFExp = tree_man->create_binary_operation(exp_type, ExpOverflow, TreeM->CreateUniqueIntegerCst((1LL << (exp_type_size - outFF->exp_bits - 1)) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-         ExpOverflow = createStmt(exp_type, andShiftFExp);
-
-         // Check overflow
-         const auto expOverflow = tree_man->create_binary_operation(bool_type, ExpOverflow, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), BUILTIN_SRCP, ne_expr_K);
-         ExpOverflow = createStmt(bool_type, expOverflow);
-
-         // Shift right fixed exponent to last bit
-         const auto underflowBit = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(exp_type_size - 1, exp_type_idx), BUILTIN_SRCP, rshift_expr_K);
-         ExpUnderflow = createStmt(exp_type, underflowBit);
-
-         // Cast fixed exponent underflow bit to bool
-         const auto castUnderBit = tree_man->CreateNopExpr(ExpUnderflow, bool_type, tree_nodeRef(), tree_nodeRef());
-         ExpUnderflow = createStmt(exp_type, castUnderBit);
-
-         // Switch between underflow and overflow exponent
-         const auto underOverExp = tree_man->create_ternary_operation(exp_type, ExpUnderflow, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 1, exp_type_idx), BUILTIN_SRCP, cond_expr_K);
-         const auto ExExp = createStmt(exp_type, underOverExp);
-
-         // Mask fix exponent
-         const auto maskFExp = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-         FExp = createStmt(exp_type, maskFExp);
-
-         // Switch between fixed and exception exponent
-         const auto expTerInf = tree_man->create_ternary_operation(exp_type, ExpOverflow, ExExp, FExp, BUILTIN_SRCP, cond_expr_K);
-         FExp = createStmt(exp_type, expTerInf);
-
-         // Set underflow significand if necessary
-         const auto underflowFrac = tree_man->create_ternary_operation(in_type, ExpUnderflow, TreeM->CreateUniqueIntegerCst(0LL, in_type_idx), Frac, BUILTIN_SRCP, cond_expr_K);
-         Frac = createStmt(in_type, underflowFrac);
-
-         // Fix overflow flag when already in underflow condition
-         const auto overXorUnder = tree_man->create_binary_operation(bool_type, ExpOverflow, ExpUnderflow, BUILTIN_SRCP, bit_xor_expr_K);
-         ExpOverflow = createStmt(bool_type, overXorUnder);
-      }
-
-      // Mask fix exponent
-      const auto maskFExp = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-      FExp = createStmt(exp_type, maskFExp);
-
-      // Check if exponent is zero
-      const auto expZero = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), BUILTIN_SRCP, eq_expr_K);
-      const auto ExpNull = createStmt(bool_type, expZero);
-
-      // Check if significand is zero
-      const auto fracEqZero = tree_man->create_binary_operation(bool_type, Frac, TreeM->CreateUniqueIntegerCst(0LL, in_type_idx), BUILTIN_SRCP, eq_expr_K);
-      const auto FracNull = createStmt(bool_type, fracEqZero);
-
-      // Check if input is zero
-      const auto expOrFrac = tree_man->create_binary_operation(bool_type, ExpNull, FracNull, BUILTIN_SRCP, bit_and_expr_K);
-      auto inputZero = createStmt(bool_type, expOrFrac);
-
-      if(ExpUnderflow)
-      {
-         const auto zeroOrUnder = tree_man->create_binary_operation(bool_type, inputZero, ExpUnderflow, BUILTIN_SRCP, bit_and_expr_K);
-         inputZero = createStmt(bool_type, zeroOrUnder);
-      }
-
-      // Choose between zero and fixed exponent
-      const auto expVal = tree_man->create_ternary_operation(exp_type, inputZero, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), FExp, BUILTIN_SRCP, cond_expr_K);
-      FExp = createStmt(exp_type, expVal);
+      bb->PushFront(cast_stmt);
    }
    else
    {
-      if(inFF->has_subnorm && !outFF->has_subnorm)
-      {
-         // Check if exponent is zero
-         const auto expZero = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), BUILTIN_SRCP, eq_expr_K);
-         const auto ExpNull = createStmt(bool_type, expZero);
-
-         // Set underflow significand if necessary
-         const auto underflowFrac = tree_man->create_ternary_operation(in_type, ExpNull, TreeM->CreateUniqueIntegerCst(0LL, in_type_idx), Frac, BUILTIN_SRCP, cond_expr_K);
-         Frac = createStmt(in_type, underflowFrac);
-      }
-
-      FExp = Exp;
+      bb->PushAfter(cast_stmt, stmt);
    }
-
-   tree_nodeRef SFrac;
-   tree_nodeRef Round;
-   if(inFF->frac_bits > outFF->frac_bits)
+   FunctionCallInline::RequestInlineStmt(cast_stmt, function_id);
+   if(!AppM->GetCallGraphManager()->IsVertex(spec_function_id))
    {
-      const auto bits_diff = inFF->frac_bits - outFF->frac_bits;
-
-      // Shift input significand right
-      const auto fracRShift = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(bits_diff, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
-      SFrac = createStmt(in_type, fracRShift);
-
-      // Cast input significand to output type
-      const auto fracCast = tree_man->CreateNopExpr(SFrac, out_type, tree_nodeRef(), tree_nodeRef());
-      SFrac = createStmt(out_type, fracCast);
-
-      if(outFF->has_rounding)
-      {
-         const auto shiftGuard = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(biasDiff - 1, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
-         auto GuardBit = createStmt(in_type, shiftGuard);
-
-         const auto castGuard = tree_man->CreateNopExpr(GuardBit, bool_type, tree_nodeRef(), tree_nodeRef());
-         GuardBit = createStmt(bool_type, castGuard);
-
-         // const auto shiftLSB = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(biasDiff, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
-         // auto LSB = createStmt(in_type, shiftLSB);
-         //
-         // const auto castLSB = tree_man->CreateNopExpr(LSB, bool_type, tree_nodeRef(), tree_nodeRef());
-         // LSB = createStmt(bool_type, castLSB);
-
-         tree_nodeRef LSB = TreeM->CreateUniqueIntegerCst(0, bool_type_idx);
-         if(bits_diff > 1)
-         {
-            const auto shiftRound = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(biasDiff - 2, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
-            auto RoundBit = createStmt(in_type, shiftRound);
-
-            const auto castRound = tree_man->CreateNopExpr(RoundBit, bool_type, tree_nodeRef(), tree_nodeRef());
-            RoundBit = createStmt(bool_type, castRound);
-
-            const auto orLSB = tree_man->create_binary_operation(bool_type, LSB, RoundBit, BUILTIN_SRCP, bit_ior_expr_K);
-            LSB = createStmt(bool_type, orLSB);
-         }
-
-         if(bits_diff > 2)
-         {
-            // Mask discarded bits
-            const auto fracRMask = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst((1LL << (bits_diff - 2)) - 1, in_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-            auto Sticky = createStmt(in_type, fracRMask);
-
-            // Jam discarded bits
-            const auto fracRJam = tree_man->create_binary_operation(bool_type, Sticky, TreeM->CreateUniqueIntegerCst(0, in_type_idx), BUILTIN_SRCP, ne_expr_K);
-            Sticky = createStmt(bool_type, fracRJam);
-
-            const auto orLSB = tree_man->create_binary_operation(bool_type, LSB, Sticky, BUILTIN_SRCP, bit_ior_expr_K);
-            LSB = createStmt(bool_type, orLSB);
-         }
-
-         const auto andRound = tree_man->create_binary_operation(bool_type, GuardBit, LSB, BUILTIN_SRCP, bit_and_expr_K);
-         Round = createStmt(bool_type, andRound);
-
-         const auto castRound = tree_man->CreateNopExpr(Round, out_type, tree_nodeRef(), tree_nodeRef());
-         Round = createStmt(out_type, castRound);
-
-         // Or jamming with output significand
-         const auto fracJam = tree_man->create_binary_operation(out_type, SFrac, Round, BUILTIN_SRCP, bit_ior_expr_K);
-         SFrac = createStmt(out_type, fracJam);
-      }
-   }
-   else if(inFF->frac_bits < outFF->frac_bits)
-   {
-      // Cast input significand to output type
-      const auto fracCast = tree_man->CreateNopExpr(Frac, out_type, tree_nodeRef(), tree_nodeRef());
-      SFrac = createStmt(out_type, fracCast);
-
-      // Shift input significand left
-      const auto bits_diff = outFF->frac_bits - inFF->frac_bits;
-      const auto fracLShift = tree_man->create_binary_operation(out_type, SFrac, TreeM->CreateUniqueIntegerCst(bits_diff, out_type_idx), BUILTIN_SRCP, lshift_expr_K);
-      SFrac = createStmt(out_type, fracLShift);
+      const auto helper = BehavioralHelperRef(new BehavioralHelper(AppM, spec_function_id, true, parameters));
+      const auto fb = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
+      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, spec_function_id, GET_INDEX_CONST_NODE(cast_stmt), fb, FunctionEdgeInfo::CallType::direct_call);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call graph updated with call to " + STR(spec_function_id));
    }
    else
    {
-      // Cast input significand to output type
-      const auto fracCast = tree_man->CreateNopExpr(Frac, out_type, tree_nodeRef(), tree_nodeRef());
-      SFrac = createStmt(out_type, fracCast);
+      AppM->GetCallGraphManager()->AddCallPoint(function_id, spec_function_id, GET_INDEX_CONST_NODE(cast_stmt), FunctionEdgeInfo::CallType::direct_call);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(spec_function_id));
    }
 
-   auto out_nan = TreeM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(bool_type));
-   tree_nodeRef sign_test;
-   if(outFF->sign != bit_lattice::U && inFF->sign != outFF->sign)
-   {
-      if(inFF->sign == bit_lattice::U)
-      {
-         // Shift input value to last bit
-         const auto signShift = tree_man->create_binary_operation(in_type, ssa, TreeM->CreateUniqueIntegerCst(inFF->exp_bits + inFF->frac_bits, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
-         auto Sign = createStmt(in_type, signShift);
-
-         // Mask input sign bit
-         const auto signAnd = tree_man->create_binary_operation(in_type, Sign, TreeM->CreateUniqueIntegerCst(1, in_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-         Sign = createStmt(in_type, signAnd);
-
-         // Cast to bool
-         const auto signCast = tree_man->CreateNopExpr(Sign, bool_type, tree_nodeRef(), tree_nodeRef());
-         sign_test = createStmt(bool_type, signCast);
-
-         // Compare with fixed output sign
-         const auto signCmp = tree_man->create_binary_operation(bool_type, sign_test, TreeM->CreateUniqueIntegerCst(outFF->sign == bit_lattice::ONE ? 1 : 0, GET_INDEX_NODE(bool_type)), BUILTIN_SRCP, ne_expr_K);
-         out_nan = createStmt(bool_type, signCmp);
-      }
-      else
-      {
-         THROW_ERROR("Casting from fixed " + STR(inFF->sign == bit_lattice::ONE ? "negative" : "positive") + " type to fixed " + STR(outFF->sign == bit_lattice::ONE ? "negative" : "positive") + " type will always result in a static value.");
-         return nullptr;
-      }
-   }
-
-   tree_nodeRef expMax;
-   if(inFF->has_nan)
-   {
-      // Check if input exponent is max
-      const auto expCmp = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst((1LL << inFF->exp_bits) - 1, in_type_idx), BUILTIN_SRCP, eq_expr_K);
-      expMax = createStmt(bool_type, expCmp);
-
-      // Or with the rest
-      const auto nanOr = tree_man->create_binary_operation(bool_type, expMax, out_nan, BUILTIN_SRCP, bit_ior_expr_K);
-      out_nan = createStmt(bool_type, nanOr);
-   }
-
-   // Cast rounded exponent to output type
-   const auto rexpCast = tree_man->CreateNopExpr(FExp, out_type, tree_nodeRef(), tree_nodeRef());
-   auto RExp = createStmt(out_type, rexpCast);
-
-   // Ternary if for exponent nan
-   const auto terRExp = tree_man->create_ternary_operation(out_type, out_nan, TreeM->CreateUniqueIntegerCst(((1LL << outFF->exp_bits) - 1), out_type_idx), RExp, BUILTIN_SRCP, cond_expr_K);
-   RExp = createStmt(out_type, terRExp);
-
-   // Shift exponent left
-   const auto expLShift = tree_man->create_binary_operation(out_type, RExp, TreeM->CreateUniqueIntegerCst(outFF->frac_bits, out_type_idx), BUILTIN_SRCP, lshift_expr_K);
-   RExp = createStmt(out_type, expLShift);
-
-   if(biasDiff < 0 || biasDiff > rangeDiff)
-   {
-      THROW_ASSERT(ExpOverflow, "");
-
-      // Or with the rest
-      const auto nanOr = tree_man->create_binary_operation(bool_type, ExpOverflow, out_nan, BUILTIN_SRCP, bit_ior_expr_K);
-      out_nan = createStmt(bool_type, nanOr);
-   }
-
-   tree_nodeRef NFrac;
-   if(outFF->has_nan)
-   {
-      if(inFF->has_nan)
-      {
-         THROW_ASSERT(expMax, "");
-         // Check if input significand is different from zero
-         const auto nfracNull = tree_man->create_binary_operation(bool_type, Frac, TreeM->CreateUniqueIntegerCst(0, in_type_idx), BUILTIN_SRCP, ne_expr_K);
-         auto nanFrac = createStmt(bool_type, nfracNull);
-
-         // Check if input is NaN
-         const auto nanFracAndNan = tree_man->create_binary_operation(bool_type, nanFrac, expMax, BUILTIN_SRCP, bit_and_expr_K);
-         auto nan = createStmt(bool_type, nanFracAndNan);
-
-         // TODO: Maybe better to define multiple outputs from nan with left/right shift as 'NFrac = (((int32_t)nan << 31) >> 31) & ((1 << outFF->frac_bits) - 1)'
-         const auto nanTer = tree_man->create_ternary_operation(out_type, nan, TreeM->CreateUniqueIntegerCst((1LL << outFF->frac_bits) - 1, out_type_idx), TreeM->CreateUniqueIntegerCst(0, out_type_idx), BUILTIN_SRCP, cond_expr_K);
-         NFrac = createStmt(out_type, nanTer);
-      }
-      else
-      {
-         NFrac = TreeM->CreateUniqueIntegerCst(0, out_type_idx);
-      }
-   }
-   else
-   {
-      NFrac = TreeM->CreateUniqueIntegerCst((1LL << outFF->frac_bits) - 1, out_type_idx);
-   }
-
-   // Ternary if for significand nan test
-   const auto terRFrac = tree_man->create_ternary_operation(out_type, out_nan, NFrac, SFrac, BUILTIN_SRCP, cond_expr_K);
-   auto RFrac = createStmt(out_type, terRFrac);
-
-   // Mask rounded significand bits
-   const auto maskRFrac = tree_man->create_binary_operation(out_type, RFrac, TreeM->CreateUniqueIntegerCst((1LL << outFF->frac_bits) - 1, out_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-   RFrac = createStmt(out_type, maskRFrac);
-
-   // Pack exponent and significand
-   const auto expFracOr = tree_man->create_binary_operation(out_type, RExp, RFrac, BUILTIN_SRCP, bit_ior_expr_K);
-   auto out = createStmt(out_type, expFracOr);
-   if(outFF->sign == bit_lattice::U)
-   {
-      tree_nodeRef FSign;
-      if(inFF->sign != bit_lattice::U)
-      {
-         FSign = TreeM->CreateUniqueIntegerCst(inFF->sign == bit_lattice::ONE ? (1LL << (outFF->exp_bits + outFF->frac_bits)) : 0, out_type_idx);
-      }
-      else
-      {
-         // Shift input value to last bit
-         const auto signShift = tree_man->create_binary_operation(in_type, ssa, TreeM->CreateUniqueIntegerCst(inFF->exp_bits + inFF->frac_bits, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
-         auto Sign = createStmt(in_type, signShift);
-
-         // Cast sign to output type
-         const auto signCast = tree_man->CreateNopExpr(Sign, out_type, tree_nodeRef(), tree_nodeRef());
-         FSign = createStmt(out_type, signCast);
-
-         // Shift sign bit left in place
-         const auto signLShift = tree_man->create_binary_operation(out_type, FSign, TreeM->CreateUniqueIntegerCst(outFF->exp_bits + outFF->frac_bits, out_type_idx), BUILTIN_SRCP, lshift_expr_K);
-         FSign = createStmt(out_type, signLShift);
-      }
-
-      // Pack sign
-      const auto outOr = tree_man->create_binary_operation(out_type, FSign, out, BUILTIN_SRCP, bit_ior_expr_K);
-      out = createStmt(out_type, outOr);
-   }
-
-   return out;
+   // Update functions float format map
+   const auto called_func_vertex = AppM->CGetCallGraphManager()->GetVertex(spec_function_id);
+   const auto calledFF = FunctionVersionRef(new FunctionVersion(called_func_vertex, inFF));
+#if HAVE_ASSERTS
+   const auto res =
+#endif
+       funcFF.insert(std::make_pair(called_func_vertex, calledFF));
+   THROW_ASSERT(res.second || res.first->second->compare(*calledFF, true) == 0, "Same function registered with different formats: " + res.first->second->ToString() + " and " + calledFF->ToString() + " (" FLOAT_CAST_FU_NAME ")");
+   return GetPointerS<const gimple_assign>(GET_CONST_NODE(cast_stmt))->op0;
 }
 
 tree_nodeRef soft_float_cg_ext::floatNegate(const tree_nodeRef& op, const FloatFormatRef& ff) const
@@ -1910,18 +1611,11 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   const auto bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
                   if(op_expr_type->get_kind() != real_type_K)
                   {
-                     std::string fu_name;
-                     if(tree_helper::is_unsigned(TreeM, op_expr_type->index))
-                     {
-                        fu_name = "__uint" + bitsize_str_in + "_to_float" + bitsize_str_out;
-                     }
-                     else
-                     {
-                        fu_name = "__int" + bitsize_str_in + "_to_float" + bitsize_str_out;
-                     }
+                     const auto is_unsigned = tree_helper::is_unsigned(TreeM, op_expr_type->index);
+                     const auto fu_name = "__" + std::string(is_unsigned ? "u" : "") + "int" + bitsize_str_in + "_to_float" + bitsize_str_out;
                      THROW_ASSERT(!_version->ieee_format() || outFF, "");
                      replaceWithCall(_version->ieee_format() ? outFF : _version->userRequired, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
-                     FunctionCallInline::inline_call[function_id].insert(GET_INDEX_CONST_NODE(current_statement));
+                     FunctionCallInline::RequestInlineStmt(current_statement, function_id);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
                      modified = true;
                   }
@@ -1972,7 +1666,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
                         THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
                         AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call);
-                        FunctionCallInline::inline_call[function_id].insert(GET_INDEX_CONST_NODE(current_statement));
+                        FunctionCallInline::RequestInlineStmt(current_statement, function_id);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
                      }
                      else
@@ -2082,7 +1776,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   const auto bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
                   const auto fu_name = "__float" + bitsize_str_in + "_to_" + (is_unsigned ? "u" : "") + "int" + bitsize_str_out + "_round_to_zero";
                   replaceWithCall(_version->ieee_format() ? inFF : _version->userRequired, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
-                  FunctionCallInline::inline_call[function_id].insert(GET_INDEX_CONST_NODE(current_statement));
+                  FunctionCallInline::RequestInlineStmt(current_statement, function_id);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
                   modified = true;
                   break;

@@ -1817,6 +1817,185 @@ __float64 __float32_to_float64_ieee(__float32 a, __flag __nan, __flag __subnorm)
    return __packFloat64(aSign, aExp + ((__int16)0x380), ((__bits64)aSig) << 29, IEEE64_PACK);
 }
 
+#define needed_bits(in, count)                        \
+   {                                                  \
+      __uint32 i;                                     \
+      __uint8 lz;                                     \
+      i = in > 0 ? in : -in;                          \
+      count_leading_zero_runtime_macro(32, in, lz);   \
+      lz = in > 0 ? lz : (lz + ((i & (i - 1)) != 0)); \
+      count = 32 - lz;                                \
+   }
+
+#define MAX(a, b) (a > b ? a : b)
+
+__float64 __float_cast(__float64 bits, __bits8 __in_exp_bits, __bits8 __in_frac_bits, __int32 __in_exp_bias, __flag __in_has_rounding, __flag __in_has_nan, __flag __in_has_one, __flag __in_has_subnorm, __sbits8 __in_sign, __bits8 __out_exp_bits,
+                       __bits8 __out_frac_bits, __int32 __out_exp_bias, __flag __out_has_rounding, __flag __out_has_nan, __flag __out_has_one, __flag __out_has_subnorm, __sbits8 __out_sign)
+{
+   __bits64 Sign, Exp, Frac, FExp, SFrac, RExp, NFrac, RFrac, expOverflow, ExExp, FSign, out_val;
+   __int32 __biasDiff, __rangeDiff;
+   __bits8 __exp_bits_diff, __bits_diff;
+   __flag ExpOverflow, ExpUnderflow, ExpNull, FracNull, inputZero;
+   __flag GuardBit, LSB, RoundBit, Sticky, Round;
+   __flag in_nan, out_nan;
+
+   Sign = bits >> (__in_exp_bits + __in_frac_bits);
+   Exp = (bits >> (__in_frac_bits)) & ((1ULL << __in_exp_bits) - 1);
+   Frac = bits & ((1ULL << __in_frac_bits) - 1);
+
+   __exp_bits_diff = __in_exp_bits > __out_exp_bits ? (__in_exp_bits - __out_exp_bits) : (__out_exp_bits - __in_exp_bits);
+   __uint8 __nb_in_exp_bias, __nb_out_exp_bias, __exp_type_size;
+   needed_bits(__in_exp_bias, __nb_in_exp_bias);
+   needed_bits(__out_exp_bias, __nb_out_exp_bias);
+   __exp_type_size = MAX((MAX(__in_exp_bits, __out_exp_bits) + (__exp_bits_diff == 1)), MAX(__nb_in_exp_bias, __nb_out_exp_bias));
+
+   __biasDiff = __in_exp_bias - __out_exp_bias;
+   __rangeDiff = ((1 << __out_exp_bits) - !__out_has_subnorm) - ((1 << __in_exp_bits) - !__in_has_subnorm);
+   if((__in_exp_bits != __out_exp_bits) || (__in_exp_bias != __out_exp_bias))
+   {
+      FExp = Exp + ((__bits64)__biasDiff);
+      if(__biasDiff < 0 || __biasDiff > __rangeDiff)
+      {
+         expOverflow = (FExp >> __out_exp_bits) & ((1ULL << (__exp_type_size - __out_exp_bits - 1)) - 1);
+         ExpOverflow = expOverflow != 0ULL;
+         ExpUnderflow = (FExp >> (__exp_type_size - 1)) & 1;
+         if((ExpOverflow || ExpUnderflow) && bits != 0)
+         {
+            /// Invalid conversion
+            return 0;
+         }
+         ExExp = ExpUnderflow ? 0ULL : ((1ULL << __out_exp_bits) - 1);
+         FExp = FExp & ((1ULL << __out_exp_bits) - 1);
+         FExp = ExpOverflow ? ExExp : FExp;
+         Frac = ExpUnderflow ? 0 : Frac;
+         ExpOverflow = ExpOverflow ^ ExpUnderflow;
+      }
+      else
+      {
+         ExpUnderflow = 0;
+      }
+
+      FExp = FExp & ((1ULL << __out_exp_bits) - 1);
+      ExpNull = Exp == 0;
+      FracNull = Frac == 0;
+      inputZero = ExpNull && FracNull;
+      if(__biasDiff < 0 || __biasDiff > __rangeDiff)
+      {
+         inputZero = inputZero || ExpUnderflow;
+      }
+      FExp = inputZero ? 0ULL : FExp;
+   }
+   else
+   {
+      if(__in_has_subnorm && !__out_has_subnorm)
+      {
+         ExpNull = Exp == 0;
+         Frac = ExpNull ? 0ULL : Frac;
+      }
+      FExp = Exp;
+   }
+
+   if(__in_frac_bits > __out_frac_bits)
+   {
+      __bits_diff = __in_frac_bits - __out_frac_bits;
+
+      SFrac = Frac >> __bits_diff;
+
+      if(__out_has_rounding)
+      {
+         GuardBit = (Frac >> (__bits_diff - 1)) & 1;
+
+         LSB = 0;
+         if(__bits_diff > 1)
+         {
+            RoundBit = (Frac >> (__bits_diff - 2)) & 1;
+            LSB = LSB | RoundBit;
+         }
+
+         if(__bits_diff > 2)
+         {
+            Sticky = (Frac & ((1ULL << (__bits_diff - 2)) - 1)) != 0;
+            LSB = LSB | Sticky;
+         }
+
+         Round = GuardBit & LSB;
+         SFrac = SFrac | ((__bits64)Round);
+      }
+   }
+   else if(__in_frac_bits < __out_frac_bits)
+   {
+      __bits_diff = __out_frac_bits - __in_frac_bits;
+      SFrac = Frac << __bits_diff;
+   }
+   else
+   {
+      SFrac = Frac;
+   }
+
+   out_nan = 0;
+   if(__out_sign != -1 && __in_sign != __out_sign)
+   {
+      if(__in_sign == -1)
+      {
+         out_nan |= Sign != (__out_sign == 1 ? 1 : 0);
+      }
+      else
+      {
+         /// Invalid conversion
+         return 0;
+      }
+   }
+
+   if(__in_has_nan)
+   {
+      out_nan |= Exp == ((1ULL << __in_exp_bits) - 1);
+   }
+
+   RExp = out_nan ? ((1ULL << __out_exp_bits) - 1) : FExp;
+   RExp <<= __out_frac_bits;
+
+   if(__biasDiff < 0 || __biasDiff > __rangeDiff)
+   {
+      out_nan |= ExpOverflow;
+   }
+
+   if(__out_has_nan)
+   {
+      if(__in_has_nan)
+      {
+         in_nan = (Exp == ((1ULL << __in_exp_bits) - 1)) && (Frac != 0);
+         NFrac = in_nan ? ((1ULL << __out_frac_bits) - 1) : 0;
+      }
+      else
+      {
+         NFrac = 0;
+      }
+   }
+   else
+   {
+      NFrac = ((1ULL << __out_frac_bits) - 1);
+   }
+
+   RFrac = out_nan ? NFrac : SFrac;
+
+   out_val = RExp | RFrac;
+
+   if(__out_sign == -1)
+   {
+      if(__in_sign != -1)
+      {
+         FSign = __in_sign == 1 ? (1ULL << (__out_exp_bits + __out_frac_bits)) : 0;
+      }
+      else
+      {
+         FSign = Sign << (__out_exp_bits + __out_frac_bits);
+      }
+      out_val |= FSign;
+   }
+
+   return out_val;
+}
+
 #ifdef FLOATX80
 
 /*----------------------------------------------------------------------------

@@ -224,3 +224,19 @@ DesignFlowStep_Status FunctionCallInline::InternalExec()
    inline_call.erase(function_id);
    return DesignFlowStep_Status::SUCCESS;
 }
+
+void FunctionCallInline::RequestInlineStmt(const tree_nodeConstRef& call_stmt, unsigned int caller_id)
+{
+#if HAVE_ASSERTS
+   const auto stmt_kind = GET_CONST_NODE(call_stmt)->get_kind();
+   bool is_call = stmt_kind == gimple_call_K;
+   if(stmt_kind == gimple_assign_K)
+   {
+      const auto rhs = GetPointerS<const gimple_assign>(GET_CONST_NODE(call_stmt))->op1;
+      const auto rhs_kind = GET_CONST_NODE(rhs)->get_kind();
+      is_call |= rhs_kind == call_expr_K || rhs_kind == aggr_init_expr_K;
+   }
+#endif
+   THROW_ASSERT(is_call, "Statement does not contain a call");
+   inline_call[caller_id].insert(GET_INDEX_CONST_NODE(call_stmt));
+}
