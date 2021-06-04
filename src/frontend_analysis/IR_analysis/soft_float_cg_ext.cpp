@@ -2062,8 +2062,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             {
                const auto bitsize = tree_helper::Size(expr_type);
                const auto opFF = bitsize == 32 ? float32FF : (bitsize == 64 ? float64FF : nullptr);
-               const auto bitsize_str = bitsize == 96 ? "x80" : STR(bitsize);
-               const auto fu_name = "__float" + bitsize_str + "_" + fu_suffix;
+               const auto fu_name = "__float_" + fu_suffix;
                replaceWithCall(_version->ieee_format() ? opFF : _version->userRequired, fu_name, {be->op0, be->op1}, current_statement, current_tree_node, current_srcp);
                modified = true;
             }
