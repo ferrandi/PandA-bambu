@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "soft-fp.h"
-
-DFtype __floatdidf(DItype i)
+static __FORCE_INLINE DFtype __floatdidf(DItype i)
 {
    FP_DECL_EX;
    FP_DECL_D(A);
@@ -43,9 +40,4 @@ DFtype __floatdidf(DItype i)
    FP_HANDLE_EXCEPTIONS;
 
    return a;
-}
-
-DFtype __int64_to_float64if(DItype i)
-{
-   return __floatdidf(i);
 }

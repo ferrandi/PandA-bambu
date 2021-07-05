@@ -28,12 +28,9 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#define FP_NO_EXCEPTIONS
-#include "double.h"
-#include "soft-fp.h"
-
-DFtype __floatunsidf(USItype i)
+static __FORCE_INLINE DFtype __floatunsidf(USItype i)
 {
+   FP_DECL_EX;
    FP_DECL_D(A);
    DFtype a;
 
@@ -41,9 +38,4 @@ DFtype __floatunsidf(USItype i)
    FP_PACK_RAW_D(a, A);
 
    return a;
-}
-
-DFtype __uint32_to_float64if(USItype i)
-{
-   return __floatunsidf(i);
 }

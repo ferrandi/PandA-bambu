@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "soft-fp.h"
-
-CMPtype __gedf2(DFtype a, DFtype b)
+static __FORCE_INLINE CMPtype __gedf2(DFtype a, DFtype b)
 {
    FP_DECL_EX;
    FP_DECL_D(A);
@@ -50,8 +47,3 @@ CMPtype __gedf2(DFtype a, DFtype b)
 }
 
 strong_alias(__gedf2, __gtdf2);
-
-CMPtype __float64_geif(DFtype a, DFtype b)
-{
-   return __gedf2(a, b);
-}

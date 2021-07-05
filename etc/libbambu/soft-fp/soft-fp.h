@@ -32,6 +32,8 @@
 #ifndef SOFT_FP_H
 #define SOFT_FP_H
 
+#include "bambu.h"
+
 #ifdef _LIBC
 #include <sfp-machine.h>
 #else

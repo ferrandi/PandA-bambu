@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "soft-fp.h"
-
-DFtype __floatundidf(UDItype i)
+static __FORCE_INLINE DFtype __floatundidf(UDItype i)
 {
    FP_DECL_EX;
    FP_DECL_D(A);
@@ -43,9 +40,4 @@ DFtype __floatundidf(UDItype i)
    FP_HANDLE_EXCEPTIONS;
 
    return a;
-}
-
-DFtype __uint64_to_float64if(UDItype i)
-{
-   return __floatundidf(i);
 }

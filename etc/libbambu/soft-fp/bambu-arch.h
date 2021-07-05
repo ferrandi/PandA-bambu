@@ -19,6 +19,8 @@
 #define BAMBU_ARCH_H
 #include "bambu_macros.h"
 
+#define __FORCE_INLINE __attribute__((always_inline)) inline
+
 #define __WORDSIZE 32
 #define __BYTE_ORDER __LITTLE_ENDIAN
 #define __bambu__
@@ -67,7 +69,7 @@
  * @param 32-bit value to find the log2 of
  */
 #ifdef LOG2_BASED_CLZ
-inline int clz(unsigned int v)
+static __FORCE_INLINE int clz(unsigned int v)
 {
    unsigned int r; // result of log2(v) will go here
    unsigned int shift;
@@ -94,7 +96,7 @@ int clzll(unsigned long long int v)
 }
 
 #elif SHIFT_BASED
-inline int clz(unsigned int v)
+static __FORCE_INLINE int clz(unsigned int v)
 {
    _Bool result_4, result_3, result_2, result_1, result_0;
    unsigned short val16;
@@ -110,7 +112,7 @@ inline int clz(unsigned int v)
    return result_4 << 4 | result_3 << 3 | result_2 << 2 | result_1 << 1 | result_0;
 }
 
-inline int clzll(unsigned long long int v)
+static __FORCE_INLINE int clzll(unsigned long long int v)
 {
    _Bool result_5;
    unsigned int val32;
@@ -120,12 +122,12 @@ inline int clzll(unsigned long long int v)
    return result_5 << 5 | clz(val32);
 }
 #else
-inline int clz(unsigned int v)
+static __FORCE_INLINE int clz(unsigned int v)
 {
    unsigned char res;
    count_leading_zero_macro(32, v, res) return res;
 }
-inline int clzll(unsigned long long int v)
+static __FORCE_INLINE int clzll(unsigned long long int v)
 {
    unsigned char res;
    count_leading_zero_macro(64, v, res) return res;
@@ -137,7 +139,7 @@ inline int clzll(unsigned long long int v)
 
 #define UDIV_NEEDS_NORMALIZATION 0
 
-inline unsigned __divlu2(unsigned u1, unsigned u0, unsigned v, unsigned* r)
+static __FORCE_INLINE unsigned __divlu2(unsigned u1, unsigned u0, unsigned v, unsigned* r)
 {
    const unsigned b = 65536; // Number base (16 bits).
    unsigned un1, un0,        // Norm. dividend LSD's.

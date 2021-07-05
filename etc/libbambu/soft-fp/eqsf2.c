@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "single.h"
-#include "soft-fp.h"
-
-CMPtype __eqsf2(SFtype a, SFtype b)
+static __FORCE_INLINE CMPtype __eqsf2(SFtype a, SFtype b)
 {
    FP_DECL_EX;
    FP_DECL_S(A);
@@ -50,8 +47,3 @@ CMPtype __eqsf2(SFtype a, SFtype b)
 }
 
 strong_alias(__eqsf2, __nesf2);
-
-CMPtype __float32_eq(SFtype a, SFtype b)
-{
-   return __eqsf2(a, b);
-}
