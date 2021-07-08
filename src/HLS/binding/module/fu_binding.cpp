@@ -1722,10 +1722,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                mem_var_size_out = std::max(mem_var_size_out, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var)));
             }
             /// specializing MEMORY_STD ports
-            if(required_variables.find(0) == required_variables.end())
-            {
-               required_variables[0] = 0;
-            }
+            required_variables.insert(std::make_pair(0, 0));
             required_variables[0] = std::max(required_variables[0], mem_var_size_in);
             required_variables[1] = bus_addr_bitsize;
             if(allocation_information->is_direct_access_memory_unit(fu))
@@ -1753,10 +1750,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                {
                   continue;
                }
-               if(required_variables.find(i) == required_variables.end())
-               {
-                  required_variables[i] = 0;
-               }
+               required_variables.insert(std::make_pair(i, 0));
                if(tree_helper::is_a_vector(TreeM, tree_var))
                {
                   unsigned int type_index = tree_helper::get_type_index(TreeM, tree_var);
@@ -2200,11 +2194,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       std::vector<unsigned int> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, type_index, dims, elts_size);
       THROW_ASSERT(dims.size(), "something of wrong happen");
-      vec_size = 1;
-      for(unsigned int dim : dims)
-      {
-         vec_size *= dim;
-      }
+      vec_size = std::accumulate(dims.begin(), dims.end(), 1, [](unsigned int a, unsigned int b) { return a * b; });
    }
    else if(GetPointer<integer_type>(array_type_node) || GetPointer<real_type>(array_type_node) || GetPointer<enumeral_type>(array_type_node) || GetPointer<pointer_type>(array_type_node) || GetPointer<reference_type>(array_type_node) ||
            GetPointer<record_type>(array_type_node) || GetPointer<union_type>(array_type_node) || GetPointer<complex_type>(array_type_node))
@@ -2356,7 +2346,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
 
          std::string str_bit;
          bool is_even = true;
-         unsigned int counter = 0;
+         unsigned int counter;
          for(unsigned int l = 0; l < eightbit_string.size();)
          {
             str_bit = "";
@@ -2865,12 +2855,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          dims.clear();
          tree_helper::get_array_dim_and_bitsize(TreeM, type_index, dims, size_of_data);
          THROW_ASSERT(size_of_data == elmt_bitsize, "something of wrong happen");
-         unsigned int num_elements = 1;
+         unsigned int num_elements = std::accumulate(dims.begin(), dims.end(), 1U, [](unsigned int a, unsigned int b) { return a * b; });
          std::string value;
-         for(unsigned int dim : dims)
-         {
-            num_elements *= dim;
-         }
          if(num_elements < (string_value.size() + 1))
          {
             THROW_ERROR("C description not supported: string with undefined size or not correctly initialized " + STR(string_value.size() + 1) + "-" + STR(num_elements));

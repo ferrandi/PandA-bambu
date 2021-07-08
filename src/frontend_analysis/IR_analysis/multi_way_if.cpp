@@ -436,7 +436,7 @@ void multi_way_if::MergeCondMulti(const unsigned int pred_bb, const unsigned int
       for(auto old_cond : old_gwi->list_of_cond)
       {
          const auto not_second = tree_man->CreateNotExpr(ce_cond, sl->list_of_bloc[pred_bb]);
-         const tree_nodeRef new_cond = old_cond.first ? tree_man->CreateAndExpr(old_cond.first, tree_man->CreateNotExpr(ce_cond, sl->list_of_bloc[pred_bb]), sl->list_of_bloc[pred_bb]) : tree_nodeRef();
+         const tree_nodeRef new_cond = old_cond.first ? tree_man->CreateAndExpr(old_cond.first, not_second, sl->list_of_bloc[pred_bb]) : tree_nodeRef();
          new_gwi->add_cond(new_cond, old_cond.second);
       }
    }

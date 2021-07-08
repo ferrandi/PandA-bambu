@@ -625,9 +625,7 @@ bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
  */
 bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> block)
 {
-   auto& statements = block.second->CGetStmtList();
-
-   for(const auto& statement : statements)
+   for(const auto& statement : block.second->CGetStmtList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing CheckIfProcessable" + statement->ToString());
       // only gimple assignments are considered
@@ -791,7 +789,7 @@ static klut_network_fn_v GetIntegerNodeCreationFunction(enum kind code)
 }
 
 #ifndef NDEBUG
-static std::string ConvertBitsToString(const std::vector<bool>& bits, std::string true_string = "vdd", std::string false_string = "gnd", std::string sep = ", ")
+static std::string ConvertBitsToString(const std::vector<bool>& bits, const std::string& true_string = "vdd", const std::string& false_string = "gnd", const std::string& sep = ", ")
 {
    std::string s;
 

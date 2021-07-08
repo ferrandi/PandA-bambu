@@ -43,39 +43,3 @@ EXTRA_DIST += \
    %D%/constrained_synth_nanoxplore_nx1h35S.sh\
    %D%/unconstrained_synth_nanoxplore_nx1h140tsp.sh\
    %D%/unconstrained_synth_nanoxplore_nx1h35S.sh
-
-
-
-TESTS += \
-   %D%/constrained_synth_altera.sh \
-   %D%/unconstrained_synth_altera.sh \
-   %D%/constrained_synth_altera_5.sh \
-   %D%/unconstrained_synth_altera_5.sh \
-   %D%/constrained_synth_altera_cyclone5.sh \
-   %D%/unconstrained_synth_altera_cyclone5.sh \
-   %D%/constrained_synth_altera_stratix4.sh \
-   %D%/unconstrained_synth_altera_stratix4.sh \
-   %D%/constrained_synth_altera_stratix5.sh \
-   %D%/unconstrained_synth_altera_stratix5.sh \
-   %D%/constrained_synth_lattice.sh \
-   %D%/unconstrained_synth_lattice.sh \
-   %D%/constrained_synth_xilinx_zynq_vvd.sh \
-   %D%/unconstrained_synth_xilinx_zynq_vvd.sh \
-   %D%/constrained_synth_xilinx_zynq_ise.sh \
-   %D%/unconstrained_synth_xilinx_zynq_ise.sh \
-   %D%/constrained_synth_xilinx_vx7330_ise.sh \
-   %D%/unconstrained_synth_xilinx_vx7330_ise.sh \
-   %D%/constrained_synth_xilinx_v6_ise.sh \
-   %D%/unconstrained_synth_xilinx_v6_ise.sh \
-   %D%/constrained_synth_xilinx_v550_ise.sh \
-   %D%/unconstrained_synth_xilinx_v550_ise.sh \
-   %D%/constrained_synth_xilinx_v5330_ise.sh \
-   %D%/unconstrained_synth_xilinx_v5330_ise.sh \
-   %D%/constrained_synth_xilinx_v5110_ise.sh \
-   %D%/unconstrained_synth_xilinx_v5110_ise.sh \
-   %D%/constrained_synth_xilinx_vc707_vvd.sh \
-   %D%/unconstrained_synth_xilinx_vc707_vvd.sh \
-   %D%/constrained_synth_xilinx_vx690t_vvd.sh \
-   %D%/unconstrained_synth_xilinx_vx690t_vvd.sh \
-   %D%/constrained_synth_xilinx_artix7_vvd.sh \
-   %D%/unconstrained_synth_xilinx_artix7_vvd.sh

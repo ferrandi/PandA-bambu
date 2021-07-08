@@ -419,7 +419,7 @@ double ADD_BUILTIN_PREFIX(sqrt)(double x)
    if(e == 0)
    {
       unsigned long long int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift64(52, m, subnormal_lz, mshifted);
+      count_leading_zero_lshift_macro(52, m, subnormal_lz, mshifted);
       e = -subnormal_lz;
       BIT_RESIZE(e, 12);
       isOddExp = !SELECT_BIT(e, 0);
@@ -490,17 +490,17 @@ double __hide_ieee754_sqrt(double x)
 #ifdef CHECK_SQRT_FUNCTION
 int main_test_sqrt()
 {
-   int nT = 4;
+   int nT = 8;
    unsigned long long s = 0;
    unsigned long long e = 0;
+#ifdef DEBUG_STATS
    unsigned long long n_ones_pos = 0;
    unsigned long long n_ones_neg = 0;
-#ifdef _OPENMP
-   nT = omp_get_max_threads();
 #endif
+
    unsigned eindex, start_eindex, end_eindex;
-   const unsigned startE[] = {0, 1023 - nT/2, 2048 - nT};
-   const unsigned endE[] = {nT, 1023 + nT/2, 2048};
+   const unsigned startE[] = {0, 1023 - nT / 2, 2048 - nT};
+   const unsigned endE[] = {nT, 1023 + nT / 2, 2048};
 
    for(s = 0; s < 2; ++s)
    {
@@ -509,7 +509,11 @@ int main_test_sqrt()
          unsigned mindex;
          start_eindex = startE[eindex];
          end_eindex = endE[eindex];
-#pragma omp parallel for reduction(+ : n_ones_pos, n_ones_neg) private(e) collapse(2)
+#ifdef DEBUG_STATS
+#pragma omp parallel for reduction(+ : n_ones_pos, n_ones_neg) private(e) private(mindex) collapse(2)
+#else
+#pragma omp parallel for private(e) private(mindex) collapse(2)
+#endif
          for(e = start_eindex; e < end_eindex; ++e)
          {
             for(mindex = 0; mindex < 2; ++mindex)
@@ -517,8 +521,10 @@ int main_test_sqrt()
                const unsigned long long startM[] = {0, 0xFFFFF00000000LL};
                const unsigned long long endM[] = {0x100000000LL, 0x10000000000000LL};
                unsigned long long x;
+#ifdef DEBUG_PRINTF
 #pragma omp critical
                printf("e=%lld\n", e);
+#endif
                for(x = startM[mindex]; x < endM[mindex]; ++x)
                {
                   double_uint_converter func_in, func_out, func_golden_libm;
@@ -551,6 +557,7 @@ int main_test_sqrt()
                      printf("libm=%llx\n", func_golden_libm.b);
                      abort();
                   }
+#ifdef DEBUG_STATS
                   else if(llabs((long long)(func_golden_libm.b - func_out.b)) == 1)
                   {
                      if(func_golden_libm.b > func_out.b)
@@ -558,13 +565,16 @@ int main_test_sqrt()
                      else
                         n_ones_neg++;
                   }
+#endif
                }
             }
          }
       }
    }
+#ifdef DEBUG_STATS
    printf("n_ones_pos=%lld\n", n_ones_pos);
    printf("n_ones_neg=%lld\n", n_ones_neg);
+#endif
    return 0;
 }
 

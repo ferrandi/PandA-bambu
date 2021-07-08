@@ -45,8 +45,6 @@
 #include "XilinxBackendFlow.hpp"
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
-#include "config_XILINX_SETTINGS.hpp"
-#include "config_XILINX_VIVADO_SETTINGS.hpp"
 
 /// constants include
 #include "synthesis_constants.hpp"
@@ -803,11 +801,13 @@ void XilinxBackendFlow::WriteFlowConfiguration(std::ostream& script)
    device_string = device->get_parameter<std::string>("family");
    if(device_string.find("-VVD") != std::string::npos)
    {
-      setupscr = STR(XILINX_VIVADO_SETTINGS);
+      THROW_ASSERT(Param->isOption(OPT_xilinx_vivado_settings), "");
+      setupscr = Param->getOption<std::string>(OPT_xilinx_vivado_settings);
    }
    else
    {
-      setupscr = STR(XILINX_SETTINGS);
+      THROW_ASSERT(Param->isOption(OPT_xilinx_settings), "");
+      setupscr = Param->getOption<std::string>(OPT_xilinx_settings);
    }
    if(setupscr.size() and setupscr != "0")
    {

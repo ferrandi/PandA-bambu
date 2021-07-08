@@ -262,7 +262,7 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
 unsigned top_entity_parallel_cs::BW_loop_iter(const structural_objectRef circuit)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   structural_objectRef controller_circuit = circuit->find_member("__controller_parallel", component_o_K, circuit);
+   circuit->find_member("__controller_parallel", component_o_K, circuit);
 
    long long int n = 0;
    const auto listLoops = FB->CGetLoops()->GetList();

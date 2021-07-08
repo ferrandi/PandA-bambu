@@ -69,7 +69,7 @@ class top_entity : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Add the register to store input parameters
@@ -99,6 +99,6 @@ class top_entity : public HLSFunctionStep
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec();
+   virtual DesignFlowStep_Status InternalExec() override;
 };
 #endif

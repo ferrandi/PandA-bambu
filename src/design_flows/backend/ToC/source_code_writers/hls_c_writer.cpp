@@ -657,7 +657,6 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
 void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned v_idx)
 {
    const HLSFlowStep_Type interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
-   CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(Param));
    auto fnode = TM->get_tree_node_const(behavioral_helper->get_function_index());
    auto fd = GetPointer<function_decl>(fnode);
    std::string fname;
@@ -897,10 +896,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    }
 
    std::list<unsigned int> mem;
-   for(const auto& ma : address)
-   {
-      mem.push_back(ma.second);
-   }
+   std::transform(address.begin(), address.end(), std::back_inserter(mem), [](const std::pair<unsigned long long, unsigned int>& ma) { return ma.second; });
 
    std::string fname;
    tree_helper::get_mangled_fname(GetPointer<const function_decl>(TM->CGetTreeNode(function_id)), fname);

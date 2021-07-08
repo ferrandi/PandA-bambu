@@ -981,19 +981,26 @@ void CheckSystemType::build_include_structures()
                temp = temp.replace(0, 8, FILENAME_NORM(mingw_prefix)); /// replace z:/mingw at the beginning of the string
             }
             temp = FILENAME_NORM(temp);
-            systemIncPath.push_back(temp);
          }
          else if(getenv("APPDIR"))
          {
-            std::string app_prefix = getenv("APPDIR");
-            temp = app_prefix + "/" + FILENAME_NORM(tok_iter);
-            systemIncPath.push_back(temp);
+            const std::string app_prefix = getenv("APPDIR");
+            temp = FILENAME_NORM(tok_iter);
+            systemIncPath.push_back(boost::filesystem::weakly_canonical(temp).string());
+            if(temp.find(app_prefix) != 0)
+            {
+               temp = app_prefix + "/" + FILENAME_NORM(tok_iter);
+            }
+            else
+            {
+               temp = temp.substr(app_prefix.size());
+            }
          }
          else
          {
             temp = FILENAME_NORM(tok_iter);
-            systemIncPath.push_back(temp);
          }
+         systemIncPath.push_back(boost::filesystem::weakly_canonical(temp).string());
       }
    }
    systemIncPath.push_back("/usr/local/share/hframework/include");

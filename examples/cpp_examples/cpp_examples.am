@@ -43,9 +43,3 @@ EXTRA_DIST +=\
              %D%/Xilinx_Examples/Math/squared_difference_accumulate/src/diff_sq_acc.h\
              %D%/Xilinx_Examples/Math/squared_difference_accumulate/src/diff_sq_acc.cpp\
              %D%/Xilinx_Examples/Math/squared_difference_accumulate/bambu.sh
-
-TESTS += %D%/gcd_example/bambu.sh\
-             %D%/fir_filter/bambu.sh\
-             %D%/Xilinx_Examples/Math/fp_accum/bambu.sh\
-             %D%/Xilinx_Examples/Math/atan2_cordic/bambu.sh\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/bambu.sh

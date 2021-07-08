@@ -673,7 +673,7 @@ struct SelectEdge
    /**
     * Default constructor
     */
-   SelectEdge() : selector(0), g(nullptr), subgraph_vertices()
+   SelectEdge() : selector(0), g(nullptr), subgraph_vertices(), empty(true)
    {
    }
 

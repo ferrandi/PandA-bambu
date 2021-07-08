@@ -55,11 +55,11 @@ class controller_cs : public fsm_controller
    virtual ~controller_cs();
 
  protected:
-   void add_common_ports(structural_objectRef circuit, structural_managerRef SM);
+   void add_common_ports(structural_objectRef circuit, structural_managerRef SM) override;
 
    void add_selector_register_file_port(structural_objectRef circuit, structural_managerRef SM);
 
-   void add_correct_transition_memory(const std::string& state_representation, structural_managerRef SM);
+   void add_correct_transition_memory(const std::string& state_representation, structural_managerRef SM) override;
 };
 
 #endif // CONTROLLER_CS_H

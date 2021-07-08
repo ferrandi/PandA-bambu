@@ -113,18 +113,11 @@
 #include "config_HAVE_I386_GCC8_M32.hpp"
 #include "config_HAVE_I386_GCC8_M64.hpp"
 #include "config_HAVE_I386_GCC8_MX32.hpp"
-#include "config_HAVE_ICARUS.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
-#include "config_HAVE_LATTICE.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
 #include "config_HAVE_LP_SOLVE.hpp"
 #include "config_HAVE_MAPPING_BUILT.hpp"
-#include "config_HAVE_MENTOR_VISUALIZER_EXE.hpp"
-#include "config_HAVE_MODELSIM.hpp"
 #include "config_HAVE_VCD_BUILT.hpp"
-#include "config_HAVE_VERILATOR.hpp"
-#include "config_HAVE_XILINX.hpp"
-#include "config_HAVE_XILINX_VIVADO.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
 #include "config_SKIP_WARNING_SECTIONS.hpp"
@@ -193,11 +186,13 @@
 #include "constant_strings.hpp"
 
 /// STD include
+#include <cstdlib>
 #include <cstring>
 #include <iosfwd>
 #include <string>
 
 /// STL includes
+#include <algorithm>
 #include <list>
 #include <vector>
 
@@ -344,6 +339,14 @@
 #define OPT_PROPAGATE_FP_FORMAT (1 + OPT_FP_FORMAT)
 #define OPT_PARALLEL_BACKEND (1 + OPT_PROPAGATE_FP_FORMAT)
 #define OPT_INTERFACE_XML_FILENAME (1 + OPT_PARALLEL_BACKEND)
+#define OPT_LATTICE_ROOT (1 + OPT_INTERFACE_XML_FILENAME)
+#define OPT_XILINX_ROOT (1 + OPT_LATTICE_ROOT)
+#define OPT_MENTOR_ROOT (1 + OPT_XILINX_ROOT)
+#define OPT_MENTOR_OPTIMIZER (1 + OPT_MENTOR_ROOT)
+#define OPT_VERILATOR_PARALLEL (1 + OPT_MENTOR_OPTIMIZER)
+#define OPT_ALTERA_ROOT (1 + OPT_VERILATOR_PARALLEL)
+#define OPT_NANOXPLORE_ROOT (1 + OPT_ALTERA_ROOT)
+#define OPT_NANOXPLORE_BYPASS (1 + OPT_NANOXPLORE_ROOT)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -691,10 +694,15 @@ void BambuParameter::PrintHelp(std::ostream& os) const
    os << "  Evaluation of HLS results:\n\n"
       << "    --simulate\n"
       << "        Simulate the RTL implementation.\n\n"
-#if HAVE_MENTOR_VISUALIZER_EXE
       << "    --mentor-visualizer\n"
-      << "        Simulate the RTL implementation and then open Mentor Visualizer.\n\n"
-#endif
+      << "        Simulate the RTL implementation and then open Mentor Visualizer.\n"
+      << "        (Mentor root has to be correctly set, see --mentor-root)\n\n"
+      << "    --mentor-optimizer=<0|1>\n"
+      << "        Enable or disable mentor optimizer. (default=enabled)\n\n"
+      << "    --nanoxplore-bypass=<name>\n"
+      << "        Define NanoXplore bypass when using NanoXplore. User may set NANOXPLORE_BYPASS variable otherwise.\n\n"
+      << "    --verilator-parallel\n"
+      << "        Enable multi-threaded simulation when using verilator\n\n"
       << "    --simulator=<type>\n"
       << "        Specify the simulator used in generated simulation scripts:\n"
       << "            MODELSIM - Mentor Modelsim\n"
@@ -703,6 +711,16 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            ICARUS - Verilog Icarus simulator\n"
       << "            VERILATOR - Verilator simulator\n"
       << "\n"
+      << "    --altera-root=<path>\n"
+      << "        Define Altera tools path. Given path is searched for Quartus. (default=/opt/altera:/opt/intelFPGA)\n\n"
+      << "    --lattice-root=<path>\n"
+      << "        Define Lattice tools path. Given path is searched for Diamond. (default=/opt/diamond:/usr/local/diamond)\n\n"
+      << "    --mentor-root=<path>\n"
+      << "        Define Mentor tools path. Given directory is searched for Modelsim and Visualizer (default=/opt/mentor)\n\n"
+      << "    --nanoxplore-root=<path>\n"
+      << "        Define NanoXplore tools path. Given directory is searched for NXMap. (default=/opt/NanoXplore/NXMap)\n\n"
+      << "    --xilinx-root=<path>\n"
+      << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado (default=/opt/Xilinx)\n\n"
       << "    --max-sim-cycles=<cycles>\n"
       << "        Specify the maximum number of cycles a HDL simulation may run.\n"
       << "        (default 20000000).\n\n"
@@ -782,7 +800,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Specify a file that will be included in the Synopsys Design Constraints\n"
       << "        file (SDC).\n\n"
       << "   --parallel-backend\n"
-      << "        when possible enable a parallel synthesis backend"
+      << "        when possible enable a parallel synthesis backend\n"
       << "    --VHDL-library=libraryname\n"
       << "        Specify the library in which the VHDL generated files are compiled.\n\n"
       << "    --device-name=value\n"
@@ -1017,7 +1035,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "           Performs automated discrepancy analysis between the execution\n"
       << "           of the original source code and the generated HDL (currently\n"
       << "           supports only Verilog). If a mismatch is detected reports\n"
-      << "           useful information the user.\n"
+      << "           useful information to the user.\n"
       << "           Uninitialized variables in C are legal, but if they are used\n"
       << "           before initialization in HDL it is possible to obtain X values\n"
       << "           in simulation. This is not necessarily wrong, so these errors\n"
@@ -1058,11 +1076,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "           Do not trigger hard errors on pointer variables.\n\n"
       << "    --discrepancy-hw\n"
       << "           Hardware Discrepancy Analysis.\n\n"
-
-#if HAVE_MODELSIM
       << "    --assert-debug\n"
-      << "        Enable assertion debugging performed by Modelsim.\n\n"
-#endif
+      << "        Enable assertion debugging performed by Modelsim.\n"
+      << "        (Mentor Modelsim should be selected to use this option)\n\n"
       << std::endl;
 }
 
@@ -1265,9 +1281,7 @@ int BambuParameter::Exec()
       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
       {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
       {"simulate", no_argument, nullptr, OPT_SIMULATE},
-#if HAVE_MENTOR_VISUALIZER_EXE
       {"mentor-visualizer", no_argument, nullptr, OPT_VISUALIZER},
-#endif
       {"simulator", required_argument, nullptr, 0},
       {"disable-function-proxy", no_argument, nullptr, OPT_DISABLE_FUNCTION_PROXY},
       {"disable-bounded-function", no_argument, nullptr, OPT_DISABLE_BOUNDED_FUNCTION},
@@ -1301,6 +1315,14 @@ int BambuParameter::Exec()
 #endif
 #endif
       {"dry-run-evaluation", no_argument, nullptr, INPUT_OPT_DRY_RUN_EVALUATION},
+      {"altera-root", optional_argument, nullptr, OPT_ALTERA_ROOT},
+      {"lattice-root", optional_argument, nullptr, OPT_LATTICE_ROOT},
+      {"mentor-root", optional_argument, nullptr, OPT_MENTOR_ROOT},
+      {"mentor-optimizer", optional_argument, nullptr, OPT_MENTOR_OPTIMIZER},
+      {"nanoxplore-root", optional_argument, nullptr, OPT_NANOXPLORE_ROOT},
+      {"nanoxplore-bypass", optional_argument, nullptr, OPT_NANOXPLORE_BYPASS},
+      {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
+      {"verilator-parallel", optional_argument, nullptr, OPT_VERILATOR_PARALLEL},
       GCC_LONG_OPTIONS,
       {nullptr, 0, nullptr, 0}
    };
@@ -1865,13 +1887,11 @@ int BambuParameter::Exec()
             setOption(OPT_evaluation_objectives, objective_string);
             break;
          }
-#if HAVE_MENTOR_VISUALIZER_EXE
          case OPT_VISUALIZER:
          {
             setOption(OPT_visualizer, true);
             break;
          }
-#endif
          case OPT_DEVICE_NAME:
          {
             std::string tmp_string = optarg;
@@ -2484,6 +2504,46 @@ int BambuParameter::Exec()
          case OPT_INTERFACE_XML_FILENAME:
          {
             setOption(OPT_interface_xml_filename, GetPath(optarg));
+            break;
+         }
+         case OPT_ALTERA_ROOT:
+         {
+            setOption(OPT_altera_root, GetPath(optarg));
+            break;
+         }
+         case OPT_LATTICE_ROOT:
+         {
+            setOption(OPT_lattice_root, GetPath(optarg));
+            break;
+         }
+         case OPT_MENTOR_ROOT:
+         {
+            setOption(OPT_mentor_root, GetPath(optarg));
+            break;
+         }
+         case OPT_MENTOR_OPTIMIZER:
+         {
+            setOption(OPT_mentor_optimizer, boost::lexical_cast<bool>(optarg));
+            break;
+         }
+         case OPT_NANOXPLORE_ROOT:
+         {
+            setOption(OPT_nanoxplore_root, GetPath(optarg));
+            break;
+         }
+         case OPT_NANOXPLORE_BYPASS:
+         {
+            setOption(OPT_nanoxplore_bypass, std::string(optarg));
+            break;
+         }
+         case OPT_VERILATOR_PARALLEL:
+         {
+            setOption(OPT_verilator_parallel, true);
+            break;
+         }
+         case OPT_XILINX_ROOT:
+         {
+            setOption(OPT_xilinx_root, GetPath(optarg));
             break;
          }
          case 0:
@@ -3109,6 +3169,332 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
+
+   const auto sorted_dirs = [](const std::string& parent_dir) {
+      std::vector<boost::filesystem::path> sorted_paths;
+      std::copy(boost::filesystem::directory_iterator(parent_dir), boost::filesystem::directory_iterator(), std::back_inserter(sorted_paths));
+      std::sort(sorted_paths.begin(), sorted_paths.end());
+      return sorted_paths;
+   };
+
+   const auto altera_dirs = SplitString(getOption<std::string>(OPT_altera_root), ":");
+   removeOption(OPT_altera_root);
+   const auto search_quartus = [&](const std::string& dir) {
+      if(boost::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
+      {
+         if(system(STR("bash -c \"if [[ \\\"$(" + dir + "/quartus/bin/quartus_sh --version | grep Version | awk '{print $2}' | awk -F'.' '{print $1}')\\\" -lt \\\"14\\\" ]]; then exit 1; else exit 0; fi\" > /dev/null 2>&1").c_str()))
+         {
+            setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
+            if(system(STR("bash -c \"" + dir + "/quartus/bin/quartus_sh --help | grep \\\"\\-\\-64bit\\\"\" > /dev/null 2>&1").c_str()) == 0)
+            {
+               setOption(OPT_quartus_13_64bit, true);
+            }
+            else
+            {
+               setOption(OPT_quartus_13_64bit, false);
+            }
+         }
+         else
+         {
+            setOption(OPT_quartus_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
+         }
+      }
+   };
+   for(const auto& altera_dir : altera_dirs)
+   {
+      if(boost::filesystem::is_directory(altera_dir))
+      {
+         for(const auto& ver_dir : sorted_dirs(altera_dir))
+         {
+            if(boost::filesystem::is_directory(ver_dir))
+            {
+               search_quartus(ver_dir.string());
+            }
+         }
+         search_quartus(altera_dir);
+      }
+   }
+
+   /// Search for lattice tool
+   const auto lattice_dirs = SplitString(getOption<std::string>(OPT_lattice_root), ":");
+   removeOption(OPT_lattice_root);
+   auto has_lattice = 0; // 0 = not found, 1 = 32-bit version, 2 = 64-bit version
+   const auto search_lattice = [&](const std::string& dir) {
+      if(boost::filesystem::exists(dir + "/bin/lin/diamondc"))
+      {
+         has_lattice = 1;
+         setOption(OPT_lattice_root, dir);
+      }
+      else if(boost::filesystem::exists(dir + "/bin/lin64/diamondc"))
+      {
+         has_lattice = 2;
+         setOption(OPT_lattice_root, dir);
+      }
+      if(boost::filesystem::exists(dir + "/cae_library/synthesis/verilog/pmi_def.v"))
+      {
+         setOption(OPT_lattice_pmi_def, dir + "/cae_library/synthesis/verilog/pmi_def.v");
+      }
+      if(boost::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_ram_dp_true_be.v"))
+      {
+         setOption(OPT_lattice_pmi_tdpbe, dir + "/cae_library/simulation/verilog/pmi/pmi_ram_dp_true_be.v");
+      }
+      if(boost::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_dsp_mult.v"))
+      {
+         setOption(OPT_lattice_pmi_mul, dir + "/cae_library/simulation/verilog/pmi/pmi_dsp_mult.v");
+      }
+   };
+   for(const auto& lattice_dir : lattice_dirs)
+   {
+      if(boost::filesystem::is_directory(lattice_dir))
+      {
+         for(const auto& ver_dir : sorted_dirs(lattice_dir))
+         {
+            if(boost::filesystem::is_directory(ver_dir))
+            {
+               search_lattice(ver_dir.string());
+            }
+         }
+         search_lattice(lattice_dir);
+      }
+   }
+   if(has_lattice == 1)
+   {
+      const auto lattice_dir = getOption<std::string>(OPT_lattice_root);
+      setOption(OPT_lattice_settings, "export TEMP=/tmp;export LSC_INI_PATH=\"\";"
+                                      "export LSC_DIAMOND=true;"
+                                      "export TCL_LIBRARY=" +
+                                          lattice_dir +
+                                          "/tcltk/lib/tcl8.5;"
+                                          "export FOUNDRY=" +
+                                          lattice_dir +
+                                          "/ispfpga;"
+                                          "export PATH=$FOUNDRY/bin/lin:" +
+                                          lattice_dir + "/bin/lin:$PATH");
+   }
+   else if(has_lattice == 2)
+   {
+      const auto lattice_dir = getOption<std::string>(OPT_lattice_root);
+      setOption(OPT_lattice_settings, "export TEMP=/tmp;export LSC_INI_PATH=\"\";"
+                                      "export LSC_DIAMOND=true;"
+                                      "export TCL_LIBRARY=" +
+                                          lattice_dir +
+                                          "/tcltk/lib/tcl8.5;"
+                                          "export FOUNDRY=" +
+                                          lattice_dir +
+                                          "/ispfpga;"
+                                          "export PATH=$FOUNDRY/bin/lin64:" +
+                                          lattice_dir + "/bin/lin64:$PATH");
+   }
+
+   /// Search for Mentor tools
+   const auto mentor_dirs = SplitString(getOption<std::string>(OPT_mentor_root), ":");
+   removeOption(OPT_mentor_root);
+   const auto search_mentor = [&](const std::string& dir) {
+      if(boost::filesystem::exists(dir + "/bin/vsim"))
+      {
+         setOption(OPT_mentor_modelsim_bin, dir + "/bin");
+      }
+      if(boost::filesystem::exists(dir + "/bin/visualizer"))
+      {
+         setOption(OPT_mentor_visualizer, dir + "/bin/visualizer");
+      }
+   };
+   for(const auto& mentor_dir : mentor_dirs)
+   {
+      if(boost::filesystem::is_directory(mentor_dir))
+      {
+         for(const auto& ver_dir : sorted_dirs(mentor_dir))
+         {
+            if(boost::filesystem::is_directory(ver_dir))
+            {
+               search_mentor(ver_dir.string());
+            }
+         }
+         search_mentor(mentor_dir);
+      }
+   }
+   if(isOption(OPT_visualizer) && getOption<bool>(OPT_visualizer) && !isOption(OPT_mentor_visualizer))
+   {
+      THROW_ERROR("Mentor Visualizer was not detected by Bambu. Please check --mentor-root option is correct.");
+   }
+
+   /// Search for NanoXPlore tools
+   const auto nanox_dirs = SplitString(getOption<std::string>(OPT_nanoxplore_root), ":");
+   removeOption(OPT_nanoxplore_root);
+   const auto search_xmap = [&](const std::string& dir) {
+      if(boost::filesystem::exists(dir + "/bin/nxpython"))
+      {
+         setOption(OPT_nanoxplore_settings, "export PATH=$PATH:" + dir + "/bin");
+      }
+   };
+   for(const auto& nanox_dir : nanox_dirs)
+   {
+      if(boost::filesystem::is_directory(nanox_dir))
+      {
+         for(const auto& ver_dir : sorted_dirs(nanox_dir))
+         {
+            if(boost::filesystem::is_directory(ver_dir))
+            {
+               search_xmap(ver_dir.string());
+            }
+         }
+         search_xmap(nanox_dir);
+      }
+   }
+
+   /// Search for Xilinx tools
+   const auto target_64 = true;
+   const auto xilinx_dirs = SplitString(getOption<std::string>(OPT_xilinx_root), ":");
+   removeOption(OPT_xilinx_root);
+   const auto search_xilinx = [&](const std::string& dir) {
+      if(boost::filesystem::exists(dir + "/ISE"))
+      {
+         if(target_64 && boost::filesystem::exists(dir + "/settings64.sh"))
+         {
+            setOption(OPT_xilinx_settings, dir + "/settings64.sh");
+         }
+         else if(boost::filesystem::exists(dir + "/settings32.sh"))
+         {
+            setOption(OPT_xilinx_settings, dir + "/settings32.sh");
+         }
+         if(boost::filesystem::exists(dir + "/ISE/verilog/src/glbl.v"))
+         {
+            setOption(OPT_xilinx_glbl, dir + "/ISE/verilog/src/glbl.v");
+         }
+      }
+   };
+   const auto search_xilinx_vivado = [&](const std::string& dir) {
+      if(boost::filesystem::exists(dir + "/ids_lite"))
+      {
+         if(target_64 && boost::filesystem::exists(dir + "/settings64.sh"))
+         {
+            setOption(OPT_xilinx_vivado_settings, dir + "/settings64.sh");
+         }
+         else if(boost::filesystem::exists(dir + "/settings32.sh"))
+         {
+            setOption(OPT_xilinx_vivado_settings, dir + "/settings32.sh");
+         }
+         if(boost::filesystem::exists(dir + "/data/verilog/src/glbl.v"))
+         {
+            setOption(OPT_xilinx_glbl, dir + "/data/verilog/src/glbl.v");
+         }
+      }
+   };
+   for(const auto& xilinx_dir : xilinx_dirs)
+   {
+      if(boost::filesystem::is_directory(xilinx_dir))
+      {
+         for(const auto& ver_dir : sorted_dirs(xilinx_dir))
+         {
+            if(boost::filesystem::is_directory(ver_dir))
+            {
+               for(const auto& ise_dir : boost::filesystem::directory_iterator(ver_dir))
+               {
+                  const auto ise_path = ise_dir.path().string();
+                  if(boost::filesystem::is_directory(ise_dir) && ise_path.find("ISE") > ise_path.find_last_of('/'))
+                  {
+                     search_xilinx(ise_path);
+                  }
+               }
+            }
+         }
+         search_xilinx(xilinx_dir);
+      }
+   }
+   for(const auto& xilinx_dir : xilinx_dirs)
+   {
+      if(boost::filesystem::is_directory(xilinx_dir))
+      {
+         for(const auto& vivado_dir : boost::filesystem::directory_iterator(xilinx_dir))
+         {
+            const auto vivado_path = vivado_dir.path().string();
+            if(boost::filesystem::is_directory(vivado_dir) && vivado_path.find("Vivado") > vivado_path.find_last_of('/'))
+            {
+               for(const auto& ver_dir : sorted_dirs(vivado_path))
+               {
+                  if(boost::filesystem::is_directory(ver_dir))
+                  {
+                     search_xilinx_vivado(ver_dir.string());
+                  }
+               }
+            }
+         }
+         search_xilinx_vivado(xilinx_dir);
+      }
+   }
+
+   /// Search for verilator
+   setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
+   if(getOption<bool>(OPT_verilator))
+   {
+      setOption(OPT_verilator_l2_name, system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
+      const auto has_timescale_override = system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+      if(has_timescale_override)
+      {
+         setOption(OPT_verilator_timescale_override, "1ps/1ps");
+      }
+      const auto thread_support = system("bash -c \"if [[ \\\"$(verilator --version | head -n1 | awk -F' ' '{print $2}'| awk -F'.' '{print $1}')\\\" = \\\"4\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+      if(getOption<bool>(OPT_verilator_parallel) && !thread_support)
+      {
+         THROW_WARNING("Installed version of Verilator does not support multi-threading.");
+         setOption(OPT_verilator_parallel, false);
+      }
+   }
+
+   /// Search for icarus
+   setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
+
+   if(isOption(OPT_simulator))
+   {
+      if(getOption<std::string>(OPT_simulator) == "MODELSIM" && !isOption(OPT_mentor_modelsim_bin))
+      {
+         THROW_ERROR("Mentor Modelsim was not detected by Bambu. Please check --mentor-root option is correct.");
+      }
+      else if(getOption<std::string>(OPT_simulator) == "XSIM" && !isOption(OPT_xilinx_vivado_settings))
+      {
+         THROW_ERROR("Xilinx XSim was not detected by Bambu. Please check --xilinx-root option is correct.");
+      }
+      else if(getOption<std::string>(OPT_simulator) == "ISIM" && !isOption(OPT_xilinx_settings))
+      {
+         THROW_ERROR("Xilinx ISim was not detected by Bambu. Please check --xilinx-root option is correct.");
+      }
+      else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
+      {
+         THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
+      }
+      else if(getOption<std::string>(OPT_simulator) == "VERILATOR" && !isOption(OPT_verilator))
+      {
+         THROW_ERROR("Verilator was not detected by Bambu. Please make sure it is installed in the system.");
+      }
+   }
+   else
+   {
+      if(isOption(OPT_mentor_modelsim_bin))
+      {
+         setOption(OPT_simulator, "MODELSIM"); /// Mixed language simulator
+      }
+      else if(isOption(OPT_xilinx_vivado_settings))
+      {
+         setOption(OPT_simulator, "XSIM"); /// Mixed language simulator
+      }
+      else if(isOption(OPT_xilinx_settings))
+      {
+         setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
+      }
+      else if(isOption(OPT_icarus))
+      {
+         setOption(OPT_simulator, "ICARUS");
+      }
+      else if(isOption(OPT_verilator))
+      {
+         setOption(OPT_simulator, "VERILATOR");
+      }
+      else
+      {
+         THROW_ERROR("No valid simulator was found in the system.");
+      }
+   }
+
 #if HAVE_TASTE
    if(isOption(OPT_input_format) and getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
    {
@@ -3854,20 +4240,22 @@ void BambuParameter::CheckParameters()
          THROW_WARNING("Simulation of Lattice device may not work with VERILATOR. Recent versions ignore some issue in Verilog Lattice libraries.");
       }
    }
-#if !HAVE_LATTICE
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and
-      (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
+   if(isOption(OPT_lattice_settings))
    {
-      THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support");
+      if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and isOption(OPT_device_string) and
+         (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C") and !getOption<bool>(OPT_connect_iob))
+      {
+         THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
+      }
    }
-#endif
-#if HAVE_LATTICE
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and isOption(OPT_device_string) and
-      (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C") and !getOption<bool>(OPT_connect_iob))
+   else
    {
-      THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
+      if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and
+         (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
+      {
+         THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support. See documentation about --lattice-root option.");
+      }
    }
-#endif
    if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and (not isOption(OPT_simulator) or getOption<std::string>(OPT_simulator) == ""))
    {
       THROW_ERROR("At least a simulator must be enabled");
@@ -4031,19 +4419,16 @@ void BambuParameter::SetDefaults()
    setOption("evaluation_output", "evaluation.txt");
 #endif
 
+   setOption(OPT_altera_root, "/opt/altera:/opt/intelFPGA");
+   setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
+   setOption(OPT_mentor_root, "/opt/mentor");
+   setOption(OPT_mentor_optimizer, true);
+   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap");
+   setOption(OPT_verilator_parallel, false);
+   setOption(OPT_xilinx_root, "/opt/Xilinx");
+
    /// -- Module Synthesis -- //
    setOption(OPT_rtl, true); /// the resulting specification will be a RTL description
-#if HAVE_MODELSIM
-   setOption(OPT_simulator, "MODELSIM"); /// Mixed language simulator
-#elif HAVE_XILINX_VIVADO
-   setOption(OPT_simulator, "XSIM"); /// Mixed language simulator
-#elif HAVE_XILINX
-   setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
-#elif HAVE_ICARUS
-   setOption(OPT_simulator, "ICARUS");
-#elif HAVE_VERILATOR
-   setOption(OPT_simulator, "VERILATOR");
-#endif
    setOption("device_name", "xc7z020");
    setOption("device_speed", "-1");
    setOption("device_package", "clg484");

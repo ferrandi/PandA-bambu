@@ -25,18 +25,6 @@ Currently accepted parameters are:
 
   --enable-flopoco: add floating point support by leveraging FloPoCo Library 
                    http://flopoco.gforge.inria.fr/
-  --enable-xilinx: enable Xilinx RTL synthesis and simulation tools execution 
-                   within the framework
-  --enable-altera: enable Altera RTL synthesis tool execution within the framework
-  --enable-lattice: enable Lattice RTL synthesis tool execution within the framework
-  --enable-nanoxplore: enable BRAVE FPGA NanoXplore RTL synthesis tool execution within the framework
-  --enable-modelsim: enable Modelsim-based simulation directly within the framework
-  --with-mentor-license=<license-file/license-server>
-  --with-nanoxplore-license=<license-file/license-server>
-  --enable-icarus: enable Icarus-based simulation
-                   http://iverilog.icarus.com/
-  --enable-verilator: enable Verilator-based simulation
-                   http://www.veripool.org/wiki/verilator
   --enable-debug: add debugging symbols to the binaries 
   --enable-opt: Compile the framework with GCC optimizations enabled
   --enable-release: Remove further tests not useful in a production environment
@@ -49,9 +37,7 @@ mixed-language simulator. Both Modelsim from Mentor and XSIM/ISIM from Xilinx
 have such support.
 
 The suggested configuration is
-../configure --prefix=/opt/panda --enable-flopoco --enable-icarus --enable-verilator --enable-opt --enable-release 
-
-Options --enable-xilinx, --enable-modelsim, --enable-altera, --enable-lattice, --enable-nanoxplore, --with-mentor-license=<license-string>, and --with-nanoxplore-license=<license-string> require that third-party tools have been installed before PandA is configured. Details on where these third-party tools are searched are provided at the end of this file.
+../configure --prefix=/opt/panda --enable-flopoco --enable-opt --enable-release 
 
 7) Compile the tool:
   $make
@@ -595,7 +581,7 @@ In a single line:
 sudo pacman -S base-devel multilib-devel boost iverilog gcc-multilib autoconf-archive verilator mpfi clang llvm gcc gcc-fortran git tar suitesparse glpk readline
 
 A working configure example is:
-../configure --prefix=$HOME/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast
+../configure --prefix=$HOME/panda --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast
 
 Mac OSX
 *************
@@ -609,7 +595,7 @@ Here the list of commands required:
      $export PATH=/opt/local/bin:/opt/local/sbin:$PATH
      $make -f Makefile.init
      $mkdir build
-     $cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --disable-Werror --with-clang6=/opt/local/bin/clang-mp-6.0 --with-gcc8=/opt/local/bin/gcc-mp-8 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
+     $cd build && ../configure --prefix=$HOME/panda --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --disable-Werror --with-clang6=/opt/local/bin/clang-mp-6.0 --with-gcc8=/opt/local/bin/gcc-mp-8 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
 
 
 
@@ -640,8 +626,8 @@ Device LFE5U85F8BG756C requires a free license available from Lattice Semiconduc
 Notes on NanoXplore tools
 *************
 The tested version of NanoXplore tools is the 2.9.4.
-The configuration of the PandA framework may require to add this option to the configure script:
-  --with-nanoxplore-bypass=<operating-system-distribution>
+The PandA framework may require to add this option at runtime:
+  --nanoxplore-bypass=<operating-system-distribution>
 where possible value can be:
   x86_64_UBUNTU_14
   x86_64_UBUNTU_16
@@ -652,8 +638,8 @@ where possible value can be:
 Notes on Modelsim
 *************
 
-PandA/bambu supports both Modelsim full version and Student/Free version by adding --enable-modelsim option to the PandA configure.
-When the Free/Student version of Modelsim is used, PandA/bambu should be configured by further adding the --disable-mentor-optimizer option. The Student/Free version does not have the optimization feature.
+PandA/bambu supports both Modelsim full version and Student/Free version.
+When the Free/Student version of Modelsim is used, PandA/bambu should be executed by further adding the --mentor-optimizer=0 option. The Student/Free version does not have the optimization feature.
 
 
 Notes on backend installation directories
@@ -666,11 +652,11 @@ For Mentor it checks this set of directories /opt/mentor and /opt/mentor/*
 For Xilinx ISE it checks these sets of directories /opt/Xilinx/* and /opt/Xilinx/*/ISE*
 For Xilinx VIVADO it checks this set of directories /opt/Xilinx/* and /opt/Xilinx/Vivado/*
 For BRAVE FPGA NanoXplore it checks this set of directories /opt/NanoXplore/NXmap/*
-Anyway, it is possible to specify a different position of the filesystem for the configuration script to look into.
+Anyway, it is possible to specify a different position of the filesystem for the application to look into.
 This is the list of options that may be useful for this purpose:
-  --with-altera-dir=DIR  where the root where ALTERA tools are installed
-  --with-lattice-dir=DIR  where the root where LATTICE tools are installed
-  --with-mentor-dir=DIR  where the root where MENTOR tools are installed
-  --with-xilinx-root-dir=DIR  where the root where XILINX tools are installed
-  --with-nanoxplore-dir=DIR  where the root where BRAVE FPGA NanoXplore tools are installed
+  --altera-root=DIR  where the root where ALTERA tools are installed
+  --lattice-root=DIR  where the root where LATTICE tools are installed
+  --mentor-root=DIR  where the root where MENTOR tools are installed
+  --xilinx-root=DIR  where the root where XILINX tools are installed
+  --nanoxplore-root=DIR  where the root where BRAVE FPGA NanoXplore tools are installed
 

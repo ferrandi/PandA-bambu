@@ -3575,7 +3575,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                std::vector<tree_nodeRef>::const_iterator formal_arg, formal_arg_end = formal_args.end();
                for(actual_arg = actual_args.begin(), formal_arg = formal_args.begin(); actual_arg != actual_arg_end; ++actual_arg)
                {
-                  if(formal_arg != formal_arg_end and (is_a_struct(GET_INDEX_NODE(*actual_arg)) or is_an_union(GET_INDEX_NODE(*actual_arg))) and (is_a_struct(GET_INDEX_NODE(*formal_arg)) or is_an_union(GET_INDEX_NODE(*formal_arg))) and
+                  if(formal_arg != formal_arg_end && (is_a_struct(GET_INDEX_NODE(*actual_arg)) || is_an_union(GET_INDEX_NODE(*actual_arg))) && (is_a_struct(GET_INDEX_NODE(*formal_arg)) || is_an_union(GET_INDEX_NODE(*formal_arg))) &&
                      (tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(*actual_arg))) != tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(*formal_arg)))))
                   {
                      THROW_ERROR_CODE(C_EC, "Implicit struct type definition not supported in gimple assignment " + boost::lexical_cast<std::string>(index));

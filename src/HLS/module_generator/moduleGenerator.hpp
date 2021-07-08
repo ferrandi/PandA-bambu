@@ -107,7 +107,7 @@ class moduleGenerator
 
    void specialize_fu(std::string fuName, vertex ve, std::string libraryId, const technology_managerRef TM, const FunctionBehaviorConstRef FB, std::string new_fu_name, std::map<std::string, technology_nodeRef>& new_fu, const TargetDevice_Type dv_type);
 
-   void create_generic_module(const std::string fuName, const std::string libraryId, const technology_managerRef TM, const std::string new_fu_name, TargetDevice_Type dv_type, const application_managerRef AppM);
+   void create_generic_module(const std::string& fuName, const std::string& libraryId, const technology_managerRef TM, const std::string& new_fu_name, TargetDevice_Type dv_type, const application_managerRef AppM);
 };
 using moduleGeneratorRef = refcount<moduleGenerator>;
 #endif

@@ -465,7 +465,6 @@ void CWriter::DeclareFunctionTypes(const unsigned int funId)
 const CustomSet<unsigned int> CWriter::GetLocalVariables(const unsigned int function_id) const
 {
    const OpGraphConstRef inGraph = this->AppM->CGetFunctionBehavior(function_id)->CGetOpGraph(FunctionBehavior::DFG);
-   const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    CustomSet<unsigned int> vars;
    // I simply have to go over all the vertices and get the used variables;
    // the variables which have to be declared are all those variables but
@@ -511,22 +510,14 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
    const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    CustomSet<unsigned int> vars = GetLocalVariables(function_id);
 
-   const std::list<unsigned int>& funParams = behavioral_helper->get_parameters();
-   for(unsigned int funParam : funParams)
+   for(unsigned int funParam : behavioral_helper->get_parameters())
    {
-      if(vars.find(funParam) != vars.end())
-      {
-         vars.erase(funParam);
-      }
+      vars.erase(funParam);
    }
 
-   const CustomSet<unsigned int>& gblVariables = AppM->get_global_variables();
-   for(unsigned int gblVariable : gblVariables)
+   for(unsigned int gblVariable : AppM->get_global_variables())
    {
-      if(vars.find(gblVariable) != vars.end())
-      {
-         vars.erase(gblVariable);
-      }
+      vars.erase(gblVariable);
    }
 
    var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));

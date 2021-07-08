@@ -55,7 +55,7 @@ class ExtractOmpAtomic : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -75,11 +75,11 @@ class ExtractOmpAtomic : public FunctionFrontendFlowStep
    /**
     * Restructures the unstructured code
     */
-   DesignFlowStep_Status InternalExec();
+   DesignFlowStep_Status InternalExec() override;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
-   virtual void Initialize();
+   virtual void Initialize() override;
 };
 #endif

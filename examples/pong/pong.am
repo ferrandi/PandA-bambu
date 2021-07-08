@@ -20,6 +20,3 @@ EXTRA_DIST +=\
    %D%/sevensegments_ctrl.h\
    %D%/sevensegments_ctrl.v\
    %D%/synthesize_NEXYS4.sh
-TESTS+=%D%/synthesize_NEXYS4.sh
-
-

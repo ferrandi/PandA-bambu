@@ -5,7 +5,7 @@ CLANG5_LIBSD=$(CLANG_LIBS)
 CLANG5_SYSTEM_H=$(shell $(I386_CLANG_CPP5_EXE) -v  < /dev/null 2>&1 | grep -E -v "(\#|Configured with|Using built-in|Target|Thread model|gcc version|End of search list|ignoring nonexistent directory|cc1 -E -quiet|cc1.exe -E -quiet|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|ignoring duplicate directory|ignoring nonexistent directory|InstalledDir|clang version|Found candidate|Selected GCC installation|Candidate multilib|Selected multilib|-cc1)" | tr '\n' ' ' | tr '\r' ' '  | sed 's/\\/\//g')
 
 if BUILD_I386_CLANG5_EMPTY_PLUGIN
-all: $(I386_CLANG5_EMPTY_PLUGIN) bambuS2S-5
+all: $(I386_CLANG5_EMPTY_PLUGIN)
 endif
 
 if BUILD_I386_CLANG5_SSA_PLUGIN

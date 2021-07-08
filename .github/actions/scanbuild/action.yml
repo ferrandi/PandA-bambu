@@ -1,0 +1,20 @@
+name: 'Scan build'
+description: 'Launch clang scan-build'
+inputs:
+  config-args:
+    description: 'Bambu configure arguments'
+    required: false
+    default: ''
+  report-dir:
+    description: 'Scan build report directory'
+    required: false
+    default: './scanbuild-report'
+outputs:
+  report-dir:
+    description: 'Scan build report directory'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{inputs.report-dir}}
+    - ${{inputs.config-args}}

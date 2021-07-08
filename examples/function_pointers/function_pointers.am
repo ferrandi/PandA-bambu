@@ -8,5 +8,3 @@ EXTRA_DIST += %D%/bsearch_uclibc/aggregate.h %D%/bsearch_uclibc/bsearch.c %D%/bs
 EXTRA_DIST += %D%/qsort_musl/atomic.h %D%/qsort_musl/less.c %D%/qsort_musl/qsort.c %D%/qsort_musl/qsort-specialized.c %D%/qsort_musl/test.c %D%/qsort_musl/test-small.xml %D%/qsort_musl/test-specialized.c %D%/qsort_musl/test.xml
 EXTRA_DIST += %D%/bsearch_newlib/aggregate.h %D%/bsearch_newlib/bsearch.c %D%/bsearch_newlib/bsearch-specialized.c %D%/bsearch_newlib/less.c %D%/bsearch_newlib/test.c %D%/bsearch_newlib/test-specialized.c %D%/bsearch_newlib/test.xml
 EXTRA_DIST += %D%/qsort_glibc/aggregate.h %D%/qsort_glibc/less.c %D%/qsort_glibc/qsort.c %D%/qsort_glibc/qsort-specialized.c %D%/qsort_glibc/test.c %D%/qsort_glibc/test-small.xml %D%/qsort_glibc/test-specialized.c %D%/qsort_glibc/test.xml
-TESTS+=%D%/bambu.sh
-

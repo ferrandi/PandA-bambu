@@ -1,5 +1,5 @@
 #!/bin/bash
-ARGS=$@
+ARGS="$@"
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
 $root_dir/softfloat/xc7z020-1clg484-VVD_10.0_OSF_sdc.sh $ARGS

@@ -499,10 +499,7 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
       auto ssaDefVar = GetPointer<ssa_name>(GET_NODE(defSSA));
       THROW_ASSERT(ssaDefVar, "unexpected condition");
       std::list<tree_nodeRef> varUses;
-      for(auto used : ssaDefVar->CGetUseStmts())
-      {
-         varUses.push_back(used.first);
-      }
+      std::transform(ssaDefVar->CGetUseStmts().begin(), ssaDefVar->CGetUseStmts().end(), std::back_inserter(varUses), [](const std::pair<const tree_nodeRef, size_t>& used) { return used.first; });
       for(auto used : varUses)
       {
          TM->ReplaceTreeNode(used, defSSA, temp_ssa_var);
@@ -799,17 +796,17 @@ void interface_infer::create_resource_Write_simple(const std::set<std::string>& 
       {
          CM->add_port_vector(START_PORT_NAME, port_o::IN, n_resources, interface_top, bool_type);
       }
-      structural_objectRef sizePort, writePort, addrPort;
+      structural_objectRef addrPort;
       if(isMultipleResource)
       {
-         sizePort = CM->add_port_vector("in1", port_o::IN, n_resources, interface_top, rwsize);
-         writePort = CM->add_port_vector("in2", port_o::IN, n_resources, interface_top, rwtype);
+         CM->add_port_vector("in1", port_o::IN, n_resources, interface_top, rwsize);
+         CM->add_port_vector("in2", port_o::IN, n_resources, interface_top, rwtype);
          addrPort = CM->add_port_vector("in3", port_o::IN, n_resources, interface_top, addrType);
       }
       else
       {
-         sizePort = CM->add_port("in1", port_o::IN, interface_top, rwsize);
-         writePort = CM->add_port("in2", port_o::IN, interface_top, rwtype);
+         CM->add_port("in1", port_o::IN, interface_top, rwsize);
+         CM->add_port("in2", port_o::IN, interface_top, rwtype);
          addrPort = CM->add_port("in3", port_o::IN, interface_top, addrType);
       }
       GetPointer<port_o>(addrPort)->set_is_addr_bus(true);
@@ -954,8 +951,8 @@ void interface_infer::create_resource_array(const std::set<std::string>& operati
       CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port_vector(START_PORT_NAME, port_o::IN, NResources, interface_top, bool_type);
 
-      auto selPort = CM->add_port_vector("in1", port_o::IN, NResources, interface_top, size1);     // when 0 is a read otherwise is a write
-      auto sizePort = CM->add_port_vector("in2", port_o::IN, NResources, interface_top, rwsize);   // bit-width size of the written or read data
+      CM->add_port_vector("in1", port_o::IN, NResources, interface_top, size1);                    // when 0 is a read otherwise is a write
+      CM->add_port_vector("in2", port_o::IN, NResources, interface_top, rwsize);                   // bit-width size of the written or read data
       auto dataPort = CM->add_port_vector("in3", port_o::IN, NResources, interface_top, rwtype);   // value written when the first operand is 1, 0 otherwise
       auto addrPort = CM->add_port_vector("in4", port_o::IN, NResources, interface_top, addrType); // address
       GetPointer<port_o>(dataPort)->set_port_alignment(nbitAddres);
@@ -1116,9 +1113,9 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port_vector(START_PORT_NAME, port_o::IN, n_resources, interface_top, bool_type);
 
-      auto selPort = CM->add_port_vector("in1", port_o::IN, n_resources, interface_top, size1);                   // when 0 is a read otherwise is a write
-      auto sizePort = CM->add_port_vector("in2", port_o::IN, n_resources, interface_top, rwsize);                 // bit-width size of the written or read data
-      auto dataPort = CM->add_port_vector("in3", port_o::IN, n_resources, interface_top, rwtype);                 // value written when the first operand is 1, 0 otherwise
+      CM->add_port_vector("in1", port_o::IN, n_resources, interface_top, size1);                                  // when 0 is a read otherwise is a write
+      CM->add_port_vector("in2", port_o::IN, n_resources, interface_top, rwsize);                                 // bit-width size of the written or read data
+      CM->add_port_vector("in3", port_o::IN, n_resources, interface_top, rwtype);                                 // value written when the first operand is 1, 0 otherwise
       auto addrPort = CM->add_port_vector("in4", port_o::IN, n_resources, interface_top, address_interface_type); // address
 
       GetPointer<port_o>(addrPort)->set_is_addr_bus(true);
@@ -1220,7 +1217,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       auto Port_arqos = CM->add_port("_m_axi_" + portNameSpecializer + "_ARQOS", port_o::OUT, interface_top, qosType);
       GetPointer<port_o>(Port_arqos)->set_port_interface(port_o::port_interface::M_AXI_ARQOS);
 
-      auto Port_arregion = CM->add_port("_m_axi_" + portNameSpecializer + "_ARREGION", port_o::OUT, interface_top, regionType);
+      CM->add_port("_m_axi_" + portNameSpecializer + "_ARREGION", port_o::OUT, interface_top, regionType);
       GetPointer<port_o>(Port_awlock)->set_port_interface(port_o::port_interface::M_AXI_ARREGION);
 
       auto Port_aruser = CM->add_port("_m_axi_" + portNameSpecializer + "_ARUSER", port_o::OUT, interface_top, userType);
@@ -1266,24 +1263,24 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       {
          auto Port_LSawvalid = CM->add_port("_s_axi_AXILiteS_AWVALID", port_o::IN, interface_top, bool_type);
          GetPointer<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWVALID);
-         auto Port_LSawready = CM->add_port("_s_axi_AXILiteS_AWREADY", port_o::OUT, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_AWREADY", port_o::OUT, interface_top, bool_type);
          GetPointer<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWREADY);
-         auto Port_LSawaddr = CM->add_port("_s_axi_AXILiteS_AWADDR", port_o::IN, interface_top, address_interface_type);
+         CM->add_port("_s_axi_AXILiteS_AWADDR", port_o::IN, interface_top, address_interface_type);
          GetPointer<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWADDR);
-         auto Port_LSwvalid = CM->add_port("_s_axi_AXILiteS_WVALID", port_o::IN, interface_top, bool_type);
-         auto Port_LSwready = CM->add_port("_s_axi_AXILiteS_WREADY", port_o::OUT, interface_top, bool_type);
-         auto Port_LSwdata = CM->add_port("_s_axi_AXILiteS_WDATA", port_o::IN, interface_top, Intype);
-         auto Port_LSwstrb = CM->add_port("_s_axi_AXILiteS_WSTRB", port_o::IN, interface_top, strbType);
-         auto Port_LSarvalid = CM->add_port("_s_axi_AXILiteS_ARVALID", port_o::IN, interface_top, bool_type);
-         auto Port_LSarready = CM->add_port("_s_axi_AXILiteS_ARREADY", port_o::OUT, interface_top, bool_type);
-         auto Port_LSaraddr = CM->add_port("_s_axi_AXILiteS_ARADDR", port_o::IN, interface_top, address_interface_type);
-         auto Port_LSrvalid = CM->add_port("_s_axi_AXILiteS_RVALID", port_o::OUT, interface_top, bool_type);
-         auto Port_LSrready = CM->add_port("_s_axi_AXILiteS_RREADY", port_o::IN, interface_top, bool_type);
-         auto Port_LSrdata = CM->add_port("_s_axi_AXILiteS_RDATA", port_o::OUT, interface_top, Intype);
-         auto Port_LSrresp = CM->add_port("_s_axi_AXILiteS_RRESP", port_o::OUT, interface_top, respType);
-         auto Port_LSbvalid = CM->add_port("_s_axi_AXILiteS_BVALID", port_o::OUT, interface_top, bool_type);
-         auto Port_LSbready = CM->add_port("_s_axi_AXILiteS_BREADY", port_o::IN, interface_top, bool_type);
-         auto Port_LSbresp = CM->add_port("_s_axi_AXILiteS_BRESP", port_o::OUT, interface_top, respType);
+         CM->add_port("_s_axi_AXILiteS_WVALID", port_o::IN, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_WREADY", port_o::OUT, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_WDATA", port_o::IN, interface_top, Intype);
+         CM->add_port("_s_axi_AXILiteS_WSTRB", port_o::IN, interface_top, strbType);
+         CM->add_port("_s_axi_AXILiteS_ARVALID", port_o::IN, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_ARREADY", port_o::OUT, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_ARADDR", port_o::IN, interface_top, address_interface_type);
+         CM->add_port("_s_axi_AXILiteS_RVALID", port_o::OUT, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_RREADY", port_o::IN, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_RDATA", port_o::OUT, interface_top, Intype);
+         CM->add_port("_s_axi_AXILiteS_RRESP", port_o::OUT, interface_top, respType);
+         CM->add_port("_s_axi_AXILiteS_BVALID", port_o::OUT, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_BREADY", port_o::IN, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_BRESP", port_o::OUT, interface_top, respType);
       }
 
       auto inPort_m_axi = CM->add_port("_" + argName_string, port_o::IN, interface_top, address_interface_type);

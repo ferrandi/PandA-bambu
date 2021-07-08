@@ -45,8 +45,6 @@
 /// Header include
 #include "map_wrapper.hpp"
 
-#include "config_XILINX_SETTINGS.hpp"
-
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
 

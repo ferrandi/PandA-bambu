@@ -1,7 +1,6 @@
 #!/bin/bash
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
-export PATH=../../src:../../../src:/opt/panda/bin:$PATH
 
 $root_dir/constrained_synth_nanoxplore_nx1h35S.sh
 return_value=$?

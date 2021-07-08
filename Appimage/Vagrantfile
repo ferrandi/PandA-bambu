@@ -40,7 +40,7 @@ Vagrant.configure(2) do |config|
      make -f Makefile.init
      mkdir build
      cd build 
-     ../configure --prefix=/usr --enable-verilator --enable-glpk --disable-release --with-opt-level=2 -with-clang6=/clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang --with-clang5=/bin/false --with-clang4=/bin/false --with-clang7=/bin/false --with-clang8=/bin/false --with-clang9=/bin/false --with-gcc48=/bin/false --with-gcc49=/bin/false --with-gcc5=/bin/false --with-gcc6=/bin/false --with-gcc7=/bin/false --with-gcc8=/bin/false --disable-flopoco CC=/clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang CXX=/clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang++ --enable-oldclangabi 
+     ../configure --prefix=/usr --enable-glpk --disable-release --with-opt-level=2 -with-clang6=/clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang --with-clang5=/bin/false --with-clang4=/bin/false --with-clang7=/bin/false --with-clang8=/bin/false --with-clang9=/bin/false --with-gcc48=/bin/false --with-gcc49=/bin/false --with-gcc5=/bin/false --with-gcc6=/bin/false --with-gcc7=/bin/false --with-gcc8=/bin/false --disable-flopoco CC=/clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang CXX=/clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang++ --enable-oldclangabi 
      make -j2
      make install-strip DESTDIR=/home/vagrant/PandA-bambu/build/dist
      cd /home/vagrant/PandA-bambu/build/dist

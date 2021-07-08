@@ -1736,7 +1736,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
 }
 
 void mux_connection_binding::add_conversion(unsigned int num, unsigned int size_tree_var, VertexIterator op, unsigned int form_par_type, unsigned int port_index, const generic_objRef fu_obj, const OpGraphConstRef data, const tree_managerRef TreeM,
-                                            unsigned int tree_var, std::vector<HLS_manager::io_binding_type>& var_read, unsigned int size_form_par)
+                                            unsigned int tree_var, const std::vector<HLS_manager::io_binding_type>& var_read, unsigned int size_form_par)
 {
    if(tree_helper::is_int(TreeM, tree_var) && (tree_helper::is_unsigned(TreeM, form_par_type) or tree_helper::is_bool(TreeM, form_par_type)))
    {

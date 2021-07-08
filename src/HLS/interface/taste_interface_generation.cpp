@@ -273,7 +273,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    AddConstant(SM_taste_interface, filtered_address, "in2", STR(address_mask), 32);
 
    /// Preparing and connecting endianess_check
-   THROW_ASSERT(parameters->getOption<std::string>(OPT_top_functions_names).find(STR_CST_taste_endianess_check + function_name) != std::string::npos, );
+   THROW_ASSERT(parameters->getOption<std::string>(OPT_top_functions_names).find(STR_CST_taste_endianess_check + function_name) != std::string::npos, "");
    THROW_ASSERT(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_endianess_check + function_name))->STG->get_number_of_states() == 1,
                 "Number of states of " STR_CST_taste_endianess_check + function_name + " is " + STR(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_endianess_check + function_name))->STG->get_number_of_states()));
    const auto endianess_check = SM_taste_interface->add_module_from_technology_library("endianess_check", STR_CST_taste_endianess_check + function_name, WORK_LIBRARY, taste_interface_circuit, TM);

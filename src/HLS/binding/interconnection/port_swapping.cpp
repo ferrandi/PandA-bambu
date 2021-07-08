@@ -181,6 +181,7 @@ int port_swapping::vertex_distance(const std::vector<PSE>& spt_edges, PSVertex r
    PSVSet set;
    set.v = root;
    set.level = 0;
+   set.belongs = SET_A;
    vset.push_back(set);
    int distance = 0;
    bool flag = false;

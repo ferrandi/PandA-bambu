@@ -61,7 +61,7 @@ class conn_binding_cs : public conn_binding
     * @param HLS
     * @param SM
     */
-   void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
+   void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM) override;
 
  protected:
    /**

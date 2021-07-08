@@ -1,2 +1,1 @@
 EXTRA_DIST += %D%/bambu.sh %D%/module.c %D%/test.xml %D%/README.txt
-TESTS+=%D%/bambu.sh

@@ -46,9 +46,6 @@
 
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_L2_NAME.hpp"
-#include "config_HAVE_THREADS.hpp"
-#include "config_USE_PARALLEL_VERILATOR.hpp"
 
 /// Constants include
 #include "file_IO_constants.hpp"
@@ -126,23 +123,22 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
    script << " -O3";
 #endif
-#if USE_PARALLEL_VERILATOR
-   unsigned int nThreads = std::thread::hardware_concurrency();
-#else
-   unsigned int nThreads = 1;
-#endif
-#if HAVE_THREADS
+   unsigned int nThreads = Param->getOption<bool>(OPT_verilator_parallel) ? std::thread::hardware_concurrency() : 1;
    if(nThreads > 1)
    {
       script << " --threads " << nThreads;
    }
-#endif
    if(generate_vcd_output)
    {
       script << " --trace --trace-underscore"; // --trace-params
-#if HAVE_L2_NAME
-      script << " --l2-name v";
-#endif
+      if(Param->getOption<bool>(OPT_verilator_l2_name))
+      {
+         script << " --l2-name v";
+      }
+   }
+   if(Param->isOption(OPT_verilator_timescale_override))
+   {
+      script << " --timescale-override \"" << Param->getOption<std::string>(OPT_verilator_timescale_override) << "\"";
    }
    for(const auto& file : file_list)
    {
@@ -157,12 +153,15 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << std::endl << std::endl;
    script << "ln -s " + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
-   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j" << nThreads;
-#if HAVE_THREADS && USE_PARALLEL_VERILATOR
-   script << R"( OPT_FAST="-fstrict-aliasing -march=native" OPT_SLOW="-fstrict-aliasing" OPT="-march=native")";
-#else
-   script << " OPT_FAST=\"-O1 -fstrict-aliasing -march=native\"";
-#endif
+   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j";
+   if(Param->getOption<bool>(OPT_verilator_parallel))
+   {
+      script << R"( OPT_FAST="-fstrict-aliasing -march=native" OPT_SLOW="-fstrict-aliasing" OPT="-march=native")";
+   }
+   else
+   {
+      script << " OPT_FAST=\"-O1 -fstrict-aliasing -march=native\"";
+   }
    script << " -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
