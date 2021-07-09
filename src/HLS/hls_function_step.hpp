@@ -68,6 +68,9 @@ class HLSFunctionStep : public HLS_step
     */
    virtual DesignFlowStep_Status InternalExec() = 0;
 
+ private:
+   bool HasToBeExecuted0() const;
+
  public:
    /**
     * Constructor

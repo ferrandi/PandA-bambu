@@ -1071,7 +1071,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
             }
 
             // Insert required sigma operation into the intermediate basic block
-            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, TM->GetTreeReindex(function_id), interBB->number);
+            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id, interBB->number);
             const auto gp = GetPointer<gimple_phi>(GET_NODE(PIC));
             gp->SetSSAUsesComputed();
             gp->artificial = true;
@@ -1081,7 +1081,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          else
          {
             // Insert required sigma operation into the destination basic block
-            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, TM->GetTreeReindex(function_id), pwe->To);
+            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id, pwe->To);
             const auto gp = GetPointer<gimple_phi>(GET_NODE(PIC));
             gp->SetSSAUsesComputed();
             gp->artificial = true;
@@ -1130,7 +1130,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
 bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, CustomMap<unsigned int, DFSInfo>& DFSInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, statement_list* sl)
 {
    const auto TM = AppM->get_tree_manager();
-   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    CustomMap<std::pair<unsigned int, unsigned int>, blocRef> interBranchBBs;
    bool modified = false;
    // This maps from copy operands to Predicate Info. Note that it does not own
@@ -1330,7 +1330,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
@@ -1346,10 +1346,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool eSSA::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return function_behavior->GetBitValueVersion() != bv_ver || FunctionFrontendFlowStep::HasToBeExecuted();
 }
 

@@ -96,7 +96,7 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
 {
    bool modified = false;
    const auto TreeM = AppM->get_tree_manager();
-   const auto tree_man = tree_manipulationRef(new tree_manipulation(TreeM, parameters));
+   const auto tree_man = tree_manipulationRef(new tree_manipulation(TreeM, parameters, AppM));
    const auto curr_tn = TreeM->CGetTreeNode(function_id);
    const auto Scpe = TreeM->CGetTreeReindex(function_id);
    const auto fd = GetPointerS<const function_decl>(curr_tn);
@@ -149,14 +149,14 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             }
             const auto booleanType = tree_man->create_boolean_type();
             const auto new_be = tree_man->create_binary_operation(booleanType, be->op0, be->op1, srcp_string, new_kind);
-            const auto new_ga = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType->index), TreeM->CreateUniqueIntegerCst(1, booleanType->index), new_be, 0, srcp_string);
-            block.second->PushBefore(new_ga, stmt);
+            const auto new_ga = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType->index), TreeM->CreateUniqueIntegerCst(1, booleanType->index), new_be, function_id, 0, srcp_string);
+            block.second->PushBefore(new_ga, stmt, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(new_ga));
             const auto new_not = tree_man->create_unary_operation(booleanType, GetPointerS<const gimple_assign>(GET_CONST_NODE(new_ga))->op0, srcp_string, truth_not_expr_K);
             if(GET_INDEX_CONST_NODE(be->type) != GET_INDEX_CONST_NODE(booleanType))
             {
-               const auto new_ga_not = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType->index), TreeM->CreateUniqueIntegerCst(1, booleanType->index), new_not, 0, srcp_string);
-               block.second->PushBefore(new_ga_not, stmt);
+               const auto new_ga_not = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType->index), TreeM->CreateUniqueIntegerCst(1, booleanType->index), new_not, function_id, 0, srcp_string);
+               block.second->PushBefore(new_ga_not, stmt, AppM);
                const auto new_nop = tree_man->create_unary_operation(be->type, GetPointerS<const gimple_assign>(GET_CONST_NODE(new_ga_not))->op0, srcp_string, nop_expr_K);
                TreeM->ReplaceTreeNode(stmt, ga->op1, new_nop);
             }

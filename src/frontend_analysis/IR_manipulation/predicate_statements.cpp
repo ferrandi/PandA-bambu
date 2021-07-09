@@ -107,10 +107,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
 
 bool PredicateStatements::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return bb_version == 0;
 }
 
@@ -118,7 +114,7 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
 {
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    const auto TM = AppM->get_tree_manager();
-   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    const auto true_value_id = TM->new_tree_node_id();
    const auto boolean_type = tree_man->create_boolean_type();
    const auto true_value = tree_man->CreateIntegerCst(boolean_type, 1, true_value_id);

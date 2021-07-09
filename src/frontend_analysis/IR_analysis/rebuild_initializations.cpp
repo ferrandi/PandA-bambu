@@ -94,7 +94,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
 {
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    tree_managerRef TM = AppM->get_tree_manager();
-   tree_manipulationRef tree_man(new tree_manipulation(TM, parameters));
+   tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
    auto* fd = GetPointerS<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
@@ -139,6 +139,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                         const auto gimple_nop_id = TM->new_tree_node_id();
                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
                         gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+                        gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                         TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
                         GetPointerS<ssa_name>(GET_NODE(ga->memdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
                      }
@@ -147,11 +148,12 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                         const auto gimple_nop_id = TM->new_tree_node_id();
                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
                         gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+                        gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                         TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
                         GetPointerS<ssa_name>(GET_NODE(ga->vdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
                      }
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(*it_los));
-                     B->RemoveStmt(*it_los);
+                     B->RemoveStmt(*it_los, AppM);
                      it_los = list_of_stmt.begin();
                      it_los_end = list_of_stmt.end();
                      continue;
@@ -665,7 +667,7 @@ tree_nodeRef getAssign(tree_nodeRef SSAop, unsigned vd_index, CustomOrderedSet<u
 bool rebuild_initialization2::look_for_ROMs()
 {
    tree_managerRef TM = AppM->get_tree_manager();
-   tree_manipulationRef tree_man(new tree_manipulation(TM, parameters));
+   tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
    auto* fd = GetPointerS<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
@@ -1225,6 +1227,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      const auto gimple_nop_id = TM->new_tree_node_id();
                      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
                      gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+                     gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                      TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
                      GetPointerS<ssa_name>(GET_NODE(ga->memdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
                   }
@@ -1233,11 +1236,12 @@ bool rebuild_initialization2::look_for_ROMs()
                      const auto gimple_nop_id = TM->new_tree_node_id();
                      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
                      gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+                     gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                      TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
                      GetPointerS<ssa_name>(GET_NODE(ga->vdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(*it_los));
-                  B->RemoveStmt(*it_los);
+                  B->RemoveStmt(*it_los, AppM);
                   it_los = list_of_stmt.begin();
                   it_los_end = list_of_stmt.end();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement");

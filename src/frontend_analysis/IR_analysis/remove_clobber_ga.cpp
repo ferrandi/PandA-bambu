@@ -83,6 +83,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REBUILD_INITIALIZATION, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -198,7 +199,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
       unsigned int curr_bb = stbr_it->first;
       for(const auto& to_be_removed : stbr_it->second)
       {
-         sl->list_of_bloc[curr_bb]->RemoveStmt(to_be_removed);
+         sl->list_of_bloc[curr_bb]->RemoveStmt(to_be_removed, AppM);
       }
    }
 

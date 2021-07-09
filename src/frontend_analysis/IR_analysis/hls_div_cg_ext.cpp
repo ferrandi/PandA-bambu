@@ -165,7 +165,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status hls_div_cg_ext::InternalExec()
 {
-   const tree_manipulationRef tree_man(new tree_manipulation(TreeM, parameters));
+   const tree_manipulationRef tree_man(new tree_manipulation(TreeM, parameters, AppM));
 
    const tree_nodeRef curr_tn = TreeM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(curr_tn);
@@ -220,9 +220,9 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
                            const tree_nodeConstRef actual_type_node = tree_helper::CGetType(GET_NODE(*arg_it));
                            if(formal_type_id != actual_type_node->index)
                            {
-                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, TreeM->CGetTreeReindex(formal_type_node->index), tree_nodeRef(), tree_nodeRef());
+                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, TreeM->CGetTreeReindex(formal_type_node->index), tree_nodeRef(), tree_nodeRef(), function_id);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
-                              it->second->PushBefore(ga_nop, *it_los);
+                              it->second->PushBefore(ga_nop, *it_los, AppM);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---old call statement " + GET_NODE(*it_los)->ToString());
                               unsigned int k = 0;
                               auto new_ssa = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
@@ -244,14 +244,13 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
                      }
                      unsigned int type_index = tree_helper::get_type_index(TreeM, GET_INDEX_NODE(ue->op));
                      tree_nodeRef op_type = TreeM->GetTreeReindex(type_index);
-                     tree_nodeRef op_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), ue->op, it->first, srcp_default);
+                     tree_nodeRef op_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), ue->op, function_id, it->first, srcp_default);
                      tree_nodeRef op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
-                     it->second->PushBefore(op_ga, *it_los);
+                     it->second->PushBefore(op_ga, *it_los, AppM);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(op_ga)->ToString());
                      TreeM->ReplaceTreeNode(*it_los, ue->op, op_vd);
                      unsigned int called_function_id = GET_INDEX_NODE(GetPointer<addr_expr>(GET_NODE(ce->fn))->op);
                      AppM->GetCallGraphManager()->RemoveCallPoint(function_id, called_function_id, ga->index);
-                     AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, op_ga->index, FunctionEdgeInfo::CallType::direct_call);
                   }
                }
             }
@@ -397,7 +396,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   std::string fu_name = STR("__") + (unsignedp ? "u" : "") + fu_suffix + bitsize_str + "i3" + ((bitsize0 == 64 && bitsize1 == 32) ? "6432" : "");
                   unsigned int called_function_id = TreeM->function_index(fu_name);
                   THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
-                  THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+                  THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(called_function_id) != 0, "inconsistent behavioral helper");
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
                   std::vector<tree_nodeRef> args;
                   args.push_back(be->op0);
@@ -422,7 +421,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   {
                      changed_call_graph = true;
                   }
-                  AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+                  CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, debug_level);
                }
                break;
             }
@@ -441,7 +440,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                      std::string fu_name = "__umul64";
                      unsigned int called_function_id = TreeM->function_index(fu_name);
                      THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
-                     THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+                     THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(called_function_id) != 0, "inconsistent behavioral helper");
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
                      std::vector<tree_nodeRef> args;
                      args.push_back(be->op0);
@@ -466,7 +465,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                      {
                         changed_call_graph = true;
                      }
-                     AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+                     CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, debug_level);
                   }
                }
                break;
@@ -694,9 +693,5 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
 
 bool hls_div_cg_ext::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return not already_executed;
 }

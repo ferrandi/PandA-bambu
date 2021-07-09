@@ -374,7 +374,7 @@ unsigned int tree_manager::find(enum kind tree_node_type, const std::map<TreeVoc
    return 0;
 }
 
-void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc, const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes)
+void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc, const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes, const application_managerRef AppM)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const unsigned int tree_node_index = GET_INDEX_NODE(tn);
@@ -400,7 +400,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
          null_deleter null_del;
          if(GET_NODE(gm->op1)->get_kind() != nop_expr_K or not tree_helper::HasToBeDeclared(tree_managerRef(this, null_del), GET_INDEX_NODE(GetPointer<nop_expr>(GET_NODE(gm->op1))->type)))
          {
-            collapse_into(funID, stmt_to_bloc, gm->op1, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, gm->op1, removed_nodes, AppM);
          }
          stack.pop_front();
          break;
@@ -409,7 +409,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
       {
          stack.push_front(tn);
          auto* gc = GetPointer<gimple_cond>(curr_tn);
-         collapse_into(funID, stmt_to_bloc, gc->op0, removed_nodes);
+         collapse_into(funID, stmt_to_bloc, gc->op0, removed_nodes, AppM);
          stack.pop_front();
          break;
       }
@@ -417,81 +417,81 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
       case CASE_UNARY_EXPRESSION:
       {
          auto* ue = GetPointer<unary_expr>(curr_tn);
-         collapse_into(funID, stmt_to_bloc, ue->op, removed_nodes);
+         collapse_into(funID, stmt_to_bloc, ue->op, removed_nodes, AppM);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
          auto* be = GetPointer<binary_expr>(curr_tn);
-         collapse_into(funID, stmt_to_bloc, be->op0, removed_nodes);
-         collapse_into(funID, stmt_to_bloc, be->op1, removed_nodes);
+         collapse_into(funID, stmt_to_bloc, be->op0, removed_nodes, AppM);
+         collapse_into(funID, stmt_to_bloc, be->op1, removed_nodes, AppM);
          break;
       }
       /*ternary expressions*/
       case gimple_switch_K:
       {
          auto* se = GetPointer<gimple_switch>(curr_tn);
-         collapse_into(funID, stmt_to_bloc, se->op0, removed_nodes);
+         collapse_into(funID, stmt_to_bloc, se->op0, removed_nodes, AppM);
          break;
       }
       case CASE_TERNARY_EXPRESSION:
       {
          auto* te = GetPointer<ternary_expr>(curr_tn);
-         collapse_into(funID, stmt_to_bloc, te->op0, removed_nodes);
-         collapse_into(funID, stmt_to_bloc, te->op1, removed_nodes);
+         collapse_into(funID, stmt_to_bloc, te->op0, removed_nodes, AppM);
+         collapse_into(funID, stmt_to_bloc, te->op1, removed_nodes, AppM);
          if(te->op2)
          {
-            collapse_into(funID, stmt_to_bloc, te->op2, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, te->op2, removed_nodes, AppM);
          }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
          auto* qe = GetPointer<quaternary_expr>(curr_tn);
-         collapse_into(funID, stmt_to_bloc, qe->op0, removed_nodes);
-         collapse_into(funID, stmt_to_bloc, qe->op1, removed_nodes);
+         collapse_into(funID, stmt_to_bloc, qe->op0, removed_nodes, AppM);
+         collapse_into(funID, stmt_to_bloc, qe->op1, removed_nodes, AppM);
          if(qe->op2)
          {
-            collapse_into(funID, stmt_to_bloc, qe->op2, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, qe->op2, removed_nodes, AppM);
          }
          if(qe->op3)
          {
-            collapse_into(funID, stmt_to_bloc, qe->op3, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, qe->op3, removed_nodes, AppM);
          }
          break;
       }
       case lut_expr_K:
       {
          auto* le = GetPointer<lut_expr>(curr_tn);
-         collapse_into(funID, stmt_to_bloc, le->op0, removed_nodes);
-         collapse_into(funID, stmt_to_bloc, le->op1, removed_nodes);
+         collapse_into(funID, stmt_to_bloc, le->op0, removed_nodes, AppM);
+         collapse_into(funID, stmt_to_bloc, le->op1, removed_nodes, AppM);
          if(le->op2)
          {
-            collapse_into(funID, stmt_to_bloc, le->op2, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, le->op2, removed_nodes, AppM);
          }
          if(le->op3)
          {
-            collapse_into(funID, stmt_to_bloc, le->op3, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, le->op3, removed_nodes, AppM);
          }
          if(le->op4)
          {
-            collapse_into(funID, stmt_to_bloc, le->op4, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, le->op4, removed_nodes, AppM);
          }
          if(le->op5)
          {
-            collapse_into(funID, stmt_to_bloc, le->op5, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, le->op5, removed_nodes, AppM);
          }
          if(le->op6)
          {
-            collapse_into(funID, stmt_to_bloc, le->op6, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, le->op6, removed_nodes, AppM);
          }
          if(le->op7)
          {
-            collapse_into(funID, stmt_to_bloc, le->op7, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, le->op7, removed_nodes, AppM);
          }
          if(le->op8)
          {
-            collapse_into(funID, stmt_to_bloc, le->op8, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, le->op8, removed_nodes, AppM);
          }
          break;
       }
@@ -557,7 +557,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---The gimple assignment is predicated");
                break;
             }
-            collapse_into(funID, stmt_to_bloc, sn->CGetDefStmt(), removed_nodes);
+            collapse_into(funID, stmt_to_bloc, sn->CGetDefStmt(), removed_nodes, AppM);
             THROW_ASSERT(gm, "ssa name " + STR(GET_INDEX_NODE(tn)) + " not defined in a gimple modify stmt, nor in gimple_asm, nor in a nop_expr");
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition of " + STR(GET_INDEX_NODE(tn)) + ":");
@@ -703,6 +703,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                         // Create a new node, the copy of the definition of ssa_name
                         IR_schema.clear();
                         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+                        IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(gm->scpe));
                         IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(tree_reindexRef_sn));
                         IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(gm->op1));
                         if(gm->orig)
@@ -739,7 +740,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                         {
                            if(GET_NODE(copy_block_stmt)->get_kind() != gimple_label_K)
                            {
-                              copy_block->PushBefore(tree_reindexRef_gm, copy_block_stmt);
+                              copy_block->PushBefore(tree_reindexRef_gm, copy_block_stmt, AppM);
                               break;
                            }
                         }
@@ -827,7 +828,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed statement " + STR(stmt->index));
                   removed_nodes.insert(GET_INDEX_NODE(stmt));
-                  curr_block->RemoveStmt(stmt);
+                  curr_block->RemoveStmt(stmt, AppM);
                   break;
                }
             }
@@ -847,7 +848,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
-            collapse_into(funID, stmt_to_bloc, *arg, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, *arg, removed_nodes, AppM);
          }
          break;
       }
@@ -859,7 +860,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
-            collapse_into(funID, stmt_to_bloc, *arg, removed_nodes);
+            collapse_into(funID, stmt_to_bloc, *arg, removed_nodes, AppM);
          }
          stack.pop_front();
          break;
@@ -2632,7 +2633,7 @@ tree_nodeRef tree_manager::CreateUniqueIntegerCst(long long int value, unsigned 
 
 bool tree_manager::is_CPP() const
 {
-   return Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP;
+   return Param->isOption(OPT_input_format) && (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP || Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
 }
 
 bool tree_manager::is_top_function(const function_decl* fd) const

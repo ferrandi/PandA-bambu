@@ -2381,7 +2381,7 @@ bool pred;
             ;
 
    stmt_star : /*empty*/
-             | stmt_star stmt{data->curr_blocRef->PushBack(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+             | stmt_star stmt{data->curr_blocRef->PushBack(data->current_TM->GetTreeReindex(data->curr_NODE_ID), application_managerRef());}
              ;
 
    rtl_star : /*empty*/

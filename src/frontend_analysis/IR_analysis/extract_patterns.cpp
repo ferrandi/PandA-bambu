@@ -184,7 +184,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                         unsigned int ssa_dest0_size = tree_helper::Size(tree_helper::get_type_node(GET_NODE(ga_dest->op0)));
                         if(code_dest0 == ssa_name_K && (code_dest1 == plus_expr_K || code_dest1 == minus_expr_K) && ga_dest->bb_index == B_id && ssa_dest0_size == ssa_defined_size)
                         {
-                           tree_manipulationRef IRman(new tree_manipulation(TM, parameters));
+                           tree_manipulationRef IRman(new tree_manipulation(TM, parameters, AppM));
                            /// matched
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ternary plus expr statement found ");
                            const std::string srcp_default = ga_dest->include_name + ":" + STR(ga_dest->line_number) + ":" + STR(ga_dest->column_number);
@@ -210,7 +210,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                               sn1->AddUseStmt(statement_node);
                            }
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement removed " + GET_NODE(*it_los)->ToString());
-                           B->RemoveStmt(*it_los);
+                           B->RemoveStmt(*it_los, AppM);
                            it_los = list_of_stmt.begin();
                            it_los_end = list_of_stmt.end();
                            AppM->RegisterTransformation(GetName(), statement_node);

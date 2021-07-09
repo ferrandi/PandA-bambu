@@ -2017,6 +2017,8 @@ src/frontend_analysis/IR_analysis/compute_implicit_calls.cpp
 src/frontend_analysis/IR_analysis/compute_implicit_calls.hpp
 src/frontend_analysis/IR_analysis/dead_code_elimination.cpp
 src/frontend_analysis/IR_analysis/dead_code_elimination.hpp
+src/frontend_analysis/IR_analysis/dead_code_eliminationIPA.cpp
+src/frontend_analysis/IR_analysis/dead_code_eliminationIPA.hpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.cpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.hpp
 src/frontend_analysis/IR_analysis/eSSA.cpp
@@ -2037,8 +2039,6 @@ src/frontend_analysis/IR_analysis/hls_div_cg_ext.cpp
 src/frontend_analysis/IR_analysis/hls_div_cg_ext.hpp
 src/frontend_analysis/IR_analysis/interface_infer.cpp
 src/frontend_analysis/IR_analysis/interface_infer.hpp
-src/frontend_analysis/IR_analysis/ipa_point_to_analysis.cpp
-src/frontend_analysis/IR_analysis/ipa_point_to_analysis.hpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.cpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.hpp
 src/frontend_analysis/IR_analysis/lut_transformation.cpp

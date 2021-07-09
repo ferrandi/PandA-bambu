@@ -190,6 +190,8 @@ class BitLatticeManipulator
    static unsigned int Size(const tree_nodeConstRef t);
 
    static unsigned int size(const tree_managerConstRef tm, unsigned int index);
+
+   static bool isBetter(const std::string& a_string, const std::string& b_string);
 };
 
 /**

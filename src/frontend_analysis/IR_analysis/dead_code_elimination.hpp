@@ -57,12 +57,13 @@
 #include "Parameter.hpp"
 
 /// Tree include
-#include "tree_manager.hpp"
 
 /**
  * @name forward declarations
  */
 //@{
+REF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(bloc);
 class statement_list;
 class gimple_node;
@@ -75,6 +76,12 @@ class dead_code_elimination : public FunctionFrontendFlowStep
 
    std::map<unsigned int, bool> last_reading_memory;
 
+   bool restart_if_opt;
+
+   bool restart_mwi_opt;
+
+   bool restart_mem;
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
@@ -86,8 +93,6 @@ class dead_code_elimination : public FunctionFrontendFlowStep
    void kill_vdef(const tree_managerRef TM, tree_nodeRef vdef);
    unsigned move2emptyBB(const tree_managerRef TM, statement_list* sl, unsigned pred, blocRef bb_pred, unsigned cand_bb_dest, unsigned bb_dest) const;
    void add_gimple_nop(gimple_node* gc, const tree_managerRef TM, tree_nodeRef cur_stmt, blocRef bb);
-
-   bool signature_opt(const tree_managerRef& TM, function_decl* fd) const;
 
  public:
    /**

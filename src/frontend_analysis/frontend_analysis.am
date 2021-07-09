@@ -157,6 +157,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/compute_implicit_calls.hpp \
      frontend_analysis/IR_analysis/CSE.hpp \
      frontend_analysis/IR_analysis/dead_code_elimination.hpp \
+     frontend_analysis/IR_analysis/dead_code_eliminationIPA.hpp \
      frontend_analysis/IR_analysis/determine_memory_accesses.hpp \
      frontend_analysis/IR_analysis/eSSA.hpp \
      frontend_analysis/IR_analysis/extract_patterns.hpp \
@@ -168,7 +169,6 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/hls_div_cg_ext.hpp \
      frontend_analysis/IR_analysis/HWCallInjection.hpp \
      frontend_analysis/IR_analysis/interface_infer.hpp \
-     frontend_analysis/IR_analysis/ipa_point_to_analysis.hpp\
      frontend_analysis/IR_analysis/IR_lowering.hpp \
      frontend_analysis/IR_analysis/loops_analysis_bambu.hpp \
      frontend_analysis/IR_analysis/lut_transformation.hpp \
@@ -202,6 +202,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/compute_implicit_calls.cpp \
      frontend_analysis/IR_analysis/CSE.cpp \
      frontend_analysis/IR_analysis/dead_code_elimination.cpp \
+     frontend_analysis/IR_analysis/dead_code_eliminationIPA.cpp \
      frontend_analysis/IR_analysis/determine_memory_accesses.cpp \
      frontend_analysis/IR_analysis/eSSA.cpp \
      frontend_analysis/IR_analysis/extract_patterns.cpp \
@@ -213,7 +214,6 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/hls_div_cg_ext.cpp \
      frontend_analysis/IR_analysis/HWCallInjection.cpp \
      frontend_analysis/IR_analysis/interface_infer.cpp \
-     frontend_analysis/IR_analysis/ipa_point_to_analysis.cpp\
      frontend_analysis/IR_analysis/loops_analysis_bambu.cpp \
      frontend_analysis/IR_analysis/lut_transformation.cpp \
      frontend_analysis/IR_analysis/multi_way_if.cpp \

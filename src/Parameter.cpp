@@ -1410,7 +1410,22 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
    if(extension == "ll")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
-      return Parameters_FileFormat::FF_LLVM;
+      auto removed_ll = file_name.substr(0, file_name.size() - 3);
+      extension = GetExtension(removed_ll);
+      if(extension == "cpp")
+      {
+         return Parameters_FileFormat::FF_LLVM_CPP;
+      }
+      else
+      {
+         return Parameters_FileFormat::FF_LLVM;
+      }
+   }
+   if(extension == "LL")
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
+
+      return Parameters_FileFormat::FF_LLVM_CPP;
    }
 #endif
    if(extension == "csv")

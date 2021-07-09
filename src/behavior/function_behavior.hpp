@@ -841,6 +841,15 @@ class FunctionBehavior
    }
 
    /**
+    * @brief get_state_variables
+    * @return the state variables data structure
+    */
+   const CustomOrderedSet<unsigned int>& get_state_variables()
+   {
+      return state_variables;
+   }
+
+   /**
     * @brief update the the packed variables status
     * @param packed is true when there is at least one packed variables
     */

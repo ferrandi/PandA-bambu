@@ -195,7 +195,14 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
             {
                if(filevalues[2] == "ns")
                {
-                  sim_cycles = static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / Param->getOption<long double>(OPT_clock_period));
+                  if(Param->getOption<std::string>(OPT_simulator) == "VERILATOR")
+                  {
+                     sim_cycles = (static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / 2)) - 2;
+                  }
+                  else
+                  {
+                     sim_cycles = (static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / Param->getOption<long double>(OPT_clock_period))) - 2;
+                  }
                }
                else if(filevalues[2] == "ps")
                {

@@ -63,7 +63,7 @@ std::deque<bit_lattice> Bit_Value::backward_compute_result_from_uses(const ssa_n
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering variable:" + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(output_uid) + "(" + STR(output_uid) + ")");
    if(not ssa.CGetUseStmts().empty())
    {
-      for(auto statement_node : ssa.CGetUseStmts())
+      for(const auto& statement_node : ssa.CGetUseStmts())
       {
          const tree_nodeRef use_stmt = GET_NODE(statement_node.first);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Output " + STR(output_uid) + " is used in " + use_stmt->get_kind_text() + ": " + STR(GET_INDEX_NODE(statement_node.first)) + "(" + STR(use_stmt) + ")");
@@ -160,11 +160,13 @@ std::deque<bit_lattice> Bit_Value::backward_compute_result_from_uses(const ssa_n
                {
                   if(GET_INDEX_NODE(*a_it) == output_uid)
                   {
-                     const auto* pd = GetPointerS<const parm_decl>(GET_NODE(*f_it));
+                     const unsigned int p_decl_id = AppM->getSSAFromParm(called_id, GET_INDEX_NODE(*f_it));
+                     auto parmssa = TM->get_tree_node_const(p_decl_id);
+                     const auto* pd = GetPointerS<const ssa_name>(parmssa);
                      std::deque<bit_lattice> tmp;
                      if(pd->bit_values.empty())
                      {
-                        tmp = create_u_bitstring(tree_helper::Size(GET_NODE(pd->type)));
+                        tmp = create_u_bitstring(tree_helper::Size(parmssa));
                      }
                      else
                      {
@@ -296,6 +298,34 @@ void Bit_Value::backward()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(B->number));
       }
+   }
+   // manage arguments now
+   for(const auto& parm_decl_node : fd->list_of_args)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing argument " + STR(parm_decl_node));
+      const unsigned int p_decl_id = AppM->getSSAFromParm(function_id, GET_INDEX_NODE(parm_decl_node));
+      auto parmssa = TM->get_tree_node_const(p_decl_id);
+      auto* p = GetPointer<ssa_name>(parmssa);
+      if(not is_handled_by_bitvalue(p_decl_id))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument " + STR(p) + " of type " + STR(tree_helper::CGetType(parmssa)) + " not considered id: " + STR(p_decl_id));
+         continue;
+      }
+
+      THROW_ASSERT(best.find(p_decl_id) != best.end(), "unexpected condition");
+      if(current.find(p_decl_id) == current.end())
+      {
+         current[p_decl_id] = best.at(p_decl_id);
+      }
+
+      if(bitstring_constant(current[p_decl_id]))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument has been proven to be constant: " + STR(p_decl_id));
+         continue;
+      }
+      auto res = backward_compute_result_from_uses(*p, *sl, 0);
+      update_current(res, p_decl_id);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed argument " + STR(parm_decl_node));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed backward transfer");
 }
@@ -1133,7 +1163,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       }
       if(left_type_size < right_type_size)
       {
-         res.push_front(bit_lattice::X);
+         // do nothing
       }
       else if(left_type_size > right_type_size)
       {
@@ -1561,11 +1591,13 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          {
             if(GET_INDEX_NODE(*a_it) == output_id)
             {
-               const auto* pd = GetPointerS<const parm_decl>(GET_NODE(*f_it));
+               const unsigned int p_decl_id = AppM->getSSAFromParm(called_id, GET_INDEX_NODE(*f_it));
+               auto parmssa = TM->get_tree_node_const(p_decl_id);
+               const auto* pd = GetPointerS<const ssa_name>(parmssa);
                std::deque<bit_lattice> tmp;
                if(pd->bit_values.empty())
                {
-                  tmp = create_u_bitstring(tree_helper::Size(GET_NODE(pd->type)));
+                  tmp = create_u_bitstring(tree_helper::Size(parmssa));
                }
                else
                {

@@ -14,7 +14,4 @@ ac_types_gdb__DATA =  ../../../etc/libbambu/ac_types/gdb/ac_pp.py
 ac_types_include__DATA = ../../../etc/libbambu/ac_types/include/ac_channel.h  ../../../etc/libbambu/ac_types/include/ac_complex.h  ../../../etc/libbambu/ac_types/include/ac_fixed.h  ../../../etc/libbambu/ac_types/include/ac_float.h  ../../../etc/libbambu/ac_types/include/ac_int.h  ../../../etc/libbambu/ac_types/include/ac_sc.h  ../../../etc/libbambu/ac_types/include/ap_fixed.h ../../../etc/libbambu/ac_types/include/ap_int.h ../../../etc/libbambu/ac_types/include/ap_shift_reg.h  ../../../etc/libbambu/ac_types/include/hls_stream.h
 ac_types_pdfdocs__DATA = ../../../etc/libbambu/ac_types/pdfdocs/ac_datatypes_ref.pdf  ../../../etc/libbambu/ac_types/pdfdocs/ac_datatypes_relnotes.pdf
 
-
 #do not touch the following line
-
-

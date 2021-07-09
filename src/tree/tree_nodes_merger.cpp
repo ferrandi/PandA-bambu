@@ -2341,7 +2341,7 @@ void tree_node_index_factory::operator()(const bloc* obj, unsigned int& mask)
       unsigned int node_id = GET_INDEX_NODE(stmt);
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
       node_id = remap.find(node_id)->second;
-      curr_bloc->PushBack(TM->GetTreeReindex(node_id));
+      curr_bloc->PushBack(TM->GetTreeReindex(node_id), application_managerRef());
    }
 }
 

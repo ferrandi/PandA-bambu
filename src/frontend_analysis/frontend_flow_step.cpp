@@ -184,6 +184,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "BitValue";
       case(BIT_VALUE_OPT):
          return "BitValueOpt";
+      case(BIT_VALUE_OPT2):
+         return "BitValueOpt2";
       case BIT_VALUE_IPA:
          return "BitValueIPA";
 #endif
@@ -236,6 +238,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
       case(DEAD_CODE_ELIMINATION):
          return "DeadCodeElimination";
+      case(DEAD_CODE_ELIMINATION_IPA):
+         return "DeadCodeEliminationIPA";
 #endif
 #if HAVE_BAMBU_BUILT
       case(DETERMINE_MEMORY_ACCESSES):
@@ -322,8 +326,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case(INTERFACE_INFER):
          return "InterfaceInfer";
-      case(IPA_POINT_TO_ANALYSIS):
-         return "IpaPointToAnalysis";
       case(IR_LOWERING):
          return "IrLowering";
 #endif

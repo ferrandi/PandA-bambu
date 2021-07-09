@@ -121,15 +121,15 @@ namespace __AC_NAMESPACE
 
       typedef ac_private::iv<N, false> Base;
 
-      __FORCE_INLINE void bit_adjust()
+      __FORCE_INLINE constexpr void bit_adjust()
       {
          Base::v.template bit_adjust<W, S>();
       }
-      __FORCE_INLINE Base& base()
+      __FORCE_INLINE constexpr Base& base()
       {
          return *this;
       }
-      __FORCE_INLINE const Base& base() const
+      __FORCE_INLINE constexpr const Base& base() const
       {
          return *this;
       }
@@ -152,20 +152,12 @@ namespace __AC_NAMESPACE
          {
             if(overflow)
             {
-#if defined(__clang__)
-#pragma clang loop unroll(full)
-#endif
-               for(auto idx = 0; idx < N - 1; ++idx)
-                  Base::v.set(idx, ~0);
+               LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, ~0); });
                Base::v.set(N - 1, (~((unsigned)~0 << ((W - 1) & 31))));
             }
             else if(underflow)
             {
-#if defined(__clang__)
-#pragma clang loop unroll(full)
-#endif
-               for(auto idx = 0; idx < N - 1; ++idx)
-                  Base::v.set(idx, 0);
+               LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, 0); });
                Base::v.set(N - 1, ((unsigned)~0 << ((W - 1) & 31)));
                if(O == AC_SAT_SYM)
                   Base::v.set(0, Base::v[0] | 1);
@@ -177,11 +169,7 @@ namespace __AC_NAMESPACE
          {
             if(overflow)
             {
-#if defined(__clang__)
-#pragma clang loop unroll(full)
-#endif
-               for(auto idx = 0; idx < N - 1; ++idx)
-                  Base::v.set(idx, ~0);
+               LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, ~0); });
                Base::v.set(N - 1, ~((unsigned)~0 << (W & 31)));
             }
             else if(underflow)
@@ -306,7 +294,7 @@ namespace __AC_NAMESPACE
 
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       friend class ac_fixed;
-      ac_fixed()
+      constexpr ac_fixed()
       {
 #if !defined(__BAMBU__) && defined(AC_DEFAULT_IN_RANGE)
          bit_adjust();
@@ -315,7 +303,7 @@ namespace __AC_NAMESPACE
 #endif
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      __FORCE_INLINE ac_fixed(const ac_fixed<W2, I2, S2, Q2, O2>& op)
+      __FORCE_INLINE constexpr ac_fixed(const ac_fixed<W2, I2, S2, Q2, O2>& op)
       {
          enum
          {
@@ -347,7 +335,7 @@ namespace __AC_NAMESPACE
          { // saturation
             bool deleted_bits_zero = (!(W & 31) && S) || 0 == (Base::v[N - 1] >> (W & 31));
             bool deleted_bits_one = (!(W & 31) && S) || 0 == (~(Base::v[N - 1] >> (W & 31)));
-            bool neg_src;
+            bool neg_src = false;
             if((F2 - F + 32 * N) < W2)
             {
                bool all_ones = ac_private::iv_equal_ones_from<F2 - F + 32 * N, N2>(op.v);
@@ -369,7 +357,7 @@ namespace __AC_NAMESPACE
       }
 
       template <int W2, bool S2>
-      __FORCE_INLINE ac_fixed(const ac_int<W2, S2>& op)
+      __FORCE_INLINE constexpr ac_fixed(const ac_int<W2, S2>& op)
       {
          ac_fixed<W2, W2, S2> f_op;
          f_op.base().operator=(op);
@@ -385,56 +373,56 @@ namespace __AC_NAMESPACE
          return r;
       }
 
-      __FORCE_INLINE ac_fixed(bool b)
+      __FORCE_INLINE constexpr ac_fixed(bool b)
       {
          *this = (ac_int<1, false>)b;
       }
-      __FORCE_INLINE ac_fixed(char b)
+      __FORCE_INLINE constexpr ac_fixed(char b)
       {
          *this = (ac_int<8, true>)b;
       }
-      __FORCE_INLINE ac_fixed(signed char b)
+      __FORCE_INLINE constexpr ac_fixed(signed char b)
       {
          *this = (ac_int<8, true>)b;
       }
-      __FORCE_INLINE ac_fixed(unsigned char b)
+      __FORCE_INLINE constexpr ac_fixed(unsigned char b)
       {
          *this = (ac_int<8, false>)b;
       }
-      __FORCE_INLINE ac_fixed(signed short b)
+      __FORCE_INLINE constexpr ac_fixed(signed short b)
       {
          *this = (ac_int<16, true>)b;
       }
-      __FORCE_INLINE ac_fixed(unsigned short b)
+      __FORCE_INLINE constexpr ac_fixed(unsigned short b)
       {
          *this = (ac_int<16, false>)b;
       }
-      __FORCE_INLINE ac_fixed(signed int b)
+      __FORCE_INLINE constexpr ac_fixed(signed int b)
       {
          *this = (ac_int<32, true>)b;
       }
-      __FORCE_INLINE ac_fixed(unsigned int b)
+      __FORCE_INLINE constexpr ac_fixed(unsigned int b)
       {
          *this = (ac_int<32, false>)b;
       }
-      __FORCE_INLINE ac_fixed(signed long b)
+      __FORCE_INLINE constexpr ac_fixed(signed long b)
       {
          *this = (ac_int<ac_private::long_w, true>)b;
       }
-      __FORCE_INLINE ac_fixed(unsigned long b)
+      __FORCE_INLINE constexpr ac_fixed(unsigned long b)
       {
          *this = (ac_int<ac_private::long_w, false>)b;
       }
-      __FORCE_INLINE ac_fixed(Slong b)
+      __FORCE_INLINE constexpr ac_fixed(Slong b)
       {
          *this = (ac_int<64, true>)b;
       }
-      __FORCE_INLINE ac_fixed(Ulong b)
+      __FORCE_INLINE constexpr ac_fixed(Ulong b)
       {
          *this = (ac_int<64, false>)b;
       }
 
-      constexpr __FORCE_INLINE ac_fixed(double d)
+      __FORCE_INLINE constexpr ac_fixed(double d)
       {
          // printf("%f\n",d);
          double di = ac_private::ldexpr<-(I + !S + ((32 - W - !S) & 31))>(d);
@@ -468,7 +456,7 @@ namespace __AC_NAMESPACE
          else
             bit_adjust();
       }
-      constexpr __FORCE_INLINE ac_fixed(float d)
+      __FORCE_INLINE constexpr ac_fixed(float d)
       {
          // printf("%f\n",d);
          float di = ac_private::ldexpr<-(I + !S + ((32 - W - !S) & 31))>(d);
@@ -503,7 +491,7 @@ namespace __AC_NAMESPACE
             bit_adjust();
       }
       template <size_t NN>
-      constexpr __FORCE_INLINE ac_fixed(const char (&str)[NN])
+      __FORCE_INLINE constexpr ac_fixed(const char (&str)[NN])
       {
          *this = ac_fixed((double)Base::hex2doubleConverter::get(str));
       }
@@ -597,11 +585,11 @@ namespace __AC_NAMESPACE
       {
          return ((I - W) >= 64) ? 0 : (Ulong)to_ac_int();
       }
-      __FORCE_INLINE double to_double() const
+      __FORCE_INLINE constexpr double to_double() const
       {
          return ac_private::ldexpr<I - W>(Base::to_double());
       }
-      __FORCE_INLINE float to_float() const
+      __FORCE_INLINE constexpr float to_float() const
       {
          return ac_private::ldexpr<I - W>(Base::to_float());
       }
@@ -617,17 +605,35 @@ namespace __AC_NAMESPACE
          ac_int<AC_MAX(I, 1), S> temp = to_ac_int();
          return (ac_int<W1, S1>)temp;
       }
-      __FORCE_INLINE operator bool() const { return !Base::equal_zero(); }
+      __FORCE_INLINE operator bool() const
+      {
+         return !Base::equal_zero();
+      }
 
-      __FORCE_INLINE operator char() const { return (char)to_int(); }
+      __FORCE_INLINE operator char() const
+      {
+         return (char)to_int();
+      }
 
-      __FORCE_INLINE operator signed char() const { return (signed char)to_int(); }
+      __FORCE_INLINE operator signed char() const
+      {
+         return (signed char)to_int();
+      }
 
-      __FORCE_INLINE operator unsigned char() const { return (unsigned char)to_uint(); }
+      __FORCE_INLINE operator unsigned char() const
+      {
+         return (unsigned char)to_uint();
+      }
 
-      __FORCE_INLINE operator short() const { return (short)to_int(); }
+      __FORCE_INLINE operator short() const
+      {
+         return (short)to_int();
+      }
 
-      __FORCE_INLINE operator unsigned short() const { return (unsigned short)to_uint(); }
+      __FORCE_INLINE operator unsigned short() const
+      {
+         return (unsigned short)to_uint();
+      }
       __FORCE_INLINE operator int() const
       {
          return to_int();
@@ -644,23 +650,22 @@ namespace __AC_NAMESPACE
       {
          return to_ulong();
       }
-     __FORCE_INLINE operator Slong() const
-     {
+      __FORCE_INLINE operator Slong() const
+      {
          return to_int64();
       }
       __FORCE_INLINE operator Ulong() const
       {
          return to_uint64();
       }
-      __FORCE_INLINE explicit operator double() const
+      __FORCE_INLINE constexpr explicit operator double() const
       {
          return to_double();
       }
-      __FORCE_INLINE explicit operator float() const
+      __FORCE_INLINE constexpr explicit operator float() const
       {
          return to_float();
       }
-
 
       __FORCE_INLINE std::string to_string(ac_base_mode base_rep, bool sign_mag = false) const
       {
@@ -719,8 +724,12 @@ namespace __AC_NAMESPACE
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       typename rt<W2, I2, S2>::mult operator*(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
+         auto op1_local = *this;
+         op1_local.bit_adjust();
+         auto op2_local = op2;
+         op2_local.bit_adjust();
          typename rt<W2, I2, S2>::mult r;
-         Base::mult(op2, r);
+         op1_local.Base::mult(op2_local, r);
          r.bit_adjust();
          return r;
       }
@@ -1182,12 +1191,12 @@ namespace __AC_NAMESPACE
          ac_fixed& ref;
          int low;
          int high;
-         range_ref_fixed(ac_fixed& _ref, int _high, int _low) : ref(_ref), low(_low), high(_high)
+         constexpr range_ref_fixed(ac_fixed& _ref, int _high, int _low) : ref(_ref), low(_low), high(_high)
          {
          }
 
          template <int W2, bool S2>
-         __FORCE_INLINE const range_ref_fixed& operator=(const ac_int<W2, S2>& op) const
+         __FORCE_INLINE constexpr const range_ref_fixed& operator=(const ac_int<W2, S2>& op) const
          {
             ref.set_slc(high, low, op);
             return *this;
@@ -1208,7 +1217,7 @@ namespace __AC_NAMESPACE
          {
             return operator=(ac_int<W, S>(b));
          }
-         __FORCE_INLINE const range_ref_fixed& operator=(const unsigned& b) const
+         __FORCE_INLINE constexpr const range_ref_fixed& operator=(const unsigned& b) const
          {
             return operator=(ac_int<W, S>(b));
          }
@@ -1249,7 +1258,7 @@ namespace __AC_NAMESPACE
       {
          return slc(Hi, Lo);
       }
-      __FORCE_INLINE const range_ref_fixed operator()(int Hi, int Lo)
+      __FORCE_INLINE constexpr const range_ref_fixed operator()(int Hi, int Lo)
       {
          return range_ref_fixed(*this, Hi, Lo);
       }
@@ -1344,9 +1353,9 @@ namespace __AC_NAMESPACE
          return *this;
       }
       template <int W2, bool S2>
-      __FORCE_INLINE ac_fixed& set_slc(int umsb, int ulsb, const ac_int<W2, S2>& slc)
+      __FORCE_INLINE constexpr ac_fixed& set_slc(int umsb, int ulsb, const ac_int<W2, S2>& slc)
       {
-         AC_ASSERT((ulsb + umsb + 1) <= W, "Out of bounds set_slc");
+         // AC_ASSERT((ulsb + umsb + 1) <= W, std::string(std::string("Out of bounds set_slc; umsb: ") + std::to_string(umsb) + std::string(" , ulsb: ") + std::to_string(ulsb) + std::string(" , W: ") + std::to_string(W)).c_str());
          Base::set_slc(ulsb, umsb + 1 - ulsb, (ac_int<W2, true>)slc);
          bit_adjust(); // in case sign bit was assigned
          return *this;
@@ -1585,216 +1594,216 @@ namespace __AC_NAMESPACE
    // Specializations for constructors on integers that bypass bit adjusting
    //  and are therefore more efficient
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, true, AC_TRN, AC_WRAP>::ac_fixed(bool b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, true, AC_TRN, AC_WRAP>::ac_fixed(bool b)
    {
       v.set(0, b ? -1 : 0);
    }
 
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(bool b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(bool b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed short b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed short b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed int b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed int b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed long b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed long b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned long b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned long b)
    {
       v.set(0, b & 1);
    }
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b)
    {
       v.set(0, (int)b & 1);
    }
    template <>
-   __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b)
+   __FORCE_INLINE constexpr ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b)
    {
       v.set(0, (int)b & 1);
    }
 
    template <>
-   __FORCE_INLINE ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(bool b)
+   __FORCE_INLINE constexpr ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(bool b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(bool b)
+   __FORCE_INLINE constexpr ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(bool b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(signed char b)
+   __FORCE_INLINE constexpr ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(signed char b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b)
+   __FORCE_INLINE constexpr ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b)
+   __FORCE_INLINE constexpr ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b)
    {
       v.set(0, (signed char)b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b)
+   __FORCE_INLINE constexpr ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b)
    {
       v.set(0, (unsigned char)b);
    }
 
    template <>
-   __FORCE_INLINE ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(bool b)
+   __FORCE_INLINE constexpr ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(bool b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(bool b)
+   __FORCE_INLINE constexpr ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(bool b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(signed char b)
+   __FORCE_INLINE constexpr ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(signed char b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b)
+   __FORCE_INLINE constexpr ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b)
+   __FORCE_INLINE constexpr ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b)
+   __FORCE_INLINE constexpr ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b)
    {
       v.set(0, (unsigned short)b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(signed short b)
+   __FORCE_INLINE constexpr ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(signed short b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b)
+   __FORCE_INLINE constexpr ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b)
+   __FORCE_INLINE constexpr ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b)
    {
       v.set(0, (signed short)b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(signed short b)
+   __FORCE_INLINE constexpr ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(signed short b)
    {
       v.set(0, (unsigned short)b);
    }
 
    template <>
-   __FORCE_INLINE ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(signed int b)
+   __FORCE_INLINE constexpr ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(signed int b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b)
+   __FORCE_INLINE constexpr ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b)
    {
       v.set(0, b);
    }
    template <>
-   __FORCE_INLINE ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(signed int b)
-   {
-      v.set(0, b);
-      v.set(1, 0);
-   }
-   template <>
-   __FORCE_INLINE ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b)
+   __FORCE_INLINE constexpr ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(signed int b)
    {
       v.set(0, b);
       v.set(1, 0);
    }
-
    template <>
-   __FORCE_INLINE ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(Slong b)
+   __FORCE_INLINE constexpr ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b)
    {
-      v.set(0, (int)b);
-   }
-   template <>
-   __FORCE_INLINE ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(Ulong b)
-   {
-      v.set(0, (int)b);
-   }
-   template <>
-   __FORCE_INLINE ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b)
-   {
-      v.set(0, (int)b);
-      v.set(1, 0);
-   }
-   template <>
-   __FORCE_INLINE ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b)
-   {
-      v.set(0, (int)b);
+      v.set(0, b);
       v.set(1, 0);
    }
 
    template <>
-   __FORCE_INLINE ac_fixed<64, 64, true, AC_TRN, AC_WRAP>::ac_fixed(Slong b)
+   __FORCE_INLINE constexpr ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(Slong b)
+   {
+      v.set(0, (int)b);
+   }
+   template <>
+   __FORCE_INLINE constexpr ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(Ulong b)
+   {
+      v.set(0, (int)b);
+   }
+   template <>
+   __FORCE_INLINE constexpr ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b)
+   {
+      v.set(0, (int)b);
+      v.set(1, 0);
+   }
+   template <>
+   __FORCE_INLINE constexpr ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b)
+   {
+      v.set(0, (int)b);
+      v.set(1, 0);
+   }
+
+   template <>
+   __FORCE_INLINE constexpr ac_fixed<64, 64, true, AC_TRN, AC_WRAP>::ac_fixed(Slong b)
    {
       v.set(0, (int)b);
       v.set(1, (int)(b >> 32));
    }
    template <>
-   __FORCE_INLINE ac_fixed<64, 64, true, AC_TRN, AC_WRAP>::ac_fixed(Ulong b)
+   __FORCE_INLINE constexpr ac_fixed<64, 64, true, AC_TRN, AC_WRAP>::ac_fixed(Ulong b)
    {
       v.set(0, (int)b);
       v.set(1, (int)(b >> 32));
    }
    template <>
-   __FORCE_INLINE ac_fixed<64, 64, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b)
+   __FORCE_INLINE constexpr ac_fixed<64, 64, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b)
    {
       v.set(0, (int)b);
       v.set(1, (int)((Ulong)b >> 32));
       v.set(2, 0);
    }
    template <>
-   __FORCE_INLINE ac_fixed<64, 64, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b)
+   __FORCE_INLINE constexpr ac_fixed<64, 64, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b)
    {
       v.set(0, (int)b);
       v.set(1, (int)(b >> 32));
@@ -1880,7 +1889,7 @@ namespace __AC_NAMESPACE
    FX_BIN_OP_WITH_INT_2I(<<, C_TYPE, WI, SI, arg1) \
    FX_BIN_OP_WITH_INT(&, C_TYPE, WI, SI, logic)    \
    FX_BIN_OP_WITH_INT(|, C_TYPE, WI, SI, logic)    \
-   FX_BIN_OP_WITH_INT (^, C_TYPE, WI, SI, logic)   \
+   FX_BIN_OP_WITH_INT(^, C_TYPE, WI, SI, logic)    \
                                                    \
    FX_REL_OP_WITH_INT(==, C_TYPE, WI, SI)          \
    FX_REL_OP_WITH_INT(!=, C_TYPE, WI, SI)          \
@@ -1983,7 +1992,7 @@ namespace __AC_NAMESPACE
          FX_BIN_OP_WITH_AC_INT(/, div)
          FX_BIN_OP_WITH_AC_INT(&, logic)
          FX_BIN_OP_WITH_AC_INT(|, logic)
-         FX_BIN_OP_WITH_AC_INT (^, logic)
+         FX_BIN_OP_WITH_AC_INT(^, logic)
 
          FX_REL_OP_WITH_AC_INT(==)
          FX_REL_OP_WITH_AC_INT(!=)

@@ -238,7 +238,15 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
 
 DesignFlowStep_Status FunctionFrontendFlowStep::Exec()
 {
-   const auto status = InternalExec();
+   DesignFlowStep_Status status;
+   if(!HasToBeExecuted0())
+   {
+      status = DesignFlowStep_Status::UNCHANGED;
+   }
+   else
+   {
+      status = InternalExec();
+   }
    bb_version = function_behavior->GetBBVersion();
    bitvalue_version = function_behavior->GetBitValueVersion();
    return status;
@@ -257,10 +265,6 @@ bool FunctionFrontendFlowStep::HasToBeExecuted0() const
 
 bool FunctionFrontendFlowStep::HasToBeExecuted() const
 {
-   //   if(!HasToBeExecuted0())
-   //   {
-   //      return false;
-   //   }
    return bb_version != function_behavior->GetBBVersion();
 }
 
@@ -359,6 +363,11 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
 }
 
 unsigned int FunctionFrontendFlowStep::CGetBBVersion() const
+{
+   return bb_version;
+}
+
+unsigned int FunctionFrontendFlowStep::GetBitValueVersion() const
 {
    return bb_version;
 }

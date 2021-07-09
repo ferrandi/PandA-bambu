@@ -1202,8 +1202,6 @@ void tree_node_dup::operator()(const gimple_assign* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
    SET_NODE_ID(op0, gimple_assign);
    SET_NODE_ID(op1, gimple_assign);
-   ///   SET_NODE_ID(orig,gimple_assign);
-   dynamic_cast<gimple_assign*>(curr_tree_node_ptr)->orig = TM->GetTreeReindex(source_tn->index);
    SET_NODE_ID(predicate, gimple_assign);
    SET_NODE_ID(orig, gimple_assign);
    SET_VALUE(init_assignment, gimple_assign);
@@ -1776,7 +1774,7 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
          node_id = remap.find(node_id)->second;
       }
-      curr_bloc->PushBack(TM->GetTreeReindex(node_id));
+      curr_bloc->PushBack(TM->GetTreeReindex(node_id), application_managerRef());
    }
 }
 

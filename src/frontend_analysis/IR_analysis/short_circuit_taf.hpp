@@ -124,5 +124,11 @@ class short_circuit_taf : public FunctionFrontendFlowStep
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
+
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

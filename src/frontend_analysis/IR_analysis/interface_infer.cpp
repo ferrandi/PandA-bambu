@@ -492,7 +492,7 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
       args.push_back(argSSANode);
    }
    auto call_expr_node = tree_man->CreateCallExpr(function_decl_node, args, srcp);
-   auto new_assignment = tree_man->CreateGimpleAssign(readType, tree_nodeRef(), tree_nodeRef(), call_expr_node, destBB, srcp); /// TO BE IMPROVED
+   auto new_assignment = tree_man->CreateGimpleAssign(readType, tree_nodeRef(), tree_nodeRef(), call_expr_node, GET_INDEX_NODE(gn->scpe), destBB, srcp); /// TO BE IMPROVED
    tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(GET_NODE(new_assignment))->op0;
    for(auto defSSA : usedStmt_defs)
    {
@@ -507,24 +507,15 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
    }
    if(origStmt)
    {
-      sl->list_of_bloc[destBB]->PushBefore(new_assignment, origStmt);
+      sl->list_of_bloc[destBB]->PushBefore(new_assignment, origStmt, AppM);
    }
    else
    {
-      sl->list_of_bloc[destBB]->PushBack(new_assignment);
+      sl->list_of_bloc[destBB]->PushBack(new_assignment, AppM);
    }
    GetPointer<HLS_manager>(AppM)->design_interface_loads[fname][destBB][argName_string].push_back(GET_INDEX_NODE(new_assignment));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---LOAD STMT: " + new_assignment->ToString() + " in function " + fname);
-   if(!AppM->GetCallGraphManager()->IsVertex(GET_INDEX_NODE(function_decl_node)))
-   {
-      BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), false, parameters));
-      FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
-      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), new_assignment->index, FB, FunctionEdgeInfo::CallType::direct_call);
-   }
-   else
-   {
-      AppM->GetCallGraphManager()->AddCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), new_assignment->index, FunctionEdgeInfo::CallType::direct_call);
-   }
+   AppM->GetCallGraphManager()->AddFunctionAndCallPoint(AppM, GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), GET_INDEX_CONST_NODE(new_assignment), FunctionEdgeInfo::CallType::direct_call);
 }
 
 void interface_infer::create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, const std::string& fdName, tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType, const tree_manipulationRef tree_man,
@@ -576,8 +567,8 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    args.push_back(size_value);
    if(tree_helper::is_int(TM, GET_INDEX_NODE(writeValue)))
    {
-      const auto ga_nop = tree_man->CreateNopExpr(writeValue, tree_man->CreateUnsigned(tree_helper::CGetType(GET_NODE(writeValue))), tree_nodeRef(), tree_nodeRef());
-      sl->list_of_bloc[destBB]->PushBefore(ga_nop, origStmt);
+      const auto ga_nop = tree_man->CreateNopExpr(writeValue, tree_man->CreateUnsigned(tree_helper::CGetType(GET_NODE(writeValue))), tree_nodeRef(), tree_nodeRef(), GET_INDEX_NODE(gn->scpe));
+      sl->list_of_bloc[destBB]->PushBefore(ga_nop, origStmt, AppM);
       args.push_back(GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0);
    }
    else
@@ -590,21 +581,13 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    auto mr = GetPointer<mem_ref>(GET_NODE(ga->op0));
    args.push_back(mr->op0);
 
-   auto new_writecall = tree_man->create_gimple_call(function_decl_node, args, srcp, destBB);
+   auto new_writecall = tree_man->create_gimple_call(function_decl_node, args, GET_INDEX_NODE(gn->scpe), srcp, destBB);
 
-   sl->list_of_bloc[destBB]->PushBefore(new_writecall, origStmt);
+   sl->list_of_bloc[destBB]->PushBefore(new_writecall, origStmt, AppM);
    GetPointer<HLS_manager>(AppM)->design_interface_stores[fname][destBB][argName_string].push_back(GET_INDEX_NODE(new_writecall));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---STORE STMT: " + new_writecall->ToString() + " in function " + fname);
    addGimpleNOPxVirtual(origStmt, TM, writeVdef);
-   if(!AppM->GetCallGraphManager()->IsVertex(GET_INDEX_NODE(function_decl_node)))
-   {
-      BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), false, parameters));
-      FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
-      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), new_writecall->index, FB, FunctionEdgeInfo::CallType::direct_call);
-   }
-   else
-   {
-      AppM->GetCallGraphManager()->AddCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), new_writecall->index, FunctionEdgeInfo::CallType::direct_call);
-   }
+   AppM->GetCallGraphManager()->AddFunctionAndCallPoint(AppM, GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), GET_INDEX_CONST_NODE(new_writecall), FunctionEdgeInfo::CallType::direct_call);
 }
 
 void interface_infer::create_resource_Read_simple(const std::set<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, unsigned n_resources, unsigned rwBWsize)
@@ -1501,6 +1484,7 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, const tree_man
    auto origGN = GetPointer<gimple_node>(GET_NODE(origStmt));
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
    gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+   gimple_nop_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(gn->scpe));
    const auto gimple_node_id = TM->new_tree_node_id();
    TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
    auto gimple_nop_Node = TM->GetTreeReindex(gimple_node_id);
@@ -1527,8 +1511,8 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, const tree_man
       snDef->SetDefStmt(gimple_nop_Node);
       writeVdef.insert(GET_INDEX_NODE(origGN->vdef));
    }
-   sl->list_of_bloc[origGN->bb_index]->PushBefore(gimple_nop_Node, origStmt);
-   sl->list_of_bloc[origGN->bb_index]->RemoveStmt(origStmt);
+   sl->list_of_bloc[origGN->bb_index]->PushBefore(gimple_nop_Node, origStmt, AppM);
+   sl->list_of_bloc[origGN->bb_index]->RemoveStmt(origStmt, AppM);
 }
 
 static boost::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
@@ -1751,7 +1735,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
             auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
             if(DesignInterface.find(fname) != DesignInterface.end())
             {
-               const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+               const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
                /// pre-process the list of statements to bind parm_decl and ssa variables
                std::map<unsigned, unsigned> par2ssa;
                auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
@@ -2185,9 +2169,5 @@ void interface_infer::Initialize()
 
 bool interface_infer::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return bb_version == 0;
 }

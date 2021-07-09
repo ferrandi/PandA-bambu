@@ -172,7 +172,7 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
                }
             }
          }
-         block->RemoveStmt(gimple_to_be_removed);
+         block->RemoveStmt(gimple_to_be_removed, AppM);
       }
    }
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)

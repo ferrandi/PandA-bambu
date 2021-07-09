@@ -142,7 +142,7 @@ static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
 soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, SOFT_FLOAT_CG_EXT, _design_flow_manager, _parameters),
       TreeM(_AppM->get_tree_manager()),
-      tree_man(new tree_manipulation(TreeM, parameters)),
+      tree_man(new tree_manipulation(TreeM, parameters, _AppM)),
       fd(GetPointer<function_decl>(TreeM->GetTreeNode(function_id))),
       isTopFunction(AppM->CGetCallGraphManager()->GetRootFunctions().count(function_id)),
       bindingCompleted(fd->list_of_args.size() == 0),
@@ -373,6 +373,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, CALLING_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
@@ -418,7 +419,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 bool soft_float_cg_ext::HasToBeExecuted() const
 {
    static const bool is_enabled = parameters->getOption<bool>(OPT_soft_float);
-   return is_enabled && FunctionFrontendFlowStep::HasToBeExecuted0() && FunctionFrontendFlowStep::HasToBeExecuted() && !modified;
+   return is_enabled && FunctionFrontendFlowStep::HasToBeExecuted() && !modified;
 }
 
 DesignFlowStep_Status soft_float_cg_ext::InternalExec()
@@ -494,9 +495,9 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---View-convert for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " + call_node->ToString());
             // At this time ssa->type is still real_type, thus we can exploit that (it will be modified after)
             const auto arg_vc = tree_man->create_unary_operation(ssa->type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
-            const auto vc_stmt = tree_man->CreateGimpleAssign(ssa->type, tree_nodeRef(), tree_nodeRef(), arg_vc, call_bb->number, BUILTIN_SRCP);
+            const auto vc_stmt = tree_man->CreateGimpleAssign(ssa->type, tree_nodeRef(), tree_nodeRef(), arg_vc, function_id, call_bb->number, BUILTIN_SRCP);
             const auto vc_ssa = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
-            call_bb->PushBefore(vc_stmt, call_stmt);
+            call_bb->PushBefore(vc_stmt, call_stmt, AppM);
             TreeM->ReplaceTreeNode(call_stmt, ssa_ridx, vc_ssa);
             if(out_ssa)
             {
@@ -523,14 +524,14 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          // Hardware calls are for sure dealing with standard IEEE formats only
          const auto int_ret_type = tree_helper::Size(GET_NODE(ssa->type)) == 32 ? float32_type : float64_type;
          const auto ret_vc = tree_man->create_unary_operation(int_ret_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
-         const auto vc_stmt = tree_man->CreateGimpleAssign(int_ret_type, tree_nodeRef(), tree_nodeRef(), ret_vc, call_bb->number, BUILTIN_SRCP);
+         const auto vc_stmt = tree_man->CreateGimpleAssign(int_ret_type, tree_nodeRef(), tree_nodeRef(), ret_vc, function_id, call_bb->number, BUILTIN_SRCP);
          const auto vc_ssa = GetPointerS<const gimple_assign>(GET_CONST_NODE(vc_stmt))->op0;
          const auto ssa_uses = ssa->CGetUseStmts();
          for(const auto& stmt_uses : ssa_uses)
          {
             TreeM->ReplaceTreeNode(stmt_uses.first, ssa_ridx, vc_ssa);
          }
-         call_bb->PushAfter(vc_stmt, call_stmt);
+         call_bb->PushAfter(vc_stmt, call_stmt, AppM);
          viewConvert.erase(ssa);
       }
       modified = true;
@@ -558,12 +559,12 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                tree_nodeRef vc_stmt;
                if(GET_NODE(parm_type)->get_kind() == pointer_type_K)
                {
-                  vc_stmt = tree_man->CreateNopExpr(parm_ridx, parm_type, tree_nodeRef(), tree_nodeRef());
+                  vc_stmt = tree_man->CreateNopExpr(parm_ridx, parm_type, tree_nodeRef(), tree_nodeRef(), function_id);
                }
                else
                {
                   const auto vc = tree_man->create_unary_operation(parm_type, parm_ridx, BUILTIN_SRCP, view_convert_expr_K);
-                  vc_stmt = tree_man->CreateGimpleAssign(parm_type, tree_nodeRef(), tree_nodeRef(), vc, first_bb->number, BUILTIN_SRCP);
+                  vc_stmt = tree_man->CreateGimpleAssign(parm_type, tree_nodeRef(), tree_nodeRef(), vc, function_id, first_bb->number, BUILTIN_SRCP);
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Lowering statement added to BB" + STR(first_bb->number) + ": " + GET_NODE(vc_stmt)->ToString());
                const auto lowered_parm = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
@@ -572,7 +573,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                {
                   TreeM->ReplaceTreeNode(stmt_uses.first, parm_ridx, lowered_parm);
                }
-               first_bb->PushFront(vc_stmt);
+               first_bb->PushFront(vc_stmt, AppM);
                viewConvert.erase(parmSSA);
                modified = true;
             }
@@ -588,15 +589,15 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          tree_nodeRef vc_stmt;
          if(GET_NODE(ret_ssa->type)->get_kind() == pointer_type_K)
          {
-            vc_stmt = tree_man->CreateNopExpr(gr->op, ret_ssa->type, tree_nodeRef(), tree_nodeRef());
+            vc_stmt = tree_man->CreateNopExpr(gr->op, ret_ssa->type, tree_nodeRef(), tree_nodeRef(), function_id);
          }
          else
          {
             const auto vc = tree_man->create_unary_operation(ret_ssa->type, gr->op, BUILTIN_SRCP, view_convert_expr_K);
-            vc_stmt = tree_man->CreateGimpleAssign(ret_ssa->type, tree_nodeRef(), tree_nodeRef(), vc, bb->number, BUILTIN_SRCP);
+            vc_stmt = tree_man->CreateGimpleAssign(ret_ssa->type, tree_nodeRef(), tree_nodeRef(), vc, function_id, bb->number, BUILTIN_SRCP);
          }
          const auto lowered_ret = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
-         bb->PushBefore(vc_stmt, ret_stmt);
+         bb->PushBefore(vc_stmt, ret_stmt, AppM);
          TreeM->ReplaceTreeNode(ret_stmt, gr->op, lowered_ret);
       }
       modified |= topReturn.size();
@@ -716,6 +717,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          const auto ssaUses = SSA->CGetUseStmts();
 
          const auto convertedSSA = generate_interface(bb, defStmt, ssa, std::get<0>(if_info.second), _version->userRequired);
+         const auto convertedSSA_type = TreeM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(convertedSSA))->index);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Interface from " + std::get<0>(if_info.second)->mngl() + " to " + _version->userRequired->mngl() + " generated output " + GET_NODE(convertedSSA)->ToString());
 
          for(const auto& ssaUse : ssaUses)
@@ -727,6 +729,16 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                continue;
             }
             TreeM->ReplaceTreeNode(useStmt, ssa, convertedSSA);
+            const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(useStmt));
+            if(ga)
+            {
+               // Unary and binary expression have already been lowered to function calls
+               auto* te = GetPointer<ternary_expr>(GET_NODE(ga->op1));
+               if(te)
+               {
+                  te->type = convertedSSA_type;
+               }
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced in statement " + GET_NODE(useStmt)->ToString());
             modified = true;
          }
@@ -915,7 +927,7 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
             const auto ssa_ridx = TreeM->CGetTreeReindex(ssa->index);
             const auto def_bb = GetPointerS<statement_list>(GET_NODE(fd->body))->list_of_bloc.at(def->bb_index);
             const auto vc = tree_man->create_unary_operation(vc_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
-            const auto vc_stmt = tree_man->CreateGimpleAssign(vc_type, tree_nodeRef(), tree_nodeRef(), vc, def_bb->number, BUILTIN_SRCP);
+            const auto vc_stmt = tree_man->CreateGimpleAssign(vc_type, tree_nodeRef(), tree_nodeRef(), vc, function_id, def_bb->number, BUILTIN_SRCP);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inserting view-convert operation after complex part expression - " + GET_NODE(vc_stmt)->ToString());
             const auto lowered_ssa = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
 
@@ -924,7 +936,7 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
             {
                TreeM->ReplaceTreeNode(stmt_uses.first, ssa_ridx, lowered_ssa);
             }
-            def_bb->PushAfter(vc_stmt, defStmt);
+            def_bb->PushAfter(vc_stmt, defStmt, AppM);
             return;
          }
          else
@@ -956,6 +968,20 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable declaration - " + vd->ToString() + " " + GET_NODE(vd->type)->ToString());
+      }
+   }
+
+   for(const auto& use_count : ssa->CGetUseStmts())
+   {
+      const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(use_count.first));
+      if(ga)
+      {
+         // Unary and binary expression have already been lowered to function calls
+         auto* te = GetPointer<ternary_expr>(GET_NODE(ga->op1));
+         if(te)
+         {
+            te->type = vc_type;
+         }
       }
    }
 }
@@ -1140,15 +1166,15 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    const auto createStmt = [&](tree_nodeRef op_type, tree_nodeRef op) {
       if(GET_NODE(op)->get_kind() != gimple_assign_K)
       {
-         op = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), op, bb->number, BUILTIN_SRCP);
+         op = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), op, function_id, bb->number, BUILTIN_SRCP);
       }
       if(stmt == nullptr)
       {
-         bb->PushFront(op);
+         bb->PushFront(op, AppM);
       }
       else
       {
-         bb->PushAfter(op, stmt);
+         bb->PushAfter(op, stmt, AppM);
       }
       stmt = op;
       return GetPointerS<gimple_assign>(GET_NODE(op))->op0;
@@ -1201,7 +1227,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    {
       THROW_ASSERT(!inFF->has_subnorm && !outFF->has_subnorm, "Subnormal value propagation not yet supported");
       // Cast exp bits to shrinked type
-      const auto expCast = tree_man->CreateNopExpr(Exp, exp_type, tree_nodeRef(), tree_nodeRef());
+      const auto expCast = tree_man->CreateNopExpr(Exp, exp_type, tree_nodeRef(), tree_nodeRef(), function_id);
       FExp = createStmt(exp_type, expCast);
 
       // Fix exponent for new encoding
@@ -1228,7 +1254,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
          ExpUnderflow = createStmt(exp_type, underflowBit);
 
          // Cast fixed exponent underflow bit to bool
-         const auto castUnderBit = tree_man->CreateNopExpr(ExpUnderflow, bool_type, tree_nodeRef(), tree_nodeRef());
+         const auto castUnderBit = tree_man->CreateNopExpr(ExpUnderflow, bool_type, tree_nodeRef(), tree_nodeRef(), function_id);
          ExpUnderflow = createStmt(exp_type, castUnderBit);
 
          // Switch between underflow and overflow exponent
@@ -1305,7 +1331,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
       SFrac = createStmt(in_type, fracRShift);
 
       // Cast input significand to output type
-      const auto fracCast = tree_man->CreateNopExpr(SFrac, out_type, tree_nodeRef(), tree_nodeRef());
+      const auto fracCast = tree_man->CreateNopExpr(SFrac, out_type, tree_nodeRef(), tree_nodeRef(), function_id);
       SFrac = createStmt(out_type, fracCast);
 
       if(outFF->has_rounding)
@@ -1313,7 +1339,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
          const auto shiftGuard = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(biasDiff - 1, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
          auto GuardBit = createStmt(in_type, shiftGuard);
 
-         const auto castGuard = tree_man->CreateNopExpr(GuardBit, bool_type, tree_nodeRef(), tree_nodeRef());
+         const auto castGuard = tree_man->CreateNopExpr(GuardBit, bool_type, tree_nodeRef(), tree_nodeRef(), function_id);
          GuardBit = createStmt(bool_type, castGuard);
 
          // const auto shiftLSB = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(biasDiff, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
@@ -1328,7 +1354,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
             const auto shiftRound = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(biasDiff - 2, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
             auto RoundBit = createStmt(in_type, shiftRound);
 
-            const auto castRound = tree_man->CreateNopExpr(RoundBit, bool_type, tree_nodeRef(), tree_nodeRef());
+            const auto castRound = tree_man->CreateNopExpr(RoundBit, bool_type, tree_nodeRef(), tree_nodeRef(), function_id);
             RoundBit = createStmt(bool_type, castRound);
 
             const auto orLSB = tree_man->create_binary_operation(bool_type, LSB, RoundBit, BUILTIN_SRCP, bit_ior_expr_K);
@@ -1352,7 +1378,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
          const auto andRound = tree_man->create_binary_operation(bool_type, GuardBit, LSB, BUILTIN_SRCP, bit_and_expr_K);
          Round = createStmt(bool_type, andRound);
 
-         const auto castRound = tree_man->CreateNopExpr(Round, out_type, tree_nodeRef(), tree_nodeRef());
+         const auto castRound = tree_man->CreateNopExpr(Round, out_type, tree_nodeRef(), tree_nodeRef(), function_id);
          Round = createStmt(out_type, castRound);
 
          // Or jamming with output significand
@@ -1363,7 +1389,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    else if(inFF->frac_bits < outFF->frac_bits)
    {
       // Cast input significand to output type
-      const auto fracCast = tree_man->CreateNopExpr(Frac, out_type, tree_nodeRef(), tree_nodeRef());
+      const auto fracCast = tree_man->CreateNopExpr(Frac, out_type, tree_nodeRef(), tree_nodeRef(), function_id);
       SFrac = createStmt(out_type, fracCast);
 
       // Shift input significand left
@@ -1374,7 +1400,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    else
    {
       // Cast input significand to output type
-      const auto fracCast = tree_man->CreateNopExpr(Frac, out_type, tree_nodeRef(), tree_nodeRef());
+      const auto fracCast = tree_man->CreateNopExpr(Frac, out_type, tree_nodeRef(), tree_nodeRef(), function_id);
       SFrac = createStmt(out_type, fracCast);
    }
 
@@ -1393,7 +1419,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
          Sign = createStmt(in_type, signAnd);
 
          // Cast to bool
-         const auto signCast = tree_man->CreateNopExpr(Sign, bool_type, tree_nodeRef(), tree_nodeRef());
+         const auto signCast = tree_man->CreateNopExpr(Sign, bool_type, tree_nodeRef(), tree_nodeRef(), function_id);
          sign_test = createStmt(bool_type, signCast);
 
          // Compare with fixed output sign
@@ -1420,7 +1446,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    }
 
    // Cast rounded exponent to output type
-   const auto rexpCast = tree_man->CreateNopExpr(FExp, out_type, tree_nodeRef(), tree_nodeRef());
+   const auto rexpCast = tree_man->CreateNopExpr(FExp, out_type, tree_nodeRef(), tree_nodeRef(), function_id);
    auto RExp = createStmt(out_type, rexpCast);
 
    // Ternary if for exponent nan
@@ -1493,7 +1519,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
          auto Sign = createStmt(in_type, signShift);
 
          // Cast sign to output type
-         const auto signCast = tree_man->CreateNopExpr(Sign, out_type, tree_nodeRef(), tree_nodeRef());
+         const auto signCast = tree_man->CreateNopExpr(Sign, out_type, tree_nodeRef(), tree_nodeRef(), function_id);
          FSign = createStmt(out_type, signCast);
 
          // Shift sign bit left in place
@@ -1548,7 +1574,6 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
 
    unsigned int called_function_id = TreeM->function_index(fu_name);
    THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
-   THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
    const auto spec_suffix = specFF->mngl();
    auto spec_function_id = TreeM->function_index(fu_name + spec_suffix);
    if(spec_function_id == 0)
@@ -1576,18 +1601,8 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
    std::copy(versioning_args.at(spec_function_id).begin(), versioning_args.at(spec_function_id).end(), std::back_inserter(args));
    called_function_id = spec_function_id;
    TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
-   if(!AppM->GetCallGraphManager()->IsVertex(called_function_id))
-   {
-      const auto helper = BehavioralHelperRef(new BehavioralHelper(AppM, called_function_id, true, parameters));
-      const auto fb = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
-      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, called_function_id, current_statement->index, fb, FunctionEdgeInfo::CallType::direct_call);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call graph updated with call to " + STR(called_function_id));
-   }
-   else
-   {
-      AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(called_function_id));
-   }
+   CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, debug_level);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(called_function_id));
 
    // Update functions float format map
    const auto called_func_vertex = AppM->CGetCallGraphManager()->GetVertex(called_function_id);
@@ -1617,7 +1632,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       static const auto mcpy_id = TreeM->function_index(MEMCPY);
       static const auto mset_id = TreeM->function_index(MEMSET);
       const auto fn_fd = GetPointerS<function_decl>(GET_NODE(fn));
-      if(!AppM->CGetFunctionBehavior(fn_fd->index)->CGetBehavioralHelper()->has_implementation())
+      if(!fn_fd->body)
       {
          if(!_version->ieee_format() && tree_helper::print_function_name(TreeM, fn_fd) == BUILTIN_WAIT_CALL)
          {
@@ -1660,7 +1675,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
 
       int type_i = is_internal_call(fn) ? INTERFACE_TYPE_NONE : INTERFACE_TYPE_OUTPUT;
       // Hardware implemented functions need arguments to still be real_type, thus it is necessary to add a view_convert operation before
-      if(!AppM->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fn))->CGetBehavioralHelper()->has_implementation())
+      if(AppM->get_tree_manager()->get_implementation_node(GET_INDEX_CONST_NODE(fn)) == 0)
       {
          type_i |= INTERFACE_TYPE_REAL;
       }
@@ -1727,7 +1742,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   int ti = is_internal_call(fn) ? type_interface : INTERFACE_TYPE_INPUT;
 
                   // Hardware implemented functions need the return value to still be real_type, thus it is necessary to add a view_convert operation after
-                  if(fname != BUILTIN_WAIT_CALL && !AppM->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fn))->CGetBehavioralHelper()->has_implementation())
+                  if(fname != BUILTIN_WAIT_CALL && AppM->get_tree_manager()->get_implementation_node(GET_INDEX_CONST_NODE(fn)) == 0)
                   {
                      ti |= INTERFACE_TYPE_REAL;
                   }
@@ -1970,8 +1985,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                         const auto bool_type_idx = GET_INDEX_CONST_NODE(tree_man->create_boolean_type());
                         std::vector<tree_nodeRef> args = {ue->op, TreeM->CreateUniqueIntegerCst(inFF->has_nan, bool_type_idx), TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, bool_type_idx)};
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
-                        THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
-                        AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+                        CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, debug_level);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(called_function_id));
                      }
                      else
                      {

@@ -119,6 +119,7 @@ void HLSCWriter::WriteHeader()
    indented_output_stream->Append("#define __Inf (1.0/0.0)\n");
    indented_output_stream->Append("#define __Nan (0.0/0.0)\n\n");
    indented_output_stream->Append("#ifdef __cplusplus\n");
+   indented_output_stream->Append("#undef printf\n\n");
    indented_output_stream->Append("#include <cstdio>\n\n");
    indented_output_stream->Append("#include <cstdlib>\n\n");
    indented_output_stream->Append("typedef bool _Bool;\n\n");
@@ -180,6 +181,9 @@ void HLSCWriter::WriteTestbenchGlobalVars()
 
 void HLSCWriter::WriteTestbenchHelperFunctions()
 {
+   indented_output_stream->Append("#ifdef __AC_NAMESPACE\n");
+   indented_output_stream->Append("using namespace __AC_NAMESPACE;\n");
+   indented_output_stream->Append("#endif\n");
    // exit function
    indented_output_stream->Append("//variable used to detect a standard end of the main (exit has not been called)\n");
    indented_output_stream->Append("unsigned int __standard_exit;\n");

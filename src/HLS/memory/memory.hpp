@@ -191,6 +191,8 @@ class memory
 
    const unsigned& bus_addr_bitsize;
 
+   bool enable_hls_bit_value;
+
    /**
     * Alignment utility function
     */
@@ -810,6 +812,15 @@ class memory
 
    /// return true in case the current memory object and the passed one are different
    bool notEQ(refcount<memory> ref) const;
+
+   void set_enable_hls_bit_value(bool value)
+   {
+      enable_hls_bit_value = value;
+   }
+   bool get_enable_hls_bit_value()
+   {
+      return enable_hls_bit_value;
+   }
 };
 /// refcount definition of the class
 using memoryRef = refcount<memory>;

@@ -68,6 +68,8 @@ class gimple_assign;
 class simple_code_motion : public FunctionFrontendFlowStep
 {
  private:
+   bool restart_ifmwi_opt;
+
    /// The scheduling solution
    ScheduleRef schedule;
 

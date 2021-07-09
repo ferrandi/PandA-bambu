@@ -100,6 +100,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
       default:
@@ -112,17 +113,13 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool SerializeMutualExclusions::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return true;
 }
 
 DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters));
+   const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
    bool bb_modified = false;
    const auto cdg_bb_graph = function_behavior->CGetBBGraph(FunctionBehavior::CDG_BB);
    const auto cfg_bb_graph = function_behavior->CGetBBGraph(FunctionBehavior::BB);
@@ -187,12 +184,12 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
          {
             std::swap(bb_node_info->true_edge, bb_node_info->false_edge);
             auto last_stmt = bb_node_info->CGetStmtList().back();
-            bb_node_info->RemoveStmt(last_stmt);
+            bb_node_info->RemoveStmt(last_stmt, AppM);
             auto gc = GetPointer<gimple_cond>(GET_NODE(last_stmt));
             THROW_ASSERT(gc, "");
-            auto new_cond = tree_man->CreateNotExpr(gc->op0, bb_node_info);
+            auto new_cond = tree_man->CreateNotExpr(gc->op0, bb_node_info, function_id);
             gc->op0 = new_cond;
-            bb_node_info->PushBack(last_stmt);
+            bb_node_info->PushBack(last_stmt, AppM);
             bb_modified = true;
          }
          else
@@ -277,14 +274,15 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             const auto gc = GetPointer<const gimple_cond>(GET_NODE(bb_node_info->CGetStmtList().back()));
             THROW_ASSERT(gc, "");
             const auto cond = gc->op0;
-            const auto not_cond = tree_man->CreateNotExpr(cond, new_block);
+            const auto not_cond = tree_man->CreateNotExpr(cond, new_block, function_id);
 
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
             tree_node_schema[TOK(TOK_SRCP)] = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
+            tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
             tree_node_schema[TOK(TOK_OP0)] = STR(not_cond->index);
             unsigned int new_tree_node_index = TM->new_tree_node_id();
             TM->create_tree_node(new_tree_node_index, gimple_cond_K, tree_node_schema);
-            new_block->PushBack(TM->GetTreeReindex(new_tree_node_index));
+            new_block->PushBack(TM->GetTreeReindex(new_tree_node_index), AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixed basic blocks connections");
 
             /// Fix the phi in end if and create the phi in new block
@@ -312,9 +310,9 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_phi_schema;
                const auto gimple_phi_id = TM->new_tree_node_id();
                gimple_phi_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+               gimple_phi_schema[TOK(TOK_SCPE)] = STR(function_id);
                gimple_phi_schema[TOK(TOK_TYPE)] = STR(type);
                gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
-               gimple_phi_schema[TOK(TOK_SCPE)] = STR(function_id);
                TM->create_tree_node(gimple_phi_id, gimple_phi_K, gimple_phi_schema);
                auto new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(gimple_phi_id));
                new_gp->SetSSAUsesComputed();

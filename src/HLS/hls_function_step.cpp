@@ -202,9 +202,27 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computing relationships of " + GetName());
 }
 
+bool HLSFunctionStep::HasToBeExecuted0() const
+{
+   CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
+   const auto funcs = CGMan->GetReachedBodyFunctions();
+   if(funId and funcs.find(funId) == funcs.end())
+   {
+      return false;
+   }
+   return true;
+}
 DesignFlowStep_Status HLSFunctionStep::Exec()
 {
-   const auto status = InternalExec();
+   DesignFlowStep_Status status;
+   if(!HasToBeExecuted0())
+   {
+      status = DesignFlowStep_Status::UNCHANGED;
+   }
+   else
+   {
+      status = InternalExec();
+   }
    if(funId)
    {
       bb_version = HLSMgr->GetFunctionBehavior(funId)->GetBBVersion();

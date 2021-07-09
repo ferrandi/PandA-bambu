@@ -2912,7 +2912,7 @@ int BambuParameter::Exec()
       else if(file_type == Parameters_FileFormat::FF_C || file_type == Parameters_FileFormat::FF_OBJECTIVEC || file_type == Parameters_FileFormat::FF_CPP || file_type == Parameters_FileFormat::FF_FORTRAN
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
     HAVE_I386_CLANGVVD_COMPILER
-              || file_type == Parameters_FileFormat::FF_LLVM
+              || file_type == Parameters_FileFormat::FF_LLVM || file_type == Parameters_FileFormat::FF_LLVM_CPP
 #endif
       )
       {
@@ -3667,7 +3667,7 @@ void BambuParameter::CheckParameters()
    if(flag_cpp)
    {
       /// add -I <ac_types_dir> and -I <ac_math_dir>
-      std::string includes = "-I " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) + " -I " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include"));
+      std::string includes = "-isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) + " -isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include"));
       if(isOption(OPT_gcc_includes))
       {
          includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;

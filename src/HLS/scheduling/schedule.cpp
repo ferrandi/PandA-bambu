@@ -109,7 +109,7 @@ bool AbsControlStep::operator<(const AbsControlStep& other) const
 Schedule::Schedule(const HLS_managerConstRef _hls_manager, const unsigned int _function_index, const OpGraphConstRef _op_graph, const ParameterConstRef _parameters)
     : hls_manager(_hls_manager),
       TM(_hls_manager->get_tree_manager()),
-      tree_man(new tree_manipulation(TM, _parameters)),
+      tree_man(new tree_manipulation(TM, _parameters, application_managerRef())),
       allocation_information(_hls_manager->get_HLS(_function_index)->allocation_information),
       function_index(_function_index),
       tot_csteps(0),
@@ -709,7 +709,7 @@ bool Schedule::CanBeChained(const unsigned int first_statement_index, const unsi
 }
 #endif
 
-bool Schedule::EvaluateCondsMerging(const unsigned statement_index, const unsigned int first_condition, const unsigned second_condition) const
+bool Schedule::EvaluateCondsMerging(const unsigned statement_index, const unsigned int first_condition, const unsigned second_condition, unsigned int function_decl_nid) const
 {
    if(not first_condition or not second_condition)
    {
@@ -720,14 +720,14 @@ bool Schedule::EvaluateCondsMerging(const unsigned statement_index, const unsign
       return true;
    }
    const auto statement = GetPointer<const gimple_node>(TM->get_tree_node_const(statement_index));
-   const auto or_result = tree_man->CreateOrExpr(TM->GetTreeReindex(first_condition), TM->GetTreeReindex(second_condition), blocRef());
+   const auto or_result = tree_man->CreateOrExpr(TM->GetTreeReindex(first_condition), TM->GetTreeReindex(second_condition), blocRef(), function_decl_nid);
    const auto or_ending_time = std::max(GetReadyTime(first_condition, statement->bb_index), GetReadyTime(second_condition, statement->bb_index)) +
                                allocation_information->GetTimeLatency(GetPointer<const ssa_name>(GET_NODE(or_result))->CGetDefStmt()->index, fu_binding::UNKNOWN).first;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking if merging of conditions can be put at then end BB" + STR(statement->bb_index) + " (ending with " + statement->ToString());
    return or_ending_time < GetBBEndingTime(statement->bb_index);
 }
 
-bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_index, const unsigned int second_statement_index) const
+bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_index, const unsigned int second_statement_index, unsigned int function_decl_nid) const
 {
    const auto hls = hls_manager.lock()->get_HLS(function_index);
    const auto basic_block_graph = hls_manager.lock()->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::FBB);
@@ -752,17 +752,17 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
          const auto second_block = list_of_block.at(second_basic_block);
          if(first_block->true_edge == second_basic_block)
          {
-            const auto not_operation = tree_man->CreateNotExpr(second_gc->op0, blocRef());
+            const auto not_operation = tree_man->CreateNotExpr(second_gc->op0, blocRef(), function_decl_nid);
             const auto not_ending_time = second_gc_input_delay + allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
-            const auto and_operation = tree_man->CreateAndExpr(not_operation, first_gc->op0, blocRef());
+            const auto and_operation = tree_man->CreateAndExpr(not_operation, first_gc->op0, blocRef(), function_decl_nid);
             const auto and_ending_time = std::max(not_ending_time, first_gc_input_delay) + allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
             return and_ending_time;
          }
          else if(first_block->false_edge == second_basic_block)
          {
-            const auto not_operation = tree_man->CreateNotExpr(first_gc->op0, blocRef());
+            const auto not_operation = tree_man->CreateNotExpr(first_gc->op0, blocRef(), function_decl_nid);
             const auto not_ending_time = first_gc_input_delay + allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
-            const auto and_operation = tree_man->CreateAndExpr(second_gc_op, not_operation, blocRef());
+            const auto and_operation = tree_man->CreateAndExpr(second_gc_op, not_operation, blocRef(), function_decl_nid);
             const auto and_ending_time = std::max(not_ending_time, second_gc_input_delay) + allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
             return and_ending_time;
          }
@@ -786,10 +786,10 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
             {
                if(cond.first)
                {
-                  const auto not_operation = tree_man->CreateNotExpr(cond.first, blocRef());
+                  const auto not_operation = tree_man->CreateNotExpr(cond.first, blocRef(), function_decl_nid);
                   const auto cond_delay = GetReadyTime(cond.first->index, first_gc->bb_index);
                   const auto not_ending_time = cond_delay + allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
-                  const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0, GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, blocRef());
+                  const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0, GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, blocRef(), function_decl_nid);
                   current_condition = and_operation;
                   current_ending_time = std::max(not_ending_time, current_ending_time) + allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
                }
@@ -801,11 +801,11 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
             const auto first_gc_op = GET_NODE(first_gc->op0);
             THROW_ASSERT(first_gc_op->get_kind() == ssa_name_K, "Condition of the first gimple cond is " + first_gc_op->ToString());
             auto current_ending_time = 0.0;
-            const auto not_operation = tree_man->CreateNotExpr(first_gc_op, blocRef());
+            const auto not_operation = tree_man->CreateNotExpr(first_gc_op, blocRef(), function_decl_nid);
             const auto not_ending_time = GetReadyTime(first_gc_op->index, first_basic_block) + allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
             for(const auto& cond : second_gmwi->list_of_cond)
             {
-               const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, cond.first, blocRef());
+               const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, cond.first, blocRef(), function_decl_nid);
                const auto and_ending_time = std::max(not_ending_time, GetReadyTime(cond.first->index, first_basic_block)) + allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
                current_ending_time = std::max(current_ending_time, and_ending_time);
             }
@@ -830,9 +830,9 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
             {
                if(cond.second == second_basic_block)
                {
-                  auto const not_operation = tree_man->CreateNotExpr(second_gc_op, blocRef());
+                  auto const not_operation = tree_man->CreateNotExpr(second_gc_op, blocRef(), function_decl_nid);
                   auto const not_ending_time = GetReadyTime(second_gc_op->index, first_basic_block) + allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
-                  const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, cond.first, blocRef());
+                  const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, cond.first, blocRef(), function_decl_nid);
                   const auto and_ending_time = std::max(not_ending_time, GetReadyTime(cond.first->index, first_basic_block)) + allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
                   return and_ending_time;
                }
@@ -847,15 +847,15 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
             {
                if(cond.first)
                {
-                  auto const not_operation = tree_man->CreateNotExpr(cond.first, blocRef());
+                  auto const not_operation = tree_man->CreateNotExpr(cond.first, blocRef(), function_decl_nid);
                   const auto not_ending_time = GetReadyTime(cond.first->index, first_basic_block) + allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
-                  const auto and_operation = current_condition ? tree_man->CreateAndExpr(current_condition, not_operation, blocRef()) : not_operation;
+                  const auto and_operation = current_condition ? tree_man->CreateAndExpr(current_condition, not_operation, blocRef(), function_decl_nid) : not_operation;
                   const auto and_ending_time = current_condition ? (std::max(not_ending_time, current_ending_time) + allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first) : not_ending_time;
                   current_condition = and_operation;
                   current_ending_time = and_ending_time;
                }
             }
-            const auto and_operation = tree_man->CreateAndExpr(current_condition, second_gc_op, blocRef());
+            const auto and_operation = tree_man->CreateAndExpr(current_condition, second_gc_op, blocRef(), function_decl_nid);
             const auto and_ending_time = std::max(current_ending_time, GetReadyTime(second_gc_op->index, first_basic_block)) + allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
             return and_ending_time;
          }
@@ -878,10 +878,10 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
                   {
                      if(second_cond.first)
                      {
-                        const auto not_operation = tree_man->CreateNotExpr(second_cond.first, blocRef());
+                        const auto not_operation = tree_man->CreateNotExpr(second_cond.first, blocRef(), function_decl_nid);
                         const auto cond_delay = GetReadyTime(second_cond.first->index, first_basic_block);
                         const auto not_ending_time = cond_delay + allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
-                        const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0, GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, blocRef());
+                        const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0, GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, blocRef(), function_decl_nid);
                         current_condition = and_operation;
                         current_ending_time = std::max(not_ending_time, current_ending_time) + allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
                      }
@@ -899,9 +899,9 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
             {
                if(cond.first)
                {
-                  const auto not_operation = tree_man->CreateNotExpr(cond.first, blocRef());
+                  const auto not_operation = tree_man->CreateNotExpr(cond.first, blocRef(), function_decl_nid);
                   const auto not_ending_time = GetReadyTime(cond.first->index, first_basic_block);
-                  const auto and_operation = current_condition ? tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0, cond.first, blocRef()) : not_operation;
+                  const auto and_operation = current_condition ? tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0, cond.first, blocRef(), function_decl_nid) : not_operation;
                   const auto and_ending_time = current_condition ? std::max(not_ending_time, current_ending_time) + allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first : not_ending_time;
                   current_condition = and_operation;
                   current_ending_time = and_ending_time;
@@ -911,7 +911,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
             {
                if(cond.first)
                {
-                  const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0, cond.first, blocRef());
+                  const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0, cond.first, blocRef(), function_decl_nid);
                   const auto and_ending_time = std::max(current_ending_time, GetReadyTime(cond.first->index, first_basic_block)) + allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
                   current_ending_time = std::max(and_ending_time, current_ending_time);
                }

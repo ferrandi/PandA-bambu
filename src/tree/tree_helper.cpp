@@ -7750,7 +7750,7 @@ unsigned int tree_helper::get_multi_way_if_pos(const tree_managerConstRef& TM, u
       }
       pos++;
    }
-   THROW_ERROR("cond not found in gimple_multi_way_if");
+   THROW_ERROR("cond not found in gimple_multi_way_if " + t->ToString() + " looked_for_cond " + STR(looked_for_cond));
    return pos;
 }
 

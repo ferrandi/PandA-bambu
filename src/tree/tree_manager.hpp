@@ -71,6 +71,7 @@ enum kind : int;
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(application_manager);
 enum class TreeVocabularyTokenTypes_TokenEnum;
 //@}
 
@@ -365,7 +366,7 @@ class tree_manager
     * @param tn is the top tree node of the tree to be collapsed
     * @param removed_nodes is the set of nodes removed during collapsing
     */
-   void collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc, const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes);
+   void collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc, const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes, const application_managerRef AppM);
 
    /// increment the number a parallel loop
    void add_parallel_loop();

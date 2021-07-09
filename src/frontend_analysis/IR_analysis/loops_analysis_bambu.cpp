@@ -146,8 +146,8 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }
       const vertex header = loop->GetHeader();
       const pragma_managerRef PM = AppM->get_pragma_manager();
-      PM->CheckAddOmpFor(function_id, header);
-      PM->CheckAddOmpSimd(function_id, header);
+      PM->CheckAddOmpFor(function_id, header, AppM);
+      PM->CheckAddOmpSimd(function_id, header, AppM);
       bool do_while = false;
       size_t feedback_edges = 0;
       InEdgeIterator ei, ei_end;

@@ -98,6 +98,7 @@
 
 simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, SIMPLE_CODE_MOTION, _design_flow_manager, _parameters),
+      restart_ifmwi_opt(false),
       schedule(ScheduleRef()),
       conservative(
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
@@ -153,42 +154,22 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CHECK_CRITICAL_SESSION, SAME_FUNCTION));
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
 #if HAVE_ILP_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UPDATE_SCHEDULE, SAME_FUNCTION));
-#endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         switch(GetStatus())
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
-            case DesignFlowStep_Status::SUCCESS:
+            if(restart_ifmwi_opt)
             {
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-               break;
             }
-            case DesignFlowStep_Status::SKIPPED:
-            case DesignFlowStep_Status::UNCHANGED:
-            case DesignFlowStep_Status::UNEXECUTED:
-            case DesignFlowStep_Status::UNNECESSARY:
-            {
-               break;
-            }
-            case DesignFlowStep_Status::ABORTED:
-            case DesignFlowStep_Status::EMPTY:
-            case DesignFlowStep_Status::NONEXISTENT:
-            default:
-               THROW_UNREACHABLE("");
          }
          break;
       }
@@ -639,6 +620,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    bool modified = false;
+   restart_ifmwi_opt = false;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);
@@ -789,7 +771,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 #else
    const CustomSet<vertex> to_be_parallelized = CustomSet<vertex>();
 #endif
-   const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
+   const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
 
    for(const auto bb_vertex : bb_sorted_vertices)
    {
@@ -1134,7 +1116,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                            else
                            {
                               /// create a negated condition
-                              auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, list_of_bloc[dest_bb_index]);
+                              auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, list_of_bloc[dest_bb_index], function_id);
                               TM->ReplaceTreeNode(*statement, ga->predicate, not_cond);
                            }
                         }
@@ -1143,13 +1125,13 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                      {
                         if(list_of_bloc[dest_bb_index]->true_edge == curr_bb)
                         {
-                           auto and_cond = tree_man->CreateAndExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, ga->predicate, list_of_bloc[dest_bb_index]);
+                           auto and_cond = tree_man->CreateAndExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, ga->predicate, list_of_bloc[dest_bb_index], function_id);
                            TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
                         }
                         else
                         {
-                           auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, list_of_bloc[dest_bb_index]);
-                           auto and_cond = tree_man->CreateAndExpr(not_cond, ga->predicate, list_of_bloc[dest_bb_index]);
+                           auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, list_of_bloc[dest_bb_index], function_id);
+                           auto and_cond = tree_man->CreateAndExpr(not_cond, ga->predicate, list_of_bloc[dest_bb_index], function_id);
                            TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
                         }
                      }
@@ -1179,11 +1161,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                                     }
                                     else
                                     {
-                                       Cur = tree_man->CreateOrExpr(Cur, gmwicond0.first, list_of_bloc[dest_bb_index]);
+                                       Cur = tree_man->CreateOrExpr(Cur, gmwicond0.first, list_of_bloc[dest_bb_index], function_id);
                                     }
                                  }
                               }
-                              Cur = tree_man->CreateNotExpr(Cur, list_of_bloc[dest_bb_index]);
+                              Cur = tree_man->CreateNotExpr(Cur, list_of_bloc[dest_bb_index], function_id);
                               if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
                               {
                                  auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
@@ -1195,7 +1177,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               }
                               else
                               {
-                                 auto and_cond = tree_man->CreateAndExpr(Cur, ga->predicate, list_of_bloc[dest_bb_index]);
+                                 auto and_cond = tree_man->CreateAndExpr(Cur, ga->predicate, list_of_bloc[dest_bb_index], function_id);
                                  TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
                               }
                            }
@@ -1212,7 +1194,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               }
                               else
                               {
-                                 auto and_cond = tree_man->CreateAndExpr(gmwicond.first, ga->predicate, list_of_bloc[dest_bb_index]);
+                                 auto and_cond = tree_man->CreateAndExpr(gmwicond.first, ga->predicate, list_of_bloc[dest_bb_index], function_id);
                                  TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
                               }
                            }
@@ -1239,8 +1221,12 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             auto tmp_it = statement;
             ++tmp_it;
             /// Moving statement
-            list_of_bloc[curr_bb]->RemoveStmt(temp_statement);
-            list_of_bloc[dest_bb_index]->PushBack(temp_statement);
+            list_of_bloc[curr_bb]->RemoveStmt(temp_statement, AppM);
+            if(list_of_bloc.at(curr_bb)->CGetStmtList().empty() && list_of_bloc.at(curr_bb)->CGetPhiList().empty())
+            {
+               restart_ifmwi_opt = true;
+            }
+            list_of_bloc[dest_bb_index]->PushBack(temp_statement, AppM);
             /// Going one step back since pointer is already increment in for loop
             --tmp_it;
             statement = tmp_it;
@@ -1250,17 +1236,21 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          for(const auto& removing : to_be_removed)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + removing->ToString() + " from BB" + STR(curr_bb));
-            list_of_bloc[curr_bb]->RemoveStmt(removing);
+            list_of_bloc[curr_bb]->RemoveStmt(removing, AppM);
+         }
+         if(!to_be_removed.empty() && list_of_bloc.at(curr_bb)->CGetStmtList().empty() && list_of_bloc.at(curr_bb)->CGetPhiList().empty())
+         {
+            restart_ifmwi_opt = true;
          }
          for(const auto& adding_back : to_be_added_back)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding back " + adding_back->ToString() + " from BB" + STR(curr_bb));
-            list_of_bloc[curr_bb]->PushBack(adding_back);
+            list_of_bloc[curr_bb]->PushBack(adding_back, AppM);
          }
          for(const auto& adding_front : to_be_added_front)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding front " + adding_front->ToString() + " from BB" + STR(curr_bb));
-            list_of_bloc[curr_bb]->PushFront(adding_front);
+            list_of_bloc[curr_bb]->PushFront(adding_front, AppM);
          }
          restart_bb_code_motion = (!to_be_added_back.empty()) or (!to_be_added_front.empty());
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
@@ -1283,10 +1273,6 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
 bool simple_code_motion::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    if(parameters->getOption<bool>(OPT_parse_pragma))
    {

@@ -87,6 +87,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(CHECK_SYSTEM_TYPE, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
@@ -115,7 +116,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
 {
    bool changed = false;
    const auto TM = AppM->get_tree_manager();
-   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    const auto tn = TM->get_tree_node_const(function_id);
    const auto fd = GetPointer<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
@@ -159,7 +160,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                         const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), ret_type_node, tree_nodeRef(), tree_nodeRef());
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create ssa " + GET_NODE(new_ssa)->ToString());
 
-                        const auto ga_nop = tree_man->CreateNopExpr(new_ssa, TM->CGetTreeReindex(assigned_ssa_type_node->index), tree_nodeRef(), tree_nodeRef());
+                        const auto ga_nop = tree_man->CreateNopExpr(new_ssa, TM->CGetTreeReindex(assigned_ssa_type_node->index), tree_nodeRef(), tree_nodeRef(), function_id);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create nop " + GET_NODE(ga_nop)->ToString());
 
                         const auto cast_ga = GetPointerS<const gimple_assign>(GET_NODE(ga_nop));
@@ -169,7 +170,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                         TM->ReplaceTreeNode(stmt, ga->op0, new_ssa);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---update call " + GET_NODE(stmt)->ToString());
 
-                        block.second->PushAfter(ga_nop, stmt);
+                        block.second->PushAfter(ga_nop, stmt, AppM);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---insert nop " + GET_NODE(ga_nop)->ToString());
                         changed = true;
                      }
@@ -188,9 +189,9 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                            const auto actual_type_node = tree_helper::CGetType(GET_NODE(*arg_it));
                            if(conv_really_needed(TM, formal_type_id, actual_type_node->index))
                            {
-                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, TM->CGetTreeReindex(formal_type_node->index), tree_nodeRef(), tree_nodeRef());
+                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, TM->CGetTreeReindex(formal_type_node->index), tree_nodeRef(), tree_nodeRef(), function_id);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
-                              block.second->PushBefore(ga_nop, stmt);
+                              block.second->PushBefore(ga_nop, stmt, AppM);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---old call statement " + GET_NODE(stmt)->ToString());
                               unsigned int k = 0;
                               const auto new_ssa = GetPointerS<gimple_assign>(GET_NODE(ga_nop))->op0;
@@ -217,9 +218,9 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                            const auto formal_type_reindex = TM->CGetTreeReindex(formal_type_id);
                            const auto parm_ue = GetPointerS<unary_expr>(GET_NODE(*arg_it));
                            const auto ue_expr = tree_man->create_unary_operation(formal_type_reindex, parm_ue->op, srcp_default, GET_NODE(*arg_it)->get_kind()); /// It is required to de-share some IR nodes
-                           const auto ue_ga = tree_man->CreateGimpleAssign(formal_type_reindex, tree_nodeRef(), tree_nodeRef(), ue_expr, block.first, srcp_default);
+                           const auto ue_ga = tree_man->CreateGimpleAssign(formal_type_reindex, tree_nodeRef(), tree_nodeRef(), ue_expr, function_id, block.first, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ue_ga)->ToString());
-                           block.second->PushBefore(ue_ga, stmt);
+                           block.second->PushBefore(ue_ga, stmt, AppM);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---old call statement " + GET_NODE(stmt)->ToString());
                            unsigned int k = 0;
                            const auto new_ssa = GetPointerS<gimple_assign>(GET_NODE(ue_ga))->op0;
@@ -274,9 +275,9 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                         const auto actual_type_node = tree_helper::CGetType(GET_NODE(*arg_it));
                         if(conv_really_needed(TM, formal_type_id, actual_type_node->index))
                         {
-                           const auto ga_nop = tree_man->CreateNopExpr(*arg_it, TM->CGetTreeReindex(formal_type_node->index), tree_nodeRef(), tree_nodeRef());
+                           const auto ga_nop = tree_man->CreateNopExpr(*arg_it, TM->CGetTreeReindex(formal_type_node->index), tree_nodeRef(), tree_nodeRef(), function_id);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
-                           block.second->PushBefore(ga_nop, stmt);
+                           block.second->PushBefore(ga_nop, stmt, AppM);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---old call statement " + GET_NODE(stmt)->ToString());
                            unsigned int k = 0;
                            const auto new_ssa = GetPointerS<gimple_assign>(GET_NODE(ga_nop))->op0;
@@ -303,10 +304,10 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                         const auto formal_type_reindex = TM->CGetTreeReindex(formal_type_id);
                         const auto parm_ue = GetPointerS<unary_expr>(GET_NODE(*arg_it));
                         const auto ue_expr = tree_man->create_unary_operation(formal_type_reindex, parm_ue->op, srcp_default, GET_NODE(*arg_it)->get_kind()); /// It is required to de-share some IR nodes
-                        const auto ue_ga = tree_man->CreateGimpleAssign(formal_type_reindex, tree_nodeRef(), tree_nodeRef(), ue_expr, block.first, srcp_default);
+                        const auto ue_ga = tree_man->CreateGimpleAssign(formal_type_reindex, tree_nodeRef(), tree_nodeRef(), ue_expr, function_id, block.first, srcp_default);
                         const auto ue_vd = GetPointerS<gimple_assign>(GET_NODE(ue_ga))->op0;
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ue_ga)->ToString());
-                        block.second->PushBefore(ue_ga, stmt);
+                        block.second->PushBefore(ue_ga, stmt, AppM);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---old call statement " + GET_NODE(stmt)->ToString());
                         unsigned int k = 0;
                         const auto new_ssa = GetPointerS<gimple_assign>(GET_NODE(ue_ga))->op0;

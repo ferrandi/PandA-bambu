@@ -372,7 +372,7 @@ class Schedule
     * @param first_condition is the first condition
     * @param second_condition is the second condition
     */
-   bool EvaluateCondsMerging(const unsigned statement_index, const unsigned int first_condition, const unsigned second_condition) const;
+   bool EvaluateCondsMerging(const unsigned statement_index, const unsigned int first_condition, const unsigned second_condition, unsigned int function_decl_nid) const;
 
    /**
     * Evaluate if two conditional statements can be merged to create a gimple_multi_way_if
@@ -380,7 +380,7 @@ class Schedule
     * @param second_statement_index is the index of the second statement to be merged
     * @return true if the latency of the basic block does not change
     */
-   bool EvaluateMultiWayIfsMerging(const unsigned int first_statement_index, const unsigned int second_statement_index) const;
+   bool EvaluateMultiWayIfsMerging(const unsigned int first_statement_index, const unsigned int second_statement_index, unsigned int function_decl_nid) const;
 
    /**
     * Print the timing information about an operation

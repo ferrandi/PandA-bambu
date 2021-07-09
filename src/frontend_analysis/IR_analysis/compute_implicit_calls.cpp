@@ -107,6 +107,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(CHECK_SYSTEM_TYPE, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
@@ -142,7 +143,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
    std::list<std::pair<tree_nodeRef, unsigned int>> to_be_lowered_memset;
 
    /// The tree manipulation
-   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
 
    unsigned int max_loop_id = 0;
 
@@ -248,14 +249,14 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                   }
                   else
                   {
-                     THROW_ASSERT(AppM->GetFunctionBehavior(TM->function_index(MEMSET))->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+                     THROW_ASSERT(GetPointer<const function_decl>(TM->CGetTreeNode(TM->function_index(MEMSET)))->body, "inconsistent behavioral helper");
                      replace_with_memset(stmt, sl, tree_man);
                      update_bb_ver = true;
                   }
                }
                else
                {
-                  THROW_ASSERT(AppM->GetFunctionBehavior(TM->function_index(MEMCPY))->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+                  THROW_ASSERT(GetPointer<const function_decl>(TM->CGetTreeNode(TM->function_index(MEMCPY)))->body, "inconsistent behavioral helper");
                   replace_with_memcpy(stmt, sl, tree_man);
                   update_bb_ver = true;
                }
@@ -351,7 +352,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
 
       /// add a cast
       const auto nop_init_var = tree_man->create_unary_operation(pt, init_var, srcp_default, nop_expr_K);
-      const auto nop_init_var_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), nop_init_var, BB1_block->number, srcp_default);
+      const auto nop_init_var_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), nop_init_var, function_id, BB1_block->number, srcp_default);
       init_var = GetPointer<gimple_assign>(GET_NODE(nop_init_var_ga))->op0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cast statement " + GET_NODE(nop_init_var_ga)->ToString());
 
@@ -360,7 +361,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       /// The list of def edge which contains for the moment only the value coming from the forward edge
       std::vector<std::pair<tree_nodeRef, unsigned int>> list_of_def_edge;
       list_of_def_edge.push_back(std::make_pair(init_var, BB1_block->number));
-      const auto phi = tree_man->create_phi_node(new_induction_var, list_of_def_edge, TM->GetTreeReindex(function_id), BBN1_block->number);
+      const auto phi = tree_man->create_phi_node(new_induction_var, list_of_def_edge, function_id, BBN1_block->number);
       const auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
       const auto phi_res_use_set = PointToSolutionRef(new PointToSolution());
       phi_res_use_set->Add(TM->GetTreeReindex(var));
@@ -376,7 +377,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       const auto copy_byte_size = dst_size / 8;
       const auto copy_byte_size_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(copy_byte_size), GET_INDEX_NODE(offset_type));
       const auto pp = tree_man->create_binary_operation(pt, init_var, copy_byte_size_node, srcp_default, pointer_plus_expr_K);
-      const auto pp_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), pp, BB1_block->number, srcp_default);
+      const auto pp_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), pp, function_id, BB1_block->number, srcp_default);
       GetPointer<gimple_assign>(GET_NODE(pp_ga))->temporary_address = true;
       const auto vd_limit = GetPointer<gimple_assign>(GET_NODE(pp_ga))->op0;
       const auto vd_limit_use_set = PointToSolutionRef(new PointToSolution());
@@ -386,26 +387,26 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
 
       const auto size_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(tree_helper::Size(type_node1) / 8), GET_INDEX_NODE(offset_type));
       const auto pp_ind = tree_man->create_binary_operation(pt, gp->res, size_node, srcp_default, pointer_plus_expr_K);
-      const auto pp_ga_ind = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), pp_ind, BBN1_block->number, srcp_default);
+      const auto pp_ga_ind = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), pp_ind, function_id, BBN1_block->number, srcp_default);
       GetPointer<gimple_assign>(GET_NODE(pp_ga_ind))->temporary_address = true;
       const auto vd_ind = GetPointer<gimple_assign>(GET_NODE(pp_ga_ind))->op0;
       const auto vd_ind_use_set = PointToSolutionRef(new PointToSolution());
       vd_ind_use_set->Add(TM->GetTreeReindex(var));
       GetPointer<ssa_name>(GET_NODE(vd_ind))->use_set = vd_ind_use_set;
       gp->AddDefEdge(TM, gimple_phi::DefEdge(vd_ind, BBN1_block->number));
-      BBN1_block->PushBack(pp_ga_ind);
+      BBN1_block->PushBack(pp_ga_ind, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create statement " + GET_NODE(pp_ga_ind)->ToString());
 
       /// the comparison
       const auto boolean_type = tree_man->create_boolean_type();
       const auto comparison = tree_man->create_binary_operation(boolean_type, vd_ind, vd_limit, srcp_default, ne_expr_K);
-      const auto comp_ga = tree_man->CreateGimpleAssign(boolean_type, TM->CreateUniqueIntegerCst(0, type_index), TM->CreateUniqueIntegerCst(1, type_index), comparison, BBN1_block->number, srcp_default);
-      BBN1_block->PushBack(comp_ga);
+      const auto comp_ga = tree_man->CreateGimpleAssign(boolean_type, TM->CreateUniqueIntegerCst(0, type_index), TM->CreateUniqueIntegerCst(1, type_index), comparison, function_id, BBN1_block->number, srcp_default);
+      BBN1_block->PushBack(comp_ga, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create comparison " + STR(comp_ga));
 
       /// the gimple cond
       const auto comp_res = GetPointer<gimple_assign>(GET_NODE(comp_ga))->op0;
-      const auto gc = tree_man->create_gimple_cond(comp_res, srcp_default, BBN1_block->number);
+      const auto gc = tree_man->create_gimple_cond(comp_res, function_id, srcp_default, BBN1_block->number);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create branch condition " + STR(gc));
 
       /// restructure of the implicit memset statement
@@ -429,8 +430,8 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             auto tmp_it = statement;
             ++tmp_it;
             /// Moving statement
-            BB1_block->RemoveStmt(temp_statement);
-            BBN1_block->PushBack(temp_statement);
+            BB1_block->RemoveStmt(temp_statement, AppM);
+            BBN1_block->PushBack(temp_statement, AppM);
             /// Going one step back since pointer is already increment in for loop
             --tmp_it;
             statement = tmp_it;
@@ -443,17 +444,17 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             auto tmp_it = statement;
             ++tmp_it;
             /// Moving statement
-            BB1_block->RemoveStmt(temp_statement);
-            BBN2_block->PushBack(temp_statement);
+            BB1_block->RemoveStmt(temp_statement, AppM);
+            BBN2_block->PushBack(temp_statement, AppM);
             /// Going one step back since pointer is already increment in for loop
             --tmp_it;
             statement = tmp_it;
          }
       }
       THROW_ASSERT(found_memset_statement, "unexpected condition");
-      BB1_block->PushBack(nop_init_var_ga);
-      BB1_block->PushBack(pp_ga);
-      BBN1_block->PushBack(gc);
+      BB1_block->PushBack(nop_init_var_ga, AppM);
+      BB1_block->PushBack(pp_ga, AppM);
+      BBN1_block->PushBack(gc, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed " + STR(stmt_bb_pair.first));
    }
    if(debug_level >= DEBUG_LEVEL_PEDANTIC && parameters->getOption<bool>(OPT_print_dot))
@@ -541,12 +542,12 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
    else if(rhs_kind == string_cst_K)
    {
       // compute src param
-      const auto memcpy_src_ga = tree_man->CreateGimpleAssignAddrExpr(rhs_node, ga->bb_index, current_srcp);
+      const auto memcpy_src_ga = tree_man->CreateGimpleAssignAddrExpr(rhs_node, function_id, ga->bb_index, current_srcp);
       // push the new gimple_assign with lhs = addr_expr(param_decl) before the call
       THROW_ASSERT(not sl->list_of_bloc.empty(), "");
       THROW_ASSERT(sl->list_of_bloc.find(ga->bb_index) != sl->list_of_bloc.end(), "");
       const auto block = sl->list_of_bloc.at(ga->bb_index);
-      block->PushBefore(memcpy_src_ga, stmt);
+      block->PushBefore(memcpy_src_ga, stmt, AppM);
       // push back src param
       const auto new_ga = GetPointer<const gimple_assign>(GET_CONST_NODE(memcpy_src_ga));
       args.push_back(new_ga->op0);
@@ -569,12 +570,12 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
    else // rhs_kind == parm_decl_K
    {
       // compute src param
-      const auto memcpy_src_ga = tree_man->CreateGimpleAssignAddrExpr(rhs_node, ga->bb_index, current_srcp);
+      const auto memcpy_src_ga = tree_man->CreateGimpleAssignAddrExpr(rhs_node, function_id, ga->bb_index, current_srcp);
       // push the new gimple_assign with lhs = addr_expr(param_decl) before the call
       THROW_ASSERT(not sl->list_of_bloc.empty(), "");
       THROW_ASSERT(sl->list_of_bloc.find(ga->bb_index) != sl->list_of_bloc.end(), "");
       const auto block = sl->list_of_bloc.at(ga->bb_index);
-      block->PushBefore(memcpy_src_ga, stmt);
+      block->PushBefore(memcpy_src_ga, stmt, AppM);
       // push back src param
       const auto new_ga = GetPointer<const gimple_assign>(GET_CONST_NODE(memcpy_src_ga));
       args.push_back(new_ga->op0);
@@ -595,7 +596,7 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
       THROW_ASSERT(src_size % 8 == 0, "");
       copy_byte_size = src_size / 8;
    }
-   THROW_ASSERT(copy_byte_size <= std::numeric_limits<long long>::max(), "");
+   THROW_ASSERT(copy_byte_size <= std::numeric_limits<unsigned long int>::max(), "");
 
    const auto memcpy_function_id = TM->function_index(MEMCPY);
    // add size to arguments
@@ -603,13 +604,12 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
    const auto formal_type_node = TM->CGetTreeReindex(size_formal_type_id);
    args.push_back(tree_man->CreateIntegerCst(formal_type_node, static_cast<long long>(copy_byte_size), TM->new_tree_node_id()));
    // create the new gimple call
-   const auto new_gimple_call = tree_man->create_gimple_call(TM->CGetTreeReindex(memcpy_function_id), args, current_srcp, ga->bb_index);
+   const auto new_gimple_call = tree_man->create_gimple_call(TM->CGetTreeReindex(memcpy_function_id), args, function_id, current_srcp, ga->bb_index);
    // replace the gimple_assign with the new gimple_call
    THROW_ASSERT(not sl->list_of_bloc.empty(), "");
    THROW_ASSERT(sl->list_of_bloc.find(ga->bb_index) != sl->list_of_bloc.end(), "");
    const auto block = sl->list_of_bloc.at(ga->bb_index);
-   block->Replace(stmt, new_gimple_call, true);
-   AppM->GetCallGraphManager()->AddCallPoint(function_id, memcpy_function_id, GET_INDEX_NODE(new_gimple_call), FunctionEdgeInfo::CallType::direct_call);
+   block->Replace(stmt, new_gimple_call, true, AppM);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced hidden call " + STR(ga) + " with call " + STR(new_gimple_call) + " id: " + STR(new_gimple_call->index));
 }
@@ -650,19 +650,18 @@ void compute_implicit_calls::replace_with_memset(tree_nodeRef stmt, const statem
    const auto dst_size = tree_helper::Size(dst_ptr_t->ptd);
    THROW_ASSERT(dst_size % 8U == 0, "");
    copy_byte_size = dst_size / 8U;
-   THROW_ASSERT(copy_byte_size <= std::numeric_limits<long long>::max(), "");
+   THROW_ASSERT(copy_byte_size <= std::numeric_limits<unsigned long int>::max(), "");
 
    // add size to arguments
    const auto size_formal_type_id = tree_helper::get_formal_ith(TM, memset_function_id, 2);
    args.push_back(tree_man->CreateIntegerCst(TM->CGetTreeReindex(size_formal_type_id), static_cast<long long>(copy_byte_size), TM->new_tree_node_id()));
    // create the new gimple call
-   const auto new_gimple_call = tree_man->create_gimple_call(TM->CGetTreeReindex(memset_function_id), args, current_srcp, ga->bb_index);
+   const auto new_gimple_call = tree_man->create_gimple_call(TM->CGetTreeReindex(memset_function_id), args, function_id, current_srcp, ga->bb_index);
    // replace the gimple_assign with the new gimple_call
    THROW_ASSERT(not sl->list_of_bloc.empty(), "");
    THROW_ASSERT(sl->list_of_bloc.find(ga->bb_index) != sl->list_of_bloc.end(), "");
    const auto block = sl->list_of_bloc.at(ga->bb_index);
-   block->Replace(stmt, new_gimple_call, true);
-   AppM->GetCallGraphManager()->AddCallPoint(function_id, memset_function_id, GET_INDEX_NODE(new_gimple_call), FunctionEdgeInfo::CallType::direct_call);
+   block->Replace(stmt, new_gimple_call, true, AppM);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Replaced hidden call " + STR(ga) + " with call " + STR(new_gimple_call) + " id: " + STR(new_gimple_call->index));
 }

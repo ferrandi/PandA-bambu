@@ -116,11 +116,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
 #endif
          break;
       }
       case(DEPENDENCE_RELATIONSHIP):
+      {
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         break;
+      }
       case(INVALIDATION_RELATIONSHIP):
       {
          break;
@@ -1075,9 +1079,5 @@ void CheckSystemType::getRealInclName(const std::string& include, std::string& r
 
 bool CheckSystemType::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return not already_executed;
 }
