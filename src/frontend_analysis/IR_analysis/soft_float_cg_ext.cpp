@@ -1180,7 +1180,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
       spec_function_id = GET_INDEX_CONST_NODE(spec_func);
       THROW_ASSERT(spec_function_id, "Error cloning function " FLOAT_CAST_FU_NAME " (" + STR(float_cast_id) + ").");
    }
-   const auto args = {
+   const std::vector<tree_nodeRef> args = {
        ssa,
        TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bits), int_type_index),
        TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->frac_bits), int_type_index),
