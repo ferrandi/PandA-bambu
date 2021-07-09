@@ -696,7 +696,7 @@ class tree_manipulation
     * @param CGM call graph manager instance
     * @return unsigned int exit basic block number where statements after inlined call have been moved
     */
-   unsigned int InlineFunctionCall(const tree_nodeRef& call_stmt, const blocRef& block, function_decl* fd, const CallGraphManagerRef& CGM);
+   unsigned int InlineFunctionCall(const tree_nodeRef& call_stmt, const blocRef& block, function_decl* fd);
 };
 
 using tree_manipulationRef = refcount<tree_manipulation>;

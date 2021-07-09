@@ -2654,7 +2654,7 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
    return TreeM->GetTreeReindex(new_functionDecl);
 }
 
-unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt, const blocRef& block, function_decl* fd, const CallGraphManagerRef& CGM)
+unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt, const blocRef& block, function_decl* fd)
 {
    THROW_ASSERT(call_stmt->get_kind() == tree_reindex_K, "");
    const auto call_node = GET_CONST_NODE(call_stmt);
@@ -2821,6 +2821,5 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       splitBB->AddPhi(ret_phi);
       TreeM->ReplaceTreeNode(ret_phi, phi_res, ret_val);
    }
-   CGM->RemoveCallPoint(fd->index, GET_INDEX_CONST_NODE(fn), call_node->index);
    return splitBB->number;
 }

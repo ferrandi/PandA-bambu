@@ -1988,6 +1988,8 @@ src/frontend_analysis/IR_analysis/CSE.cpp
 src/frontend_analysis/IR_analysis/CSE.hpp
 src/frontend_analysis/IR_analysis/FixStructsPassedByValue.cpp
 src/frontend_analysis/IR_analysis/FixStructsPassedByValue.hpp
+src/frontend_analysis/IR_analysis/FunctionCallInline.cpp
+src/frontend_analysis/IR_analysis/FunctionCallInline.hpp
 src/frontend_analysis/IR_analysis/FunctionCallTypeCleanup.cpp
 src/frontend_analysis/IR_analysis/FunctionCallTypeCleanup.hpp
 src/frontend_analysis/IR_analysis/HWCallInjection.cpp

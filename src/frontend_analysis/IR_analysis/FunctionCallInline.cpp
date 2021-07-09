@@ -76,26 +76,28 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, CALLED_FUNCTIONS));
-         relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, CALLED_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(CALL_GRAPH_BUILTIN_CALL, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
-         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, CALLED_FUNCTIONS));
+         if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
+         {
+            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
+         }
+         if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
+         {
+            relationships.insert(std::make_pair(HLS_DIV_CG_EXT, SAME_FUNCTION));
+         }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
-         {
-            relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
-            // relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         }
          break;
       }
       default:
@@ -189,7 +191,6 @@ DesignFlowStep_Status FunctionCallInline::InternalExec()
       return DesignFlowStep_Status::UNCHANGED;
    }
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
-   const auto CGM = AppM->GetCallGraphManager();
    for(const auto& stmt_id : inline_stmts)
    {
       const auto stmt = TM->CGetTreeReindex(stmt_id);
@@ -203,7 +204,7 @@ DesignFlowStep_Status FunctionCallInline::InternalExec()
             if(std::find_if(bb->CGetStmtList().cbegin(), bb->CGetStmtList().cend(), [&](const tree_nodeRef& tn) { return GET_INDEX_CONST_NODE(tn) == stmt_id; }) != bb->CGetStmtList().cend())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inlining required for call statement " + GET_CONST_NODE(stmt)->ToString());
-               tree_man->InlineFunctionCall(stmt, bb, fd, CGM);
+               tree_man->InlineFunctionCall(stmt, bb, fd);
             }
             else
             {

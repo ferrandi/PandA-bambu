@@ -202,6 +202,11 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SOFT_FLOAT_CG_EXT, WHOLE_APPLICATION));
          }
+         if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
+         {
+            relationships.insert(std::make_pair(HLS_DIV_CG_EXT, SAME_FUNCTION));
+         }
+         relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
