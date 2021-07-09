@@ -2685,7 +2685,6 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       fn = GetPointerS<const unary_expr>(GET_CONST_NODE(fn))->op;
    }
    THROW_ASSERT(GET_CONST_NODE(fn)->get_kind() == function_decl_K, "Call statement should address a function declaration");
-   THROW_ASSERT(CGM->IsCallPoint(fd->index, GET_INDEX_CONST_NODE(fn), call_node->index, FunctionEdgeInfo::CallType::call_any), "Inline call statement should be a call point");
 
    auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
    const auto splitBBI = sl->list_of_bloc.rbegin()->first + 1;
@@ -2722,10 +2721,10 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       {
          const auto mv_stmt = *it;
          ++it;
-         block->RemoveStmt(mv_stmt);
-         splitBB->PushBack(mv_stmt);
+         block->RemoveStmt(mv_stmt, AppM);
+         splitBB->PushBack(mv_stmt, AppM);
       }
-      block->RemoveStmt(call_stmt);
+      block->RemoveStmt(call_stmt, AppM);
    }
 
    const auto max_loop_id = [&]() {
@@ -2806,7 +2805,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
                const auto gr = GetPointerS<const gimple_return>(GET_CONST_NODE(stmt));
                list_of_def_edge.push_back(std::make_pair(gr->op, bb->number));
             }
-            bb->RemoveStmt(stmt);
+            bb->RemoveStmt(stmt, AppM);
          }
       }
    }
@@ -2815,7 +2814,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
    {
       THROW_ASSERT(!list_of_def_edge.empty(), "");
       tree_nodeRef phi_res;
-      const auto ret_phi = create_phi_node(phi_res, list_of_def_edge, TreeM->GetTreeReindex(fd->index), splitBB->number);
+      const auto ret_phi = create_phi_node(phi_res, list_of_def_edge, fd->index, splitBB->number);
       auto gp = GetPointer<gimple_phi>(GET_NODE(ret_phi));
       gp->artificial = true;
       gp->SetSSAUsesComputed();

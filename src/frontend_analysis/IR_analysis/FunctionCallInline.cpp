@@ -108,7 +108,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool FunctionCallInline::HasToBeExecuted() const
 {
-   return !parameters->IsParameter("no-inline") && FunctionFrontendFlowStep::HasToBeExecuted0() && FunctionFrontendFlowStep::HasToBeExecuted();
+   return !parameters->IsParameter("no-inline") && FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 DesignFlowStep_Status FunctionCallInline::InternalExec()
@@ -188,7 +188,7 @@ DesignFlowStep_Status FunctionCallInline::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       return DesignFlowStep_Status::UNCHANGED;
    }
-   tree_manipulationRef tree_man(new tree_manipulation(TM, parameters));
+   tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
    const auto CGM = AppM->GetCallGraphManager();
    for(const auto& stmt_id : inline_stmts)
    {
