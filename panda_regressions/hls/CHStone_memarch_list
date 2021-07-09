@@ -1,2 +1,39 @@
-CHStone/blowfish/bf.c
-CHStone/gsm/gsm.c
+CHStone/blowfish/bf.c --device-name=xc7z020-1clg484
+CHStone/blowfish/bf.c --device-name=xc5vlx50-3ff1153
+CHStone/blowfish/bf.c --device-name=xc5vlx110t-1ff1136
+CHStone/blowfish/bf.c --device-name=xc5vlx330t-2ff1738
+CHStone/blowfish/bf.c --device-name=xc6vlx240t-1ff1156
+CHStone/blowfish/bf.c --device-name=xc7vx330t-1ffg1157
+CHStone/blowfish/bf.c --device-name=xc7z020-1clg484-VVD
+CHStone/blowfish/bf.c --device-name=xc7vx485t-2ffg1761-VVD
+CHStone/blowfish/bf.c --device-name=xc7vx690t-3ffg1930-VVD
+CHStone/blowfish/bf.c --device-name=xc7a100t-1csg324-VVD
+CHStone/blowfish/bf.c --device-name=xc4vlx100-10ff1513
+CHStone/blowfish/bf.c --device-name=LFE335EA8FN484C
+CHStone/blowfish/bf.c --device-name=5CSEMA5F31C6
+CHStone/blowfish/bf.c --device-name=5SGXEA7N2F45C1
+CHStone/blowfish/bf.c --device-name=EP4SGX530KH40C2
+CHStone/blowfish/bf.c --device-name=EP2C70F896C6
+CHStone/blowfish/bf.c --device-name=EP2C70F896C6-R
+CHStone/blowfish/bf.c --device-name=nx1h35S
+CHStone/blowfish/bf.c --device-name=nx1h140tsp
+
+CHStone/gsm/gsm.c --device-name=xc7z020-1clg484
+CHStone/gsm/gsm.c --device-name=xc5vlx50-3ff1153
+CHStone/gsm/gsm.c --device-name=xc5vlx110t-1ff1136
+CHStone/gsm/gsm.c --device-name=xc5vlx330t-2ff1738
+CHStone/gsm/gsm.c --device-name=xc6vlx240t-1ff1156
+CHStone/gsm/gsm.c --device-name=xc7vx330t-1ffg1157
+CHStone/gsm/gsm.c --device-name=xc7z020-1clg484-VVD
+CHStone/gsm/gsm.c --device-name=xc7vx485t-2ffg1761-VVD
+CHStone/gsm/gsm.c --device-name=xc7vx690t-3ffg1930-VVD
+CHStone/gsm/gsm.c --device-name=xc7a100t-1csg324-VVD
+CHStone/gsm/gsm.c --device-name=xc4vlx100-10ff1513
+CHStone/gsm/gsm.c --device-name=LFE335EA8FN484C
+CHStone/gsm/gsm.c --device-name=5CSEMA5F31C6
+CHStone/gsm/gsm.c --device-name=5SGXEA7N2F45C1
+CHStone/gsm/gsm.c --device-name=EP4SGX530KH40C2
+CHStone/gsm/gsm.c --device-name=EP2C70F896C6
+CHStone/gsm/gsm.c --device-name=EP2C70F896C6-R
+CHStone/gsm/gsm.c --device-name=nx1h35S
+CHStone/gsm/gsm.c --device-name=nx1h140tsp

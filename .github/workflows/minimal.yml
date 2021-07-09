@@ -173,16 +173,16 @@ jobs:
             args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR
           - setup: clang-4.0
             script: generic_gcc_regression_simple_default.sh
-            args: -c=--compiler=I386_CLANG4 -c=-wH -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM
           - setup: clang-5.0
             script: generic_gcc_regression_simple_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG5 -c=-wH -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
           - setup: clang-6.0
             script: generic_gcc_regression_simple_no_expose_globals.sh
-            args: -c=--compiler=I386_CLANG6 -c=-wH -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM
           - setup: clang-7
             script: generic_gcc_regression_simple_no_expose_globals.sh
-            args: -c=--compiler=I386_CLANG7 -c=-wH -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=MODELSIM
           - setup: clang-11
             script: generic_gcc_regression_simple_no_expose_globals.sh
             args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR
@@ -262,6 +262,49 @@ jobs:
         with:
           name: ${{env.outname}}
           path: ${{steps.grspp.outputs.test-reports-dir}}
+
+  gcc_regression_simple-vhdl:
+    needs: [build, specific-test]
+    runs-on: [self-hosted, mentor]
+    env:
+      setup: gcc-8
+      script: generic_gcc_regression_simple_no_expose_globals_vhdl.sh
+      args: -c=--compiler=I386_GCC8 -c=--simulator=MODELSIM -c=-wH
+      outname: gcc-8_regression_simple-vhdl
+      jobs: 14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download pre-installed Bambu binaries
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          path: ${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
+          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+      - name: Launch GCC regression test suite with pretty-print
+        id: grsvhdl
+        shell: bash
+        working-directory: ./panda_regressions/hls
+        run: |
+          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
+          export APPDIR=${{steps.setup.outputs.appdir}}
+          mkdir test-reports
+          echo "::set-output name=test-reports-dir::$PWD/test-reports"
+          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.grsvhdl.outputs.test-reports-dir}}
 
   discrepancy-test:
     needs: [build, specific-test]
@@ -402,7 +445,7 @@ jobs:
       matrix:
         include:
           - setup: gcc-4.9
-            args: -c=-wH -c=--compiler=I386_GCC49
+            args: -c=--compiler=I386_GCC49
           - setup: clang-4.0
             args: -c=--compiler=I386_CLANG4
           - setup: clang-5.0
@@ -415,7 +458,7 @@ jobs:
             args: -c=--compiler=I386_CLANG11
     env:
       script: generic_libm-tests.sh
-      args: -c=--simulator=MODELSIM
+      args: -c=--simulator=MODELSIM -c=--speculative-sdc-scheduling
       outname: ${{matrix.setup}}_libm
       jobs: 14
     steps:
@@ -452,21 +495,14 @@ jobs:
           name: ${{env.outname}}
           path: ${{steps.libm.outputs.test-reports-dir}}
 
-  CHStone-tests:
+  CHStone-multi:
     needs: [build]
     runs-on: [self-hosted, mentor]
-    strategy:
-      matrix:
-        include:
-          - setup: gcc-4.9
-            compiler: I386_GCC49
-          - setup: clang-4.0
-            compiler: I386_CLANG4
     env:
       jobs: 14
-      script: generic_CHStone-frontend.sh
+      script: multi_CHStone-frontend.sh
       args: -c=--simulator=MODELSIM
-      outname: ${{matrix.setup}}_CHStone-frontend
+      outname: multi_CHStone-frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -493,7 +529,56 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" -c=--compiler=${{matrix.compiler}} ${{env.args}}
+          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.chstone.outputs.test-reports-dir}}
+
+  CHStone-memarch:
+    needs: [build, CHStone-multi]
+    runs-on: [self-hosted, mentor]
+    strategy:
+      matrix:
+        include:
+          - setup: gcc-7-verilog
+            args: -c=--compiler=I386_GCC7
+          - setup: gcc-7-vhdl
+            args: -c=--compiler=I386_GCC7 -c=-wH
+    env:
+      jobs: 14
+      script: generic_CHStone-memarch.sh
+      args: -c=--simulator=MODELSIM
+      outname: ${{matrix.setup}}_CHStone-memarch
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download pre-installed Bambu binaries
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          path: ${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
+          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+      - name: Launch CHStone test suite
+        id: chstone
+        shell: bash
+        working-directory: ./panda_regressions/hls
+        run: |
+          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
+          export APPDIR=${{steps.setup.outputs.appdir}}
+          mkdir test-reports
+          echo "::set-output name=test-reports-dir::$PWD/test-reports"
+          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
