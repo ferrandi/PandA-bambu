@@ -80,60 +80,63 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ADD_ARTIFICIAL_CALL_FLOW_EDGES, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ADD_OP_EXIT_FLOW_EDGES, WHOLE_APPLICATION));
-         //            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ADD_OP_LOOP_FLOW_EDGES, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CALL_EXPR_FIX, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FIX_STRUCTS_PASSED_BY_VALUE, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FUNCTION_CALL_INLINE, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FUNCTION_CALL_TYPE_CLEANUP, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CHECK_SYSTEM_TYPE, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_CONTROL_DEPENDENCE_COMPUTATION, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LUT_TRANSFORMATION, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SCALAR_SSA_DATA_FLOW_ANALYSIS, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(AGGREGATE_DATA_FLOW_ANALYSIS, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PREDICATE_STATEMENTS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(ADD_ARTIFICIAL_CALL_FLOW_EDGES, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(ADD_OP_EXIT_FLOW_EDGES, WHOLE_APPLICATION));
+         //            relationships.insert(std::make_pair(ADD_OP_LOOP_FLOW_EDGES, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(BLOCK_FIX, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(CALL_EXPR_FIX, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, WHOLE_APPLICATION));
+         if(!parameters->IsParameter("no-inline"))
+         {
+            relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, WHOLE_APPLICATION));
+         }
+         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(CHECK_SYSTEM_TYPE, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(OP_CONTROL_DEPENDENCE_COMPUTATION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(IR_LOWERING, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(LUT_TRANSFORMATION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(SCALAR_SSA_DATA_FLOW_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(AGGREGATE_DATA_FLOW_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(SWITCH_FIX, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(PREDICATE_STATEMENTS, WHOLE_APPLICATION));
 #if HAVE_EXPERIMENTAL
          if(parameters->getOption<bool>(OPT_speculative))
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPECULATION_EDGES_COMPUTATION, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(SPECULATION_EDGES_COMPUTATION, WHOLE_APPLICATION));
          if(parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR)
          {
             // Silvia: this is the transformation to disable for testing
-            // relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPLIT_PHINODES, WHOLE_APPLICATION));
-            // relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VIRTUAL_PHI_NODES_SPLIT, WHOLE_APPLICATION));
+            // relationships.insert(std::make_pair(SPLIT_PHINODES, WHOLE_APPLICATION));
+            // relationships.insert(std::make_pair(VIRTUAL_PHI_NODES_SPLIT, WHOLE_APPLICATION));
             if(parameters->isOption(OPT_chaining) and parameters->getOption<bool>(OPT_chaining))
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PARALLEL_REGIONS_GRAPH_COMPUTATION, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTENDED_PDG_COMPUTATION, WHOLE_APPLICATION));
+               relationships.insert(std::make_pair(PARALLEL_REGIONS_GRAPH_COMPUTATION, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(EXTENDED_PDG_COMPUTATION, WHOLE_APPLICATION));
             if(parameters->isOption("pdg-reduction") and parameters->getOption<bool>("pdg-reduction"))
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REDUCED_PDG_COMPUTATION, WHOLE_APPLICATION));
+               relationships.insert(std::make_pair(REDUCED_PDG_COMPUTATION, WHOLE_APPLICATION));
          }
          else
          {
             if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, WHOLE_APPLICATION));
+               relationships.insert(std::make_pair(MULTI_WAY_IF, WHOLE_APPLICATION));
          }
 #else
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MULTI_WAY_IF, WHOLE_APPLICATION));
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, WHOLE_APPLICATION));
 #if HAVE_ILP_BUILT
          if((parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ADD_OP_PHI_FLOW_EDGES, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMMUTATIVE_EXPR_RESTRUCTURING, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_ENDING_IF, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(ADD_OP_PHI_FLOW_EDGES, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(SDC_CODE_MOTION, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(COMMUTATIVE_EXPR_RESTRUCTURING, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(COND_EXPR_RESTRUCTURING, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(REMOVE_ENDING_IF, WHOLE_APPLICATION));
          }
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_CLOBBER_GA, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPLIT_RETURN, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(SPLIT_RETURN, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(PHI_OPT, WHOLE_APPLICATION));
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             if(parameters->isOption(OPT_bitvalue_ipa) && parameters->getOption<bool>(OPT_bitvalue_ipa))
@@ -141,72 +144,71 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                relationships.insert(std::make_pair(BIT_VALUE_IPA, WHOLE_APPLICATION));
             }
             relationships.insert(std::make_pair(BIT_VALUE, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(RANGE_ANALYSIS, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT2, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(BIT_VALUE_OPT, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(BIT_VALUE_OPT2, WHOLE_APPLICATION));
          }
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTIPLE_ENTRY_IF_REDUCTION, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REBUILD_INITIALIZATION, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REBUILD_INITIALIZATION2, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PARM2SSA, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(STRING_CST_FIX, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(NI_SSA_LIVENESS, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MULTIPLE_ENTRY_IF_REDUCTION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(REBUILD_INITIALIZATION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(REBUILD_INITIALIZATION2, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(PARM2SSA, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(STRING_CST_FIX, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(NI_SSA_LIVENESS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(CSE_STEP, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FANOUT_OPT, WHOLE_APPLICATION));
 #if HAVE_PRAGMA_BUILT
          if((parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma)) or parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PRAGMA_SUBSTITUTION, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PRAGMA_ANALYSIS, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(PRAGMA_SUBSTITUTION, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(PRAGMA_ANALYSIS, WHOLE_APPLICATION));
          }
          if(parameters->getOption<int>(OPT_parse_pragma))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_ATOMIC, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_FOR, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(EXTRACT_OMP_ATOMIC, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(EXTRACT_OMP_FOR, WHOLE_APPLICATION));
 #if HAVE_EXPERIMENTAL
             if(not parameters->isOption(OPT_context_switch))
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UNROLL_LOOPS, WHOLE_APPLICATION));
+               relationships.insert(std::make_pair(UNROLL_LOOPS, WHOLE_APPLICATION));
             }
 #endif
          }
          if(parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(VECTORIZE, WHOLE_APPLICATION));
          }
 #endif
 #if HAVE_HOST_PROFILING_BUILT
          if(parameters->getOption<HostProfiling_Method>(OPT_profiling_method) != HostProfiling_Method::PM_NONE)
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HOST_PROFILING, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(HOST_PROFILING, WHOLE_APPLICATION));
          }
 #endif
          const auto hdl_writer_type = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
          if(hdl_writer_type == HDLWriter_Language::VHDL)
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HDL_FUNCTION_DECL_FIX, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(HDL_FUNCTION_DECL_FIX, WHOLE_APPLICATION));
          }
 #if HAVE_TASTE
          if(parameters->getOption<bool>(OPT_generate_taste_architecture))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_ADDRESS_TRANSLATION, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(CREATE_ADDRESS_TRANSLATION, WHOLE_APPLICATION));
          }
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(INTERFACE_INFER, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
          if(parameters->isOption(OPT_soft_float) and parameters->getOption<bool>(OPT_soft_float))
          {
             relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SOFT_FLOAT_CG_EXT, WHOLE_APPLICATION));
          }
          if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
          {
-            relationships.insert(std::make_pair(HLS_DIV_CG_EXT, SAME_FUNCTION));
+            relationships.insert(std::make_pair(HLS_DIV_CG_EXT, WHOLE_APPLICATION));
          }
-         relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

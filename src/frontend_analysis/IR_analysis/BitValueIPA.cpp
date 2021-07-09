@@ -160,6 +160,7 @@ bool BitValueIPA::HasToBeExecuted() const
 
 DesignFlowStep_Status BitValueIPA::Exec()
 {
+   THROW_ASSERT(parameters->isOption(OPT_bitvalue_ipa) && parameters->getOption<bool>(OPT_bitvalue_ipa), "Bit value IPA should not be executed");
    if(not AppM->ApplyNewTransformation())
    {
       return DesignFlowStep_Status::UNCHANGED;

@@ -416,12 +416,13 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool soft_float_cg_ext::HasToBeExecuted() const
 {
-   static const bool is_enabled = parameters->getOption<bool>(OPT_soft_float);
-   return is_enabled && FunctionFrontendFlowStep::HasToBeExecuted() && !modified;
+   return bb_version != 0 && FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 {
+   THROW_ASSERT(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float), "Floating-point lowering should not be executed");
+
    static const auto ff_already_propagated = parameters->isOption(OPT_propagate_fp_format) && parameters->getOption<bool>(OPT_propagate_fp_format);
    // Check if current function needs IO fp format interface (avoid check if fp format propagation has already been computed)
    if(!ff_already_propagated && !_version->ieee_format())

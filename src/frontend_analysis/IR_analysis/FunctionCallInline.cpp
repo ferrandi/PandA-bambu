@@ -110,11 +110,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool FunctionCallInline::HasToBeExecuted() const
 {
-   return !parameters->IsParameter("no-inline") && FunctionFrontendFlowStep::HasToBeExecuted();
+   return FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 DesignFlowStep_Status FunctionCallInline::InternalExec()
 {
+   THROW_ASSERT(!parameters->IsParameter("no-inline"), "Function call inlining should not be executed");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    bool need_execution = static_cast<bool>(inline_call.count(function_id));
    if(!need_execution)

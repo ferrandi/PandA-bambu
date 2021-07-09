@@ -76,7 +76,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
          }
-         relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, ALL_FUNCTIONS));
+         if(!parameters->IsParameter("no-inline"))
+         {
+            relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, ALL_FUNCTIONS));
+         }
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          break;
       }
