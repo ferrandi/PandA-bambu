@@ -693,7 +693,6 @@ class tree_manipulation
     * @param call_stmt call statement to inline
     * @param block block containing the call statement (list_of_stmts is modified during the call)
     * @param fd function declaration of the calling function (body->list_of_bloc is modified during the call)
-    * @param CGM call graph manager instance
     * @return unsigned int exit basic block number where statements after inlined call have been moved
     */
    unsigned int InlineFunctionCall(const tree_nodeRef& call_stmt, const blocRef& block, function_decl* fd);
