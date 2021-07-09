@@ -144,8 +144,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       fd(GetPointer<function_decl>(TreeM->GetTreeNode(function_id))),
       isTopFunction(AppM->CGetCallGraphManager()->GetRootFunctions().count(function_id)),
       bindingCompleted(fd->list_of_args.size() == 0),
-      paramBinding(fd->list_of_args.size(), nullptr),
-      modified(false)
+      paramBinding(fd->list_of_args.size(), nullptr)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 
@@ -416,7 +415,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool soft_float_cg_ext::HasToBeExecuted() const
 {
-   return bb_version != 0 && FunctionFrontendFlowStep::HasToBeExecuted();
+   return bb_version == 0 && FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 DesignFlowStep_Status soft_float_cg_ext::InternalExec()
@@ -458,20 +457,20 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---IO interface is " + STR((_version->ieee_format() || _version->internal) ? "not " : "") + "necessary");
 
    const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
-   modified = false;
+   bool modified = false;
 
    for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Update recursively BB" + STR(block.first));
       for(const auto& phi : block.second->CGetPhiList())
       {
-         RecursiveExaminate(phi, phi, INTERFACE_TYPE_NONE);
+         modified |= RecursiveExaminate(phi, phi, INTERFACE_TYPE_NONE);
       }
 
       // RecursiveExaminate could add statements to the statements list, thus it is necessary to iterate over a static copy of the initial statement list
       for(const auto& stmt : block.second->CGetStmtList())
       {
-         RecursiveExaminate(stmt, stmt, INTERFACE_TYPE_NONE);
+         modified |= RecursiveExaminate(stmt, stmt, INTERFACE_TYPE_NONE);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Updated recursively BB" + STR(block.first));
    }
@@ -789,7 +788,6 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       function_behavior->UpdateBBVersion();
       return DesignFlowStep_Status::SUCCESS;
    }
-   modified = true;
    return DesignFlowStep_Status::UNCHANGED;
 }
 
@@ -1302,7 +1300,7 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
    THROW_ASSERT(res.second || res.first->second->compare(*calledFF, true) == 0, "Same function registered with different formats: " + res.first->second->ToString() + " and " + calledFF->ToString() + " (" + fu_name + ")");
 }
 
-void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, int type_interface)
+bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, int type_interface)
 {
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    THROW_ASSERT((type_interface & 3) == INTERFACE_TYPE_NONE || (type_interface & 3) == INTERFACE_TYPE_INPUT || (type_interface & 3) == INTERFACE_TYPE_OUTPUT, "Required interface type must be unique (" + STR(type_interface) + ")");
@@ -1316,6 +1314,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       }
       return "";
    }();
+   bool modified = false;
    const auto is_internal_call = [&](const tree_nodeRef& fn) -> bool {
       static const auto mcpy_id = TreeM->function_index(MEMCPY);
       static const auto mset_id = TreeM->function_index(MEMSET);
@@ -2353,5 +2352,5 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated recursively (" + STR(current_tree_node->index) + ") " + STR(current_tree_node));
-   return;
+   return modified;
 }
