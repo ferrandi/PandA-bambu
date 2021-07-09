@@ -7062,25 +7062,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case INVALIDATION_RELATIONSHIP:
       {
-         if(GetStatus() != DesignFlowStep_Status::SUCCESS && !parameters->getOption<int>(OPT_gcc_openmp_simd))
-         {
-            const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
-            for(const auto i : CGMan->GetReachedBodyFunctions())
-            {
-               const auto update_BV = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_OPT, i));
-               if(update_BV)
-               {
-                  const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-                  const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_BV)->design_flow_step;
-                  if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != AppM->CGetFunctionBehavior(i)->GetBBVersion() &&
-                     GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->GetBitValueVersion() != AppM->CGetFunctionBehavior(i)->GetBitValueVersion())
-                  {
-                     relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
-                     break;
-                  }
-               }
-            }
-         }
          break;
       }
       default:
@@ -7126,23 +7107,6 @@ bool RangeAnalysis::HasToBeExecuted() const
    std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    std::map<unsigned int, unsigned int> cur_bb_ver;
    const auto CGMan = AppM->CGetCallGraphManager();
-   if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-   {
-      for(const auto i : CGMan->GetReachedBodyFunctions())
-      {
-         const auto update_BVO = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_OPT, i));
-         if(update_BVO)
-         {
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_BVO)->design_flow_step;
-            if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != AppM->CGetFunctionBehavior(i)->GetBBVersion() &&
-               GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->GetBitValueVersion() != AppM->CGetFunctionBehavior(i)->GetBitValueVersion())
-            {
-               return false;
-            }
-         }
-      }
-   }
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const auto FB = AppM->CGetFunctionBehavior(i);
