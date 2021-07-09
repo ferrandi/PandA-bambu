@@ -49,7 +49,7 @@ class datapath_cs : public classic_datapath
    /**
     * Adds the input/output ports of the module
     */
-   void add_ports();
+   void add_ports() override;
 
  public:
    /**
@@ -61,6 +61,6 @@ class datapath_cs : public classic_datapath
    /**
     * Destructor.
     */
-   virtual ~datapath_cs();
+   virtual ~datapath_cs() override;
 };
 #endif

@@ -65,6 +65,7 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
+#include <boost/filesystem/operations.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <set>
@@ -1069,6 +1070,10 @@ std::tuple<std::string, unsigned int, unsigned int> tree_helper::get_definition(
       line_number = dn->line_number;
       column_number = dn->column_number;
       is_system = dn->operating_system_flag or dn->library_system_flag;
+   }
+   if(include_name != "<built-in>")
+   {
+      include_name = boost::filesystem::weakly_canonical(include_name).string();
    }
    return std::tuple<std::string, unsigned int, unsigned int>(include_name, line_number, column_number);
 }
@@ -7569,7 +7574,7 @@ unsigned int tree_helper::get_multi_way_if_pos(const tree_managerConstRef& TM, u
       }
       pos++;
    }
-   THROW_ERROR("cond not found in gimple_multi_way_if");
+   THROW_ERROR("cond not found in gimple_multi_way_if " + t->ToString() + " looked_for_cond " + STR(looked_for_cond));
    return pos;
 }
 

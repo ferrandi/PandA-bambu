@@ -53,6 +53,7 @@
 
 /// behavior includes
 #include "application_manager.hpp"
+#include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
 /// algorithm/dominance include
@@ -108,18 +109,27 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case DEPENDENCE_RELATIONSHIP:
       {
+         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION)); // To postpone the step as much as possible
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(BIT_VALUE_OPT, SAME_FUNCTION));
-         relationships.insert(std::make_pair(COMPLETE_BB_GRAPH, SAME_FUNCTION));
+         if(parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
+            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
+         }
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
+#endif
+         relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -171,7 +181,7 @@ DesignFlowStep_Status CSE::InternalExec()
    bool IR_changed = false;
    restart_phi_opt = false;
    size_t n_equiv_stmt = 0;
-   const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    /// define a map relating variables and columns
    std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>> unique_table;
 
@@ -286,20 +296,20 @@ DesignFlowStep_Status CSE::InternalExec()
                const auto ssa_vd = IRman->create_ssa_name(tree_nodeRef(), ga_op_type, tree_nodeRef(), tree_nodeRef());
                GetPointerS<ssa_name>(GET_NODE(ssa_vd))->use_set = ref_ssa->use_set;
                const auto srcp_default = ref_ga->include_name + ":" + STR(ref_ga->line_number) + ":" + STR(ref_ga->column_number);
-               const auto curr_ga = IRman->CreateGimpleAssign(ga_op_type, tree_nodeRef(), tree_nodeRef(), ssa_vd, ref_ga->bb_index, srcp_default);
+               const auto curr_ga = IRman->CreateGimpleAssign(ga_op_type, tree_nodeRef(), tree_nodeRef(), ssa_vd, function_id, ref_ga->bb_index, srcp_default);
                TM->ReplaceTreeNode(curr_ga, GetPointerS<const gimple_assign>(GET_CONST_NODE(curr_ga))->op0, ref_ga->op0);
                TM->ReplaceTreeNode(TM->GetTreeReindex(eq_tn->index), ref_ga->op0, ssa_vd);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updated old GA: " + ref_ga->ToString());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created new GA: " + curr_ga->ToString());
                if(B->number == ref_ga->bb_index)
                {
-                  B->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index));
+                  B->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index), AppM);
                }
                else
                {
                   THROW_ASSERT(inverse_vertex_map.find(ref_ga->bb_index) != inverse_vertex_map.end(), "unexpected condition");
                   THROW_ASSERT(bb_domGraph->CGetBBNodeInfo(inverse_vertex_map.at(ref_ga->bb_index)), "unexpected condition");
-                  bb_domGraph->CGetBBNodeInfo(inverse_vertex_map.at(ref_ga->bb_index))->block->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index));
+                  bb_domGraph->CGetBBNodeInfo(inverse_vertex_map.at(ref_ga->bb_index))->block->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index), AppM);
                }
             }
             if(!same_range && dead_ssa->min && dead_ssa->max && GET_CONST_NODE(ga_op_type)->get_kind() == integer_type_K)
@@ -328,7 +338,7 @@ DesignFlowStep_Status CSE::InternalExec()
       for(const auto& stmt : to_be_removed)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + GET_CONST_NODE(stmt)->ToString());
-         B->RemoveStmt(stmt);
+         B->RemoveStmt(stmt, AppM);
       }
       if(B->CGetStmtList().empty() && B->CGetPhiList().empty() && !to_be_removed.empty())
       {
@@ -463,6 +473,8 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* s
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked loads: null");
          return tree_nodeRef();
       }
+      /// we add as first parameter the bitwidth of ga->op0
+      ins.push_back(tree_helper::Size(ga->op0));
       /// We add type of right part; load from same address with different types must be considered different
       ins.push_back(tree_helper::CGetType(GET_CONST_NODE(ga->op1))->index);
 

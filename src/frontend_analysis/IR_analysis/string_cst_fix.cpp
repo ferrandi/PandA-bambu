@@ -451,7 +451,7 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          if(string_cst_map.find(GET_INDEX_NODE(tn)) == string_cst_map.end())
          {
             auto* sc = GetPointer<string_cst>(curr_tn);
-            const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+            const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
             const auto* type_sc = GetPointer<const type_node>(GET_NODE(sc->type));
             const std::string local_var_name = "__bambu_artificial_var_string_cst_" + STR(GET_INDEX_NODE(tn));
             auto local_var_identifier = tree_man->create_identifier_node(local_var_name);

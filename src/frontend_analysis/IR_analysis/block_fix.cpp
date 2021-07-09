@@ -184,7 +184,7 @@ DesignFlowStep_Status BlockFix::InternalExec()
 
    for(auto removing : to_be_removed)
    {
-      sl->list_of_bloc[removing.second]->RemoveStmt(removing.first);
+      sl->list_of_bloc[removing.second]->RemoveStmt(removing.first, AppM);
    }
 
    function_behavior->UpdateBBVersion();

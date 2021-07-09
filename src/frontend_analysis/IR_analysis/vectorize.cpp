@@ -105,7 +105,7 @@ std::string ToString(Transformation transformation)
 }
 
 Vectorize::Vectorize(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, VECTORIZE, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TM, _parameters))
+    : FunctionFrontendFlowStep(_AppM, _function_id, VECTORIZE, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TM, _parameters, _AppM))
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -819,11 +819,11 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
 #endif
          TM->ReplaceTreeNode(feedback_condition_sn->CGetDefStmt(), condition_to_be_duplicated, new_gc_cond->op0);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced condition in feedback guard computation " + STR(feedback_condition_def_stmt));
-         bb_graph->GetBBNodeInfo(*(loop->exit_block_iter_begin()))->block->PushBefore(TM->GetTreeReindex(new_cond_computation), feedback_condition_sn->CGetDefStmt());
+         bb_graph->GetBBNodeInfo(*(loop->exit_block_iter_begin()))->block->PushBefore(TM->GetTreeReindex(new_cond_computation), feedback_condition_sn->CGetDefStmt(), AppM);
       }
       else
       {
-         bb_graph->GetBBNodeInfo(*(loop->exit_block_iter_begin()))->block->PushBack(TM->GetTreeReindex(new_cond_computation));
+         bb_graph->GetBBNodeInfo(*(loop->exit_block_iter_begin()))->block->PushBack(TM->GetTreeReindex(new_cond_computation), AppM);
       }
       ClassifyTreeNode(loop_id, TM->get_tree_node_const(new_cond_computation));
    }
@@ -960,9 +960,9 @@ void Vectorize::AddGuards()
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_phi_schema;
          const auto gimple_phi_id = TM->new_tree_node_id();
          gimple_phi_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         gimple_phi_schema[TOK(TOK_SCPE)] = STR(function_id);
          gimple_phi_schema[TOK(TOK_TYPE)] = STR(boolean_type->index);
          gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
-         gimple_phi_schema[TOK(TOK_SCPE)] = STR(function_id);
          TM->create_tree_node(gimple_phi_id, gimple_phi_K, gimple_phi_schema);
          auto gp = GetPointer<gimple_phi>(TM->get_tree_node_const(gimple_phi_id));
          gp->SetSSAUsesComputed();
@@ -1013,14 +1013,14 @@ void Vectorize::AddGuards()
             const auto edge_condition = gc->op0;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Edge condition is " + STR(edge_condition));
             /// We cannot use CreateAndExpr to add the created statement since we need to add at the beginning of the current basic block instad of the end
-            const auto combined_condition = control_condition->index != true_value->index ? tree_man->CreateAndExpr(control_condition, edge_condition, blocRef()) : edge_condition;
+            const auto combined_condition = control_condition->index != true_value->index ? tree_man->CreateAndExpr(control_condition, edge_condition, blocRef(), function_id) : edge_condition;
             if(control_condition->index != true_value->index)
             {
-               bb_node_info->block->PushFront(GetPointer<const ssa_name>(GET_NODE(combined_condition))->CGetDefStmt());
+               bb_node_info->block->PushFront(GetPointer<const ssa_name>(GET_NODE(combined_condition))->CGetDefStmt(), AppM);
             }
             if(edge_condition != gc->op0)
             {
-               bb_node_info->block->PushFront(GetPointer<const ssa_name>(GET_NODE(edge_condition))->CGetDefStmt());
+               bb_node_info->block->PushFront(GetPointer<const ssa_name>(GET_NODE(edge_condition))->CGetDefStmt(), AppM);
             }
             condition_guards[controller] = combined_condition;
             guards[basic_block_id] = combined_condition;
@@ -1073,7 +1073,7 @@ void Vectorize::AddGuards()
                         THROW_ASSERT(gc, "");
                         const auto current_condition = guards.find(basic_block_id)->second;
                         const auto feedback_condition = gc->op0;
-                        const auto combined_condition = current_condition->index != true_value->index ? tree_man->CreateAndExpr(current_condition, feedback_condition, bb_node_info->block) : gc->op0;
+                        const auto combined_condition = current_condition->index != true_value->index ? tree_man->CreateAndExpr(current_condition, feedback_condition, bb_node_info->block, function_id) : gc->op0;
                         gp->AddDefEdge(TM, gimple_phi::DefEdge(combined_condition, basic_block_id));
                      }
                   }
@@ -1240,11 +1240,12 @@ void Vectorize::FixPhis()
             /// Create the assign
             const auto gimple_node_id = TM->new_tree_node_id();
             gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+            gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
             gimple_assign_schema[TOK(TOK_TYPE)] = STR(type->index);
             gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
             gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
             TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
-            fcfg_bb_graph->CGetBBNodeInfo(source)->block->PushBack(TM->GetTreeReindex(gimple_node_id));
+            fcfg_bb_graph->CGetBBNodeInfo(source)->block->PushBack(TM->GetTreeReindex(gimple_node_id), AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created gimple_assign " + TM->get_tree_node_const(gimple_node_id)->ToString());
             new_defs[source_id] = TM->GetTreeReindex(ssa_node_nid);
             gp->ReplaceDefEdge(TM, from_source, gimple_phi::DefEdge(TM->GetTreeReindex(ssa_node_nid), from_source.second));
@@ -1333,16 +1334,16 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
          }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_CLOBBER_GA, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          break;
       }
       default:
@@ -1431,7 +1432,7 @@ DesignFlowStep_Status Vectorize::InternalExec()
                   gimple_file.close();
                }
                const auto new_statement = DuplicateIncrement(bb_node_info->loop_id, GET_NODE(statement));
-               block->PushBefore(TM->GetTreeReindex(new_statement), statement);
+               block->PushBefore(TM->GetTreeReindex(new_statement), statement, AppM);
                ClassifyTreeNode(bb_node_info->loop_id, TM->get_tree_node_const(new_statement));
                transformations[new_statement] = INC;
                if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
@@ -1475,7 +1476,7 @@ DesignFlowStep_Status Vectorize::InternalExec()
          const auto& old_statement_list = block->CGetStmtList();
          while(old_statement_list.size())
          {
-            block->RemoveStmt(old_statement_list.front());
+            block->RemoveStmt(old_statement_list.front(), AppM);
          }
          /// Remove old phis
          const auto& old_phi_list = block->CGetPhiList();
@@ -1486,7 +1487,7 @@ DesignFlowStep_Status Vectorize::InternalExec()
          /// Add new statements
          for(const auto& new_stmt : new_statement_list)
          {
-            block->PushBack(new_stmt);
+            block->PushBack(new_stmt, AppM);
          }
          /// Add new phis
          for(const auto& new_phi : new_phi_list)
@@ -1545,6 +1546,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
          unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
          tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+         tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
          tree_node_schema[TOK(TOK_OP0)] = STR(Transform(gc->op0->index, parallel_degree, 1, new_stmt_list, new_phi_list));
          unsigned int new_tree_node_index = TM->new_tree_node_id();
          TM->create_tree_node(new_tree_node_index, gimple_cond_K, tree_node_schema);
@@ -1581,7 +1583,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             conditions.pop_front();
             const auto second_condition = conditions.front();
             conditions.pop_front();
-            const auto new_cond = tree_man->CreateOrExpr(first_condition, second_condition, blocRef());
+            const auto new_cond = tree_man->CreateOrExpr(first_condition, second_condition, blocRef(), function_id);
             new_stmt_list.push_back(GetPointer<const ssa_name>(GET_NODE(new_cond))->CGetDefStmt());
             conditions.push_back(new_cond);
          }
@@ -1589,6 +1591,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
          unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
          tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+         tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
          tree_node_schema[TOK(TOK_OP0)] = STR(conditions.front()->index);
          unsigned int new_tree_node_index = TM->new_tree_node_id();
          TM->create_tree_node(new_tree_node_index, gimple_cond_K, tree_node_schema);
@@ -1691,13 +1694,14 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      version_to_ssa[i] = ssa_tree_node_index;
 
                      gimple_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+                     gimple_tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
                      gimple_tree_node_schema[TOK(TOK_OP1)] = STR(plus_tree_node_index);
                      gimple_tree_node_schema[TOK(TOK_OP0)] = STR(ssa_tree_node_index);
                      unsigned int gimple_tree_node_index = TM->new_tree_node_id();
                      TM->create_tree_node(gimple_tree_node_index, gimple_assign_K, gimple_tree_node_schema);
 
                      THROW_ASSERT(previous_list_of_stmt.empty() or GET_NODE((*(previous_list_of_stmt.begin())))->get_kind() != gimple_cond_K, "");
-                     previous_block->PushBack(TM->GetTreeReindex(gimple_tree_node_index));
+                     previous_block->PushBack(TM->GetTreeReindex(gimple_tree_node_index), AppM);
                   }
                   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> constructor_tree_node_schema, gimple_tree_node_schema, ssa_tree_node_schema;
                   constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(tree_helper::CGetType(GET_NODE(gp->res))->index, parallel_degree, 0, new_stmt_list, new_phi_list));
@@ -1740,11 +1744,12 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
 
                   gimple_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+                  gimple_tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
                   gimple_tree_node_schema[TOK(TOK_OP1)] = STR(constructor_index);
                   gimple_tree_node_schema[TOK(TOK_OP0)] = STR(ssa_tree_node_index);
                   unsigned int gimple_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(gimple_tree_node_index, gimple_assign_K, gimple_tree_node_schema);
-                  previous_block->PushBack(TM->GetTreeReindex(gimple_tree_node_index));
+                  previous_block->PushBack(TM->GetTreeReindex(gimple_tree_node_index), AppM);
                   new_gp->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(ssa_tree_node_index), def_edge.second));
                }
                else
@@ -1810,6 +1815,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
 
             gimple_assign_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+            gimple_assign_tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
             gimple_assign_tree_node_schema[TOK(TOK_OP1)] = STR(bit_field_ref_index);
             gimple_assign_tree_node_schema[TOK(TOK_OP0)] = STR(Transform(gp->res->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
             unsigned int gimple_new_tree_node_index = TM->new_tree_node_id();
@@ -1829,6 +1835,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
          unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
          tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+         tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
          tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
          tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
          tree_node_schema[TOK(TOK_OP0)] = STR(Transform(ga->op0->index, parallel_degree, 0, new_stmt_list, new_phi_list));
@@ -1911,6 +1918,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
 
             gimple_assign_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+            gimple_assign_tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
             gimple_assign_tree_node_schema[TOK(TOK_OP1)] = STR(bit_field_ref_index);
             gimple_assign_tree_node_schema[TOK(TOK_OP0)] = STR(Transform(ga->op0->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
             unsigned int gimple_new_tree_node_index = TM->new_tree_node_id();
@@ -1935,14 +1943,6 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             case gimple_assign_K:
             {
                const auto* ga = GetPointer<const gimple_assign>(tn);
-               if(GET_CONST_NODE(ga->op1)->get_kind() == call_expr_K || GET_CONST_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
-               {
-                  const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
-                  THROW_ASSERT(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K, STR(ce->fn));
-                  const auto ae = GetPointer<const addr_expr>(GET_CONST_NODE(ce->fn));
-                  THROW_ASSERT(GET_CONST_NODE(ae->op)->get_kind() == function_decl_K, STR(ae->op));
-                  AppM->GetCallGraphManager()->RemoveCallPoint(function_id, ae->op->index, tn->index);
-               }
                CustomUnorderedMap<size_t, unsigned int> scalar_to_ssa;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating replicas of scalar");
                for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
@@ -1951,6 +1951,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
                   unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
                   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+                  tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
                   tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
                   tree_node_schema[TOK(TOK_ADDR)] = STR(ga->temporary_address);
                   tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
@@ -1990,15 +1991,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   new_ga->clobbered_set = ga->clobbered_set;
                   new_stmt_list.push_back(TM->GetTreeReindex(new_tree_node_index));
                   scalar_to_ssa[scalar] = new_ga->op0->index;
-                  return_value = new_ga->index;
-                  if(GET_CONST_NODE(ga->op1)->get_kind() == call_expr_K || GET_CONST_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
-                  {
-                     const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
-                     THROW_ASSERT(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K, STR(ce->fn));
-                     const auto ae = GetPointer<const addr_expr>(GET_CONST_NODE(ce->fn));
-                     THROW_ASSERT(GET_CONST_NODE(ae->op)->get_kind() == function_decl_K, STR(ae->op));
-                     AppM->GetCallGraphManager()->AddCallPoint(function_id, ae->op->index, new_ga->index, FunctionEdgeInfo::CallType::direct_call);
-                  }
+                  return_value = new_tree_node_index;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + new_ga->ToString());
                }
                tree_node_schema.clear();
@@ -2024,6 +2017,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
                   unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
                   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+                  tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
                   tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
                   tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
                   tree_node_schema[TOK(TOK_OP1)] = STR(constr->index);
@@ -2322,6 +2316,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
                unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
                tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+               tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
                tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
                tree_node_schema[TOK(TOK_ADDR)] = STR(ga->temporary_address);
                tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
@@ -2366,6 +2361,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   TM->create_tree_node(bit_field_ref_index, bit_field_ref_K, bit_field_ref_tree_node_schema);
 
                   gimple_assign_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+                  gimple_assign_tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
                   gimple_assign_tree_node_schema[TOK(TOK_OP1)] = STR(bit_field_ref_index);
                   gimple_assign_tree_node_schema[TOK(TOK_OP0)] = STR(Transform(ga->op0->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
                   unsigned int gimple_new_tree_node_index = TM->new_tree_node_id();
@@ -2784,8 +2780,6 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   std::string include_name = GetPointer<const srcp>(tn)->include_name;
                   unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
                   unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
-                  temp_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
-                  temp_tree_node_schema[TOK(TOK_OP1)] = STR(constr->index);
                   THROW_ASSERT(GET_NODE(be->op1)->get_kind() == ssa_name_K, "Unexpected operand " + GET_NODE(be->op1)->get_kind_text());
                   const auto* sa = GetPointer<const ssa_name>(GET_NODE(be->op1));
                   if(sa->type)
@@ -2817,6 +2811,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
                   unsigned int ssa_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
+                  temp_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+                  temp_tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
+                  temp_tree_node_schema[TOK(TOK_OP1)] = STR(constr->index);
                   temp_tree_node_schema[TOK(TOK_OP0)] = STR(ssa_tree_node_index);
                   temp_tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(tree_helper::CGetType(GET_NODE(be->op1))->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   unsigned int temp_tree_node_index = TM->new_tree_node_id();
@@ -2879,6 +2876,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                unsigned int line_number = gp->line_number;
                unsigned int column_number = gp->column_number;
                tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+               tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
                unsigned int new_tree_node_id = TM->new_tree_node_id();
                TM->create_tree_node(new_tree_node_id, gimple_phi_K, tree_node_schema);
                auto* new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(new_tree_node_id));
@@ -2951,6 +2949,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
 
                      gimple_assign_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+                     gimple_assign_tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
                      gimple_assign_tree_node_schema[TOK(TOK_OP1)] = STR(bit_field_ref_index);
                      gimple_assign_tree_node_schema[TOK(TOK_OP0)] = STR(Transform(gp->res->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
                      unsigned int gimple_new_tree_node_index = TM->new_tree_node_id();
@@ -3064,10 +3063,6 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
 bool Vectorize::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    if(bb_version != 0)
    {
       return false;

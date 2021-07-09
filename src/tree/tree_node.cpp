@@ -1565,3 +1565,17 @@ TreeNodeConstSet::TreeNodeConstSet() : OrderedSetStd<tree_nodeConstRef, TreeNode
 {
 }
 #endif
+
+// unsigned int GET_INDEX_NODE(const tree_nodeRef& t)
+//{
+//   THROW_ASSERT(t->get_kind() == tree_reindex_K, "");
+//   THROW_ASSERT(t->index == GET_NODE(t)->index, "");
+//   return (GET_NODE(t))->index;
+//}
+
+// unsigned int GET_INDEX_CONST_NODE(const tree_nodeConstRef& t)
+//{
+//   THROW_ASSERT(t->get_kind() == tree_reindex_K, "");
+//   THROW_ASSERT(t->index == GET_CONST_NODE(t)->index, "");
+//   return (GET_CONST_NODE(t))->index;
+//}

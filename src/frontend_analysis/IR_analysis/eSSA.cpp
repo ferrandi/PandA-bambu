@@ -128,7 +128,7 @@ class OrderedBasicBlock
    }
 
  public:
-   OrderedBasicBlock(const blocRef BasicB) : LastInstFound(BasicB->CGetStmtList().end()), NextInstPos(0), BBInst(BasicB->CGetStmtList()), BB(BasicB)
+   explicit OrderedBasicBlock(const blocRef& BasicB) : LastInstFound(BasicB->CGetStmtList().end()), NextInstPos(0), BBInst(BasicB->CGetStmtList()), BB(BasicB)
    {
       unsigned int phiPos = 0U;
       for(const auto& gp : BasicB->CGetPhiList())
@@ -193,7 +193,7 @@ class OrderedInstructions
 
  public:
    /// Constructor.
-   OrderedInstructions(BBGraphConstRef _DT) : DT(_DT)
+   explicit OrderedInstructions(BBGraphConstRef _DT) : DT(_DT)
    {
    }
 
@@ -487,7 +487,7 @@ tree_nodeRef branchOpRecurse(tree_nodeRef op, tree_nodeRef stmt = nullptr)
 }
 
 void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSSA::ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly,
-                   const std::map<unsigned int, blocRef> BBs,
+                   const std::map<unsigned int, blocRef>& BBs,
                    int
 #ifndef NDEBUG
                        debug_level
@@ -590,7 +590,7 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
 // Process a block terminating switch, and place relevant operations to be
 // renamed into OpsToRename.
 void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRename, eSSA::ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly,
-                       const std::map<unsigned int, blocRef> BBs,
+                       const std::map<unsigned int, blocRef>& BBs,
                        int
 #ifndef NDEBUG
                            debug_level
@@ -736,7 +736,7 @@ struct ValueDFS
 struct ValueDFS_Compare
 {
    OrderedInstructions& OI;
-   ValueDFS_Compare(OrderedInstructions& _OI) : OI(_OI)
+   explicit ValueDFS_Compare(OrderedInstructions& _OI) : OI(_OI)
    {
    }
 
@@ -757,8 +757,8 @@ struct ValueDFS_Compare
    // For two phi related values, return the ordering.
    bool comparePHIRelated(const ValueDFS& A, const ValueDFS& B) const
    {
-      auto& ABlockEdge = getBlockEdge_local(A);
-      auto& BBlockEdge = getBlockEdge_local(B);
+      const auto ABlockEdge = getBlockEdge_local(A);
+      const auto BBlockEdge = getBlockEdge_local(B);
       // Now sort by block edge and then defs before uses.
       return std::tie(ABlockEdge, A.Def, A.U) < std::tie(BBlockEdge, B.Def, B.U);
    }
@@ -1088,7 +1088,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
             }
 
             // Insert required sigma operation into the intermediate basic block
-            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, TM->GetTreeReindex(function_id), interBB->number);
+            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id, interBB->number);
             const auto gp = GetPointer<gimple_phi>(GET_NODE(PIC));
             gp->SetSSAUsesComputed();
             gp->artificial = true;
@@ -1098,7 +1098,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          else
          {
             // Insert required sigma operation into the destination basic block
-            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, TM->GetTreeReindex(function_id), pwe->To);
+            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id, pwe->To);
             const auto gp = GetPointer<gimple_phi>(GET_NODE(PIC));
             gp->SetSSAUsesComputed();
             gp->artificial = true;
@@ -1147,7 +1147,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
 bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, CustomMap<unsigned int, DFSInfo>& DFSInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, statement_list* sl)
 {
    const auto TM = AppM->get_tree_manager();
-   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    CustomMap<std::pair<unsigned int, unsigned int>, blocRef> interBranchBBs;
    bool modified = false;
    // This maps from copy operands to Predicate Info. Note that it does not own
@@ -1347,8 +1347,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, SAME_FUNCTION));
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
@@ -1364,10 +1363,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool eSSA::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return function_behavior->GetBitValueVersion() != bv_ver || FunctionFrontendFlowStep::HasToBeExecuted();
 }
 

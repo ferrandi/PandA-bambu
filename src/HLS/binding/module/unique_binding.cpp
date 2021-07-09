@@ -89,10 +89,7 @@ DesignFlowStep_Status unique_binding::InternalExec()
       {
          fu_ops[fu].push_back(std::make_pair(GET_NAME(data, *vIt), *vIt));
       }
-      if(black_list.find(fu) == black_list.end())
-      {
-         black_list[fu] = CustomOrderedSet<unsigned int>();
-      }
+      black_list.insert(std::make_pair(fu, CustomOrderedSet<unsigned int>()));
    }
    for(auto& fu_op : fu_ops)
    {

@@ -1,0 +1,21 @@
+name: 'Scan build'
+description: 'Launch clang scan-build'
+inputs:
+  script:
+    description: 'Script to launch'
+    required: true
+  args:
+    description: 'Script arguments'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Working directory from where the script is executed'
+    required: false
+    default: .
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{inputs.working-directory}}
+    - ${{inputs.script}}
+    - ${{inputs.args}}

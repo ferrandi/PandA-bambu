@@ -116,11 +116,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
 #endif
          break;
       }
       case(DEPENDENCE_RELATIONSHIP):
+      {
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         break;
+      }
       case(INVALIDATION_RELATIONSHIP):
       {
          break;
@@ -981,19 +985,26 @@ void CheckSystemType::build_include_structures()
                temp = temp.replace(0, 8, FILENAME_NORM(mingw_prefix)); /// replace z:/mingw at the beginning of the string
             }
             temp = FILENAME_NORM(temp);
-            systemIncPath.push_back(temp);
          }
          else if(getenv("APPDIR"))
          {
-            std::string app_prefix = getenv("APPDIR");
-            temp = app_prefix + "/" + FILENAME_NORM(tok_iter);
-            systemIncPath.push_back(temp);
+            const std::string app_prefix = getenv("APPDIR");
+            temp = FILENAME_NORM(tok_iter);
+            systemIncPath.push_back(boost::filesystem::weakly_canonical(temp).string());
+            if(temp.find(app_prefix) != 0)
+            {
+               temp = app_prefix + "/" + FILENAME_NORM(tok_iter);
+            }
+            else
+            {
+               temp = temp.substr(app_prefix.size());
+            }
          }
          else
          {
             temp = FILENAME_NORM(tok_iter);
-            systemIncPath.push_back(temp);
          }
+         systemIncPath.push_back(boost::filesystem::weakly_canonical(temp).string());
       }
    }
    systemIncPath.push_back("/usr/local/share/hframework/include");
@@ -1068,9 +1079,5 @@ void CheckSystemType::getRealInclName(const std::string& include, std::string& r
 
 bool CheckSystemType::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return not already_executed;
 }

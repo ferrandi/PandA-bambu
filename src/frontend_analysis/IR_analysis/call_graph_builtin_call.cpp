@@ -82,7 +82,7 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
                if(GET_NODE(builtinArgZero)->get_kind() == function_decl_K)
                {
                   unsigned int calledFunctionId = builtinArgZero->index;
-                  AppM->GetCallGraphManager()->AddCallPoint(function_id, calledFunctionId, GET_INDEX_NODE(TN), FunctionEdgeInfo::CallType::indirect_call);
+                  CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, calledFunctionId, GET_INDEX_CONST_NODE(TN), FunctionEdgeInfo::CallType::indirect_call, debug_level);
                   modified = true;
                }
                else if(GET_NODE(builtinArgZero)->get_kind() == ssa_name_K)
@@ -111,7 +111,7 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
                if(GET_NODE(builtinArgZero)->get_kind() == function_decl_K)
                {
                   unsigned int calledFunctionId = builtinArgZero->index;
-                  AppM->GetCallGraphManager()->AddCallPoint(function_id, calledFunctionId, GET_INDEX_NODE(TN), FunctionEdgeInfo::CallType::indirect_call);
+                  CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, calledFunctionId, GET_INDEX_CONST_NODE(TN), FunctionEdgeInfo::CallType::indirect_call, debug_level);
                   modified = true;
                }
                else if(GET_NODE(builtinArgZero)->get_kind() == ssa_name_K)
@@ -131,40 +131,6 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---call_expr " + STR(GET_NODE(gm->op1)));
             lookForBuiltinCall(gm->op1);
-         }
-         else if(GetPointer<addr_expr>(GET_NODE(gm->op1)))
-         {
-            auto* ae = GetPointer<addr_expr>(GET_NODE(gm->op1));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is addr_expr " + GET_NODE(ae->op)->get_kind_text());
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---takes address " + STR(GET_NODE(gm->op1)));
-            if(GetPointer<function_decl>(GET_NODE(ae->op)))
-            {
-               AppM->GetCallGraphManager()->AddCallPoint(function_id, GET_INDEX_NODE(ae->op), currentTreeNode->index, FunctionEdgeInfo::CallType::function_address);
-            }
-         }
-         else if(GetPointer<nop_expr>(GET_NODE(gm->op1)))
-         {
-            auto* nop = GetPointer<nop_expr>(GET_NODE(gm->op1));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---nop_expr(" + STR(GET_NODE(nop->op)) +
-                               ")"
-                               " op is " +
-                               GET_NODE(nop->op)->get_kind_text());
-            if(GetPointer<addr_expr>(GET_NODE(nop->op)))
-            {
-               auto* ae = GetPointer<addr_expr>(GET_NODE(nop->op));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is addr_expr of " + GET_NODE(ae->op)->get_kind_text());
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---takes address " + STR(GET_NODE(nop->op)));
-               if(GetPointer<function_decl>(GET_NODE(ae->op)))
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---takes address of function_decl " + STR(GET_INDEX_NODE(ae->op)));
-                  AppM->GetCallGraphManager()->AddCallPoint(function_id, GET_INDEX_NODE(ae->op), currentTreeNode->index, FunctionEdgeInfo::CallType::function_address);
-               }
-            }
-         }
-         else
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- not addr_expr " + GET_NODE(gm->op1)->get_kind_text());
          }
          break;
       }
@@ -239,7 +205,7 @@ void CallGraphBuiltinCall::ExtendCallGraph(unsigned int callerIdx, tree_nodeRef 
    std::string type = tree_helper::print_type(AppM->get_tree_manager(), funType->index);
    for(unsigned int Itr : typeToDeclaration[type])
    {
-      AppM->GetCallGraphManager()->AddCallPoint(callerIdx, Itr, stmtIdx, FunctionEdgeInfo::CallType::indirect_call);
+      CallGraphManager::addCallPointAndExpand(already_visited, AppM, callerIdx, Itr, stmtIdx, FunctionEdgeInfo::CallType::indirect_call, debug_level);
       modified = true;
    }
 }
@@ -292,6 +258,7 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("builtin-graph-pre" + STR(function_id) + ".dot");
    }
+   already_visited.clear();
 
    // Build the typeToDeclarationMap
    const CallGraphManagerRef CGM = AppM->GetCallGraphManager();

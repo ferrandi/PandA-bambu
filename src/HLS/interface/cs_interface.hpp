@@ -62,7 +62,7 @@ class cs_interface : public module_interface
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec();
+   virtual DesignFlowStep_Status InternalExec() override;
 
  protected:
    /**

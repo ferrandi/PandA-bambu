@@ -109,15 +109,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         if(parameters->isOption(OPT_bitvalue_ipa) && parameters->getOption<bool>(OPT_bitvalue_ipa))
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_IPA, WHOLE_APPLICATION));
-         }
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(RANGE_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_CLOBBER_GA, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
          break;
       }
       default:
@@ -134,10 +127,6 @@ bool SplitReturn::HasToBeExecuted() const
    {
       return false;
    }
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
    if(parameters->isOption(OPT_scheduling_algorithm) and parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
    {
@@ -150,7 +139,8 @@ bool SplitReturn::HasToBeExecuted() const
    }
 }
 
-static void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& gimple_return_schema, statement_list* sl, blocRef pred_block, blocRef bb_block, int DEBUG_PARAMETER(debug_level))
+static void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& gimple_return_schema, statement_list* sl, blocRef pred_block, blocRef bb_block, int DEBUG_PARAMETER(debug_level),
+                                      const application_managerRef AppM)
 {
    auto bb_index = bb_block->number;
    const auto gimple_node_id = TM->new_tree_node_id();
@@ -158,7 +148,7 @@ static void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVoc
    gimple_return_schema.clear();
    if(pred_block->list_of_succ.size() == 1)
    {
-      pred_block->PushBack(TM->GetTreeReindex(gimple_node_id));
+      pred_block->PushBack(TM->GetTreeReindex(gimple_node_id), AppM);
       pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
       pred_block->list_of_succ.push_back(bb_block->list_of_succ.front());
    }
@@ -171,7 +161,7 @@ static void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVoc
       new_block->loop_id = bb_block->loop_id;
       new_block->SetSSAUsesComputed();
       new_block->schedule = bb_block->schedule;
-      new_block->PushBack(TM->GetTreeReindex(gimple_node_id));
+      new_block->PushBack(TM->GetTreeReindex(gimple_node_id), AppM);
       /// Add predecessor as pred basic block
       new_block->list_of_pred.push_back(pred_block->number);
       /// Add successor as succ basic block
@@ -237,11 +227,11 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
                gimple_return_schema[TOK(TOK_OP)] = STR(op_node_nid);
                auto pred_block = sl->list_of_bloc[def_edge.second];
-               create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
+               create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level, AppM);
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));
             bb_block->RemovePhi(bb_block->CGetPhiList().front());
-            bb_block->RemoveStmt(bb_block->CGetStmtList().front());
+            bb_block->RemoveStmt(bb_block->CGetStmtList().front(), AppM);
             to_be_erase.push_back(bb_index);
             isChanged = true;
          }
@@ -260,11 +250,11 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                }
                gimple_return_schema[TOK(TOK_MEMUSE)] = STR(op_node_nid);
                auto pred_block = sl->list_of_bloc[def_edge.second];
-               create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
+               create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level, AppM);
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));
             bb_block->RemovePhi(bb_block->CGetPhiList().front());
-            bb_block->RemoveStmt(bb_block->CGetStmtList().front());
+            bb_block->RemoveStmt(bb_block->CGetStmtList().front(), AppM);
             to_be_erase.push_back(bb_index);
             isChanged = true;
          }
@@ -284,10 +274,10 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                {
                   gimple_return_schema[TOK(TOK_OP)] = STR(GET_INDEX_NODE(gr->op));
                }
-               create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
+               create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level, AppM);
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));
-            bb_block->RemoveStmt(bb_block->CGetStmtList().front());
+            bb_block->RemoveStmt(bb_block->CGetStmtList().front(), AppM);
             to_be_erase.push_back(bb_index);
             isChanged = true;
          }

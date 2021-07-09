@@ -1,0 +1,15 @@
+name: 'Panda build'
+description: 'Configure, build, and generate Panda Bambu appimage'
+inputs:
+  config-args:
+    description: 'Configure command line arguments'
+outputs:
+  appimage:
+    description: 'Output appimage file'
+  dist-dir:
+    description: 'Distribution directory with appimage contents'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{inputs.config-args}}

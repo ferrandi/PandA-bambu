@@ -57,7 +57,8 @@
 #define PRECISION 200
 #define SZ 64
 
-typedef union {
+typedef union
+{
    unsigned int b;
    float f;
 } float_uint_converter;
@@ -477,7 +478,7 @@ float ADD_BUILTIN_PREFIX(logf)(float x)
    if(e == 0)
    {
       unsigned int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift(23, m, subnormal_lz, mshifted);
+      count_leading_zero_lshift_macro(23, m, subnormal_lz, mshifted);
       e = -subnormal_lz;
       m = SELECT_RANGE(mshifted, 21, 0) << 1;
    }
@@ -563,7 +564,7 @@ float ADD_BUILTIN_PREFIX(logf)(float x)
    nZ <<= n_leading_zeros;
    nZ >>= 4;
 #else
-   count_leading_zero_macro_lshift(60, nZ, n_leading_zeros, nZ);
+   count_leading_zero_lshift_macro(60, nZ, n_leading_zeros, nZ);
    BIT_RESIZE(n_leading_zeros, 5);
 #endif
    fR0 = SELECT_RANGE(nZ, 58, 30);

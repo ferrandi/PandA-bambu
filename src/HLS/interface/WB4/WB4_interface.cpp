@@ -609,15 +609,12 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          connect_with_signal(SM, S_Wdata_ram_port, interfaceObj->find_member(WB_DATIS_PORT_NAME, port_o_K, interfaceObj));
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Connected S_Wdata_ram");
       }
-   }
-
-   // ---- Add the Rdata logic ----
-   if(is_slave)
-   {
+      // ---- Add the Rdata logic ----
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Connecting Sout_Rdata_ram");
       connect_with_signal(SM, Sout_Rdata_ram_port, interfaceObj->find_member(WB_DATOS_PORT_NAME, port_o_K, interfaceObj));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Connected Sout_Rdata_ram");
    }
+
    if(is_master)
    {
       if(is_slave)
@@ -783,11 +780,8 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          connect_with_signal_name(SM, S_addr_ram_port, afAddrISOut1, "addr_is_f");
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Connected S_addr_ram");
       }
-   }
 
-   // ---- Data ready ack logic ----
-   if(is_slave)
-   {
+      // ---- Data ready ack logic ----
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Inserting AckOSGate");
       structural_objectRef andGateAckOS = SM->add_module_from_technology_library("andGateAckOS", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
 

@@ -351,7 +351,9 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  * @return the index of t in tree_manager
  */
 #define GET_INDEX_NODE(t) (GET_NODE(t))->index
+// unsigned int GET_INDEX_NODE(const tree_nodeRef& t);
 #define GET_INDEX_CONST_NODE(t) (GET_CONST_NODE(t))->index
+// unsigned int GET_INDEX_CONST_NODE(const tree_nodeConstRef& t);
 
 /**
  * This macro collects all case labels for unary_expr objects.
@@ -3710,9 +3712,6 @@ struct parm_decl : public decl_node
     * symbol_memory_tag annotation
     */
    tree_nodeRef smt_ann;
-
-   /// for each bit of the SSA variable tells if it is equal to U,X,0,1
-   std::string bit_values;
 
    /// PointToInformation associated with this ssa_name if the corresponding variable is a pointer
    const PointToInformationRef point_to_information;

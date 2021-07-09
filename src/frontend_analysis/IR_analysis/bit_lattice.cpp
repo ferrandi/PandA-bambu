@@ -163,37 +163,28 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
       res.push_front(bit_lattice::X);
    }
    sign_reduce_bitstring(res, out_is_signed);
+   size_t final_size;
    if(out_is_signed)
    {
       const bool a_sign_is_x = _a.front() == bit_lattice::X;
       const bool b_sign_is_x = _b.front() == bit_lattice::X;
-      const size_t final_size = std::min(out_type_size, ((a_sign_is_x == b_sign_is_x) ? (std::min(_a.size(), _b.size())) : (a_sign_is_x ? _a.size() : _b.size())));
-      const auto sign_bit = res.front();
-      while(res.size() > final_size)
-      {
-         res.pop_front();
-      }
-      if(sign_bit != bit_lattice::X && res.front() == bit_lattice::X)
-      {
-         res.pop_front();
-         res.push_front(sign_bit);
-      }
+      final_size = std::min(out_type_size, ((a_sign_is_x == b_sign_is_x) ? (std::min(_a.size(), _b.size())) : (a_sign_is_x ? _a.size() : _b.size())));
+      THROW_ASSERT(final_size, "final size of sup cannot be 0");
    }
    else
    {
-      const size_t final_size = std::min(out_type_size, std::min(_a.size(), _b.size()));
+      final_size = std::min(out_type_size, std::min(_a.size(), _b.size()));
       THROW_ASSERT(final_size, "final size of sup cannot be 0");
-      while(res.size() > final_size)
-      {
-         if(res.at(0) != bit_lattice::ZERO || (res.size() > 1 && res.at(1) != bit_lattice::X))
-         {
-            res.pop_front();
-         }
-         else
-         {
-            break;
-         }
-      }
+   }
+   const auto sign_bit = res.front();
+   while(res.size() > final_size)
+   {
+      res.pop_front();
+   }
+   if(sign_bit != bit_lattice::X && res.front() == bit_lattice::X)
+   {
+      res.pop_front();
+      res.push_front(sign_bit);
    }
 
    return res;
@@ -1064,4 +1055,22 @@ unsigned int BitLatticeManipulator::Size(const tree_nodeConstRef t)
       }
    }
    return return_value;
+}
+
+bool BitLatticeManipulator::isBetter(const std::string& a_string, const std::string& b_string)
+{
+   auto av = string_to_bitstring(a_string);
+   auto bv = string_to_bitstring(b_string);
+   auto a_it = av.crbegin();
+   auto b_it = bv.crbegin();
+   const auto a_end = av.crend();
+   const auto b_end = bv.crend();
+   for(; a_it != a_end && b_it != b_end; a_it++, b_it++)
+   {
+      if((*b_it == bit_lattice::U && *a_it != bit_lattice::U) || (*b_it != bit_lattice::X && *a_it == bit_lattice::X))
+      {
+         return true;
+      }
+   }
+   return a_string.size() < b_string.size();
 }

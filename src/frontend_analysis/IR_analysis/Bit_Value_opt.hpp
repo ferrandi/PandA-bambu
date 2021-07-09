@@ -56,6 +56,7 @@ REF_FORWARD_DECL(Bit_Value_opt);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);
 class statement_list;
+class ssa_name;
 //@}
 
 /**
@@ -66,9 +67,6 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
  private:
    /// when true IR has been modified
    bool modified;
-
-   /// True if dead code must be restarted
-   bool restart_dead_code;
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
@@ -96,7 +94,7 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
    ~Bit_Value_opt() override;
 
    /**
-    * Extract patterns from the GCC IR.
+    * Optimize IR after the BitValue/BitValueIPA has been executed
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;
@@ -106,9 +104,43 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
+
+   static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM);
+};
+
+/**
+ * @brief Class performing some optimizations on the IR exploiting Bit Value analysis but executed after Range Analysis.
+ */
+class Bit_Value_opt2 : public FunctionFrontendFlowStep
+{
+ private:
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+ public:
    /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
+    * Constructor.
+    * @param _Param is the set of the parameters
+    * @param _AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param design_flow_manager is the design flow manager
     */
-   void Initialize() override;
+   Bit_Value_opt2(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+
+   /**
+    *  Destructor
+    */
+   ~Bit_Value_opt2() override;
+
+   /**
+    * Optimize IR after the RA has been executed
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
+
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif /* Bit_Value_opt_HPP */

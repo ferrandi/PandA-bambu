@@ -94,6 +94,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case BIT_VALUE:
       case BIT_VALUE_OPT:
+      case BIT_VALUE_OPT2:
 #endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
@@ -201,6 +202,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case PARALLEL_REGIONS_GRAPH_COMPUTATION:
 #endif
+      case PARM2SSA:
 #if HAVE_BAMBU_BUILT
       case PARM_DECL_TAKEN_ADDRESS:
       case PHI_OPT:
@@ -309,6 +311,9 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
       case DYNAMIC_VAR_COMPUTATION:
 #endif
+#if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
+      case DEAD_CODE_ELIMINATION_IPA:
+#endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
 #endif
@@ -322,10 +327,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
 #endif
-#if HAVE_BAMBU_BUILT
-      case(IPA_POINT_TO_ANALYSIS):
-#endif
-      case PARM2SSA:
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:
 #endif

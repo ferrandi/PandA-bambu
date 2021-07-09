@@ -171,7 +171,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
 {
    tree_nodeRef expr = GET_NODE(stmt);
    tree_managerRef TM = AppM->get_tree_manager();
-   tree_manipulationRef IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   tree_manipulationRef IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
 
    unsigned int retVar = 0;
 
@@ -223,6 +223,16 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
    unsigned int gimpleCallIdx = TM->new_tree_node_id();
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimpleCallMap;
    gimpleCallMap[TOK(TOK_FN)] = STR(addrExprBuiltinCall);
+   if(GetPointer<gimple_call>(expr))
+   {
+      auto* GC = GetPointer<gimple_call>(expr);
+      gimpleCallMap[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(GC->scpe));
+   }
+   else if(GetPointer<gimple_assign>(expr))
+   {
+      auto* GA = GetPointer<gimple_assign>(expr);
+      gimpleCallMap[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(GA->scpe));
+   }
    gimpleCallMap[TOK(TOK_SRCP)] = srcPtr->include_name + ":" + STR(srcPtr->line_number) + ":" + STR(srcPtr->column_number);
    TM->create_tree_node(gimpleCallIdx, gimple_call_K, gimpleCallMap);
 
@@ -396,19 +406,15 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding to BB" + STR(block->number) + " stmt: " + builtinCallTN->ToString());
-   block->PushBefore(builtinCallTN, stmt);
+   block->PushBefore(builtinCallTN, stmt, AppM);
    if(not retVar)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---removing from BB" + STR(block->number) + " stmt: " + stmt->ToString());
-      block->RemoveStmt(stmt);
+      block->RemoveStmt(stmt, AppM);
    }
 }
 
 bool HWCallInjection::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return not already_executed;
 }

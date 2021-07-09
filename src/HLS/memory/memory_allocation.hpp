@@ -126,7 +126,7 @@ class memory_allocation : public HLS_step
    std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
    /**
-    * Prepares the datastructures for the memory allocation
+    * Prepares the data structures for the memory allocation
     */
    void setup_memory_allocation();
 

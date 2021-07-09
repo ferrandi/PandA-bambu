@@ -43,9 +43,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_XILINX_SETTINGS.hpp"
-
 /// Includes the class definition
 #include "ISE_isim_wrapper.hpp"
 
@@ -128,7 +125,8 @@ void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::str
    log_file = ISIM_SUBDIR + suffix + "/" + top_filename + "_isim.log";
 
    script << "#configuration" << std::endl;
-   auto setupscr = STR(XILINX_SETTINGS);
+   THROW_ASSERT(Param->isOption(OPT_xilinx_settings), "");
+   auto setupscr = Param->getOption<std::string>(OPT_xilinx_settings);
    if(!setupscr.empty() && setupscr != "0")
    {
       if(boost::algorithm::starts_with(setupscr, "export"))

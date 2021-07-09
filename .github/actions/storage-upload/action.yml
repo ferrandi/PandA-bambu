@@ -1,0 +1,57 @@
+name: 'Storage upload'
+description: 'Upload a file or directory to private storage'
+inputs:
+  path:
+    description: 'Path of the file or directory to upload'
+    required: true
+  name:
+    description: 'Storage id for the given path'
+    required: false
+    default: ''
+  storage-url:
+    description: 'Url of private storage'
+    required: true
+  username:
+    description: 'Username for private storage access'
+    required: false
+    default: ''
+  password:
+    description: 'Password for private storage access'
+    required: false
+    default: ''
+  storage-path:
+    description: 'Custom storage path'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate and upload package
+      shell: bash
+      run: |
+        set -e
+        export XZ_OPT='-T0'
+        PKG_NAME="${{inputs.name}}"
+        if [[ -z "$PKG_NAME" ]]; then
+          PKG_NAME="$(basename ${{inputs.path}})"
+          if [[ "$PKG_NAME" = "." || "$PKG_NAME" = "*" ]]; then
+            PKG_NAME="$(basename $(dirname "${{inputs.path}}"))"
+          fi
+        fi
+        PKG_FILE="$PKG_NAME.tar.xz"
+        if [[ -f "${{inputs.path}}" || -d "${{inputs.path}}" ]]; then 
+          if [[ ! -z "${{inputs.storage-path}}" ]]; then
+            PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/$PKG_FILE"
+          else
+            PKG_URL="${{inputs.storage-url}}/${{github.ref}}/$PKG_FILE"
+          fi
+          if [[ -z '${{inputs.username}}' ]]; then
+            tar -C "$(dirname ${{inputs.path}})" "$(basename ${{inputs.path}})" --mode="u+rwX,g+rwX,o+rX" -cJf - | curl -L --fail -T- "$PKG_URL";
+          else
+            tar -C "$(dirname ${{inputs.path}})" "$(basename ${{inputs.path}})" --mode="u+rwX,g+rwX,o+rX" -cJf - | curl -u '${{inputs.username}}':'${{inputs.password}}' -L --fail -T- "$PKG_URL";
+          fi
+          echo "Package successfully uploaded to $PKG_URL"
+        else 
+          echo "Path '${{inputs.path}}' does not name a file or directory"
+          exit -1; 
+        fi

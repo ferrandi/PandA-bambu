@@ -421,6 +421,9 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
       }
    }
 
+   tree_node_schema.clear();
+   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+   tree_node_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(gc->scpe));
    tree_node_schema[TOK(TOK_IS_BLOCK)] = boost::lexical_cast<std::string>(is_block);
    tree_node_schema[TOK(TOK_OPEN)] = boost::lexical_cast<std::string>(is_opening);
    tree_node_schema[TOK(TOK_PRAGMA_SCOPE)] = boost::lexical_cast<std::string>(scope_idx);
@@ -453,11 +456,9 @@ void PragmaAnalysis::create_map_pragma(const unsigned int node_id) const
    const std::string& function_name = GetPointer<identifier_node>(name)->strg;
 #endif
 
-   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
    std::string include_name = GetPointer<srcp>(TM->get_tree_node_const(node_id))->include_name;
    unsigned int line_number = GetPointer<srcp>(TM->get_tree_node_const(node_id))->line_number;
    unsigned int column_number = GetPointer<srcp>(TM->get_tree_node_const(node_id))->column_number;
-   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> scope_tn_schema;
    unsigned int directive_idx = TM->new_tree_node_id(), scope_idx = TM->new_tree_node_id();
@@ -482,6 +483,9 @@ void PragmaAnalysis::create_map_pragma(const unsigned int node_id) const
    }
    TM->create_tree_node(directive_idx, call_point_hw_pragma_K, directive_tn_schema);
 
+   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
+   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+   tree_node_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(gc->scpe));
    tree_node_schema[TOK(TOK_IS_BLOCK)] = boost::lexical_cast<std::string>(false);
    tree_node_schema[TOK(TOK_OPEN)] = boost::lexical_cast<std::string>(false);
    tree_node_schema[TOK(TOK_PRAGMA_SCOPE)] = boost::lexical_cast<std::string>(scope_idx);
@@ -541,6 +545,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                      unsigned int line_number = GetPointer<srcp>(TN)->line_number;
                      unsigned int column_number = GetPointer<srcp>(TN)->column_number;
                      tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+                     tree_node_schema[TOK(TOK_SCPE)] = STR(function);
 
                      // unsigned int scope, directive;
                      if(!boost::algorithm::starts_with(function_name, STR_CST_pragma_function_generic))
@@ -575,7 +580,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                               /// Erasing first element
                               if(it2 == list_of_stmt.begin())
                               {
-                                 it->second->RemoveStmt(*it2);
+                                 it->second->RemoveStmt(*it2, AppM);
                                  it2 = list_of_stmt.begin();
                               }
                               /// Erasing not the first element
@@ -583,7 +588,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                               {
                                  next = it2;
                                  next++;
-                                 it->second->RemoveStmt(*it2);
+                                 it->second->RemoveStmt(*it2, AppM);
                                  next--;
                                  it2 = next;
                               }

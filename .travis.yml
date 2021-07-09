@@ -4,12 +4,12 @@ os: linux
 dist: xenial
 sudo: required
 compiler:
- - gcc
+  - gcc
 install: make -f Makefile.init
 
 before_script: mkdir build
 
-script: cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt --with-opt-level=0 CXX=g++-8 CC=gcc-8  && make -j4
+script: cd build && ../configure --prefix=$HOME/panda --enable-glpk --enable-opt --with-opt-level=0 CXX=g++-8 CC=gcc-8  && make -j4
 
 addons:
   apt:
@@ -17,34 +17,33 @@ addons:
       - ubuntu-toolchain-r-test
       - llvm-toolchain-xenial-6.0
     packages:
-    - autoconf
-    - autoconf-archive
-    - automake
-    - libtool
-    - g++
-    - gcc
-    - gcc-8-plugin-dev
-    - gcc-multilib
-    - g++-8-multilib
-    - gfortran-8
-    - gfortran-8-multilib
-    - libbdd-dev 
-    - libboost-all-dev
-    - libmpc-dev
-    - libmpfi-dev
-    - libmpfr-dev
-    - libxml2-dev
-    - liblzma-dev
-    - zlib1g-dev
-    - libicu-dev
-    - bison
-    - doxygen
-    - flex
-    - graphviz
-    - iverilog
-    - verilator
-    - pkg-config
-    - libsuitesparse-dev
-    - libglpk-dev
-    - make
-
+      - autoconf
+      - autoconf-archive
+      - automake
+      - libtool
+      - g++
+      - gcc
+      - gcc-8-plugin-dev
+      - gcc-multilib
+      - g++-8-multilib
+      - gfortran-8
+      - gfortran-8-multilib
+      - libbdd-dev
+      - libboost-all-dev
+      - libmpc-dev
+      - libmpfi-dev
+      - libmpfr-dev
+      - libxml2-dev
+      - liblzma-dev
+      - zlib1g-dev
+      - libicu-dev
+      - bison
+      - doxygen
+      - flex
+      - graphviz
+      - iverilog
+      - verilator
+      - pkg-config
+      - libsuitesparse-dev
+      - libglpk-dev
+      - make

@@ -91,9 +91,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_HOST_PROFILING_BUILT
    HOST_PROFILING,
 #endif
-#if HAVE_BAMBU_BUILT
-   IPA_POINT_TO_ANALYSIS,
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
    PRAGMA_SUBSTITUTION,
 #endif
@@ -129,6 +126,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    BIT_VALUE,
    BIT_VALUE_OPT,
+   BIT_VALUE_OPT2,
    BIT_VALUE_IPA,
 #endif
    BLOCK_FIX,
@@ -163,6 +161,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #endif
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
    DEAD_CODE_ELIMINATION,
+   DEAD_CODE_ELIMINATION_IPA,
 #endif
 #if HAVE_BAMBU_BUILT
    DETERMINE_MEMORY_ACCESSES,

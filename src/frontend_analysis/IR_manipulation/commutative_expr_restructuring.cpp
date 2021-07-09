@@ -97,7 +97,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
                GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
             {
-               /// If schedule is not update, do not execute this step and invalidate UpdateSchedule
+               /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
                const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
                if(update_schedule)
                {
@@ -116,6 +116,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPLETE_BB_GRAPH, SAME_FUNCTION));
          break;
       }
@@ -198,7 +199,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
    bool modified = false;
    static size_t counter = 0;
 
-   const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
+   const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
    auto* fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)
@@ -351,6 +352,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          /// Create the assign
          const auto gimple_node_id = TM->new_tree_node_id();
          gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(comm_expr_id);
@@ -358,7 +360,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->GetTreeReindex(gimple_node_id)));
          /// Set the bit value for the intermediate ssa to correctly update execution time
          GetPointer<ssa_name>(TM->get_tree_node_const(ssa_node_nid))->bit_values = GetPointer<ssa_name>(GET_NODE(first_ga->op0))->bit_values;
-         block.second->PushBefore(TM->GetTreeReindex(gimple_node_id), *stmt);
+         block.second->PushBefore(TM->GetTreeReindex(gimple_node_id), *stmt, AppM);
          new_tree_nodes.push_back(TM->GetTreeReindex(gimple_node_id));
 
          /// Inserting last commutative expression
@@ -373,12 +375,13 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          /// Create the assign
          const auto root_gimple_node_id = TM->new_tree_node_id();
          gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(first_ga->op0->index);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(root_comm_expr_id);
          TM->create_tree_node(root_gimple_node_id, gimple_assign_K, gimple_assign_schema);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->GetTreeReindex(root_gimple_node_id)));
-         block.second->Replace(*stmt, TM->GetTreeReindex(root_gimple_node_id), true);
+         block.second->Replace(*stmt, TM->GetTreeReindex(root_gimple_node_id), true, AppM);
          new_tree_nodes.push_back(TM->GetTreeReindex(root_gimple_node_id));
          AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(root_gimple_node_id));
 
@@ -386,7 +389,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(second_ga->op0))->CGetUseStmts().size() == 0, "");
 
          /// Remove the intermediate commutative expression
-         block.second->RemoveStmt(second_stmt);
+         block.second->RemoveStmt(second_stmt, AppM);
 
          for(const auto& temp_stmt : list_of_stmt)
          {
@@ -406,12 +409,12 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
             /// Removing added statements
             for(const auto& to_be_removed : new_tree_nodes)
             {
-               block.second->RemoveStmt(to_be_removed);
+               block.second->RemoveStmt(to_be_removed, AppM);
             }
 
             /// Adding old statements
-            next_stmt ? block.second->PushBefore(second_stmt, next_stmt) : block.second->PushBack(second_stmt);
-            next_stmt ? block.second->PushBefore(first_stmt, next_stmt) : block.second->PushBack(first_stmt);
+            next_stmt ? block.second->PushBefore(second_stmt, next_stmt, AppM) : block.second->PushBack(second_stmt, AppM);
+            next_stmt ? block.second->PushBefore(first_stmt, next_stmt, AppM) : block.second->PushBack(first_stmt, AppM);
 
             /// Recomputing schedule
             for(const auto& temp_stmt : list_of_stmt)
@@ -453,10 +456,6 @@ void commutative_expr_restructuring::Initialize()
 
 bool commutative_expr_restructuring::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    if(!FunctionFrontendFlowStep::HasToBeExecuted())
    {
       return false;
@@ -465,7 +464,7 @@ bool commutative_expr_restructuring::HasToBeExecuted() const
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
-      /// If schedule is not update, do not execute this step and invalidate UpdateSchedule
+      /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
       const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
       if(update_schedule)
       {

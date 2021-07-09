@@ -375,7 +375,7 @@ void application_manager::RegisterTransformation(const std::string&
 )
 {
 #ifndef NDEBUG
-   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations), step + " - " + (new_tn ? new_tn->ToString() : ""));
+   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations), step + " - " + (new_tn ? new_tn->ToString() : "") + " Transformations " + STR(cfg_transformations));
    cfg_transformations++;
    if(Param->getOption<size_t>(OPT_cfg_max_transformations) != std::numeric_limits<size_t>::max())
    {
@@ -384,32 +384,46 @@ void application_manager::RegisterTransformation(const std::string&
 #endif
 }
 
-bool application_manager::isParmUsed(unsigned parm_index) const
+bool application_manager::isParmUsed(unsigned int functionID, unsigned parm_index) const
 {
-   return Parm2SSA_map.find(parm_index) != Parm2SSA_map.end();
+   return Parm2SSA_map.find(functionID) != Parm2SSA_map.end() && Parm2SSA_map.find(functionID)->second.find(parm_index) != Parm2SSA_map.find(functionID)->second.end();
 }
 
-unsigned application_manager::getSSAFromParm(unsigned parm_index) const
+unsigned application_manager::getSSAFromParm(unsigned int functionID, unsigned parm_index) const
 {
    THROW_ASSERT(parm_index, "unexpected null parm_decl index");
-   THROW_ASSERT(Parm2SSA_map.find(parm_index) != Parm2SSA_map.end(), "unexpected condition");
-   return Parm2SSA_map.find(parm_index)->second;
+   THROW_ASSERT(Parm2SSA_map.find(functionID) != Parm2SSA_map.end(), "relation not computed for function id: " + STR(functionID));
+   THROW_ASSERT(Parm2SSA_map.find(functionID)->second.find(parm_index) != Parm2SSA_map.find(functionID)->second.end(), "unexpected condition " + STR(functionID) + " " + STR(parm_index));
+   return Parm2SSA_map.find(functionID)->second.find(parm_index)->second;
 }
 
-void application_manager::setSSAFromParm(unsigned int parm_index, unsigned ssa_index)
+void application_manager::setSSAFromParm(unsigned int functionID, unsigned int parm_index, unsigned ssa_index)
 {
-   THROW_ASSERT(parm_index, "unexpected null parm_decl index");
-   THROW_ASSERT(ssa_index, "unexpected null ssa_name index");
-   if(Parm2SSA_map.find(parm_index) == Parm2SSA_map.end())
+   THROW_ASSERT(functionID, "unexpected null function id: " + STR(functionID));
+   THROW_ASSERT(parm_index, "unexpected null parm_decl index " + STR(parm_index));
+   THROW_ASSERT(ssa_index, "unexpected null ssa_name index " + STR(ssa_index));
+   if(Parm2SSA_map.find(functionID) == Parm2SSA_map.end())
    {
-      Parm2SSA_map[parm_index] = ssa_index;
+      Parm2SSA_map[functionID][parm_index] = ssa_index;
    }
    else
    {
-      THROW_ASSERT(Parm2SSA_map.find(parm_index)->second == ssa_index, "unexpected condition");
+      if(Parm2SSA_map.find(functionID)->second.find(parm_index) == Parm2SSA_map.find(functionID)->second.end())
+      {
+         Parm2SSA_map[functionID][parm_index] = ssa_index;
+      }
+      else
+      {
+         THROW_ASSERT(Parm2SSA_map.find(functionID)->second.find(parm_index)->second == ssa_index, "unexpected condition " + STR(functionID) + " " + STR(parm_index) + " " + STR(ssa_index));
+      }
    }
 }
-void application_manager::clearParm2SSA()
+void application_manager::clearParm2SSA(unsigned int functionID)
 {
-   Parm2SSA_map.clear();
+   Parm2SSA_map[functionID].clear();
+}
+
+CustomMap<unsigned, unsigned> application_manager::getACopyParm2SSA(unsigned int functionID)
+{
+   return Parm2SSA_map[functionID];
 }

@@ -17,6 +17,7 @@ New features introduced:
 - Improved and better integrated value range analysis.
 - Improved support to interface synthesis by allowing references in called functions.
 - Added a first support to axis interface.
+- Simulation and synthesis tools are now detected at runtime. Configure options have been removed, now vendor specific install directories may be specified using Bambu option --<vendor>-root=<path> (e.g. --xilinx-root=/opt/Xilinx).
 
 =========== PANDA 0.9.6 ===========
 Sat 11 January 2020, PandA release 0.9.6

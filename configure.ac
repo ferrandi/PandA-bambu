@@ -283,15 +283,8 @@ AC_ARG_ENABLE(eucalyptus,            [  --enable-eucalyptus          compile euc
 AC_ARG_ENABLE(treegcc,               [  --enable-treegcc             compile tree-panda-gcc tool for gimple compilation],    [panda_USE_TREE_PANDA_GCC="$enableval"])
 
 #Ext libraries tools
-AC_ARG_ENABLE(modelsim,               [  --enable-modelsim            enable modelsim simulator],                               [panda_USE_MODELSIM="$enableval"])
 
 #synthesis wrappers
-AC_ARG_ENABLE(xilinx,                 [  --enable-xilinx              compile the wrapper for interfacing with Xilinx tools],[panda_USE_WRAPPER_XILINX="$enableval"])
-AC_ARG_ENABLE(altera,                 [  --enable-altera              compile the wrapper for interfacing with Altera tools],[panda_USE_WRAPPER_ALTERA="$enableval"])
-AC_ARG_ENABLE(lattice,                [  --enable-lattice             compile the wrapper for interfacing with Lattice tools],[panda_USE_WRAPPER_LATTICE="$enableval"])
-AC_ARG_ENABLE(nanoxplore,             [  --enable-nanoxplore          compile the wrapper for interfacing with NanoXplore tools],[panda_USE_WRAPPER_NANOXPLORE="$enableval"])
-AC_ARG_ENABLE(verilator,              [  --disable-verilator          disable the/ wrapper to Verilator Verilog compiler],   [panda_USE_VERILATOR="$enableval"], [panda_USE_VERILATOR="yes"])
-
 
 #aid stuff
 AC_ARG_ENABLE(release,             [  --enable-release             compile the source code for release (default enabled)],                                  [panda_RELEASE="$enableval"], [panda_RELEASE="yes"])
@@ -306,9 +299,6 @@ AC_ARG_ENABLE(32bits,              [  --enable-32bits              create 32bits
 
 #etc/ext stuff
 AC_ARG_ENABLE(flopoco,             [  --enable-flopoco             compile FloPoCo external library],                     [panda_USE_FLOPOCO="$enableval"])
-AC_ARG_ENABLE(icarus,              [  --enable-icarus              compile Icarus Verilog compiler],                      [panda_USE_ICARUS="$enableval"])
-AC_ARG_ENABLE(verilator,           [  --enable-verilator           compile Verilator Verilog compiler],                   [panda_USE_VERILATOR="$enableval"])
-AC_ARG_ENABLE(parallel-verilator,  [  --enable-parallel-verilator  enable parallel simulation with Verilator],            [panda_PARALLEL_VERILATOR="$enableval"], [panda_PARALLEL_VERILATOR="no"])
 
 ################################################################################
 #                                                                              #
@@ -490,7 +480,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_GENERIC_BASHBACKEND=yes;
 
   #characterization requires to configure at least one synthesis toolchain
-  if test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
+  if test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes; then
     AC_APPEND(ENABLE_DOC,"EUCALYPTUS")
     panda_USE_EUCALYPTUS=yes;
   fi
@@ -603,15 +593,6 @@ if test "x$panda_USE_KOALA" = xyes; then
   panda_USE_LIB_TO_HDL=yes;
   panda_USE_PARAMETER=yes;
 
-  if test "x$panda_USE_ICARUS" != "xno"; then
-    panda_USE_ICARUS=yes;
-  fi
-  if test "x$panda_USE_VERILATOR" != "xno"; then
-    panda_USE_VERILATOR=yes;
-  fi
-  if test "x$panda_PARALLEL_VERILATOR" != "xno"; then
-    panda_PARALLEL_VERILATOR=yes;
-  fi
   if test "x$panda_USE_CUDD" != "xno"; then
     panda_USE_CUDD=yes;
   fi
@@ -947,7 +928,7 @@ if test "x$panda_USE_LIB_TARGET_PROFILING" != xyes && test "x$panda_USE_LIB_COMP
    panda_USE_LIB_COMPARE_MODELS=no;
 fi
 
-if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
+if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
    panda_USE_LIB_RTL_CHARACTERIZATION=yes;
 fi
 
@@ -1061,13 +1042,6 @@ if test "x$panda_USE_A3" = xyes; then
 fi
 
 
-
-################################ ALtera checks #################################
-if test "x$panda_USE_WRAPPER_ALTERA" = xyes; then
-  AC_CHECK_ALTERA
-fi
-AM_CONDITIONAL(BUILD_QUARTUS_13, test "x$QUARTUS_13_SETTINGS" != "x")
-
 ################################## bfd checks ##################################
 if test "x$panda_USE_LIB_OBJECT_CODE_WRAPPER" = xyes; then
   AC_CHECK_LIB([bfd],[bfd_openr],[HAVE_LIB_BFD=yes],[HAVE_LIB_BFD=no])
@@ -1132,31 +1106,11 @@ fi
 AM_CONDITIONAL(BUILD_GSL,  test "x$panda_USE_LIB_GSL" = xyes)
 
 
-################################ Lattice checks #################################
-if test "x$panda_USE_WRAPPER_LATTICE" = xyes; then
-  AC_CHECK_LATTICE
-fi
-
-################################ NanoXplore checks #################################
-if test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
-  AC_CHECK_NANOXPLORE
-fi
-
-
-############################# Mentor modelsim stuff ############################
-if test "x$panda_USE_MODELSIM" = xyes; then
-  AC_CHECK_MENTOR
-fi
-
-
-
 ##################################### MPPB #####################################
 if test "x$panda_USE_MPPB" = xyes; then
    AC_CHECK_MPPB
    AC_CHECK_MPPB_ELF
-   AC_CHECK_XILINX
 fi
-
 
 
 ####################################### R ######################################
@@ -1164,7 +1118,6 @@ if test "x$panda_USE_R" = xyes; then
    AC_CHECK_R
 fi
 AM_CONDITIONAL(BUILD_R, test "x$panda_USE_R" = xyes)
-
 
 
 ############################### Sparc elf compiler #############################
@@ -1184,25 +1137,6 @@ fi
 if test "x$panda_USE_TSIM" = xyes; then
   AC_CHECK_TSIM
 fi
-
-################################ Icarus checks #################################
-if test "x$panda_USE_ICARUS" = xyes; then
-  AC_CHECK_ICARUS
-fi
-
-################################ Verilator checks #################################
-if test "x$panda_USE_VERILATOR" = xyes; then
-  AC_CHECK_VERILATOR
-fi
-if test "x$panda_PARALLEL_VERILATOR" = xyes; then
-  AC_DEFINE(USE_PARALLEL_VERILATOR, 1, "Define if parallel Verilator simulation is used")
-fi
-
-################################ Xilinx checks #################################
-if test "x$panda_USE_WRAPPER_XILINX" = xyes; then
-  AC_CHECK_XILINX
-fi
-
 
 
 ################################################################################
@@ -2354,26 +2288,6 @@ if test "x$panda_USE_CORE_TOOLS" = xyes; then
 fi
 AM_CONDITIONAL(BUILD_CORE_TOOLS, test "x$panda_USE_CORE_TOOLS" = xyes)
 
-################ Xilinx stuff ########################
-if test "x$panda_USE_WRAPPER_XILINX" = xyes; then
-  AC_DEFINE(HAVE_XILINX, 1, "Define if Xilinx wrapper library is built")
-fi
-
-################ Altera stuff ########################
-if test "x$panda_USE_WRAPPER_ALTERA" = xyes; then
-  AC_DEFINE(HAVE_ALTERA, 1, "Define if Altera wrapper library is built")
-fi
-
-################ Lattice stuff ########################
-if test "x$panda_USE_WRAPPER_LATTICE" = xyes; then
-  AC_DEFINE(HAVE_LATTICE, 1, "Define if Lattice wrapper library is built")
-fi
-
-################ NanoXplore stuff ########################
-if test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
-  AC_DEFINE(HAVE_NANOXPLORE, 1, "Define if NanoXplore wrapper library is built")
-fi
-
 ################ Design Compiler stuff #####################
 if test "x$panda_USE_DESIGN_COMPILER" = xyes; then
   AC_DEFINE(HAVE_DESIGN_COMPILER, 1, "Define if Synopsys Design Compiler is correctly configured")
@@ -2421,21 +2335,6 @@ if test "x$panda_USE_LIB_SIMULATION_WRAPPER" = xyes; then
 fi
 AM_CONDITIONAL(BUILD_SIMULATION, test "x$panda_USE_LIB_SIMULATION_WRAPPER" = xyes)
 
-################ Icarus Verilog stuff ########################
-if test "x$panda_USE_ICARUS" = xyes; then
-  AC_DEFINE(HAVE_ICARUS, 1, "Define if icarus wrapper library is built")
-fi
-
-################ Verilator Verilog stuff ########################
-if test "x$panda_USE_VERILATOR" = xyes; then
-  AC_DEFINE(HAVE_VERILATOR, 1, "Define if verilator wrapper library is built")
-fi
-
-############################# Mentor modelsim stuff ############################
-if test "x$panda_USE_MODELSIM" = xyes; then
-  AC_DEFINE(HAVE_MODELSIM, 1, "Define if modelsim wrapper library is built")
-fi
-AM_CONDITIONAL(BUILD_MODELSIM, test "x$panda_USE_MODELSIM" = xyes)
 
 #################################### A3 stuff ####################################
 if test "x$panda_USE_A3" = xyes; then

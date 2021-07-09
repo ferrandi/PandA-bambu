@@ -38,7 +38,8 @@
 #define ADD_BUILTIN_PREFIX(fname) fname
 #endif
 
-typedef union {
+typedef union
+{
    unsigned int b;
    float f;
 } float_uint_converter;
@@ -116,7 +117,7 @@ float ADD_BUILTIN_PREFIX(sqrtf)(float x)
    if(e == 0)
    {
       unsigned int subnormal_lz, mshifted;
-      count_leading_zero_macro_lshift(23, m, subnormal_lz, mshifted);
+      count_leading_zero_lshift_macro(23, m, subnormal_lz, mshifted);
       e = -subnormal_lz;
       BIT_RESIZE(e, 9);
       isOddExp = !SELECT_BIT(e, 0);

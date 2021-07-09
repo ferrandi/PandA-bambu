@@ -480,7 +480,7 @@ typedef signed long long Slong;
             }
          }
 
-         __FORCE_INLINE void assign_uint64(Ulong l)
+         __FORCE_INLINE constexpr void assign_uint64(Ulong l)
          {
             set(0, static_cast<int>(l));
             if(N > 1)
@@ -494,7 +494,7 @@ typedef signed long long Slong;
             v[x] = value;
          }
 
-         __FORCE_INLINE Slong to_int64() const
+         __FORCE_INLINE constexpr Slong to_int64() const
          {
             return N == 1 ? v[0] : ((Ulong)v[1] << 32) | (Ulong)(unsigned)v[0];
          }
@@ -545,7 +545,7 @@ typedef signed long long Slong;
             }
          }
 
-         __FORCE_INLINE void assign_uint64(Ulong l)
+         __FORCE_INLINE constexpr void assign_uint64(Ulong l)
          {
             set(0, static_cast<int>(l));
             if(N > 2)
@@ -563,7 +563,7 @@ typedef signed long long Slong;
             //               assert(value==0);
          }
 
-         __FORCE_INLINE Slong to_int64() const
+         __FORCE_INLINE constexpr Slong to_int64() const
          {
             return N <= 2 ? v[0] : ((Ulong)v[1] << 32) | (Ulong)(unsigned)v[0];
          }
@@ -606,7 +606,7 @@ typedef signed long long Slong;
          {
             v = static_cast<int>(l);
          }
-         void assign_uint64(Ulong l)
+         void constexpr assign_uint64(Ulong l)
          {
             v = static_cast<int>(l);
          }
@@ -614,7 +614,7 @@ typedef signed long long Slong;
          {
             v = value;
          }
-         __FORCE_INLINE Slong to_int64() const
+         __FORCE_INLINE constexpr Slong to_int64() const
          {
             return v;
          }
@@ -653,7 +653,7 @@ typedef signed long long Slong;
          {
             v = l;
          }
-         void assign_uint64(Ulong l)
+         void constexpr assign_uint64(Ulong l)
          {
             v = static_cast<Slong>(l);
          }
@@ -664,7 +664,7 @@ typedef signed long long Slong;
             else
                v = ((((Ulong)all_ones) << 32) & v) | ((Ulong)((unsigned)value));
          }
-         __FORCE_INLINE Slong to_int64() const
+         __FORCE_INLINE constexpr Slong to_int64() const
          {
             return v;
          }
@@ -705,7 +705,7 @@ typedef signed long long Slong;
          {
             v = l;
          }
-         void assign_uint64(Ulong l)
+         void constexpr assign_uint64(Ulong l)
          {
             v = static_cast<Slong>(l);
          }
@@ -714,7 +714,7 @@ typedef signed long long Slong;
             if(!x)
                v = value;
          }
-         __FORCE_INLINE Slong to_int64() const
+         __FORCE_INLINE constexpr Slong to_int64() const
          {
             return v;
          }
@@ -759,7 +759,7 @@ typedef signed long long Slong;
             va = l;
             v2 = va < 0 ? ~0LL : 0;
          }
-         void assign_uint64(Ulong l)
+         void constexpr assign_uint64(Ulong l)
          {
             va = static_cast<Slong>(l);
             v2 = 0;
@@ -774,7 +774,7 @@ typedef signed long long Slong;
             else
                v2 = value;
          }
-         __FORCE_INLINE Slong to_int64() const
+         __FORCE_INLINE constexpr Slong to_int64() const
          {
             return va;
          }
@@ -823,7 +823,7 @@ typedef signed long long Slong;
          {
             va = l;
          }
-         void assign_uint64(Ulong l)
+         void constexpr assign_uint64(Ulong l)
          {
             va = static_cast<Slong>(l);
          }
@@ -835,7 +835,7 @@ typedef signed long long Slong;
             else if(x == 1)
                va = (all_ones & va) | (((Slong)value) << 32);
          }
-         __FORCE_INLINE Slong to_int64() const
+         __FORCE_INLINE constexpr Slong to_int64() const
          {
             return va;
          }
@@ -885,7 +885,7 @@ typedef signed long long Slong;
             va = l;
             vb = va < 0 ? ~0LL : 0;
          }
-         void assign_uint64(Ulong l)
+         void constexpr assign_uint64(Ulong l)
          {
             va = static_cast<Slong>(l);
             vb = 0;
@@ -902,7 +902,7 @@ typedef signed long long Slong;
             else
                vb = (all_ones & vb) | (((Slong)value) << 32);
          }
-         __FORCE_INLINE Slong to_int64() const
+         __FORCE_INLINE constexpr Slong to_int64() const
          {
             return va;
          }
@@ -965,7 +965,7 @@ typedef signed long long Slong;
             va = l;
             vb = va < 0 ? ~0LL : 0;
          }
-         void assign_uint64(Ulong l)
+         void constexpr assign_uint64(Ulong l)
          {
             va = static_cast<Slong>(l);
             vb = 0;
@@ -982,7 +982,7 @@ typedef signed long long Slong;
             else if(x == 3)
                vb = (all_ones & vb) | (((Slong)value) << 32);
          }
-         __FORCE_INLINE Slong to_int64() const
+         __FORCE_INLINE constexpr Slong to_int64() const
          {
             return va;
          }
@@ -1178,7 +1178,7 @@ typedef signed long long Slong;
       }
 
       template <int Nr, bool Cr>
-      __FORCE_INLINE void iv_assign_uint64(iv_base<Nr, Cr>& r, Ulong l)
+      __FORCE_INLINE constexpr void iv_assign_uint64(iv_base<Nr, Cr>& r, Ulong l)
       {
          r.assign_uint64(l);
       }
@@ -2362,11 +2362,11 @@ typedef signed long long Slong;
          }
 
          // Explicit conversion functions to C built-in types -------------
-         __FORCE_INLINE Slong to_int64() const
+         __FORCE_INLINE constexpr Slong to_int64() const
          {
             return v.to_int64();
          }
-         __FORCE_INLINE Ulong to_uint64() const
+         __FORCE_INLINE constexpr Ulong to_uint64() const
          {
             return (Ulong)v.to_int64();
          }
@@ -2511,7 +2511,7 @@ typedef signed long long Slong;
             return iv_equal_zero<0, N>(v);
          }
          template <int N2, bool C2>
-         __FORCE_INLINE void set_slc(unsigned lsb, int WS, const iv<N2, C2>& op2)
+         __FORCE_INLINE constexpr void set_slc(unsigned lsb, int WS, const iv<N2, C2>& op2)
          {
             AC_ASSERT((31 + WS) / 32 == N2, "Bad usage: WS greater than length of slice");
             unsigned msb = lsb + WS - 1;
@@ -2535,7 +2535,7 @@ typedef signed long long Slong;
                v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
                LOOP(int, i, 1, exclude, N2 - 1, { v.set(lsb_v + i, (op2.v[i] << lsb_b) | (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b))); });
                unsigned t = (op2.v[N2 - 1] << lsb_b) | (((unsigned)op2.v[N2 - 2] >> 1) >> (31 - lsb_b));
-               unsigned m;
+               unsigned m = t;
                if(msb_v - lsb_v == N2)
                {
                   v.set(msb_v - 1, t);
@@ -2594,11 +2594,11 @@ typedef signed long long Slong;
       template <>
       __FORCE_INLINE constexpr void iv<1, false>::set_slc(unsigned lsb, int WS, const iv<1, false>& op2)
       {
-         v.set(0, v[0] ^ ((v[0] ^ (op2.v[0] << lsb)) & ((WS == 32 ? ~0u : ((1u << WS) - 1)) << lsb)));
+         v.set(0, v[0] ^ ((v[0] ^ ((unsigned)op2.v[0] << lsb)) & ((WS == 32 ? ~0u : ((1u << WS) - 1)) << lsb)));
       }
       template <>
       template <>
-      __FORCE_INLINE void iv<2, false>::set_slc(unsigned lsb, int WS, const iv<1, false>& op2)
+      __FORCE_INLINE constexpr void iv<2, false>::set_slc(unsigned lsb, int WS, const iv<1, false>& op2)
       {
          Ulong l = to_uint64();
          Ulong l2 = op2.to_uint64();
@@ -2607,7 +2607,7 @@ typedef signed long long Slong;
       }
       template <>
       template <>
-      __FORCE_INLINE void iv<2, false>::set_slc(unsigned lsb, int WS, const iv<2, false>& op2)
+      __FORCE_INLINE constexpr void iv<2, false>::set_slc(unsigned lsb, int WS, const iv<2, false>& op2)
       {
          Ulong l = to_uint64();
          Ulong l2 = op2.to_uint64();
@@ -3385,11 +3385,11 @@ typedef signed long long Slong;
       {
          return ac_private::long_w == 32 ? (unsigned long)Base::v[0] : (unsigned long)Base::to_uint64();
       }
-      __FORCE_INLINE Slong to_int64() const
+      __FORCE_INLINE constexpr Slong to_int64() const
       {
          return Base::to_int64();
       }
-      __FORCE_INLINE Ulong to_uint64() const
+      __FORCE_INLINE constexpr Ulong to_uint64() const
       {
          return Base::to_uint64();
       }
@@ -4068,7 +4068,7 @@ typedef signed long long Slong;
       }
 
       template <int W2, bool S2, int WX, bool SX>
-      __FORCE_INLINE ac_int& set_slc(const ac_int<WX, SX> lsb, const ac_int<W2, S2>& slc)
+      __FORCE_INLINE constexpr ac_int& set_slc(const ac_int<WX, SX> lsb, const ac_int<W2, S2>& slc)
       {
          AC_ASSERT(lsb.to_int() + W2 <= W && lsb.to_int() >= 0, "Out of bounds set_slc");
          ac_int<WX - SX, false> ulsb = lsb;
@@ -4077,7 +4077,7 @@ typedef signed long long Slong;
          return *this;
       }
       template <int W2, bool S2>
-      __FORCE_INLINE ac_int& set_slc(signed lsb, const ac_int<W2, S2>& slc)
+      __FORCE_INLINE constexpr ac_int& set_slc(signed lsb, const ac_int<W2, S2>& slc)
       {
          AC_ASSERT(lsb + W2 <= W && lsb >= 0, "Out of bounds set_slc");
          unsigned ulsb = lsb & ((unsigned)~0 >> 1);
@@ -4086,7 +4086,7 @@ typedef signed long long Slong;
          return *this;
       }
       template <int W2, bool S2>
-      __FORCE_INLINE ac_int& set_slc(unsigned ulsb, const ac_int<W2, S2>& slc)
+      __FORCE_INLINE constexpr ac_int& set_slc(unsigned ulsb, const ac_int<W2, S2>& slc)
       {
          AC_ASSERT(ulsb + W2 <= W, "Out of bounds set_slc");
          Base::set_slc(ulsb, W2, (ac_int<W2, true>)slc);
@@ -4094,7 +4094,7 @@ typedef signed long long Slong;
          return *this;
       }
       template <int W2, bool S2>
-      __FORCE_INLINE ac_int& set_slc(int umsb, int ulsb, const ac_int<W2, S2>& slc)
+      __FORCE_INLINE constexpr ac_int& set_slc(int umsb, int ulsb, const ac_int<W2, S2>& slc)
       {
          AC_ASSERT((umsb + 1) <= W, "Out of bounds set_slc");
          Base::set_slc2(ulsb, umsb + 1 - ulsb, (ac_int<W2, true>)slc);
@@ -4452,12 +4452,12 @@ typedef signed long long Slong;
          const ac_int<W1, false> r = ref.slc(high, low);
          return r.to_ulong();
       }
-      __FORCE_INLINE Slong to_int64() const
+      __FORCE_INLINE constexpr Slong to_int64() const
       {
          const ac_int<W1, false> r = ref.slc(high, low);
          return r.to_int64();
       }
-      __FORCE_INLINE Ulong to_uint64() const
+      __FORCE_INLINE constexpr Ulong to_uint64() const
       {
          const ac_int<W1, false> r = ref.slc(high, low);
          return r.to_uint64();

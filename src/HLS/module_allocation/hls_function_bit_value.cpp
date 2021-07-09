@@ -45,6 +45,7 @@
 #include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
+#include "memory.hpp"
 #include "utility.hpp"
 
 /// design_flow includes
@@ -93,6 +94,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
       {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
          ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
          break;
@@ -118,8 +120,10 @@ DesignFlowStep_Status HLSFunctionBitValue::InternalExec()
    if(default_address_bitsize != curr_address_bitsize)
    {
       const DesignFlowStepRef design_flow_step = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);
+      HLSMgr->Rmem->set_enable_hls_bit_value(true);
       design_flow_step->Initialize();
       const DesignFlowStep_Status return_status = design_flow_step->Exec();
+      HLSMgr->Rmem->set_enable_hls_bit_value(false);
       return return_status;
    }
    return DesignFlowStep_Status::UNCHANGED;

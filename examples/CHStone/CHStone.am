@@ -158,10 +158,3 @@ EXTRA_DIST += %D%/adpcm/adpcm.c %D%/aes/aes_enc.c\
 %D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC6.tex\
 %D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC7.tex\
 %D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC8.tex
-
-
-TESTS += \
-  %D%/bambu_dfadd_sdc.sh
-
-
-

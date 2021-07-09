@@ -84,6 +84,9 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
       INTERFACE_TYPE_REAL = 4    // Floating-point type must be persisted
    };
 
+   /// Already visited tree node (used to avoid infinite recursion)
+   CustomUnorderedSet<unsigned int> already_visited;
+
    /// Tree manager
    const tree_managerRef TreeM;
 

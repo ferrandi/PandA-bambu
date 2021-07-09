@@ -42,6 +42,7 @@
 #include "Parameter.hpp"
 
 // include from tree/
+#include "Range.hpp"
 #include "application_manager.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
@@ -2753,8 +2754,11 @@ void Bit_Value::forward()
 
                      THROW_ASSERT(best.find(output_uid) != best.end(), "unexpected condition");
                      current.insert(std::make_pair(output_uid, best.at(output_uid)));
-                     auto res = forward_transfer(ga);
-                     current_updated = update_current(res, output_uid) or current_updated;
+                     if(!ssa->CGetUseStmts().empty())
+                     {
+                        auto res = forward_transfer(ga);
+                        current_updated = update_current(res, output_uid) or current_updated;
+                     }
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + STR(stmt));
@@ -2854,4 +2858,65 @@ void Bit_Value::forward()
       }
       first_phase = !first_phase;
    } while(!first_phase);
+   /// returned value management
+   auto fu_type = GET_NODE(fd->type);
+   THROW_ASSERT(fu_type->get_kind() == function_type_K || fu_type->get_kind() == method_type_K, "node " + STR(function_id) + " is " + fu_type->get_kind_text());
+   tree_nodeRef fret_type_node;
+   unsigned int ret_type_id;
+   if(fu_type->get_kind() == function_type_K)
+   {
+      const auto* ft = GetPointer<const function_type>(fu_type);
+      fret_type_node = GET_NODE(ft->retn);
+      ret_type_id = GET_INDEX_NODE(ft->retn);
+   }
+   else
+   {
+      const auto* mt = GetPointer<const method_type>(fu_type);
+      fret_type_node = GET_NODE(mt->retn);
+      ret_type_id = GET_INDEX_NODE(mt->retn);
+   }
+   if(tree_helper::is_scalar(TM, ret_type_id))
+   {
+      current.insert(std::make_pair(function_id, best.at(function_id)));
+      auto res = create_x_bitstring(1);
+      bool undefined_behavior = false;
+      for(const auto& B_it : sl->list_of_bloc)
+      {
+         blocRef B = B_it.second;
+         for(const auto& stmt : B->CGetStmtList())
+         {
+            const auto stmt_node = GET_NODE(stmt);
+            if(stmt_node->get_kind() == gimple_return_K)
+            {
+               auto* gr = GetPointerS<gimple_return>(stmt_node);
+               if(!gr->op)
+               {
+                  /// do nothing
+                  /// undefined behavior
+                  undefined_behavior = true;
+               }
+               else
+               {
+                  if(current.find(GET_INDEX_NODE(gr->op)) == current.end())
+                  {
+                     if(best.find(GET_INDEX_NODE(gr->op)) == best.end())
+                     {
+                        current[GET_INDEX_NODE(gr->op)] = fd->range ? fd->range->getBitValues(tree_helper::is_int(TM, ret_type_id)) : create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
+                     }
+                     else
+                     {
+                        current[GET_INDEX_NODE(gr->op)] = best.at(GET_INDEX_NODE(gr->op));
+                     }
+                  }
+                  res = inf(res, current.at(GET_INDEX_NODE(gr->op)), function_id);
+               }
+            }
+         }
+      }
+      if(undefined_behavior)
+      {
+         res = create_x_bitstring(1);
+      }
+      update_current(res, function_id);
+   }
 }

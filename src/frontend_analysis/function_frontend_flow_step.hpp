@@ -96,6 +96,7 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
     */
    void WriteBBGraphDot(const std::string& filename) const;
 
+ private:
    /**
     * Check if this function is reachable from the top functions
     */
@@ -159,6 +160,11 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
     * @return on which bb version this step has been executed last time
     */
    unsigned int CGetBBVersion() const;
+
+   /**
+    * @return on which bit_value version this step has been executed last time
+    */
+   unsigned int GetBitValueVersion() const;
 
    /**
     * Dump the initial intermediate representation

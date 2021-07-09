@@ -95,7 +95,8 @@ memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_ad
       parameter_alignment(16),
       null_pointer_check(_null_pointer_check),
       packed_vars(false),
-      bus_addr_bitsize(_bus_addr_bitsize)
+      bus_addr_bitsize(_bus_addr_bitsize),
+      enable_hls_bit_value(false)
 {
    unsigned int max_bus_size = 2 * max_bram;
    external_base_address_alignment = internal_base_address_alignment = max_bus_size / 8;

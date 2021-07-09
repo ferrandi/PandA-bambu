@@ -76,7 +76,8 @@
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-parm2ssa::parm2ssa(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, PARM2SSA, _design_flow_manager, _parameters)
+parm2ssa::parm2ssa(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, PARM2SSA, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -90,8 +91,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -110,47 +111,66 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-DesignFlowStep_Status parm2ssa::Exec()
+DesignFlowStep_Status parm2ssa::InternalExec()
 {
-   const CallGraphManagerConstRef CG = AppM->CGetCallGraphManager();
    const tree_managerRef TM = AppM->get_tree_manager();
+   const tree_manipulationRef IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    /// Already visited address expression (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited_ae;
 
-   const auto reached_body_fun_ids = CG->GetReachedBodyFunctions();
-   AppM->clearParm2SSA();
+   const auto beforeParm2SSA = AppM->getACopyParm2SSA(function_id);
+   AppM->clearParm2SSA(function_id);
 
-   for(auto function_id : reached_body_fun_ids)
+   const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
+   auto* fd = GetPointer<function_decl>(curr_tn);
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
+
+   for(auto arg : fd->list_of_args)
    {
-      const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
-      auto* fd = GetPointer<function_decl>(curr_tn);
-      auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-      const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
-
-      for(auto arg : fd->list_of_args)
-      {
-         recursive_analysis(arg, srcp_default, already_visited_ae);
-      }
-
-      std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
-      std::map<unsigned int, blocRef>::iterator it, it_end;
-
-      it_end = blocks.end();
-      for(it = blocks.begin(); it != it_end; ++it)
-      {
-         for(auto stmt : it->second->CGetStmtList())
-         {
-            recursive_analysis(stmt, srcp_default, already_visited_ae);
-         }
-         for(auto phi : it->second->CGetPhiList())
-         {
-            recursive_analysis(phi, srcp_default, already_visited_ae);
-         }
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
+      recursive_analysis(arg, srcp_default, already_visited_ae);
    }
-   return DesignFlowStep_Status::SUCCESS;
+
+   std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
+   std::map<unsigned int, blocRef>::iterator it, it_end;
+
+   it_end = blocks.end();
+   for(it = blocks.begin(); it != it_end; ++it)
+   {
+      for(auto stmt : it->second->CGetStmtList())
+      {
+         recursive_analysis(stmt, srcp_default, already_visited_ae);
+      }
+      for(auto phi : it->second->CGetPhiList())
+      {
+         recursive_analysis(phi, srcp_default, already_visited_ae);
+      }
+   }
+   for(const auto& arg : fd->list_of_args)
+   {
+      if(!AppM->isParmUsed(function_id, GET_INDEX_CONST_NODE(arg)))
+      {
+         if(beforeParm2SSA.find(GET_INDEX_CONST_NODE(arg)) == beforeParm2SSA.end())
+         {
+            const auto* pd = GetPointer<const parm_decl>(GET_NODE(arg));
+            tree_nodeRef ssa_par = IRman->create_ssa_name(arg, pd->type, tree_nodeRef(), tree_nodeRef());
+            AppM->setSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg), GET_INDEX_CONST_NODE(ssa_par));
+         }
+         else
+         {
+            AppM->setSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg), beforeParm2SSA.find(GET_INDEX_CONST_NODE(arg))->second);
+         }
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
+   const auto afterParm2SSA = AppM->getACopyParm2SSA(function_id);
+   auto modified = afterParm2SSA != beforeParm2SSA;
+   if(modified)
+   {
+      function_behavior->UpdateBBVersion();
+   }
+   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
 void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, CustomUnorderedSet<unsigned int>& already_visited_ae)
@@ -215,7 +235,7 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, Cus
             if(GET_NODE(sn->var)->get_kind() == parm_decl_K && GET_NODE(defStmt)->get_kind() == gimple_nop_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Setting " + STR(GET_INDEX_NODE(sn->var)) + "-> " + STR(GET_INDEX_NODE(tn)) + " " + STR(GET_INDEX_NODE(tn)));
-               AppM->setSSAFromParm(GET_INDEX_NODE(sn->var), GET_INDEX_NODE(tn));
+               AppM->setSSAFromParm(function_id, GET_INDEX_NODE(sn->var), GET_INDEX_NODE(tn));
             }
             recursive_analysis(sn->var, srcp, already_visited_ae);
          }

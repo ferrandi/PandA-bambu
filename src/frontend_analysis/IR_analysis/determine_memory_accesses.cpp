@@ -94,13 +94,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::make_pair(VAR_DECL_FIX, SAME_FUNCTION));
          }
          relationships.insert(std::make_pair(CALL_GRAPH_BUILTIN_CALL, SAME_FUNCTION));
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(PARM2SSA, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(PARM2SSA, SAME_FUNCTION));
          relationships.insert(std::make_pair(REBUILD_INITIALIZATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(REBUILD_INITIALIZATION2, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
@@ -132,6 +131,16 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Node is not a function or it hasn't a body");
       return DesignFlowStep_Status::UNCHANGED;
    }
+   const CustomOrderedSet<unsigned int> before_function_mem = function_behavior->get_function_mem();
+   const bool before_has_globals = function_behavior->get_has_globals();
+   const CustomOrderedSet<unsigned int> before_state_variables = function_behavior->get_state_variables();
+   const CustomOrderedSet<unsigned int> before_dynamic_address = function_behavior->get_dynamic_address();
+   const CustomOrderedSet<unsigned int> before_parm_decl_copied = function_behavior->get_parm_decl_copied();
+   const CustomOrderedSet<unsigned int> before_parm_decl_loaded = function_behavior->get_parm_decl_loaded();
+   const CustomOrderedSet<unsigned int> before_parm_decl_stored = function_behavior->get_parm_decl_stored();
+   const bool before_dereference_unknown_addr = function_behavior->get_dereference_unknown_addr();
+   const bool before_has_undefined_function_receiving_pointers = function_behavior->get_has_undefined_function_receiving_pointers();
+
    /// cleanup data structure
    function_behavior->clean_function_mem();
    function_behavior->set_has_globals(false);
@@ -176,7 +185,12 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
    /// mem clean up
    already_visited_ae.clear();
    already_visited.clear();
-   return DesignFlowStep_Status::SUCCESS;
+
+   bool changed = before_function_mem != function_behavior->get_function_mem() || before_has_globals != function_behavior->get_has_globals() || before_state_variables != function_behavior->get_state_variables() ||
+                  before_dynamic_address != function_behavior->get_dynamic_address() || before_parm_decl_copied != function_behavior->get_parm_decl_copied() || before_parm_decl_loaded != function_behavior->get_parm_decl_loaded() ||
+                  before_parm_decl_stored != function_behavior->get_parm_decl_stored() || before_dereference_unknown_addr != function_behavior->get_dereference_unknown_addr() ||
+                  before_has_undefined_function_receiving_pointers != function_behavior->get_has_undefined_function_receiving_pointers();
+   return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
 void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, bool dynamic_address, bool no_dynamic_address)
@@ -759,9 +773,9 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                }
                const FunctionBehaviorRef FBcalled = AppM->GetFunctionBehavior(calledFundID);
                /// check if the actual parameter has been allocated in memory
-               if(function_behavior->is_variable_mem(actual_par_index) && AppM->isParmUsed(formal_par_index))
+               if(function_behavior->is_variable_mem(actual_par_index) && AppM->isParmUsed(calledFundID, formal_par_index))
                {
-                  auto formal_ssa_index = AppM->getSSAFromParm(formal_par_index);
+                  auto formal_ssa_index = AppM->getSSAFromParm(calledFundID, formal_par_index);
                   auto formal_ssa_node = TM->get_tree_node_const(formal_ssa_index);
                   auto formal_ssa = GetPointer<ssa_name>(formal_ssa_node);
                   auto is_singleton = formal_ssa->use_set->is_a_singleton() && actual_par_index == formal_ssa->use_set->variables.front()->index;
@@ -778,7 +792,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      }
                   }
                }
-               else if(!AppM->isParmUsed(formal_par_index))
+               else if(!AppM->isParmUsed(calledFundID, formal_par_index))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter is not used in the function body.");
                }
@@ -982,9 +996,9 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                }
                const FunctionBehaviorRef FBcalled = AppM->GetFunctionBehavior(calledFundID);
                /// check if the actual parameter has been allocated in memory
-               if(function_behavior->is_variable_mem(actual_par_index) && AppM->isParmUsed(formal_par_index))
+               if(function_behavior->is_variable_mem(actual_par_index) && AppM->isParmUsed(calledFundID, formal_par_index))
                {
-                  auto formal_ssa_index = AppM->getSSAFromParm(formal_par_index);
+                  auto formal_ssa_index = AppM->getSSAFromParm(calledFundID, formal_par_index);
                   auto formal_ssa_node = TM->get_tree_node_const(formal_ssa_index);
                   auto formal_ssa = GetPointer<ssa_name>(formal_ssa_node);
                   auto is_singleton = formal_ssa->use_set->is_a_singleton() && actual_par_index == formal_ssa->use_set->variables.front()->index;
@@ -1001,7 +1015,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      }
                   }
                }
-               else if(!AppM->isParmUsed(formal_par_index))
+               else if(!AppM->isParmUsed(calledFundID, formal_par_index))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter is not used in the function body.");
                }
@@ -1475,9 +1489,5 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
 
 bool determine_memory_accesses::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return FunctionFrontendFlowStep::HasToBeExecuted();
 }

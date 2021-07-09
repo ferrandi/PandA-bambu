@@ -1,0 +1,22 @@
+name: 'CPP Check'
+description: 'Perform CPP check on bambu code'
+inputs:
+  args:
+    description: 'Configure command line arguments'
+    required: false
+    default: ''
+  report-dir:
+    description: 'Output report directory'
+    required: false
+    default: './cppcheck-report'
+outputs:
+  error-count:
+    description: 'Number of errors from CPP check report'
+  report-dir:
+    description: 'Output report directory'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{inputs.report-dir}}
+    - ${{inputs.args}}

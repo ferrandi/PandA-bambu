@@ -1103,7 +1103,7 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, bool one_hot_encodi
                          STR(GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))) +
                          "\n"
                          "|  bitvalue string for ssa id is " +
-                         GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))->bit_values + "\n";
+                         STR(l.ssa_id) + " " + GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))->bit_values + "\n";
 
    if(l.type & DISCR_ADDR)
    {

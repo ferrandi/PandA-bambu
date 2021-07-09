@@ -48,8 +48,6 @@
 
 /// Autoheader includes
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
-#include "config_QUARTUS_13_SETTINGS.hpp"
-#include "config_QUARTUS_SETTINGS.hpp"
 
 /// constants include
 #include "synthesis_constants.hpp"
@@ -278,13 +276,13 @@ void AlteraBackendFlow::WriteFlowConfiguration(std::ostream& script)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing flow configuration");
    auto device_string = Param->getOption<std::string>(OPT_device_string);
    std::string setupscr;
-   if(STR(QUARTUS_SETTINGS) != "0" and device_string.find("EP2C") == std::string::npos)
+   if(Param->isOption(OPT_quartus_settings) and device_string.find("EP2C") == std::string::npos)
    {
-      setupscr = STR(QUARTUS_SETTINGS);
+      setupscr = Param->getOption<std::string>(OPT_quartus_settings);
    }
-   else if(STR(QUARTUS_13_SETTINGS) != "0")
+   else if(Param->isOption(OPT_quartus_13_settings))
    {
-      setupscr = STR(QUARTUS_13_SETTINGS);
+      setupscr = Param->getOption<std::string>(OPT_quartus_13_settings);
    }
    if(setupscr.size())
    {

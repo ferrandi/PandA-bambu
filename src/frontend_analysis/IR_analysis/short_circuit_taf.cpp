@@ -52,8 +52,10 @@
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
 /// HLS include
+#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#include "hls.hpp"
+#include "hls_manager.hpp"
 #include "hls_step.hpp"
 #endif
 
@@ -61,6 +63,7 @@
 #include "Parameter.hpp"
 
 /// design flow manager include
+#include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
 /// HLS includes
@@ -120,45 +123,48 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
          }
 #endif
-         /// We can check if single_write_memory is true only after technology was loaded
-         const auto technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         if(design_flow_manager.lock()->GetStatus(technology_flow_signature) == DesignFlowStep_Status::EMPTY)
-         {
-            if(GetPointer<const HLS_manager>(AppM) && !GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory())
-            {
-               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-            }
-         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         switch(GetStatus())
+         /// Not executed
+         if(GetStatus() != DesignFlowStep_Status::SUCCESS)
          {
-            case DesignFlowStep_Status::SUCCESS:
+            if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+               GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
             {
-               relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
-               break;
+               /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
+               const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
+               if(update_schedule)
+               {
+                  const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+                  const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                  if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != function_behavior->GetBBVersion())
+                  {
+                     relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UPDATE_SCHEDULE, SAME_FUNCTION));
+                     break;
+                  }
+               }
             }
-            case DesignFlowStep_Status::SKIPPED:
-            case DesignFlowStep_Status::UNCHANGED:
-            case DesignFlowStep_Status::UNEXECUTED:
-            case DesignFlowStep_Status::UNNECESSARY:
-            {
-               break;
-            }
-            case DesignFlowStep_Status::ABORTED:
-            case DesignFlowStep_Status::EMPTY:
-            case DesignFlowStep_Status::NONEXISTENT:
-            default:
-               THROW_UNREACHABLE("");
+         }
+         else
+         {
+            relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
+            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
+         }
          relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          break;
       }
       default:
@@ -411,13 +417,13 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    const auto& list_of_stmt_cond1 = list_of_bloc.at(bb1)->CGetStmtList();
    THROW_ASSERT(GET_CONST_NODE(list_of_stmt_cond1.back())->get_kind() == gimple_cond_K, "a gimple_cond is expected");
    const auto cond_statement = list_of_stmt_cond1.back();
-   list_of_bloc.at(bb1)->RemoveStmt(cond_statement);
+   list_of_bloc.at(bb1)->RemoveStmt(cond_statement, AppM);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---First gimple cond is " + STR(cond_statement));
    const auto ce1 = GetPointer<const gimple_cond>(GET_CONST_NODE(cond_statement));
    auto cond1_index = GET_INDEX_CONST_NODE(ce1->op0);
    const auto type_node = tree_helper::CGetType(GET_CONST_NODE(ce1->op0));
-   const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
+   const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
    const auto type_index = tree_helper::is_bool(TM, type_node->index) ? type_node->index : tree_man->create_boolean_type()->index;
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
 
@@ -435,13 +441,14 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    /// create the assignment between condition for bb1 and the new ssa var
    const auto cond1_gimple_stmt_id = TM->new_tree_node_id();
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+   IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa1_node_nid);
    IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond1_index);
    TM->create_tree_node(cond1_gimple_stmt_id, gimple_assign_K, IR_schema);
    IR_schema.clear();
    const auto cond1_created_stmt = TM->GetTreeReindex(cond1_gimple_stmt_id);
    /// and then add to the bb1 statement list
-   list_of_bloc.at(bb1)->PushBack(cond1_created_stmt);
+   list_of_bloc.at(bb1)->PushBack(cond1_created_stmt, AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created statement in BB" + STR(bb1) + " - " + STR(cond1_created_stmt));
    cond1_index = ssa1_node_nid;
 
@@ -496,6 +503,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          /// second, create the gimple assignment
          const auto gimple_stmt_id = TM->new_tree_node_id();
          IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         IR_schema[TOK(TOK_SCPE)] = STR(function_id);
          IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa_node_nid);
          IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond_expr_id);
          IR_schema[TOK(TOK_ORIG)] = boost::lexical_cast<std::string>(GET_INDEX_CONST_NODE(phi));
@@ -505,7 +513,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
          /// and then add to the statement list
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created new assignment: " + STR(created_stmt));
-         list_of_bloc.at(bb1)->PushBack(created_stmt);
+         list_of_bloc.at(bb1)->PushBack(created_stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi is " + mc_phi->ToString());
          mc_phi->ReplaceDefEdge(TM, def_edge_to_be_updated, gimple_phi::DefEdge(ssa_cond_node, def_edge_to_be_updated.second));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi is " + mc_phi->ToString());
@@ -538,13 +546,14 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
       const auto ncond_gimple_stmt_id = TM->new_tree_node_id();
       IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+      IR_schema[TOK(TOK_SCPE)] = STR(function_id);
       IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ncond_ssa_node_nid);
       IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond1_index);
       TM->create_tree_node(ncond_gimple_stmt_id, gimple_assign_K, IR_schema);
       IR_schema.clear();
       const auto created_stmt = TM->GetTreeReindex(ncond_gimple_stmt_id);
       /// and then add to the bb1 statement list
-      list_of_bloc.at(bb1)->PushBack(created_stmt);
+      list_of_bloc.at(bb1)->PushBack(created_stmt, AppM);
       cond1_index = ncond_ssa_node_nid;
    }
    /// identify the second gimple_cond
@@ -579,13 +588,14 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    /// create the assignment between condition for bb2 and the new ssa var
    const auto cond2_gimple_stmt_id = TM->new_tree_node_id();
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+   IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa2_node_nid);
    IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond2_index);
    TM->create_tree_node(cond2_gimple_stmt_id, gimple_assign_K, IR_schema);
    IR_schema.clear();
    tree_nodeRef cond2_created_stmt = TM->GetTreeReindex(cond2_gimple_stmt_id);
    /// and then add to the bb1 statement list
-   list_of_bloc.at(bb1)->PushBack(cond2_created_stmt);
+   list_of_bloc.at(bb1)->PushBack(cond2_created_stmt, AppM);
    cond2_index = ssa2_node_nid;
 
    /// create (!)cond1 or cond2
@@ -606,18 +616,18 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    /// The expression contained in ce2 must now be the newly created expression,
    /// identified by expr_index
    /// Temporary remove statement to remove old uses
-   list_of_bloc.at(bb2)->RemoveStmt(second_stmt);
+   list_of_bloc.at(bb2)->RemoveStmt(second_stmt, AppM);
    ce2->op0 = TM->GetTreeReindex(expr_index);
 
    /// Readding the statement
-   list_of_bloc.at(bb2)->PushBack(second_stmt);
+   list_of_bloc.at(bb2)->PushBack(second_stmt, AppM);
 
    /// add the statements of bb1 to bb2
    while(list_of_stmt_cond1.size())
    {
       const auto stmt = list_of_stmt_cond1.back();
-      list_of_bloc.at(bb1)->RemoveStmt(stmt);
-      list_of_bloc.at(bb2)->PushFront(stmt);
+      list_of_bloc.at(bb1)->RemoveStmt(stmt, AppM);
+      list_of_bloc.at(bb2)->PushFront(stmt, AppM);
    }
    /// add the phi of bb1 to bb2
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Moving phis");
@@ -689,5 +699,47 @@ bool short_circuit_taf::check_phis(unsigned int curr_bb, const std::map<unsigned
          return false;
       }
    }
+   return true;
+}
+
+bool short_circuit_taf::HasToBeExecuted() const
+{
+   if(!FunctionFrontendFlowStep::HasToBeExecuted())
+   {
+      return false;
+   }
+
+#if HAVE_ILP_BUILT
+   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
+   {
+      if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
+      {
+         /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
+         const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
+         if(update_schedule)
+         {
+            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+            const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+            if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != function_behavior->GetBBVersion())
+            {
+               return false;
+            }
+            else
+            {
+               return true;
+            }
+         }
+         else
+         {
+            return false;
+         }
+      }
+      else
+      {
+         return false;
+      }
+   }
+#endif
+
    return true;
 }

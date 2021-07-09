@@ -47,6 +47,7 @@
 /// behavior includes
 #include "application_frontend_flow_step.hpp"
 #include "call_graph_manager.hpp"
+#include "function_behavior.hpp"
 
 /// design_flows includes
 #include "design_flow_graph.hpp"
@@ -89,34 +90,39 @@ void HLSBitValue::ComputeRelationships(DesignFlowStepSet& relationship, const De
          if(status == DesignFlowStep_Status::SUCCESS)
          {
             changed_functions.insert(reached_body_fun_id);
+            const auto FB = HLSMgr->GetFunctionBehavior(reached_body_fun_id);
+            FB->UpdateBitValueVersion();
          }
          else
          {
             THROW_ASSERT(status == DesignFlowStep_Status::UNCHANGED, "");
          }
       }
-      if(parameters->isOption(OPT_bitvalue_ipa) && parameters->getOption<bool>(OPT_bitvalue_ipa))
+      if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
       {
-         if(!changed_functions.empty())
+         if(parameters->isOption(OPT_bitvalue_ipa) && parameters->getOption<bool>(OPT_bitvalue_ipa))
          {
-            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_IPA));
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ?
-                                                           design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
-                                                           GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateApplicationFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_IPA);
-            relationship.insert(design_flow_step);
+            if(!changed_functions.empty())
+            {
+               vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_IPA));
+               const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+               const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ?
+                                                              design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+                                                              GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateApplicationFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_IPA);
+               relationship.insert(design_flow_step);
+            }
          }
-      }
-      else
-      {
-         for(const auto changed_function : changed_functions)
+         else
          {
-            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_OPT, changed_function));
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ?
-                                                           design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
-                                                           GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, changed_function);
-            relationship.insert(design_flow_step);
+            for(const auto changed_function : changed_functions)
+            {
+               vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_OPT, changed_function));
+               const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+               const DesignFlowStepRef design_flow_step =
+                   frontend_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+                                                  GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, changed_function);
+               relationship.insert(design_flow_step);
+            }
          }
       }
    }

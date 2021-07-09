@@ -253,7 +253,7 @@ const std::string CDFCModuleBindingSpecialization::GetSignature() const
    return STR(static_cast<unsigned int>(clique_covering_algorithm));
 }
 
-void cdfc_module_binding::initialize_connection_relation(connection_relation& con_rel, OpVertexSet& all_candidate_vertices)
+void cdfc_module_binding::initialize_connection_relation(connection_relation& con_rel, const OpVertexSet& all_candidate_vertices)
 {
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
@@ -2202,9 +2202,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);
-   }
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
-   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform module binding: " + print_cpu_time(step_time) + " seconds");
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");

@@ -641,7 +641,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
    }
 }
 
-void moduleGenerator::create_generic_module(const std::string fuName, const std::string libraryId, const technology_managerRef TM, const std::string new_fu_name, TargetDevice_Type dv_type, const application_managerRef AppM)
+void moduleGenerator::create_generic_module(const std::string& fuName, const std::string& libraryId, const technology_managerRef TM, const std::string& new_fu_name, TargetDevice_Type dv_type, const application_managerRef AppM)
 {
    const library_managerRef libraryManager = TM->get_library_manager(libraryId);
    technology_nodeRef techNode_obj = libraryManager->get_fu(fuName);

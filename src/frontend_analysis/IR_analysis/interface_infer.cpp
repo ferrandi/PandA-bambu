@@ -492,17 +492,14 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
       args.push_back(argSSANode);
    }
    auto call_expr_node = tree_man->CreateCallExpr(function_decl_node, args, srcp);
-   auto new_assignment = tree_man->CreateGimpleAssign(readType, tree_nodeRef(), tree_nodeRef(), call_expr_node, destBB, srcp); /// TO BE IMPROVED
+   auto new_assignment = tree_man->CreateGimpleAssign(readType, tree_nodeRef(), tree_nodeRef(), call_expr_node, GET_INDEX_NODE(gn->scpe), destBB, srcp); /// TO BE IMPROVED
    tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(GET_NODE(new_assignment))->op0;
    for(auto defSSA : usedStmt_defs)
    {
       auto ssaDefVar = GetPointer<ssa_name>(GET_NODE(defSSA));
       THROW_ASSERT(ssaDefVar, "unexpected condition");
       std::list<tree_nodeRef> varUses;
-      for(auto used : ssaDefVar->CGetUseStmts())
-      {
-         varUses.push_back(used.first);
-      }
+      std::transform(ssaDefVar->CGetUseStmts().begin(), ssaDefVar->CGetUseStmts().end(), std::back_inserter(varUses), [](const std::pair<const tree_nodeRef, size_t>& used) { return used.first; });
       for(auto used : varUses)
       {
          TM->ReplaceTreeNode(used, defSSA, temp_ssa_var);
@@ -510,24 +507,14 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
    }
    if(origStmt)
    {
-      sl->list_of_bloc[destBB]->PushBefore(new_assignment, origStmt);
+      sl->list_of_bloc[destBB]->PushBefore(new_assignment, origStmt, AppM);
    }
    else
    {
-      sl->list_of_bloc[destBB]->PushBack(new_assignment);
+      sl->list_of_bloc[destBB]->PushBack(new_assignment, AppM);
    }
    GetPointer<HLS_manager>(AppM)->design_interface_loads[fname][destBB][argName_string].push_back(GET_INDEX_NODE(new_assignment));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---LOAD STMT: " + new_assignment->ToString() + " in function " + fname);
-   if(!AppM->GetCallGraphManager()->IsVertex(GET_INDEX_NODE(function_decl_node)))
-   {
-      BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), false, parameters));
-      FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
-      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), GET_INDEX_CONST_NODE(new_assignment), FB, FunctionEdgeInfo::CallType::direct_call);
-   }
-   else
-   {
-      AppM->GetCallGraphManager()->AddCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), GET_INDEX_CONST_NODE(new_assignment), FunctionEdgeInfo::CallType::direct_call);
-   }
 }
 
 void interface_infer::create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, const std::string& fdName, tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType, const tree_manipulationRef tree_man,
@@ -579,8 +566,8 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    args.push_back(size_value);
    if(tree_helper::is_int(TM, GET_INDEX_NODE(writeValue)))
    {
-      const auto ga_nop = tree_man->CreateNopExpr(writeValue, tree_man->CreateUnsigned(tree_helper::CGetType(GET_NODE(writeValue))), tree_nodeRef(), tree_nodeRef());
-      sl->list_of_bloc[destBB]->PushBefore(ga_nop, origStmt);
+      const auto ga_nop = tree_man->CreateNopExpr(writeValue, tree_man->CreateUnsigned(tree_helper::CGetType(GET_NODE(writeValue))), tree_nodeRef(), tree_nodeRef(), GET_INDEX_NODE(gn->scpe));
+      sl->list_of_bloc[destBB]->PushBefore(ga_nop, origStmt, AppM);
       args.push_back(GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0);
    }
    else
@@ -593,22 +580,12 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    auto mr = GetPointer<mem_ref>(GET_NODE(ga->op0));
    args.push_back(mr->op0);
 
-   auto new_writecall = tree_man->create_gimple_call(function_decl_node, args, srcp, destBB);
+   auto new_writecall = tree_man->create_gimple_call(function_decl_node, args, GET_INDEX_NODE(gn->scpe), srcp, destBB);
 
-   sl->list_of_bloc[destBB]->PushBefore(new_writecall, origStmt);
+   sl->list_of_bloc[destBB]->PushBefore(new_writecall, origStmt, AppM);
    GetPointer<HLS_manager>(AppM)->design_interface_stores[fname][destBB][argName_string].push_back(GET_INDEX_NODE(new_writecall));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---STORE STMT: " + new_writecall->ToString() + " in function " + fname);
    addGimpleNOPxVirtual(origStmt, TM, writeVdef);
-   if(!AppM->GetCallGraphManager()->IsVertex(GET_INDEX_NODE(function_decl_node)))
-   {
-      BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), false, parameters));
-      FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
-      AppM->GetCallGraphManager()->AddFunctionAndCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), GET_INDEX_CONST_NODE(new_writecall), FB, FunctionEdgeInfo::CallType::direct_call);
-   }
-   else
-   {
-      AppM->GetCallGraphManager()->AddCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), GET_INDEX_CONST_NODE(new_writecall), FunctionEdgeInfo::CallType::direct_call);
-   }
 }
 
 void interface_infer::create_resource_Read_simple(const std::set<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, unsigned n_resources, unsigned rwBWsize)
@@ -800,17 +777,17 @@ void interface_infer::create_resource_Write_simple(const std::set<std::string>& 
       {
          CM->add_port_vector(START_PORT_NAME, port_o::IN, n_resources, interface_top, bool_type);
       }
-      structural_objectRef sizePort, writePort, addrPort;
+      structural_objectRef addrPort;
       if(isMultipleResource)
       {
-         sizePort = CM->add_port_vector("in1", port_o::IN, n_resources, interface_top, rwsize);
-         writePort = CM->add_port_vector("in2", port_o::IN, n_resources, interface_top, rwtype);
+         CM->add_port_vector("in1", port_o::IN, n_resources, interface_top, rwsize);
+         CM->add_port_vector("in2", port_o::IN, n_resources, interface_top, rwtype);
          addrPort = CM->add_port_vector("in3", port_o::IN, n_resources, interface_top, addrType);
       }
       else
       {
-         sizePort = CM->add_port("in1", port_o::IN, interface_top, rwsize);
-         writePort = CM->add_port("in2", port_o::IN, interface_top, rwtype);
+         CM->add_port("in1", port_o::IN, interface_top, rwsize);
+         CM->add_port("in2", port_o::IN, interface_top, rwtype);
          addrPort = CM->add_port("in3", port_o::IN, interface_top, addrType);
       }
       GetPointer<port_o>(addrPort)->set_is_addr_bus(true);
@@ -955,8 +932,8 @@ void interface_infer::create_resource_array(const std::set<std::string>& operati
       CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port_vector(START_PORT_NAME, port_o::IN, NResources, interface_top, bool_type);
 
-      auto selPort = CM->add_port_vector("in1", port_o::IN, NResources, interface_top, size1);     // when 0 is a read otherwise is a write
-      auto sizePort = CM->add_port_vector("in2", port_o::IN, NResources, interface_top, rwsize);   // bit-width size of the written or read data
+      CM->add_port_vector("in1", port_o::IN, NResources, interface_top, size1);                    // when 0 is a read otherwise is a write
+      CM->add_port_vector("in2", port_o::IN, NResources, interface_top, rwsize);                   // bit-width size of the written or read data
       auto dataPort = CM->add_port_vector("in3", port_o::IN, NResources, interface_top, rwtype);   // value written when the first operand is 1, 0 otherwise
       auto addrPort = CM->add_port_vector("in4", port_o::IN, NResources, interface_top, addrType); // address
       GetPointer<port_o>(dataPort)->set_port_alignment(nbitAddres);
@@ -1117,9 +1094,9 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port_vector(START_PORT_NAME, port_o::IN, n_resources, interface_top, bool_type);
 
-      auto selPort = CM->add_port_vector("in1", port_o::IN, n_resources, interface_top, size1);                   // when 0 is a read otherwise is a write
-      auto sizePort = CM->add_port_vector("in2", port_o::IN, n_resources, interface_top, rwsize);                 // bit-width size of the written or read data
-      auto dataPort = CM->add_port_vector("in3", port_o::IN, n_resources, interface_top, rwtype);                 // value written when the first operand is 1, 0 otherwise
+      CM->add_port_vector("in1", port_o::IN, n_resources, interface_top, size1);                                  // when 0 is a read otherwise is a write
+      CM->add_port_vector("in2", port_o::IN, n_resources, interface_top, rwsize);                                 // bit-width size of the written or read data
+      CM->add_port_vector("in3", port_o::IN, n_resources, interface_top, rwtype);                                 // value written when the first operand is 1, 0 otherwise
       auto addrPort = CM->add_port_vector("in4", port_o::IN, n_resources, interface_top, address_interface_type); // address
 
       GetPointer<port_o>(addrPort)->set_is_addr_bus(true);
@@ -1221,7 +1198,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       auto Port_arqos = CM->add_port("_m_axi_" + portNameSpecializer + "_ARQOS", port_o::OUT, interface_top, qosType);
       GetPointer<port_o>(Port_arqos)->set_port_interface(port_o::port_interface::M_AXI_ARQOS);
 
-      auto Port_arregion = CM->add_port("_m_axi_" + portNameSpecializer + "_ARREGION", port_o::OUT, interface_top, regionType);
+      CM->add_port("_m_axi_" + portNameSpecializer + "_ARREGION", port_o::OUT, interface_top, regionType);
       GetPointer<port_o>(Port_awlock)->set_port_interface(port_o::port_interface::M_AXI_ARREGION);
 
       auto Port_aruser = CM->add_port("_m_axi_" + portNameSpecializer + "_ARUSER", port_o::OUT, interface_top, userType);
@@ -1267,24 +1244,24 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       {
          auto Port_LSawvalid = CM->add_port("_s_axi_AXILiteS_AWVALID", port_o::IN, interface_top, bool_type);
          GetPointer<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWVALID);
-         auto Port_LSawready = CM->add_port("_s_axi_AXILiteS_AWREADY", port_o::OUT, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_AWREADY", port_o::OUT, interface_top, bool_type);
          GetPointer<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWREADY);
-         auto Port_LSawaddr = CM->add_port("_s_axi_AXILiteS_AWADDR", port_o::IN, interface_top, address_interface_type);
+         CM->add_port("_s_axi_AXILiteS_AWADDR", port_o::IN, interface_top, address_interface_type);
          GetPointer<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWADDR);
-         auto Port_LSwvalid = CM->add_port("_s_axi_AXILiteS_WVALID", port_o::IN, interface_top, bool_type);
-         auto Port_LSwready = CM->add_port("_s_axi_AXILiteS_WREADY", port_o::OUT, interface_top, bool_type);
-         auto Port_LSwdata = CM->add_port("_s_axi_AXILiteS_WDATA", port_o::IN, interface_top, Intype);
-         auto Port_LSwstrb = CM->add_port("_s_axi_AXILiteS_WSTRB", port_o::IN, interface_top, strbType);
-         auto Port_LSarvalid = CM->add_port("_s_axi_AXILiteS_ARVALID", port_o::IN, interface_top, bool_type);
-         auto Port_LSarready = CM->add_port("_s_axi_AXILiteS_ARREADY", port_o::OUT, interface_top, bool_type);
-         auto Port_LSaraddr = CM->add_port("_s_axi_AXILiteS_ARADDR", port_o::IN, interface_top, address_interface_type);
-         auto Port_LSrvalid = CM->add_port("_s_axi_AXILiteS_RVALID", port_o::OUT, interface_top, bool_type);
-         auto Port_LSrready = CM->add_port("_s_axi_AXILiteS_RREADY", port_o::IN, interface_top, bool_type);
-         auto Port_LSrdata = CM->add_port("_s_axi_AXILiteS_RDATA", port_o::OUT, interface_top, Intype);
-         auto Port_LSrresp = CM->add_port("_s_axi_AXILiteS_RRESP", port_o::OUT, interface_top, respType);
-         auto Port_LSbvalid = CM->add_port("_s_axi_AXILiteS_BVALID", port_o::OUT, interface_top, bool_type);
-         auto Port_LSbready = CM->add_port("_s_axi_AXILiteS_BREADY", port_o::IN, interface_top, bool_type);
-         auto Port_LSbresp = CM->add_port("_s_axi_AXILiteS_BRESP", port_o::OUT, interface_top, respType);
+         CM->add_port("_s_axi_AXILiteS_WVALID", port_o::IN, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_WREADY", port_o::OUT, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_WDATA", port_o::IN, interface_top, Intype);
+         CM->add_port("_s_axi_AXILiteS_WSTRB", port_o::IN, interface_top, strbType);
+         CM->add_port("_s_axi_AXILiteS_ARVALID", port_o::IN, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_ARREADY", port_o::OUT, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_ARADDR", port_o::IN, interface_top, address_interface_type);
+         CM->add_port("_s_axi_AXILiteS_RVALID", port_o::OUT, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_RREADY", port_o::IN, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_RDATA", port_o::OUT, interface_top, Intype);
+         CM->add_port("_s_axi_AXILiteS_RRESP", port_o::OUT, interface_top, respType);
+         CM->add_port("_s_axi_AXILiteS_BVALID", port_o::OUT, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_BREADY", port_o::IN, interface_top, bool_type);
+         CM->add_port("_s_axi_AXILiteS_BRESP", port_o::OUT, interface_top, respType);
       }
 
       auto inPort_m_axi = CM->add_port("_" + argName_string, port_o::IN, interface_top, address_interface_type);
@@ -1505,6 +1482,7 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, const tree_man
    auto origGN = GetPointer<gimple_node>(GET_NODE(origStmt));
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
    gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+   gimple_nop_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(gn->scpe));
    const auto gimple_node_id = TM->new_tree_node_id();
    TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
    auto gimple_nop_Node = TM->GetTreeReindex(gimple_node_id);
@@ -1531,8 +1509,8 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, const tree_man
       snDef->SetDefStmt(gimple_nop_Node);
       writeVdef.insert(GET_INDEX_NODE(origGN->vdef));
    }
-   sl->list_of_bloc[origGN->bb_index]->PushBefore(gimple_nop_Node, origStmt);
-   sl->list_of_bloc[origGN->bb_index]->RemoveStmt(origStmt);
+   sl->list_of_bloc[origGN->bb_index]->PushBefore(gimple_nop_Node, origStmt, AppM);
+   sl->list_of_bloc[origGN->bb_index]->RemoveStmt(origStmt, AppM);
 }
 
 static boost::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
@@ -1755,7 +1733,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
             auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
             if(DesignInterface.find(fname) != DesignInterface.end())
             {
-               const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+               const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
                /// pre-process the list of statements to bind parm_decl and ssa variables
                std::map<unsigned, unsigned> par2ssa;
                auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
@@ -2189,9 +2167,5 @@ void interface_infer::Initialize()
 
 bool interface_infer::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return bb_version == 0;
 }

@@ -55,7 +55,7 @@ class fu_binding_cs : public fu_binding
    /**
     * Call different method that instantiate the new component for each function_type
     */
-   virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
+   virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port) override;
 
    /**
     * @brief decide based on function what function to call in order to connect appropriately the datapath memory_signal with the component
@@ -66,7 +66,7 @@ class fu_binding_cs : public fu_binding
     * @param HLS
     * @param _unique_id
     */
-   void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
+   void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id) override;
 
    /**
     * @brief manage_extern_global_port based on function attach the input of memory modules
@@ -78,7 +78,7 @@ class fu_binding_cs : public fu_binding
     * @param circuit
     * @param num
     */
-   void manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, structural_objectRef port_in, unsigned int dir, structural_objectRef circuit, unsigned int num);
+   void manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, structural_objectRef port_in, unsigned int dir, structural_objectRef circuit, unsigned int num) override;
 
  protected:
    /**

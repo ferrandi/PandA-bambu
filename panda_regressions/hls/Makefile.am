@@ -1988,3 +1988,5 @@ test_libm_sqrt.sh \
 test_libm_sqrtf.sh \
 test_softfloat.sh \
 wb4_interface.sh
+
+TESTS = test_libm_expf.sh test_libm_logf.sh test_libm_powf.sh test_libm_sinecosine.sh test_libm_sqrt.sh  test_libm_sqrtf.sh test_softfloat.sh

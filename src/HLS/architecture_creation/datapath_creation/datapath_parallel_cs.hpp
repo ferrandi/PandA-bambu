@@ -81,14 +81,14 @@ class datapath_parallel_cs : public classic_datapath
    /**
     * Adds the input/output ports of the module
     */
-   virtual void add_ports();
+   virtual void add_ports() override;
 
    /**
     * @brief ComputeHLSRelationships datapath need kernel in order to be created
     * @param relationship_type
     * @return
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * @brief for each port resize it depending on the type of bus port
@@ -113,13 +113,13 @@ class datapath_parallel_cs : public classic_datapath
    /**
     * Destructor.
     */
-   virtual ~datapath_parallel_cs();
+   virtual ~datapath_parallel_cs() override;
 
    /**
     * @brief InternalExec
     * @return
     */
-   DesignFlowStep_Status InternalExec();
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif // DATAPATH_PARALLEL_CS_H

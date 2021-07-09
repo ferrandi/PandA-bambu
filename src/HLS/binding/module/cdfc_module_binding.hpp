@@ -393,7 +393,7 @@ class cdfc_module_binding : public fu_binding_creator
    void update_slack_starting_time(const OpGraphConstRef fdfg, OpVertexSet& sorted_vertices, CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time, bool update_starting_time, bool only_backward,
                                    bool only_forward);
 
-   void initialize_connection_relation(connection_relation& con_rel, OpVertexSet& all_candidate_vertices);
+   void initialize_connection_relation(connection_relation& con_rel, const OpVertexSet& all_candidate_vertices);
 
    static const int CD_EDGE = 1;
    static const int COMPATIBILITY_EDGE = 2;

@@ -28,5 +28,3 @@ EXTRA_DIST+= \
    %D%/multi-keccak/src/theta/Makefile.am \
    %D%/multi-keccak/src/theta/theta.c\
    %D%/README.txt
-
-TESTS+=%D%/multi.sh %D%/keccak_CycloneII_10ns.sh %D%/keccak_CycloneII_5ns.sh %D%/keccak_ECP3_9ns.sh %D%/keccak_V5_4ns.sh %D%/keccak_V7_2ns.sh %D%/keccak_V7_2ns-INFER.sh %D%/keccak_CycloneII_5ns-INFER.sh

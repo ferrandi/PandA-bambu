@@ -108,7 +108,7 @@ void PhiOpt::Initialize()
 {
    bb_modified = false;
    TM = AppM->get_tree_manager();
-   tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
+   tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
    auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
    sl = GetPointer<statement_list>(GET_NODE(fd->body));
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
@@ -130,43 +130,16 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         switch(GetStatus())
-         {
-            case DesignFlowStep_Status::SUCCESS:
-            {
-               if(tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(TM->get_tree_node_const(function_id))))
-               {
-                  relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-               }
-               break;
-            }
-            case DesignFlowStep_Status::SKIPPED:
-            case DesignFlowStep_Status::UNCHANGED:
-            case DesignFlowStep_Status::UNEXECUTED:
-            case DesignFlowStep_Status::UNNECESSARY:
-            {
-               break;
-            }
-            case DesignFlowStep_Status::ABORTED:
-            case DesignFlowStep_Status::EMPTY:
-            case DesignFlowStep_Status::NONEXISTENT:
-            default:
-               THROW_UNREACHABLE("");
-         }
          break;
       }
       default:
@@ -333,7 +306,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          /// Remove nop
          if(block.second->CGetStmtList().size() == 1 and GET_NODE(block.second->CGetStmtList().front())->get_kind() == gimple_nop_K)
          {
-            block.second->RemoveStmt(block.second->CGetStmtList().front());
+            block.second->RemoveStmt(block.second->CGetStmtList().front(), AppM);
             bb_modified = true;
          }
 
@@ -602,7 +575,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       }
       for(const auto& to_be_removed : to_be_removeds)
       {
-         block.second->RemoveStmt(to_be_removed);
+         block.second->RemoveStmt(to_be_removed, AppM);
       }
       if(!to_be_removeds.empty())
       {
@@ -725,10 +698,10 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
    const auto true_edge = pred_block->true_edge == bb_index;
 
    /// The condition
-   const auto condition = tree_man->ExtractCondition(pred_stmt_list.back(), pred_block);
+   const auto condition = tree_man->ExtractCondition(pred_stmt_list.back(), pred_block, function_id);
 
    /// Remove gimple_cond from list of statement
-   pred_block->RemoveStmt(pred_stmt_list.back());
+   pred_block->RemoveStmt(pred_stmt_list.back(), AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Condition is " + condition->ToString());
 
    /// Update all the phis
@@ -790,6 +763,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
          /// Create a nop with virtual operands
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
          gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
          auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(gimple_node_id));
          gn->AddVdef(TM->GetTreeReindex(ssa_node_nid));
@@ -810,12 +784,13 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
 
          /// Create the assign
          gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
          TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
       }
-      pred_block->PushBack(TM->GetTreeReindex(gimple_node_id));
+      pred_block->PushBack(TM->GetTreeReindex(gimple_node_id), AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + TM->get_tree_node_const(gimple_node_id)->ToString());
 
       /// Updating the phi
@@ -944,8 +919,8 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
 
    /// The condition
    const auto last_stmt = pred_stmt_list.back();
-   const auto condition = tree_man->ExtractCondition(last_stmt, pred_block);
-   pred_block->RemoveStmt(last_stmt);
+   const auto condition = tree_man->ExtractCondition(last_stmt, pred_block, function_id);
+   pred_block->RemoveStmt(last_stmt, AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Condition is " + condition->ToString());
 
    /// Remove all the phis
@@ -1005,12 +980,13 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
             /// Create a nop with virtual operands
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
             gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+            gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
             TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
             auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(gimple_node_id));
             gn->AddVdef(TM->GetTreeReindex(gp->res->index));
             gn->AddVuse(TM->GetTreeReindex(true_value));
             gn->AddVuse(TM->GetTreeReindex(false_value));
-            succ_block->PushFront(TM->GetTreeReindex(gimple_node_id));
+            succ_block->PushFront(TM->GetTreeReindex(gimple_node_id), AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created " + TM->get_tree_node_const(gimple_node_id)->ToString());
          }
          else
@@ -1056,11 +1032,12 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
 
          /// Create the assign
          gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(gp->res->index);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
          TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
-         succ_block->PushFront(TM->GetTreeReindex(gimple_node_id));
+         succ_block->PushFront(TM->GetTreeReindex(gimple_node_id), AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created " + TM->get_tree_node_const(gimple_node_id)->ToString());
       }
    }
@@ -1100,7 +1077,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
    auto gmwi = GetPointer<gimple_multi_way_if>(GET_NODE(pred_stmt_list.back()));
 
    /// Temporary remove gimple multi way if
-   pred_block->RemoveStmt(pred_stmt_list.back());
+   pred_block->RemoveStmt(pred_stmt_list.back(), AppM);
 
    /// The first condition
    auto first_condition = std::pair<tree_nodeRef, unsigned int>(tree_nodeRef(), 0);
@@ -1141,7 +1118,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
    const auto new_cond = [&]() -> unsigned int {
       if(second_condition.first)
       {
-         const auto new_node = tree_man->CreateOrExpr(first_condition.first, second_condition.first, pred_block);
+         const auto new_node = tree_man->CreateOrExpr(first_condition.first, second_condition.first, pred_block, function_id);
          return new_node->index;
       }
       else
@@ -1234,6 +1211,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
          /// Create a nop with virtual operands
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
          gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
          auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(gimple_node_id));
          gn->AddVdef(TM->GetTreeReindex(ssa_node_nid));
@@ -1253,12 +1231,13 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
 
          /// Create the assign
          gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
          TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
       }
-      pred_block->PushBack(TM->GetTreeReindex(gimple_node_id));
+      pred_block->PushBack(TM->GetTreeReindex(gimple_node_id), AppM);
 
       /// Updating the phi
       gimple_phi::DefEdgeList new_list_of_def_edge;
@@ -1284,7 +1263,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
    /// Readding gimple multi way if it has more than two exits
    if(gmwi->list_of_cond.size() >= 2)
    {
-      pred_block->PushBack(TM->GetTreeReindex(gmwi->index));
+      pred_block->PushBack(TM->GetTreeReindex(gmwi->index), AppM);
    }
 
    /// Refactoring of the cfg - updating the predecessor
@@ -1358,7 +1337,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Multi way if is " + gmwi->ToString());
 
    /// Temporary remove gimple multi way if
-   pred_block->RemoveStmt(pred_stmt_list.back());
+   pred_block->RemoveStmt(pred_stmt_list.back(), AppM);
 
    /// The first condition
    auto first_condition = std::pair<tree_nodeRef, unsigned int>(tree_nodeRef(), 0);
@@ -1399,7 +1378,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
    const auto new_cond = [&]() -> unsigned int {
       if(second_condition.first)
       {
-         const auto new_node = tree_man->CreateOrExpr(first_condition.first, second_condition.first, pred_block);
+         const auto new_node = tree_man->CreateOrExpr(first_condition.first, second_condition.first, pred_block, function_id);
          return new_node->index;
       }
       else
@@ -1487,6 +1466,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
             gimple_node_id = TM->new_tree_node_id();
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
             gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+            gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
             TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
             auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(gimple_node_id));
             gn->AddVdef(TM->GetTreeReindex(gp->res->index));
@@ -1544,6 +1524,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
          /// Create the assign
          gimple_node_id = TM->new_tree_node_id();
          gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(gp->res->index);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
@@ -1551,7 +1532,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       }
       if(not gp->virtual_flag or create_gimple_nop)
       {
-         succ_block->PushFront(TM->GetTreeReindex(gimple_node_id));
+         succ_block->PushFront(TM->GetTreeReindex(gimple_node_id), AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added gimple assignment " + TM->get_tree_node_const(gimple_node_id)->ToString());
       }
    }
@@ -1559,7 +1540,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
    /// Readd multi way if
    if(gmwi->list_of_cond.size() >= 2)
    {
-      pred_block->PushBack(TM->GetTreeReindex(gmwi->index));
+      pred_block->PushBack(TM->GetTreeReindex(gmwi->index), AppM);
    }
 
    while(succ_block->CGetPhiList().size())
@@ -1691,7 +1672,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Second condition is " + (second_condition ? second_condition->ToString() : "default"));
             if(not first_condition or not second_condition
 #if HAVE_BAMBU_BUILT
-               or schedule->EvaluateCondsMerging(pred_last_stmt->index, first_condition->index, second_condition->index)
+               or schedule->EvaluateCondsMerging(pred_last_stmt->index, first_condition->index, second_condition->index, function_id)
 #endif
             )
             {
@@ -1794,6 +1775,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             /// Create the assign
             const auto gimple_assign_id = TM->new_tree_node_id();
             gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+            gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
             gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
             /// Workaround: we need to consider the overhead due to multiplexers associated with the phi; for this reason definition is one of the operands; this is not fully consistent, but it is a temporary assignment
             gimple_assign_schema[TOK(TOK_OP0)] = STR(first_value);
@@ -1890,8 +1872,8 @@ void PhiOpt::ChainOptimization(const unsigned int bb_index)
    {
       const auto statement = succ_block->CGetStmtList().front();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Moving " + STR(statement));
-      succ_block->RemoveStmt(statement);
-      curr_block->PushBack(statement);
+      succ_block->RemoveStmt(statement, AppM);
+      curr_block->PushBack(statement, AppM);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Moved statement");
 
@@ -2082,7 +2064,7 @@ void PhiOpt::RemoveCondExpr(const tree_nodeRef statement)
    {
       TM->ReplaceTreeNode(use.first, ga->op0, new_sn);
    }
-   sl->list_of_bloc[ga->bb_index]->RemoveStmt(statement);
+   sl->list_of_bloc[ga->bb_index]->RemoveStmt(statement, AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed " + statement->ToString());
 }
 

@@ -1836,7 +1836,7 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
          node_id = remap.find(node_id)->second;
       }
-      curr_bloc->PushBack(TM->GetTreeReindex(node_id));
+      curr_bloc->PushBack(TM->GetTreeReindex(node_id), application_managerRef());
    }
    if(use_counting)
    {

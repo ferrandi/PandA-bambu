@@ -4,6 +4,3 @@ EXTRA_DIST += \
    %D%/module.c \
    %D%/README.txt \
    %D%/test.xml
-
-TESTS += \
-   %D%/bambu.sh

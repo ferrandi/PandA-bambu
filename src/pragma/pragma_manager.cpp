@@ -141,7 +141,7 @@ pragma_manager::pragma_manager(const application_managerRef _application_manager
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, param->getOption<int>(OPT_output_level), "Function \"" + black_box_function + "\" is a blackbox");
          BlackBoxFunctions.insert(black_box_function);
-         addBlackBoxPragma(black_box_function);
+         // addBlackBoxPragma(black_box_function);
       }
    }
 }
@@ -253,7 +253,7 @@ void pragma_manager::addFunctionCallPragmas(const std::string& Name, const Custo
    }
 }
 
-unsigned int pragma_manager::addBlackBoxPragma(const std::string& function_name)
+unsigned int pragma_manager::addBlackBoxPragma(const std::string& function_name, unsigned int function_id)
 {
    unsigned int scope = TM->new_tree_node_id();
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
@@ -264,6 +264,7 @@ unsigned int pragma_manager::addBlackBoxPragma(const std::string& function_name)
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> schema;
    schema[TOK(TOK_SRCP)] = ":0:0";
+   schema[TOK(TOK_SCPE)] = STR(function_id);
    schema[TOK(TOK_IS_BLOCK)] = boost::lexical_cast<std::string>(false);
    schema[TOK(TOK_OPEN)] = boost::lexical_cast<std::string>(false);
    schema[TOK(TOK_PRAGMA_SCOPE)] = boost::lexical_cast<std::string>(scope);
@@ -276,7 +277,7 @@ unsigned int pragma_manager::addBlackBoxPragma(const std::string& function_name)
    return final_id;
 }
 
-unsigned int pragma_manager::AddOmpSimdPragma(const std::string& line) const
+unsigned int pragma_manager::AddOmpSimdPragma(const std::string& line, unsigned int function_id) const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> simd_tree_node_schema, omp_pragma_tree_node_schema, tree_node_schema;
    unsigned int scope_id = TM->new_tree_node_id();
@@ -296,6 +297,7 @@ unsigned int pragma_manager::AddOmpSimdPragma(const std::string& line) const
    tree_node_schema[TOK(TOK_PRAGMA_DIRECTIVE)] = boost::lexical_cast<std::string>(simd_id);
    tree_node_schema[TOK(TOK_BB_INDEX)] = boost::lexical_cast<std::string>(0);
    tree_node_schema[TOK(TOK_SRCP)] = ":0:0";
+   tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
    unsigned int pragma_id = TM->new_tree_node_id();
    TM->create_tree_node(pragma_id, gimple_pragma_K, tree_node_schema);
    return pragma_id;
@@ -399,7 +401,7 @@ bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, cons
    return false;
 }
 
-void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex)
+void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex, const application_managerRef AppM)
 {
    const BBGraphConstRef bb_cfg = application_manager->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB);
    vertex current = bb_operation_vertex;
@@ -419,7 +421,7 @@ void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const ver
                auto* fp = GetPointer<omp_for_pragma>(GET_NODE(pn->directive));
                if(fp)
                {
-                  info->block->RemoveStmt(stmt);
+                  info->block->RemoveStmt(stmt, AppM);
                   application_manager->GetFunctionBehavior(function_index)->GetLoops()->GetLoop(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number)->loop_type |= DOALL_LOOP;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Found");
                   return;
@@ -434,7 +436,7 @@ void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const ver
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not found");
 }
 
-void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex)
+void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex, const application_managerRef AppM)
 {
    const BBGraphRef bb_cfg = application_manager->GetFunctionBehavior(function_index)->GetBBGraph(FunctionBehavior::BB);
    const unsigned int current_loop_id = bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->loop_id;
@@ -461,7 +463,7 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
                auto* sp = GetPointer<omp_simd_pragma>(GET_NODE(pn->directive));
                if(sp)
                {
-                  info->block->RemoveStmt(stmt);
+                  info->block->RemoveStmt(stmt, AppM);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing vdef");
                   if(pn->vdef)
                   {

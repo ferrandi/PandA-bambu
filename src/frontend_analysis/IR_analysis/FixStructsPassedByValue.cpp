@@ -142,7 +142,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
 {
    bool changed = false;
    const auto TM = AppM->get_tree_manager();
-   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    const auto tn = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node " + STR(tn) + "is not a function_decl or has no body");
@@ -252,7 +252,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
             // create the call to memcpy
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating new call to memcpy");
             const auto memcpy_function_id = TM->function_index(MEMCPY);
-            THROW_ASSERT(AppM->GetFunctionBehavior(memcpy_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+            THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(memcpy_function_id) != 0, "inconsistent behavioral helper");
             const auto size_formal_type_id = tree_helper::get_formal_ith(TM, memcpy_function_id, 2);
             const auto formal_type_node = TM->CGetTreeReindex(size_formal_type_id);
             const std::vector<tree_nodeRef> args = {// & new_local_var_decl
@@ -261,7 +261,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                                                     tree_man->create_ssa_name(*p_decl_it, ptr_type, tree_nodeRef(), tree_nodeRef()),
                                                     // sizeof(var_decl)
                                                     tree_man->CreateIntegerCst(formal_type_node, static_cast<long long>(ptd_type_size), TM->new_tree_node_id())};
-            const auto gimple_call_memcpy = tree_man->create_gimple_call(TM->CGetTreeReindex(memcpy_function_id), args, srcp, bb_index);
+            const auto gimple_call_memcpy = tree_man->create_gimple_call(TM->CGetTreeReindex(memcpy_function_id), args, function_id, srcp, bb_index);
             auto gn = GetPointer<gimple_node>(GET_NODE(gimple_call_memcpy));
             /*
              * the call is artificial. this is necessary because this memcpy
@@ -277,10 +277,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
             gn->artificial = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created new call to memcpy: " + STR(GET_NODE(gimple_call_memcpy)));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updating basic block");
-            first_block->PushFront(gimple_call_memcpy);
-            // add call to memcpy to the call graph and refresh the reached functions
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updating call graph");
-            AppM->GetCallGraphManager()->AddCallPoint(function_id, memcpy_function_id, GET_INDEX_CONST_NODE(gimple_call_memcpy), FunctionEdgeInfo::CallType::direct_call);
+            first_block->PushFront(gimple_call_memcpy, AppM);
             changed = true;
          }
 
@@ -366,9 +363,9 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                         THROW_ASSERT(tree_helper::is_an_union(TM, arg_id) or tree_helper::is_a_struct(TM, arg_id), "op: " + STR(stmt) + " id: " + STR(call_tree_node_id) + " passes argument " + STR(actual_argument_node) + " to a call to function " +
                                                                                                                        called_ssa_name + " which has a struct/union parameter with type: " + STR(GET_CONST_NODE(p->valu)) + " but " +
                                                                                                                        STR(actual_argument_node) + " is a " + STR(tree_helper::CGetType(actual_argument_node)));
-                        auto new_ga_node = tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, gn->bb_index, srcp_default);
+                        auto new_ga_node = tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, function_id, gn->bb_index, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Changing parameter: creating pointer " + STR(GET_NODE(new_ga_node)));
-                        block.second->PushBefore(new_ga_node, stmt);
+                        block.second->PushBefore(new_ga_node, stmt, AppM);
                         const auto new_ga = GetPointer<const gimple_assign>(GET_CONST_NODE(new_ga_node));
                         arguments->at(param_n) = new_ga->op0;
                         changed = true;
@@ -435,9 +432,9 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                      THROW_ASSERT(tree_helper::is_an_union(TM, arg_id) or tree_helper::is_a_struct(TM, arg_id), "op: " + STR(stmt) + " id: " + STR(call_tree_node_id) + " passes argument " + STR(actual_argument_node) + " to a call to function " +
                                                                                                                     called_fu_name + " which has a struct/union parameter: " + STR(p_decl) + " but " + STR(actual_argument_node) + " is a " +
                                                                                                                     STR(tree_helper::CGetType(actual_argument_node)));
-                     const auto new_ga_node = tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, gn->bb_index, srcp_default);
+                     const auto new_ga_node = tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, function_id, gn->bb_index, srcp_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Changing parameter: creating pointer " + STR(GET_NODE(new_ga_node)));
-                     block.second->PushBefore(new_ga_node, stmt);
+                     block.second->PushBefore(new_ga_node, stmt, AppM);
                      const auto* new_ga = GetPointer<const gimple_assign>(GET_CONST_NODE(new_ga_node));
                      arguments->at(param_n) = new_ga->op0;
                      changed = true;

@@ -42,9 +42,6 @@
 /// Header include
 #include "quartus_13_report_wrapper.hpp"
 
-/// Autoheader include
-#include "config_HAVE_QUARTUS_13_64BIT.hpp"
-
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
 
@@ -71,9 +68,11 @@ std::string Quartus13ReportWrapper::get_command_line(const DesignParametersRef& 
 {
    std::ostringstream s;
    s << get_tool_exec() << " -t ";
-#if HAVE_QUARTUS_13_64BIT
-   s << " --64bit ";
-#endif
+   THROW_ASSERT(Param->isOption(OPT_quartus_13_64bit), "");
+   if(Param->getOption<bool>(OPT_quartus_13_64bit))
+   {
+      s << " --64bit ";
+   }
    s << script_name;
    for(const auto& option : xml_tool_options)
    {

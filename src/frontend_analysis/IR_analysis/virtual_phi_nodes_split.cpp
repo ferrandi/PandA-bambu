@@ -89,6 +89,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
          break;
@@ -252,6 +253,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
          unsigned int gimple_stmt_id = TM->new_tree_node_id();
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
          IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         IR_schema[TOK(TOK_SCPE)] = STR(function_id);
          IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(res));
          IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(def));
          IR_schema[TOK(TOK_ORIG)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(tree_phi));
@@ -261,7 +263,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
          if(list_of_stmt.size() and
             (GetPointer<gimple_goto>(GET_NODE(list_of_stmt.back())) || GetPointer<gimple_while>(GET_NODE(list_of_stmt.back())) || GetPointer<gimple_for>(GET_NODE(list_of_stmt.back())) || GetPointer<gimple_switch>(GET_NODE(list_of_stmt.back()))))
          {
-            source_bb->PushBack(created_stmt);
+            source_bb->PushBack(created_stmt, AppM);
             /// update bb_index associated with the statement
          }
          else if(list_of_stmt.size() && GetPointer<gimple_cond>(GET_NODE(list_of_stmt.back())))
@@ -311,14 +313,14 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
             phi->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(def_edge.first, new_bb->number));
 
             // Inserting phi
-            new_bb->PushBack(created_stmt);
+            new_bb->PushBack(created_stmt, AppM);
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inserted new gimple " + boost::lexical_cast<std::string>(gimple_stmt_id));
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Finished creation of new basic block");
          }
          else
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inserted new gimple " + boost::lexical_cast<std::string>(gimple_stmt_id));
-            source_bb->PushBack(created_stmt);
+            source_bb->PushBack(created_stmt, AppM);
          }
          break;
       }

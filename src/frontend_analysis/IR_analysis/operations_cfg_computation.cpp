@@ -113,12 +113,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT2, SAME_FUNCTION));
+         }
 #endif
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
 #endif
 #if HAVE_ZEBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_ANALYSIS_ZEBU, SAME_FUNCTION));
@@ -202,11 +205,12 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
          const auto new_tree_node_id = TM->new_tree_node_id();
          gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+         gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
          TM->create_tree_node(new_tree_node_id, gimple_nop_K, gimple_nop_schema);
          auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(new_tree_node_id));
          gn->bb_index = block->number;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created gimple_nop " + TM->get_tree_node_const(new_tree_node_id)->ToString());
-         block->PushBack(TM->GetTreeReindex(new_tree_node_id));
+         block->PushBack(TM->GetTreeReindex(new_tree_node_id), AppM);
       }
       if(block->CGetStmtList().size())
       {

@@ -62,6 +62,10 @@ REF_FORWARD_DECL(tree_node);
  */
 class hls_div_cg_ext : public FunctionFrontendFlowStep
 {
+ private:
+   /// Already visited tree node (used to avoid infinite recursion)
+   CustomUnorderedSet<unsigned int> already_visited;
+
  protected:
    const tree_managerRef TreeM;
 

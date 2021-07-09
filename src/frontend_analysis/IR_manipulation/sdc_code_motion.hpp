@@ -52,6 +52,8 @@
 class SDCCodeMotion : public FunctionFrontendFlowStep
 {
  private:
+   bool restart_ifmwi_opt;
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered

@@ -368,6 +368,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> nop_IR_schema;
       const auto nop_id = TM->new_tree_node_id();
       nop_IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+      nop_IR_schema[TOK(TOK_SCPE)] = STR(function_id);
       TM->create_tree_node(nop_id, gimple_nop_K, nop_IR_schema);
 
       unsigned int ssa_vers = TM->get_next_vers();
@@ -536,6 +537,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 
                unsigned int phi_gimple_stmt_id = TM->new_tree_node_id();
                IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+               IR_schema[TOK(TOK_SCPE)] = STR(function_id);
                IR_schema[TOK(TOK_RES)] = boost::lexical_cast<std::string>(phi_def_ssa_node_nid);
                IR_schema[TOK(TOK_VIRTUAL)] = STR(true);
                TM->create_tree_node(phi_gimple_stmt_id, gimple_phi_K, IR_schema);
@@ -694,14 +696,10 @@ void BuildVirtualPhi::Initialize()
 {
    FunctionFrontendFlowStep::Initialize();
    basic_block_graph = function_behavior->GetBBGraph(FunctionBehavior::FBB);
-   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
 }
 
 bool BuildVirtualPhi::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return bb_version == 0;
 }

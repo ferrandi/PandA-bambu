@@ -129,7 +129,7 @@ class APInt
    bw_t minBitwidth(bool sign) const;
 
    template <typename T>
-   T cast_to(typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr) const
+   typename std::enable_if<std::is_arithmetic<T>::value, T>::type cast_to() const
    {
       using U = typename std::make_unsigned<T>::type;
       if(_data < 0)

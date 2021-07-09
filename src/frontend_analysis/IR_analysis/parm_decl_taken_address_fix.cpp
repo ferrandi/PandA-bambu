@@ -66,6 +66,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(CHECK_SYSTEM_TYPE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
@@ -92,7 +93,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
 {
    bool changed = false;
    const tree_managerRef TM = AppM->get_tree_manager();
-   const tree_manipulationRef IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   const tree_manipulationRef IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    const tree_nodeRef tn = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd and fd->body, "Node " + STR(tn) + "is not a function_decl or has no body");
@@ -161,8 +162,8 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
          const auto* pd = GetPointer<const parm_decl>(GET_NODE(par));
          THROW_ASSERT(pd, "unexpected condition");
          const std::string srcp_default = pd->include_name + ":" + STR(pd->line_number) + ":" + STR(pd->column_number);
-         auto new_ga_expr = IRman->CreateGimpleAssignAddrExpr(GET_NODE(vd), bb_index, srcp_default);
-         first_block->PushFront(new_ga_expr);
+         auto new_ga_expr = IRman->CreateGimpleAssignAddrExpr(GET_NODE(vd), function_id, bb_index, srcp_default);
+         first_block->PushFront(new_ga_expr, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New statement statement " + GET_NODE(new_ga_expr)->ToString());
          auto* nge = GetPointer<gimple_assign>(GET_NODE(new_ga_expr));
          nge->temporary_address = true;
@@ -173,8 +174,8 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
          const tree_nodeRef p_type = pd->type;
          auto mr = IRman->create_binary_operation(p_type, ssa_addr, offset, srcp_default, mem_ref_K);
          tree_nodeRef ssa_par = IRman->create_ssa_name(par, p_type, tree_nodeRef(), tree_nodeRef());
-         tree_nodeRef ga = IRman->create_gimple_modify_stmt(mr, ssa_par, srcp_default, bb_index);
-         first_block->PushAfter(ga, new_ga_expr);
+         tree_nodeRef ga = IRman->create_gimple_modify_stmt(mr, ssa_par, function_id, srcp_default, bb_index);
+         first_block->PushAfter(ga, new_ga_expr, AppM);
          GetPointer<gimple_node>(GET_NODE(ga))->artificial = true;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New statement statement " + GET_NODE(ga)->ToString());
       }

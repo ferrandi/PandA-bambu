@@ -53,7 +53,7 @@ class OmpAllocation : public allocation
    /**
     * Integrate technology libraries with special functional units
     */
-   virtual void IntegrateTechnologyLibraries();
+   virtual void IntegrateTechnologyLibraries() override;
 
    /**
     * Add the module implementing panda_pthread_mutex

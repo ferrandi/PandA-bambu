@@ -385,6 +385,7 @@ void StateTransitionGraph::WriteDot(const std::string& file_name, const int deta
    const VertexWriterConstRef state_writer(new StateWriter(this, op_function_graph, detail_level));
    const EdgeWriterConstRef transition_writer(new TransitionWriter(this, op_function_graph, detail_level));
    InternalWriteDot<const StateWriter, const TransitionWriter>(complete_file_name + file_name, state_writer, transition_writer);
+#if 0
    for(boost::tie(state, state_end) = boost::vertices(*this); state != state_end; state++)
    {
       if(*state == CGetStateTransitionGraphInfo()->entry_node or *state == CGetStateTransitionGraphInfo()->exit_node)
@@ -399,6 +400,7 @@ void StateTransitionGraph::WriteDot(const std::string& file_name, const int deta
       auto st_file_name = file_name.substr(0, file_name.find(".dot"));
       st_op_graph->WriteDot(st_file_name + "_" + state_info->name + ".dot", state_info->HLSMgr.lock()->get_HLS(state_info->funId), state_info->HLSMgr.lock()->get_HLS(state_info->funId)->Rsch->ComputeCriticalPath(state_info));
    }
+#endif
 }
 
 StateWriter::StateWriter(const graph* _stg, const OpGraphConstRef _op_function_graph, int _detail_level)

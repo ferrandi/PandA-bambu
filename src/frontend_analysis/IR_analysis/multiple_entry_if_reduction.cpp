@@ -125,7 +125,7 @@ void MultipleEntryIfReduction::Initialize()
 {
    bb_modified = false;
    TM = AppM->get_tree_manager();
-   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    const auto temp = TM->get_tree_node_const(function_id);
    auto fd = GetPointer<function_decl>(temp);
    sl = GetPointer<statement_list>(GET_NODE(fd->body));
@@ -144,7 +144,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(PRECEDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
          break;
       }
       case DEPENDENCE_RELATIONSHIP:
@@ -158,10 +160,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
-               {
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE, SAME_FUNCTION));
-               }
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
                break;
@@ -505,7 +503,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                }
                const auto new_stmt = tree_node_dups[copy.second]->create_tree_node(GET_NODE(gimple));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New statement (" + STR(new_stmt) + ") is " + STR(TM->CGetTreeNode(new_stmt)));
-               sl->list_of_bloc[copy.second]->PushBack(TM->GetTreeReindex(new_stmt));
+               sl->list_of_bloc[copy.second]->PushBack(TM->GetTreeReindex(new_stmt), AppM);
             }
          }
          else if(GET_NODE(gimple)->get_kind() == gimple_multi_way_if_K or GET_NODE(gimple)->get_kind() == gimple_cond_K or GET_NODE(gimple)->get_kind() == gimple_return_K)
@@ -532,7 +530,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             {
                const auto new_stmt = tree_node_dups[copy.second]->create_tree_node(GET_NODE(gimple));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New statement is " + STR(TM->CGetTreeNode(new_stmt)));
-               sl->list_of_bloc[copy.second]->PushBack(TM->GetTreeReindex(new_stmt));
+               sl->list_of_bloc[copy.second]->PushBack(TM->GetTreeReindex(new_stmt), AppM);
             }
          }
          else
@@ -758,6 +756,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
 
                         unsigned int phi_gimple_stmt_id = TM->new_tree_node_id();
                         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+                        IR_schema[TOK(TOK_SCPE)] = STR(function_id);
                         IR_schema[TOK(TOK_RES)] = boost::lexical_cast<std::string>(phi_def_ssa_node_nid);
                         IR_schema[TOK(TOK_VIRTUAL)] = STR(sn->virtual_flag);
                         TM->create_tree_node(phi_gimple_stmt_id, gimple_phi_K, IR_schema);
@@ -934,7 +933,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       }
       while(block->CGetStmtList().size())
       {
-         block->RemoveStmt(block->CGetStmtList().front());
+         block->RemoveStmt(block->CGetStmtList().front(), AppM);
       }
       while(block->CGetPhiList().size())
       {
@@ -980,10 +979,6 @@ double MultipleEntryIfReduction::GetAreaCost(const std::list<tree_nodeRef>& list
 bool MultipleEntryIfReduction::HasToBeExecuted() const
 {
    if(not parameters->IsParameter("meif_threshold"))
-   {
-      return false;
-   }
-   if(!HasToBeExecuted0())
    {
       return false;
    }

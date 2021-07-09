@@ -43,8 +43,7 @@
 #ifndef PARM2SSA_HPP
 #define PARM2SSA_HPP
 
-/// Superclass include
-#include "application_frontend_flow_step.hpp"
+#include "function_frontend_flow_step.hpp"
 
 /// STL include
 #include "custom_map.hpp"
@@ -64,7 +63,7 @@ REF_FORWARD_DECL(tree_node);
 /**
  * Pre-analysis step. computing the relation between parm_decl and the associated ssa_name.
  */
-class parm2ssa : public ApplicationFrontendFlowStep
+class parm2ssa : public FunctionFrontendFlowStep
 {
  protected:
    /**
@@ -85,7 +84,7 @@ class parm2ssa : public ApplicationFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   parm2ssa(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   parm2ssa(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -93,9 +92,9 @@ class parm2ssa : public ApplicationFrontendFlowStep
    ~parm2ssa() override;
 
    /**
-    * Fixes the var_decl duplication.
+    * Computes the relation between parameters and their SSA obj
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec() override;
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif

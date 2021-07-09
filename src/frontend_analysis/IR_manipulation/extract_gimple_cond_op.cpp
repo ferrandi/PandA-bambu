@@ -101,7 +101,7 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
 {
    bb_modified = false;
    const auto TM = AppM->get_tree_manager();
-   const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
+   const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
    const auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
    const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)
@@ -113,15 +113,15 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
          auto gc = GetPointer<gimple_cond>(GET_NODE(last_stmt));
          if(gc and GET_NODE(gc->op0)->get_kind() != ssa_name_K and GetPointer<cst_node>(GET_NODE(gc->op0)) == nullptr)
          {
-            auto new_gc_cond = tree_man->ExtractCondition(last_stmt, block.second);
+            auto new_gc_cond = tree_man->ExtractCondition(last_stmt, block.second, function_id);
             /// Temporary removed old gimple cond to remove uses
-            block.second->RemoveStmt(last_stmt);
+            block.second->RemoveStmt(last_stmt, AppM);
 
             /// Update gimple_cond
             gc->op0 = new_gc_cond;
 
             /// Readd gimple cond
-            block.second->PushBack(last_stmt);
+            block.second->PushBack(last_stmt, AppM);
             bb_modified = true;
          }
       }

@@ -724,14 +724,14 @@ class tree_helper
    /**
     * Function return the symbol related with the operator op passed as parameter
     * @param op is the tree node of the expression
-    * @return the string correspoinding to the operator
+    * @return the string corresponding to the operator
     */
    static std::string op_symbol(const tree_nodeRef& op);
 
    /**
     * Function return the symbol related with the operator op passed as parameter
     * @param op is the tree node of the expression
-    * @return the string correspoinding to the operator
+    * @return the string corresponding to the operator
     */
    static std::string op_symbol(const tree_node* op);
 
