@@ -55,7 +55,7 @@
 REF_FORWARD_DECL(Bit_Value_opt);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);
-class statement_list;
+class function_decl;
 class ssa_name;
 //@}
 
@@ -73,10 +73,12 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
    /**
     * do bit value based optimization such as:
     * - constant propagation
-    * @param sl is the statement list
+    * @param fd is the function declaration
     * @param TM is the tree manager
     */
-   void optimize(statement_list* sl, tree_managerRef TM, tree_manipulationRef IRman);
+   void optimize(const function_decl* fd, tree_managerRef TM, tree_manipulationRef IRman);
+
+   void propagateValue(const ssa_name* ssa, tree_managerRef TM, tree_nodeRef old_val, tree_nodeRef new_val);
 
  public:
    /**

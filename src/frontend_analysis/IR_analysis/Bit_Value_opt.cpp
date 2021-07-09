@@ -106,6 +106,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case DEPENDENCE_RELATIONSHIP:
       {
+         relationships.insert(std::make_pair(PARM2SSA, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
@@ -180,11 +181,8 @@ DesignFlowStep_Status Bit_Value_opt::InternalExec()
    // tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
    const auto fd = GetPointerS<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
-   THROW_ASSERT(sl, "Body is not a statement_list");
-   /// for each basic block B in CFG do > Consider all blocks successively
    modified = false;
-   optimize(sl, TM, IRman);
+   optimize(fd, TM, IRman);
    modified ? function_behavior->UpdateBBVersion() : 0;
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
@@ -241,8 +239,87 @@ void Bit_Value_opt::constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
    }
 }
 
-void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipulationRef IRman)
+static unsigned long long int convert_bitvalue2longlong(const std::string& bit_values, tree_managerRef TM, unsigned int var_id)
 {
+   unsigned long long int const_value = 0;
+   unsigned int index_val = 0;
+   for(auto current_el : boost::adaptors::reverse(bit_values))
+   {
+      if(current_el == '1')
+      {
+         const_value |= 1ULL << index_val;
+      }
+      ++index_val;
+   }
+   /// in case do sign extension
+   if(tree_helper::is_int(TM, var_id) && bit_values[0] == '1')
+   {
+      for(; index_val < 64; ++index_val)
+      {
+         const_value |= 1ULL << index_val;
+      }
+   }
+   return const_value;
+}
+
+static bool is_bit_values_constant(const std::string& bit_values)
+{
+   bool is_constant = bit_values.size() != 0;
+   for(auto current_el : bit_values)
+   {
+      if(current_el == 'U')
+      {
+         is_constant = false;
+         break;
+      }
+   }
+   return is_constant;
+}
+
+void Bit_Value_opt::propagateValue(const ssa_name* ssa, tree_managerRef TM, tree_nodeRef old_val, tree_nodeRef new_val)
+{
+   const auto StmtUses = ssa->CGetUseStmts();
+   for(const auto& use : StmtUses)
+   {
+      if(!AppM->ApplyNewTransformation())
+      {
+         break;
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
+      TM->ReplaceTreeNode(use.first, old_val, new_val);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
+      modified = true;
+      AppM->RegisterTransformation(GetName(), use.first);
+   }
+}
+
+void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_manipulationRef IRman)
+{
+   /// in case propagate constants from parameters
+   for(const auto& parm_decl_node : fd->list_of_args)
+   {
+      const unsigned int p_decl_id = AppM->getSSAFromParm(function_id, GET_INDEX_NODE(parm_decl_node));
+      if(tree_helper::is_real(TM, p_decl_id) || tree_helper::is_a_complex(TM, p_decl_id))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter not supported " + TM->get_tree_node_const(p_decl_id)->ToString());
+         continue;
+      }
+      if(AppM->ApplyNewTransformation())
+      {
+         const tree_nodeConstRef parm_type = tree_helper::CGetType(GET_NODE(parm_decl_node));
+         auto parmssa = TM->get_tree_node_const(p_decl_id);
+         auto* p = GetPointer<ssa_name>(parmssa);
+         auto is_constant = is_bit_values_constant(p->bit_values);
+         if(is_constant)
+         {
+            auto ull_value = convert_bitvalue2longlong(p->bit_values, TM, p_decl_id);
+            auto val = TM->CreateUniqueIntegerCst(static_cast<long long int>(ull_value), parm_type->index);
+            propagateValue(p, TM, TM->CGetTreeReindex(p_decl_id), val);
+         }
+      }
+   }
+   auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   THROW_ASSERT(sl, "Body is not a statement_list");
    for(const auto& bb_pair : sl->list_of_bloc)
    {
       const auto B = bb_pair.second;
@@ -281,41 +358,15 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                         if(op0 == op1)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with equal operands");
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, me->op1);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
-                              modified = true;
-                           }
-                           AppM->RegisterTransformation(GetName(), stmt);
+                           propagateValue(ssa, TM, ga->op0, me->op1);
                         }
                         else if(condition->get_kind() == integer_cst_K)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with constant condition");
                            const auto ic = GetPointerS<integer_cst>(condition);
                            auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              if(!AppM->ApplyNewTransformation())
-                              {
-                                 break;
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
-                              if(ull_value)
-                              {
-                                 TM->ReplaceTreeNode(use.first, ga->op0, me->op1);
-                              }
-                              else
-                              {
-                                 TM->ReplaceTreeNode(use.first, ga->op0, me->op2);
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
-                              modified = true;
-                              AppM->RegisterTransformation(GetName(), use.first);
-                           }
+                           tree_nodeRef new_val = ull_value ? me->op1 : me->op2;
+                           propagateValue(ssa, TM, ga->op0, new_val);
                         }
                         else
                         {
@@ -324,35 +375,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                      }
                      else if(GetPointer<cst_node>(GET_NODE(ga->op1)))
                      {
-                        const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                        for(const auto& use : StmtUses)
-                        {
-                           if(!AppM->ApplyNewTransformation())
-                           {
-                              break;
-                           }
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                           TM->ReplaceTreeNode(use.first, ga->op0, ga->op1);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                           modified = true;
-                           AppM->RegisterTransformation(GetName(), use.first);
-                        }
+                        propagateValue(ssa, TM, ga->op0, ga->op1);
                      }
                      else if(GetPointer<ssa_name>(GET_NODE(ga->op1)))
                      {
-                        const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                        for(const auto& use : StmtUses)
-                        {
-                           if(!AppM->ApplyNewTransformation())
-                           {
-                              break;
-                           }
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage before: " + use.first->ToString());
-                           TM->ReplaceTreeNode(use.first, ga->op0, ga->op1);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage after: " + use.first->ToString());
-                           modified = true;
-                           AppM->RegisterTransformation(GetName(), use.first);
-                        }
+                        propagateValue(ssa, TM, ga->op0, ga->op1);
                      }
                      else if(GET_NODE(ga->op1)->get_kind() == view_convert_expr_K)
                      {
@@ -392,20 +419,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               {
                                  THROW_ERROR("not supported floating point bitwidth");
                               }
-
-                              const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                              for(const auto& use : StmtUses)
-                              {
-                                 if(!AppM->ApplyNewTransformation())
-                                 {
-                                    break;
-                                 }
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                                 TM->ReplaceTreeNode(use.first, ga->op0, val);
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                                 modified = true;
-                                 AppM->RegisterTransformation(GetName(), use.first);
-                              }
+                              propagateValue(ssa, TM, ga->op0, val);
                            }
                         }
                      }
@@ -449,20 +463,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                   continue;
                }
                auto ga_BVO = [&] {
-                  unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0));
+                  unsigned int type_index = tree_helper::get_type_index(TM, output_uid);
                   tree_nodeRef ga_op_type = TM->GetTreeReindex(type_index);
                   tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
                   const std::string& bit_values = ssa->bit_values;
-                  bool is_constant = bit_values.size() != 0 && !tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op1));
-                  for(auto current_el : bit_values)
-                  {
-                     if(current_el == 'U')
-                     {
-                        is_constant = false;
-                        break;
-                     }
-                  }
-
+                  auto is_constant = is_bit_values_constant(bit_values) && !tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op1));
                   auto rel_expr_BVO = [&] {
                      auto* me = GetPointer<binary_expr>(GET_NODE(ga->op1));
                      tree_nodeRef op0 = GET_NODE(me->op0);
@@ -590,24 +595,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                   {
                      auto c_BVO = [&] {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Left part is constant " + bit_values);
-                        unsigned long long int const_value = 0;
-                        unsigned int index_val = 0;
-                        for(auto current_el : boost::adaptors::reverse(bit_values))
-                        {
-                           if(current_el == '1')
-                           {
-                              const_value |= 1ULL << index_val;
-                           }
-                           ++index_val;
-                        }
-                        /// in case do sign extension
-                        if(tree_helper::is_int(TM, output_uid) && bit_values[0] == '1')
-                        {
-                           for(; index_val < 64; ++index_val)
-                           {
-                              const_value |= 1ULL << index_val;
-                           }
-                        }
                         tree_nodeRef val;
                         if(GetPointer<integer_cst>(GET_NODE(ga->op1)))
                         {
@@ -615,9 +602,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                         }
                         else
                         {
+                           auto const_value = convert_bitvalue2longlong(bit_values, TM, output_uid);
                            val = TM->CreateUniqueIntegerCst(static_cast<long long int>(const_value), type_index);
                         }
-                        const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                         if(AppM->ApplyNewTransformation())
                         {
                            if(GET_NODE(ga->op0)->get_kind() == ssa_name_K and ga->predicate)
@@ -632,39 +619,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               }
                            }
                         }
-                        for(const auto& use : StmtUses)
-                        {
-                           if(!AppM->ApplyNewTransformation())
-                           {
-                              break;
-                           }
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                           TM->ReplaceTreeNode(use.first, ga->op0, val);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                           modified = true;
-                           AppM->RegisterTransformation(GetName(), use.first);
-                        }
+                        propagateValue(ssa, TM, ga->op0, val);
                      };
                      c_BVO();
                   }
                   else if(GetPointer<cst_node>(GET_NODE(ga->op1)))
                   {
-                     auto cst_node_BVO = [&] {
-                        const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                        for(const auto& use : StmtUses)
-                        {
-                           if(!AppM->ApplyNewTransformation())
-                           {
-                              break;
-                           }
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                           TM->ReplaceTreeNode(use.first, ga->op0, ga->op1);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                           modified = true;
-                           AppM->RegisterTransformation(GetName(), use.first);
-                        }
-                     };
-                     cst_node_BVO();
+                     propagateValue(ssa, TM, ga->op0, ga->op1);
                   }
                   else if(GetPointer<ssa_name>(GET_NODE(ga->op1)))
                   {
@@ -707,18 +668,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
 
                            if(bw_op1 <= bw_op0)
                            {
-                              for(const auto& use : StmtUses)
-                              {
-                                 if(!AppM->ApplyNewTransformation())
-                                 {
-                                    break;
-                                 }
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage before: " + use.first->ToString());
-                                 TM->ReplaceTreeNode(use.first, ga->op0, ga->op1);
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage after: " + use.first->ToString());
-                                 modified = true;
-                                 AppM->RegisterTransformation(GetName(), use.first);
-                              }
+                              propagateValue(ssa, TM, ga->op0, ga->op1);
                            }
                         }
                      };
@@ -1022,35 +972,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Trailing zeros op0=" + STR(trailing_zero_op0) + ", trailing zeros op1=" + STR(trailing_zero_op1));
                         if(is_op0_null)
                         {
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              if(!AppM->ApplyNewTransformation())
-                              {
-                                 break;
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, me->op1);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                              modified = true;
-                              AppM->RegisterTransformation(GetName(), use.first);
-                           }
+                           propagateValue(ssa, TM, ga->op0, me->op1);
                         }
                         else if(is_op1_null)
                         {
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              if(!AppM->ApplyNewTransformation())
-                              {
-                                 break;
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, me->op0);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                              modified = true;
-                              AppM->RegisterTransformation(GetName(), use.first);
-                           }
+                           propagateValue(ssa, TM, ga->op0, me->op0);
                         }
                         else if(trailing_zero_op0 != 0 || trailing_zero_op1 != 0)
                         {
@@ -1381,19 +1307,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                         {
                            long long int const_value = GET_NODE(ga->op1)->get_kind() == eq_expr_K ? 1LL : 0LL;
                            tree_nodeRef val = TM->CreateUniqueIntegerCst(const_value, type_index);
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              if(!AppM->ApplyNewTransformation())
-                              {
-                                 break;
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, val);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                              modified = true;
-                              AppM->RegisterTransformation(GetName(), use.first);
-                           }
+                           propagateValue(ssa, TM, ga->op0, val);
                         }
                         else if(is_op1_zero && GET_NODE(ga->op1)->get_kind() == ne_expr_K && op0_size == 1)
                         {
@@ -1402,19 +1316,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            unsigned data_bitsize = BitLatticeManipulator::size(TM, op0_type_index);
                            if(data_bitsize == 1)
                            {
-                              const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                              for(const auto& use : StmtUses)
-                              {
-                                 if(!AppM->ApplyNewTransformation())
-                                 {
-                                    break;
-                                 }
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace expression usage before: " + use.first->ToString());
-                                 TM->ReplaceTreeNode(use.first, ga->op0, me->op0);
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace expression usage after: " + use.first->ToString());
-                                 modified = true;
-                                 AppM->RegisterTransformation(GetName(), use.first);
-                              }
+                              propagateValue(ssa, TM, ga->op0, me->op0);
                               if(!ssa->CGetUseStmts().empty())
                               {
                                  if(AppM->ApplyNewTransformation())
@@ -1510,38 +1412,14 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace bit_and_expr usage before: " + stmt->ToString());
                                  unsigned int type_index0 = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op0));
                                  tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(0, type_index0);
-                                 const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                                 for(const auto& use : StmtUses)
-                                 {
-                                    if(!AppM->ApplyNewTransformation())
-                                    {
-                                       break;
-                                    }
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                                    TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                                    modified = true;
-                                    AppM->RegisterTransformation(GetName(), use.first);
-                                 }
+                                 propagateValue(ssa, TM, ga->op0, zero_node);
                               }
                               else
                               {
                                  // bit_xor_expr_K
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace bit_xor_expr usage before: " + stmt->ToString());
                                  tree_nodeRef val = is_zero0 ? me->op1 : me->op0;
-                                 const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                                 for(const auto& use : StmtUses)
-                                 {
-                                    if(!AppM->ApplyNewTransformation())
-                                    {
-                                       break;
-                                    }
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace expression usage before: " + use.first->ToString());
-                                    TM->ReplaceTreeNode(use.first, ga->op0, val);
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace expression usage after: " + use.first->ToString());
-                                    modified = true;
-                                    AppM->RegisterTransformation(GetName(), use.first);
-                                 }
+                                 propagateValue(ssa, TM, ga->op0, val);
                               }
                            }
                            else
@@ -1681,45 +1559,15 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                         if(op0 == op1)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with equal operands");
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              if(!AppM->ApplyNewTransformation())
-                              {
-                                 break;
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, me->op1);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
-                              modified = true;
-                              AppM->RegisterTransformation(GetName(), use.first);
-                           }
+                           propagateValue(ssa, TM, ga->op0, me->op1);
                         }
                         else if(condition->get_kind() == integer_cst_K)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with constant condition");
                            auto* ic = GetPointer<integer_cst>(condition);
                            auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              if(!AppM->ApplyNewTransformation())
-                              {
-                                 break;
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
-                              if(ull_value)
-                              {
-                                 TM->ReplaceTreeNode(use.first, ga->op0, me->op1);
-                              }
-                              else
-                              {
-                                 TM->ReplaceTreeNode(use.first, ga->op0, me->op2);
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
-                              modified = true;
-                              AppM->RegisterTransformation(GetName(), use.first);
-                           }
+                           auto val = ull_value ? me->op1 : me->op2;
+                           propagateValue(ssa, TM, ga->op0, val);
                         }
                         else
                         {
@@ -1866,20 +1714,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     AppM->RegisterTransformation(GetName(), ga_nop);
                                     cond_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                                  }
-
-                                 const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                                 for(const auto& use : StmtUses)
-                                 {
-                                    if(!AppM->ApplyNewTransformation())
-                                    {
-                                       break;
-                                    }
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
-                                    TM->ReplaceTreeNode(use.first, ga->op0, cond_var);
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
-                                    modified = true;
-                                    AppM->RegisterTransformation(GetName(), use.first);
-                                 }
+                                 propagateValue(ssa, TM, ga->op0, cond_var);
                               }
                               else if(precision == 1 and s0 == "0" and s1 == "1")
                               {
@@ -1901,19 +1736,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     B->PushBefore(ga_nop, stmt, AppM);
                                     cond_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                                  }
-                                 const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                                 for(const auto& use : StmtUses)
-                                 {
-                                    if(!AppM->ApplyNewTransformation())
-                                    {
-                                       break;
-                                    }
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
-                                    TM->ReplaceTreeNode(use.first, ga->op0, cond_var);
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
-                                    modified = true;
-                                    AppM->RegisterTransformation(GetName(), use.first);
-                                 }
+                                 propagateValue(ssa, TM, ga->op0, cond_var);
                               }
                            }
                            else if(GetPointer<integer_cst>(op0) && GetPointer<integer_cst>(op1))
@@ -1957,19 +1780,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            auto* int_const = GetPointer<integer_cst>(GET_NODE(tne->op));
                            long long int const_value = int_const->value == 0 ? 1LL : 0LL;
                            tree_nodeRef val = TM->CreateUniqueIntegerCst(const_value, type_index);
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              if(!AppM->ApplyNewTransformation())
-                              {
-                                 break;
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, val);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                              modified = true;
-                              AppM->RegisterTransformation(GetName(), use.first);
-                           }
+                           propagateValue(ssa, TM, ga->op0, val);
                         }
                      };
                      tne_BVO();
@@ -2001,19 +1812,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            {
                               val = tae->op0;
                            }
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              if(!AppM->ApplyNewTransformation())
-                              {
-                                 break;
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, val);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                              modified = true;
-                              AppM->RegisterTransformation(GetName(), use.first);
-                           }
+                           propagateValue(ssa, TM, ga->op0, val);
                         }
                      };
                      tae_BVO();
@@ -2045,19 +1844,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            {
                               val = toe->op0;
                            }
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              if(!AppM->ApplyNewTransformation())
-                              {
-                                 break;
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, val);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                              modified = true;
-                              AppM->RegisterTransformation(GetName(), use.first);
-                           }
+                           propagateValue(ssa, TM, ga->op0, val);
                         }
                      };
                      toe_BVO();
@@ -2088,19 +1875,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            }
                            if(val)
                            {
-                              const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                              for(const auto& use : StmtUses)
-                              {
-                                 if(!AppM->ApplyNewTransformation())
-                                 {
-                                    break;
-                                 }
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                                 TM->ReplaceTreeNode(use.first, ga->op0, val);
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                                 modified = true;
-                                 AppM->RegisterTransformation(GetName(), use.first);
-                              }
+                              propagateValue(ssa, TM, ga->op0, val);
                            }
                         }
                      };
@@ -2115,19 +1890,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            auto* int_const = GetPointer<integer_cst>(GET_NODE(ppe->op1));
                            if(int_const->value == 0)
                            {
-                              const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                              for(const auto& use : StmtUses)
-                              {
-                                 if(!AppM->ApplyNewTransformation())
-                                 {
-                                    break;
-                                 }
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                                 TM->ReplaceTreeNode(use.first, ga->op0, ppe->op0);
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                                 modified = true;
-                                 AppM->RegisterTransformation(GetName(), use.first);
-                              }
+                              propagateValue(ssa, TM, ga->op0, ppe->op0);
                            }
                            else if(GetPointer<ssa_name>(GET_NODE(ppe->op0)))
                            {
@@ -2175,19 +1938,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  const auto prev_ga = GetPointer<const gimple_assign>(temp_def);
                                  if(GET_NODE(prev_ga->op1)->get_kind() == addr_expr_K)
                                  {
-                                    const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                                    for(const auto& use : StmtUses)
-                                    {
-                                       if(!AppM->ApplyNewTransformation())
-                                       {
-                                          break;
-                                       }
-                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                                       TM->ReplaceTreeNode(use.first, ga->op0, prev_ga->op0);
-                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                                       modified = true;
-                                       AppM->RegisterTransformation(GetName(), use.first);
-                                    }
+                                    propagateValue(ssa, TM, ga->op0, prev_ga->op0);
                                  }
                               }
                            }
@@ -2235,36 +1986,12 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               {
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
                                  tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type));
-                                 const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                                 for(const auto& use : StmtUses)
-                                 {
-                                    if(!AppM->ApplyNewTransformation())
-                                    {
-                                       break;
-                                    }
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                                    TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                                    modified = true;
-                                    AppM->RegisterTransformation(GetName(), use.first);
-                                 }
+                                 propagateValue(ssa, TM, ga->op0, zero_node);
                               }
                            }
                            else if(tree_helper::is_bool(TM, GET_INDEX_NODE(ebe->op0)))
                            {
-                              const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                              for(const auto& use : StmtUses)
-                              {
-                                 if(!AppM->ApplyNewTransformation())
-                                 {
-                                    break;
-                                 }
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr input bool usage before: " + use.first->ToString());
-                                 TM->ReplaceTreeNode(use.first, ga->op0, ebe->op0);
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr input bool usage after: " + use.first->ToString());
-                                 modified = true;
-                                 AppM->RegisterTransformation(GetName(), use.first);
-                              }
+                              propagateValue(ssa, TM, ga->op0, ebe->op0);
                            }
                            else
                            {
@@ -2291,19 +2018,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                        else
                                        {
                                           tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type));
-                                          const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                                          for(const auto& use : StmtUses)
-                                          {
-                                             if(!AppM->ApplyNewTransformation())
-                                             {
-                                                break;
-                                             }
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant usage before: " + use.first->ToString());
-                                             TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant usage after: " + use.first->ToString());
-                                             modified = true;
-                                             AppM->RegisterTransformation(GetName(), use.first);
-                                          }
+                                          propagateValue(ssa, TM, ga->op0, zero_node);
                                        }
                                     }
                                     else
@@ -2350,19 +2065,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                              {
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
                                                 tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type));
-                                                const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                                                for(const auto& use : StmtUses)
-                                                {
-                                                   if(!AppM->ApplyNewTransformation())
-                                                   {
-                                                      break;
-                                                   }
-                                                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                                                   TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
-                                                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                                                   modified = true;
-                                                   AppM->RegisterTransformation(GetName(), use.first);
-                                                }
+                                                propagateValue(ssa, TM, ga->op0, zero_node);
                                              }
                                           }
                                        }
@@ -2399,19 +2102,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
                                           tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(masked_value ? 1 : 0, GET_INDEX_NODE(ebe->type));
-                                          const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                                          for(const auto& use : StmtUses)
-                                          {
-                                             if(!AppM->ApplyNewTransformation())
-                                             {
-                                                break;
-                                             }
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                                             TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                                             modified = true;
-                                             AppM->RegisterTransformation(GetName(), use.first);
-                                          }
+                                          propagateValue(ssa, TM, ga->op0, zero_node);
                                        }
                                     }
                                  }
@@ -2457,19 +2148,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
                                           tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type));
-                                          const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                                          for(const auto& use : StmtUses)
-                                          {
-                                             if(!AppM->ApplyNewTransformation())
-                                             {
-                                                break;
-                                             }
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                                             TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                                             modified = true;
-                                             AppM->RegisterTransformation(GetName(), use.first);
-                                          }
+                                          propagateValue(ssa, TM, ga->op0, zero_node);
                                        }
                                     }
                                  }
@@ -2756,19 +2435,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               res_value = val;
                            }
                            tree_nodeRef res_node = TM->CreateUniqueIntegerCst(res_value, GET_INDEX_NODE(ebe->type));
-                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                           for(const auto& use : StmtUses)
-                           {
-                              if(!AppM->ApplyNewTransformation())
-                              {
-                                 break;
-                              }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant input usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, res_node);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant input usage after: " + use.first->ToString());
-                              modified = true;
-                              AppM->RegisterTransformation(GetName(), use.first);
-                           }
+                           propagateValue(ssa, TM, ga->op0, res_node);
                         }
                      };
                      extract_bit_expr_BVO();
@@ -2781,19 +2448,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                         {
                            if(tree_helper::is_bool(TM, GET_INDEX_NODE(ne->op)))
                            {
-                              const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                              for(const auto& use : StmtUses)
-                              {
-                                 if(!AppM->ApplyNewTransformation())
-                                 {
-                                    break;
-                                 }
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace bool nop usage before: " + use.first->ToString());
-                                 TM->ReplaceTreeNode(use.first, ga->op0, ne->op);
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace bool nop usage after: " + use.first->ToString());
-                                 modified = true;
-                                 AppM->RegisterTransformation(GetName(), use.first);
-                              }
+                              propagateValue(ssa, TM, ga->op0, ne->op);
                            }
                            else
                            {
@@ -2844,54 +2499,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
             if(ssa)
             {
                const std::string& bit_values = ssa->bit_values;
-               bool is_constant = bit_values.size() != 0 && !tree_helper::is_a_pointer(TM, ssa_node_id);
-               for(auto current_el : bit_values)
-               {
-                  if(current_el == 'U')
-                  {
-                     is_constant = false;
-                     break;
-                  }
-               }
+               auto is_constant = is_bit_values_constant(bit_values);
                if(is_constant)
                {
                   auto c_BVO = [&] {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Left part is constant " + bit_values);
-                     unsigned long long int const_value = 0;
-                     unsigned int index_val = 0;
-                     for(auto current_el : boost::adaptors::reverse(bit_values))
-                     {
-                        if(current_el == '1')
-                        {
-                           const_value |= 1ULL << index_val;
-                        }
-                        ++index_val;
-                     }
-                     /// in case do sign extension
-                     if(tree_helper::is_int(TM, ssa_node_id) && bit_values[0] == '1')
-                     {
-                        for(; index_val < 64; ++index_val)
-                        {
-                           const_value |= 1ULL << index_val;
-                        }
-                     }
+                     auto const_value = convert_bitvalue2longlong(bit_values, TM, ssa_node_id);
                      unsigned int type_index = tree_helper::get_type_index(TM, ssa_node_id);
                      tree_nodeRef val = TM->CreateUniqueIntegerCst(static_cast<long long int>(const_value), type_index);
 
-                     const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                      auto old_res = TM->GetTreeReindex(ssa_node_id);
-                     for(const auto& use : StmtUses)
-                     {
-                        if(!AppM->ApplyNewTransformation())
-                        {
-                           break;
-                        }
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
-                        TM->ReplaceTreeNode(use.first, old_res, val);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
-                        modified = true;
-                        AppM->RegisterTransformation(GetName(), use.first);
-                     }
+                     propagateValue(ssa, TM, old_res, val);
                      if(AppM->ApplyNewTransformation())
                      {
                         pn->res = TM->GetTreeReindex(ssa_node_id);
