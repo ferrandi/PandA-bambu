@@ -91,7 +91,7 @@ bool bloc::check_function_call(const tree_nodeRef statement, gimple_assign* ga, 
          if(GET_NODE(fn)->get_kind() == function_decl_K)
          {
             called_function_id = GET_INDEX_CONST_NODE(fn);
-            return GetPointerS<function_decl>(GET_NODE(fn))->body.get();
+            return true;
          }
       }
    }
@@ -104,7 +104,7 @@ bool bloc::check_function_call(const tree_nodeRef statement, gimple_assign* ga, 
          if(GET_NODE(fn)->get_kind() == function_decl_K)
          {
             called_function_id = GET_INDEX_NODE(fn);
-            return GetPointerS<function_decl>(GET_NODE(fn))->body.get();
+            return true;
          }
       }
    }
