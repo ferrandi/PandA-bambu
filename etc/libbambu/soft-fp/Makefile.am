@@ -2,7 +2,7 @@
 EXTRA_DIST=bambu.h bambu-arch.h common_core_nonrestoring_sdiv.h double.h extended.h longlong.h op-1.h op-2.h op-4.h op-8.h op-common.h quad.h README \
            sfp-machine.h single.h soft-fp.h  adddf3.c addsf3.c divdf3.c eqdf2.c eqsf2.c extendsfdf2.c fixdfdi.c fixdfsi.c fixsfdi.c fixsfsi.c fixunsdfdi.c \
            fixunsdfsi.c fixunssfdi.c fixunssfsi.c floatdidf.c floatdisf.c floatsidf.c floatsisf.c floatundidf.c floatundisf.c floatunsidf.c floatunsisf.c \
-           gedf2.c gesf2.c ledf2.c lesf2.c muldf3.c mulsf3.c negdf2.c negsf2.c subdf3.c subsf3.c truncdfsf2.c unorddf2.c unordsf2.c 
+           gedf2.c gesf2.c ledf2.c lesf2.c muldf3.c mulsf3.c negdf2.c negsf2.c subdf3.c subsf3.c truncdfsf2.c unorddf2.c unordsf2.c divsf3.c
 common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
 common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin
 common_cflags= -O3 -D_FLT_NO_DENORMALS -I$(top_srcdir)/etc/libbambu -fipa-pta $(common_treegccflags)
