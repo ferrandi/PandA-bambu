@@ -86,6 +86,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SPLIT_RETURN, SAME_FUNCTION));
 #endif
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
+            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BIT_VALUE_OPT, CALLED_FUNCTIONS));
+            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BIT_VALUE_OPT2, SAME_FUNCTION));
+            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BIT_VALUE_OPT2, CALLED_FUNCTIONS));
+            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(RANGE_ANALYSIS, WHOLE_APPLICATION));
+            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(ESSA, SAME_FUNCTION));
+         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -99,15 +108,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #endif
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(DEAD_CODE_ELIMINATION, CALLED_FUNCTIONS));
-         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
-            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BIT_VALUE_OPT, CALLED_FUNCTIONS));
-            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BIT_VALUE_OPT2, SAME_FUNCTION));
-            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BIT_VALUE_OPT2, CALLED_FUNCTIONS));
-            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(RANGE_ANALYSIS, WHOLE_APPLICATION));
-            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(ESSA, SAME_FUNCTION));
-         }
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(LUT_TRANSFORMATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));

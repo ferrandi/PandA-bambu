@@ -119,11 +119,11 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
             }
          }
+         relationships.insert(std::make_pair(BIT_VALUE_OPT, CALLED_FUNCTIONS));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(BIT_VALUE_OPT, CALLED_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -2538,11 +2538,11 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::make_pair(BIT_VALUE_OPT, SAME_FUNCTION));
          }
          relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(BIT_VALUE_OPT2, CALLED_FUNCTIONS));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(BIT_VALUE_OPT2, CALLED_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

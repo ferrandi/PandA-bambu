@@ -123,6 +123,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
          }
 #endif
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
+            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
+         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -156,12 +162,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
-         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-         {
-            relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
-            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
-         }
          relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
