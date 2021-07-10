@@ -1987,6 +1987,18 @@ test_libm_sinecosine.sh \
 test_libm_sqrt.sh \
 test_libm_sqrtf.sh \
 test_softfloat.sh \
-wb4_interface.sh
+wb4_interface.sh \
+generic_CHStone-memarch.sh \
+generic_discrepancy.sh \
+generic_gcc_regression_simple_default.sh \
+generic_gcc_regression_simple_ext_pipelined.sh \
+generic_gcc_regression_simple_no_expose_globals_pretty_print.sh \
+generic_gcc_regression_simple_no_expose_globals.sh \
+generic_gcc_regression_simple_no_expose_globals_vhdl.sh \
+generic_gcc_regression_simple.sh \
+generic_getopt.sh \
+generic_libm-tests.sh \
+generic_softfloat-tests.sh
 
 TESTS = test_libm_expf.sh test_libm_logf.sh test_libm_powf.sh test_libm_sinecosine.sh test_libm_sqrt.sh  test_libm_sqrtf.sh test_softfloat.sh
+
