@@ -344,7 +344,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
             auto ga = GetPointerS<gimple_assign>(GET_NODE(stmt));
             unsigned int output_uid = GET_INDEX_NODE(ga->op0);
             auto ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
-            if(ssa)
+            if(ssa && !ssa->bit_values.empty() && !ssa->CGetUseStmts().empty())
             {
                if(tree_helper::is_real(TM, output_uid))
                {
