@@ -53,8 +53,6 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
 
-#include "call_graph_manager.hpp"
-
 #include "Parameter.hpp"           // for Parameter
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "exceptions.hpp"          // for THROW_ASSERT, THROW_ERROR
