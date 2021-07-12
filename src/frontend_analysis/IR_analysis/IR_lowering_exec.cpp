@@ -1938,6 +1938,26 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   };
                   ce_expr1();
                }
+               else if(code1 == indirect_ref_K)
+               {
+                  auto* ir = GetPointer<indirect_ref>(GET_NODE(ga->op1));
+                  tree_nodeRef type = ir->type;
+                  auto pt_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ir->op));
+                  tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, pt_index);
+                  tree_nodeRef mr = tree_man->create_binary_operation(type, ir->op, offset, srcp_default, mem_ref_K);
+                  ga->op1 = mr;
+                  restart_analysis = true;
+               }
+               else if(code1 == misaligned_indirect_ref_K)
+               {
+                  auto* MIR = GetPointer<misaligned_indirect_ref>(GET_NODE(ga->op1));
+                  tree_nodeRef type = MIR->type;
+                  tree_nodeRef pt = tree_man->create_pointer_type(type, 8);
+                  tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
+                  tree_nodeRef mr = tree_man->create_binary_operation(type, MIR->op, offset, srcp_default, mem_ref_K);
+                  ga->op1 = mr;
+                  restart_analysis = true;
+               }
                else if(reached_max_transformation_limit(*it_los))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations (" + GET_CONST_NODE(ga->op1)->get_kind_text() + ")");
@@ -2375,26 +2395,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         }
                      };
                      pe_expr1();
-                  }
-                  else if(code1 == indirect_ref_K)
-                  {
-                     auto* ir = GetPointer<indirect_ref>(GET_NODE(ga->op1));
-                     tree_nodeRef type = ir->type;
-                     auto pt_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ir->op));
-                     tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, pt_index);
-                     tree_nodeRef mr = tree_man->create_binary_operation(type, ir->op, offset, srcp_default, mem_ref_K);
-                     ga->op1 = mr;
-                     restart_analysis = true;
-                  }
-                  else if(code1 == misaligned_indirect_ref_K)
-                  {
-                     auto* MIR = GetPointer<misaligned_indirect_ref>(GET_NODE(ga->op1));
-                     tree_nodeRef type = MIR->type;
-                     tree_nodeRef pt = tree_man->create_pointer_type(type, 8);
-                     tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
-                     tree_nodeRef mr = tree_man->create_binary_operation(type, MIR->op, offset, srcp_default, mem_ref_K);
-                     ga->op1 = mr;
-                     restart_analysis = true;
                   }
                   else if(code1 == parm_decl_K)
                   {
