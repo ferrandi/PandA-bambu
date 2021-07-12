@@ -1766,6 +1766,24 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             else
             {
+               auto boolType = tree_man->create_boolean_type();
+               /// check if operands are of bool type
+               auto check_lut_compatibility = [&](tree_nodeRef& lut_operand) {
+                  if(lut_operand && !tree_helper::is_bool(TM, GET_INDEX_NODE(lut_operand)))
+                  {
+                     tree_nodeRef ga_nop = tree_man->CreateNopExpr(lut_operand, boolType, tree_nodeRef(), tree_nodeRef(), function_id);
+                     block.second->PushBefore(ga_nop, po_stmpt, AppM);
+                     lut_operand = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+                  }
+               };
+               check_lut_compatibility(op1);
+               check_lut_compatibility(op2);
+               check_lut_compatibility(op3);
+               check_lut_compatibility(op4);
+               check_lut_compatibility(op5);
+               check_lut_compatibility(op6);
+               check_lut_compatibility(op7);
+               check_lut_compatibility(op8);
                if(tree_helper::is_bool(TM, GET_INDEX_NODE(gimpleAssign->op0)))
                {
                   tree_nodeRef new_op1 = tree_man->create_lut_expr(ssa_ga_op0->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
@@ -1774,7 +1792,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                }
                else
                {
-                  auto boolType = tree_man->create_boolean_type();
                   tree_nodeRef lut_node = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
                   auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), lut_node, function_id, BB_index, srcp_default);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(lut_ga)->ToString());
@@ -1790,8 +1807,25 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
          else
          {
-            const std::string srcp_default("built-in:0:0");
             auto boolType = tree_man->create_boolean_type();
+            /// check if operands are of bool type
+            auto check_lut_compatibility = [&](tree_nodeRef& lut_operand) {
+               if(lut_operand && !tree_helper::is_bool(TM, GET_INDEX_NODE(lut_operand)))
+               {
+                  tree_nodeRef ga_nop = tree_man->CreateNopExpr(lut_operand, boolType, tree_nodeRef(), tree_nodeRef(), function_id);
+                  prev_stmts_to_add.push_back(ga_nop);
+                  lut_operand = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+               }
+            };
+            check_lut_compatibility(op1);
+            check_lut_compatibility(op2);
+            check_lut_compatibility(op3);
+            check_lut_compatibility(op4);
+            check_lut_compatibility(op5);
+            check_lut_compatibility(op6);
+            check_lut_compatibility(op7);
+            check_lut_compatibility(op8);
+            const std::string srcp_default("built-in:0:0");
             tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
             auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), new_op1, function_id, BB_index, srcp_default);
             auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
