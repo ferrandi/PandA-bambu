@@ -49,6 +49,8 @@
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
+#include "op_graph.hpp"
+#include "tree_manager.hpp"
 
 #if HAVE_BAMBU_BUILT
 /// HLS/scheduling include
@@ -519,31 +521,32 @@ void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef
    auto* ga = GetPointer<gimple_assign>(GET_NODE(statement));
    if((ga && (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)) || (GetPointer<gimple_call>(GET_NODE(statement))))
    {
-      const CallGraphManagerRef cg_man = AppM->GetCallGraphManager();
+      const auto cg_man = AppM->GetCallGraphManager();
       THROW_ASSERT(cg_man, "");
       THROW_ASSERT(GetPointer<gimple_node>(GET_NODE(statement)), "");
       unsigned int called_function_id;
       if(check_function_call(statement, ga, called_function_id))
       {
          THROW_ASSERT(GetPointer<gimple_node>(GET_NODE(statement))->scpe, "statement " + statement->ToString());
-         auto fun_id = GET_INDEX_NODE(GetPointer<gimple_node>(GET_NODE(statement))->scpe);
-         const vertex fun_cg_vertex = cg_man->GetVertex(fun_id);
-         const CallGraphConstRef cg = cg_man->CGetCallGraph();
+         const auto fun_id = GET_INDEX_NODE(GetPointer<gimple_node>(GET_NODE(statement))->scpe);
+         const auto fun_cg_vertex = cg_man->GetVertex(fun_id);
+         const auto cg = cg_man->CGetCallGraph();
          CustomOrderedSet<EdgeDescriptor> to_remove;
          OutEdgeIterator oei, oei_end;
          boost::tie(oei, oei_end) = boost::out_edges(fun_cg_vertex, *cg);
          const unsigned int call_id = GET_INDEX_NODE(statement);
          for(; oei != oei_end; oei++)
          {
-            const CustomOrderedSet<unsigned int>& direct_calls = cg->CGetFunctionEdgeInfo(*oei)->direct_call_points;
+            const auto& direct_calls = cg->CGetFunctionEdgeInfo(*oei)->direct_call_points;
             auto call_it = direct_calls.find(call_id);
             if(call_it != direct_calls.end())
             {
                to_remove.insert(*oei);
             }
          }
-         THROW_ASSERT(to_remove.size(), "Call to be removed not found in call graph " + STR(call_id) + " " + STR(fun_id) + GET_NODE(statement)->get_kind_text() + " |" + GetPointer<gimple_node>(GET_NODE(statement))->scpe->ToString());
-         for(const EdgeDescriptor& e : to_remove)
+         THROW_ASSERT(to_remove.size() || tree_helper::print_function_name(AppM->get_tree_manager(), GetPointer<const function_decl>(AppM->get_tree_manager()->CGetTreeNode(called_function_id))) == BUILTIN_WAIT_CALL,
+                      "Call to be removed not found in call graph " + STR(call_id) + " " + STR(fun_id) + GET_NODE(statement)->get_kind_text() + " |" + GetPointer<gimple_node>(GET_NODE(statement))->scpe->ToString());
+         for(const auto& e : to_remove)
          {
             cg_man->RemoveCallPoint(e, call_id);
          }

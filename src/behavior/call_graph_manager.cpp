@@ -245,23 +245,30 @@ void CallGraphManager::AddFunctionAndCallPoint(unsigned int caller_id, unsigned 
 
 void CallGraphManager::AddFunctionAndCallPoint(const application_managerRef AppM, unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type)
 {
-   if(!IsVertex(called_id))
+   if(tree_helper::print_function_name(tree_manager, GetPointer<const function_decl>(tree_manager->CGetTreeNode(called_id))) != BUILTIN_WAIT_CALL)
    {
-      bool has_body = AppM->get_tree_manager()->get_implementation_node(called_id) != 0;
-      BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, called_id, has_body, AppM->get_parameter()));
-      FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, AppM->get_parameter()));
-      AddFunctionAndCallPoint(caller_id, called_id, call_id, FB, call_type);
-   }
-   else
-   {
-      AddCallPoint(caller_id, called_id, call_id, call_type);
+      if(!IsVertex(called_id))
+      {
+         bool has_body = tree_manager->get_implementation_node(called_id) != 0;
+         BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, called_id, has_body, AppM->get_parameter()));
+         FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, AppM->get_parameter()));
+         AddFunctionAndCallPoint(caller_id, called_id, call_id, FB, call_type);
+      }
+      else
+      {
+         AddCallPoint(caller_id, called_id, call_id, call_type);
+      }
    }
 }
 
 void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int callid)
 {
-   const unsigned int caller_id = Cget_node_info<FunctionInfo, CallGraph>(boost::source(e, *call_graph), *call_graph)->nodeID;
    const unsigned int called_id = Cget_node_info<FunctionInfo, CallGraph>(boost::target(e, *call_graph), *call_graph)->nodeID;
+   if(tree_helper::print_function_name(tree_manager, GetPointer<const function_decl>(tree_manager->CGetTreeNode(called_id))) == BUILTIN_WAIT_CALL)
+   {
+      return;
+   }
+   const unsigned int caller_id = Cget_node_info<FunctionInfo, CallGraph>(boost::source(e, *call_graph), *call_graph)->nodeID;
 
    auto* edge_info = get_edge_info<FunctionEdgeInfo, CallGraph>(e, *call_graph);
    auto& direct_calls = edge_info->direct_call_points;
@@ -319,6 +326,10 @@ void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int call
 
 void CallGraphManager::RemoveCallPoint(const unsigned int caller_id, const unsigned int called_id, const unsigned int call_id)
 {
+   if(tree_helper::print_function_name(tree_manager, GetPointer<const function_decl>(tree_manager->CGetTreeNode(called_id))) == BUILTIN_WAIT_CALL)
+   {
+      return;
+   }
    const auto caller_vertex = GetVertex(caller_id);
    const auto called_vertex = GetVertex(called_id);
    EdgeDescriptor e;
