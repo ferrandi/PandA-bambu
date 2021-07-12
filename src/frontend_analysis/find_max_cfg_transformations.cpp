@@ -74,13 +74,13 @@ const std::string FindMaxCFGTransformations::ComputeArgString(const size_t cfg_m
       else
       {
          arg_string += " ";
-         if(arg.find("--cfg-max-transformation") == std::string::npos and arg.find("--find-max-cfg-transformations") == std::string::npos)
+         if(arg.find("--cfg-max-transformations") == std::string::npos and arg.find("--find-cfg-max-transformations") == std::string::npos)
          {
             arg_string += arg;
          }
       }
    }
-   arg_string += " --cfg-max-transformation=" + STR(cfg_max_transformations);
+   arg_string += " --cfg-max-transformations=" + STR(cfg_max_transformations);
    return arg_string;
 }
 
