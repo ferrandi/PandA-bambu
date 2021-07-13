@@ -1334,6 +1334,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                }
                break;
             }
+            case bit_lattice::X:
             case bit_lattice::U:
             {
                std::deque<bit_lattice> negated_bitstring;
@@ -1351,7 +1352,6 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                res = inf(arg_bitstring, negated_bitstring, output_uid);
                break;
             }
-            case bit_lattice::X:
             default:
             {
                THROW_UNREACHABLE("unexpected bit lattice for sign bit" + bitstring_to_string(arg_bitstring));
