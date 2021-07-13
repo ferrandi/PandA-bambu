@@ -372,25 +372,10 @@ jobs:
     needs: [build, softfloat-preliminary]
     runs-on: [self-hosted, mentor]
     env:
-      script: generic_softfloat-tests.sh
+      script: multi_softfloat-tests.sh
       args: -c=--simulator=MODELSIM
-      outname: ${{matrix.setup}}_softfloat-tests
+      outname: multi_softfloat-tests
       jobs: 14
-    strategy:
-      matrix:
-        include:
-          - setup: gcc-4.9
-            compiler: I386_GCC49
-          - setup: clang-4.0
-            compiler: I386_CLANG4
-          - setup: clang-5.0
-            compiler: I386_CLANG5
-          - setup: clang-6.0
-            compiler: I386_CLANG6
-          - setup: clang-7
-            compiler: I386_CLANG7
-          - setup: clang-11
-            compiler: I386_CLANG11
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -417,7 +402,7 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" -c=--compiler=${{matrix.compiler}} ${{env.args}}
+          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2

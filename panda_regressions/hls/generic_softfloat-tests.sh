@@ -4,7 +4,7 @@ script_dir="$(dirname $(readlink -e $0))"
 . $script_dir/generic_getopt.sh
 
 BATCH_ARGS=("--soft-float" "--max-ulp=0" "--experimental-setup=BAMBU-PERFORMANCE-MP")
-OUT_SUFFIX="${COMPILER}_softfloat_tests"
+OUT_SUFFIX="${COMPILER}_softfloat-tests"
 
 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${COMPILER} ${BATCH_ARGS[*]}"\
