@@ -110,13 +110,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
+            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
             if(parameters->isOption(OPT_bitvalue_ipa) && parameters->getOption<bool>(OPT_bitvalue_ipa))
             {
                relationships.insert(std::make_pair(BIT_VALUE_IPA, WHOLE_APPLICATION));
-            }
-            else
-            {
-               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
             }
          }
          relationships.insert(std::make_pair(BIT_VALUE_OPT, CALLED_FUNCTIONS));
@@ -129,23 +126,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(INVALIDATION_RELATIONSHIP):
       {
          /// Not executed
-         if(GetStatus() != DesignFlowStep_Status::SUCCESS)
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
-            const auto update_BV = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, function_id));
-            if(update_BV)
+            if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
-               const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-               const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_BV)->design_flow_step;
-               if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != function_behavior->GetBBVersion() &&
-                  GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->GetBitValueVersion() != function_behavior->GetBitValueVersion())
-               {
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE, SAME_FUNCTION));
-               }
+               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
             }
-         }
-         else
-         {
-            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          }
          break;
       }
@@ -157,17 +143,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool Bit_Value_opt::HasToBeExecuted() const
 {
-   /// If BitValue is not up to date, do not execute this step and invalidate BitValue
-   const auto update_BV = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, function_id));
-   if(update_BV)
-   {
-      const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-      const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_BV)->design_flow_step;
-      if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != function_behavior->GetBBVersion() && GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->GetBitValueVersion() != function_behavior->GetBitValueVersion())
-      {
-         return false;
-      }
-   }
    return FunctionFrontendFlowStep::HasToBeExecuted() || bitvalue_version != function_behavior->GetBitValueVersion();
 }
 
@@ -2536,6 +2511,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             relationships.insert(std::make_pair(BIT_VALUE_OPT, SAME_FUNCTION));
+            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          }
          relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(BIT_VALUE_OPT2, CALLED_FUNCTIONS));
