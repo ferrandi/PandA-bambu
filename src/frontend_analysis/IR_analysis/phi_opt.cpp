@@ -478,6 +478,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                   AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
                   ChainOptimization(block.first);
                   bb_modified = true;
+                  restart = true;
+                  break;
                }
             }
          }
