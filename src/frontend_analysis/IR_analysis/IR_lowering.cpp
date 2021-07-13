@@ -1131,20 +1131,35 @@ tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree
    if(GetPointer<HLS_manager>(AppM))
    {
       const HLS_targetRef HLS_T = GetPointer<HLS_manager>(AppM)->get_HLS_target();
+      bool use64bitMul = false;
+      if(HLS_T->get_target_device()->has_parameter("use_soft_64_mul") && HLS_T->get_target_device()->get_parameter<size_t>("use_soft_64_mul"))
+      {
+         use64bitMul = true;
+      }
       const technology_managerRef TechManager = HLS_T->get_technology_manager();
       unsigned int fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
       if(fu_prec == 1)
       {
          fu_prec = 8;
       }
-      technology_nodeRef mult_f_unit = TechManager->get_fu(MULTIPLIER_STD + std::string("_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+      if(fu_prec >= 64 && use64bitMul)
+      {
+         fu_prec = 32;
+      }
+      auto component_name_mult = MULTIPLIER_STD + std::string("_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0";
+      technology_nodeRef mult_f_unit = TechManager->get_fu(component_name_mult, LIBRARY_STD_FU);
+      THROW_ASSERT(mult_f_unit, "missing component: " + component_name_mult);
       auto* mult_fu = GetPointer<functional_unit>(mult_f_unit);
       technology_nodeRef mult_op_node = mult_fu->get_operation("mult_expr");
+      THROW_ASSERT(mult_op_node, "missing mult_expr from " + component_name_mult);
       auto* mult_op = GetPointer<operation>(mult_op_node);
       double mult_delay = mult_op->time_m->get_execution_time();
-      technology_nodeRef add_f_unit = TechManager->get_fu(ADDER_STD + std::string("_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+      auto component_name_add = ADDER_STD + std::string("_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
+      technology_nodeRef add_f_unit = TechManager->get_fu(component_name_add, LIBRARY_STD_FU);
+      THROW_ASSERT(add_f_unit, "missing component: " + component_name_add);
       auto* add_fu = GetPointer<functional_unit>(add_f_unit);
       technology_nodeRef add_op_node = add_fu->get_operation("plus_expr");
+      THROW_ASSERT(add_op_node, "missing plus_expr from " + component_name_add);
       auto* add_op = GetPointer<operation>(add_op_node);
       double add_delay = add_op->time_m->get_execution_time();
       mult_plus_ratio = static_cast<short int>(ceil(mult_delay / add_delay));
