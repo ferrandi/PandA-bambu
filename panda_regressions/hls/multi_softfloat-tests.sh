@@ -16,5 +16,5 @@ $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    -o "output_${OUT_SUFFIX}" -b$script_dir \
    --table="${OUT_SUFFIX}.tex" \
    --csv="${OUT_SUFFIX}.csv" \
-   --name="${OUT_SUFFIX}" $ARGS
+   --name="${OUT_SUFFIX}" $@
 exit $?
