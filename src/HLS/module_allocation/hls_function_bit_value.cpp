@@ -115,14 +115,14 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status HLSFunctionBitValue::InternalExec()
 {
-   unsigned int curr_address_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int default_address_bitsize = parameters->isOption(OPT_addr_bus_bitsize) ? parameters->getOption<unsigned int>(OPT_addr_bus_bitsize) : 32;
+   const auto curr_address_bitsize = HLSMgr->get_address_bitsize();
+   const auto default_address_bitsize = parameters->isOption(OPT_addr_bus_bitsize) ? parameters->getOption<unsigned int>(OPT_addr_bus_bitsize) : 32;
    if(default_address_bitsize != curr_address_bitsize)
    {
-      const DesignFlowStepRef design_flow_step = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);
+      const auto design_flow_step = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);
       HLSMgr->Rmem->set_enable_hls_bit_value(true);
       design_flow_step->Initialize();
-      const DesignFlowStep_Status return_status = design_flow_step->Exec();
+      const auto return_status = design_flow_step->Exec();
       HLSMgr->Rmem->set_enable_hls_bit_value(false);
       return return_status;
    }

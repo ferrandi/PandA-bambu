@@ -125,7 +125,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         /// Not executed
          if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
             if(!parameters->getOption<int>(OPT_gcc_openmp_simd))

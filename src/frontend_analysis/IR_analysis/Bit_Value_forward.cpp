@@ -1354,7 +1354,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             }
             default:
             {
-               THROW_UNREACHABLE("unexpected bit lattice for sign bit" + bitstring_to_string(arg_bitstring));
+               THROW_UNREACHABLE("unexpected bit lattice for sign bit " + bitstring_to_string(arg_bitstring));
                break;
             }
          }

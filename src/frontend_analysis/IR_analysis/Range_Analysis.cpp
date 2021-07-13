@@ -1412,7 +1412,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
       updateState = ut_Range;
 
 #ifdef BITVALUE_UPDATE
-      if(not bit_values.empty())
+      if(!bit_values.empty())
       {
          auto range_bv = interval->getBitValues(isSigned);
          const auto sup_bv = BitLatticeManipulator::sup(bit_values, range_bv, interval->getBitWidth(), isSigned, interval->getBitWidth() == 1);
@@ -1430,7 +1430,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
 #endif
    }
 
-   if(not AppM->ApplyNewTransformation())
+   if(!AppM->ApplyNewTransformation())
    {
       return ut_None;
    }
