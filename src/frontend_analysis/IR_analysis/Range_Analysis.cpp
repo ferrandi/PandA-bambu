@@ -1393,11 +1393,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
 
    int updateState = ut_None;
    auto bit_values = string_to_bitstring(SSA->bit_values);
-   if(interval->isConstant())
-   {
-      // leave the optimization to BitValueOpt
-   }
-   else if(interval->isReal())
+   if(interval->isReal())
    {
    }
    else if(interval->isAnti() || interval->isEmpty())
