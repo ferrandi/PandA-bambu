@@ -757,7 +757,7 @@ assign xdenom = in2;"/>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="max_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &gt; in2 ? in1 : in2;" VHDL_PROVIDED="begin\n  out1 &lt;= resize(in1, BITSIZE_out1) when (in1 &gt;= in2) else resize(in2, BITSIZE_out1);\n"/>
+          <NP_functionality LIBRARY="max_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &gt; in2 ? in1 : in2;" VHDL_PROVIDED="begin\n  out1 &lt;= resize_signed(in1, BITSIZE_out1) when (in1 &gt;= in2) else resize_signed(in2, BITSIZE_out1);\n"/>
         </component_o>
       </circuit>
     </template>
@@ -806,7 +806,7 @@ assign xdenom = in2;"/>
             <structural_type_descriptor type="INT" size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="min_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt; in2 ? in1 : in2;" VHDL_PROVIDED="begin\n  out1 &lt;= resize(in1, BITSIZE_out1) when (in1 &lt;= in2) else resize(in2, BITSIZE_out1);\n"/>
+          <NP_functionality LIBRARY="min_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt; in2 ? in1 : in2;" VHDL_PROVIDED="begin\n  out1 &lt;= resize_signed(in1, BITSIZE_out1) when (in1 &lt;= in2) else resize_signed(in2, BITSIZE_out1);\n"/>
         </component_o>
       </circuit>
     </template>
