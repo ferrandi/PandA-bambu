@@ -121,7 +121,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     * Debugging function used to print the contents of the current and best maps.
     * @param map map to be printed
     */
-   void print_bitstring_map(const CustomUnorderedMap<unsigned int, std::deque<bit_lattice>>& map) const;
+   void print_bitstring_map(const CustomMap<unsigned int, std::deque<bit_lattice>>& map) const;
 
    unsigned int pointer_resizing(unsigned int output_id) const;
 

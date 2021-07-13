@@ -1005,7 +1005,7 @@ DesignFlowStep_Status Bit_Value::InternalExec()
 }
 
 // prints the content of a bitstring map
-void Bit_Value::print_bitstring_map(const CustomUnorderedMap<unsigned int, std::deque<bit_lattice>>&
+void Bit_Value::print_bitstring_map(const CustomMap<unsigned int, std::deque<bit_lattice>>&
 #ifndef NDEBUG
                                         map
 #endif

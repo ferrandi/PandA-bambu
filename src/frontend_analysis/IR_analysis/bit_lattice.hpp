@@ -76,18 +76,18 @@ class BitLatticeManipulator
     * @brief Map of the current bit-values of each variable.
     * Map storing the current bit-values of the variables at the end of each iteration of forward_transfer or backward_transfer.
     */
-   CustomUnorderedMap<unsigned int, std::deque<bit_lattice>> current;
+   CustomMap<unsigned int, std::deque<bit_lattice>> current;
 
    /**
     * @brief Map of the best bit-values of each variable.
     * Map storing the best bit-values of the variables at the end of all the iterations of forward_transfer or backward_transfer.
     */
-   CustomUnorderedMap<unsigned int, std::deque<bit_lattice>> best;
+   CustomMap<unsigned int, std::deque<bit_lattice>> best;
 
    /**
     * @brief Set storing the signed ssa
     */
-   CustomUnorderedSet<unsigned int> signed_var;
+   CustomSet<unsigned int> signed_var;
 
    /// The debug level of methods of this class - it cannot be named debug_level because of ambiguity of FrontendFlowStep::debug_level derived classes
    const int bl_debug_level;
