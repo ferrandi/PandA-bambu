@@ -270,7 +270,7 @@ jobs:
     env:
       setup: gcc-8
       script: generic_gcc_regression_simple_no_expose_globals_vhdl.sh
-      args: -c=--compiler=I386_GCC8 -c=--simulator=MODELSIM -c=-wH
+      args: -c=--compiler=I386_GCC8 -c=--simulator=MODELSIM
       outname: gcc-8_regression_simple-vhdl
       jobs: 14
     steps:

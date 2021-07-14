@@ -3,7 +3,7 @@
 script_dir="$(dirname $(readlink -e $0))"
 . $script_dir/generic_getopt.sh
 
-BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--do-not-expose-globals")
+BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--do-not-expose-globals" "-wH")
 OUT_SUFFIX="${COMPILER}_grs_no_expose_globals_vhdl"
 
 $script_dir/../../etc/scripts/test_panda.py gcc_regression_simple --tool=bambu \
