@@ -52,9 +52,9 @@ runs:
         else
           PKG_URL="${{inputs.storage-url}}/${{github.ref}}/$PKG_FILE"
         fi
-        CURL_CMD="curl -L --fail -T- "
+        CURL_CMD='curl -L --fail -T- '
         if [[ ! -z '${{inputs.username}}' ]]; then
-          CURL_CMD+="-u ${{inputs.username}}:${{inputs.password}} "
+          CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
         fi
         if [[ -f "${{inputs.path}}" || -d "${{inputs.path}}" ]]; then 
           tar -C "$(dirname ${{inputs.path}})" "$(basename ${{inputs.path}})" --mode="u+rwX,g+rwX,o+rX" $TAR_OPT - | $CURL_CMD "$PKG_URL"

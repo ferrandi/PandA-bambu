@@ -37,9 +37,9 @@ runs:
           PKG_URL="${{inputs.storage-url}}/${{github.ref}}/${{inputs.name}}"
         fi
         PKG_URL+=".gh.pkg"
-        CURL_CMD="curl -L --fail "
+        CURL_CMD='curl -L --fail '
         if [[ ! -z '${{inputs.username}}' ]]; then
-          CURL_CMD+="-u ${{inputs.username}}:${{inputs.password}} "
+          CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
         fi
         echo "Downloading package information"
         STORAGE_COMPRESSED="$($CURL_CMD -s $PKG_URL.nfo)"
