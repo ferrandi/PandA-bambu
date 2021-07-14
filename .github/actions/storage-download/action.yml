@@ -32,16 +32,23 @@ runs:
       run: |
         set -e
         if [[ ! -z "${{inputs.storage-path}}" ]]; then
-          PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/${{inputs.name}}.tar.xz"
+          PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/${{inputs.name}}"
         else
-          PKG_URL="${{inputs.storage-url}}/${{github.ref}}/${{inputs.name}}.tar.xz"
+          PKG_URL="${{inputs.storage-url}}/${{github.ref}}/${{inputs.name}}"
         fi
+        PKG_URL+=".gh.pkg"
+        CURL_CMD="curl -L --fail "
+        if [[ ! -z '${{inputs.username}}' ]]; then
+          CURL_CMD+="-u ${{inputs.username}}:${{inputs.password}} "
+        fi
+        echo "Downloading package information"
+        STORAGE_COMPRESSED="$($CURL_CMD -s $PKG_URL.nfo)"
         echo "Downloading from $PKG_URL to ${{inputs.path}}"
         mkdir -p "${{inputs.path}}"
-        if [[ -z '${{inputs.username}}' ]]; then
-          curl -L "$PKG_URL" --fail | pxz -dc | tar -C "${{inputs.path}}" -xf -;
+        if [[ "$STORAGE_COMPRESSED" != "0" ]]; then
+          $CURL_CMD $PKG_URL | pxz -dc | tar -C "${{inputs.path}}" -xf -
         else
-          curl -u '${{inputs.username}}':'${{inputs.password}}' -L "$PKG_URL" --fail | pxz -dc | tar -C "${{inputs.path}}" -xf -;
+          $CURL_CMD $PKG_URL | tar -C "${{inputs.path}}" -xf -
         fi
         chmod -R g+w "${{inputs.path}}"
         echo "Content restored in '${{inputs.path}}'"
