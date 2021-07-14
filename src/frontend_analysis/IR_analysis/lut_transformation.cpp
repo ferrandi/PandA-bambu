@@ -1947,7 +1947,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
             relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+            if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+            {
+               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+            }
          }
          break;
       case(PRECEDENCE_RELATIONSHIP):
