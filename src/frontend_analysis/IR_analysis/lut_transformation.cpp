@@ -1215,6 +1215,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
                   kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  modified = true;
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1249,8 +1250,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          // mockturtle::write_bench(klut_e, std::cout);
          // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LUT found");
-
-         modified = true;
          continue;
       }
 
@@ -1902,7 +1901,7 @@ lut_transformation::lut_transformation(const ParameterConstRef Param, const appl
 
 DesignFlowStep_Status lut_transformation::InternalExec()
 {
-   if(parameters->IsParameter("disable-lut-transformation") && parameters->GetParameter<int>("disable-lut-transformation") == 1)
+   if(parameters->IsParameter("disable-lut-transformation") && parameters->GetParameter<unsigned int>("disable-lut-transformation") == 1)
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
@@ -1939,11 +1938,16 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(DEPENDENCE_RELATIONSHIP):
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+         }
          break;
       case(INVALIDATION_RELATIONSHIP):
          if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
             relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          }
          break;
       case(PRECEDENCE_RELATIONSHIP):
