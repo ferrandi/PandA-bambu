@@ -264,13 +264,16 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          if(block.second->list_of_succ.size() == 1)
          {
             auto succ_block = block.second->list_of_succ.front();
-            if(sl->list_of_bloc[succ_block]->list_of_pred.size() == 1 && sl->list_of_bloc[succ_block]->list_of_pred.front() != bloc::ENTRY_BLOCK_ID)
+            THROW_ASSERT(sl->list_of_bloc.find(succ_block) != sl->list_of_bloc.end(), "Successor block BB" + STR(succ_block) + " does not exist");
+            if(sl->list_of_bloc[succ_block]->list_of_pred.size() == 1)
             {
                if(AppM->ApplyNewTransformation())
                {
                   AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
                   ChainOptimization(block.first);
                   bb_modified = true;
+                  restart = true;
+                  break;
                }
             }
          }
