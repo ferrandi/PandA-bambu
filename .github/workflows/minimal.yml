@@ -103,6 +103,7 @@ jobs:
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
+          storage-compression: false
 
   ACMath-tests:
     runs-on: [self-hosted]
@@ -289,7 +290,7 @@ jobs:
         run: |
           echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
           echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
-      - name: Launch GCC regression test suite with pretty-print
+      - name: Launch GCC regression test suite with VHDL target
         id: grsvhdl
         shell: bash
         working-directory: ./panda_regressions/hls
