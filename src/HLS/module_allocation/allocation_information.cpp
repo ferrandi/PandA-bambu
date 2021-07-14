@@ -1763,7 +1763,7 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
          if(right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_xor_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == vec_cond_expr_K or
             right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or right->get_kind() == integer_cst_K or
             right->get_kind() == rshift_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == plus_expr_K or right->get_kind() == minus_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == bit_ior_concat_expr_K or
-            right->get_kind() == lut_expr_K or right->get_kind() == extract_bit_expr_K or right->get_kind() == convert_expr_K or right->get_kind() == nop_expr_K)
+            right->get_kind() == lut_expr_K or right->get_kind() == extract_bit_expr_K or right->get_kind() == convert_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_xor_expr_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1");
             return 1;
@@ -1944,326 +1944,353 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not yet available: building time model");
       THROW_ASSERT(time_operation_index != ENTRY_ID and time_operation_index != EXIT_ID, "Entry or exit not allocated");
-      const auto ga = GetPointer<const gimple_assign>(TreeM->get_tree_node_const(time_operation_index));
-      if(ga and (GET_NODE(ga->op1)->get_kind() == ssa_name_K or GET_NODE(ga->op1)->get_kind() == integer_cst_K))
+      if(const auto ga = GetPointer<const gimple_assign>(TreeM->get_tree_node_const(time_operation_index)))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
-         return std::pair<double, double>(0.0, 0.0);
-      }
-      if(ga and (GET_NODE(ga->op1)->get_kind() == cond_expr_K or GET_NODE(ga->op1)->get_kind() == vec_cond_expr_K))
-      {
+         if(GET_NODE(ga->op1)->get_kind() == ssa_name_K or GET_NODE(ga->op1)->get_kind() == integer_cst_K)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
+            return std::pair<double, double>(0.0, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == cond_expr_K or GET_NODE(ga->op1)->get_kind() == vec_cond_expr_K)
+         {
 #ifndef NDEBUG
-         const auto ce = GetPointer<const ternary_expr>(GET_NODE(ga->op1));
-         THROW_ASSERT(tree_helper::Size(ce->op0) == 1, "Cond expr not allocated " + ga->op1->ToString());
+            const auto ce = GetPointer<const ternary_expr>(GET_NODE(ga->op1));
+            THROW_ASSERT(tree_helper::Size(ce->op0) == 1, "Cond expr not allocated " + ga->op1->ToString());
 #endif
-         /// Computing time of cond_expr as time of cond_expr_FU - setup_time
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto op_execution_time = mux_time_unit(fu_prec);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is mux time (precision is " + STR(fu_prec) + ") " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == truth_and_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto fu_name = "truth_and_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu_name, LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit " + fu_name + " not found");
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("truth_and_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == truth_or_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto fu = "truth_or_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
-         ;
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu, LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit " + fu + " not found");
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("truth_or_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == truth_xor_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto fu = "truth_xor_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
-         ;
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu, LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit " + fu + " not found");
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("truth_xor_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == truth_not_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("truth_not_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: truth_not_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec));
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("truth_not_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == ternary_plus_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("ternary_plus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: ternary_plus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("ternary_plus_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == ternary_mp_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("ternary_mp_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: ternary_mp_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("ternary_mp_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == ternary_pm_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("ternary_pm_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: ternary_pm_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("ternary_pm_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == ternary_mm_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("ternary_mm_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: ternary_mm_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("ternary_mm_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == plus_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("plus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: plus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("plus_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == minus_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("minus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: minus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("minus_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == widen_mult_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0");
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("widen_mult_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         double actual_stage_period;
-         actual_stage_period = time_m_stage_period(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual_stage_period=" + STR(actual_stage_period));
-         double initial_stage_period = 0.0;
-         if(new_stmt_op->time_m->get_initiation_time() > 0)
-         {
-            if(actual_stage_period > HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period())
-            {
-               actual_stage_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
-            }
-            initial_stage_period = actual_stage_period - get_setup_hold_time();
+            /// Computing time of cond_expr as time of cond_expr_FU - setup_time
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto op_execution_time = mux_time_unit(fu_prec);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is mux time (precision is " + STR(fu_prec) + ") " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
          }
-         double stage_period = initial_stage_period;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + "," + STR(stage_period));
-         return std::pair<double, double>(op_execution_time, stage_period);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == mult_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0");
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("mult_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         double actual_stage_period;
-         actual_stage_period = time_m_stage_period(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual_stage_period=" + STR(actual_stage_period));
-         double initial_stage_period = 0.0;
-         if(new_stmt_op->time_m->get_initiation_time() > 0)
+         else if(GET_NODE(ga->op1)->get_kind() == truth_and_expr_K)
          {
-            if(actual_stage_period > HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period())
-            {
-               actual_stage_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
-            }
-            initial_stage_period = actual_stage_period - get_setup_hold_time();
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto fu_name = "truth_and_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu_name, LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit " + fu_name + " not found");
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("truth_and_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
          }
-         double stage_period = initial_stage_period;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + "," + STR(stage_period));
-         return std::pair<double, double>(op_execution_time, stage_period);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == lut_expr_K)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation is a lut_expr");
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("lut_expr_FU", LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: lut_expr_FU");
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("lut_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == bit_ior_concat_expr_K)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
-         return std::pair<double, double>(0, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == extract_bit_expr_K)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
-         return std::pair<double, double>(0, 0.0);
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == rshift_expr_K)
-      {
-         const auto re = GetPointer<const rshift_expr>(GET_NODE(ga->op1));
-         if(GET_NODE(re->op1)->get_kind() == integer_cst_K)
+         else if(GET_NODE(ga->op1)->get_kind() == truth_or_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto fu = "truth_or_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
+            ;
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu, LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit " + fu + " not found");
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("truth_or_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == truth_xor_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto fu = "truth_xor_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
+            ;
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu, LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit " + fu + " not found");
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("truth_xor_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == truth_not_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("truth_not_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: truth_not_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec));
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("truth_not_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == ternary_plus_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("ternary_plus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: ternary_plus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("ternary_plus_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == ternary_mp_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("ternary_mp_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: ternary_mp_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("ternary_mp_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == ternary_pm_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("ternary_pm_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: ternary_pm_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("ternary_pm_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == ternary_mm_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("ternary_mm_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: ternary_mm_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("ternary_mm_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == plus_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("plus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: plus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("plus_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == minus_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("minus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: minus_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("minus_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == widen_mult_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0");
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("widen_mult_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            double actual_stage_period;
+            actual_stage_period = time_m_stage_period(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual_stage_period=" + STR(actual_stage_period));
+            double initial_stage_period = 0.0;
+            if(new_stmt_op->time_m->get_initiation_time() > 0)
+            {
+               if(actual_stage_period > HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period())
+               {
+                  actual_stage_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
+               }
+               initial_stage_period = actual_stage_period - get_setup_hold_time();
+            }
+            double stage_period = initial_stage_period;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + "," + STR(stage_period));
+            return std::pair<double, double>(op_execution_time, stage_period);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == mult_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0");
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("mult_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            double actual_stage_period;
+            actual_stage_period = time_m_stage_period(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual_stage_period=" + STR(actual_stage_period));
+            double initial_stage_period = 0.0;
+            if(new_stmt_op->time_m->get_initiation_time() > 0)
+            {
+               if(actual_stage_period > HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period())
+               {
+                  actual_stage_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
+               }
+               initial_stage_period = actual_stage_period - get_setup_hold_time();
+            }
+            double stage_period = initial_stage_period;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + "," + STR(stage_period));
+            return std::pair<double, double>(op_execution_time, stage_period);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == lut_expr_K)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation is a lut_expr");
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("lut_expr_FU", LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: lut_expr_FU");
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("lut_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == bit_ior_concat_expr_K)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
+            return std::pair<double, double>(0, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == extract_bit_expr_K)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
+            return std::pair<double, double>(0, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == rshift_expr_K)
+         {
+            const auto re = GetPointer<const rshift_expr>(GET_NODE(ga->op1));
+            if(GET_NODE(re->op1)->get_kind() == integer_cst_K)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
+               return std::pair<double, double>(0.0, 0.0);
+            }
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == lshift_expr_K)
+         {
+            const auto le = GetPointer<const lshift_expr>(GET_NODE(ga->op1));
+            if(GET_NODE(le->op1)->get_kind() == integer_cst_K)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
+               return std::pair<double, double>(0.0, 0.0);
+            }
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == bit_and_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("bit_and_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: bit_and_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("bit_and_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == bit_ior_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("bit_ior_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: bit_ior_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("bit_ior_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if(GET_NODE(ga->op1)->get_kind() == bit_xor_expr_K)
+         {
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("bit_xor_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: bit_xor_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("bit_xor_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            auto op_execution_time = time_m_execution_time(new_stmt_op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+            op_execution_time = op_execution_time - get_setup_hold_time();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+            return std::pair<double, double>(op_execution_time, 0.0);
+         }
+         else if((GET_NODE(ga->op1)->get_kind() == convert_expr_K or GET_NODE(ga->op1)->get_kind() == nop_expr_K))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
             return std::pair<double, double>(0.0, 0.0);
          }
       }
-      if(ga and GET_NODE(ga->op1)->get_kind() == lshift_expr_K)
-      {
-         const auto le = GetPointer<const lshift_expr>(GET_NODE(ga->op1));
-         if(GET_NODE(le->op1)->get_kind() == integer_cst_K)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
-            return std::pair<double, double>(0.0, 0.0);
-         }
-      }
-      if(ga and GET_NODE(ga->op1)->get_kind() == bit_and_expr_K)
-      {
-         const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("bit_and_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: bit_andexpr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
-         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-         const auto new_stmt_op_temp = new_stmt_fu->get_operation("bit_and_expr");
-         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-         auto op_execution_time = time_m_execution_time(new_stmt_op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
-         op_execution_time = op_execution_time - get_setup_hold_time();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
-         return std::pair<double, double>(op_execution_time, 0.0);
-      }
-      if(ga and (GET_NODE(ga->op1)->get_kind() == convert_expr_K or GET_NODE(ga->op1)->get_kind() == nop_expr_K))
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
-         return std::pair<double, double>(0.0, 0.0);
-      }
-      const auto gmwi = GetPointer<const gimple_multi_way_if>(TreeM->get_tree_node_const(operation_index));
-      if(gmwi)
+      else if(const auto gmwi = GetPointer<const gimple_multi_way_if>(TreeM->get_tree_node_const(operation_index)))
       {
          auto controller_delay = estimate_controller_delay_fb();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(controller_delay) + ",0.0");
          return std::pair<double, double>(controller_delay, 0.0);
       }
-      const auto gc = GetPointer<const gimple_cond>(TreeM->get_tree_node_const(operation_index));
-      if(gc)
+      else if(const auto gc = GetPointer<const gimple_cond>(TreeM->get_tree_node_const(operation_index)))
       {
          auto controller_delay = estimate_controller_delay_fb();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(controller_delay) + ",0.0");
          return std::pair<double, double>(controller_delay, 0.0);
       }
-      const auto gp = GetPointer<const gimple_phi>(TreeM->get_tree_node_const(operation_index));
-      if(gp)
+      else if(const auto gp = GetPointer<const gimple_phi>(TreeM->get_tree_node_const(operation_index)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
          return std::pair<double, double>(0.0, 0.0);
       }
-      const auto gn = GetPointer<const gimple_nop>(TreeM->get_tree_node_const(operation_index));
-      if(gn)
+      else if(const auto gn = GetPointer<const gimple_nop>(TreeM->get_tree_node_const(operation_index)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
          return std::pair<double, double>(0.0, 0.0);
       }
-      const auto gr = GetPointer<const gimple_return>(TreeM->get_tree_node_const(operation_index));
-      if(gr)
+      else if(const auto gr = GetPointer<const gimple_return>(TreeM->get_tree_node_const(operation_index)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
          return std::pair<double, double>(0.0, 0.0);
