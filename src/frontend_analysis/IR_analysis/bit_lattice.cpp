@@ -164,19 +164,20 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    }
    sign_reduce_bitstring(res, out_is_signed);
    size_t final_size;
+   const bool a_sign_is_x = _a.front() == bit_lattice::X;
+   const bool b_sign_is_x = _b.front() == bit_lattice::X;
+   auto sign_bit = res.front();
    if(out_is_signed)
    {
-      const bool a_sign_is_x = _a.front() == bit_lattice::X;
-      const bool b_sign_is_x = _b.front() == bit_lattice::X;
       final_size = std::min(out_type_size, ((a_sign_is_x == b_sign_is_x) ? (std::min(_a.size(), _b.size())) : (a_sign_is_x ? _a.size() : _b.size())));
       THROW_ASSERT(final_size, "final size of sup cannot be 0");
    }
    else
    {
-      final_size = std::min(out_type_size, std::min(_a.size(), _b.size()));
+      final_size = std::min(out_type_size, (a_sign_is_x == b_sign_is_x) ? std::min(_a.size(), _b.size()) : (a_sign_is_x ? (_a.size() < _b.size() ? _a.size() : 1 + _b.size()) : (_a.size() < _b.size() ? 1 + _a.size() : _b.size())));
+      sign_bit = (a_sign_is_x == b_sign_is_x) ? sign_bit : (a_sign_is_x ? (_a.size() < _b.size() ? sign_bit : bit_lattice::ZERO) : (_a.size() < _b.size() ? bit_lattice::ZERO : sign_bit));
       THROW_ASSERT(final_size, "final size of sup cannot be 0");
    }
-   const auto sign_bit = res.front();
    while(res.size() > final_size)
    {
       res.pop_front();
@@ -185,6 +186,10 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    {
       res.pop_front();
       res.push_front(sign_bit);
+   }
+   if(!out_is_signed)
+   {
+      sign_reduce_bitstring(res, out_is_signed);
    }
 
    return res;
@@ -364,6 +369,12 @@ void BitLatticeManipulator::sign_reduce_bitstring(std::deque<bit_lattice>& bitst
          if((bitstring.at(0) == bit_lattice::X and bitstring.at(1) == bit_lattice::X) or (bitstring.at(0) == bit_lattice::ZERO and bitstring.at(1) != bit_lattice::X))
          {
             bitstring.pop_front();
+         }
+         else if(bitstring.at(0) == bit_lattice::ZERO and bitstring.at(1) == bit_lattice::X)
+         {
+            bitstring.pop_front();
+            bitstring.pop_front();
+            bitstring.push_front(bit_lattice::ZERO);
          }
          else
          {
