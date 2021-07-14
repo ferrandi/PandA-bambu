@@ -110,24 +110,36 @@ bool FindMaxCFGTransformations::ExecuteBambu(const size_t cfg_max_transformation
 
 DesignFlowStep_Status FindMaxCFGTransformations::Exec()
 {
-   size_t correct_cmt = 0;
+   size_t correct_cmt = 1;
    size_t wrong_cmt = 0;
-   /// First check
-   const auto zero_execution = ExecuteBambu(0);
-   if(not zero_execution)
+   if(parameters->IsParameter("wrong-transformation"))
    {
-      INDENT_OUT_MEX(0, 0, "Bambu fails with --cfg-max-transformations=0");
-      return DesignFlowStep_Status::ABORTED;
+      wrong_cmt = parameters->GetParameter<unsigned int>("wrong-transformation");
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Looking for upper bound of cfg max transformations");
-   correct_cmt = 1;
-   while(ExecuteBambu(correct_cmt))
+   if(parameters->IsParameter("correct-transformation"))
    {
-      correct_cmt *= 2;
+      correct_cmt = parameters->GetParameter<unsigned int>("correct-transformation");
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--Upper bound is " + STR(correct_cmt));
-   wrong_cmt = correct_cmt;
-   correct_cmt = wrong_cmt / 2;
+
+   if(!wrong_cmt)
+   {
+      /// First check
+      const auto zero_execution = ExecuteBambu(0);
+      if(not zero_execution)
+      {
+         INDENT_OUT_MEX(0, 0, "Bambu fails with --cfg-max-transformations=0");
+         return DesignFlowStep_Status::ABORTED;
+      }
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Looking for upper bound of cfg max transformations");
+
+      while(ExecuteBambu(correct_cmt))
+      {
+         correct_cmt *= 2;
+      }
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--Upper bound is " + STR(correct_cmt));
+      wrong_cmt = correct_cmt;
+      correct_cmt = wrong_cmt / 2;
+   }
    while(wrong_cmt - correct_cmt > 1)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Current range is [" + STR(correct_cmt) + ":" + STR(wrong_cmt) + "]");
