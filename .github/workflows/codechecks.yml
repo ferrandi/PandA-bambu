@@ -16,7 +16,7 @@ env:
 
 jobs:
   cppcheck:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, classB]
     env:
       jobs: 20
     steps:
@@ -39,7 +39,7 @@ jobs:
           script: core.setFailed('Too many errors detected from cppcheck')
 
   clang-check:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, classB]
     env:
       dist-dir: dist
     steps:
@@ -122,3 +122,80 @@ jobs:
         with:
           name: scanbuild-report
           path: ${{steps.scanbuild.outputs.report-dir}}
+
+  make-dist:
+    runs-on: [self-hosted, classB]
+    env:
+      dist-dir: dist
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Prepare ccache timestamp
+        id: ccache_cache_timestamp
+        shell: bash
+        run: |
+          echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
+      - name: ccache cache files
+        uses: actions/cache@v2
+        with:
+          path: .ccache
+          key: makedist-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          restore-keys: |
+            makedist-ccache-
+      - name: Download clang compilers
+        shell: bash
+        run: |
+          mkdir ${{env.dist-dir}}
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | pxz -dc | tar -C ${{env.dist-dir}} -xf - &
+          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | pxz -dc | tar -C ${{env.dist-dir}} -xf - &
+          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | pxz -dc | tar -C ${{env.dist-dir}} -xf - &
+          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | pxz -dc | tar -C ${{env.dist-dir}} -xf - &
+          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | pxz -dc | tar -C ${{env.dist-dir}} -xf - &
+          wait
+      - name: Download gcc 4.9
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-4.9-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 5
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-5-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 6
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-6-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 7
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-7-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 8
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-8-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Make Dist
+        uses: ./.github/actions/make-dist

@@ -4,6 +4,7 @@ set -e
 workspace_dir=$PWD
 
 function cleanup {
+   echo "::endgroup::"
    make --directory=$workspace_dir -f Makefile.init clean
 }
 trap cleanup EXIT
