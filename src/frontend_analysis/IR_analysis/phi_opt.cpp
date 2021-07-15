@@ -152,6 +152,29 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
 
 DesignFlowStep_Status PhiOpt::InternalExec()
 {
+   /// remove dead PHIs
+   for(const auto& block : sl->list_of_bloc)
+   {
+      std::list<tree_nodeRef> phis_to_be_removed;
+      for(const auto& phi : block.second->CGetPhiList())
+      {
+         const auto gp = GetPointer<const gimple_phi>(GET_NODE(phi));
+         const auto sn = GetPointer<const ssa_name>(GET_NODE(gp->res));
+         if(sn->CGetUseStmts().empty())
+         {
+            phis_to_be_removed.push_back(phi);
+         }
+      }
+      for(const auto& phi : phis_to_be_removed)
+      {
+         if(AppM->ApplyNewTransformation())
+         {
+            AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
+            block.second->RemovePhi(phi);
+            bb_modified = true;
+         }
+      }
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Merging phis");
    /// Removed blocks composed only of phi
    CustomSet<unsigned int> blocks_to_be_removed;
