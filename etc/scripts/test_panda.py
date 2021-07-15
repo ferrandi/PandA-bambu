@@ -575,7 +575,7 @@ parser.add_argument('-b', "--benchmarks_root",
 parser.add_argument(
     '-o', "--output", help="The directory where output files we be put (default=\"output\")", default="output")
 parser.add_argument('-j', help="The number of jobs which execute the benchmarks (default=\"1\")",
-                    default=1, type=positive_integer, action=StoreOrUpdateMin)
+                    default=int(os.getenv('J', "1")), type=positive_integer, action=StoreOrUpdateMin)
 parser.add_argument(
     "--bambu", help="The bambu executable (default=bambu)", default="bambu")
 parser.add_argument("--spider", help="The spider executable (default=spider)",

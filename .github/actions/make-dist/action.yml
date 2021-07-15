@@ -1,11 +1,5 @@
 name: 'Panda make dist'
 description: 'Build Panda distribution'
-inputs:
-  jobs: 'Parallel jobs'
-  required: false
-  default: $J
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  args:
-    - ${{inputs.jobs}}

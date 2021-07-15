@@ -122,8 +122,6 @@ jobs:
   specific-test:
     needs: [build, ACMath-tests]
     runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
-    env:
-      jobs: 14
     strategy:
       fail-fast: false
       matrix:
@@ -146,12 +144,12 @@ jobs:
           echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
           echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
       - name: Launch Bambu specific tests ${{matrix.id}}
+        working-directory: ./panda_regressions/hls
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          ./bambu_specific_test${{matrix.id}}.sh -j${{env.jobs}} --returnfail --junitdir="./test-reports"
-        working-directory: ./panda_regressions/hls
+          ./bambu_specific_test${{matrix.id}}.sh --returnfail --junitdir="./test-reports"
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -163,7 +161,6 @@ jobs:
     needs: [build, specific-test]
     runs-on: [self-hosted, mentor]
     env:
-      jobs: 14
       outname: ${{matrix.setup}}_regression_simple
     strategy:
       fail-fast: false
@@ -213,7 +210,7 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{matrix.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{matrix.args}}
+          ./${{matrix.script}} --returnfail --junitdir="./test-reports" ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -229,7 +226,6 @@ jobs:
       script: generic_gcc_regression_simple_no_expose_globals_pretty_print.sh
       args: -c=--compiler=I386_GCC49 -c=--simulator=VERILATOR
       outname: gcc-4.9_regression_simple-pretty_print
-      jobs: 14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -256,7 +252,7 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -272,7 +268,6 @@ jobs:
       script: generic_gcc_regression_simple_no_expose_globals_vhdl.sh
       args: -c=--compiler=I386_GCC8 -c=--simulator=MODELSIM
       outname: gcc-8_regression_simple-vhdl
-      jobs: 14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -299,7 +294,7 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -315,7 +310,6 @@ jobs:
       script: generic_discrepancy.sh
       args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM
       outname: gcc-7_discrepancy
-      jobs: 14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -351,7 +345,7 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -376,7 +370,6 @@ jobs:
       script: multi_softfloat-tests.sh
       args: -c=--simulator=MODELSIM
       outname: multi_softfloat-tests
-      jobs: 14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -403,7 +396,7 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -446,7 +439,6 @@ jobs:
       script: generic_libm-tests.sh
       args: -c=--simulator=MODELSIM -c=--speculative-sdc-scheduling
       outname: ${{matrix.setup}}_libm
-      jobs: 14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -473,7 +465,7 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{matrix.args}} ${{env.args}}
+          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{matrix.args}} ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -485,7 +477,6 @@ jobs:
     needs: [build]
     runs-on: [self-hosted, mentor]
     env:
-      jobs: 14
       script: multi_CHStone-frontend.sh
       args: -c=--simulator=MODELSIM
       outname: multi_CHStone-frontend
@@ -515,7 +506,7 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -534,7 +525,6 @@ jobs:
           - setup: gcc-7-vhdl
             args: -c=--compiler=I386_GCC7 -c=-wH
     env:
-      jobs: 14
       script: generic_CHStone-memarch.sh
       args: -c=--simulator=MODELSIM
       outname: ${{matrix.setup}}_CHStone-memarch
@@ -564,7 +554,7 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}} ${{matrix.args}}
+          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -605,7 +595,7 @@ jobs:
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ./test-reports 
-          ./${{matrix.device}}_10.0_O2.sh -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          ./${{matrix.device}}_10.0_O2.sh --returnfail --junitdir="./test-reports" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -627,7 +617,6 @@ jobs:
           - xilinx_vvd
     env:
       outname: panda_bench_${{matrix.test}}
-      jobs: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -653,7 +642,7 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir test-reports
           echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./examples/panda_bench_${{matrix.test}}.sh -j${{env.jobs}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          ./examples/panda_bench_${{matrix.test}}.sh --returnfail --junitdir="./test-reports" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2

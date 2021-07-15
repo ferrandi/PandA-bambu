@@ -17,8 +17,6 @@ env:
 jobs:
   cppcheck:
     runs-on: [self-hosted, classB]
-    env:
-      jobs: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -26,7 +24,7 @@ jobs:
         id: cppcheck
         uses: ./.github/actions/cppcheck
         with:
-          args: -j${{env.jobs}} --enable=all --force --suppress=unusedFunction --suppress=unmatchedSuppression --inline-suppr
+          args: --enable=all --force --suppress=unusedFunction --suppress=unmatchedSuppression --inline-suppr
       - name: Upload cppcheck HTML report
         uses: actions/upload-artifact@v2
         with:

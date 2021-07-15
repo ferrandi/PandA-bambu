@@ -2,6 +2,9 @@
 set -e
 
 workspace_dir=$PWD
+if [[ -z "$J" ]]; then
+J="1"
+fi
 
 function cleanup {
    echo "::endgroup::"
@@ -67,7 +70,7 @@ done
 cd $workspace_dir
 
 echo "Initializing build environment..."
-make -j -f Makefile.init
+make -f Makefile.init
 echo "::endgroup::"
 
 echo "::group::Configure build environment"
@@ -78,7 +81,7 @@ cd ..
 echo "::endgroup::"
 
 echo "::group::Build application package"
-make --directory=build -j install-strip DESTDIR="$workspace_dir/dist"
+make --directory=build -j$J install-strip DESTDIR="$workspace_dir/dist"
 
 echo "Inflating python interpreter..."
 wget https://github.com/niess/python-appimage/releases/download/python3.9/python3.9.6-cp39-cp39-manylinux1_x86_64.AppImage -q

@@ -6,6 +6,9 @@ DIST_NAME="$2-$(lsb_release -is)_$(lsb_release -rs)"
 DIST_DIR="$GITHUB_WORKSPACE/$DIST_NAME"
 shift
 shift
+if [[ -z "$J" ]]; then
+J="1"
+fi
 
 git clone --depth 1 --branch $BRANCH git://gcc.gnu.org/git/gcc.git
 
@@ -14,7 +17,7 @@ cd gcc
 mkdir build
 cd build
 ../configure $@
-make -j bootstrap
+make -j$J bootstrap
 make DESTDIR="$DIST_DIR" install
 
 lsb_release -a >> "$DIST_DIR/VERSION"

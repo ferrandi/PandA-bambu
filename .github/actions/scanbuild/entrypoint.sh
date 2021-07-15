@@ -4,6 +4,9 @@ set -e
 workspace_dir="$PWD"
 report_dir="$1"
 shift
+if [[ -z "$J" ]]; then
+J="1"
+fi
 
 function cleanup {
    echo "::endgroup::"
@@ -68,7 +71,7 @@ done
 cd $workspace_dir
 
 echo "Initializing build environment..."
-make -j -f Makefile.init
+make -f Makefile.init
 echo "::endgroup::"
 
 echo "::group::Configure build environment"
@@ -79,7 +82,7 @@ cd ..
 echo "::endgroup::"
 
 echo "::group::Compile external libraries"
-make --directory=build/ext -j
+make --directory=build/ext -j$J
 echo "::endgroup::"
 
 echo "::group::Scan build Bambu sources"

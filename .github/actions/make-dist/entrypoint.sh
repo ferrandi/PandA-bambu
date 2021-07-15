@@ -2,8 +2,10 @@
 set -e
 
 workspace_dir=$PWD
-jobs="$1"
 shift
+if [[ -z "$J" ]]; then
+J="1"
+fi
 
 function cleanup {
    echo "::endgroup::"
@@ -56,5 +58,5 @@ cd $workspace_dir
 echo "::endgroup::"
 
 echo "::group::Make distribution"
-make -f Makefile.init dist J="$jobs"
+make -f Makefile.init dist J=$J
 echo "::endgroup::"

@@ -22,3 +22,10 @@ To create such volumes the following may be useful:
 ```
 docker volume create --driver local --opt o=bind,ro --opt type=none --opt device=/path/to/dir vendor-tools
 ```
+
+## Runner environment
+Some environment variables are expected to be set by each runner host:
+
+- **J**: number of maximum parallel jobs handled by the runner
+- **LM_LICENSE_FILE**: license file path for simulation/synthesis tools
+- **NANOXPLORE_BYPASS**: NanoXplore bypass setting
