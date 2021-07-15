@@ -319,7 +319,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    const auto current_ending_time = starting_times[operation_index];
 
    CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
-   const auto tn = TM->get_tree_node_const(operation_index);
+   const auto tn = TM->CGetTreeNode(operation_index);
    const auto gn = GetPointer<const gimple_node>(tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing ending time of new statement " + STR(gn->index) + ": " + gn->ToString());
    const auto hls = hls_manager.lock()->get_HLS(function_index);
@@ -331,7 +331,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
 
    /// The starting control step
    ControlStep starting_cs = ControlStep(0);
-   if(not update_cs)
+   if(!update_cs)
    {
       starting_time = clock_period * from_strongtype_cast<double>(op_starting_cycle.at(operation_index));
    }
