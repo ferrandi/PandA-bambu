@@ -16,6 +16,7 @@ env:
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: '${{secrets.CI_STORAGE_USER}}'
   storage-token: '${{secrets.CI_STORAGE_TOKEN}}'
+  host_jobs: $J
 
 jobs:
   build:
@@ -23,6 +24,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
       - name: Prepare ccache timestamp
         id: ccache_cache_timestamp
         shell: bash
@@ -95,6 +102,7 @@ jobs:
         uses: ./.github/actions/generate-bin
         with:
           config-args: ${{env.build-args}} CC=gcc-8 CXX=g++-8
+          jobs: ${{steps.host.outputs.jobs}}
       - name: Upload Panda install directory
         uses: ./.github/actions/storage-upload
         with:
@@ -113,11 +121,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
       - name: Launch ACMath tests for ${{matrix.compiler}}
         uses: ./.github/actions/docker-runner
         with:
           working-directory: ./etc/libbambu/ac_math
           script: ./ac_math_test_${{matrix.compiler}}.sh
+          jobs: ${{steps.host.outputs.jobs}}
 
   specific-test:
     needs: [build, ACMath-tests]
@@ -358,10 +373,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
       - name: Verify SoftFloat implementation
         uses: ./.github/actions/docker-runner
         with:
           script: ./panda_regressions/hls/test_softfloat.sh
+          jobs: ${{steps.host.outputs.jobs}}
 
   softfloat-tests:
     needs: [build, softfloat-preliminary]
@@ -412,10 +434,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
       - name: Verify ${{matrix.func}} implementation
         uses: ./.github/actions/docker-runner
         with:
           script: ./panda_regressions/hls/test_libm_${{matrix.func}}.sh
+          jobs: ${{steps.host.outputs.jobs}}
 
   libm-tests:
     needs: [build, libm-preliminary, softfloat-tests]

@@ -13,6 +13,7 @@ env:
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: '${{secrets.CI_STORAGE_USER}}'
   storage-token: '${{secrets.CI_STORAGE_TOKEN}}'
+  host_jobs: $J
 
 jobs:
   cppcheck:
@@ -20,10 +21,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
       - name: Run CPP checks on Bambu source
         id: cppcheck
         uses: ./.github/actions/cppcheck
         with:
+          jobs: ${{steps.host.outputs.jobs}}
           args: --enable=all --force --suppress=unusedFunction --suppress=unmatchedSuppression --inline-suppr
       - name: Upload cppcheck HTML report
         uses: actions/upload-artifact@v2
@@ -43,6 +51,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
       - name: Prepare ccache timestamp
         id: ccache_cache_timestamp
         shell: bash
@@ -114,6 +128,7 @@ jobs:
         id: scanbuild
         uses: ./.github/actions/scanbuild
         with:
+          jobs: ${{steps.host.outputs.jobs}}
           config-args: CC=clang-11 CXX=clang++-11 --disable-release --enable-flopoco --enable-glpk
       - name: Upload scan-build report
         uses: actions/upload-artifact@v2
@@ -128,6 +143,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
       - name: Prepare ccache timestamp
         id: ccache_cache_timestamp
         shell: bash
@@ -197,3 +218,5 @@ jobs:
           password: '${{env.storage-token}}'
       - name: Make Dist
         uses: ./.github/actions/make-dist
+        with:
+          jobs: ${{steps.host.outputs.jobs}}

@@ -2,9 +2,6 @@
 set -e
 
 workspace_dir=$PWD
-if [[ -z "$J" ]]; then
-J="1"
-fi
 
 function cleanup {
    echo "::endgroup::"

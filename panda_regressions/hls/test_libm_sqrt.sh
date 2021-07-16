@@ -4,10 +4,15 @@ dir_script=$(dirname $abs_script)
 if test -f output_test_libm_sqrt/finished; then
    exit 0
 fi
+if [[ -z "$J" ]]; then
+   J="1"
+fi
+echo "Parallel jobs: $J"
 rm -fr output_test_libm_sqrt
 mkdir output_test_libm_sqrt
 cd output_test_libm_sqrt
-gcc -fopenmp -O3 -I$dir_script/../../etc/libbambu/ $dir_script/../../etc/libbambu/libm/poly_sqrt.c -DCHECK_SQRT_FUNCTION -lm 
+gcc -fopenmp -O3 -I$dir_script/../../etc/libbambu/ $dir_script/../../etc/libbambu/libm/poly_sqrt.c -DCHECK_SQRT_FUNCTION -lm
+export OMP_NUM_THREADS=$J
 ./a.out
 return_value=$?
 cd ..

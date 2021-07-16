@@ -4,9 +4,6 @@ set -e
 workspace_dir="$PWD"
 report_dir="$1"
 shift
-if [[ -z "$J" ]]; then
-J="1"
-fi
 
 function cleanup {
    echo "::endgroup::"

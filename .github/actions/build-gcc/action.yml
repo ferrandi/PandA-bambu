@@ -10,12 +10,18 @@ inputs:
   config-args:
     description: 'Configure command line arguments'
     required: true
+  jobs:
+    description: 'Parallel jobs'
+    required: false
+    default: 1
 outputs:
   dist-dir:
     description: 'Output dist directory'
 runs:
   using: 'docker'
   image: 'Dockerfile'
+  env:
+    J: ${{inputs.jobs}}
   args:
     - ${{inputs.branch}}
     - ${{inputs.dist-name}}

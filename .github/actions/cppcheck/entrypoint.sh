@@ -4,9 +4,8 @@ set -e
 workspace_dir="$PWD"
 report_dir="$1"
 shift
-if [[ -z "$J" ]]; then
-J="1"
-fi
+
+echo "Parallel jobs: $J"
 mkdir -p "$report_dir"
 cppcheck -j$J $@ src \
    --xml --xml-version=2 --output-file="$report_dir/cppcheck.xml" \
