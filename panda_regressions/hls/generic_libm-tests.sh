@@ -3,7 +3,7 @@
 script_dir="$(dirname $(readlink -e $0))"
 . $script_dir/generic_getopt.sh
 
-BATCH_ARGS=("--soft-float" "--simulate" "-lm" "--reset-type=sync" "-DNO_MAIN" "--max-ulp=0" "--experimental-setup=BAMBU")
+BATCH_ARGS=("--soft-float" "--simulate" "-lm" "--reset-type=sync" "--experimental-setup=BAMBU")
 OUT_SUFFIX="${COMPILER}_libm_tests"
 
 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
