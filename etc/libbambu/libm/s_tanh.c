@@ -46,18 +46,19 @@ double tanh(double x)
 {
    double t, z;
    int jx, ix;
+   unsigned long long ux;
 
    /* High word of |x|. */
    jx = GET_HI(x);
    ix = jx & 0x7fffffff;
+   ux = __hide_get_uint64(x) & 0x7fffffffffffffffL;
 
    /* x is INF or NaN */
-   if(ix >= 0x7ff00000)
+   if(ux >= 0x7ff0000000000000L)
    {
-      if(jx >= 0)
-         return one / x + one; /* tanh(+-inf)=+-1 */
-      else
-         return __builtin_nan(""); /* tanh(NaN) = NaN */
+      /* tanh(+-inf)=+-1 */
+      /* tanh(NaN) = NaN */
+      return ux == 0x7ff0000000000000L ? copysign(one, x) : __builtin_nan("");
    }
 
    /* |x| < 22 */

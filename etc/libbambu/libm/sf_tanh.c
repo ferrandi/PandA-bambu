@@ -36,10 +36,9 @@ float tanhf(float x)
    /* x is INF or NaN */
    if(!FLT_UWORD_IS_FINITE(ix))
    {
-      if(jx >= 0)
-         return one / x + one; /* tanh(+-inf)=+-1 */
-      else
-         return __builtin_nanf(""); /* tanh(NaN) = NaN */
+      /* tanh(+-inf)=+-1 */
+      /* tanh(NaN) = NaN */
+      return FLT_UWORD_IS_INFINITE(ix) ? copysignf(one, x) : __builtin_nanf("");
    }
 
    /* |x| < 22 */
