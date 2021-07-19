@@ -83,7 +83,7 @@ make --directory=build/ext -j$J
 echo "::endgroup::"
 
 echo "::group::Scan build Bambu sources"
-scan-build-$CLANG_VERSION -v -v --use-cc=/usr/bin/clang-$CLANG_VERSION --use-c++=/usr/bin/clang++-$CLANG_VERSION --use-analyzer=/usr/bin/clang-$CLANG_VERSION -o "$report_dir" make --directory=build/src -j
+scan-build-$CLANG_VERSION -v -v --use-cc=/usr/bin/clang-$CLANG_VERSION --use-c++=/usr/bin/clang++-$CLANG_VERSION --use-analyzer=/usr/bin/clang-$CLANG_VERSION -o "$report_dir" make --directory=build/src -j$J
 echo "::endgroup"
 
 mkdir -p "$report_dir"
