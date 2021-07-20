@@ -304,7 +304,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #endif
       )
       {
-         compiler_flags += " -g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
+         compiler_flags += " -g -fsanitize=address -fno-omit-frame-pointer -fno-common -static-libasan ";
       }
       if(false
 #if HAVE_I386_GCC5_COMPILER
@@ -348,7 +348,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #endif
       )
       {
-         compiler_flags += " -fsanitize=undefined -fsanitize-recover=undefined ";
+         compiler_flags += " -fsanitize=undefined -fsanitize-recover=undefined -static-libubsan ";
       }
    }
    // setup source files
