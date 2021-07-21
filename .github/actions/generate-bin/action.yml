@@ -3,6 +3,8 @@ description: 'Configure, build, and generate Panda Bambu appimage'
 inputs:
   config-args:
     description: 'Configure command line arguments'
+    required: false
+    default: ''
   jobs:
     description: 'Parallel jobs'
     required: false

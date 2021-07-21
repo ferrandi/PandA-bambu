@@ -2,7 +2,6 @@
 set -e
 
 workspace_dir=$PWD
-shift
 
 function cleanup {
    echo "::endgroup::"
@@ -19,7 +18,8 @@ cache_dir = $workspace_dir/.ccache
 EOF
 if [[ -d "dist" ]]; then
    echo "Pre-initialized dist dir found. Installing system wide..."
-   mv dist/. /
+   cp -r dist/. /
+   rm -rf dist
 fi
 
 GCC_BINS=("`find /usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?'`")
@@ -55,5 +55,5 @@ cd $workspace_dir
 echo "::endgroup::"
 
 echo "::group::Make distribution"
-make -f Makefile.init dist J=$J
-echo "::endgroup::"
+CONFIGURE_OPTIONS="$@"
+make -f etc/scripts/Makeall dist J=$J CONFIGURE_OPTIONS="$CONFIGURE_OPTIONS"
