@@ -2260,35 +2260,35 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
             return std::pair<double, double>(op_execution_time, 0.0);
          }
-         else if((GET_NODE(ga->op1)->get_kind() == convert_expr_K or GET_NODE(ga->op1)->get_kind() == nop_expr_K))
+         else if((GET_NODE(ga->op1)->get_kind() == convert_expr_K || GET_NODE(ga->op1)->get_kind() == nop_expr_K))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
             return std::pair<double, double>(0.0, 0.0);
          }
       }
-      else if(const auto gmwi = GetPointer<const gimple_multi_way_if>(TreeM->CGetTreeNode(operation_index)))
+      else if(GetPointer<const gimple_multi_way_if>(TreeM->CGetTreeNode(operation_index)))
       {
          auto controller_delay = estimate_controller_delay_fb();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(controller_delay) + ",0.0");
          return std::pair<double, double>(controller_delay, 0.0);
       }
-      else if(const auto gc = GetPointer<const gimple_cond>(TreeM->CGetTreeNode(operation_index)))
+      else if(GetPointer<const gimple_cond>(TreeM->CGetTreeNode(operation_index)))
       {
          auto controller_delay = estimate_controller_delay_fb();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(controller_delay) + ",0.0");
          return std::pair<double, double>(controller_delay, 0.0);
       }
-      else if(const auto gp = GetPointer<const gimple_phi>(TreeM->CGetTreeNode(operation_index)))
+      else if(GetPointer<const gimple_phi>(TreeM->CGetTreeNode(operation_index)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
          return std::pair<double, double>(0.0, 0.0);
       }
-      else if(const auto gn = GetPointer<const gimple_nop>(TreeM->CGetTreeNode(operation_index)))
+      else if(GetPointer<const gimple_nop>(TreeM->CGetTreeNode(operation_index)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
          return std::pair<double, double>(0.0, 0.0);
       }
-      else if(const auto gr = GetPointer<const gimple_return>(TreeM->CGetTreeNode(operation_index)))
+      else if(GetPointer<const gimple_return>(TreeM->CGetTreeNode(operation_index)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
          return std::pair<double, double>(0.0, 0.0);
