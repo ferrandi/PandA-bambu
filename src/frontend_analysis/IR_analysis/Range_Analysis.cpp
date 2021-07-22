@@ -1321,20 +1321,14 @@ int VarNode::updateIR(const tree_managerRef& TM,
    }
    else
    {
-#ifndef NDEBUG
       bw_t newBW = interval->getBitWidth();
-#else
-      bw_t newBW;
-#endif
       if(interval->isFullSet())
       {
          return ut_None;
       }
       if(interval->isConstant())
       {
-#ifndef NDEBUG
          newBW = 0U;
-#endif
       }
       else if(!interval->isReal())
       {
@@ -3962,8 +3956,8 @@ TernaryOpNode::TernaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, co
    THROW_ASSERT(ga, "TernaryOp associated statement should be a gimple_assign " + GET_CONST_NODE(_inst)->ToString());
    const auto* I = GetPointer<const ternary_expr>(GET_CONST_NODE(ga->op1));
    THROW_ASSERT(I, "TernaryOp operator should be a ternary_expr");
-   THROW_ASSERT(_sink->getBitWidth() >= _source2->getBitWidth(), "Operator bitwidth overflow (sink= " + STR(_sink->getBitWidth()) + ", op2= " + STR(_source2->getBitWidth()) + ")");
-   THROW_ASSERT(_sink->getBitWidth() >= _source3->getBitWidth(), "Operator bitwidth overflow (sink= " + STR(_sink->getBitWidth()) + ", op3= " + STR(_source3->getBitWidth()) + ")");
+   THROW_ASSERT(_sink->getBitWidth() >= _source2->getBitWidth(), STR("Operator bitwidth overflow ") + ga->ToString() + " (sink= " + STR(+_sink->getBitWidth()) + ", op2= " + STR(+_source2->getBitWidth()) + ")");
+   THROW_ASSERT(_sink->getBitWidth() >= _source3->getBitWidth(), STR("Operator bitwidth overflow ") + ga->ToString() + " (sink= " + STR(+_sink->getBitWidth()) + ", op3= " + STR(+_source3->getBitWidth()) + ")");
 #endif
 }
 
