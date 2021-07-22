@@ -681,7 +681,7 @@ jobs:
 
   Make-checks:
     needs: [build, gcc_regression_simple, libm-tests]
-    runs-on: [self-hosted, lattice, mentor, xilinx]
+    runs-on: [self-hosted, lattice, mentor, xilinx, classA]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
