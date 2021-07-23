@@ -1524,7 +1524,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   const auto iif = inputInterface.find(SSA);
                   if(iif == inputInterface.end())
                   {
-                     inputInterface.insert({SSA, {ssa_ff, {GET_INDEX_CONST_NODE(current_statement)}}});
+                     inputInterface.insert({SSA, {ssa_ff, std::vector<unsigned int>({GET_INDEX_CONST_NODE(current_statement)})}});
                   }
                   else
                   {
@@ -1536,7 +1536,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                if(!static_cast<bool>(inputInterface.count(SSA)))
                {
                   // Add current input SSA to the input cast rename list for all its uses if not already present
-                  inputInterface.insert({SSA, {ssa_ff, {}}});
+                  inputInterface.insert({SSA, {ssa_ff, std::vector<unsigned int>()}});
                }
             }
             else if(type_interface & INTERFACE_TYPE_OUTPUT)
@@ -1553,7 +1553,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   const auto oif = outputInterface.find(SSA);
                   if(oif == outputInterface.end())
                   {
-                     outputInterface.insert({SSA, {ssa_ff, {current_statement}}});
+                     outputInterface.insert({SSA, {ssa_ff, std::vector<tree_nodeRef>({current_statement})}});
                   }
                   else
                   {
