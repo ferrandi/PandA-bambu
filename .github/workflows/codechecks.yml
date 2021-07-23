@@ -220,4 +220,4 @@ jobs:
         uses: ./.github/actions/make-dist
         with:
           jobs: ${{steps.host.outputs.jobs}}
-          config-args: --enable-release --enable-opt --enable-flopoco
+          config-args: CC=gcc-8 CXX=g++-8 --enable-release --enable-opt --enable-flopoco
