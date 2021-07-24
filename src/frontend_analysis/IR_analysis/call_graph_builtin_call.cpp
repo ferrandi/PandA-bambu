@@ -68,7 +68,6 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
       case aggr_init_expr_K:
       {
          const call_expr* CE = GetPointer<call_expr>(currentTreeNode);
-         const std::vector<tree_nodeRef>& args = CE->args;
 
          tree_nodeRef FN = GetPointer<addr_expr>(GET_NODE(CE->fn)) ? GetPointer<addr_expr>(GET_NODE(CE->fn))->op : CE->fn;
          THROW_ASSERT(FN, "Address expression with null op");
@@ -78,6 +77,7 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
             std::string funName = tree_helper::name_function(TM, functionDeclIdx);
             if(funName == BUILTIN_WAIT_CALL)
             {
+               const std::vector<tree_nodeRef>& args = CE->args;
                tree_nodeRef builtinArgZero = GetPointer<addr_expr>(GET_NODE(args[0])) ? GetPointer<addr_expr>(GET_NODE(args[0]))->op : args[0];
                if(GET_NODE(builtinArgZero)->get_kind() == function_decl_K)
                {
@@ -97,7 +97,6 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
       case gimple_call_K:
       {
          const gimple_call* CE = GetPointer<gimple_call>(currentTreeNode);
-         const std::vector<tree_nodeRef>& args = CE->args;
 
          tree_nodeRef FN = GetPointer<addr_expr>(GET_NODE(CE->fn)) ? GetPointer<addr_expr>(GET_NODE(CE->fn))->op : CE->fn;
          THROW_ASSERT(FN, "Address expression with null op");
@@ -107,6 +106,7 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
             std::string funName = tree_helper::name_function(TM, functionDeclIdx);
             if(funName == BUILTIN_WAIT_CALL)
             {
+               const std::vector<tree_nodeRef>& args = CE->args;
                tree_nodeRef builtinArgZero = GetPointer<addr_expr>(GET_NODE(args[0])) ? GetPointer<addr_expr>(GET_NODE(args[0]))->op : args[0];
                if(GET_NODE(builtinArgZero)->get_kind() == function_decl_K)
                {
@@ -203,6 +203,7 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
 void CallGraphBuiltinCall::ExtendCallGraph(unsigned int callerIdx, tree_nodeRef funType, unsigned int stmtIdx)
 {
    std::string type = tree_helper::print_type(AppM->get_tree_manager(), funType->index);
+   buildTypeToDeclaration();
    for(unsigned int Itr : typeToDeclaration[type])
    {
       CallGraphManager::addCallPointAndExpand(already_visited, AppM, callerIdx, Itr, stmtIdx, FunctionEdgeInfo::CallType::indirect_call, debug_level);
@@ -233,7 +234,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, CallGraphBuiltinCall::F
 }
 
 CallGraphBuiltinCall::CallGraphBuiltinCall(const application_managerRef AM, unsigned int functionId, const DesignFlowManagerConstRef DFM, const ParameterConstRef P)
-    : FunctionFrontendFlowStep(AM, functionId, CALL_GRAPH_BUILTIN_CALL, DFM, P), modified(false)
+    : FunctionFrontendFlowStep(AM, functionId, CALL_GRAPH_BUILTIN_CALL, DFM, P), modified(false), typeToDeclarationBuilt(false)
 {
    debug_level = P->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -242,8 +243,37 @@ CallGraphBuiltinCall::~CallGraphBuiltinCall() = default;
 
 void CallGraphBuiltinCall::Initialize()
 {
-   modified = false;
-   typeToDeclaration.clear();
+}
+
+void CallGraphBuiltinCall::buildTypeToDeclaration()
+{
+   if(!typeToDeclarationBuilt)
+   {
+      tree_managerRef TM = AppM->get_tree_manager();
+      const CallGraphManagerRef CGM = AppM->GetCallGraphManager();
+      const auto root_functions = CGM->GetRootFunctions();
+      CustomUnorderedSet<unsigned int> allFunctions;
+      function_decl_refs fdr_visitor(allFunctions);
+      for(const auto root_function : root_functions)
+      {
+         tree_nodeRef rf = TM->get_tree_node_const(root_function);
+         rf->visit(&fdr_visitor);
+      }
+      for(unsigned int allFunction : allFunctions)
+      {
+         std::string functionName = tree_helper::name_function(TM, allFunction);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing function " + STR(allFunction) + " " + functionName);
+         tree_nodeRef function = TM->get_tree_node_const(allFunction);
+         auto* funDecl = GetPointer<function_decl>(function);
+         std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
+         if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" && !boost::algorithm::starts_with(functionName, "__pragma__"))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---FunctionTypeString " + type);
+         }
+         typeToDeclaration[type].insert(allFunction);
+      }
+      typeToDeclarationBuilt = true;
+   }
 }
 
 DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
@@ -259,30 +289,10 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("builtin-graph-pre" + STR(function_id) + ".dot");
    }
    already_visited.clear();
+   modified = false;
+   typeToDeclaration.clear();
+   typeToDeclarationBuilt = false;
 
-   // Build the typeToDeclarationMap
-   const CallGraphManagerRef CGM = AppM->GetCallGraphManager();
-   const auto root_functions = CGM->GetRootFunctions();
-   CustomUnorderedSet<unsigned int> allFunctions;
-   function_decl_refs fdr_visitor(allFunctions);
-   for(const auto root_function : root_functions)
-   {
-      tree_nodeRef rf = TM->get_tree_node_const(root_function);
-      rf->visit(&fdr_visitor);
-   }
-   for(unsigned int allFunction : allFunctions)
-   {
-      std::string functionName = tree_helper::name_function(TM, allFunction);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing function " + STR(allFunction) + " " + functionName);
-      tree_nodeRef function = TM->get_tree_node_const(allFunction);
-      auto* funDecl = GetPointer<function_decl>(function);
-      std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
-      if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" && !boost::algorithm::starts_with(functionName, "__pragma__"))
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---FunctionTypeString " + type);
-      }
-      typeToDeclaration[type].insert(allFunction);
-   }
    for(const auto& block : stmtList->list_of_bloc)
    {
       for(const auto& stmt : block.second->CGetStmtList())

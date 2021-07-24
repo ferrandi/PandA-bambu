@@ -59,9 +59,14 @@ class CallGraphBuiltinCall : public FunctionFrontendFlowStep
     */
    TypeDeclarationMap typeToDeclaration;
 
+   bool typeToDeclarationBuilt;
+
    void lookForBuiltinCall(const tree_nodeRef TN);
 
    void ExtendCallGraph(unsigned int callerIdx, tree_nodeRef funType, unsigned int stmtIdx);
+
+   // Build the typeToDeclarationMap
+   void buildTypeToDeclaration();
 
  protected:
    /// @brief State relationship with other design step
