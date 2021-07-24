@@ -446,6 +446,13 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef& typ
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
+   /// some checks
+   if(operation_kind == cond_expr_K)
+   {
+      THROW_ASSERT(GET_INDEX_NODE(op1) == 0 || tree_helper::get_type_index(this->TreeM, GET_INDEX_NODE(op1)) == GET_INDEX_NODE(type), "unexpected pattern");
+      THROW_ASSERT(GET_INDEX_NODE(op1) == 0 || tree_helper::get_type_index(this->TreeM, GET_INDEX_NODE(op1)) == GET_INDEX_NODE(type), "unexpected pattern");
+
+   }
    IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(type));
    IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(op0));
    IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(op1));

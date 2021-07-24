@@ -322,10 +322,10 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             std::swap(first_value, second_value);
          }
          cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
-         cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_ce->op0->index);
-         cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(first_value->index);
-         cond_expr_schema[TOK(TOK_OP2)] = boost::lexical_cast<std::string>(second_value->index);
+         cond_expr_schema[TOK(TOK_TYPE)] = STR(type_index);
+         cond_expr_schema[TOK(TOK_OP0)] = STR(first_ce->op0->index);
+         cond_expr_schema[TOK(TOK_OP1)] = STR(first_value->index);
+         cond_expr_schema[TOK(TOK_OP2)] = STR(second_value->index);
          TM->create_tree_node(cond_expr_id, cond_expr_K, cond_expr_schema);
 
          /// Create the ssa in the left part
@@ -430,10 +430,10 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          cond_expr_schema.clear();
          const auto root_cond_expr_id = TM->new_tree_node_id();
          cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
-         cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(and_first_cond->index);
-         cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(first_operand_of_second ? second_ce->op1->index : second_ce->op2->index);
-         cond_expr_schema[TOK(TOK_OP2)] = boost::lexical_cast<std::string>(ssa_node_nid);
+         cond_expr_schema[TOK(TOK_TYPE)] = STR(type_index);
+         cond_expr_schema[TOK(TOK_OP0)] = STR(and_first_cond->index);
+         cond_expr_schema[TOK(TOK_OP1)] = STR(first_operand_of_second ? second_ce->op1->index : second_ce->op2->index);
+         cond_expr_schema[TOK(TOK_OP2)] = STR(ssa_node_nid);
          TM->create_tree_node(root_cond_expr_id, cond_expr_K, cond_expr_schema);
 
          /// Create the assign

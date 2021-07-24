@@ -225,7 +225,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    }
    if(!merging_candidates.empty())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Merging candidate number " + boost::lexical_cast<std::string>(merging_candidates.size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Merging candidate number " + STR(merging_candidates.size()));
    }
    else
    {
@@ -312,7 +312,7 @@ bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int&
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining merging candidate predecessor BB" + STR(bb1));
-      THROW_ASSERT(list_of_bloc.at(bb1)->true_edge > 0, "bb1 has to be an if statement " + boost::lexical_cast<std::string>(bb1) + " " + boost::lexical_cast<std::string>(merging_candidate));
+      THROW_ASSERT(list_of_bloc.at(bb1)->true_edge > 0, "bb1 has to be an if statement " + STR(bb1) + " " + STR(merging_candidate));
       if(list_of_bloc.at(bb1)->true_edge == merging_candidate)
       {
          bb1_true = true;
@@ -325,7 +325,7 @@ bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int&
       for(auto it_bb2_pred = list_of_bloc.at(merging_candidate)->list_of_pred.begin(); !mergeable_pair_found && it_pred_end != it_bb2_pred; ++it_bb2_pred)
       {
          bb2 = *it_bb2_pred;
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining merging candidate nested predecessor " + boost::lexical_cast<std::string>(bb2));
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining merging candidate nested predecessor " + STR(bb2));
          if(bb2 == bloc::ENTRY_BLOCK_ID || bb2 == merging_candidate)
          {
             continue;
@@ -346,7 +346,7 @@ bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int&
          {
             continue;
          }
-         THROW_ASSERT(list_of_bloc.at(bb2)->true_edge > 0, "bb2 has to be an if statement " + boost::lexical_cast<std::string>(bb2) + " " + boost::lexical_cast<std::string>(merging_candidate));
+         THROW_ASSERT(list_of_bloc.at(bb2)->true_edge > 0, "bb2 has to be an if statement " + STR(bb2) + " " + STR(merging_candidate));
          // This check is needed for empty while loop with short circuit (e. g. 20000314-1.c)
          if(list_of_bloc.at(bb2)->true_edge == bb1 || list_of_bloc.at(bb2)->false_edge == bb1)
          {
@@ -362,15 +362,15 @@ bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int&
             {
                bb2_true = false;
             }
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pair found: " << boost::lexical_cast<std::string>(bb1) << " and " << boost::lexical_cast<std::string>(bb2));
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pair found: " << STR(bb1) << " and " << STR(bb2));
             mergeable_pair_found = true;
             if(bb2_true)
             {
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 T " + boost::lexical_cast<std::string>(bb1) + " bb2 T " + boost::lexical_cast<std::string>(bb2) + " MC " + boost::lexical_cast<std::string>(merging_candidate));
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 T " + STR(bb1) + " bb2 T " + STR(bb2) + " MC " + STR(merging_candidate));
             }
             else
             {
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 T " + boost::lexical_cast<std::string>(bb1) + " bb2 F " + boost::lexical_cast<std::string>(bb2) + " MC " + boost::lexical_cast<std::string>(merging_candidate));
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 T " + STR(bb1) + " bb2 F " + STR(bb2) + " MC " + STR(merging_candidate));
             }
          }
          else if(!bb1_true && list_of_bloc.at(bb1)->true_edge == bb2)
@@ -384,14 +384,14 @@ bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int&
                bb2_true = false;
             }
             mergeable_pair_found = true;
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pair found: " << boost::lexical_cast<std::string>(bb1) << " and " << boost::lexical_cast<std::string>(bb2));
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pair found: " << STR(bb1) << " and " << STR(bb2));
             if(bb2_true)
             {
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 F " + boost::lexical_cast<std::string>(bb1) + " bb2 T " + boost::lexical_cast<std::string>(bb2) + " MC " + boost::lexical_cast<std::string>(merging_candidate));
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 F " + STR(bb1) + " bb2 T " + STR(bb2) + " MC " + STR(merging_candidate));
             }
             else
             {
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 F " + boost::lexical_cast<std::string>(bb1) + " bb2 F " + boost::lexical_cast<std::string>(bb2) + " MC " + boost::lexical_cast<std::string>(merging_candidate));
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 F " + STR(bb1) + " bb2 F " + STR(bb2) + " MC " + STR(merging_candidate));
             }
          }
       }
@@ -405,7 +405,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 {
    const tree_managerRef TM = AppM->get_tree_manager();
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Creating new cond expr: " + boost::lexical_cast<std::string>(bb1) + " is the first basic block, " + boost::lexical_cast<std::string>(bb2) + " is the second basic block");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Creating new cond expr: " + STR(bb1) + " is the first basic block, " + STR(bb2) + " is the second basic block");
    /// If there are more than one statements in the basic block containing cond2, then do not merge conditions (in case speculation step should manage the code motion)
    if(list_of_bloc.at(bb2)->CGetStmtList().size() != 1)
    {
@@ -442,8 +442,8 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    const auto cond1_gimple_stmt_id = TM->new_tree_node_id();
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-   IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa1_node_nid);
-   IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond1_index);
+   IR_schema[TOK(TOK_OP0)] = STR(ssa1_node_nid);
+   IR_schema[TOK(TOK_OP1)] = STR(cond1_index);
    TM->create_tree_node(cond1_gimple_stmt_id, gimple_assign_K, IR_schema);
    IR_schema.clear();
    const auto cond1_created_stmt = TM->GetTreeReindex(cond1_gimple_stmt_id);
@@ -492,21 +492,26 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          TM->create_tree_node(ssa_node_nid, ssa_name_K, IR_schema);
          IR_schema.clear();
          const auto ssa_cond_node = TM->GetTreeReindex(ssa_node_nid);
+
+         THROW_ASSERT(op1 == 0 || tree_helper::get_type_index(TM, op1) == type_index, "unexpected pattern");
+         THROW_ASSERT(op2 == 0 || tree_helper::get_type_index(TM, op2) == type_index, "unexpected pattern");
+
          const auto cond_expr_id = TM->new_tree_node_id();
          IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(res_type_index);
-         IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(cond1_index);
-         IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(op1);
-         IR_schema[TOK(TOK_OP2)] = boost::lexical_cast<std::string>(op2);
+         IR_schema[TOK(TOK_TYPE)] = STR(res_type_index);
+         IR_schema[TOK(TOK_OP0)] = STR(cond1_index);
+         IR_schema[TOK(TOK_OP1)] = STR(op1);
+         IR_schema[TOK(TOK_OP2)] = STR(op2);
          TM->create_tree_node(cond_expr_id, (tree_helper::is_a_vector(TM, res_type_index) ? vec_cond_expr_K : cond_expr_K), IR_schema);
          IR_schema.clear();
+
          /// second, create the gimple assignment
          const auto gimple_stmt_id = TM->new_tree_node_id();
          IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-         IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa_node_nid);
-         IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond_expr_id);
-         IR_schema[TOK(TOK_ORIG)] = boost::lexical_cast<std::string>(GET_INDEX_CONST_NODE(phi));
+         IR_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
+         IR_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
+         IR_schema[TOK(TOK_ORIG)] = STR(GET_INDEX_CONST_NODE(phi));
          TM->create_tree_node(gimple_stmt_id, gimple_assign_K, IR_schema);
          IR_schema.clear();
          const auto created_stmt = TM->GetTreeReindex(gimple_stmt_id);
@@ -537,8 +542,8 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
       const auto ncond_ssa_cond_node = TM->GetTreeReindex(ncond_ssa_node_nid);
 
       /// create !cond1
-      IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
-      IR_schema[TOK(TOK_OP)] = boost::lexical_cast<std::string>(cond1_index);
+      IR_schema[TOK(TOK_TYPE)] = STR(type_index);
+      IR_schema[TOK(TOK_OP)] = STR(cond1_index);
       IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       cond1_index = TM->new_tree_node_id();
       TM->create_tree_node(cond1_index, truth_not_expr_K, IR_schema);
@@ -547,8 +552,8 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
       const auto ncond_gimple_stmt_id = TM->new_tree_node_id();
       IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-      IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ncond_ssa_node_nid);
-      IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond1_index);
+      IR_schema[TOK(TOK_OP0)] = STR(ncond_ssa_node_nid);
+      IR_schema[TOK(TOK_OP1)] = STR(cond1_index);
       TM->create_tree_node(ncond_gimple_stmt_id, gimple_assign_K, IR_schema);
       IR_schema.clear();
       const auto created_stmt = TM->GetTreeReindex(ncond_gimple_stmt_id);
@@ -589,8 +594,8 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    const auto cond2_gimple_stmt_id = TM->new_tree_node_id();
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-   IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa2_node_nid);
-   IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond2_index);
+   IR_schema[TOK(TOK_OP0)] = STR(ssa2_node_nid);
+   IR_schema[TOK(TOK_OP1)] = STR(cond2_index);
    TM->create_tree_node(cond2_gimple_stmt_id, gimple_assign_K, IR_schema);
    IR_schema.clear();
    tree_nodeRef cond2_created_stmt = TM->GetTreeReindex(cond2_gimple_stmt_id);
@@ -599,9 +604,9 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    cond2_index = ssa2_node_nid;
 
    /// create (!)cond1 or cond2
-   IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
-   IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(cond1_index);
-   IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond2_index);
+   IR_schema[TOK(TOK_TYPE)] = STR(type_index);
+   IR_schema[TOK(TOK_OP0)] = STR(cond1_index);
+   IR_schema[TOK(TOK_OP1)] = STR(cond2_index);
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    unsigned int expr_index = TM->new_tree_node_id();
    if(or_type)
@@ -667,7 +672,7 @@ void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsi
    /// fix bb1 empty block
    pos = std::find(list_of_bloc.at(merging_candidate)->list_of_pred.begin(), list_of_bloc.at(merging_candidate)->list_of_pred.end(), bb1);
    list_of_bloc.at(merging_candidate)->list_of_pred.erase(pos);
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Removed BB " + boost::lexical_cast<std::string>(bb1));
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Removed BB " + STR(bb1));
    /// check for BB with gimple_multi_way_if
    for(const auto& pred : list_of_bloc.at(bb1)->list_of_pred)
    {

@@ -810,6 +810,9 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       }
       else
       {
+         THROW_ASSERT(true_value == 0 || tree_helper::get_type_index(TM, true_value) == type_index, "unexpected pattern");
+         THROW_ASSERT(false_value == 0 || tree_helper::get_type_index(TM, false_value) == type_index, "unexpected pattern");
+
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
          cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
@@ -1055,6 +1058,9 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       }
       else
       {
+         THROW_ASSERT(true_value == 0 || tree_helper::get_type_index(TM, true_value) == type_index, "unexpected pattern");
+         THROW_ASSERT(false_value == 0 || tree_helper::get_type_index(TM, false_value) == type_index, "unexpected pattern");
+
          const auto gimple_node_id = TM->new_tree_node_id();
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
@@ -1256,6 +1262,9 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       }
       else
       {
+         THROW_ASSERT(first_value == 0 || tree_helper::get_type_index(TM, first_value) == type_index, "unexpected pattern");
+         THROW_ASSERT(second_value == 0 || tree_helper::get_type_index(TM, second_value) == type_index, "unexpected pattern");
+
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
          cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
@@ -1547,6 +1556,9 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       }
       else
       {
+         THROW_ASSERT(first_value == 0 || tree_helper::get_type_index(TM, first_value) == type_index, "unexpected pattern");
+         THROW_ASSERT(second_value == 0 || tree_helper::get_type_index(TM, second_value) == type_index, "unexpected pattern");
+
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
          cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
@@ -1797,6 +1809,9 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
                }
             }
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema;
+
+            THROW_ASSERT(first_value == 0 || tree_helper::get_type_index(TM, first_value) == type_index, "unexpected pattern");
+            THROW_ASSERT(second_value == 0 || tree_helper::get_type_index(TM, second_value) == type_index, "unexpected pattern");
 
             /// Create the cond expr
             const auto cond_expr_id = TM->new_tree_node_id();
