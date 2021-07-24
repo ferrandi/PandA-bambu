@@ -101,7 +101,7 @@ jobs:
         id: build
         uses: ./.github/actions/generate-bin
         with:
-          config-args: ${{env.build-args}} CC=gcc-8 CXX=g++-8
+          config-args: ${{env.build-args}} --enable-Werror CC=gcc-8 CXX=g++-8
           jobs: ${{steps.host.outputs.jobs}}
       - name: Upload Panda install directory
         uses: ./.github/actions/storage-upload

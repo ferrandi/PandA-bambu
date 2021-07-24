@@ -75,6 +75,7 @@ using namespace std;
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wswitch-default"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 
 CInitializationFlexLexer::CInitializationFlexLexer(const ParameterConstRef parameters, std::istream* argin, std::ostream* argout) :
    yyFlexLexer(argin, argout),
