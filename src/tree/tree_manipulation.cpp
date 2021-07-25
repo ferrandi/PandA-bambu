@@ -1768,6 +1768,7 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef& ssa_res, const std
 
    for(const auto& def_edge : list_of_def_edge)
    {
+      THROW_ASSERT(tree_helper::get_type_index(this->TreeM, GET_INDEX_NODE(def_edge.first)) == tree_helper::get_type_index(this->TreeM, GET_INDEX_NODE(ssa_res)), "unexpected condition");
       pn->AddDefEdge(TreeM, def_edge);
    }
 
