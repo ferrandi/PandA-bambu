@@ -493,8 +493,8 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          IR_schema.clear();
          const auto ssa_cond_node = TM->GetTreeReindex(ssa_node_nid);
 
-         THROW_ASSERT(op1 == 0 || tree_helper::get_type_index(TM, op1) == type_index, "unexpected pattern");
-         THROW_ASSERT(op2 == 0 || tree_helper::get_type_index(TM, op2) == type_index, "unexpected pattern");
+         THROW_ASSERT(op1 == 0 || tree_helper::get_type_index(TM, op1) == res_type_index, "unexpected pattern");
+         THROW_ASSERT(op2 == 0 || tree_helper::get_type_index(TM, op2) == res_type_index, "unexpected pattern");
 
          const auto cond_expr_id = TM->new_tree_node_id();
          IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
