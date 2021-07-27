@@ -252,6 +252,7 @@ static bool is_bit_values_constant(const std::string& bit_values)
 
 void Bit_Value_opt::propagateValue(const ssa_name* ssa, tree_managerRef TM, tree_nodeRef old_val, tree_nodeRef new_val)
 {
+   THROW_ASSERT(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(old_val))) == tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(new_val))), "unexpected case " + STR(old_val) + " " + STR(new_val));
    const auto StmtUses = ssa->CGetUseStmts();
    for(const auto& use : StmtUses)
    {
@@ -586,7 +587,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               if(GET_NODE(ga->predicate)->get_kind() != integer_cst_K || GetPointer<integer_cst>(GET_NODE(ga->predicate))->value != 0)
                               {
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---zero predicated statement: " + stmt->ToString());
-                                 auto zeroval = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), type_index);
+                                 const auto bt = IRman->create_boolean_type();
+                                 auto zeroval = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), bt->index);
                                  TM->ReplaceTreeNode(stmt, ga->predicate, zeroval);
                                  modified = true;
                                  AppM->RegisterTransformation(GetName(), stmt);
