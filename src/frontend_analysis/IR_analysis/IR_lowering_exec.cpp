@@ -1218,6 +1218,19 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   ga->op1 = array_ref_lowering(AR, srcp_default, block, it_los, true);
                   restart_analysis = true;
                }
+               else if(code1 == ssa_name_K && code0 == ssa_name_K)
+               {
+                  /// check for a missing cast
+                  if(tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)) != tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1)))
+                  {
+                     auto ssa0 = GetPointerS<ssa_name>(GET_NODE(ga->op0));
+                     const auto ga_nop = tree_man->CreateNopExpr(ga->op1, ssa0->type, ssa0->min, ssa0->max, function_id);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
+                     const auto nop_vd = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+                     block.second->PushBefore(ga_nop, *it_los, AppM);
+                     ga->op1 = nop_vd;
+                  }
+               }
                else if(code1 == addr_expr_K)
                {
                   auto addr_exprNormalize = [&] {
