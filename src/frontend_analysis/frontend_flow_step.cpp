@@ -563,10 +563,16 @@ void FrontendFlowStep::PrintTreeManager(const bool before) const
 
 void FrontendFlowStep::PrintInitialIR() const
 {
-   PrintTreeManager(true);
+   if(!parameters->IsParameter("disable-print-tree-manager"))
+   {
+      PrintTreeManager(true);
+   }
 }
 
 void FrontendFlowStep::PrintFinalIR() const
 {
-   PrintTreeManager(false);
+   if(!parameters->IsParameter("disable-print-tree-manager"))
+   {
+      PrintTreeManager(false);
+   }
 }

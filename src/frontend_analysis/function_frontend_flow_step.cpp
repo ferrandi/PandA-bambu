@@ -374,12 +374,18 @@ unsigned int FunctionFrontendFlowStep::GetBitValueVersion() const
 
 void FunctionFrontendFlowStep::PrintInitialIR() const
 {
-   WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
+   if(!parameters->IsParameter("disable-print-dot-FF"))
+   {
+      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
+   }
    FrontendFlowStep::PrintInitialIR();
 }
 
 void FunctionFrontendFlowStep::PrintFinalIR() const
 {
-   WriteBBGraphDot("BB_After_" + GetName() + ".dot");
+   if(!parameters->IsParameter("disable-print-dot-FF"))
+   {
+      WriteBBGraphDot("BB_After_" + GetName() + ".dot");
+   }
    FrontendFlowStep::PrintFinalIR();
 }
