@@ -153,7 +153,7 @@ class tree_manipulation
     * @param  operation_kind is the kind of unary expression to create (bit_not_expr_K, nop_expr_K,...).
     * @return the tree_reindex node of the operation created.
     */
-   tree_nodeRef create_unary_operation(const tree_nodeRef& type, const tree_nodeRef& op, const std::string& srcp, enum kind operation_kind) const;
+   tree_nodeRef create_unary_operation(const tree_nodeConstRef& type, const tree_nodeRef& op, const std::string& srcp, enum kind operation_kind) const;
 
    /**
     * Function used to create a binary expression.
@@ -164,7 +164,7 @@ class tree_manipulation
     * @param  operation_kind is the kind of binary expression to create (bit_and_expr_K, plus_expr_K,...).
     * @return the tree_reindex node of the operation created.
     */
-   tree_nodeRef create_binary_operation(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp, enum kind operation_kind) const;
+   tree_nodeRef create_binary_operation(const tree_nodeConstRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp, enum kind operation_kind) const;
 
    /**
     * Function used to create a ternary expression.
@@ -176,7 +176,7 @@ class tree_manipulation
     * @param  operation_kind is the kind of ternary expression to create (component_ref_K, gimple_switch_K,...).
     * @return the tree_reindex node of the operation created.
     */
-   tree_nodeRef create_ternary_operation(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const std::string& srcp, enum kind operation_kind) const;
+   tree_nodeRef create_ternary_operation(const tree_nodeConstRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const std::string& srcp, enum kind operation_kind) const;
 
    /**
     * Function used to create a quaternary expression.
@@ -189,7 +189,7 @@ class tree_manipulation
     * @param  operation_kind is the kind of quaternary expression to create (array_range_ref_K, array_ref_K).
     * @return the tree_reindex node of the operation created.
     */
-   tree_nodeRef create_quaternary_operation(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const std::string& srcp, enum kind operation_kind) const;
+   tree_nodeRef create_quaternary_operation(const tree_nodeConstRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const std::string& srcp, enum kind operation_kind) const;
 
    /**
     * @brief create_lut_expr: function used to create a generic lut_expr operation
@@ -206,7 +206,7 @@ class tree_manipulation
     * @param srcp is the definition of the source position.
     * @return the tree_reindex node of the operation created.
     */
-   tree_nodeRef create_lut_expr(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const tree_nodeRef& op4, const tree_nodeRef& op5, const tree_nodeRef& op6,
+   tree_nodeRef create_lut_expr(const tree_nodeConstRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const tree_nodeRef& op4, const tree_nodeRef& op5, const tree_nodeRef& op6,
                                 const tree_nodeRef& op7, const tree_nodeRef& op8, const std::string& srcp) const;
 
    tree_nodeRef create_extract_bit_expr(const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp) const;

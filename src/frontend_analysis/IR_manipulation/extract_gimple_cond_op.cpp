@@ -80,7 +80,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -104,7 +104,7 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
    bb_modified = false;
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
-   const auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+   const auto fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
    const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)
    {
@@ -113,18 +113,11 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
       {
          const auto last_stmt = stmt_list.back();
          auto gc = GetPointer<gimple_cond>(GET_NODE(last_stmt));
-         if(gc and (!tree_helper::is_bool(TM, GET_INDEX_NODE(gc->op0)) || (GET_NODE(gc->op0)->get_kind() != ssa_name_K and GetPointer<cst_node>(GET_NODE(gc->op0)) == nullptr)))
+         if(gc && (!tree_helper::is_bool(TM, GET_INDEX_NODE(gc->op0)) || (GET_NODE(gc->op0)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(gc->op0)))))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---fixing gimple cond: " + last_stmt->ToString());
             auto new_gc_cond = tree_man->ExtractCondition(last_stmt, block.second, function_id);
-            /// Temporary removed old gimple cond to remove uses
-            block.second->RemoveStmt(last_stmt, AppM);
-
-            /// Update gimple_cond
-            gc->op0 = new_gc_cond;
-
-            /// Readd gimple cond
-            block.second->PushBack(last_stmt, AppM);
+            TM->ReplaceTreeNode(last_stmt, gc->op0, new_gc_cond);
             bb_modified = true;
          }
       }

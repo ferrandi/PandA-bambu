@@ -80,7 +80,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -112,13 +112,13 @@ DesignFlowStep_Status SwitchFix::InternalExec()
    /// Fix switch statements
    for(auto basic_block : list_of_block)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + boost::lexical_cast<std::string>(basic_block.first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(basic_block.first));
       const auto list_of_stmt = basic_block.second->CGetStmtList();
       // Checking for switch
       if(!list_of_stmt.empty() && GET_NODE(*(list_of_stmt.rbegin()))->get_kind() == gimple_switch_K)
       {
          const auto gs = GetPointer<const gimple_switch>(GET_NODE(list_of_stmt.back()));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->BB" + boost::lexical_cast<std::string>(basic_block.first) + " ends with a switch");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->BB" + STR(basic_block.first) + " ends with a switch");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if some successor has more than two gimple_label");
          /// The set of basic blocks which contain more than a label; this fix has to be performed before multiple_pred_switch check
          CustomUnorderedSet<unsigned int> multiple_labels_blocks;
@@ -138,7 +138,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          CustomUnorderedSet<unsigned int>::iterator multiple_labels_block, multiple_labels_block_end = multiple_labels_blocks.end();
          for(multiple_labels_block = multiple_labels_blocks.begin(); multiple_labels_block != multiple_labels_block_end; ++multiple_labels_block)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Splitting BB" + boost::lexical_cast<std::string>(*multiple_labels_block));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Splitting BB" + STR(*multiple_labels_block));
             /// Compute the case labels of the switch
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computing case labels");
             CustomUnorderedSet<tree_nodeRef> cases;
@@ -162,7 +162,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                ++stmt_index;
                while(stmt_index != current_list_of_stmt.end())
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining operation " + boost::lexical_cast<std::string>(stmt_i));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining operation " + STR(stmt_i));
                   current_tree_node = *stmt_index;
                   THROW_ASSERT(GET_NODE(current_tree_node)->get_kind() == gimple_label_K, "An artificial label_decl has not been found at the beginning of the basic block");
                   ld = GET_NODE(GetPointer<gimple_label>(GET_NODE(current_tree_node))->op);
@@ -187,7 +187,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             /// Create new basic block
             blocRef new_bb = blocRef(new bloc(list_of_block.rbegin()->first + 1));
             new_bb->loop_id = current_block->loop_id;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created BB" + boost::lexical_cast<std::string>(new_bb->number));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created BB" + STR(new_bb->number));
             list_of_block[new_bb->number] = new_bb;
             new_bb->list_of_pred = current_block->list_of_pred;
             /// Updating successors of the predecessor of the current block when they are not the switch
@@ -215,7 +215,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                /// Create new basic block
                new_bb = blocRef(new bloc(list_of_block.rbegin()->first + 1));
                new_bb->loop_id = previous_block->loop_id;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created BB" + boost::lexical_cast<std::string>(new_bb->number));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created BB" + STR(new_bb->number));
                list_of_block[new_bb->number] = new_bb;
                new_bb->list_of_pred.push_back(previous_block->number);
                previous_block->list_of_succ.push_back(new_bb->number);
@@ -250,7 +250,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             {
                current_block->list_of_pred.push_back(basic_block.first);
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Split BB" + boost::lexical_cast<std::string>(*multiple_labels_block));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Split BB" + STR(*multiple_labels_block));
          }
          if(debug_level >= DEBUG_LEVEL_PEDANTIC)
          {
@@ -321,7 +321,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                }
             }
             // moving label expr
-            THROW_ASSERT(GET_NODE(list_of_block.find(*t)->second->CGetStmtList().front())->get_kind() == gimple_label_K, "BB" + STR(*t) + " follows switch " + boost::lexical_cast<std::string>(basic_block.first) + " but it does not start with a label");
+            THROW_ASSERT(GET_NODE(list_of_block.find(*t)->second->CGetStmtList().front())->get_kind() == gimple_label_K, "BB" + STR(*t) + " follows switch " + STR(basic_block.first) + " but it does not start with a label");
             if(multiple_pred_switch)
             {
                auto label_expr_node = list_of_block.find(*t)->second->CGetStmtList().front();
@@ -330,16 +330,16 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                auto* ld = GetPointer<label_decl>(GET_NODE(label_decl_node));
                unsigned int new_label_decl_id = TM->new_tree_node_id();
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-               IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(ld->type));
-               IR_schema[TOK(TOK_SCPE)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(ld->scpe));
-               IR_schema[TOK(TOK_SRCP)] = ld->include_name + ":" + boost::lexical_cast<std::string>(ld->line_number) + ":" + boost::lexical_cast<std::string>(ld->column_number);
-               IR_schema[TOK(TOK_ARTIFICIAL)] = boost::lexical_cast<std::string>(ld->artificial_flag);
+               IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(ld->type));
+               IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(ld->scpe));
+               IR_schema[TOK(TOK_SRCP)] = ld->include_name + ":" + STR(ld->line_number) + ":" + STR(ld->column_number);
+               IR_schema[TOK(TOK_ARTIFICIAL)] = STR(ld->artificial_flag);
                TM->create_tree_node(new_label_decl_id, label_decl_K, IR_schema);
                unsigned int new_label_expr_id = TM->new_tree_node_id();
                IR_schema.clear();
-               IR_schema[TOK(TOK_SCPE)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(ld->scpe));
-               IR_schema[TOK(TOK_OP)] = boost::lexical_cast<std::string>(new_label_decl_id);
-               IR_schema[TOK(TOK_SRCP)] = le->include_name + ":" + boost::lexical_cast<std::string>(le->line_number) + ":" + boost::lexical_cast<std::string>(ld->column_number);
+               IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(ld->scpe));
+               IR_schema[TOK(TOK_OP)] = STR(new_label_decl_id);
+               IR_schema[TOK(TOK_SRCP)] = le->include_name + ":" + STR(le->line_number) + ":" + STR(ld->column_number);
                TM->create_tree_node(new_label_expr_id, gimple_label_K, IR_schema);
                auto gl = GetPointer<gimple_label>(TM->get_tree_node_const(new_label_expr_id));
                gl->bb_index = new_bb->number;
@@ -458,7 +458,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + boost::lexical_cast<std::string>(basic_block.first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(basic_block.first));
    }
 
    function_behavior->UpdateBBVersion();

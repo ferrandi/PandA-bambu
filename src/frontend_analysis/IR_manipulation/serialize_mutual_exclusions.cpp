@@ -276,13 +276,8 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             const auto cond = gc->op0;
             const auto not_cond = tree_man->CreateNotExpr(cond, new_block, function_id);
 
-            std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
-            tree_node_schema[TOK(TOK_SRCP)] = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
-            tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
-            tree_node_schema[TOK(TOK_OP0)] = STR(not_cond->index);
-            unsigned int new_tree_node_index = TM->new_tree_node_id();
-            TM->create_tree_node(new_tree_node_index, gimple_cond_K, tree_node_schema);
-            new_block->PushBack(TM->GetTreeReindex(new_tree_node_index), AppM);
+            const auto new_tree_node = tree_man->create_gimple_cond(not_cond, function_id, gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number), new_block->number);
+            new_block->PushBack(new_tree_node, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixed basic blocks connections");
 
             /// Fix the phi in end if and create the phi in new block

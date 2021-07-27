@@ -94,7 +94,7 @@ tree_manipulation::~tree_manipulation() = default;
 
 /// TODO weight_node to fix in tree_node_factory.cpp
 /// Create an unary operation
-tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef& type, const tree_nodeRef& op, const std::string& srcp, kind operation_kind) const
+tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeConstRef& type, const tree_nodeRef& op, const std::string& srcp, kind operation_kind) const
 {
    /// Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
@@ -140,7 +140,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef& type,
    }
 
    /// Check if it is a correct node type
-   switch(GET_NODE(type)->get_kind())
+   switch(GET_CONST_NODE(type)->get_kind())
    {
       case array_type_K:
       case boolean_type_K:
@@ -196,13 +196,13 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef& type,
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_NODE(type)) + std::string("): ") + GET_NODE(type)->get_kind_text());
+         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") + GET_CONST_NODE(type)->get_kind_text());
    }
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(type));
+   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
    IR_schema[TOK(TOK_OP)] = STR(GET_INDEX_NODE(op));
    IR_schema[TOK(TOK_SRCP)] = srcp;
 
@@ -215,7 +215,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef& type,
 
 /// TODO weight_node to fix in tree_node_factory.cpp
 /// Create a binary expression
-tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp, kind operation_kind) const
+tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeConstRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp, kind operation_kind) const
 {
    /// Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
@@ -261,7 +261,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef& type
    }
 
    /// Check if it is a correct node type
-   switch(GET_NODE(type)->get_kind())
+   switch(GET_CONST_NODE(type)->get_kind())
    {
       case array_type_K:
       case boolean_type_K:
@@ -317,13 +317,19 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef& type
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_NODE(type)) + std::string("): ") + GET_NODE(type)->get_kind_text());
+         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") + GET_CONST_NODE(type)->get_kind_text());
+   }
+
+   if(operation_kind == eq_expr_K || operation_kind == ne_expr_K || operation_kind == lt_expr_K || operation_kind == le_expr_K || operation_kind == gt_expr_K || operation_kind == ge_expr_K || operation_kind == ltgt_expr_K ||
+      operation_kind == truth_and_expr_K || operation_kind == truth_andif_expr_K || operation_kind == truth_or_expr_K || operation_kind == truth_orif_expr_K || operation_kind == truth_xor_expr_K)
+   {
+      THROW_ASSERT((tree_helper::is_a_vector(TreeM, GET_INDEX_CONST_NODE(type)) && tree_helper::is_bool(TreeM, tree_helper::GetElements(TreeM, GET_INDEX_CONST_NODE(type)))) || tree_helper::is_bool(TreeM, GET_INDEX_CONST_NODE(type)), "");
    }
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(type));
+   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
    IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(op0));
    IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(op1));
    IR_schema[TOK(TOK_SRCP)] = srcp;
@@ -337,7 +343,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef& type
 
 /// TODO weight_node to fix in tree_node_factory.cpp
 /// Create a ternary expression
-tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const std::string& srcp, kind operation_kind) const
+tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeConstRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const std::string& srcp, kind operation_kind) const
 {
    /// Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type is not a tree reindex");
@@ -384,7 +390,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef& typ
    }
 
    /// Check if it is a correct node type
-   switch(GET_NODE(type)->get_kind())
+   switch(GET_CONST_NODE(type)->get_kind())
    {
       case array_type_K:
       case boolean_type_K:
@@ -440,7 +446,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef& typ
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_NODE(type)) + std::string("): ") + GET_NODE(type)->get_kind_text());
+         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") + GET_CONST_NODE(type)->get_kind_text());
    }
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
@@ -449,10 +455,14 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef& typ
    /// some checks
    if(operation_kind == cond_expr_K)
    {
-      THROW_ASSERT(GET_INDEX_NODE(op1) == 0 || tree_helper::get_type_index(this->TreeM, GET_INDEX_NODE(op1)) == GET_INDEX_NODE(type), "unexpected pattern");
-      THROW_ASSERT(GET_INDEX_NODE(op1) == 0 || tree_helper::get_type_index(this->TreeM, GET_INDEX_NODE(op1)) == GET_INDEX_NODE(type), "unexpected pattern");
+      THROW_ASSERT(GET_INDEX_NODE(op1) == 0 || tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(op1))) == tree_helper::Size(GET_CONST_NODE(type)), "unexpected pattern (<" + STR(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(op1)))) + ">" +
+                                                                                                                                                             tree_helper::CGetType(GET_CONST_NODE(op1))->ToString() + " != <" +
+                                                                                                                                                             STR(tree_helper::Size(GET_CONST_NODE(type))) + ">" + GET_CONST_NODE(type)->ToString() + ")");
+      THROW_ASSERT(GET_INDEX_NODE(op2) == 0 || tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(op2))) == tree_helper::Size(GET_CONST_NODE(type)), "unexpected pattern (<" + STR(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(op2)))) + ">" +
+                                                                                                                                                             tree_helper::CGetType(GET_CONST_NODE(op2))->ToString() + " != <" +
+                                                                                                                                                             STR(tree_helper::Size(GET_CONST_NODE(type))) + ">" + GET_CONST_NODE(type)->ToString() + ")");
    }
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(type));
+   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
    IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(op0));
    IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(op1));
    IR_schema[TOK(TOK_OP2)] = STR(GET_INDEX_NODE(op2));
@@ -467,7 +477,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef& typ
 
 /// TODO weight_node to fix in tree_node_factory.cpp
 /// Create a quaternary expression
-tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const std::string& srcp, kind operation_kind) const
+tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeConstRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const std::string& srcp, kind operation_kind) const
 {
    /// Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
@@ -514,7 +524,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef& 
          THROW_ERROR("The operation given is not a quaternary expression");
    }
 
-   switch(GET_NODE(type)->get_kind())
+   switch(GET_CONST_NODE(type)->get_kind())
    {
       case array_type_K:
       case boolean_type_K:
@@ -570,13 +580,13 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef& 
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_NODE(type)) + std::string("): ") + GET_NODE(type)->get_kind_text());
+         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") + GET_CONST_NODE(type)->get_kind_text());
    }
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(type));
+   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
    IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(op0));
    IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(op1));
    IR_schema[TOK(TOK_OP2)] = STR(GET_INDEX_NODE(op2));
@@ -590,7 +600,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef& 
    return node_ref;
 }
 
-tree_nodeRef tree_manipulation::create_lut_expr(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const tree_nodeRef& op4, const tree_nodeRef& op5, const tree_nodeRef& op6,
+tree_nodeRef tree_manipulation::create_lut_expr(const tree_nodeConstRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const tree_nodeRef& op4, const tree_nodeRef& op5, const tree_nodeRef& op6,
                                                 const tree_nodeRef& op7, const tree_nodeRef& op8, const std::string& srcp) const
 {
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
@@ -607,7 +617,7 @@ tree_nodeRef tree_manipulation::create_lut_expr(const tree_nodeRef& type, const 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(type));
+   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
    IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(op0));
    IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(op1));
    if(op2)
@@ -1621,6 +1631,10 @@ tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef& op
    GetPointer<gimple_node>(GET_NODE(node_ref))->bb_index = bb_index;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created node " + STR(node_ref));
 
+   THROW_ASSERT(GET_INDEX_CONST_NODE(op0) == 0 || GET_INDEX_CONST_NODE(op1) == 0 || tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(op0))) == tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(op1))),
+                "unexpected pattern - " + GET_CONST_NODE(node_ref)->ToString() + " (lhs = <" + STR(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(op0)))) + ">(" + tree_helper::CGetType(GET_CONST_NODE(op0))->ToString() + "), rhs = <" +
+                    STR(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(op1)))) + ">(" + tree_helper::CGetType(GET_CONST_NODE(op1))->ToString() + "))");
+
    return node_ref;
 }
 
@@ -1628,7 +1642,7 @@ tree_nodeRef tree_manipulation::CreateGimpleAssign(const tree_nodeConstRef& type
 {
    tree_nodeRef ssa_vd = create_ssa_name(tree_nodeConstRef(), type, min, max);
    auto ga = create_gimple_modify_stmt(ssa_vd, op, function_decl_nid, srcp, bb_index);
-   GetPointer<ssa_name>(TreeM->get_tree_node_const(ssa_vd->index))->SetDefStmt(TreeM->GetTreeReindex(ga->index));
+   GetPointer<ssa_name>(TreeM->GetTreeNode(ssa_vd->index))->SetDefStmt(TreeM->GetTreeReindex(ga->index));
    return ga;
 }
 
@@ -1674,6 +1688,7 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef& call
 tree_nodeRef tree_manipulation::create_gimple_cond(const tree_nodeRef& expr, unsigned int function_decl_nid, const std::string& srcp, unsigned int bb_index) const
 {
    THROW_ASSERT(expr->get_kind() == tree_reindex_K, "Node is not a tree reindex");
+   THROW_ASSERT(tree_helper::is_bool(TreeM, GET_INDEX_CONST_NODE(GetPointer<expr_node>(GET_CONST_NODE(expr))->type)), "");
    THROW_ASSERT(!srcp.empty(), "It requires a non empty string");
 
    /// schema used to create the nodes
@@ -1768,7 +1783,9 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef& ssa_res, const std
 
    for(const auto& def_edge : list_of_def_edge)
    {
-      THROW_ASSERT(tree_helper::get_type_index(this->TreeM, GET_INDEX_NODE(def_edge.first)) == tree_helper::get_type_index(this->TreeM, GET_INDEX_NODE(ssa_res)), "unexpected condition");
+      THROW_ASSERT(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(ssa_res))) == tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(def_edge.first))),
+                   "unexpected condition - lhs = <" + STR(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(ssa_res)))) + ">" + tree_helper::CGetType(GET_CONST_NODE(ssa_res))->ToString() + ", rhs = <" +
+                       STR(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(def_edge.first)))) + ">" + tree_helper::CGetType(GET_CONST_NODE(def_edge.first))->ToString());
       pn->AddDefEdge(TreeM, def_edge);
    }
 

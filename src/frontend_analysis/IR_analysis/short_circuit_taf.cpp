@@ -147,7 +147,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                   const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
                   if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != function_behavior->GetBBVersion())
                   {
-                     relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UPDATE_SCHEDULE, SAME_FUNCTION));
+                     relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
                      break;
                   }
                }
@@ -421,36 +421,21 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---First gimple cond is " + STR(cond_statement));
    const auto ce1 = GetPointer<const gimple_cond>(GET_CONST_NODE(cond_statement));
-   auto cond1_index = GET_INDEX_CONST_NODE(ce1->op0);
-   const auto type_node = tree_helper::CGetType(GET_CONST_NODE(ce1->op0));
+   auto cond1 = ce1->op0;
+   auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(cond1))->index);
    const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
-   const auto type_index = tree_helper::is_bool(TM, type_node->index) ? type_node->index : tree_man->create_boolean_type()->index;
-   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-
-   /// create the ssa_var representing the condition for bb1
-   const auto ssa1_vers = TM->get_next_vers();
-   const auto ssa1_node_nid = TM->new_tree_node_id();
-   IR_schema[TOK(TOK_TYPE)] = STR(type_index);
-   IR_schema[TOK(TOK_VERS)] = STR(ssa1_vers);
-   IR_schema[TOK(TOK_VOLATILE)] = STR(false);
-   IR_schema[TOK(TOK_VIRTUAL)] = STR(false);
-   TM->create_tree_node(ssa1_node_nid, ssa_name_K, IR_schema);
-   IR_schema.clear();
-   tree_nodeRef ssa1_cond_node = TM->GetTreeReindex(ssa1_node_nid);
+   if(tree_helper::is_bool(TM, type_node->index))
+   {
+      type_node = tree_man->create_boolean_type();
+   }
 
    /// create the assignment between condition for bb1 and the new ssa var
-   const auto cond1_gimple_stmt_id = TM->new_tree_node_id();
-   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-   IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-   IR_schema[TOK(TOK_OP0)] = STR(ssa1_node_nid);
-   IR_schema[TOK(TOK_OP1)] = STR(cond1_index);
-   TM->create_tree_node(cond1_gimple_stmt_id, gimple_assign_K, IR_schema);
-   IR_schema.clear();
-   const auto cond1_created_stmt = TM->GetTreeReindex(cond1_gimple_stmt_id);
+   const auto cond1_created_stmt = tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, cond1, function_id, bb1, BUILTIN_SRCP);
+   const auto ssa1_cond_node = GetPointer<const gimple_assign>(GET_CONST_NODE(cond1_created_stmt))->op0;
    /// and then add to the bb1 statement list
    list_of_bloc.at(bb1)->PushBack(cond1_created_stmt, AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created statement in BB" + STR(bb1) + " - " + STR(cond1_created_stmt));
-   cond1_index = ssa1_node_nid;
+   cond1 = ssa1_cond_node;
 
    /// fix merging_candidate phis
    if(list_of_bloc.at(merging_candidate)->CGetPhiList().size())
@@ -471,53 +456,23 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
                def_edge_to_be_updated = def_edge;
             }
          }
-         THROW_ASSERT(def_edge_to_be_removed.first != tree_nodeRef(), "unexpected condition");
-         THROW_ASSERT(def_edge_to_be_updated.first != tree_nodeRef(), "unexpected condition");
-         auto op1 = GET_INDEX_CONST_NODE(def_edge_to_be_removed.first);
-         auto op2 = GET_INDEX_CONST_NODE(def_edge_to_be_updated.first);
+         THROW_ASSERT(def_edge_to_be_removed.first, "unexpected condition");
+         THROW_ASSERT(def_edge_to_be_updated.first, "unexpected condition");
+         auto op1 = def_edge_to_be_removed.first;
+         auto op2 = def_edge_to_be_updated.first;
          if(!bb1_true)
          {
             std::swap(op1, op2);
          }
 
-         const auto res_type_index = tree_helper::get_type_index(TM, GET_INDEX_CONST_NODE(mc_phi->res));
-
-         /// create the ssa_var representing the result of the cond_expr
-         const auto ssa_vers = TM->get_next_vers();
-         const auto ssa_node_nid = TM->new_tree_node_id();
-         IR_schema[TOK(TOK_TYPE)] = STR(res_type_index);
-         IR_schema[TOK(TOK_VERS)] = STR(ssa_vers);
-         IR_schema[TOK(TOK_VOLATILE)] = STR(false);
-         IR_schema[TOK(TOK_VIRTUAL)] = STR(false);
-         TM->create_tree_node(ssa_node_nid, ssa_name_K, IR_schema);
-         IR_schema.clear();
-         const auto ssa_cond_node = TM->GetTreeReindex(ssa_node_nid);
-
-         THROW_ASSERT(op1 == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, op1)) == tree_helper::size(TM, res_type_index), "unexpected pattern");
-         THROW_ASSERT(op2 == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, op2)) == tree_helper::size(TM, res_type_index), "unexpected pattern");
-
-         const auto cond_expr_id = TM->new_tree_node_id();
-         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         IR_schema[TOK(TOK_TYPE)] = STR(res_type_index);
-         IR_schema[TOK(TOK_OP0)] = STR(cond1_index);
-         IR_schema[TOK(TOK_OP1)] = STR(op1);
-         IR_schema[TOK(TOK_OP2)] = STR(op2);
-         TM->create_tree_node(cond_expr_id, (tree_helper::is_a_vector(TM, res_type_index) ? vec_cond_expr_K : cond_expr_K), IR_schema);
-         IR_schema.clear();
-
          /// second, create the gimple assignment
-         const auto gimple_stmt_id = TM->new_tree_node_id();
-         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-         IR_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
-         IR_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
-         IR_schema[TOK(TOK_ORIG)] = STR(GET_INDEX_CONST_NODE(phi));
-         TM->create_tree_node(gimple_stmt_id, gimple_assign_K, IR_schema);
-         IR_schema.clear();
-         const auto created_stmt = TM->GetTreeReindex(gimple_stmt_id);
+         const auto res_type = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(mc_phi->res))->index);
+         const auto cond_expr_node = tree_man->create_ternary_operation(res_type, cond1, op1, op2, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(res_type)) ? vec_cond_expr_K : cond_expr_K));
+         const auto created_stmt = tree_man->CreateGimpleAssign(res_type, nullptr, nullptr, cond_expr_node, function_id, bb1, BUILTIN_SRCP);
+         const auto ssa_cond_node = GetPointer<const gimple_assign>(GET_CONST_NODE(created_stmt))->op0;
 
          /// and then add to the statement list
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created new assignment: " + STR(created_stmt));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created new assignment: " + GET_CONST_NODE(created_stmt)->ToString());
          list_of_bloc.at(bb1)->PushBack(created_stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi is " + mc_phi->ToString());
          mc_phi->ReplaceDefEdge(TM, def_edge_to_be_updated, gimple_phi::DefEdge(ssa_cond_node, def_edge_to_be_updated.second));
@@ -529,37 +484,12 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
    if((bb1_true && !or_type) || (!bb1_true && or_type))
    {
-      /// cond1 has to be negate
-      /// create the ssa_var representing the negated condition
-      const auto ncond_ssa_vers = TM->get_next_vers();
-      const auto ncond_ssa_node_nid = TM->new_tree_node_id();
-      IR_schema[TOK(TOK_TYPE)] = STR(type_index);
-      IR_schema[TOK(TOK_VERS)] = STR(ncond_ssa_vers);
-      IR_schema[TOK(TOK_VOLATILE)] = STR(false);
-      IR_schema[TOK(TOK_VIRTUAL)] = STR(false);
-      TM->create_tree_node(ncond_ssa_node_nid, ssa_name_K, IR_schema);
-      IR_schema.clear();
-      const auto ncond_ssa_cond_node = TM->GetTreeReindex(ncond_ssa_node_nid);
-
       /// create !cond1
-      IR_schema[TOK(TOK_TYPE)] = STR(type_index);
-      IR_schema[TOK(TOK_OP)] = STR(cond1_index);
-      IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-      cond1_index = TM->new_tree_node_id();
-      TM->create_tree_node(cond1_index, truth_not_expr_K, IR_schema);
-      IR_schema.clear();
-
-      const auto ncond_gimple_stmt_id = TM->new_tree_node_id();
-      IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-      IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-      IR_schema[TOK(TOK_OP0)] = STR(ncond_ssa_node_nid);
-      IR_schema[TOK(TOK_OP1)] = STR(cond1_index);
-      TM->create_tree_node(ncond_gimple_stmt_id, gimple_assign_K, IR_schema);
-      IR_schema.clear();
-      const auto created_stmt = TM->GetTreeReindex(ncond_gimple_stmt_id);
+      const auto not_cond1 = tree_man->create_unary_operation(type_node, cond1, BUILTIN_SRCP, truth_not_expr_K);
+      const auto created_stmt = tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, not_cond1, function_id, bb1, BUILTIN_SRCP);
+      cond1 = GetPointer<const gimple_assign>(GET_CONST_NODE(created_stmt))->op0;
       /// and then add to the bb1 statement list
       list_of_bloc.at(bb1)->PushBack(created_stmt, AppM);
-      cond1_index = ncond_ssa_node_nid;
    }
    /// identify the second gimple_cond
    THROW_ASSERT(list_of_bloc.at(bb2)->CGetPhiList().size() == 0, "not expected phi nodes");
@@ -569,60 +499,20 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    const auto second_stmt = list_of_stmt_cond2.front();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Second gimple cond is " + STR(second_stmt));
    auto ce2 = GetPointer<gimple_cond>(GET_NODE(second_stmt));
-
-   auto cond2_index = GET_INDEX_CONST_NODE(ce2->op0);
-   // const auto type_node2 = tree_helper::CGetType(GET_CONST_NODE(ce2->op0));
-   // THROW_ASSERT(type_node->get_kind() == boolean_type_K and type_node2->get_kind() == boolean_type_K, "something of unexpected is happened:"
-   //                                                                                                   " type_node: " +
-   //                                                                                                   STR(type_node) + " is " + type_node->get_kind_text() + " type_node2: " + STR(type_node2) + " is " + type_node2->get_kind_text());
-   // unsigned int type_index2;
-   // tree_helper::get_type_node(GET_CONST_NODE(ce2->op0), type_index2);
-   // the following condition cannot be guaranteed
-   // THROW_ASSERT(type_index == type_index2, "Different types " + STR(TM->CGetTreeNode(type_index)) + " vs " + STR(TM->CGetTreeNode(type_index2)) + " in " + ce1->ToString() + " and " + ce2->ToString());
-   /// create the ssa_var representing the condition for bb2
-   const auto ssa2_vers = TM->get_next_vers();
-   const auto ssa2_node_nid = TM->new_tree_node_id();
-   IR_schema[TOK(TOK_TYPE)] = STR(type_index);
-   IR_schema[TOK(TOK_VERS)] = STR(ssa2_vers);
-   IR_schema[TOK(TOK_VOLATILE)] = STR(false);
-   IR_schema[TOK(TOK_VIRTUAL)] = STR(false);
-   TM->create_tree_node(ssa2_node_nid, ssa_name_K, IR_schema);
-   IR_schema.clear();
-   const auto ssa2_cond_node = TM->GetTreeReindex(ssa2_node_nid);
+   auto cond2 = ce2->op0;
 
    /// create the assignment between condition for bb2 and the new ssa var
-   const auto cond2_gimple_stmt_id = TM->new_tree_node_id();
-   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-   IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-   IR_schema[TOK(TOK_OP0)] = STR(ssa2_node_nid);
-   IR_schema[TOK(TOK_OP1)] = STR(cond2_index);
-   TM->create_tree_node(cond2_gimple_stmt_id, gimple_assign_K, IR_schema);
-   IR_schema.clear();
-   tree_nodeRef cond2_created_stmt = TM->GetTreeReindex(cond2_gimple_stmt_id);
+   const auto cond2_created_stmt = tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, cond2, function_id, bb1, BUILTIN_SRCP);
+   cond2 = GetPointer<const gimple_assign>(GET_CONST_NODE(cond2_created_stmt))->op0;
    /// and then add to the bb1 statement list
    list_of_bloc.at(bb1)->PushBack(cond2_created_stmt, AppM);
-   cond2_index = ssa2_node_nid;
 
-   /// create (!)cond1 or cond2
-   IR_schema[TOK(TOK_TYPE)] = STR(type_index);
-   IR_schema[TOK(TOK_OP0)] = STR(cond1_index);
-   IR_schema[TOK(TOK_OP1)] = STR(cond2_index);
-   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-   unsigned int expr_index = TM->new_tree_node_id();
-   if(or_type)
-   {
-      TM->create_tree_node(expr_index, truth_or_expr_K, IR_schema);
-   }
-   else
-   {
-      TM->create_tree_node(expr_index, truth_and_expr_K, IR_schema);
-   }
-   IR_schema.clear();
    /// The expression contained in ce2 must now be the newly created expression,
    /// identified by expr_index
    /// Temporary remove statement to remove old uses
    list_of_bloc.at(bb2)->RemoveStmt(second_stmt, AppM);
-   ce2->op0 = TM->GetTreeReindex(expr_index);
+   /// create (!)cond1 or cond2
+   ce2->op0 = tree_man->create_binary_operation(type_node, cond1, cond2, BUILTIN_SRCP, (or_type ? truth_or_expr_K : truth_and_expr_K));
 
    /// Readding the statement
    list_of_bloc.at(bb2)->PushBack(second_stmt, AppM);

@@ -109,9 +109,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -121,10 +121,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
       default:
@@ -371,21 +371,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       nop_IR_schema[TOK(TOK_SCPE)] = STR(function_id);
       TM->create_tree_node(nop_id, gimple_nop_K, nop_IR_schema);
 
-      unsigned int ssa_vers = TM->get_next_vers();
-      const auto volatile_id = TM->new_tree_node_id();
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_IR_schema;
-      ssa_IR_schema[TOK(TOK_TYPE)] = STR(tree_helper::get_type_index(TM, sn->index));
-      ssa_IR_schema[TOK(TOK_VERS)] = STR(ssa_vers);
-      if(sn->var)
-      {
-         ssa_IR_schema[TOK(TOK_VAR)] = STR(sn->var->index);
-      }
-      ssa_IR_schema[TOK(TOK_VOLATILE)] = STR(true);
-      ssa_IR_schema[TOK(TOK_VIRTUAL)] = STR(true);
-      TM->create_tree_node(volatile_id, ssa_name_K, ssa_IR_schema);
-      const auto volatile_sn = TM->GetTreeReindex(volatile_id);
+      const auto volatile_sn = tree_man->create_ssa_name(sn->var, tree_helper::CGetType(TM->CGetTreeNode(sn->index)), nullptr, nullptr, true, true);
       GetPointer<ssa_name>(GET_NODE(volatile_sn))->SetDefStmt(TM->GetTreeReindex(nop_id));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created volatile ssa _" + STR(ssa_vers));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created volatile ssa _" + STR(GetPointerS<const ssa_name>(GET_CONST_NODE(volatile_sn))->vers));
 
       /// Set of basic blocks belonging to the loop
       CustomUnorderedSet<vertex> loop_basic_blocks;
@@ -519,44 +507,33 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             if(build_phi)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---PHI has to be built");
-               unsigned int phi_ssa_vers = TM->get_next_vers();
-               unsigned int phi_def_ssa_node_nid = TM->new_tree_node_id();
-               std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-               IR_schema[TOK(TOK_TYPE)] = STR(tree_helper::get_type_index(TM, sn->index));
-               IR_schema[TOK(TOK_VERS)] = STR(phi_ssa_vers);
-               if(sn->var)
-               {
-                  IR_schema[TOK(TOK_VAR)] = STR(sn->var->index);
-               }
-               IR_schema[TOK(TOK_VOLATILE)] = STR(false);
-               IR_schema[TOK(TOK_VIRTUAL)] = STR(true);
-               TM->create_tree_node(phi_def_ssa_node_nid, ssa_name_K, IR_schema);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa _" + STR(phi_ssa_vers));
-               IR_schema.clear();
-               tree_nodeRef phi_def_ssa_node = TM->GetTreeReindex(phi_def_ssa_node_nid);
 
-               unsigned int phi_gimple_stmt_id = TM->new_tree_node_id();
-               IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-               IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-               IR_schema[TOK(TOK_RES)] = boost::lexical_cast<std::string>(phi_def_ssa_node_nid);
-               IR_schema[TOK(TOK_VIRTUAL)] = STR(true);
-               TM->create_tree_node(phi_gimple_stmt_id, gimple_phi_K, IR_schema);
-               auto new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(phi_gimple_stmt_id));
-               new_gp->SetSSAUsesComputed();
-               reaching_defs[virtual_ssa_definition.first][current] = TM->GetTreeReindex(phi_def_ssa_node_nid);
-
+               std::vector<gimple_phi::DefEdge> def_edges;
                for(boost::tie(ie, ie_end) = boost::in_edges(current, *basic_block_graph); ie != ie_end; ie++)
                {
                   if((basic_block_graph->GetSelector(*ie) & CFG_SELECTOR) != 0)
                   {
                      const auto source = boost::source(*ie, *basic_block_graph);
-                     new_gp->AddDefEdge(TM, gimple_phi::DefEdge(reaching_defs[virtual_ssa_definition.first][source], basic_block_graph->CGetBBNodeInfo(source)->block->number));
+                     def_edges.push_back(gimple_phi::DefEdge(reaching_defs[virtual_ssa_definition.first][source], basic_block_graph->CGetBBNodeInfo(source)->block->number));
                   }
                }
-               basic_block_graph->GetBBNodeInfo(current)->block->AddPhi(TM->GetTreeReindex(phi_gimple_stmt_id));
-               reaching_defs[virtual_ssa_definition.first][current] = TM->GetTreeReindex(phi_def_ssa_node_nid);
-               added_phis[virtual_ssa_definition.first][current] = TM->GetTreeReindex(phi_gimple_stmt_id);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + new_gp->ToString());
+               tree_nodeRef phi_def_ssa_node;
+               const auto phi_gimple_stmt = tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
+               THROW_ASSERT(tree_helper::CGetType(GET_CONST_NODE(phi_def_ssa_node))->index == tree_helper::CGetType(TM->CGetTreeNode(sn->index))->index, "");
+               GetPointerS<ssa_name>(GET_NODE(phi_def_ssa_node))->AddUseStmt(phi_gimple_stmt);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa _" + STR(GetPointerS<const ssa_name>(GET_CONST_NODE(phi_def_ssa_node))->vers));
+               for(const auto& def_edge : def_edges)
+               {
+                  if(GET_CONST_NODE(def_edge.first)->get_kind() == ssa_name_K)
+                  {
+                     GetPointerS<ssa_name>(GET_NODE(def_edge.first))->AddUseStmt(phi_gimple_stmt);
+                  }
+               }
+               GetPointer<gimple_phi>(GET_NODE(phi_gimple_stmt))->SetSSAUsesComputed();
+               basic_block_graph->GetBBNodeInfo(current)->block->AddPhi(phi_gimple_stmt);
+               reaching_defs[virtual_ssa_definition.first][current] = phi_def_ssa_node;
+               added_phis[virtual_ssa_definition.first][current] = phi_gimple_stmt;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + GetPointer<gimple_phi>(GET_NODE(phi_gimple_stmt))->ToString());
             }
             else
             {

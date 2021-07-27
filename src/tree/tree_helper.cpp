@@ -4732,7 +4732,7 @@ bool tree_helper::is_simple_pointer_plus_test(const tree_managerConstRef& TM, co
 
 bool tree_helper::is_constant(const tree_managerConstRef& TM, const unsigned int index)
 {
-   tree_nodeRef node = TM->get_tree_node_const(index);
+   const auto node = TM->CGetTreeNode(index);
    switch(node->get_kind())
    {
       case string_cst_K:

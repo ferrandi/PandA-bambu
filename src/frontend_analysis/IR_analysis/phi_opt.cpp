@@ -747,92 +747,75 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Modifying " + phi->ToString());
       /// The value coming from true edge
-      auto true_value = 0u;
+      tree_nodeRef true_value = nullptr;
 
       /// The value coming from false edge
-      auto false_value = 0u;
+      tree_nodeRef false_value = nullptr;
 
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
 
       /// The type of the expression
-      const auto type_index = tree_helper::get_type_index(TM, gp->res->index);
+      const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(gp->res))->index);
 
       for(const auto& def : gp->CGetDefEdgesList())
       {
          if((true_edge && bb_index == def.second) || (!true_edge && pred_block->number == def.second))
          {
-            THROW_ASSERT(true_value == 0, "True value already found");
-            true_value = def.first->index;
+            THROW_ASSERT(!true_value, "True value already found");
+            true_value = def.first;
          }
          else if((!true_edge && bb_index == def.second) || (true_edge && pred_block->number == def.second))
          {
-            THROW_ASSERT(false_value == 0, "True value already found");
-            false_value = def.first->index;
+            THROW_ASSERT(!false_value, "True value already found");
+            false_value = def.first;
          }
       }
       THROW_ASSERT(true_value, "True value not found");
       THROW_ASSERT(false_value, "False value not found");
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema, ssa_schema;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From true edge " + TM->CGetTreeNode(true_value)->ToString());
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From false edge " + TM->CGetTreeNode(false_value)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From true edge " + GET_CONST_NODE(true_value)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From false edge " + GET_CONST_NODE(false_value)->ToString());
 
-      const auto gimple_node_id = TM->new_tree_node_id();
+      tree_nodeRef gimple_node;
 
       /// Create the ssa with the new input of the phi
-      auto ssa_vers = TM->get_next_vers();
-      auto ssa_node_nid = TM->new_tree_node_id();
-      ssa_schema[TOK(TOK_TYPE)] = STR(type_index);
-      ssa_schema[TOK(TOK_VERS)] = STR(ssa_vers);
-      ssa_schema[TOK(TOK_VOLATILE)] = STR(false);
-      ssa_schema[TOK(TOK_VIRTUAL)] = STR(gp->virtual_flag);
-      ssa_schema[TOK(TOK_BIT_VALUES)] = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res))->bit_values;
-      if(TM->CGetTreeNode(true_value)->get_kind() == ssa_name_K && TM->CGetTreeNode(false_value)->get_kind() == ssa_name_K)
+      tree_nodeRef var = nullptr;
+      if(GET_CONST_NODE(true_value)->get_kind() == ssa_name_K && GET_CONST_NODE(false_value)->get_kind() == ssa_name_K)
       {
-         const auto sn1 = GetPointer<const ssa_name>(TM->CGetTreeNode(true_value));
-         const auto sn2 = GetPointer<const ssa_name>(TM->CGetTreeNode(false_value));
+         const auto sn1 = GetPointer<const ssa_name>(GET_CONST_NODE(true_value));
+         const auto sn2 = GetPointer<const ssa_name>(GET_CONST_NODE(false_value));
          if(sn1->var && sn2->var && sn1->var->index == sn2->var->index)
          {
-            ssa_schema[TOK(TOK_VAR)] = STR(sn1->var->index);
+            var = sn1->var;
          }
       }
-      TM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
+      const auto gp_res = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res));
+      const auto ssa_node = tree_man->create_ssa_name(var, type_node, gp_res->min, gp_res->max, false, gp->virtual_flag);
+      GetPointer<ssa_name>(GET_NODE(ssa_node))->bit_values = gp_res->bit_values;
       if(gp->virtual_flag)
       {
          /// Create a nop with virtual operands
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
          gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
+         const auto gimple_node_id = TM->new_tree_node_id();
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
-         auto gn = GetPointer<gimple_nop>(TM->GetTreeNode(gimple_node_id));
-         gn->AddVdef(TM->GetTreeReindex(ssa_node_nid));
-         gn->AddVuse(TM->GetTreeReindex(true_value));
-         gn->AddVuse(TM->GetTreeReindex(false_value));
+         gimple_node = TM->GetTreeReindex(gimple_node_id);
+         auto gn = GetPointer<gimple_nop>(GET_NODE(gimple_node));
+         gn->AddVdef(ssa_node);
+         gn->AddVuse(true_value);
+         gn->AddVuse(false_value);
       }
       else
       {
-         THROW_ASSERT(true_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, true_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(true_value)));
-         THROW_ASSERT(false_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, false_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(false_value)));
-
          /// Create the cond expr
-         const auto cond_expr_id = TM->new_tree_node_id();
-         cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         cond_expr_schema[TOK(TOK_TYPE)] = STR(type_index);
-         cond_expr_schema[TOK(TOK_OP0)] = STR(condition->index);
-         cond_expr_schema[TOK(TOK_OP1)] = STR(true_value);
-         cond_expr_schema[TOK(TOK_OP2)] = STR(false_value);
-         TM->create_tree_node(cond_expr_id, (tree_helper::is_a_vector(TM, type_index) ? vec_cond_expr_K : cond_expr_K), cond_expr_schema);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cond_expr " + TM->CGetTreeNode(cond_expr_id)->ToString());
+         const auto cond_expr_node = tree_man->create_ternary_operation(type_node, condition, true_value, false_value, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
 
          /// Create the assign
-         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
-         gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
-         gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
-         gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
-         TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
+         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP, pred_block->number);
       }
-      pred_block->PushBack(TM->GetTreeReindex(gimple_node_id), AppM);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + TM->CGetTreeNode(gimple_node_id)->ToString());
+      pred_block->PushBack(gimple_node, AppM);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + GET_CONST_NODE(gimple_node)->ToString());
 
       /// Updating the phi
       gimple_phi::DefEdgeList new_list_of_def_edge;
@@ -840,7 +823,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       {
          if(def.second == pred_block->number)
          {
-            new_list_of_def_edge.push_back(gimple_phi::DefEdge(TM->GetTreeReindex(ssa_node_nid), pred_block->number));
+            new_list_of_def_edge.push_back(gimple_phi::DefEdge(ssa_node, pred_block->number));
          }
          else if(def.second == bb_index)
          {
@@ -969,27 +952,27 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + phi->ToString());
       /// The value coming from true edge
-      auto true_value = 0u;
+      tree_nodeRef true_value = nullptr;
 
       /// The value coming from false edge
-      auto false_value = 0u;
+      tree_nodeRef false_value = nullptr;
 
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
 
       /// The type of the expression
-      const auto type_index = tree_helper::get_type_index(TM, gp->res->index);
+      const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(gp->res))->index);
 
       for(const auto& def_edge : gp->CGetDefEdgesList())
       {
          if((true_edge && bb_index == def_edge.second) || (!true_edge && pred_block->number == def_edge.second))
          {
-            THROW_ASSERT(true_value == 0, "True value already found");
-            true_value = def_edge.first->index;
+            THROW_ASSERT(!true_value, "True value already found");
+            true_value = def_edge.first;
          }
          else if((!true_edge && bb_index == def_edge.second) || (true_edge && pred_block->number == def_edge.second))
          {
-            THROW_ASSERT(false_value == 0, "False value already found");
-            false_value = def_edge.first->index;
+            THROW_ASSERT(!false_value, "False value already found");
+            false_value = def_edge.first;
          }
          else
          {
@@ -998,9 +981,8 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       }
       THROW_ASSERT(true_value, "True value not found");
       THROW_ASSERT(false_value, "False value not found");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From true edge " + TM->CGetTreeNode(true_value)->ToString());
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From false edge " + TM->CGetTreeNode(false_value)->ToString());
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From true edge " + GET_CONST_NODE(true_value)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From false edge " + GET_CONST_NODE(false_value)->ToString());
 
       if(gp->virtual_flag)
       {
@@ -1023,9 +1005,9 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
             gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
             TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
             auto gn = GetPointer<gimple_nop>(TM->GetTreeNode(gimple_node_id));
-            gn->AddVdef(TM->GetTreeReindex(gp->res->index));
-            gn->AddVuse(TM->GetTreeReindex(true_value));
-            gn->AddVuse(TM->GetTreeReindex(false_value));
+            gn->AddVdef(gp->res);
+            gn->AddVuse(true_value);
+            gn->AddVuse(false_value);
             succ_block->PushFront(TM->GetTreeReindex(gimple_node_id), AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created " + TM->CGetTreeNode(gimple_node_id)->ToString());
          }
@@ -1058,30 +1040,14 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       }
       else
       {
-         THROW_ASSERT(true_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, true_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(true_value)));
-         THROW_ASSERT(false_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, false_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(false_value)));
-
-         const auto gimple_node_id = TM->new_tree_node_id();
          /// Create the cond expr
-         const auto cond_expr_id = TM->new_tree_node_id();
-         cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         cond_expr_schema[TOK(TOK_TYPE)] = STR(type_index);
-         cond_expr_schema[TOK(TOK_OP0)] = STR(condition->index);
-         cond_expr_schema[TOK(TOK_OP1)] = STR(true_value);
-         cond_expr_schema[TOK(TOK_OP2)] = STR(false_value);
-         TM->create_tree_node(cond_expr_id, (tree_helper::is_a_vector(TM, type_index) ? vec_cond_expr_K : cond_expr_K), cond_expr_schema);
-
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cond_expr " + TM->CGetTreeNode(cond_expr_id)->ToString());
+         const auto cond_expr_node = tree_man->create_ternary_operation(type_node, condition, true_value, false_value, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
 
          /// Create the assign
-         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
-         gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
-         gimple_assign_schema[TOK(TOK_OP0)] = STR(gp->res->index);
-         gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
-         TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
-         succ_block->PushFront(TM->GetTreeReindex(gimple_node_id), AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created " + TM->CGetTreeNode(gimple_node_id)->ToString());
+         const auto gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP, succ_block->number);
+         succ_block->PushFront(gimple_node, AppM);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created " + GET_CONST_NODE(gimple_node)->ToString());
       }
    }
 
@@ -1204,85 +1170,66 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Modifying phi " + phi->ToString());
       /// The value coming from the first edge
-      auto first_value = 0u;
+      tree_nodeRef first_value = nullptr;
 
       /// The value coming from the second edge
-      auto second_value = 0u;
+      tree_nodeRef second_value = nullptr;
 
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
 
       /// The type of the expression
-      const auto type_index = tree_helper::get_type_index(TM, gp->res->index);
+      const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(gp->res))->index);
 
       for(const auto& def_edge : gp->CGetDefEdgesList())
       {
          if((first_edge && bb_index == def_edge.second) || (!first_edge && pred_block->number == def_edge.second))
          {
-            first_value = def_edge.first->index;
+            first_value = def_edge.first;
          }
          else if((!first_edge && bb_index == def_edge.second) || (first_edge && pred_block->number == def_edge.second))
          {
-            second_value = def_edge.first->index;
+            second_value = def_edge.first;
          }
       }
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema, ssa_schema;
-
-      const auto gimple_node_id = TM->new_tree_node_id();
 
       /// Create the ssa with the new input of the phi
-      auto ssa_vers = TM->get_next_vers();
-      auto ssa_node_nid = TM->new_tree_node_id();
-      ssa_schema[TOK(TOK_TYPE)] = STR(type_index);
-      ssa_schema[TOK(TOK_VERS)] = STR(ssa_vers);
-      ssa_schema[TOK(TOK_VOLATILE)] = STR(false);
-      ssa_schema[TOK(TOK_VIRTUAL)] = STR(gp->virtual_flag);
-      ssa_schema[TOK(TOK_BIT_VALUES)] = GetPointer<const ssa_name>(GET_NODE(gp->res))->bit_values;
-      if(TM->CGetTreeNode(first_value)->get_kind() == ssa_name_K && TM->CGetTreeNode(second_value)->get_kind() == ssa_name_K)
+      tree_nodeRef var;
+      if(GET_CONST_NODE(first_value)->get_kind() == ssa_name_K && GET_CONST_NODE(second_value)->get_kind() == ssa_name_K)
       {
-         const auto sn1 = GetPointer<const ssa_name>(TM->CGetTreeNode(first_value));
-         const auto sn2 = GetPointer<const ssa_name>(TM->CGetTreeNode(second_value));
+         const auto sn1 = GetPointer<const ssa_name>(GET_CONST_NODE(first_value));
+         const auto sn2 = GetPointer<const ssa_name>(GET_CONST_NODE(second_value));
          if(sn1->var && sn2->var && sn1->var->index == sn2->var->index)
          {
-            ssa_schema[TOK(TOK_VAR)] = STR(sn1->var->index);
+            var = sn1->var;
          }
       }
-
-      TM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
+      const auto gp_res = GetPointer<const ssa_name>(GET_NODE(gp->res));
+      const auto ssa_node = tree_man->create_ssa_name(var, type_node, gp_res->min, gp_res->max, false, gp->virtual_flag);
+      GetPointer<ssa_name>(GET_NODE(ssa_node))->bit_values = gp_res->bit_values;
+      tree_nodeRef gimple_node;
       if(gp->virtual_flag)
       {
          /// Create a nop with virtual operands
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
          gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
+         const auto gimple_node_id = TM->new_tree_node_id();
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
-         auto gn = GetPointer<gimple_nop>(TM->GetTreeNode(gimple_node_id));
-         gn->AddVdef(TM->GetTreeReindex(ssa_node_nid));
-         gn->AddVuse(TM->GetTreeReindex(first_value));
-         gn->AddVuse(TM->GetTreeReindex(second_value));
+         gimple_node = TM->GetTreeReindex(gimple_node_id);
+         auto gn = GetPointer<gimple_nop>(GET_NODE(gimple_node));
+         gn->AddVdef(ssa_node);
+         gn->AddVuse(first_value);
+         gn->AddVuse(second_value);
       }
       else
       {
-         THROW_ASSERT(first_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, first_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(first_value)));
-         THROW_ASSERT(second_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, second_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(second_value)));
-
          /// Create the cond expr
-         const auto cond_expr_id = TM->new_tree_node_id();
-         cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         cond_expr_schema[TOK(TOK_TYPE)] = STR(type_index);
-         cond_expr_schema[TOK(TOK_OP0)] = STR(first_condition.first->index);
-         cond_expr_schema[TOK(TOK_OP1)] = STR(first_value);
-         cond_expr_schema[TOK(TOK_OP2)] = STR(second_value);
-         TM->create_tree_node(cond_expr_id, (tree_helper::is_a_vector(TM, type_index) ? vec_cond_expr_K : cond_expr_K), cond_expr_schema);
+         const auto cond_expr_node = tree_man->create_ternary_operation(type_node, first_condition.first, first_value, second_value, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
 
          /// Create the assign
-         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
-         gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
-         gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
-         gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
-         TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
+         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP, pred_block->number);
       }
-      pred_block->PushBack(TM->GetTreeReindex(gimple_node_id), AppM);
+      pred_block->PushBack(gimple_node, AppM);
 
       /// Updating the phi
       gimple_phi::DefEdgeList new_list_of_def_edge;
@@ -1290,7 +1237,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       {
          if(def_edge.second == pred_block->number)
          {
-            new_list_of_def_edge.push_back(gimple_phi::DefEdge(TM->GetTreeReindex(ssa_node_nid), pred_block->number));
+            new_list_of_def_edge.push_back(gimple_phi::DefEdge(ssa_node, pred_block->number));
          }
          else if(def_edge.second == bb_index)
          {
@@ -1465,41 +1412,39 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
    for(const auto& phi : succ_block->CGetPhiList())
    {
       /// The value coming from the first edge
-      auto first_value = 0u;
+      tree_nodeRef first_value = nullptr;
 
       /// The value coming from the second edge
-      auto second_value = 0u;
+      tree_nodeRef second_value = nullptr;
 
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
 
       /// The type of the expression
-      const auto type_index = tree_helper::get_type_index(TM, gp->res->index);
+      const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(gp->res))->index);
 
       for(const auto& def_edge : gp->CGetDefEdgesList())
       {
          if((first_edge && bb_index == def_edge.second) || (!first_edge && pred_block->number == def_edge.second))
          {
-            first_value = def_edge.first->index;
+            first_value = def_edge.first;
          }
          else if((!first_edge && bb_index == def_edge.second) || (first_edge && pred_block->number == def_edge.second))
          {
-            second_value = def_edge.first->index;
+            second_value = def_edge.first;
          }
          else
          {
             THROW_UNREACHABLE("");
          }
       }
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema;
-      unsigned int gimple_node_id = 0;
+      tree_nodeRef new_gimple_node = nullptr;
       bool create_gimple_nop = false;
       if(gp->virtual_flag)
       {
          auto virtual_ssa = GetPointer<ssa_name>(GET_NODE(gp->res));
          for(const auto& use_stmt : virtual_ssa->CGetUseStmts())
          {
-            const auto gn = GetPointer<const gimple_node>(GET_CONST_NODE(use_stmt.first));
-            if(gn->get_kind() == gimple_phi_K)
+            if(GET_CONST_NODE(use_stmt.first)->get_kind() == gimple_phi_K)
             {
                create_gimple_nop = true;
             }
@@ -1507,15 +1452,16 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
          if(create_gimple_nop)
          {
             /// Create a nop with virtual operands
-            gimple_node_id = TM->new_tree_node_id();
+            const auto gimple_node_id = TM->new_tree_node_id();
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
             gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
             gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
             TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
-            auto gn = GetPointer<gimple_nop>(TM->GetTreeNode(gimple_node_id));
-            gn->AddVdef(TM->GetTreeReindex(gp->res->index));
-            gn->AddVuse(TM->GetTreeReindex(first_value));
-            gn->AddVuse(TM->GetTreeReindex(second_value));
+            new_gimple_node = TM->GetTreeReindex(gimple_node_id);
+            auto gn = GetPointer<gimple_nop>(GET_NODE(new_gimple_node));
+            gn->AddVdef(gp->res);
+            gn->AddVuse(first_value);
+            gn->AddVuse(second_value);
          }
          else
          {
@@ -1527,24 +1473,22 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
                THROW_ASSERT(gn->vuses.find(gp->res) != gn->vuses.end(), STR(gp) + " is not in the vuses of " + STR(use_stmt));
                gn->vuses.erase(gn->vuses.find(gp->res));
                virtual_ssa->RemoveUse(use_stmt);
-               auto FV = TM->GetTreeReindex(first_value);
-               if(gn->vuses.find(FV) == gn->vuses.end())
+               if(gn->vuses.find(first_value) == gn->vuses.end())
                {
-                  gn->AddVuse(FV);
-                  gn->AddVuse(FV);
-                  auto defSSA = GetPointer<ssa_name>(GET_NODE(FV));
+                  gn->AddVuse(first_value);
+                  gn->AddVuse(first_value);
+                  auto defSSA = GetPointer<ssa_name>(GET_NODE(first_value));
                   const auto& defssaStmt = defSSA->CGetUseStmts();
                   if(defssaStmt.find(use_stmt) == defssaStmt.end())
                   {
                      defSSA->AddUseStmt(use_stmt);
                   }
                }
-               const auto SV = TM->GetTreeReindex(second_value);
-               if(gn->vuses.find(SV) == gn->vuses.end())
+               if(gn->vuses.find(second_value) == gn->vuses.end())
                {
-                  gn->AddVuse(SV);
-                  gn->AddVuse(SV);
-                  auto defSSA = GetPointer<ssa_name>(GET_NODE(SV));
+                  gn->AddVuse(second_value);
+                  gn->AddVuse(second_value);
+                  auto defSSA = GetPointer<ssa_name>(GET_NODE(second_value));
                   const auto& defssaStmt = defSSA->CGetUseStmts();
                   if(defssaStmt.find(use_stmt) == defssaStmt.end())
                   {
@@ -1556,31 +1500,16 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       }
       else
       {
-         THROW_ASSERT(first_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, first_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(first_value)));
-         THROW_ASSERT(second_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, second_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(second_value)));
-
          /// Create the cond expr
-         const auto cond_expr_id = TM->new_tree_node_id();
-         cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         cond_expr_schema[TOK(TOK_TYPE)] = STR(type_index);
-         cond_expr_schema[TOK(TOK_OP0)] = STR(first_condition.first->index);
-         cond_expr_schema[TOK(TOK_OP1)] = STR(first_value);
-         cond_expr_schema[TOK(TOK_OP2)] = STR(second_value);
-         TM->create_tree_node(cond_expr_id, (tree_helper::is_a_vector(TM, type_index) ? vec_cond_expr_K : cond_expr_K), cond_expr_schema);
+         const auto cond_expr_node = tree_man->create_ternary_operation(type_node, first_condition.first, first_value, second_value, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
 
          /// Create the assign
-         gimple_node_id = TM->new_tree_node_id();
-         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
-         gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
-         gimple_assign_schema[TOK(TOK_OP0)] = STR(gp->res->index);
-         gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
-         TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
+         new_gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP, succ_block->number);
       }
       if(!gp->virtual_flag || create_gimple_nop)
       {
-         succ_block->PushFront(TM->GetTreeReindex(gimple_node_id), AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added gimple assignment " + TM->CGetTreeNode(gimple_node_id)->ToString());
+         succ_block->PushFront(new_gimple_node, AppM);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added gimple assignment " + GET_CONST_NODE(new_gimple_node)->ToString());
       }
    }
 
@@ -1784,10 +1713,10 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
          for(const auto& phi : list_of_phi)
          {
             /// The value coming from the first edge
-            auto first_value = 0u;
+            tree_nodeRef first_value = nullptr;
 
             /// The value coming from the second edge
-            auto second_value = 0u;
+            tree_nodeRef second_value = nullptr;
 
             /// True if bb_index is on the first edge
             auto first_edge = false;
@@ -1795,46 +1724,30 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
 
             /// The type of the expression
-            const auto type_index = tree_helper::get_type_index(TM, gp->res->index);
+            const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(gp->res))->index);
 
             for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if((first_edge && bb_index == def_edge.second) || (!first_edge && pred_block->number == def_edge.second))
                {
-                  first_value = def_edge.first->index;
+                  first_value = def_edge.first;
                }
                else if((!first_edge && bb_index == def_edge.second) || (first_edge && pred_block->number == def_edge.second))
                {
-                  second_value = def_edge.first->index;
+                  second_value = def_edge.first;
                }
             }
-            std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema;
-
-            THROW_ASSERT(first_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, first_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(first_value)));
-            THROW_ASSERT(second_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, second_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(second_value)));
 
             /// Create the cond expr
-            const auto cond_expr_id = TM->new_tree_node_id();
-            cond_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-            cond_expr_schema[TOK(TOK_TYPE)] = STR(type_index);
-            cond_expr_schema[TOK(TOK_OP0)] = STR(condition->index);
-            cond_expr_schema[TOK(TOK_OP1)] = STR(first_value);
-            cond_expr_schema[TOK(TOK_OP2)] = STR(second_value);
-            TM->create_tree_node(cond_expr_id, (tree_helper::is_a_vector(TM, type_index) ? vec_cond_expr_K : cond_expr_K), cond_expr_schema);
+            const auto cond_expr_node = tree_man->create_ternary_operation(type_node, condition, first_value, second_value, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
 
             /// Create the assign
-            const auto gimple_assign_id = TM->new_tree_node_id();
-            gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-            gimple_assign_schema[TOK(TOK_SCPE)] = STR(function_id);
-            gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
             /// Workaround: we need to consider the overhead due to multiplexers associated with the phi; for this reason definition is one of the operands; this is not fully consistent, but it is a temporary assignment
-            gimple_assign_schema[TOK(TOK_OP0)] = STR(first_value);
-            gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
-            TM->create_tree_node(gimple_assign_id, gimple_assign_K, gimple_assign_schema);
+            const auto gimple_assign_node = tree_man->create_gimple_modify_stmt(first_value, cond_expr_node, function_id, BUILTIN_SRCP, 0);
 
             /// Created statement is not added to the predecessor
 #if HAVE_BAMBU_BUILT
-            if(schedule && schedule->CanBeMoved(gimple_assign_id, pred_block->number) != FunctionFrontendFlowStep_Movable::MOVABLE)
+            if(schedule && schedule->CanBeMoved(GET_INDEX_CONST_NODE(gimple_assign_node), pred_block->number) != FunctionFrontendFlowStep_Movable::MOVABLE)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty path to phi to be merged, but modifying would increase the latency of predecessor");
@@ -1861,42 +1774,28 @@ void PhiOpt::SinglePhiOptimization(const unsigned int bb_index)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing using of ssa defined in " + phi->ToString());
       const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
-      if(gp->virtual_flag)
+      const auto left_part = gp->res;
+      THROW_ASSERT(gp->CGetDefEdgesList().size() == 1, "");
+      const auto right_part = gp->CGetDefEdgesList().front().first;
+      const auto left_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res));
+      /// Building temp set of use stmts (to avoid invalidation during loop execution and to skip phi)
+      TreeNodeSet use_stmts;
+      for(const auto& use_stmt : left_ssa->CGetUseStmts())
       {
-         const auto def_edge_list = gp->CGetDefEdgesList();
-         THROW_ASSERT(def_edge_list.size() == 1, gp->ToString());
-         const auto new_def = def_edge_list.begin()->first;
-         const auto old_virtual_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res));
-         while(old_virtual_ssa->CGetUseStmts().size())
+         if(use_stmt.first->index != gp->index)
          {
-            auto use_stmt = old_virtual_ssa->CGetUseStmts().begin()->first;
-            TM->ReplaceTreeNode(use_stmt, gp->res, new_def);
+            use_stmts.insert(use_stmt.first);
          }
       }
-      else
-      {
-         const auto left_part = gp->res;
-         const auto right_part = gp->CGetDefEdgesList().front().first;
-         const auto left_ssa = GetPointer<const ssa_name>(GET_NODE(gp->res));
-         /// Building temp set of use stmts (to avoid invalidation during loop execution and to skip phi)
-         TreeNodeSet use_stmts;
-         for(const auto& use_stmt : left_ssa->CGetUseStmts())
-         {
-            if(use_stmt.first->index != gp->index)
-            {
-               use_stmts.insert(use_stmt.first);
-            }
-         }
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing " + left_part->ToString() + " with " + right_part->ToString());
-         for(const auto& use_stmt : use_stmts)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before ssa replacement " + use_stmt->ToString());
-            TM->ReplaceTreeNode(use_stmt, left_part, right_part);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After ssa replacement " + use_stmt->ToString());
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing " + left_part->ToString() + " with " + right_part->ToString());
+      for(const auto& use_stmt : use_stmts)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before ssa replacement " + use_stmt->ToString());
+         TM->ReplaceTreeNode(use_stmt, left_part, right_part);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After ssa replacement " + use_stmt->ToString());
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed using of ssa defined in " + phi->ToString());
    }
    while(curr_block->CGetPhiList().size())
