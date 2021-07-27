@@ -457,7 +457,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       BBN1_block->PushBack(gc, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed " + STR(stmt_bb_pair.first));
    }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC && parameters->getOption<bool>(OPT_print_dot))
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC && parameters->getOption<bool>(OPT_print_dot) && !parameters->IsParameter("disable-print-dot-FF"))
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("compute_implicit_calls" + GetSignature() + ".dot");
    }

@@ -275,7 +275,7 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       const auto& curr_bbi = bb_node_info->block->number;
       const auto& curr_bb = bb_node_info->block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(curr_bbi));
-      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
       {
          WriteBBGraphDot("BB_Before_" + GetName() + "_" + STR(curr_bbi) + ".dot");
       }
@@ -354,7 +354,7 @@ DesignFlowStep_Status multi_way_if::InternalExec()
                THROW_ASSERT(sl->list_of_bloc.count(succ_bbi), "");
                FixCfg(curr_bb, sl->list_of_bloc.at(succ_bbi));
                restart = true;
-               if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+               if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
                {
                   WriteBBGraphDot("BB_After_" + GetName() + "_" + STR(curr_bbi) + "_Fix.dot");
                }
@@ -389,7 +389,7 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       UpdateCfg(pred_bb, curr_bb);
       bb_modified = true;
       bb_to_be_removed.insert(curr_bbi);
-      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
       {
          WriteBBGraphDot("BB_After_" + GetName() + "_" + STR(curr_bbi) + ".dot");
       }

@@ -249,7 +249,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       {
          AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
          MergePhi(block_to_be_removed);
-         if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+         if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
          {
             WriteBBGraphDot("BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) + ".dot");
@@ -385,7 +385,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          }
          AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not Exit");
-         if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+         if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
          {
             WriteBBGraphDot("BB_Before_" + GetName() + "_Before_BB" + STR(block->number) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_Before_" + GetName() + "_Before_BB" + STR(block->number) + ".dot");
@@ -810,8 +810,8 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       }
       else
       {
-         THROW_ASSERT(true_value == 0 || tree_helper::get_type_index(TM, true_value) == type_index, "unexpected pattern");
-         THROW_ASSERT(false_value == 0 || tree_helper::get_type_index(TM, false_value) == type_index, "unexpected pattern");
+         THROW_ASSERT(true_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, true_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(true_value)));
+         THROW_ASSERT(false_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, false_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(false_value)));
 
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
@@ -979,7 +979,7 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       /// The type of the expression
       const auto type_index = tree_helper::get_type_index(TM, gp->res->index);
 
-      for(auto def_edge : gp->CGetDefEdgesList())
+      for(const auto& def_edge : gp->CGetDefEdgesList())
       {
          if((true_edge && bb_index == def_edge.second) || (!true_edge && pred_block->number == def_edge.second))
          {
@@ -1058,8 +1058,8 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       }
       else
       {
-         THROW_ASSERT(true_value == 0 || tree_helper::get_type_index(TM, true_value) == type_index, "unexpected pattern");
-         THROW_ASSERT(false_value == 0 || tree_helper::get_type_index(TM, false_value) == type_index, "unexpected pattern");
+         THROW_ASSERT(true_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, true_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(true_value)));
+         THROW_ASSERT(false_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, false_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(false_value)));
 
          const auto gimple_node_id = TM->new_tree_node_id();
          /// Create the cond expr
@@ -1214,7 +1214,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       /// The type of the expression
       const auto type_index = tree_helper::get_type_index(TM, gp->res->index);
 
-      for(auto def_edge : gp->CGetDefEdgesList())
+      for(const auto& def_edge : gp->CGetDefEdgesList())
       {
          if((first_edge && bb_index == def_edge.second) || (!first_edge && pred_block->number == def_edge.second))
          {
@@ -1262,8 +1262,8 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       }
       else
       {
-         THROW_ASSERT(first_value == 0 || tree_helper::get_type_index(TM, first_value) == type_index, "unexpected pattern");
-         THROW_ASSERT(second_value == 0 || tree_helper::get_type_index(TM, second_value) == type_index, "unexpected pattern");
+         THROW_ASSERT(first_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, first_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(first_value)));
+         THROW_ASSERT(second_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, second_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(second_value)));
 
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
@@ -1556,8 +1556,8 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       }
       else
       {
-         THROW_ASSERT(first_value == 0 || tree_helper::get_type_index(TM, first_value) == type_index, "unexpected pattern");
-         THROW_ASSERT(second_value == 0 || tree_helper::get_type_index(TM, second_value) == type_index, "unexpected pattern");
+         THROW_ASSERT(first_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, first_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(first_value)));
+         THROW_ASSERT(second_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, second_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(second_value)));
 
          /// Create the cond expr
          const auto cond_expr_id = TM->new_tree_node_id();
@@ -1810,8 +1810,8 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             }
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema;
 
-            THROW_ASSERT(first_value == 0 || tree_helper::get_type_index(TM, first_value) == type_index, "unexpected pattern");
-            THROW_ASSERT(second_value == 0 || tree_helper::get_type_index(TM, second_value) == type_index, "unexpected pattern");
+            THROW_ASSERT(first_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, first_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(first_value)));
+            THROW_ASSERT(second_value == 0 || tree_helper::size(TM, tree_helper::get_type_index(TM, second_value)) == tree_helper::size(TM, type_index), "unexpected pattern " + STR(TM->GetTreeReindex(second_value)));
 
             /// Create the cond expr
             const auto cond_expr_id = TM->new_tree_node_id();

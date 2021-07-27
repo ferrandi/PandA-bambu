@@ -256,7 +256,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          {
             PrintTreeManager(false);
          }
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
          {
             WriteBBGraphDot("BB_After_" + GetName() + "_BB" + STR(basic_block.first) + ".dot");
          }
@@ -368,7 +368,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          {
             PrintTreeManager(false);
          }
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
          {
             WriteBBGraphDot("BB_After_" + GetName() + "_BB" + STR(basic_block.first) + ".dot");
          }

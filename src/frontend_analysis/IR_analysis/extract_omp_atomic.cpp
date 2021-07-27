@@ -111,7 +111,7 @@ void ExtractOmpAtomic::Initialize()
 DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
    {
       WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
       PrintTreeManager(true);
@@ -175,7 +175,7 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
          block->RemoveStmt(gimple_to_be_removed, AppM);
       }
    }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
    {
       WriteBBGraphDot("BB_After_" + GetName() + ".dot");
       PrintTreeManager(false);

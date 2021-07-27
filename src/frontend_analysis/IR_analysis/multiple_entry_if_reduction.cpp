@@ -741,7 +741,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         unsigned int phi_ssa_vers = TM->get_next_vers();
                         unsigned int phi_def_ssa_node_nid = TM->new_tree_node_id();
                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-                        IR_schema[TOK(TOK_TYPE)] = STR(tree_helper::get_type_index(TM, sn->index));
+                        auto type_res = tree_helper::get_type_index(TM, sn->index);
+                        IR_schema[TOK(TOK_TYPE)] = STR(type_res);
                         IR_schema[TOK(TOK_VERS)] = STR(phi_ssa_vers);
                         if(sn->var)
                         {
@@ -757,7 +758,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         unsigned int phi_gimple_stmt_id = TM->new_tree_node_id();
                         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-                        IR_schema[TOK(TOK_RES)] = boost::lexical_cast<std::string>(phi_def_ssa_node_nid);
+                        IR_schema[TOK(TOK_RES)] = STR(phi_def_ssa_node_nid);
                         IR_schema[TOK(TOK_VIRTUAL)] = STR(sn->virtual_flag);
                         TM->create_tree_node(phi_gimple_stmt_id, gimple_phi_K, IR_schema);
                         auto new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(phi_gimple_stmt_id));
@@ -799,7 +800,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + new_gp->ToString());
                      }
                   }
-                  for(auto local_phi : bb_cfg->CGetBBNodeInfo(current)->block->CGetPhiList())
+                  for(const auto& local_phi : bb_cfg->CGetBBNodeInfo(current)->block->CGetPhiList())
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + STR(local_phi));
                      auto uses = tree_helper::ComputeSsaUses(local_phi);
