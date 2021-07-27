@@ -2321,11 +2321,12 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef& condition
 
 tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, const blocRef& block, unsigned int function_decl_nid) const
 {
+   THROW_ASSERT(block, "expected basic block");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Extracting condition from " + condition->ToString());
 
    const auto gc = GetPointer<const gimple_cond>(GET_CONST_NODE(condition));
    THROW_ASSERT(gc, "Trying to extract condition from " + condition->ToString());
-   if(GET_NODE(gc->op0)->get_kind() == ssa_name_K || GetPointer<const cst_node>(GET_CONST_NODE(gc->op0)) != nullptr)
+   if(tree_helper::is_bool(TreeM, GET_INDEX_NODE(gc->op0)) && (GET_NODE(gc->op0)->get_kind() == ssa_name_K || GetPointer<const cst_node>(GET_CONST_NODE(gc->op0)) != nullptr))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition already available as " + gc->op0->ToString());
       return gc->op0;
@@ -2337,7 +2338,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
          for(const auto& statement : block->CGetStmtList())
          {
             const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(statement));
-            if(ga && ga->op1->index == condition->index)
+            if(ga && ga->op1->index == condition->index && tree_helper::is_bool(TreeM, GET_INDEX_NODE(ga->op0)))
             {
                THROW_ASSERT(GET_NODE(ga->op0)->get_kind() == ssa_name_K, "unexpected condition");
                auto ssa0 = GetPointerS<ssa_name>(GET_NODE(ga->op0));
@@ -2348,13 +2349,34 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
       }
       const auto bt = create_boolean_type();
       const auto type_index = bt->index;
-
-      const auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(GET_INDEX_NODE(gc->op0)), function_decl_nid, 0, BUILTIN_SRCP);
-      if(block)
+      tree_nodeRef ret;
+      if(tree_helper::is_bool(TreeM, GET_INDEX_NODE(gc->op0)))
       {
+         const auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(GET_INDEX_NODE(gc->op0)), function_decl_nid, 0, BUILTIN_SRCP);
          block->PushBack(ga, AppM);
+         ret = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga))->op0;
       }
-      const auto ret = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga))->op0;
+      else if((GET_CONST_NODE(gc->op0))->get_kind() == integer_cst_K)
+      {
+         const auto int_cst_operand = GetPointer<const integer_cst>(GET_CONST_NODE(gc->op0));
+         if(int_cst_operand->value)
+         {
+            ret = TreeM->CreateUniqueIntegerCst(static_cast<long long int>(1), type_index);
+         }
+         else
+         {
+            ret = TreeM->CreateUniqueIntegerCst(static_cast<long long int>(0), type_index);
+         }
+      }
+      else
+      {
+         const std::string srcp_default = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
+         tree_nodeRef constNE0 = TreeM->CreateUniqueIntegerCst(0, tree_helper::get_type_index(TreeM, GET_INDEX_NODE(gc->op0)));
+         tree_nodeRef cond_op0 = create_binary_operation(bt, gc->op0, constNE0, srcp_default, ne_expr_K);
+         tree_nodeRef op0_ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, bt->index), TreeM->CreateUniqueIntegerCst(1, bt->index), cond_op0, function_decl_nid, block->number, srcp_default);
+         block->PushBack(op0_ga, AppM);
+         ret = GetPointerS<const gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition created is " + ret->ToString());
       return ret;
    }
