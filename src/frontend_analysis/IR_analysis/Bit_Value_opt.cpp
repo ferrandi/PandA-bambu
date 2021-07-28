@@ -2475,7 +2475,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Phi operation " + GET_NODE(phi)->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Phi index: " + STR(GET_INDEX_CONST_NODE(phi)));
-         const auto pn = GetPointerS<const gimple_phi>(GET_CONST_NODE(phi));
+         auto pn = GetPointerS<gimple_phi>(GET_CONST_NODE(phi));
          bool is_virtual = pn->virtual_flag;
          if(not is_virtual)
          {
@@ -2495,7 +2495,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                   propagateValue(ssa, TM, pn->res, val);
                   if(AppM->ApplyNewTransformation())
                   {
-                     TM->ReplaceTreeNode(phi, pn->res, TM->GetTreeReindex(ssa->index));
+                     pn->res = TM->GetTreeReindex(ssa->index);
                      THROW_ASSERT(ssa->CGetUseStmts().empty(), "unexpected case");
                      AppM->RegisterTransformation(GetName(), phi);
                   }
