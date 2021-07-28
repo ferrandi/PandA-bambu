@@ -1876,15 +1876,9 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      THROW_ASSERT(vce->op1 && vce->op2, "expected three parameters");
                      if(GetPointer<binary_expr>(GET_NODE(vce->op0)))
                      {
-#if HAVE_ASSERTS
                         auto* be = GetPointer<binary_expr>(GET_NODE(vce->op0));
                         THROW_ASSERT(be->get_kind() == le_expr_K or be->get_kind() == eq_expr_K or be->get_kind() == ne_expr_K or be->get_kind() == gt_expr_K or be->get_kind() == lt_expr_K or be->get_kind() == ge_expr_K, be->get_kind_text());
-#endif
-                        const auto element_type = tree_helper::GetElements(TM, tree_helper::get_type_index(TM, vce->op0->index));
-                        const auto element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
-                        const auto vector_size = static_cast<unsigned int>(tree_helper::size(TM, tree_helper::get_type_index(TM, vce->op0->index)));
-                        const unsigned int num_elements = vector_size / element_size;
-                        tree_nodeRef new_ga = tree_man->CreateGimpleAssign(tree_man->CreateVectorBooleanType(num_elements), tree_nodeRef(), tree_nodeRef(), vce->op0, function_id, block.first, srcp_default);
+                        tree_nodeRef new_ga = tree_man->CreateGimpleAssign(be->type, tree_nodeRef(), tree_nodeRef(), vce->op0, function_id, block.first, srcp_default);
                         tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
 
                         vce->op0 = ssa_vd;
