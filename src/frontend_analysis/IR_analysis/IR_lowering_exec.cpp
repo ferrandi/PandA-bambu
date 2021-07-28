@@ -1227,7 +1227,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                else if(code1 == ssa_name_K && code0 == ssa_name_K)
                {
                   /// check for a missing cast
-                  if(tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)) != tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1)))
+                  if(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(ga->op0))) != tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(ga->op1))))
                   {
                      auto ssa0 = GetPointerS<ssa_name>(GET_NODE(ga->op0));
                      const auto ga_nop = tree_man->CreateNopExpr(ga->op1, ssa0->type, ssa0->min, ssa0->max, function_id);
@@ -1235,6 +1235,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      const auto nop_vd = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                      block.second->PushBefore(ga_nop, *it_los, AppM);
                      ga->op1 = nop_vd;
+                     restart_analysis = true;
                   }
                }
                else if(code1 == addr_expr_K)
@@ -2381,16 +2382,36 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   {
                      auto pe_expr1 = [&] {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Expanding plus_expr " + STR(GET_INDEX_NODE(ga->op1)));
-                        tree_nodeRef op0 = GetPointer<binary_expr>(GET_NODE(ga->op1))->op0;
-                        bool intp = tree_helper::is_int(TM, GET_INDEX_NODE(op0)) || tree_helper::is_unsigned(TM, GET_INDEX_NODE(op0));
+                        tree_nodeRef bop0 = GetPointer<binary_expr>(GET_NODE(ga->op1))->op0;
+                        tree_nodeRef bop1 = GetPointer<binary_expr>(GET_NODE(ga->op1))->op1;
+                        if(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(ga->op0))) != tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(bop0))))
+                        {
+                           auto ssa0 = GetPointerS<ssa_name>(GET_NODE(ga->op0));
+                           const auto ga_nop = tree_man->CreateNopExpr(bop0, ssa0->type, ssa0->min, ssa0->max, function_id);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
+                           const auto nop_vd = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+                           block.second->PushBefore(ga_nop, *it_los, AppM);
+                           GetPointer<binary_expr>(GET_NODE(ga->op1))->op0 = bop1 = nop_vd;
+                           restart_analysis = true;
+                        }
+                        if(tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(ga->op0))) != tree_helper::Size(tree_helper::CGetType(GET_CONST_NODE(bop1))))
+                        {
+                           auto ssa0 = GetPointerS<ssa_name>(GET_NODE(ga->op0));
+                           const auto ga_nop = tree_man->CreateNopExpr(bop1, ssa0->type, ssa0->min, ssa0->max, function_id);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
+                           const auto nop_vd = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+                           block.second->PushBefore(ga_nop, *it_los, AppM);
+                           GetPointer<binary_expr>(GET_NODE(ga->op1))->op1 = bop1 = nop_vd;
+                           restart_analysis = true;
+                        }
+                        bool intp = tree_helper::is_int(TM, GET_INDEX_NODE(bop0)) || tree_helper::is_unsigned(TM, GET_INDEX_NODE(bop0));
                         if(intp)
                         {
-                           tree_nodeRef op1 = GetPointer<binary_expr>(GET_NODE(ga->op1))->op1;
-                           if(GET_INDEX_NODE(op0) == GET_INDEX_NODE(op1))
+                           if(GET_INDEX_NODE(bop0) == GET_INDEX_NODE(bop1))
                            {
                               tree_nodeRef type = GetPointer<binary_expr>(GET_NODE(ga->op1))->type;
                               tree_nodeRef left_shift_value = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(type));
-                              tree_nodeRef left1 = tree_man->create_binary_operation(type, op0, left_shift_value, srcp_default, lshift_expr_K);
+                              tree_nodeRef left1 = tree_man->create_binary_operation(type, bop0, left_shift_value, srcp_default, lshift_expr_K);
                               ga->op1 = left1;
                               restart_analysis = true;
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Expanded");
