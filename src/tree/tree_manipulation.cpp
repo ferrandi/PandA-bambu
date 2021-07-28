@@ -1688,7 +1688,7 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef& call
 tree_nodeRef tree_manipulation::create_gimple_cond(const tree_nodeRef& expr, unsigned int function_decl_nid, const std::string& srcp, unsigned int bb_index) const
 {
    THROW_ASSERT(expr->get_kind() == tree_reindex_K, "Node is not a tree reindex");
-   THROW_ASSERT(tree_helper::is_bool(TreeM, GET_INDEX_CONST_NODE(GetPointer<expr_node>(GET_CONST_NODE(expr))->type)), "");
+   THROW_ASSERT(tree_helper::is_bool(TreeM, tree_helper::CGetType(GET_CONST_NODE(expr))->index), "");
    THROW_ASSERT(!srcp.empty(), "It requires a non empty string");
 
    /// schema used to create the nodes
