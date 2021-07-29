@@ -657,17 +657,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         const auto data_bitsize_in0 = resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(op0));
                         const auto data_bitsize_in1 = resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(op1));
                         const auto realp = tree_helper::is_real(TM, GET_INDEX_CONST_NODE(GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1))->type));
-                        if(GET_CONST_NODE(ga->op1)->get_kind() == mult_expr_K && !realp && std::max(data_bitsize_in0, data_bitsize_in1) * 2 == data_bitsize_out)
-                        {
-                           const auto srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-                           const auto ga_op1 = GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1));
-                           const auto new_widen_expr = IRman->create_binary_operation(ga_op_type, ga_op1->op0, ga_op1->op1, srcp_default, widen_mult_expr_K);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(ga->op1) + " with " + STR(new_widen_expr) + " in " + STR(stmt));
-                           modified = true;
-                           TM->ReplaceTreeNode(stmt, ga->op1, new_widen_expr);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace expression with a widen mult_expr: " + stmt->ToString());
-                        }
-                        else if(GET_CONST_NODE(ga->op1)->get_kind() == widen_mult_expr_K && !realp && std::max(data_bitsize_in0, data_bitsize_in1) == data_bitsize_out)
+                        if(GET_CONST_NODE(ga->op1)->get_kind() == widen_mult_expr_K && !realp && std::max(data_bitsize_in0, data_bitsize_in1) <= data_bitsize_out)
                         {
                            const auto srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                            const auto ga_op1 = GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1));
