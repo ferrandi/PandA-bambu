@@ -1947,6 +1947,17 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                         restart_analysis = true;
                      }
+                     else if(!tree_helper::is_bool(TM, GET_INDEX_NODE(ce->op0)))
+                     {
+                        const auto bt = tree_man->create_boolean_type();
+                        const auto operand_type = tree_helper::CGetType(GET_NODE(ce->op0));
+                        const auto ga_nop = tree_man->CreateNopExpr(ce->op0, bt, TM->CreateUniqueIntegerCst(0, bt->index), TM->CreateUniqueIntegerCst(1, bt->index), function_id);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
+                        block.second->PushBefore(ga_nop, *it_los, AppM);
+                        ce->op0 = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---modified statement " + STR(ga));
+                        restart_analysis = true;
+                     }
                   };
                   ce_expr1();
                }
