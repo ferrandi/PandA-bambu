@@ -652,27 +652,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         const auto me = GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1));
                         const auto op0 = GET_CONST_NODE(me->op0);
                         const auto op1 = GET_CONST_NODE(me->op1);
-                        /// first check if we have to change a mult_expr in a widen_mult_expr
-                        const auto data_bitsize_out = resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(GET_CONST_NODE(ga->op0)));
                         const auto data_bitsize_in0 = resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(op0));
                         const auto data_bitsize_in1 = resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(op1));
-                        const auto realp = tree_helper::is_real(TM, GET_INDEX_CONST_NODE(GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1))->type));
-                        if(GET_CONST_NODE(ga->op1)->get_kind() == widen_mult_expr_K && !realp && std::max(data_bitsize_in0, data_bitsize_in1) <= data_bitsize_out)
-                        {
-                           const auto srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-                           const auto ga_op1 = GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1));
-                           auto res_type = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(ga_op1->op0))->index);
-                           const auto new_expr = IRman->create_binary_operation(res_type, ga_op1->op0, ga_op1->op1, srcp_default, mult_expr_K);
-                           const auto op0_ga = IRman->CreateGimpleAssign(res_type, nullptr, nullptr, new_expr, function_id, B_id, srcp_default);
-                           B->PushBefore(op0_ga, stmt, AppM);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
-                           const auto op0_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
-                           const auto nop_expr_node = IRman->create_unary_operation(ga_op_type, op0_ga_var, srcp_default, nop_expr_K);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(ga->op1) + " with " + STR(op0_ga_var) + " in " + STR(stmt));
-                           modified = true;
-                           TM->ReplaceTreeNode(stmt, ga->op1, nop_expr_node);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace expression with a mult_expr: " + stmt->ToString());
-                        }
                         const auto isSigned = tree_helper::is_int(TM, GET_INDEX_CONST_NODE(ga_op_type));
                         if(!isSigned && GET_CONST_NODE(ga->op1)->get_kind() == mult_expr_K && (data_bitsize_in0 == 1 || data_bitsize_in1 == 1))
                         {
