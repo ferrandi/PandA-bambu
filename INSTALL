@@ -7,6 +7,11 @@ In order to install the PandA framework, you need to perform the following steps
 1) Give write permission to your user on /opt:
    $chown -R <username.usergroup> /opt
 
+The installation can either be performed natively or by using rootless Docker if native operating system is not supported.
+
+Native installation:
+*******************
+
 2) Install required packages (for Ubuntu/Debian/CentOS/Scientific Linux/ArchLinux/Fedora systems, see below)
 
 3) Prepare the configuration script:
@@ -16,10 +21,37 @@ In order to install the PandA framework, you need to perform the following steps
    $mkdir obj
    $cd obj
 
-5) Configure PandA:
+5) Configure PandA (Currently accepted configure parameters, see below):
    $../configure [--enable-<ext-feature>...] --prefix=/opt/panda
 
-Currently accepted parameters are:
+6) Compile the tool:
+  $make
+
+7) Install the tool:
+  $make install
+
+Docker installation:
+*******************
+
+Refer to https://docs.docker.com/engine/security/rootless/ for a description of how to configure native operating system for Docker.
+
+2) Build Docker image and run installation from within container (Currently accepted configure parameters, see below):
+   $./docker_install.sh -i "<configure parameters>"
+   Get example by typing:
+   $./docker_install.sh -h
+
+
+At the end, if the installation has been successful, you can run the tool:
+  $/opt/panda/bin/bambu
+
+which prints its help message.
+
+Additional documentation about the configuration, the execution of the test 
+examples, and the creation of the basic documentation of the framework can be
+found at: http://panda.dei.polimi.it/?page_id=88
+
+Currently accepted configure parameters are:
+*******************************************
 
   --enable-flopoco: add floating point support by leveraging FloPoCo Library 
                    http://flopoco.gforge.inria.fr/
@@ -50,21 +82,6 @@ The suggested configuration is
 ../configure --prefix=/opt/panda --enable-flopoco --enable-icarus --enable-verilator --enable-xilinx --enable-modelsim --enable-altera --enable-nanoxplore --enable-opt --enable-lattice --enable-release --with-mentor-license=<license-string> --with-nanoxplore-license=<license-string>
 
 Options --enable-xilinx, --enable-modelsim, --enable-altera, --enable-lattice, --enable-nanoxplore, --with-mentor-license=<license-string>, and --with-nanoxplore-license=<license-string> require that third-party tools have been installed before PandA is configured. Details on where these third-party tools are searched are provided at the end of this file.
-
-7) Compile the tool:
-  $make
-
-8) Install the tool:
-  $make install
-
-At the end, if the installation has been successful, you can run the tool:
-  $/opt/panda/bin/bambu
-
-which prints its help message.
-
-Additional documentation about the configuration, the execution of the test 
-examples, and the creation of the basic documentation of the framework can be
-found at: http://panda.dei.polimi.it/?page_id=88
 
 Testcases
 *********
