@@ -36,10 +36,12 @@ Docker installation:
 Refer to https://docs.docker.com/engine/security/rootless/ for a description of how to configure native operating system for Docker.
 
 2) Build Docker image and run installation from within container (Currently accepted configure parameters, see below):
-   $./docker_install.sh -i "<configure parameters>"
+   $docker/install.sh -i "<configure parameters>"
    Get example by typing:
-   $./docker_install.sh -h
+   $docker/install.sh -h
 
+3) In order to run Bambu in Docker container execute:
+   $docker/bash.sh
 
 At the end, if the installation has been successful, you can run the tool:
   $/opt/panda/bin/bambu
@@ -104,7 +106,7 @@ command:
   $make documentation
 
 Then, you can start browsing the documentation from the file 
-  obj/doc/PANDA_html/index.html
+  obj/documentation/PANDA_html/index.html
 
 
 Ubuntu packages

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+SCRIPT=$(readlink -f $0)
+SCRIPT_DIR=$(dirname $SCRIPT)
+
+ALL_ARGUMENTS=$@
+
+$SCRIPT_DIR/run.sh -v $(pwd) -c "/opt/panda/bin/bambu $ALL_ARGUMENTS"
+

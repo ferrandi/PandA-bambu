@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT=$(readlink -f $0)
-SCRIPT_DIR=$(dirname $SCRIPT)
+SCRIPTPATH=$(dirname $SCRIPT)
 ALL_ARGUMENTS=$@
 
 function error {
@@ -107,54 +107,16 @@ do
      esac
 done
 
-function addpath
-{
-    local new_path=$1
-    if ! (echo $PATH | grep $new_path: > /dev/null); then
-        export PATH=$new_path:$PATH
-    fi
-}
-
 function install_docker {
-    $SCRIPT_DIR/docker/rootless
-}
-
-function start_docker_service {
-    if [ -z "$XDG_RUNTIME_DIR" ]; then
-        export XDG_RUNTIME_DIR=/run/user/$(id -u)
-    fi
-
-    addpath $HOME/bin
-    export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
-
-    if ! systemctl --user start docker.service; then
-        error "Could not start docker service"
-        exit 1
-    fi
+    $SCRIPTPATH/rootless
 }
 
 function build_docker_image {
     local DOCKER_IMAGE_EXISTS=$(docker images -q $DOCKER_IMAGE_NAME)
 
     if [ -z "$DOCKER_IMAGE_EXISTS" ]; then
-        docker build -t $DOCKER_IMAGE_NAME -f docker/Dockerfile .
+        docker build -t $DOCKER_IMAGE_NAME -f $SCRIPTPATH/Dockerfile .
     fi
-}
-
-function docker_run {
-    local COMMAND="$1"
-    if [ ! -w $PANDA_DIR ]; then
-        error "$PANDA_DIR is not writable"
-        exit 1
-    fi
-
-    local MOUNT_OPT_DIR="-v /opt:/opt:z"
-
-    local MOUNT_SCRIPT_DIR="-v ${SCRIPT_DIR}:${SCRIPT_DIR}:z"
-
-    local WORKING_DIR="-w $SCRIPT_DIR"
-    
-    docker run -it --rm $WORKING_DIR $MOUNT_OPT_DIR $MOUNT_SCRIPT_DIR $DOCKER_IMAGE_NAME bash -c "$COMMAND"
 }
 
 SPACE_SEPARATED_EXECUTE=$(echo "$EXECUTE" | tr ',' ' ')
@@ -163,24 +125,23 @@ for i in $SPACE_SEPARATED_EXECUTE; do
      case $i in
          install)
              install_docker
-             start_docker_service || exit $?
+             source $SCRIPTPATH/start.sh || exit $?
              build_docker_image
+             if [ ! -e $HOME/bin/bambu ]; then
+                 ln -s $SCRIPTPATH/bambu $HOME/bin/bambu
+             fi
              ;;
          configure)
-             start_docker_service || exit $?
-             docker_run "make -f Makefile.init; mkdir -p obj; cd obj; ../configure $INSTALL_ARGUMENTS"
+             $SCRIPTPATH/run.sh -i $DOCKER_IMAGE_NAME -c "make -f Makefile.init; mkdir -p obj; cd obj; ../configure $INSTALL_ARGUMENTS"
              ;;
          compile)
-             start_docker_service || exit $?
-             docker_run "cd obj; make; make install"
+             $SCRIPTPATH/run.sh -i $DOCKER_IMAGE_NAME -c "cd obj; make; make install"
              ;;
          documentation)
-             start_docker_service || exit $?
-             docker_run "cd obj; make documentation"
+             $SCRIPTPATH/run.sh -i $DOCKER_IMAGE_NAME -c "cd obj; make documentation"
              ;;
          bash)
-             start_docker_service || exit $?
-             docker_run "bash"
+             $SCRIPTPATH/run.sh -i $DOCKER_IMAGE_NAME -c "bash"
              ;;
          *)
              error "Unknown execute command: $i"
