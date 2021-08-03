@@ -1899,6 +1899,7 @@ __float __float_cast(__float bits, __bits8 __in_exp_bits, __bits8 __in_frac_bits
       }
       else
       {
+         ExpOverflow = 0;
          ExpUnderflow = 0;
       }
 
@@ -1914,6 +1915,8 @@ __float __float_cast(__float bits, __bits8 __in_exp_bits, __bits8 __in_frac_bits
    }
    else
    {
+      ExpOverflow = 0;
+      ExpUnderflow = 0;
       if(__in_has_subnorm && !__out_has_subnorm)
       {
          ExpNull = Exp == 0;
@@ -2355,6 +2358,7 @@ __float32 __float32_muladd_ieee(__float32 uiA, __float32 uiB, __float32 uiC)
       {
          __bits64 softfloat_shiftRightJam64 = (expDiff < 63) ? sig64C >> expDiff | ((__bits64)(sig64C << (-expDiff & 63)) != 0) : (sig64C != 0);
          expZ = expProd;
+         sig64Z = 0;
       }
       shiftDist = __countLeadingZeros64(sig64Z) - 1;
       expZ -= shiftDist;
@@ -3274,6 +3278,11 @@ static __FORCE_INLINE __float __addsubFloat(__float a, __float b, __flag bSign, 
    if(__rounding)
    {
       fB_shifted_low = fB & (~((~(0ULL)) << expDiff));
+      sb = fB_shifted_low != 0;
+   }
+   else
+   {
+      sb = 0;
    }
    fB_shifted = fB >> expDiff;
    fB_shifted = fB_shifted & ((1ULL << __frac_almost) - 1);
@@ -3281,8 +3290,6 @@ static __FORCE_INLINE __float __addsubFloat(__float a, __float b, __flag bSign, 
    fB_shifted1 = ((__bits64)((((__sbits64)sAB) << 63) >> 63)) ^ fB_shifted;
    fB_shifted1 = fB_shifted1 & ((1ULL << __frac_full) - 1);
 
-   sb = fB_shifted_low != 0;
-   sb = __rounding ? sb : 0;
    fR0 = fA + fB_shifted1 + (sAB && (!sb));
 
    fR0 = fR0 & ((1ULL << __frac_full) - 1);
@@ -3521,6 +3528,7 @@ __float __float_mul(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
       sigProdHigh = sigProdHigh << !norm;
       sigProdExtHigh = ((sigProdHigh << 1) | sigProdLow) & ((1ULL << __frac_bits) - 1);
       expSig = (((__bits64)expPostNorm) << __frac_bits) | sigProdExtHigh;
+      sigProdExt = 0;
    }
    else
    {
@@ -3530,6 +3538,8 @@ __float __float_mul(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
       sigProdExt = sigProd << !norm;
       sigProdExt = (sigProdExt & ((1ULL << __frac_mul) - 1)) << 1;
       expSig = (((__bits64)expPostNorm) << __frac_bits) | ((sigProdExt >> __frac_full) & ((1ULL << __frac_bits) - 1));
+      sigProdExtHigh = 0;
+      sigProdExtLow = 0;
    }
    if((__exp_bits + __frac_bits) < 62)
    {
@@ -3751,6 +3761,10 @@ __float __float_divSRT4(__float a, __float b, __bits8 __exp_bits, __bits8 __frac
       Guard_bit = SELECT_BIT(zSig1, 1);
       Round_bit = SELECT_BIT(zSig1, 0);
       round = Guard_bit & (LSB_bit | Round_bit);
+   }
+   else
+   {
+      round = 0;
    }
 
    if(__exp_bias & 1)

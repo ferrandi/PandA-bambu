@@ -3,10 +3,10 @@ EXTRA_DIST=bambu.h milieu.h README.txt softfloat.h SoftFloat-history.txt softflo
 
 common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
 common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin
-common_cflags=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags)
-common_cflags_clang=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang) 
-common_cflags_subnormals=-DNO_PARAMETRIC -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags)
-common_cflags_subnormals_clang=-DNO_PARAMETRIC -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang)
+common_cflags=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags) -Werror=uninitialized
+common_cflags_clang=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang)  -Werror=uninitialized
+common_cflags_subnormals=-DNO_PARAMETRIC -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags) -Werror=uninitialized
+common_cflags_subnormals_clang=-DNO_PARAMETRIC -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang) -Werror=uninitialized
 
 METASOURCES = AUTO
 CC=$(top_builddir)/src/tree-panda-gcc
