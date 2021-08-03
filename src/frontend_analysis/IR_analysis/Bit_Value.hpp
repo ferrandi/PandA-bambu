@@ -209,7 +209,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     * @param arg2_bitstring where the bitstring ( taken from best ) relative to argument 2 is going to be saved.
     * @return TRUE, if the operation was successful, FALSE otherwise.
     */
-   bool manage_forward_binary_operands(const binary_expr* operation, unsigned int& arg1_uid, unsigned int& arg2_uid, std::deque<bit_lattice>& arg1_bitstring, std::deque<bit_lattice>& arg2_bitstring) const;
+   void manage_forward_binary_operands(const binary_expr* operation, unsigned int& arg1_uid, unsigned int& arg2_uid, std::deque<bit_lattice>& arg1_bitstring, std::deque<bit_lattice>& arg2_bitstring) const;
 
    /**
     * Given an ssa_name it computes the resulting bitstring from backward
