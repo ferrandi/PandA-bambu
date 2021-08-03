@@ -19,7 +19,7 @@ RUN if [ "$(lsb_release -rs | cut -f1 -d'.')" -gt "16" ]; then echo "deb http://
    && if [ "$(lsb_release -rs | cut -f1 -d'.')" -gt "20" ]; then echo "deb http://dk.archive.ubuntu.com/ubuntu/ focal main universe" >> /etc/apt/sources.list; fi \
    && dpkg --add-architecture i386 \
    && apt-get update && apt-get install -y --no-install-recommends \
-   libc6:i386 libncurses5:i386 libstdc++6:i386 lib32ncurses5 libxft2 libxft2:i386 lib32ncurses5 libxext6 libxext6:i386 linux-libc-dev:i386 \
+   libc6:i386 libncurses5:i386 libstdc++6:i386 libxft2 libxft2:i386 lib32ncurses5 libxext6 libxext6:i386 linux-libc-dev:i386 \
    libtinfo5 \
    gcc-${GCC_VER} gcc-${GCC_VER}-plugin-dev gcc-${GCC_VER}-multilib g++-${GCC_VER} g++-${GCC_VER}-multilib gfortran-${GCC_VER} gfortran-${GCC_VER}-multilib \
    clang-${CLANG_VER} libclang-${CLANG_VER}-dev llvm-${CLANG_VER}-dev \
