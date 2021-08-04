@@ -78,24 +78,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
    if(op_kind == ssa_name_K)
    {
-      unsigned int arg2_uid;
-      arg2_uid = GET_INDEX_NODE(ga->op1);
-      if(current.find(arg2_uid) == current.end())
-      {
-         const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(ga->op1));
-         if(not is_handled_by_bitvalue(op1_type->index))
-         {
-            return res;
-         }
-         else
-         {
-            res = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(ga->op1)));
-         }
-      }
-      else
-      {
-         res = current.at(arg2_uid);
-      }
+      auto arg1_uid = GET_INDEX_NODE(ga->op1);
+      THROW_ASSERT(current.find(arg1_uid) != current.end(), "unexpected case");
+      res = current.at(arg1_uid);
    }
    else if(op_kind == integer_cst_K or op_kind == real_cst_K)
    {
@@ -160,108 +145,17 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    {
       auto* operation = GetPointerS<ternary_expr>(GET_NODE(ga->op1));
 
-      std::deque<bit_lattice> arg1_bitstring;
-      std::deque<bit_lattice> arg2_bitstring;
-      std::deque<bit_lattice> arg3_bitstring;
-      unsigned int arg1_uid = 0;
-      unsigned int arg2_uid = 0;
-      unsigned int arg3_uid = 0;
+      auto arg1_uid = GET_INDEX_NODE(operation->op0);
+      THROW_ASSERT(current.find(arg1_uid) != current.end(), "unexpected case");
+      auto arg1_bitstring = current.at(arg1_uid);
 
-      if(GET_NODE(operation->op0)->get_kind() == ssa_name_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         if(current.find(arg1_uid) == current.end())
-         {
-            const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
-            if(not is_handled_by_bitvalue(op1_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
-            }
-         }
-         else
-         {
-            arg1_bitstring = current.at(arg1_uid);
-         }
-      }
-      else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
-         arg1_bitstring = best.at(arg1_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
-      }
-      else
-      {
-         return res;
-      }
+      auto arg2_uid = GET_INDEX_NODE(operation->op1);
+      THROW_ASSERT(current.find(arg2_uid) != current.end(), "unexpected case");
+      auto arg2_bitstring = current.at(arg2_uid);
 
-      if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
-      {
-         arg2_uid = GET_INDEX_NODE(operation->op1);
-         if(current.find(arg2_uid) == current.end())
-         {
-            const tree_nodeConstRef op2_type = tree_helper::CGetType(GET_NODE(operation->op1));
-            if(not is_handled_by_bitvalue(op2_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg2_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op1)));
-            }
-         }
-         else
-         {
-            arg2_bitstring = current.at(arg2_uid);
-         }
-      }
-      else if(GET_NODE(operation->op1)->get_kind() == integer_cst_K)
-      {
-         arg2_uid = GET_INDEX_NODE(operation->op1);
-         THROW_ASSERT(best.find(arg2_uid) != best.end(), "unexpected condition");
-         arg2_bitstring = best.at(arg2_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op1))->value) + " : " + bitstring_to_string(arg2_bitstring));
-      }
-      else
-      {
-         return res;
-      }
-
-      if(GET_NODE(operation->op2)->get_kind() == ssa_name_K)
-      {
-         arg3_uid = GET_INDEX_NODE(operation->op2);
-         if(current.find(arg3_uid) == current.end())
-         {
-            const tree_nodeConstRef op3_type = tree_helper::CGetType(GET_NODE(operation->op2));
-            if(not is_handled_by_bitvalue(op3_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg3_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op2)));
-            }
-         }
-         else
-         {
-            arg3_bitstring = current.at(arg3_uid);
-         }
-      }
-      else if(GET_NODE(operation->op2)->get_kind() == integer_cst_K)
-      {
-         arg3_uid = GET_INDEX_NODE(operation->op2);
-         THROW_ASSERT(best.find(arg3_uid) != best.end(), "unexpected condition");
-         arg3_bitstring = best.at(arg3_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op2))->value) + " : " + bitstring_to_string(arg3_bitstring));
-      }
-      else
-      {
-         return res;
-      }
+      auto arg3_uid = GET_INDEX_NODE(operation->op2);
+      THROW_ASSERT(current.find(arg3_uid) != current.end(), "unexpected case");
+      auto arg3_bitstring = current.at(arg3_uid);
 
       auto ternary_adders = [&] {
          size_t arg_size_max = std::max({arg1_bitstring.size(), arg2_bitstring.size(), arg3_bitstring.size()});
@@ -1087,39 +981,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    {
       auto* operation = GetPointerS<negate_expr>(GET_NODE(ga->op1));
 
-      std::deque<bit_lattice> arg_bitstring;
-      unsigned int arg_uid = 0;
-
-      if(GET_NODE(operation->op)->get_kind() == ssa_name_K)
-      {
-         arg_uid = GET_INDEX_NODE(operation->op);
-         if(current.find(arg_uid) == current.end())
-         {
-            const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op));
-            if(not is_handled_by_bitvalue(op1_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op)));
-            }
-         }
-         else
-         {
-            arg_bitstring = current.at(arg_uid);
-         }
-      }
-      else if(GET_NODE(operation->op)->get_kind() == integer_cst_K or GET_NODE(operation->op)->get_kind() == real_cst_K)
-      {
-         arg_uid = GET_INDEX_NODE(operation->op);
-         THROW_ASSERT(best.find(arg_uid) != best.end(), "unexpected condition");
-         arg_bitstring = best.at(arg_uid);
-      }
-      else
-      {
-         return res;
-      }
+      auto arg_uid = GET_INDEX_NODE(operation->op);
+      THROW_ASSERT(current.find(arg_uid) != current.end(), "unexpected case");
+      auto arg_bitstring = current.at(arg_uid);
 
       auto ne0 = [&] {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = - " + STR(arg_uid));
@@ -1143,31 +1007,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(arg_bitstring.front()).at(borrow).back());
          }
       };
-
-      if(tree_helper::is_real(TM, arg_uid))
-      {
-         const auto arg_size = BitLatticeManipulator::Size(tree_helper::CGetType(GET_NODE(operation->op)));
-         if(arg_bitstring.size() < arg_size)
-         {
-            arg_bitstring = sign_extend_bitstring(arg_bitstring, false, arg_size);
-         }
-         THROW_ASSERT(arg_size == arg_bitstring.size(), "Real bitstring must be exact: " + bitstring_to_string(arg_bitstring) + "<" + STR(arg_bitstring.size()) + "> should be " + STR(arg_size) + " bits");
-         if(arg_bitstring.front() == bit_lattice::ONE)
-         {
-            arg_bitstring.pop_front();
-            arg_bitstring.push_front(bit_lattice::ZERO);
-         }
-         else if(arg_bitstring.front() == bit_lattice::ZERO)
-         {
-            arg_bitstring.pop_front();
-            arg_bitstring.push_front(bit_lattice::ONE);
-         }
-         res = arg_bitstring;
-      }
-      else
-      {
-         ne0();
-      }
+      ne0();
    }
 #endif
 #if 1
@@ -1176,34 +1016,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       auto* operation = GetPointerS<abs_expr>(GET_NODE(ga->op1));
 
       const tree_nodeConstRef op_type = tree_helper::CGetType(GET_NODE(operation->op));
-      if(not is_handled_by_bitvalue(op_type->index))
-      {
-         return res;
-      }
-
-      const unsigned int arg_uid = GET_INDEX_NODE(operation->op);
-
-      std::deque<bit_lattice> arg_bitstring;
-      if(GET_NODE(operation->op)->get_kind() == ssa_name_K)
-      {
-         if(current.find(arg_uid) == current.end())
-         {
-            arg_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op)));
-         }
-         else
-         {
-            arg_bitstring = current.at(arg_uid);
-         }
-      }
-      else if(GET_NODE(operation->op)->get_kind() == integer_cst_K or GET_NODE(operation->op)->get_kind() == real_cst_K)
-      {
-         THROW_ASSERT(best.find(arg_uid) != best.end(), "unexpected condition");
-         arg_bitstring = best.at(arg_uid);
-      }
-      else
-      {
-         return res;
-      }
+      auto arg_uid = GET_INDEX_NODE(operation->op);
+      THROW_ASSERT(current.find(arg_uid) != current.end(), "unexpected case");
+      auto arg_bitstring = current.at(arg_uid);
 
       auto ae0 = [&] {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = abs " + STR(arg_uid));
@@ -1258,27 +1073,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             }
          }
       };
-
-      if(tree_helper::is_real(TM, arg_uid))
-      {
-         const auto arg_size = BitLatticeManipulator::Size(op_type);
-         if(arg_bitstring.size() < arg_size)
-         {
-            arg_bitstring = sign_extend_bitstring(arg_bitstring, false, arg_size);
-         }
-         THROW_ASSERT(arg_size == arg_bitstring.size(), "Real bitstring must be exact: " + bitstring_to_string(arg_bitstring) + "<" + STR(arg_bitstring.size()) + " should be " + STR(arg_size) + " bits");
-         if(arg_bitstring.front() == bit_lattice::ONE)
-         {
-            arg_bitstring.pop_front();
-            arg_bitstring.push_front(bit_lattice::ZERO);
-         }
-         res = arg_bitstring;
-      }
-      else
-      {
-         THROW_ASSERT(tree_helper::is_int(TM, output_uid) and tree_helper::is_int(TM, arg_uid), "lhs and rhs of an abs_expr must be signed");
-         ae0();
-      }
+      THROW_ASSERT(tree_helper::is_int(TM, output_uid) and tree_helper::is_int(TM, arg_uid), "lhs and rhs of an abs_expr must be signed");
+      ae0();
    }
 #endif
 #if 1
@@ -1370,74 +1166,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    {
       auto* operation = GetPointerS<bit_ior_concat_expr>(GET_NODE(ga->op1));
 
-      std::deque<bit_lattice> arg1_bitstring;
-      std::deque<bit_lattice> arg2_bitstring;
-      unsigned int arg1_uid = 0;
-      unsigned int arg2_uid = 0;
+      auto arg1_uid = GET_INDEX_NODE(operation->op0);
+      THROW_ASSERT(current.find(arg1_uid) != current.end(), "unexpected case");
+      auto arg1_bitstring = current.at(arg1_uid);
 
-      if(GET_NODE(operation->op0)->get_kind() == ssa_name_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         if(current.find(arg1_uid) == current.end())
-         {
-            const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
-            if(not is_handled_by_bitvalue(op1_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
-            }
-         }
-         else
-         {
-            arg1_bitstring = current.at(arg1_uid);
-         }
-      }
-      else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
-         arg1_bitstring = best.at(arg1_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
-      }
-      else
-      {
-         return res;
-      }
-
-      if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
-      {
-         arg2_uid = GET_INDEX_NODE(operation->op1);
-         if(current.find(arg2_uid) == current.end())
-         {
-            const tree_nodeConstRef op2_type = tree_helper::CGetType(GET_NODE(operation->op1));
-            if(not is_handled_by_bitvalue(op2_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg2_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op1)));
-            }
-         }
-         else
-         {
-            arg2_bitstring = current.at(arg2_uid);
-         }
-      }
-      else if(GET_NODE(operation->op1)->get_kind() == integer_cst_K)
-      {
-         arg2_uid = GET_INDEX_NODE(operation->op1);
-         THROW_ASSERT(best.find(arg2_uid) != best.end(), "unexpected condition");
-         arg2_bitstring = best.at(arg2_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op1))->value) + " : " + bitstring_to_string(arg2_bitstring));
-      }
-      else
-      {
-         return res;
-      }
+      auto arg2_uid = GET_INDEX_NODE(operation->op1);
+      THROW_ASSERT(current.find(arg2_uid) != current.end(), "unexpected case");
+      auto arg2_bitstring = current.at(arg2_uid);
 
       auto bice0 = [&] {
          long long int offset = GetPointerS<integer_cst>(GET_NODE(operation->op2))->value;
@@ -1526,40 +1261,10 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    {
       auto* operation = GetPointerS<bit_not_expr>(GET_NODE(ga->op1));
 
-      std::deque<bit_lattice> arg1_bitstring;
-      unsigned int arg1_uid = 0;
+      auto arg1_uid = GET_INDEX_NODE(operation->op);
+      THROW_ASSERT(current.find(arg1_uid) != current.end(), "unexpected case");
+      auto arg1_bitstring = current.at(arg1_uid);
 
-      if(GET_NODE(operation->op)->get_kind() == ssa_name_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op);
-         if(current.find(arg1_uid) == current.end())
-         {
-            const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op));
-            if(not is_handled_by_bitvalue(op1_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op)));
-            }
-         }
-         else
-         {
-            arg1_bitstring = current.at(arg1_uid);
-         }
-      }
-      else if(GET_NODE(operation->op)->get_kind() == integer_cst_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op);
-         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
-         arg1_bitstring = best.at(arg1_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op))->value) + " : " + bitstring_to_string(arg1_bitstring));
-      }
-      else
-      {
-         return res;
-      }
       auto bne0 = [&] {
          unsigned int max_size = BitLatticeManipulator::Size(GET_NODE(ga->op0));
          if(arg1_bitstring.size() == 1 && arg1_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, arg1_uid) && !tree_helper::is_int(TM, arg1_uid))
@@ -1800,40 +1505,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    else if(op_kind == rshift_expr_K)
    {
       auto* operation = GetPointerS<rshift_expr>(GET_NODE(ga->op1));
-      std::deque<bit_lattice> arg1_bitstring;
-      unsigned int arg1_uid = 0;
-      if(GET_NODE(operation->op0)->get_kind() == ssa_name_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         if(current.find(arg1_uid) == current.end())
-         {
-            const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
-            if(not is_handled_by_bitvalue(op1_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
-            }
-         }
-         else
-         {
-            arg1_bitstring = current.at(arg1_uid);
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, first argument is ssa with bitstring -> " + bitstring_to_string(arg1_bitstring));
-      }
-      else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
-         arg1_bitstring = best.at(arg1_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
-      }
-      else
-      {
-         return res;
-      }
+      auto arg1_uid = GET_INDEX_NODE(operation->op0);
+      THROW_ASSERT(current.find(arg1_uid) != current.end(), "unexpected case");
+      auto arg1_bitstring = current.at(arg1_uid);
 
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
       {
@@ -1878,6 +1552,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       }
       else
       {
+         THROW_ERROR("unexpected case");
          return res;
       }
    }
@@ -1893,32 +1568,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    else if(op_kind == extract_bit_expr_K)
    {
       auto* operation = GetPointerS<extract_bit_expr>(GET_NODE(ga->op1));
-      std::deque<bit_lattice> arg1_bitstring;
-      unsigned int arg1_uid = 0;
-      if(GET_NODE(operation->op0)->get_kind() == ssa_name_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         if(current.find(arg1_uid) == current.end())
-         {
-            arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
-         }
-         else
-         {
-            arg1_bitstring = current.at(arg1_uid);
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, first argument is ssa with bitstring -> " + bitstring_to_string(arg1_bitstring));
-      }
-      else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
-         arg1_bitstring = best.at(arg1_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
-      }
-      else
-      {
-         return res;
-      }
+
+      auto arg1_uid = GET_INDEX_NODE(operation->op0);
+      THROW_ASSERT(current.find(arg1_uid) != current.end(), "unexpected case");
+      auto arg1_bitstring = current.at(arg1_uid);
+
       auto ebe0 = [&] {
          THROW_ASSERT(GET_NODE(operation->op1)->get_kind() == integer_cst_K, "unexpected condition");
          auto* const2 = GetPointerS<integer_cst>(GET_NODE(operation->op1));
@@ -1960,39 +1614,10 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    else if(op_kind == rrotate_expr_K)
    {
       auto* operation = GetPointerS<rrotate_expr>(GET_NODE(ga->op1));
-      std::deque<bit_lattice> arg1_bitstring;
-      unsigned int arg1_uid = 0;
-      if(GET_NODE(operation->op0)->get_kind() == ssa_name_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         if(current.find(arg1_uid) == current.end())
-         {
-            const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
-            if(not is_handled_by_bitvalue(op1_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
-            }
-         }
-         else
-         {
-            arg1_bitstring = current.at(arg1_uid);
-         }
-      }
-      else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
-         arg1_bitstring = best.at(arg1_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
-      }
-      else
-      {
-         return res;
-      }
+
+      auto arg1_uid = GET_INDEX_NODE(operation->op0);
+      THROW_ASSERT(current.find(arg1_uid) != current.end(), "unexpected case");
+      auto arg1_bitstring = current.at(arg1_uid);
 
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
       {
@@ -2021,44 +1646,19 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " rrotate");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, STR(arg2_value) + " =");
       }
+      else
+      {
+         THROW_ERROR("unexpected case");
+      }
       return res;
    }
    else if(op_kind == lrotate_expr_K)
    {
       auto* operation = GetPointerS<lrotate_expr>(GET_NODE(ga->op1));
-      std::deque<bit_lattice> arg1_bitstring;
-      unsigned int arg1_uid = 0;
-      if(GET_NODE(operation->op0)->get_kind() == ssa_name_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         if(current.find(arg1_uid) == current.end())
-         {
-            const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
-            if(not is_handled_by_bitvalue(op1_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
-            }
-         }
-         else
-         {
-            arg1_bitstring = current.at(arg1_uid);
-         }
-      }
-      else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
-         arg1_bitstring = best.at(arg1_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
-      }
-      else
-      {
-         return res;
-      }
+
+      auto arg1_uid = GET_INDEX_NODE(operation->op0);
+      THROW_ASSERT(current.find(arg1_uid) != current.end(), "unexpected case");
+      auto arg1_bitstring = current.at(arg1_uid);
 
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
       {
@@ -2087,6 +1687,10 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " lrotate");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, STR(arg2_value) + " =");
       }
+      else
+      {
+         THROW_ERROR("unexpected case");
+      }
       return res;
    }
 #endif
@@ -2094,41 +1698,12 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    else if(op_kind == lshift_expr_K)
    {
       auto* operation = GetPointerS<lshift_expr>(GET_NODE(ga->op1));
-      std::deque<bit_lattice> arg1_bitstring;
-      std::deque<bit_lattice> arg2_bitstring;
-      unsigned int arg1_uid = 0;
-      if(GET_NODE(operation->op0)->get_kind() == ssa_name_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         if(current.find(arg1_uid) == current.end())
-         {
-            const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
-            if(not is_handled_by_bitvalue(op1_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
-            }
-         }
-         else
-         {
-            arg1_bitstring = current.at(arg1_uid);
-         }
-      }
-      else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
-      {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
-         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
-         arg1_bitstring = best.at(arg1_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
-      }
-      else
-      {
-         return res;
-      }
 
+      auto arg1_uid = GET_INDEX_NODE(operation->op0);
+      THROW_ASSERT(current.find(arg1_uid) != current.end(), "unexpected case");
+      auto arg1_bitstring = current.at(arg1_uid);
+
+      std::deque<bit_lattice> arg2_bitstring;
       unsigned int res_bitsize = BitLatticeManipulator::Size(GET_NODE(ga->op0));
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
       {
@@ -2199,6 +1774,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       }
       else
       {
+         THROW_ERROR("unexpected case");
          return res;
       }
    }
@@ -2283,128 +1859,17 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    {
       auto* operation = GetPointerS<cond_expr>(GET_NODE(ga->op1));
 
-      std::deque<bit_lattice> arg1_bitstring;
-      std::deque<bit_lattice> arg2_bitstring;
-      std::deque<bit_lattice> arg3_bitstring;
-      unsigned int arg2_uid = 0;
-      unsigned int arg3_uid = 0;
+      auto arg1_uid = GET_INDEX_NODE(operation->op0);
+      THROW_ASSERT(current.find(arg1_uid) != current.end(), "unexpected case");
+      auto arg1_bitstring = current.at(arg1_uid);
 
-      if(GET_NODE(operation->op0)->get_kind() == ssa_name_K)
-      {
-         const auto arg1_uid = GET_INDEX_NODE(operation->op0);
-         if(current.find(arg1_uid) == current.end())
-         {
-            const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
-            if(not is_handled_by_bitvalue(op1_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
-            }
-         }
-         else
-         {
-            arg1_bitstring = current.at(arg1_uid);
-         }
-      }
-      else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
-      {
-         const auto arg1_uid = GET_INDEX_NODE(operation->op0);
-         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
-         arg1_bitstring = best.at(arg1_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
-      }
-      else if(GET_NODE(operation->op0)->get_kind() == real_cst_K)
-      {
-         const auto arg1_uid = GET_INDEX_NODE(operation->op0);
-         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
-         arg1_bitstring = best.at(arg1_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<real_cst>(GET_NODE(operation->op0))->valr) + " : " + bitstring_to_string(arg1_bitstring));
-      }
-      else
-      {
-         return res;
-      }
+      auto arg2_uid = GET_INDEX_NODE(operation->op1);
+      THROW_ASSERT(current.find(arg2_uid) != current.end(), "unexpected case");
+      auto arg2_bitstring = current.at(arg2_uid);
 
-      if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
-      {
-         arg2_uid = GET_INDEX_NODE(operation->op1);
-         if(current.find(arg2_uid) == current.end())
-         {
-            const tree_nodeConstRef op2_type = tree_helper::CGetType(GET_NODE(operation->op1));
-            if(not is_handled_by_bitvalue(op2_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg2_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op1)));
-            }
-         }
-         else
-         {
-            arg2_bitstring = current.at(arg2_uid);
-         }
-      }
-      else if(GET_NODE(operation->op1)->get_kind() == integer_cst_K)
-      {
-         arg2_uid = GET_INDEX_NODE(operation->op1);
-         THROW_ASSERT(best.find(arg2_uid) != best.end(), "unexpected condition");
-         arg2_bitstring = best.at(arg2_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op1))->value) + " : " + bitstring_to_string(arg2_bitstring));
-      }
-      else if(GET_NODE(operation->op1)->get_kind() == real_cst_K)
-      {
-         arg2_uid = GET_INDEX_NODE(operation->op1);
-         THROW_ASSERT(best.find(arg2_uid) != best.end(), "unexpected condition");
-         arg2_bitstring = best.at(arg2_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<real_cst>(GET_NODE(operation->op1))->valr) + " : " + bitstring_to_string(arg2_bitstring));
-      }
-      else
-      {
-         return res;
-      }
-
-      if(GET_NODE(operation->op2)->get_kind() == ssa_name_K)
-      {
-         arg3_uid = GET_INDEX_NODE(operation->op2);
-         if(current.find(arg3_uid) == current.end())
-         {
-            const tree_nodeConstRef op3_type = tree_helper::CGetType(GET_NODE(operation->op2));
-            if(not is_handled_by_bitvalue(op3_type->index))
-            {
-               return res;
-            }
-            else
-            {
-               arg3_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op2)));
-            }
-         }
-         else
-         {
-            arg3_bitstring = current.at(arg3_uid);
-         }
-      }
-      else if(GET_NODE(operation->op2)->get_kind() == integer_cst_K)
-      {
-         arg3_uid = GET_INDEX_NODE(operation->op2);
-         THROW_ASSERT(best.find(arg3_uid) != best.end(), "unexpected condition");
-         arg3_bitstring = best.at(arg3_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<integer_cst>(GET_NODE(operation->op2))->value) + " : " + bitstring_to_string(arg3_bitstring));
-      }
-      else if(GET_NODE(operation->op2)->get_kind() == real_cst_K)
-      {
-         arg3_uid = GET_INDEX_NODE(operation->op2);
-         THROW_ASSERT(best.find(arg3_uid) != best.end(), "unexpected condition");
-         arg3_bitstring = best.at(arg3_uid);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointerS<real_cst>(GET_NODE(operation->op2))->valr) + " : " + bitstring_to_string(arg3_bitstring));
-      }
-      else
-      {
-         return res;
-      }
+      auto arg3_uid = GET_INDEX_NODE(operation->op2);
+      THROW_ASSERT(current.find(arg3_uid) != current.end(), "unexpected case");
+      auto arg3_bitstring = current.at(arg3_uid);
 
       auto ce0 = [&] {
          bit_lattice arg_cond = bit_lattice::ZERO;
@@ -2550,7 +2015,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer Error: operation unhandled yet -> " + GET_NODE(ga->op1)->get_kind_text());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(res));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res=" + bitstring_to_string(res));
    return res;
 }
 
