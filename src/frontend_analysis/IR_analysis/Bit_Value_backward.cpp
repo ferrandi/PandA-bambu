@@ -60,7 +60,7 @@ std::deque<bit_lattice> Bit_Value::backward_compute_result_from_uses(const ssa_n
 {
    const auto output_uid = ssa.index;
    auto res = create_x_bitstring(1);
-#ifndef NDEBUG
+#if !defined(NDEBUG) || HAVE_ASSERTS
    const auto ssa_var_name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(output_uid);
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering variable:" + ssa_var_name + "(" + STR(output_uid) + ")");
@@ -270,7 +270,7 @@ void Bit_Value::backward()
       const auto stmt = pop_front();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing statement " + STR(stmt));
       const auto stmt_kind = stmt->get_kind();
-      const ssa_name* ssa;
+      const ssa_name* ssa = nullptr;
       unsigned int output_uid;
       if(stmt_kind == gimple_assign_K)
       {
