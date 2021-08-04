@@ -2,7 +2,7 @@ FROM ubuntu:focal
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-   build-essential ca-certificates clang curl gfortran git libbdd-dev lsb-release pkg-config python3-distutils python3-defusedxml time xz-utils \
+   build-essential ca-certificates clang curl doxygen gfortran git graphviz libbdd-dev lsb-release pkg-config python3-distutils python3-defusedxml time xz-utils \
    iverilog verilator locales \
    && rm -rf /var/lib/apt/lists/* \
    && locale-gen en_US.UTF-8

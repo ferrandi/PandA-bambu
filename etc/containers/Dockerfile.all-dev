@@ -5,7 +5,7 @@ ENV TZ=Europe/Rome
 RUN dpkg --add-architecture i386 \
    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
    && apt-get update && apt-get install -y --no-install-recommends \
-   autoconf autoconf-archive automake bison ca-certificates ccache clang curl flex g++ gcc gfortran git lsb-release make pkg-config python3-distutils python3-defusedxml time xz-utils \
+   autoconf autoconf-archive automake bison ca-certificates ccache clang curl doxygen flex g++ gcc gfortran git graphviz lsb-release make pkg-config python3-distutils python3-defusedxml time xz-utils \
    libbdd-dev libfl-dev libglpk-dev libicu-dev libltdl-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev zlib1g-dev \
    libboost-dev libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-regex-dev libboost-regex-dev libboost-date-time-dev libboost-wave-dev \
    iverilog verilator locales \
