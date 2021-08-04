@@ -54,7 +54,9 @@
 #include "Bit_Value.hpp"
 
 ///. include
+#include "Dominance.hpp"
 #include "Parameter.hpp"
+#include "basic_block.hpp"
 
 /// behavior includes
 #include "application_manager.hpp"
@@ -958,8 +960,68 @@ bool Bit_Value::HasToBeExecuted() const
 
 void Bit_Value::Initialize()
 {
-   const std::string bambu_frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BAMBU_FRONTEND_FLOW);
+   const auto bambu_frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BAMBU_FRONTEND_FLOW);
    not_frontend = design_flow_manager.lock()->GetStatus(bambu_frontend_flow_signature) == DesignFlowStep_Status::EMPTY;
+
+   const auto tn = TM->CGetTreeNode(function_id);
+   THROW_ASSERT(tn->get_kind() == function_decl_K, "Node is not a function");
+   const auto fd = GetPointerS<const function_decl>(tn);
+   THROW_ASSERT(fd->body, "Function has not a body");
+   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+   /// store the IR BB graph ala boost::graph
+   BBGraphsCollectionRef bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
+   BBGraph cfg(bb_graphs_collection, CFG_SELECTOR);
+   CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
+   /// add vertices
+   for(const auto& block : sl->list_of_bloc)
+   {
+      inverse_vertex_map.insert(std::make_pair(block.first, bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)))));
+   }
+
+   /// add edges
+   for(const auto& curr_bb_pair : sl->list_of_bloc)
+   {
+      const auto curr_bbi = curr_bb_pair.first;
+      const auto curr_bb = curr_bb_pair.second;
+      for(const auto& lop : curr_bb->list_of_pred)
+      {
+         THROW_ASSERT(static_cast<bool>(inverse_vertex_map.count(lop)), "BB" + STR(lop) + " (successor of BB" + STR(curr_bbi) + ") does not exist");
+         bb_graphs_collection->AddEdge(inverse_vertex_map.at(lop), inverse_vertex_map.at(curr_bbi), CFG_SELECTOR);
+      }
+
+      for(const auto& los : curr_bb->list_of_succ)
+      {
+         if(los == bloc::EXIT_BLOCK_ID)
+         {
+            bb_graphs_collection->AddEdge(inverse_vertex_map.at(curr_bbi), inverse_vertex_map.at(los), CFG_SELECTOR);
+         }
+      }
+
+      if(curr_bb->list_of_succ.empty())
+      {
+         bb_graphs_collection->AddEdge(inverse_vertex_map.at(curr_bbi), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
+      }
+   }
+   /// add a connection between entry and exit thus avoiding problems with non terminating code
+   bb_graphs_collection->AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
+   dominance<BBGraph> bb_dominators(cfg, inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), parameters);
+   bb_dominators.calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
+
+   BBGraphRef dt(new BBGraph(bb_graphs_collection, D_SELECTOR));
+   for(const auto& it : bb_dominators.get_dominator_map())
+   {
+      if(it.first != inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID))
+      {
+         bb_graphs_collection->AddEdge(it.second, it.first, D_SELECTOR);
+      }
+   }
+   dt->GetBBGraphInfo()->bb_index_map = std::move(inverse_vertex_map);
+
+   std::list<vertex> v_topological;
+   dt->TopologicalSort(v_topological);
+   THROW_ASSERT(v_topological.size(), "");
+   bb_topological.reserve(v_topological.size());
+   std::transform(v_topological.begin(), v_topological.end(), std::back_inserter(bb_topological), [&](const vertex& v) { return dt->CGetBBNodeInfo(v)->block; });
 }
 
 DesignFlowStep_Status Bit_Value::InternalExec()

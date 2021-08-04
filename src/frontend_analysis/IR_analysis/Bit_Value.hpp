@@ -57,6 +57,7 @@
  */
 //@{
 REF_FORWARD_DECL(Bit_Value);
+REF_FORWARD_DECL(bloc);
 class binary_expr;
 enum class bit_lattice;
 class gimple_assign;
@@ -104,6 +105,11 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
 
    /// True if this step is not executed in the frontend
    bool not_frontend;
+
+   /**
+    * Topologically ordered basic blocks
+    */
+   std::vector<blocRef> bb_topological;
 
    /**
     * Maps the id of a gimple statement to the id of the function called in
