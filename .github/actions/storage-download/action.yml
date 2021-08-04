@@ -31,6 +31,7 @@ runs:
       shell: bash
       run: |
         set -e
+        export XZ_OPT='-T0'
         if [[ ! -z "${{inputs.storage-path}}" ]]; then
           PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/${{inputs.name}}"
         else
@@ -46,7 +47,7 @@ runs:
         echo "Downloading from $PKG_URL to ${{inputs.path}}"
         mkdir -p "${{inputs.path}}"
         if [[ "$STORAGE_COMPRESSED" != "false" ]]; then
-          $CURL_CMD $PKG_URL | pxz -dc | tar -C "${{inputs.path}}" -xf -
+          $CURL_CMD $PKG_URL | tar -C "${{inputs.path}}" -xJf -
         else
           $CURL_CMD $PKG_URL | tar -C "${{inputs.path}}" -xf -
         fi
