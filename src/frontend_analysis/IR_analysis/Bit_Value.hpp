@@ -65,6 +65,7 @@ class ssa_name;
 class statement_list;
 class addr_expr;
 REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_manager);
 //@}
 
@@ -201,15 +202,11 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
    bool update_IR();
 
    /**
-    * Given a binary operation, fetches the uid of the arguments and the relative bitstrings.
-    * @param operation where the inputs are going to be extracted from.
-    * @param arg1_uid where the uid of the first argument is going to be stored
-    * @param arg2_uid where the uid of the second argument is going to be stored
-    * @param arg1_bitstring where the bitstring ( taken from best ) relative to argument 1 is going to be saved.
-    * @param arg2_bitstring where the bitstring ( taken from best ) relative to argument 2 is going to be saved.
-    * @return TRUE, if the operation was successful, FALSE otherwise.
+    * Given an operand, returns its current bitvalue
+    * @param tn Operand node
+    * @return std::deque<bit_lattice> Current bitvalue for given operand
     */
-   void manage_forward_binary_operands(const binary_expr* operation, unsigned int& arg1_uid, unsigned int& arg2_uid, std::deque<bit_lattice>& arg1_bitstring, std::deque<bit_lattice>& arg2_bitstring) const;
+   std::deque<bit_lattice> get_current(const tree_nodeConstRef& tn) const;
 
    /**
     * Given an ssa_name it computes the resulting bitstring from backward

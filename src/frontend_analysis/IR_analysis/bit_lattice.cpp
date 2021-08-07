@@ -476,7 +476,7 @@ std::deque<bit_lattice> BitLatticeManipulator::string_cst_bitstring(const tree_n
 
 bool BitLatticeManipulator::is_handled_by_bitvalue(unsigned int type_id) const
 {
-   return not tree_helper::is_a_complex(TM, type_id) and not tree_helper::is_a_vector(TM, type_id) and not tree_helper::is_a_struct(TM, type_id);
+   return !(tree_helper::is_real(TM, type_id) || tree_helper::is_a_complex(TM, type_id) || tree_helper::is_a_vector(TM, type_id) || tree_helper::is_a_struct(TM, type_id));
 }
 
 bool BitLatticeManipulator::mix()

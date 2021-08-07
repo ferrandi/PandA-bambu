@@ -1277,7 +1277,7 @@ void Bit_Value::initialize()
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "operation kind: " + GET_NODE(ga->op1)->get_kind_text());
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bloc: " + STR(B->number));
 
-                  if(not is_handled_by_bitvalue(ssa_node_id))
+                  if(!is_handled_by_bitvalue(ssa_node_id))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "variable " + STR(GetPointerS<ssa_name>(op0_node)) + " of type " + STR(tree_helper::CGetType(GET_NODE(ga->op0))) + " not considered id: " + STR(ssa_node_id));
                   }
@@ -1420,7 +1420,7 @@ void Bit_Value::initialize()
                                     if(cur_node->get_kind() == ssa_name_K)
                                     {
                                        const auto* ssa = GetPointerS<const ssa_name>(cur_node);
-                                       if(not is_handled_by_bitvalue(source_type->index))
+                                       if(!is_handled_by_bitvalue(source_type->index))
                                        {
                                           INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "Not handled by bitvalue");
                                           cur_bitstring = create_u_bitstring(BitLatticeManipulator::Size(cur_node));
@@ -1535,7 +1535,7 @@ void Bit_Value::initialize()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "operation kind: " + GET_NODE(ga->op1)->get_kind_text());
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bloc: " + STR(bloc_num) + " statement: " + STR(statement_num));
 
-               if(not is_handled_by_bitvalue(ssa_node_id))
+               if(!is_handled_by_bitvalue(ssa_node_id))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "variable " + STR(lhs_ssa) + " of type " + STR(tree_helper::CGetType(GET_NODE(ga->op0))) + " not considered id: " + STR(ssa_node_id));
                }
@@ -1650,7 +1650,7 @@ void Bit_Value::initialize()
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "output ssa_name: " + GET_NODE(ga->out)->get_kind_text());
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bloc: " + STR(bloc_num) + " statement: " + STR(statement_num));
 
-                  if(not is_handled_by_bitvalue(ssa_node_id))
+                  if(!is_handled_by_bitvalue(ssa_node_id))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "variable " + STR(lhs_ssa) + " of type " + STR(tree_helper::CGetType(GET_NODE(ga->out))) + " not considered id: " + STR(ssa_node_id));
                   }
@@ -1682,7 +1682,7 @@ void Bit_Value::initialize()
             {
                continue;
             }
-            if(not is_handled_by_bitvalue(ssa_use_node_id))
+            if(!is_handled_by_bitvalue(ssa_use_node_id))
             {
                continue;
             }
@@ -1772,7 +1772,7 @@ void Bit_Value::initialize()
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "LHS: " + STR(ssa_node_id));
             auto* ssa = GetPointer<ssa_name>(GET_NODE(pn->res));
             THROW_ASSERT(ssa, "unexpected condition");
-            if(not is_handled_by_bitvalue(ssa_node_id))
+            if(!is_handled_by_bitvalue(ssa_node_id))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "variable " + STR(ssa) + " of type " + STR(tree_helper::CGetType(GET_NODE(pn->res))) + " not considered id: " + STR(ssa_node_id));
                continue;
@@ -1837,7 +1837,7 @@ void Bit_Value::initialize()
                      unsigned int ssa_use_node_id = GET_INDEX_NODE(def_edge.first);
                      const auto use_node = GET_NODE(def_edge.first);
                      auto* ssa_use = GetPointer<ssa_name>(use_node);
-                     if(not is_handled_by_bitvalue(ssa_use_node_id))
+                     if(!is_handled_by_bitvalue(ssa_use_node_id))
                      {
                         continue;
                      }
