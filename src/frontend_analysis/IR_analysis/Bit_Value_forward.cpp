@@ -97,7 +97,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          auto ae0 = [&] {
             const auto ae = GetPointerS<const addr_expr>(GET_CONST_NODE(rhs));
             const auto address_size = AppM->get_address_bitsize();
-            const auto is_pretty_print_used = parameters->isOption(OPT_pretty_print);
+            const auto is_pretty_print_used = parameters->isOption(OPT_pretty_print) || (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
             const auto lt0 = lsb_to_zero(ae, is_pretty_print_used);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "address_size: " + STR(address_size) + " lt0: " + STR(lt0));
             if(lt0 && address_size > lt0)

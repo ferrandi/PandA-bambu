@@ -885,7 +885,7 @@ unsigned int Bit_Value::lsb_to_zero(const addr_expr* ae, bool safe) const
    auto align = vd->algn;
    if(safe)
    {
-      align = align < 8 ? 1 : (align / 8);
+      align = 1;
    }
    else
    {
