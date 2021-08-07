@@ -197,7 +197,7 @@ jobs:
             args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM
           - setup: clang-7
             script: generic_gcc_regression_simple_no_expose_globals.sh
-            args: -c=--compiler=I386_CLANG7 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
           - setup: clang-11
             script: generic_gcc_regression_simple_no_expose_globals.sh
             args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR
@@ -455,20 +455,20 @@ jobs:
       matrix:
         include:
           - setup: gcc-4.9
-            args: -c=--compiler=I386_GCC49
+            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM
           - setup: clang-4.0
-            args: -c=--compiler=I386_CLANG4
+            args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR
           - setup: clang-5.0
-            args: -c=--compiler=I386_CLANG5
+            args: -c=--compiler=I386_CLANG5 -c=--simulator=MODELSIM
           - setup: clang-6.0
-            args: -c=--compiler=I386_CLANG6
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR
           - setup: clang-7
-            args: -c=--compiler=I386_CLANG7
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=MODELSIM
           - setup: clang-11
-            args: -c=--compiler=I386_CLANG11
+            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM
     env:
       script: generic_libm-tests.sh
-      args: -c=--simulator=MODELSIM -c=--speculative-sdc-scheduling
+      args: -c=--speculative-sdc-scheduling
       outname: ${{matrix.setup}}_libm
     steps:
       - name: Checkout repository
@@ -547,7 +547,7 @@ jobs:
 
   CHStone-memarch:
     needs: [build, CHStone-multi]
-    runs-on: [self-hosted, mentor]
+    runs-on: [self-hosted, lattice, mentor]
     strategy:
       matrix:
         include:
