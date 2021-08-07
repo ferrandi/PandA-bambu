@@ -90,11 +90,6 @@ class BitValueIPA : public ApplicationFrontendFlowStep, public BitLatticeManipul
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
 };
 
 #endif
