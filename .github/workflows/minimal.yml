@@ -20,7 +20,7 @@ env:
 
 jobs:
   build:
-    runs-on: [self-hosted, classA]
+    runs-on: [self-hosted]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -683,7 +683,7 @@ jobs:
 
   Make-checks:
     needs: [build, gcc_regression_simple, libm-tests]
-    runs-on: [self-hosted, lattice, mentor, xilinx, classA]
+    runs-on: [self-hosted, lattice, mentor, xilinx]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2

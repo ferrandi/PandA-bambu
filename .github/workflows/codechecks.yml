@@ -17,7 +17,7 @@ env:
 
 jobs:
   cppcheck:
-    runs-on: [self-hosted, classB]
+    runs-on: [self-hosted]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -45,7 +45,7 @@ jobs:
           script: core.setFailed('Too many errors detected from cppcheck')
 
   clang-check:
-    runs-on: [self-hosted, classB]
+    runs-on: [self-hosted]
     env:
       dist-dir: dist
     steps:
@@ -139,7 +139,7 @@ jobs:
           path: ${{steps.scanbuild.outputs.report-dir}}
 
   make-dist:
-    runs-on: [self-hosted, classB]
+    runs-on: [self-hosted]
     env:
       dist-dir: dist
     steps:
