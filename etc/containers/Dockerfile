@@ -3,7 +3,7 @@ FROM ubuntu:${DISTRO}
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-   build-essential ca-certificates clang curl doxygen gfortran git graphviz libbdd-dev lsb-release pkg-config python3-distutils python3-defusedxml time xz-utils \
+   build-essential ca-certificates clang curl doxygen gfortran git graphviz libbdd-dev lsb-release pkg-config python3-distutils python3-defusedxml texlive-latex-recommended texlive-latex-extra time xz-utils \
    iverilog verilator locales \
    && rm -rf /var/lib/apt/lists/* \
    && locale-gen en_US.UTF-8
