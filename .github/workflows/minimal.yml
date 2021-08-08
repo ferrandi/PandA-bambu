@@ -20,7 +20,7 @@ env:
 
 jobs:
   build:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, classA]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2

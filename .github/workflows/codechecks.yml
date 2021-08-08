@@ -139,7 +139,7 @@ jobs:
           path: ${{steps.scanbuild.outputs.report-dir}}
 
   make-dist:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, classA]
     env:
       dist-dir: dist
     steps:
