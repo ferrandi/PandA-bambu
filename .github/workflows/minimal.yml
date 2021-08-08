@@ -635,7 +635,7 @@ jobs:
           path: ./examples/omp_simd/test-reports
 
   Panda-bench:
-    needs: [build, CHStone-memarch, libm-tests]
+    needs: [build]
     runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
     strategy:
       matrix:
@@ -682,7 +682,7 @@ jobs:
           path: ${{steps.panda_bench.outputs.test-reports-dir}}
 
   Make-checks:
-    needs: [build, gcc_regression_simple, libm-tests]
+    needs: [build]
     runs-on: [self-hosted, lattice, mentor, xilinx]
     steps:
       - name: Checkout repository
