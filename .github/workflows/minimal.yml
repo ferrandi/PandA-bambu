@@ -635,7 +635,7 @@ jobs:
           path: ./examples/omp_simd/test-reports
 
   Panda-bench:
-    needs: [build, gcc_regression_simple, libm-tests]
+    needs: [build, CHStone-memarch, libm-tests]
     runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
     strategy:
       matrix:
