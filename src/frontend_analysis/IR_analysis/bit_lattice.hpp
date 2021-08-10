@@ -187,7 +187,7 @@ class BitLatticeManipulator
 
    static std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
 
-   static unsigned int Size(const tree_nodeConstRef t);
+   static unsigned int Size(const tree_nodeConstRef& t);
 
    static unsigned int size(const tree_managerConstRef tm, unsigned int index);
 

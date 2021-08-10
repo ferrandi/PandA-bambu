@@ -209,6 +209,13 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
    std::deque<bit_lattice> get_current(const tree_nodeConstRef& tn) const;
 
    /**
+    * Given an operand, returns its current bitvalue, or its best if current is not available
+    * @param tn Operand node
+    * @return std::deque<bit_lattice> Current or best bitvalue for given operand
+    */
+   std::deque<bit_lattice> get_current_or_best(const tree_nodeConstRef& tn) const;
+
+   /**
     * Given an ssa_name it computes the resulting bitstring from backward
     * propagation from the places where that ssa is used
     * @param ssa the ssa_name to process
