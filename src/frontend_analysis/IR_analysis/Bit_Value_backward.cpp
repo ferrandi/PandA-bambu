@@ -1358,6 +1358,8 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case trunc_div_expr_K:
       case trunc_mod_expr_K:
       case lut_expr_K:
+      case sat_plus_expr_K:
+      case sat_minus_expr_K:
       {
          // Do nothing
          break;
@@ -1443,8 +1445,6 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case vec_extractodd_expr_K:
       case vec_interleavehigh_expr_K:
       case vec_interleavelow_expr_K:
-      case sat_plus_expr_K:
-      case sat_minus_expr_K:
       // Ternary expressions
       case component_ref_K:
       case bit_field_ref_K:

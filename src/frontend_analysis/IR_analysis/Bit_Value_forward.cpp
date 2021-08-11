@@ -1474,6 +1474,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case realpart_expr_K:
       // Binary expressions
       case mem_ref_K:
+      case sat_plus_expr_K:
+      case sat_minus_expr_K:
       // Ternary expressions
       case bit_field_ref_K:
       case component_ref_K:
@@ -1588,8 +1590,6 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case vec_extractodd_expr_K:
       case vec_interleavehigh_expr_K:
       case vec_interleavelow_expr_K:
-      case sat_plus_expr_K:
-      case sat_minus_expr_K:
       // Ternary expressions
       case vtable_ref_K:
       case with_cleanup_expr_K:
