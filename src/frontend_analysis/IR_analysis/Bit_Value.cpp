@@ -832,6 +832,11 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
             {
                ;
             }
+            /// added to consider the 64bit alignment of the allocated variables
+            if(address_bitsize < 4)
+            {
+               address_bitsize = 4;
+            }
             /// check if it clash with the alignment:
             auto vd = GetPointer<const var_decl>(TM->CGetTreeNode(var));
             if(hm->Rmem->get_base_address(var, function_id) == 0 && vd)
