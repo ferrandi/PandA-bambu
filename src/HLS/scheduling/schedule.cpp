@@ -346,7 +346,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    else if(gn->get_kind() == gimple_multi_way_if_K)
    {
       const auto gmwi = GetPointer<const gimple_multi_way_if>(tn);
-      for(auto cond : gmwi->list_of_cond)
+      for(const auto& cond : gmwi->list_of_cond)
       {
          if(cond.first)
          {
@@ -393,6 +393,11 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    }
    for(const auto ssa_use : rhs_ssa_uses)
    {
+      if(ssa_use->virtual_flag)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Virtual SSAs are not considered");
+         continue;
+      }
       const auto def = ssa_use->CGetDefStmt();
       const auto def_gn = GetPointer<const gimple_node>(GET_CONST_NODE(def));
       if(def_gn->get_kind() == gimple_nop_K)
@@ -409,11 +414,6 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
       if(def_gn->bb_index != curr_bb_index)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition " + STR(def->index) + " - " + def->ToString() + " is in BB" + STR(curr_bb_index));
-         continue;
-      }
-      if(ssa_use->virtual_flag and ending_times.find(def_gn->index) == ending_times.end())
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition " + STR(def->index) + " - " + def->ToString() + " not yet examined --> anti dependence?");
          continue;
       }
       if(!allocation_information->is_operation_bounded(def->index))
@@ -1118,7 +1118,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       else if(gn->get_kind() == gimple_multi_way_if_K)
       {
          const auto gmwi = GetPointer<const gimple_multi_way_if>(stmt_tn);
-         for(auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {
@@ -1157,6 +1157,11 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       }
       for(const auto ssa_use : rhs_ssa_uses)
       {
+         if(ssa_use->virtual_flag)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Virtual SSAs are not considered");
+            continue;
+         }
          const auto def = GET_NODE(ssa_use->CGetDefStmt());
          const auto def_gn = GetPointer<const gimple_node>(def);
          if(def_gn->get_kind() == gimple_nop_K)
@@ -1178,11 +1183,6 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
          if(state_info->BB_ids.find(def_gn->bb_index) == state_info->BB_ids.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition " + STR(def->index) + " - " + def->ToString() + " is in other state");
-            continue;
-         }
-         if(ssa_use->virtual_flag and ending_times.find(def_gn->index) == ending_times.end())
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition " + STR(def->index) + " - " + def->ToString() + " not yet examined --> anti dependence?");
             continue;
          }
          THROW_ASSERT(ending_times.find(def_gn->index) != ending_times.end(), "Not possible because ending time of " + def_gn->ToString() + " (which defines " + ssa_use->ToString() + ") is unknown");

@@ -213,12 +213,5 @@ class PhiOpt : public FunctionFrontendFlowStep
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

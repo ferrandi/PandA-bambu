@@ -315,6 +315,7 @@ lib_IR_manipulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/design_flows/technology \
    -I$(top_srcdir)/src/frontend_analysis \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/parser/compiler \

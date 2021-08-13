@@ -60,18 +60,6 @@ class BuildVirtualPhi : public FunctionFrontendFlowStep
    /// The tree manager
    const tree_managerRef TM;
 
-   /// the tree manipulation
-   tree_manipulationRef tree_man;
-
-   /// The graph of basic blocks
-   BBGraphRef basic_block_graph;
-
-   /// Cache of created phi - first key is the used ssa - second key is the basic block where is created
-   TreeNodeMap<CustomUnorderedMapStable<vertex, tree_nodeRef>> added_phis;
-
-   /// Cache of reaching defs - first key is the used ssa - second key is the basic block to be considered
-   TreeNodeMap<CustomUnorderedMapStable<vertex, tree_nodeRef>> reaching_defs;
-
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
@@ -97,17 +85,6 @@ class BuildVirtualPhi : public FunctionFrontendFlowStep
     * Performs the loops analysis
     */
    DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 
    void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };

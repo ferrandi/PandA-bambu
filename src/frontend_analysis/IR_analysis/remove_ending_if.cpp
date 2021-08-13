@@ -156,22 +156,24 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
       {
          if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS)
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+            relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+            relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          break;
       }
       default:

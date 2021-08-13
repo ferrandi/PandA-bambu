@@ -103,10 +103,11 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPLETE_BB_GRAPH, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HDL_VAR_DECL_FIX, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COMPLETE_BB_GRAPH, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(HDL_VAR_DECL_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -115,10 +116,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FANOUT_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));
          break;
       }
       default:

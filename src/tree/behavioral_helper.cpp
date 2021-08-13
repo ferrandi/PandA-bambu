@@ -3186,6 +3186,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_nop_K:
       {
+         res += "/*gimple_nop*/";
          break;
       }
       case init_expr_K:

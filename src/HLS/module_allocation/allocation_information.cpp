@@ -3795,18 +3795,21 @@ void AllocationInformation::Initialize()
    mux_time_multiplier = HLS_T->get_target_device()->has_parameter("mux_time_multiplier") ? HLS_T->get_target_device()->get_parameter<double>("mux_time_multiplier") : 1.0;
    memory_correction_coefficient = HLS_T->get_target_device()->has_parameter("memory_correction_coefficient") ? HLS_T->get_target_device()->get_parameter<double>("memory_correction_coefficient") : 0.7;
 
-   connection_offset = parameters->IsParameter("ConnectionOffset")                           ? parameters->GetParameter<double>("ConnectionOffset") :
-                       parameters->IsParameter("RelativeConnectionOffset")                   ? parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-                       HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ? HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-                       HLS_T->get_target_device()->has_parameter("ConnectionOffset")         ? HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") :
-                                                                                               NUM_CST_allocation_default_connection_offset;
+   connection_offset = parameters->IsParameter("ConnectionOffset") ? parameters->GetParameter<double>("ConnectionOffset") :
+                                                                     parameters->IsParameter("RelativeConnectionOffset") ?
+                                                                     parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                                                                     HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ?
+                                                                     HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                                                                     HLS_T->get_target_device()->has_parameter("ConnectionOffset") ? HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") : NUM_CST_allocation_default_connection_offset;
 
-   output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio")                   ? parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
-                                HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
-                                                                                                        NUM_CST_allocation_default_output_DSP_connection_ratio * get_setup_hold_time();
-   output_carry_connection_time = parameters->IsParameter("OutputCarryConnectionRatio")                   ? parameters->GetParameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
-                                  HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
-                                                                                                            NUM_CST_allocation_default_output_carry_connection_ratio * get_setup_hold_time();
+   output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio") ?
+                                    parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
+                                    HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
+                                                                                                            NUM_CST_allocation_default_output_DSP_connection_ratio * get_setup_hold_time();
+   output_carry_connection_time = parameters->IsParameter("OutputCarryConnectionRatio") ?
+                                      parameters->GetParameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
+                                      HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
+                                                                                                                NUM_CST_allocation_default_output_carry_connection_ratio * get_setup_hold_time();
    fanout_coefficient = parameters->IsParameter("FanOutCoefficient") ? parameters->GetParameter<double>("FanOutCoefficient") : NUM_CST_allocation_default_fanout_coefficent;
    max_fanout_size = parameters->IsParameter("MaxFanOutSize") ? parameters->GetParameter<size_t>("MaxFanOutSize") : NUM_CST_allocation_default_max_fanout_size;
    DSPs_margin = HLS_T->get_target_device()->has_parameter("DSPs_margin") && parameters->getOption<double>(OPT_DSP_margin_combinational) == 1.0 ? HLS_T->get_target_device()->get_parameter<double>("DSPs_margin") :

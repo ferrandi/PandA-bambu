@@ -142,21 +142,22 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PREDICATE_STATEMENTS, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PREDICATE_STATEMENTS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CHECK_CRITICAL_SESSION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CHECK_CRITICAL_SESSION, SAME_FUNCTION));
 #endif
 #if HAVE_ILP_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -165,9 +166,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
          {
             if(restart_ifmwi_opt)
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
+               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
+               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
             }
          }
          break;
@@ -641,7 +643,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    CustomUnorderedMap<vertex, unsigned int> direct_vertex_map;
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
-   for(auto block : list_of_bloc)
+   for(const auto& block : list_of_bloc)
    {
       inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
       direct_vertex_map[inverse_vertex_map[block.first]] = block.first;

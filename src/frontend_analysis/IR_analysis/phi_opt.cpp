@@ -54,10 +54,6 @@
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
 
-/// design_flow_manager includes
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
 /// HLS includes
 #include "hls.hpp"
@@ -77,10 +73,6 @@
 
 /// STD include
 #include <fstream>
-
-/// design_flows/technology includes
-#include "technology_flow_step.hpp"
-#include "technology_flow_step_factory.hpp"
 
 /// tree includes
 #include "ext_tree_node.hpp"
@@ -129,6 +121,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
       {
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
          relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
@@ -183,80 +176,84 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          }
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Merging phis");
-   /// Removed blocks composed only of phi
-   CustomSet<unsigned int> blocks_to_be_removed;
-   for(const auto& block : sl->list_of_bloc)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking BB" + STR(block.first));
-      if(block.second->list_of_pred.size() >= 2 && block.second->CGetPhiList().size() && block.second->CGetStmtList().empty())
-      {
-         const auto successor = block.second->list_of_succ.front();
-         THROW_ASSERT(sl->list_of_bloc.count(successor), "");
-         const auto succ_block = sl->list_of_bloc.at(successor);
-         /// Check that two basic block do not have any common predecessor
-         const bool common_predecessor = [&]() {
-            for(auto predecessor : block.second->list_of_pred)
-            {
-               if(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), predecessor) != succ_block->list_of_pred.end())
-               {
-                  return true;
-               }
-            }
-            return false;
-         }();
-         if(common_predecessor)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of common predecessor");
-            continue;
-         }
 
-         // True if the variables defined in the first basic block are only used in the phi of the second basic block
-         const bool only_phi_use = [&]() {
-            /// Check that ssa defined by phi are used only once
-            for(const auto& phi : block.second->CGetPhiList())
-            {
-               const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
-               const auto sn = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res));
-               for(const auto& use : sn->CGetUseStmts())
+   auto removePhiOnly = [&]() {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Merging phis");
+      /// Removed blocks composed only of phi
+      CustomSet<unsigned int> blocks_to_be_removed;
+      for(const auto& block : sl->list_of_bloc)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking BB" + STR(block.first));
+         if(block.second->list_of_pred.size() >= 2 && block.second->CGetPhiList().size() && block.second->CGetStmtList().empty())
+         {
+            const auto successor = block.second->list_of_succ.front();
+            THROW_ASSERT(sl->list_of_bloc.count(successor), "");
+            const auto succ_block = sl->list_of_bloc.at(successor);
+            /// Check that two basic block do not have any common predecessor
+            const bool common_predecessor = [&]() {
+               for(auto predecessor : block.second->list_of_pred)
                {
-                  const auto gn = GetPointer<const gimple_node>(GET_CONST_NODE(use.first));
-                  if(gn->get_kind() != gimple_phi_K)
+                  if(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), predecessor) != succ_block->list_of_pred.end())
                   {
-                     return false;
-                  }
-                  if(gn->bb_index != successor)
-                  {
-                     return false;
+                     return true;
                   }
                }
+               return false;
+            }();
+            if(common_predecessor)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of common predecessor");
+               continue;
             }
-            return true;
-         }();
-         if(!only_phi_use)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because not used only in the second phi");
-            continue;
+
+            // True if the variables defined in the first basic block are only used in the phi of the second basic block
+            const bool only_phi_use = [&]() {
+               /// Check that ssa defined by phi are used only once
+               for(const auto& phi : block.second->CGetPhiList())
+               {
+                  const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
+                  const auto sn = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res));
+                  for(const auto& use : sn->CGetUseStmts())
+                  {
+                     const auto gn = GetPointer<const gimple_node>(GET_CONST_NODE(use.first));
+                     if(gn->get_kind() != gimple_phi_K)
+                     {
+                        return false;
+                     }
+                     if(gn->bb_index != successor)
+                     {
+                        return false;
+                     }
+                  }
+               }
+               return true;
+            }();
+            if(!only_phi_use)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because not used only in the second phi");
+               continue;
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to the basic block to be merged");
+            blocks_to_be_removed.insert(block.first);
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to the basic block to be merged");
-         blocks_to_be_removed.insert(block.first);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   }
-   for(auto block_to_be_removed : blocks_to_be_removed)
-   {
-      if(AppM->ApplyNewTransformation())
+      for(auto block_to_be_removed : blocks_to_be_removed)
       {
-         AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-         MergePhi(block_to_be_removed);
-         if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+         if(AppM->ApplyNewTransformation())
          {
-            WriteBBGraphDot("BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) + ".dot");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) + ".dot");
+            AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
+            MergePhi(block_to_be_removed);
+            if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+            {
+               WriteBBGraphDot("BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) + ".dot");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) + ".dot");
+            }
          }
       }
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Merged phis");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Merged phis");
+   };
+   removePhiOnly();
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing single input phis");
    /// Transform single input phi
@@ -273,7 +270,6 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed single input phis");
-
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
       WriteBBGraphDot("BB_Removed_Single_Input_Phis_" + GetName() + "_chain.dot");
@@ -319,6 +315,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
    restart = true;
    while(restart)
    {
+      bool removePhiOnlyP = false;
       restart = false;
       /// Workaround to avoid invalidation of pointer
 #if HAVE_STDCXX_11
@@ -336,13 +333,17 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       {
          THROW_ASSERT(sl->list_of_bloc.count(bloc_to_be_analyzed), "");
          const auto& block = sl->list_of_bloc.at(bloc_to_be_analyzed);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block->number) + " Stmts= " + STR(block->CGetStmtList().size()) + " Phis=" + STR(block->CGetPhiList().size()));
 
          /// Remove nop
          if(block->CGetStmtList().size() == 1 && GET_CONST_NODE(block->CGetStmtList().front())->get_kind() == gimple_nop_K)
          {
             block->RemoveStmt(block->CGetStmtList().front(), AppM);
             bb_modified = true;
+         }
+         if(block->list_of_pred.size() >= 2 && block->CGetPhiList().size() && block->CGetStmtList().empty())
+         {
+            removePhiOnlyP = true;
          }
 
          if(block->CGetStmtList().size() || block->CGetPhiList().size())
@@ -459,6 +460,10 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed BB" + STR(block->number));
       }
+      if(removePhiOnlyP)
+      {
+         removePhiOnly();
+      }
    }
 
    TreeNodeSet ces_to_be_removed;
@@ -528,11 +533,17 @@ DesignFlowStep_Status PhiOpt::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
       TreeNodeSet to_be_removeds;
-      for(auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
          auto gn = GetPointer<gimple_node>(GET_NODE(stmt));
          if(gn->get_kind() != gimple_nop_K || !gn->vdef || (gn->vovers.find(gn->vdef) != gn->vovers.end() && gn->vovers.size() > 1) || (gn->vovers.find(gn->vdef) == gn->vovers.end() && (!gn->vovers.empty())))
          {
+            if(gn->get_kind() == gimple_nop_K)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---skipped gimple nop " + STR(gn->index) + (!gn->vdef ? "NOVDEF " : "VDEF ") + ((gn->vovers.find(gn->vdef) != gn->vovers.end() && gn->vovers.size() > 1) ? "cond1 " : "not cond1 ") +
+                                  ((gn->vovers.find(gn->vdef) == gn->vovers.end() && (!gn->vovers.empty())) ? "cond2 " : "not cond2 "));
+            }
             continue;
          }
          if(AppM->ApplyNewTransformation())
@@ -2015,32 +2026,4 @@ void PhiOpt::RemoveCondExpr(const tree_nodeRef statement)
    THROW_ASSERT(sl->list_of_bloc.count(ga->bb_index), "");
    sl->list_of_bloc.at(ga->bb_index)->RemoveStmt(statement, AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed " + statement->ToString());
-}
-
-void PhiOpt::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
-{
-   switch(relationship_type)
-   {
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         break;
-      }
-      case DEPENDENCE_RELATIONSHIP:
-      {
-         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto technology_flow_step_factory = GetPointerS<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-         const auto technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-         const auto technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         relationship.insert(technology_design_flow_step);
-         break;
-      }
-      case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
-      default:
-         THROW_UNREACHABLE("");
-   }
-   FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }

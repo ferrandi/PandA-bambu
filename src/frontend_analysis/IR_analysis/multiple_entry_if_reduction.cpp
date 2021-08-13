@@ -160,6 +160,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
+               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
                relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
                relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
                break;

@@ -96,6 +96,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(PARM2SSA, ALL_FUNCTIONS));
          break;

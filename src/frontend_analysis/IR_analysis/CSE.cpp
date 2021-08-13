@@ -113,6 +113,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
@@ -140,6 +141,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             {
                if(restart_phi_opt)
                {
+                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
                   relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
                }
                relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));

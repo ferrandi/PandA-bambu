@@ -145,12 +145,16 @@ BuildVirtualPhi::~BuildVirtualPhi() = default;
 
 DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 {
+   auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
+   auto basic_block_graph = function_behavior->GetBBGraph(FunctionBehavior::FBB);
    const auto loops = function_behavior->CGetLoops();
    const auto bb_index_map = basic_block_graph->CGetBBGraphInfo()->bb_index_map;
-
+   /// Cache of created phi - first key is the used ssa - second key is the basic block where is created
+   TreeNodeMap<CustomUnorderedMapStable<vertex, tree_nodeRef>> added_phis;
+   /// Cache of reaching defs - first key is the used ssa - second key is the basic block to be considered
+   TreeNodeMap<CustomUnorderedMapStable<vertex, tree_nodeRef>> reaching_defs;
    /// For each virtual operand its definition
    TreeNodeMap<tree_nodeConstRef> virtual_ssa_definitions;
-
    /// The set of nodes which overwrite a vop
    TreeNodeMap<TreeNodeSet> vovers;
 
@@ -642,7 +646,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered ssa " + virtual_ssa_definition.first->ToString());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked uses");
-   function_behavior->UpdateBBVersion();
+   // function_behavior->UpdateBBVersion();
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->GetBBGraph(FunctionBehavior::FBB)->WriteDot("BB_FCFG.dot");
@@ -667,16 +671,4 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    }
 #endif
    return DesignFlowStep_Status::SUCCESS;
-}
-
-void BuildVirtualPhi::Initialize()
-{
-   FunctionFrontendFlowStep::Initialize();
-   basic_block_graph = function_behavior->GetBBGraph(FunctionBehavior::FBB);
-   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-}
-
-bool BuildVirtualPhi::HasToBeExecuted() const
-{
-   return bb_version == 0;
 }

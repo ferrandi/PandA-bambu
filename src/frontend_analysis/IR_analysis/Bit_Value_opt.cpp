@@ -107,6 +107,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert(std::make_pair(PARM2SSA, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
@@ -2490,6 +2491,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case DEPENDENCE_RELATIONSHIP:
       {
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
