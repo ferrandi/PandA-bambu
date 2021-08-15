@@ -146,3 +146,4 @@ DesignFlowStep_Status InitializeHLS::InternalExec()
 #endif
    return DesignFlowStep_Status::SUCCESS;
 }
+

@@ -230,8 +230,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT:
          return "GenerateTasteSynthesisScript";
 #endif
-      case HLSFlowStep_Type::HLS_BIT_VALUE:
-         return "HLSBitValue";
       case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
          return "HLSFunctionBitValue";
       case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:

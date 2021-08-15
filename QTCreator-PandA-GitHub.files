@@ -1707,8 +1707,6 @@ src/HLS/module_allocation/allocation.cpp
 src/HLS/module_allocation/allocation.hpp
 src/HLS/module_allocation/allocation_information.cpp
 src/HLS/module_allocation/allocation_information.hpp
-src/HLS/module_allocation/hls_bit_value.cpp
-src/HLS/module_allocation/hls_bit_value.hpp
 src/HLS/module_allocation/hls_function_bit_value.cpp
 src/HLS/module_allocation/hls_function_bit_value.hpp
 src/HLS/module_allocation/omp_allocation.cpp

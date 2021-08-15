@@ -54,6 +54,7 @@
  */
 class HLSFunctionBitValue : public HLSFunctionStep
 {
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
