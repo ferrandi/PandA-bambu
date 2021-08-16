@@ -280,7 +280,7 @@ void NI_SSA_liveness::Initialize()
       auto fd = GetPointer<function_decl>(tn);
       THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
       auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
-      for(auto block : sl->list_of_bloc)
+      for(const auto& block : sl->list_of_bloc)
       {
          block.second->live_in.clear();
          block.second->live_out.clear();
