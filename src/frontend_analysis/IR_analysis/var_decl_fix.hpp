@@ -65,6 +65,7 @@ REF_FORWARD_DECL(tree_node);
 class VarDeclFix : public FunctionFrontendFlowStep
 {
  protected:
+   bool modified;
    /**
     * Return the normalized identifier; in this class it is the identifier itself. Subclasses can specialize it
     * @param identifier is the identifier to be normalized

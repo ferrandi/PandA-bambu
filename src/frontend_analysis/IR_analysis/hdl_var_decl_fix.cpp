@@ -111,7 +111,7 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
 
    if(HLSMgr && !HLSMgr->design_interface.empty() && HLSMgr->design_interface.find(fname) != HLSMgr->design_interface.end())
    {
-      for(auto arg : fd->list_of_args)
+      for(const auto& arg : fd->list_of_args)
       {
          auto a = GetPointer<parm_decl>(GET_NODE(arg));
          auto argName = GET_NODE(a->name);
@@ -189,15 +189,13 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    }
    else
    {
-      for(auto arg : fd->list_of_args)
+      for(const auto& arg : fd->list_of_args)
       {
          recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
       }
    }
 
-   VarDeclFix::InternalExec();
-
-   return DesignFlowStep_Status::SUCCESS;
+   return VarDeclFix::InternalExec();
 }
 
 const std::string HDLVarDeclFix::Normalize(const std::string& identifier) const
