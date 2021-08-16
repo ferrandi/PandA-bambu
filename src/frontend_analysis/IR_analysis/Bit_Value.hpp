@@ -215,16 +215,6 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     */
    std::deque<bit_lattice> get_current_or_best(const tree_nodeConstRef& tn) const;
 
-   /**
-    * Given an ssa_name it computes the resulting bitstring from backward
-    * propagation from the places where that ssa is used
-    * @param ssa the ssa_name to process
-    * @param sl is the statment list of the function where ssa is defined
-    * @param bb_loop_id is the loop_id of the basic block where ssa is defined
-    * @return the computed bitstring
-    */
-   std::deque<bit_lattice> backward_compute_result_from_uses(const ssa_name& ssa, const statement_list& sl, unsigned int bb_loop_id) const;
-
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:

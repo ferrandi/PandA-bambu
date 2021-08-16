@@ -68,172 +68,11 @@ std::deque<bit_lattice> Bit_Value::get_current_or_best(const tree_nodeConstRef& 
    return best.at(nid);
 }
 
-std::deque<bit_lattice> Bit_Value::backward_compute_result_from_uses(const ssa_name& ssa, const statement_list& sl, unsigned int bb_loop_id) const
-{
-   const auto output_uid = ssa.index;
-   auto res = create_x_bitstring(1);
-#if !defined(NDEBUG) || HAVE_ASSERTS
-   const auto ssa_var_name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(output_uid);
-#endif
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering variable:" + ssa_var_name + "(" + STR(output_uid) + ")");
-   if(ssa.CGetUseStmts().size())
-   {
-      for(const auto& statement_node : ssa.CGetUseStmts())
-      {
-         const auto use_stmt = GET_NODE(statement_node.first);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Output " + ssa_var_name + " is used in " + use_stmt->get_kind_text() + ": " + STR(GET_INDEX_NODE(statement_node.first)) + "(" + STR(use_stmt) + ")");
-         const auto use_kind = use_stmt->get_kind();
-         if(use_kind == gimple_assign_K)
-         {
-            const auto ga_tmp = GetPointerS<const gimple_assign>(use_stmt);
-            std::deque<bit_lattice> res_fanout = backward_transfer(ga_tmp, output_uid);
-            if(res_fanout.size() > 0)
-            {
-               res = inf(res, res_fanout, output_uid);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "inf:" + bitstring_to_string(res));
-            }
-            else
-            {
-               THROW_ASSERT(best.count(output_uid), "");
-               res = best.at(output_uid);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best");
-               break;
-            }
-         }
-         else if(use_kind == gimple_phi_K)
-         {
-            const auto gp_tmp = GetPointerS<const gimple_phi>(use_stmt);
-            bool all_comes_from_the_same_loop = true;
-            for(const auto& def_edge : gp_tmp->CGetDefEdgesList())
-            {
-               if(bb_loop_id != sl.list_of_bloc.at(def_edge.second)->loop_id)
-               {
-                  all_comes_from_the_same_loop = false;
-               }
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "all_comes_from_the_same_loop = " + STR(all_comes_from_the_same_loop));
-            const auto dest_block = sl.list_of_bloc.at(gp_tmp->bb_index);
-            const auto dest_loop_id = dest_block->loop_id;
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb_loop_id = " + STR(bb_loop_id));
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "dest_loop_id = " + STR(dest_loop_id));
-            if(bb_loop_id < dest_loop_id || all_comes_from_the_same_loop)
-            {
-               res = inf(res, best.at(GET_INDEX_NODE(gp_tmp->res)), output_uid);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "inf:" + bitstring_to_string(res));
-            }
-            else
-            {
-               THROW_ASSERT(best.count(output_uid), "");
-               res = best.at(output_uid);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best");
-               break;
-            }
-         }
-         else if(use_kind == gimple_return_K)
-         {
-#if HAVE_ASSERTS
-            const auto gr = GetPointerS<const gimple_return>(use_stmt);
-#endif
-            THROW_ASSERT(gr->op, "ssa var " + ssa_var_name + "(" + STR(output_uid) + ")" + " used in empty return statement: " + gr->ToString());
-            std::deque<bit_lattice> res_fanout = std::deque<bit_lattice>();
-            auto res_it = current.find(function_id);
-            if(res_it != current.end())
-            {
-               res_fanout = res_it->second;
-            }
-            if(res_fanout.size() > 0)
-            {
-               res = inf(res, res_fanout, output_uid);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "inf:" + bitstring_to_string(res));
-            }
-            else
-            {
-               THROW_ASSERT(best.count(output_uid), "");
-               res = best.at(output_uid);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best");
-               break;
-            }
-         }
-         else if(use_kind == gimple_call_K)
-         {
-            std::deque<bit_lattice> res_fanout;
-            const auto gc_tmp = GetPointerS<const gimple_call>(use_stmt);
-            THROW_ASSERT(gc_tmp, "not a gimple_call");
-            const auto call_it = direct_call_id_to_called_id.find(gc_tmp->index);
-            if(call_it != direct_call_id_to_called_id.end())
-            {
-               const auto called_id = call_it->second;
-               const auto called_tn = TM->CGetTreeNode(called_id);
-               const auto called_fd = GetPointerS<const function_decl>(called_tn);
-
-               const auto actual_parms = gc_tmp->args;
-               const auto formal_parms = called_fd->list_of_args;
-               THROW_ASSERT(actual_parms.size() == formal_parms.size(), "");
-               auto a_it = actual_parms.cbegin();
-               auto a_end = actual_parms.cend();
-               auto f_it = formal_parms.cbegin();
-               auto f_end = formal_parms.cend();
-               bool found = actual_parms.empty();
-               for(; a_it != a_end and f_it != f_end; a_it++, f_it++)
-               {
-                  if(GET_INDEX_NODE(*a_it) == output_uid)
-                  {
-                     const auto p_decl_id = AppM->getSSAFromParm(called_id, GET_INDEX_NODE(*f_it));
-                     const auto parmssa = TM->CGetTreeNode(p_decl_id);
-                     const auto pd = GetPointerS<const ssa_name>(parmssa);
-                     std::deque<bit_lattice> tmp;
-                     if(pd->bit_values.empty())
-                     {
-                        tmp = create_u_bitstring(tree_helper::Size(parmssa));
-                     }
-                     else
-                     {
-                        tmp = string_to_bitstring(pd->bit_values);
-                     }
-
-                     res_fanout = found ? inf(res_fanout, tmp, output_uid) : tmp;
-                     found = true;
-                  }
-               }
-               THROW_ASSERT(found, ssa_var_name + "(" + STR(output_uid) + ") is not an actual parameter of function " + STR(called_id));
-            }
-
-            if(res_fanout.size() > 0)
-            {
-               res = inf(res, res_fanout, output_uid);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "inf:" + bitstring_to_string(res));
-            }
-            else
-            {
-               res = best.at(output_uid);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best");
-               break;
-            }
-         }
-         else
-         {
-            res = best.at(output_uid);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best");
-            break;
-         }
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "output uid: " + STR(output_uid) + " bitstring: " + bitstring_to_string(res));
-   }
-   else
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "no one use variable: " + ssa_var_name + "(" + STR(output_uid) + ")");
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered variable:" + ssa_var_name + "(" + STR(output_uid) + ")");
-   return res;
-}
-
 void Bit_Value::backward()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing backward transfer");
    const auto tn = TM->CGetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(tn);
-   THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
    std::deque<tree_nodeConstRef> working_list;
    CustomUnorderedSet<unsigned int> working_list_idx;
    auto push_back = [&](const tree_nodeConstRef& stmt) {
@@ -505,27 +344,22 @@ void Bit_Value::backward()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing argument " + STR(parm_decl_node));
       const auto p_decl_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
-      auto parmssa = TM->GetTreeNode(p_decl_id);
-      auto p = GetPointer<ssa_name>(parmssa);
+      auto parmssa = TM->CGetTreeReindex(p_decl_id);
+      auto res = get_current_or_best(parmssa);
+      THROW_ASSERT(res.size(), "");
       if(!is_handled_by_bitvalue(p_decl_id))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument " + STR(p) + " of type " + STR(tree_helper::CGetType(parmssa)) + " not considered id: " + STR(p_decl_id));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument " + STR(parmssa) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(parmssa))) + " not considered id: " + STR(p_decl_id));
          continue;
       }
-
-      THROW_ASSERT(best.find(p_decl_id) != best.end(), "unexpected condition");
-      if(current.find(p_decl_id) == current.end())
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---res: " + bitstring_to_string(res));
+      auto& output_current = current[GET_INDEX_CONST_NODE(parm_decl_node)];
+      if(output_current.size())
       {
-         current[p_decl_id] = best.at(p_decl_id);
+         res = inf(res, output_current, GET_INDEX_CONST_NODE(parm_decl_node));
       }
-
-      if(bitstring_constant(current[p_decl_id]))
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument has been proven to be constant: " + STR(p_decl_id));
-         continue;
-      }
-      auto res = backward_compute_result_from_uses(*p, *sl, 0);
-      update_current(res, p_decl_id);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---inf: " + bitstring_to_string(res));
+      output_current = res;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed argument " + STR(parm_decl_node));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed backward transfer");
