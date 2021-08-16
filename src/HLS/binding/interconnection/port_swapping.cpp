@@ -536,12 +536,12 @@ DesignFlowStep_Status port_swapping::InternalExec()
             unsigned int tree_var = std::get<0>(var_read[var_num]);
             if(tree_var == 0)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Constant: " + STR(std::get<1>(var_read[var_num])));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Constant: " + STR(std::get<1>(var_read[var_num])));
                key_value = std::make_tuple(0, 0, std::get<1>(var_read[var_num]));
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Read: " + behavioral_helper->PrintVariable(tree_var));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Read: " + behavioral_helper->PrintVariable(tree_var));
                const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(fu_operation);
                for(const auto state : running_states)
                {
@@ -572,7 +572,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
                         {
                            unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(state, tree_var);
                            unsigned int r_index = HLS->Rreg->get_register(storage_value);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Register: " + STR(r_index));
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Register: " + STR(r_index));
                            key_value = std::make_tuple(3, 0, r_index);
                         }
                         else
@@ -584,7 +584,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
                      {
                         unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(state, tree_var);
                         unsigned int r_index = HLS->Rreg->get_register(storage_value);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Register: " + STR(r_index));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Register: " + STR(r_index));
                         key_value = std::make_tuple(3, 0, r_index);
                      }
                   }
@@ -597,7 +597,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
             if(op_vertex_map.find(key_value) == op_vertex_map.end())
             {
                v_input = boost::add_vertex(g);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Vertex: " + STR(v_input));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Vertex: " + STR(v_input));
                op_vertex_map[key_value] = v_input;
             }
             vertices_in_op[var_num] = op_vertex_map.at(key_value);
