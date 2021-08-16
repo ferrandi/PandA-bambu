@@ -143,9 +143,10 @@ static kind ternary_operation_type1(kind operation_kind1, kind operation_kind2)
    }
 }
 
-void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM)
+bool extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM)
 {
-   for(auto bb_pair : sl->list_of_bloc)
+   bool modified = false;
+   for(const auto& bb_pair : sl->list_of_bloc)
    {
       blocRef B = bb_pair.second;
       unsigned int B_id = B->number;
@@ -215,6 +216,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                            it_los = list_of_stmt.begin();
                            it_los_end = list_of_stmt.end();
                            AppM->RegisterTransformation(GetName(), statement_node);
+                           modified = true;
                            continue;
                         }
                      }
@@ -227,6 +229,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(B_id));
    }
+   return modified;
 }
 
 DesignFlowStep_Status extract_patterns::InternalExec()
@@ -240,7 +243,11 @@ DesignFlowStep_Status extract_patterns::InternalExec()
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    /// for each basic block B in CFG do > Consider all blocks successively
-   ternary_plus_expr_extraction(sl, TM);
+   auto modified = ternary_plus_expr_extraction(sl, TM);
+   if(modified)
+   {
+      function_behavior->UpdateBBVersion();
+   }
 
-   return DesignFlowStep_Status::SUCCESS;
+   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
