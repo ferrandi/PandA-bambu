@@ -105,6 +105,7 @@ tree_helper::tree_helper() = default;
 
 tree_helper::~tree_helper() = default;
 
+/// function slightly different than BitLatticeManipulator::sign_reduce_bitstring
 static std::string sign_reduce_bitstring(std::string bitstring, bool bitstring_is_signed)
 {
    THROW_ASSERT(!bitstring.empty(), "");
@@ -112,7 +113,7 @@ static std::string sign_reduce_bitstring(std::string bitstring, bool bitstring_i
    {
       if(bitstring_is_signed)
       {
-         if(bitstring.at(0) == 'X' or (bitstring.at(0) != 'U' and (bitstring.at(0) == bitstring.at(1) or bitstring.at(1) == 'X')))
+         if(bitstring.at(0) != 'U' and (bitstring.at(0) == bitstring.at(1)))
          {
             bitstring = bitstring.substr(1);
          }
@@ -123,15 +124,25 @@ static std::string sign_reduce_bitstring(std::string bitstring, bool bitstring_i
       }
       else
       {
-         if(bitstring.at(0) == 'X' or bitstring.at(0) == '0')
+         if((bitstring.at(0) == 'X' && bitstring.at(1) == 'X') || (bitstring.at(0) == '0' && bitstring.at(1) != 'X'))
          {
             bitstring = bitstring.substr(1);
+         }
+         else if(bitstring.at(0) == '0' && bitstring.at(1) == 'X')
+         {
+            bitstring = bitstring.substr(1);
+            bitstring = bitstring.substr(1);
+            bitstring = '0' + bitstring;
          }
          else
          {
             break;
          }
       }
+   }
+   while(bitstring.at(0) == 'X' && bitstring.size() > 1)
+   {
+      bitstring = bitstring.substr(1);
    }
    return bitstring;
 }

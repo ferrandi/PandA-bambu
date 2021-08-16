@@ -351,6 +351,7 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>
    return inf(a, b, out_type_size, out_is_signed, out_is_bool);
 }
 
+/// function slightly different than tree_helper.cpp: sign_reduce_bitstring
 void BitLatticeManipulator::sign_reduce_bitstring(std::deque<bit_lattice>& bitstring, bool bitstring_is_signed)
 {
    THROW_ASSERT(not bitstring.empty(), "");

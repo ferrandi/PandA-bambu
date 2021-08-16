@@ -41,9 +41,6 @@
 #ifndef _BIT_LATTICE_HPP_
 #define _BIT_LATTICE_HPP_
 
-/// Header include
-#include "frontend_flow_step.hpp"
-
 /// STD include
 #include <string>
 
