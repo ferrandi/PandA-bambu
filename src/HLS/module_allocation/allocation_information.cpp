@@ -2803,7 +2803,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       double correction = ce_delay;
       res_value = res_value + correction;
    }
-   else if(0 && operation_name == "lut_expr")
+   else if(operation_name == "lut_expr")
    {
       // std::cerr << "get_correction_time " << operation_name << " - " << n_ins << "\n";
       if(HLS_T->get_target_device()->has_parameter("max_lut_size"))
