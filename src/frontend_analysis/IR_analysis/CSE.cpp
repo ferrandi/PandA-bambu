@@ -95,7 +95,7 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 CSE::CSE(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, CSE_STEP, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager()), restart_phi_opt(false)
+    : FunctionFrontendFlowStep(_AppM, _function_id, CSE_STEP, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager()), restart_phi_opt(false), restart_bit_value(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -115,6 +115,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
          relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+         }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -128,7 +132,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
          relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          break;
@@ -141,8 +145,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             {
                if(restart_phi_opt)
                {
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+                  relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
                   relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               }
+               if(restart_bit_value && !parameters->getOption<int>(OPT_gcc_openmp_simd))
+               {
+                  relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
                }
                relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
                break;
@@ -182,6 +190,7 @@ DesignFlowStep_Status CSE::InternalExec()
 {
    bool IR_changed = false;
    restart_phi_opt = false;
+   restart_bit_value = false;
    size_t n_equiv_stmt = 0;
    const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    /// define a map relating variables and columns
@@ -251,7 +260,7 @@ DesignFlowStep_Status CSE::InternalExec()
          THROW_ASSERT(unique_table.find(bb_dominator_map.at(bb)) != unique_table.end(), "unexpected condition");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding dominator equiv: " + STR(bb_domGraph->CGetBBNodeInfo(bb_dominator_map.at(bb))->block->number));
 
-         for(auto key_value_pair : unique_table.at(bb_dominator_map.at(bb)))
+         for(const auto& key_value_pair : unique_table.at(bb_dominator_map.at(bb)))
          {
             unique_table.at(bb)[key_value_pair.first] = key_value_pair.second;
          }
@@ -281,56 +290,21 @@ DesignFlowStep_Status CSE::InternalExec()
                ref_ssa->use_set = dead_ssa->use_set;
             }
             const auto ga_op_type = TM->GetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(ref_ga->op0))->index);
-            bool same_range = false;
-            if(GET_CONST_NODE(ga_op_type)->get_kind() == integer_type_K && ref_ssa->min && ref_ssa->max && dead_ssa->min && dead_ssa->max)
+            if(ref_ssa->bit_values != dead_ssa->bit_values)
             {
-               const auto dead_min_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ref_ssa->min));
-               const auto ref_min_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(dead_ssa->min));
-               const auto dead_max_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ref_ssa->max));
-               const auto ref_max_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(dead_ssa->max));
-               if(dead_min_ic->value == ref_min_ic->value && dead_max_ic->value == ref_max_ic->value)
-               {
-                  same_range = true;
-               }
+               restart_bit_value = true;
+               ref_ssa->bit_values.clear();
             }
-            if(!same_range && ref_ssa->min && ref_ssa->max && GET_CONST_NODE(ga_op_type)->get_kind() == integer_type_K)
+
+            const auto StmtUses = dead_ssa->CGetUseStmts();
+            for(const auto& use : StmtUses)
             {
-               const auto ssa_vd = IRman->create_ssa_name(tree_nodeRef(), ga_op_type, tree_nodeRef(), tree_nodeRef());
-               GetPointerS<ssa_name>(GET_NODE(ssa_vd))->use_set = ref_ssa->use_set;
-               const auto srcp_default = ref_ga->include_name + ":" + STR(ref_ga->line_number) + ":" + STR(ref_ga->column_number);
-               const auto curr_ga = IRman->CreateGimpleAssign(ga_op_type, tree_nodeRef(), tree_nodeRef(), ssa_vd, function_id, ref_ga->bb_index, srcp_default);
-               TM->ReplaceTreeNode(curr_ga, GetPointerS<const gimple_assign>(GET_CONST_NODE(curr_ga))->op0, ref_ga->op0);
-               TM->ReplaceTreeNode(TM->GetTreeReindex(eq_tn->index), ref_ga->op0, ssa_vd);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updated old GA: " + ref_ga->ToString());
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created new GA: " + curr_ga->ToString());
-               if(B->number == ref_ga->bb_index)
-               {
-                  B->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index), AppM);
-               }
-               else
-               {
-                  THROW_ASSERT(inverse_vertex_map.find(ref_ga->bb_index) != inverse_vertex_map.end(), "unexpected condition");
-                  THROW_ASSERT(bb_domGraph->CGetBBNodeInfo(inverse_vertex_map.at(ref_ga->bb_index)), "unexpected condition");
-                  bb_domGraph->CGetBBNodeInfo(inverse_vertex_map.at(ref_ga->bb_index))->block->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index), AppM);
-               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement before: " + use.first->ToString());
+               TM->ReplaceTreeNode(use.first, dead_ga->op0, ref_ga->op0);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement after: " + use.first->ToString());
             }
-            if(!same_range && dead_ssa->min && dead_ssa->max && GET_CONST_NODE(ga_op_type)->get_kind() == integer_type_K)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement before assign transformation: " + stmt->ToString());
-               TM->ReplaceTreeNode(stmt, dead_ga->op1, ref_ga->op0);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement after assign transformation: " + stmt->ToString());
-            }
-            else
-            {
-               const auto StmtUses = dead_ssa->CGetUseStmts();
-               for(const auto& use : StmtUses)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement before: " + use.first->ToString());
-                  TM->ReplaceTreeNode(use.first, dead_ga->op0, ref_ga->op0);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement after: " + use.first->ToString());
-               }
-               to_be_removed.insert(stmt);
-            }
+            to_be_removed.insert(stmt);
+
             AppM->RegisterTransformation(GetName(), stmt);
             IR_changed = true;
             ++n_equiv_stmt;
@@ -475,8 +449,6 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* s
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked loads: null");
          return tree_nodeRef();
       }
-      /// we add as first parameter the bitwidth of ga->op0
-      ins.push_back(tree_helper::Size(ga->op0));
       /// We add type of right part; load from same address with different types must be considered different
       ins.push_back(tree_helper::CGetType(GET_CONST_NODE(ga->op1))->index);
 
