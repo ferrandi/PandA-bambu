@@ -345,13 +345,13 @@ void Bit_Value::backward()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing argument " + STR(parm_decl_node));
       const auto p_decl_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
       auto parmssa = TM->CGetTreeReindex(p_decl_id);
-      auto res = get_current_or_best(parmssa);
-      THROW_ASSERT(res.size(), "");
       if(!is_handled_by_bitvalue(p_decl_id))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument " + STR(parmssa) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(parmssa))) + " not considered id: " + STR(p_decl_id));
          continue;
       }
+      auto res = get_current_or_best(parmssa);
+      THROW_ASSERT(res.size(), "");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---res: " + bitstring_to_string(res));
       auto& output_current = current[GET_INDEX_CONST_NODE(parm_decl_node)];
       if(output_current.size())
