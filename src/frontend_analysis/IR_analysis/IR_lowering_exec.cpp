@@ -1085,7 +1085,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   continue;
                }
 
-               if(GetPointer<unary_expr>(GET_NODE(ga->op1))) /// required by the CLANG/LLVM plugin
+               if(GetPointer<unary_expr>(GET_NODE(ga->op1)) && GET_NODE(ga->op1)->get_kind() != addr_expr_K) /// required by the CLANG/LLVM plugin
                {
                   auto ue = GetPointer<unary_expr>(GET_NODE(ga->op1));
                   if(GetPointer<unary_expr>(GET_NODE(ue->op)))
