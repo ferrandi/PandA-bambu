@@ -1315,6 +1315,12 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New definition not dominating use in DT, but in CFG only");
          }
 #endif
+         if(not AppM->ApplyNewTransformation())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            return modified;
+         }
          AppM->RegisterTransformation(GetName(), VD.U->getUser());
          VD.U->set(phi->res, TM);
          modified = true;
