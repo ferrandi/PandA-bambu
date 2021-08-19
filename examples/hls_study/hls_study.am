@@ -275,12 +275,12 @@ EXTRA_DIST += \
    %D%/aes_decrypt/not-optimized/decrypt.xml\
    %D%/aes_decrypt/not-optimized/aes.c\
    %D%/aes_decrypt/not-optimized/aes_func.c \
-   %D%/5SGXEA7N2F45C1_02.5_donotexploseglobals_alignedaccess.sh \
+   %D%/5SGXEA7N2F45C1_02.5_alignedaccess.sh \
    %D%/5SGXEA7N2F45C1_custom.sh \
    %D%/all.sh \
-   %D%/xc7vx690t-3ffg1930-VVD_02.5_donotexploseglobals_alignedaccess.sh \
+   %D%/xc7vx690t-3ffg1930-VVD_02.5_alignedaccess.sh \
    %D%/xc7vx690t-3ffg1930-VVD_custom.sh \
-   %D%/hls_study_5SGXEA7N2F45C1_02.5_donotexploseglobals_alignedaccess.tex \
+   %D%/hls_study_5SGXEA7N2F45C1_02.5_alignedaccess.tex \
    %D%/hls_study_5SGXEA7N2F45C1_custom.tex \
-   %D%/hls_study_xc7vx690t-3ffg1930-VVD_02.5_donotexploseglobals_alignedaccess.tex \
+   %D%/hls_study_xc7vx690t-3ffg1930-VVD_02.5_alignedaccess.tex \
    %D%/hls_study_xc7vx690t-3ffg1930-VVD_custom.tex
