@@ -49,6 +49,7 @@
 
 // behavior includes
 #include "application_manager.hpp"
+#include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
 // include boost range adaptors
@@ -71,8 +72,6 @@ std::deque<bit_lattice> Bit_Value::get_current_or_best(const tree_nodeConstRef& 
 void Bit_Value::backward()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing backward transfer");
-   const auto tn = TM->CGetTreeNode(function_id);
-   const auto fd = GetPointerS<const function_decl>(tn);
    std::deque<tree_nodeConstRef> working_list;
    CustomUnorderedSet<unsigned int> working_list_idx;
    auto push_back = [&](const tree_nodeConstRef& stmt) {
@@ -112,7 +111,7 @@ void Bit_Value::backward()
          }
       }
    }
-
+   const auto is_root_function = AppM->CGetCallGraphManager()->GetRootFunctions().count(function_id);
    while(!working_list.empty())
    {
       const auto stmt = pop_front();
@@ -270,41 +269,44 @@ void Bit_Value::backward()
       }
       else if(stmt_kind == gimple_return_K)
       {
-         const auto gr = GetPointerS<const gimple_return>(stmt);
-         if(gr->op && GET_CONST_NODE(gr->op)->get_kind() == ssa_name_K)
+         if(!is_root_function)
          {
-            const auto op_nid = GET_INDEX_CONST_NODE(gr->op);
-            if(!is_handled_by_bitvalue(op_nid))
+            const auto gr = GetPointerS<const gimple_return>(stmt);
+            if(gr->op && GET_CONST_NODE(gr->op)->get_kind() == ssa_name_K)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable " + STR(gr->op) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(gr->op))) + " not considered id: " + STR(op_nid));
-               continue;
-            }
-            std::deque<bit_lattice> res;
-            // TODO: replace current with best, because IPA is updating best
-            if(current.find(function_id) != current.end())
-            {
-               res = current.at(function_id);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ret: " + bitstring_to_string(res));
-            }
-            else
-            {
-               THROW_ASSERT(best.find(op_nid) != best.end(), "unexpected condition");
-               res = best.at(op_nid);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---best: " + bitstring_to_string(res));
-            }
-            THROW_ASSERT(res.size(), "");
-            auto& output_current = current[op_nid];
-            if(output_current.size())
-            {
-               res = inf(res, output_current, op_nid);
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---inf: " + bitstring_to_string(res));
-            if(output_current != res)
-            {
-               output_current = res;
-               const auto ssa_var = GetPointerS<const ssa_name>(GET_CONST_NODE(gr->op));
-               const auto nextNode = ssa_var->CGetDefStmt();
-               push_back(GET_CONST_NODE(nextNode));
+               const auto op_nid = GET_INDEX_CONST_NODE(gr->op);
+               if(!is_handled_by_bitvalue(op_nid))
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable " + STR(gr->op) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(gr->op))) + " not considered id: " + STR(op_nid));
+                  continue;
+               }
+               std::deque<bit_lattice> res;
+               // TODO: replace current with best, because IPA is updating best
+               if(current.find(function_id) != current.end())
+               {
+                  res = current.at(function_id);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ret: " + bitstring_to_string(res));
+               }
+               else
+               {
+                  THROW_ASSERT(best.find(op_nid) != best.end(), "unexpected condition");
+                  res = best.at(op_nid);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---best: " + bitstring_to_string(res));
+               }
+               THROW_ASSERT(res.size(), "");
+               auto& output_current = current[op_nid];
+               if(output_current.size())
+               {
+                  res = inf(res, output_current, op_nid);
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---inf: " + bitstring_to_string(res));
+               if(output_current != res)
+               {
+                  output_current = res;
+                  const auto ssa_var = GetPointerS<const ssa_name>(GET_CONST_NODE(gr->op));
+                  const auto nextNode = ssa_var->CGetDefStmt();
+                  push_back(GET_CONST_NODE(nextNode));
+               }
             }
          }
       }
@@ -339,28 +341,36 @@ void Bit_Value::backward()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement " + STR(stmt));
    }
 
-   // manage arguments now
-   for(const auto& parm_decl_node : fd->list_of_args)
+   if(!is_root_function)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing argument " + STR(parm_decl_node));
-      const auto p_decl_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
-      auto parmssa = TM->CGetTreeReindex(p_decl_id);
-      if(!is_handled_by_bitvalue(p_decl_id))
+      const auto tn = TM->CGetTreeNode(function_id);
+      const auto fd = GetPointerS<const function_decl>(tn);
+      for(const auto& parm_decl_node : fd->list_of_args)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument " + STR(parmssa) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(parmssa))) + " not considered id: " + STR(p_decl_id));
-         continue;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing argument " + STR(parm_decl_node));
+         const auto parmssa_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
+         const auto parmssa = TM->CGetTreeReindex(parmssa_id);
+         if(!is_handled_by_bitvalue(parmssa_id))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument " + STR(parmssa) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(parmssa))) + " not considered id: " + STR(parmssa_id));
+            continue;
+         }
+         auto res = get_current_or_best(parmssa);
+         THROW_ASSERT(res.size(), "");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---res: " + bitstring_to_string(res));
+         auto& output_current = current[GET_INDEX_CONST_NODE(parm_decl_node)];
+         if(output_current.size())
+         {
+            res = inf(res, output_current, GET_INDEX_CONST_NODE(parm_decl_node));
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---inf: " + bitstring_to_string(res));
+         output_current = res;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed argument " + STR(parm_decl_node));
       }
-      auto res = get_current_or_best(parmssa);
-      THROW_ASSERT(res.size(), "");
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---res: " + bitstring_to_string(res));
-      auto& output_current = current[GET_INDEX_CONST_NODE(parm_decl_node)];
-      if(output_current.size())
-      {
-         res = inf(res, output_current, GET_INDEX_CONST_NODE(parm_decl_node));
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---inf: " + bitstring_to_string(res));
-      output_current = res;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed argument " + STR(parm_decl_node));
+   }
+   else
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Backward propagation to function arguments not performed on root functions");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed backward transfer");
 }

@@ -42,6 +42,7 @@
 #include "Dominance.hpp"
 #include "Parameter.hpp"
 #include "basic_block.hpp"
+#include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
 // include from tree/
@@ -62,7 +63,7 @@ std::deque<bit_lattice> Bit_Value::get_current(const tree_nodeConstRef& tn) cons
 {
    const auto nid = GET_INDEX_CONST_NODE(tn);
    const auto node = GET_CONST_NODE(tn);
-   if(node->get_kind() == ssa_name_K)
+   if(node->get_kind() == ssa_name_K || node->get_kind() == parm_decl_K)
    {
       THROW_ASSERT(current.count(nid), "");
       return current.at(nid);
@@ -127,6 +128,41 @@ void Bit_Value::forward()
          }
       }
    }
+
+   const auto is_root_function = AppM->CGetCallGraphManager()->GetRootFunctions().count(function_id);
+   if(!is_root_function)
+   {
+      const auto tn = TM->CGetTreeNode(function_id);
+      const auto fd = GetPointerS<const function_decl>(tn);
+      for(const auto& parm_decl_node : fd->list_of_args)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing argument " + STR(parm_decl_node));
+         const auto parmssa_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
+         const auto parmssa = TM->CGetTreeReindex(parmssa_id);
+         if(!is_handled_by_bitvalue(parmssa_id))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument " + STR(parmssa) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(parmssa))) + " not handled by bitvalue");
+            continue;
+         }
+         auto res = get_current(parm_decl_node);
+         THROW_ASSERT(res.size(), "");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer, parmssa(" + STR(parmssa_id) + "): " + bitstring_to_string(res));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---=>");
+         auto& output_current = current[parmssa_id];
+         if(output_current.size())
+         {
+            res = inf(res, output_current, parmssa_id);
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---res: " + bitstring_to_string(res));
+         output_current = res;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed argument " + STR(parm_decl_node));
+      }
+   }
+   else
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Forward propagation from function arguments not performed on root functions");
+   }
+
    while(!working_list.empty())
    {
       const auto stmt_node = pop_front();
@@ -292,20 +328,23 @@ void Bit_Value::forward()
       }
       else if(stmt_kind == gimple_return_K)
       {
-         const auto gr = GetPointerS<const gimple_return>(stmt_node);
-         THROW_ASSERT(gr->op, "Empty return should not be a use of any ssa");
-         if(GET_CONST_NODE(gr->op)->get_kind() == ssa_name_K && is_handled_by_bitvalue(GET_INDEX_CONST_NODE(gr->op)))
+         if(!is_root_function)
          {
-            auto res = get_current(gr->op);
-            THROW_ASSERT(res.size(), "");
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---res: " + bitstring_to_string(res));
-            auto& output_current = current[function_id];
-            if(output_current.size())
+            const auto gr = GetPointerS<const gimple_return>(stmt_node);
+            THROW_ASSERT(gr->op, "Empty return should not be a use of any ssa");
+            if(GET_CONST_NODE(gr->op)->get_kind() == ssa_name_K && is_handled_by_bitvalue(GET_INDEX_CONST_NODE(gr->op)))
             {
-               res = inf(res, output_current, function_id);
+               auto res = get_current(gr->op);
+               THROW_ASSERT(res.size(), "");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---res: " + bitstring_to_string(res));
+               auto& output_current = current[function_id];
+               if(output_current.size())
+               {
+                  res = inf(res, output_current, function_id);
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---inf: " + bitstring_to_string(res));
+               output_current = res;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---inf: " + bitstring_to_string(res));
-            output_current = res;
          }
       }
       else
