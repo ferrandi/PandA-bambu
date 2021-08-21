@@ -1067,6 +1067,14 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                extract_expr(op, set_temp_addr);
             };
+            const auto type_cast = [&](tree_nodeRef& op, const tree_nodeConstRef& type) {
+               const auto nop = tree_man->CreateNopExpr(op, type, tree_nodeConstRef(), tree_nodeConstRef(), function_id);
+               const auto nop_ssa = GetPointerS<const gimple_assign>(GET_CONST_NODE(nop))->op0;
+               op = nop_ssa;
+               block.second->PushBefore(nop, *it_los, AppM);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(nop)->ToString());
+               restart_analysis = true;
+            };
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
             if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
@@ -1115,6 +1123,21 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   if(GetPointer<binary_expr>(GET_NODE(be->op1)))
                   {
                      extract_expr(be->op1, false);
+                  }
+                  const auto be_kind = be->get_kind();
+                  if(be_kind == bit_and_expr_K || be_kind == bit_ior_expr_K || be_kind == bit_xor_expr_K || be_kind == plus_expr_K || be_kind == minus_expr_K || be_kind == mult_expr_K || be_kind == trunc_div_expr_K || be_kind == trunc_mod_expr_K ||
+                     be_kind == sat_plus_expr_K || be_kind == sat_minus_expr_K)
+                  {
+                     const auto op0_type = tree_helper::CGetType(GET_CONST_NODE(be->op0));
+                     if(op0_type->index != GET_INDEX_CONST_NODE(be->type))
+                     {
+                        type_cast(be->op0, be->type);
+                     }
+                     const auto op1_type = tree_helper::CGetType(GET_CONST_NODE(be->op1));
+                     if(op1_type->index != GET_INDEX_CONST_NODE(be->type))
+                     {
+                        type_cast(be->op1, be->type);
+                     }
                   }
                }
                if(GetPointer<ternary_expr>(GET_NODE(ga->op1))) /// required by the CLANG/LLVM plugin
