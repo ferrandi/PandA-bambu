@@ -1147,7 +1147,7 @@ assign out1 = (in1 &lt;&lt; (in2[marg2_bitsize-1:0]))|(in1 &gt;&gt; (PRECISION-(
     <template>
       <name>widen_mult_expr_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="widen_mult_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
+      <operation operation_name="widen_mult_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <component_o id="widen_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1178,7 +1178,7 @@ assign out1 = (in1 &lt;&lt; (in2[marg2_bitsize-1:0]))|(in1 &gt;&gt; (PRECISION-(
     <template>
       <name>mult_expr_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="mult_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
+      <operation operation_name="mult_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <component_o id="mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1275,7 +1275,7 @@ begin
     <template>
       <name>ui_widen_mult_expr_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="widen_mult_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
+      <operation operation_name="widen_mult_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <component_o id="ui_widen_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1308,7 +1308,7 @@ begin
     <template>
       <name>ui_mult_expr_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="mult_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
+      <operation operation_name="mult_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <component_o id="ui_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1406,7 +1406,7 @@ begin
     </template>
     <template>
       <name>dot_prod_expr_FU</name>
-      <operation operation_name="dot_prod_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17"/>
+      <operation operation_name="dot_prod_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7"/>
       <circuit>
         <component_o id="dot_prod_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1436,7 +1436,7 @@ begin
     </template>
     <template>
       <name>ui_dot_prod_expr_FU</name>
-      <operation operation_name="dot_prod_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17"/>
+      <operation operation_name="dot_prod_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7"/>
       <circuit>
         <component_o id="ui_dot_prod_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1586,25 +1586,28 @@ assign out1 = (in1 &gt;&gt; (in2[marg2_bitsize-1:0]))|(in1 &lt;&lt;(PRECISION-(i
             <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="lut_expr_FU in1 out1" VERILOG_PROVIDED="
-reg[7:0] cleaned_in0;
+`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  parameter arg0_prec = $clog2(BITSIZE_in1);
+`else
+  parameter arg0_prec = log2(BITSIZE_in1);
+`endif
+parameter arg0_bitsize = arg0_prec == 0 ? 1 : arg0_prec;
 wire [7:0] in0;
 wire[BITSIZE_in1-1:0] shifted_s;
 
 assign in0 = {in9, in8, in7, in6, in5, in4, in3, in2};
-generate
-genvar i0;
-for (i0=0; i0&lt;8; i0=i0+1)
-begin : L0
-      always @(*)
-      begin
-         if (in0[i0] == 1'b1)
-            cleaned_in0[i0] = 1'b1;
-         else
-            cleaned_in0[i0] = 1'b0;
-      end
-  end
-endgenerate
-assign shifted_s = in1 &gt;&gt; cleaned_in0;
+assign shifted_s = in1 &gt;&gt; in0[arg0_bitsize-1:0];
 assign out1[0] = shifted_s[0];
 generate
  if(BITSIZE_out1 &gt; 1)
@@ -1962,7 +1965,7 @@ endgenerate
     <template>
       <name>exact_div_expr_FU</name>
       <characterizing_constant_value>21845</characterizing_constant_value>
-      <operation operation_name="exact_div_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2,3,7|16:0,1,2,3,5,7,16|32:0,1,3,7,15,31|64:0,1,3,7,15,31,63"/>
+      <operation operation_name="exact_div_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2,3,7|16:0,1,2,3,5,7,15|32:0,1,3,7,15,31|64:0,1,3,7,15,31,63"/>
       <circuit>
         <component_o id="exact_div_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -2270,7 +2273,7 @@ assign xdenom = in2 &gt;= $signed({BITSIZE_in2{1&apos;b0}}) ? in2 : -in2;"/>
     <template>
       <name>ui_trunc_div_expr_FU</name>
       <characterizing_constant_value>21845</characterizing_constant_value>
-      <operation operation_name="trunc_div_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2,3,7|16:0,1,2,3,5,7,16|32:0,1,3,7,15,31|64:0,1,3,7,15,31,63"/>
+      <operation operation_name="trunc_div_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2,3,7|16:0,1,2,3,5,7,15|32:0,1,3,7,15,31|64:0,1,3,7,15,31,63"/>
       <circuit>
         <component_o id="ui_trunc_div_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
