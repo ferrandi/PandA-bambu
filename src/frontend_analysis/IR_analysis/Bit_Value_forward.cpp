@@ -1752,9 +1752,17 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case imagpart_expr_K:
       case realpart_expr_K:
       // Binary expressions
+      case ltgt_expr_K:
       case mem_ref_K:
-      case sat_plus_expr_K:
+      case ordered_expr_K:
       case sat_minus_expr_K:
+      case sat_plus_expr_K:
+      case uneq_expr_K:
+      case unge_expr_K:
+      case ungt_expr_K:
+      case unle_expr_K:
+      case unlt_expr_K:
+      case unordered_expr_K:
       // Ternary expressions
       case bit_field_ref_K:
       case component_ref_K:
@@ -1837,7 +1845,6 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case init_expr_K:
       case modify_expr_K:
       case mult_highpart_expr_K:
-      case ordered_expr_K:
       case postdecrement_expr_K:
       case postincrement_expr_K:
       case predecrement_expr_K:
@@ -1849,13 +1856,6 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case set_le_expr_K:
       case try_catch_expr_K:
       case try_finally_K:
-      case uneq_expr_K:
-      case ltgt_expr_K:
-      case unge_expr_K:
-      case ungt_expr_K:
-      case unle_expr_K:
-      case unlt_expr_K:
-      case unordered_expr_K:
       case widen_sum_expr_K:
       case with_size_expr_K:
       case vec_lshift_expr_K:

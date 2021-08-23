@@ -534,6 +534,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- => " + tree_node::GetString(rhs_kind));
    switch(rhs_kind)
    {
+      // Unary expressions
       case addr_expr_K:
       case bit_not_expr_K:
       case convert_expr_K:
@@ -701,6 +702,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          }
          break;
       }
+      // Binary expressions
       case bit_and_expr_K:
       case bit_ior_expr_K:
       case bit_xor_expr_K:
@@ -977,6 +979,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          }
          break;
       }
+      // Ternary expressions
       case bit_ior_concat_expr_K:
       case cond_expr_K:
       case ternary_plus_expr_K:
@@ -1197,14 +1200,22 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case gt_expr_K:
       case le_expr_K:
       case lt_expr_K:
+      case ltgt_expr_K:
       case max_expr_K:
       case min_expr_K:
       case ne_expr_K:
+      case ordered_expr_K:
+      case sat_minus_expr_K:
+      case sat_plus_expr_K:
       case trunc_div_expr_K:
       case trunc_mod_expr_K:
+      case uneq_expr_K:
+      case unge_expr_K:
+      case ungt_expr_K:
+      case unle_expr_K:
+      case unlt_expr_K:
+      case unordered_expr_K:
       case lut_expr_K:
-      case sat_plus_expr_K:
-      case sat_minus_expr_K:
       {
          // Do nothing
          break;
@@ -1258,7 +1269,6 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case init_expr_K:
       case modify_expr_K:
       case mult_highpart_expr_K:
-      case ordered_expr_K:
       case postdecrement_expr_K:
       case postincrement_expr_K:
       case predecrement_expr_K:
@@ -1270,13 +1280,6 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case set_le_expr_K:
       case try_catch_expr_K:
       case try_finally_K:
-      case uneq_expr_K:
-      case ltgt_expr_K:
-      case unge_expr_K:
-      case ungt_expr_K:
-      case unle_expr_K:
-      case unlt_expr_K:
-      case unordered_expr_K:
       case widen_sum_expr_K:
       case with_size_expr_K:
       case vec_lshift_expr_K:
