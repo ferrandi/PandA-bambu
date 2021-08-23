@@ -1866,11 +1866,11 @@ void tree_node_dup::operator()(const gimple_multi_way_if* obj, unsigned int& mas
    THROW_ASSERT(source_tn, "");
    if(!GetPointer<gimple_multi_way_if>(source_tn)->list_of_cond.empty())
    {
-      for(auto cond : GetPointer<gimple_multi_way_if>(source_tn)->list_of_cond)
+      for(const auto& cond : GetPointer<gimple_multi_way_if>(source_tn)->list_of_cond)
       {
          if(cond.first)
          {
-            unsigned int node_id = cond.first->index;
+            unsigned int node_id = GET_INDEX_NODE(cond.first);
             if(deep_copy)
             {
                if(remap.find(node_id) != remap.end())
@@ -1882,7 +1882,7 @@ void tree_node_dup::operator()(const gimple_multi_way_if* obj, unsigned int& mas
                {
                   tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
                   tree_nodeRef saved_source_tn = source_tn;
-                  node_id = create_tree_node(cond.first, deep_copy);
+                  node_id = create_tree_node(GET_NODE(cond.first), deep_copy);
                   curr_tree_node_ptr = saved_curr_tree_node_ptr;
                   source_tn = saved_source_tn;
                }
