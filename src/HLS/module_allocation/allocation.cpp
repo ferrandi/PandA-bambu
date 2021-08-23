@@ -1384,7 +1384,7 @@ DesignFlowStep_Status allocation::InternalExec()
       support_ops.insert(HLS->operations.begin(), HLS->operations.end());
    }
    const OpGraphConstRef g = op_graph_size != HLS->operations.size() ? function_behavior->CGetOpGraph(FunctionBehavior::CFG, support_ops) : cfg;
-   OpVertexSet vertex_to_analyse(g);
+   CustomUnorderedMap<std::string, OpVertexSet> vertex_to_analyse_partition;
    graph::vertex_iterator v, v_end;
    std::map<std::string, technology_nodeRef> new_fu;
    bool gimple_return_allocated_p = false;
@@ -1424,7 +1424,11 @@ DesignFlowStep_Status allocation::InternalExec()
          if(var == 0 ||
             (function_vars.find(var) == function_vars.end() && (!HLSMgr->Rmem->has_proxied_internal_variables(funId) || HLSMgr->Rmem->get_proxied_internal_variables(funId).find(var) == HLSMgr->Rmem->get_proxied_internal_variables(funId).end())))
          {
-            vertex_to_analyse.insert(*v);
+            if(vertex_to_analyse_partition.find(current_op) == vertex_to_analyse_partition.end())
+            {
+               vertex_to_analyse_partition.insert(std::pair<std::string, OpVertexSet>(current_op, OpVertexSet(g)));
+            }
+            vertex_to_analyse_partition.at(current_op).insert(*v);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Operation " + current_op + " queued for allocation");
             continue;
          }
@@ -1868,7 +1872,11 @@ DesignFlowStep_Status allocation::InternalExec()
       }
       else
       {
-         vertex_to_analyse.insert(*v);
+         if(vertex_to_analyse_partition.find(current_op) == vertex_to_analyse_partition.end())
+         {
+            vertex_to_analyse_partition.insert(std::pair<std::string, OpVertexSet>(current_op, OpVertexSet(g)));
+         }
+         vertex_to_analyse_partition.at(current_op).insert(*v);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation " + current_op + " queued for allocation");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1890,6 +1898,11 @@ DesignFlowStep_Status allocation::InternalExec()
       if(lib_name == "STD_COMMON")
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered library " + lib_name);
+         continue;
+      }
+      else if(lib_name == PROXY_LIBRARY)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because proxy library");
          continue;
       }
       for(const auto& fu : library->get_library_fu())
@@ -1917,11 +1930,6 @@ DesignFlowStep_Status allocation::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because proxy");
                continue;
             }
-         }
-         else if(lib_name == PROXY_LIBRARY)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because proxy");
-            continue;
          }
 
          const auto tech_constrain_it =
@@ -1953,9 +1961,14 @@ DesignFlowStep_Status allocation::InternalExec()
          for(const auto& ops : GetPointer<functional_unit>(current_fu)->get_operations())
          {
             auto* curr_op = GetPointer<operation>(ops);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering operation: " + (ops)->get_name());
             std::string curr_op_name = curr_op->get_name();
-            for(const auto vert : vertex_to_analyse)
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering operation: " + curr_op_name);
+            if(vertex_to_analyse_partition.find(curr_op_name) == vertex_to_analyse_partition.end())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered operation: " + curr_op_name);
+               continue;
+            }
+            for(const auto vert : vertex_to_analyse_partition.at(curr_op_name))
             {
                const auto vert_node_id = g->CGetOpNodeInfo(vert)->GetNodeId();
                const auto vert_node_operation = [&]() -> std::string {
@@ -2231,7 +2244,7 @@ DesignFlowStep_Status allocation::InternalExec()
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered vertex " + GET_NAME(g, vert));
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered operation: " + (ops)->get_name());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered operation: " + curr_op_name);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered functional unit: " + current_fu->get_name());
       }
@@ -2250,42 +2263,46 @@ DesignFlowStep_Status allocation::InternalExec()
 #endif
 
    // Check if each operation has been analysed
-   for(const auto ve : vertex_to_analyse)
+   bool completely_analyzed = true;
+   for(const auto& ve_op : vertex_to_analyse_partition)
    {
-      if(vertex_analysed.find(ve) != vertex_analysed.end())
+      for(const auto& ve : ve_op.second)
       {
-         continue;
-      }
-
-      node_kind_prec_infoRef node_info(new node_kind_prec_info());
-      HLS_manager::io_binding_type constant_id;
-      allocation_information->GetNodeTypePrec(ve, g, node_info, constant_id, false);
-      std::string precisions;
-      const size_t n_ins = node_info->input_prec.size();
-      for(size_t ind = 0; ind < n_ins; ++ind)
-      {
-         if(node_info->real_input_nelem[ind] == 0)
+         if(vertex_analysed.find(ve) != vertex_analysed.end())
          {
-            precisions += " " + STR(node_info->input_prec[ind]);
+            continue;
+         }
+         node_kind_prec_infoRef node_info(new node_kind_prec_info());
+         HLS_manager::io_binding_type constant_id;
+         allocation_information->GetNodeTypePrec(ve, g, node_info, constant_id, false);
+         std::string precisions;
+         const size_t n_ins = node_info->input_prec.size();
+         for(size_t ind = 0; ind < n_ins; ++ind)
+         {
+            if(node_info->real_input_nelem[ind] == 0)
+            {
+               precisions += " " + STR(node_info->input_prec[ind]);
+            }
+            else
+            {
+               precisions += " " + STR(node_info->input_prec[ind]) + ":" + STR(node_info->real_input_nelem[ind]);
+            }
+         }
+         if(node_info->real_output_nelem == 0)
+         {
+            precisions += " " + STR(node_info->output_prec);
          }
          else
          {
-            precisions += " " + STR(node_info->input_prec[ind]) + ":" + STR(node_info->real_input_nelem[ind]);
+            precisions += " " + STR(node_info->output_prec) + ":" + STR(node_info->real_output_nelem);
          }
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Operation for which does not exist a functional unit in the resource library: " + tree_helper::normalized_ID(g->CGetOpNodeInfo(ve)->GetOperation()) + " in vertex: " + GET_NAME(g, ve) +
+                            " with vertex type: " + node_info->node_kind + " and vertex prec:" + precisions);
+         completely_analyzed = false;
       }
-      if(node_info->real_output_nelem == 0)
-      {
-         precisions += " " + STR(node_info->output_prec);
-      }
-      else
-      {
-         precisions += " " + STR(node_info->output_prec) + ":" + STR(node_info->real_output_nelem);
-      }
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                     "---Operation for which does not exist a functional unit in the resource library: " + tree_helper::normalized_ID(g->CGetOpNodeInfo(ve)->GetOperation()) + " in vertex: " + GET_NAME(g, ve) + " with vertex type: " + node_info->node_kind +
-                         " and vertex prec:" + precisions);
    }
-   if(vertex_to_analyse.size() > static_cast<size_t>(vertex_analysed.size()))
+   if(!completely_analyzed)
    {
       THROW_ERROR("Vertices not completely allocated");
    }

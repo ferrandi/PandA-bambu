@@ -1379,11 +1379,21 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          info->real_output_nelem = output_size / element_size;
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
+         info->input_prec[0] = max_size_in;
+         info->input_prec[1] = max_size_in;
       }
       else
       {
-         unsigned int output_size = static_cast<unsigned int>(tree_helper::size(TreeM, nodeOutput_id));
          THROW_ASSERT(info->input_prec.size() == 2, "unexpected number of inputs");
+         unsigned int output_size_true = static_cast<unsigned int>(tree_helper::size(TreeM, nodeOutput_id));
+         if(output_size_true < info->input_prec[0])
+         {
+            info->input_prec[0] = output_size_true;
+         }
+         if(output_size_true < info->input_prec[1])
+         {
+            info->input_prec[1] = output_size_true;
+         }
          if(info->input_prec[0] > info->input_prec[1])
          {
             std::swap(info->input_prec[0], info->input_prec[1]);
@@ -1412,36 +1422,19 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
             max_size_in = resize_to_1_8_16_32_64_128_256_512(max_size_in);
             info->input_prec[0] = max_size_in;
             info->input_prec[1] = max_size_in;
-         }
-         if(current_op == "widen_mult_expr")
-         {
-            info->output_prec = info->input_prec[0] + info->input_prec[1];
+            info->output_prec = max_size_in;
          }
          else
          {
-            const auto resized_output_size = resize_to_1_8_16_32_64_128_256_512(output_size);
-            THROW_ASSERT(parameters->isOption(OPT_cfg_max_transformations) or std::max(resize_to_1_8_16_32_64_128_256_512(info->input_prec[0]), resize_to_1_8_16_32_64_128_256_512(info->input_prec[1])) >= resized_output_size,
-                         GET_NAME(g, node) + ": " + STR(TreeM->CGetTreeNode(g->CGetOpNodeInfo(node)->GetNodeId())));
-            info->output_prec = resized_output_size;
-            if(info->output_prec < info->input_prec[0])
+            if(resize_to_1_8_16_32_64_128_256_512(output_size_true) < max_size_in)
             {
-               info->input_prec[0] = info->output_prec;
+               max_size_in = resize_to_1_8_16_32_64_128_256_512(output_size_true);
             }
-            if(info->output_prec < info->input_prec[1])
-            {
-               info->input_prec[1] = info->output_prec;
-            }
-            if(parameters->isOption(OPT_cfg_max_transformations))
-            {
-               if(info->output_prec > info->input_prec[0])
-               {
-                  info->input_prec[0] = info->output_prec;
-               }
-               if(info->output_prec > info->input_prec[1])
-               {
-                  info->input_prec[1] = info->output_prec;
-               }
-            }
+            info->output_prec = max_size_in;
+         }
+         if(current_op == "widen_mult_expr" && not resized)
+         {
+            info->output_prec = info->input_prec[0] + info->input_prec[1];
          }
          info->real_output_nelem = info->base128_output_nelem = 0;
       }
@@ -1618,6 +1611,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          std::swap(info->real_input_nelem[2], info->real_input_nelem[1]);
       }
    }
+   std::cerr << "current_op: " << current_op << "\n";
+   info->print(std::cerr);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got node type precision of " + GET_NAME(g, node));
 }
 
@@ -2823,7 +2818,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          }
          else
          {
-            auto delta_delay = (lut_delay * .7) / static_cast<double>(max_lut_size);
+            auto delta_delay = (lut_delay * 1.) / static_cast<double>(max_lut_size);
             // std::cerr << "correction value = " << (max_lut_size-n_ins)*delta_delay << "\n";
             res_value = res_value - static_cast<double>(n_ins) * delta_delay;
          }
@@ -4006,4 +4001,30 @@ CustomSet<unsigned int> AllocationInformation::GetZeroDistanceOperations(const u
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed Zero Distance Operations of " + STR(statement_index));
       return zero_distance_ops[statement_index];
    }
+}
+
+void node_kind_prec_info::print(std::ostream& os) const
+{
+   os << "node_kind: " << node_kind << "\n";
+   os << "node_kind: " << node_kind << "\n";
+   for(auto el : input_prec)
+   {
+      os << el << " ";
+   }
+   os << "\n";
+   for(auto el : base128_input_nelem)
+   {
+      os << el << " ";
+   }
+   os << "\n";
+   for(auto el : real_input_nelem)
+   {
+      os << el << " ";
+   }
+   os << "\n";
+   os << "output_prec: " << output_prec << "\n";
+   os << "base128_output_nelem: " << base128_output_nelem << "\n";
+   os << "real_output_nelem: " << real_output_nelem << "\n";
+   os << "is_single_bool_test_cond_expr: " << (is_single_bool_test_cond_expr ? "T" : "F") << "\n";
+   os << "is_simple_pointer_plus_expr: " << (is_single_bool_test_cond_expr ? "T" : "F") << "\n";
 }
