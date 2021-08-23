@@ -1611,8 +1611,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          std::swap(info->real_input_nelem[2], info->real_input_nelem[1]);
       }
    }
-   std::cerr << "current_op: " << current_op << "\n";
-   info->print(std::cerr);
+   //std::cerr << "current_op: " << current_op << "\n";
+   //info->print(std::cerr);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got node type precision of " + GET_NAME(g, node));
 }
 

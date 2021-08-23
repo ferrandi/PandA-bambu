@@ -1900,11 +1900,6 @@ DesignFlowStep_Status allocation::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered library " + lib_name);
          continue;
       }
-      else if(lib_name == PROXY_LIBRARY)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because proxy library");
-         continue;
-      }
       for(const auto& fu : library->get_library_fu())
       {
          technology_nodeRef current_fu = fu.second;
@@ -1930,6 +1925,11 @@ DesignFlowStep_Status allocation::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because proxy");
                continue;
             }
+         }
+         else if(lib_name == PROXY_LIBRARY)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because proxy library");
+            continue;
          }
 
          const auto tech_constrain_it =
