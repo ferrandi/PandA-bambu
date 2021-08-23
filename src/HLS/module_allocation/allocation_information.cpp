@@ -1432,7 +1432,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
             }
             info->output_prec = max_size_in;
          }
-         if(current_op == "widen_mult_expr" && not resized)
+         if(current_op == "widen_mult_expr")
          {
             info->output_prec = info->input_prec[0] + info->input_prec[1];
          }
