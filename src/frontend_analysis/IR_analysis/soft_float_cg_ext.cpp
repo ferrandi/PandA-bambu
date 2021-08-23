@@ -2067,6 +2067,10 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                const auto opFF = bitsize == 32 ? float32FF : (bitsize == 64 ? float64FF : nullptr);
                const auto fu_name = "__float_" + fu_suffix;
                replaceWithCall(_version->ieee_format() ? opFF : _version->userRequired, fu_name, {be->op0, be->op1}, current_statement, current_tree_node, current_srcp);
+               if(parameters->IsParameter("soft-float-always-inline") && parameters->GetParameter<unsigned int>("soft-float-always-inline") == 1)
+               {
+                  FunctionCallInline::RequestInlineStmt(current_statement, function_id);
+               }
                modified = true;
             }
          }
