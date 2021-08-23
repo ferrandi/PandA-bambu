@@ -86,9 +86,7 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
          "C_HLS_IPs.data",
          "C_IO_IPs.data",
          "C_MEM_IPs.data",
-#if HAVE_EXPERIMENTAL
          "C_PC_IPs.data",
-#endif
          "CS_COMPONENT.data",
          "C_PROFILING_IPs.data",
          "C_STD_IPs.data",
