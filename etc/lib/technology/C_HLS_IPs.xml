@@ -1586,28 +1586,11 @@ assign out1 = (in1 &gt;&gt; (in2[marg2_bitsize-1:0]))|(in1 &lt;&lt;(PRECISION-(i
             <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="lut_expr_FU in1 out1" VERILOG_PROVIDED="
-`ifndef _SIM_HAVE_CLOG2
-  function integer log2;
-     input integer value;
-     integer temp_value;
-    begin
-      temp_value = value-1;
-      for (log2=0; temp_value&gt;0; log2=log2+1)
-        temp_value = temp_value&gt;&gt;1;
-    end
-  endfunction
-`endif
-`ifdef _SIM_HAVE_CLOG2
-  parameter arg0_prec = $clog2(BITSIZE_in1);
-`else
-  parameter arg0_prec = log2(BITSIZE_in1);
-`endif
-parameter arg0_bitsize = arg0_prec == 0 ? 1 : arg0_prec;
 wire [7:0] in0;
 wire[BITSIZE_in1-1:0] shifted_s;
 
 assign in0 = {in9, in8, in7, in6, in5, in4, in3, in2};
-assign shifted_s = in1 &gt;&gt; in0[arg0_bitsize-1:0];
+assign shifted_s = in1 &gt;&gt; in0;
 assign out1[0] = shifted_s[0];
 generate
  if(BITSIZE_out1 &gt; 1)
