@@ -87,6 +87,8 @@ bambu_specific_test/bambu1.c \
 bambu_specific_test/chk.h \
 bambu_specific_test/memset-chk.c \
 bambu_specific_test/return_vector.c \
+bambu_specific_test/990829-1.c.gimplePSSA \
+bambu_specific_test/20020108-1.c.gimplePSSA \
 bambu_specific_test2.sh \
 bambu_specific_test2/dd_test1.xml \
 bambu_specific_test2/duff_device.c \
