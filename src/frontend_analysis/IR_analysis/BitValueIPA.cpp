@@ -360,6 +360,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "fu_id: " + STR(fu_id) + " bitstring: " + bitstring_to_string(res));
                         if(BitLatticeManipulator::isBetter(bitstring_to_string(best.at(fu_id)), s->bit_values))
                         {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "" + STR(fu_id) + " " + bitstring_to_string(best.at(fu_id)) + " is better than: " + s->bit_values);
                            fun_id_to_restart_caller.insert(caller_id);
                         }
                      }
@@ -649,7 +650,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Updated IR");
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Functions to restart: " + STR(fun_id_to_restart.size()));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Functions to restart: " + STR(fun_id_to_restart.size() + fun_id_to_restart_caller.size()));
    BitLatticeManipulator::clear();
 
    for(const auto& i : fun_id_to_restart)
