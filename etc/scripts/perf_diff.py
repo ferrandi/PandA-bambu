@@ -6,7 +6,7 @@ from collections import defaultdict
 
 
 class SplitArgs(argparse.Action):
-    def call(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, values.split(','))
 
 
@@ -129,34 +129,34 @@ if len(args.output) > 0:
                 else:
                     base_line += ',' + base_perf[pp] + ','
                     new_line += ',' + new_perf[pp] + \
-                        ',' + "{0:.6%}".format(bp[idx] - 1.0)
+                        ',' + "{0:.4%}".format(bp[idx] - 1.0)
                 idx += 1
             result_csv.write(base_line + '\n')
             result_csv.write(new_line + '\n')
 
-row_format = "{:<15}" * (len(args.datapoints) + 1)
+row_format = "{:50}" + "{:<15}" * (len(args.datapoints))
 print(row_format.format('Benchmark', *args.datapoints))
 if use_score:
     for bp in bad_perf:
         bp_score = bp.pop()
         print(row_format.format(
-            bp[0], *["{0:.6%}".format(x - 1.0) for x in bp[1:]], "{:.6f}".format(bp_score)))
+            bp[0], *["{0:.4%}".format(x - 1.0) for x in bp[1:]], "{:.4f}".format(bp_score)))
     print('-----------------')
     mean_score = perf_mean.pop()
-    print(row_format.format(perf_mean[0], *["{0:.6%}".format(x - 1.0)
-                                            for x in perf_mean[1:]], "{:.6f}".format(mean_score)))
+    print(row_format.format(perf_mean[0], *["{0:.4%}".format(x - 1.0)
+                                            for x in perf_mean[1:]], "{:.4f}".format(mean_score)))
     var_score = perf_var.pop()
-    print(row_format.format(perf_var[0], *["{0:.6%}".format(x - 1.0)
-                                           for x in perf_var[1:]], "{:.6f}".format(var_score)))
+    print(row_format.format(perf_var[0], *["{0:.4%}".format(x)
+                                           for x in perf_var[1:]], "{:.4f}".format(var_score)))
 else:
     for bp in bad_perf:
         print(row_format.format(
-            bp[0], *["{0:.6%}".format(x - 1.0) for x in bp[1:]]))
+            bp[0], *["{0:.4%}".format(x - 1.0) for x in bp[1:]]))
     print('-----------------')
     print(row_format.format(
-        perf_mean[0], *["{0:.6%}".format(x - 1.0) for x in perf_mean[1:]]))
+        perf_mean[0], *["{0:.4%}".format(x - 1.0) for x in perf_mean[1:]]))
     print(row_format.format(
-        perf_var[0], *["{0:.6%}".format(x - 1.0) for x in perf_var[1:]]))
+        perf_var[0], *["{0:.4%}".format(x) for x in perf_var[1:]]))
 
 if len(bad_perf) > 0 and args.returnfail:
     exit(-1)

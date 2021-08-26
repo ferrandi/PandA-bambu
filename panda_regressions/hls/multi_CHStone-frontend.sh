@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. $script_dir/generic_getopt.sh
+
 script_dir="$(dirname $(readlink -e $0))"
 
 BATCH_ARGS=("--simulate" "-O0" "-fwhole-program" "--clock-period=15" "-D'printf(fmt, ...)='" "--channels-type=MEM_ACC_NN" "--experimental-setup=BAMBU")
@@ -13,7 +15,7 @@ $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=CLANG7-O0-wp-NN ${BATCH_ARGS[*]}" \
    -lCHStone_list \
    -o "output_${OUT_SUFFIX}" -b$script_dir \
-   --table="${OUT_SUFFIX}.tex" \
-   --csv="${OUT_SUFFIX}.csv" \
+   --table="${REPORT_DIR}${OUT_SUFFIX}.tex" \
+   --csv="${REPORT_DIR}${OUT_SUFFIX}.csv" \
    --name="${OUT_SUFFIX}" $ARGS
 exit $?
