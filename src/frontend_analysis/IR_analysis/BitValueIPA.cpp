@@ -358,7 +358,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         THROW_ASSERT(res_fanout.size(), "unexpected condition");
                         res = inf(res, res_fanout, fu_id);
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "fu_id: " + STR(fu_id) + " bitstring: " + bitstring_to_string(res));
-                        if(BitLatticeManipulator::isBetter(bitstring_to_string(best.at(fu_id)), s->bit_values))
+                        auto res_sup = sup(best.at(fu_id), res_fanout, fu_id);
+                        auto res_sup_string = bitstring_to_string(res_sup);
+                        if(res_sup_string != s->bit_values)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "" + STR(fu_id) + " " + bitstring_to_string(best.at(fu_id)) + " is better than: " + s->bit_values);
                            fun_id_to_restart_caller.insert(caller_id);
