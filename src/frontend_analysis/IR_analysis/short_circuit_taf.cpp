@@ -632,7 +632,7 @@ bool short_circuit_taf::HasToBeExecuted() const
       }
       else
       {
-         return false;
+         return true;
       }
    }
 #endif

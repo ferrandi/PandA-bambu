@@ -99,13 +99,7 @@ simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, cons
     : FunctionFrontendFlowStep(_AppM, _function_id, SIMPLE_CODE_MOTION, _design_flow_manager, _parameters),
       restart_ifmwi_opt(false),
       schedule(ScheduleRef()),
-      conservative(
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-          (parameters->isOption(OPT_scheduling_algorithm) and parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING) ? true : false
-#else
-          false
-#endif
-      )
+      conservative(false)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }

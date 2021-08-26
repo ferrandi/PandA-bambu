@@ -129,21 +129,17 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             {
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
             }
-            if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING ||
-               (GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch))
+            if(restart_if_opt)
             {
-               if(restart_if_opt)
-               {
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-               }
-               if(restart_mwi_opt)
-               {
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-               }
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+            }
+            if(restart_mwi_opt)
+            {
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
             }
             if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
@@ -1326,16 +1322,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
 
    if(restart_mem || modified || restart_if_opt || restart_mwi_opt)
    {
-      if((restart_mem || modified) || parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING ||
-         (GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch))
-      {
-         function_behavior->UpdateBBVersion();
-         return DesignFlowStep_Status::SUCCESS;
-      }
-      else
-      {
-         return DesignFlowStep_Status::UNCHANGED;
-      }
+      function_behavior->UpdateBBVersion();
+      return DesignFlowStep_Status::SUCCESS;
    }
    else
    {

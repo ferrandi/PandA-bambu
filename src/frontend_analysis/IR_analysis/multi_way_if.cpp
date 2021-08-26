@@ -801,7 +801,7 @@ bool multi_way_if::HasToBeExecuted() const
       }
       else
       {
-         return false;
+         return true;
       }
    }
 #endif
