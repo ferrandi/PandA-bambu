@@ -282,8 +282,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "ExtractPatterns";
 #endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
-         return "FindMaxCfgTransformations";
+      case FIND_MAX_TRANSFORMATIONS:
+         return "FindMaxTransformations";
 #endif
       case(FUNCTION_ANALYSIS):
          return "CallGraphComputation";

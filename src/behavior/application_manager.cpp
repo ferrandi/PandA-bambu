@@ -357,7 +357,7 @@ void application_manager::clean_written_objects()
 bool application_manager::ApplyNewTransformation() const
 {
 #ifndef NDEBUG
-   return cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations);
+   return cfg_transformations < Param->getOption<size_t>(OPT_max_transformations);
 #else
    return true;
 #endif
@@ -375,9 +375,9 @@ void application_manager::RegisterTransformation(const std::string&
 )
 {
 #ifndef NDEBUG
-   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations), step + " - " + (new_tn ? new_tn->ToString() : "") + " Transformations " + STR(cfg_transformations));
+   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_max_transformations), step + " - " + (new_tn ? new_tn->ToString() : "") + " Transformations " + STR(cfg_transformations));
    cfg_transformations++;
-   if(Param->getOption<size_t>(OPT_cfg_max_transformations) != std::numeric_limits<size_t>::max())
+   if(Param->getOption<size_t>(OPT_max_transformations) != std::numeric_limits<size_t>::max())
    {
       INDENT_OUT_MEX(0, 0, "---Transformation " + STR(cfg_transformations) + " - " + step + " - " + (new_tn ? new_tn->ToString() : ""));
    }

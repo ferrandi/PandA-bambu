@@ -127,7 +127,7 @@
 #include "dead_code_eliminationIPA.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
-#include "find_max_cfg_transformations.hpp"
+#include "find_max_transformations.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "determine_memory_accesses.hpp"
@@ -588,7 +588,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case DEAD_CODE_ELIMINATION_IPA:
 #endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FIND_MAX_TRANSFORMATIONS:
 #endif
       case FUNCTION_ANALYSIS:
 #if HAVE_ZEBU_BUILT
@@ -676,9 +676,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       }
 #endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FIND_MAX_TRANSFORMATIONS:
       {
-         return DesignFlowStepRef(new FindMaxCFGTransformations(AppM, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(new FindMaxTransformations(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
       case(FUNCTION_ANALYSIS):
@@ -1559,7 +1559,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case DEAD_CODE_ELIMINATION_IPA:
 #endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FIND_MAX_TRANSFORMATIONS:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT

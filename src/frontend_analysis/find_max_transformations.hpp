@@ -31,14 +31,14 @@
  *
  */
 /**
- * @file find_max_cfg_transformations.hpp
- * @brief Analysis step to find transformation which breaks synthesis flow by launching bambu with different values of --cfg-max-transformations
+ * @file find_max_transformations.hpp
+ * @brief Analysis step to find transformation which breaks synthesis flow by launching bambu with different values of --max-transformations
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-#ifndef FIND_MAX_CFG_TRANSFORMATIONS_HPP
-#define FIND_MAX_CFG_TRANSFORMATIONS_HPP
+#ifndef FIND_MAX_TRANSFORMATIONS_HPP
+#define FIND_MAX_TRANSFORMATIONS_HPP
 
 #include "application_frontend_flow_step.hpp" // for ApplicationFrontendFlo...
 #include "custom_set.hpp"                     // for unordered_set
@@ -49,9 +49,9 @@
 #include <utility>                            // for pair
 
 /**
- * Class to find the maximum admissible value of cfg-max-transformations
+ * Class to find the maximum admissible value of max-transformations
  */
-class FindMaxCFGTransformations : public ApplicationFrontendFlowStep
+class FindMaxTransformations : public ApplicationFrontendFlowStep
 {
  private:
    /**
@@ -62,17 +62,17 @@ class FindMaxCFGTransformations : public ApplicationFrontendFlowStep
 
    /**
     * Compute the arg list string of bambu
-    * @param cfg_max_transformations is the value to be used in the option
+    * @param max_transformations is the value to be used in the option
     * @return the argument string
     */
-   const std::string ComputeArgString(const size_t cfg_max_transformations) const;
+   const std::string ComputeArgString(const size_t max_transformations) const;
 
    /**
-    * Execute bambu with cfg-max-transformations
-    * @param cfg_max_transformations is the value to be used in the option
+    * Execute bambu with max-transformations
+    * @param max_transformations is the value to be used in the option
     * @return true if the execution was successful, false otherwise
     */
-   bool ExecuteBambu(const size_t cfg_max_transformations) const;
+   bool ExecuteBambu(const size_t max_transformations) const;
 
  public:
    /**
@@ -81,12 +81,12 @@ class FindMaxCFGTransformations : public ApplicationFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of the parameters
     */
-   FindMaxCFGTransformations(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   FindMaxTransformations(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor
     */
-   ~FindMaxCFGTransformations() override;
+   ~FindMaxTransformations() override;
 
    /**
     * Performs the profiling step

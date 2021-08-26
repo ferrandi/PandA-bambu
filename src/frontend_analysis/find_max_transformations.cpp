@@ -31,13 +31,13 @@
  *
  */
 /**
- * @file find_max_cfg_transformations.cpp
- * @brief Analysis step to find transformation which breaks synthesis flow by launching bambu with different values of --cfg-max-transformations
+ * @file find_max_transformations.cpp
+ * @brief Analysis step to find transformation which breaks synthesis flow by launching bambu with different values of --max-transformations
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-#include "find_max_cfg_transformations.hpp"
+#include "find_max_transformations.hpp"
 #include "Parameter.hpp"                   // for Parameter, OPT_output_tem...
 #include "dbgPrintHelper.hpp"              // for INDENT_OUT_MEX, OUTPUT_LE...
 #include "exceptions.hpp"                  // for IsError, THROW_ASSERT
@@ -46,20 +46,20 @@
 #include "string_manipulation.hpp"         // for STR GET_CLASS
 #include <boost/filesystem/operations.hpp> // for create_directory, exists
 
-FindMaxCFGTransformations::FindMaxCFGTransformations(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::FIND_MAX_CFG_TRANSFORMATIONS, _design_flow_manager, _parameters)
+FindMaxTransformations::FindMaxTransformations(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::FIND_MAX_TRANSFORMATIONS, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-FindMaxCFGTransformations::~FindMaxCFGTransformations() = default;
+FindMaxTransformations::~FindMaxTransformations() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> FindMaxCFGTransformations::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> FindMaxTransformations::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {
    return CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>();
 }
 
-const std::string FindMaxCFGTransformations::ComputeArgString(const size_t cfg_max_transformations) const
+const std::string FindMaxTransformations::ComputeArgString(const size_t max_transformations) const
 {
    const auto argv = parameters->CGetArgv();
    std::string arg_string;
@@ -74,22 +74,22 @@ const std::string FindMaxCFGTransformations::ComputeArgString(const size_t cfg_m
       else
       {
          arg_string += " ";
-         if(arg.find("--cfg-max-transformations") == std::string::npos and arg.find("--find-cfg-max-transformations") == std::string::npos)
+         if(arg.find("--max-transformations") == std::string::npos and arg.find("--find-max-transformations") == std::string::npos)
          {
             arg_string += arg;
          }
       }
    }
-   arg_string += " --cfg-max-transformations=" + STR(cfg_max_transformations);
+   arg_string += " --max-transformations=" + STR(max_transformations);
    return arg_string;
 }
 
-bool FindMaxCFGTransformations::ExecuteBambu(const size_t cfg_max_transformations) const
+bool FindMaxTransformations::ExecuteBambu(const size_t max_transformations) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing with max transformations " + STR(cfg_max_transformations));
-   const auto arg_string = ComputeArgString(cfg_max_transformations);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing with max transformations " + STR(max_transformations));
+   const auto arg_string = ComputeArgString(max_transformations);
    const auto temp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-   const auto new_directory = temp_directory + "/" + STR(cfg_max_transformations);
+   const auto new_directory = temp_directory + "/" + STR(max_transformations);
    if(boost::filesystem::exists(new_directory))
    {
       boost::filesystem::remove_all(new_directory);
@@ -108,7 +108,7 @@ bool FindMaxCFGTransformations::ExecuteBambu(const size_t cfg_max_transformation
    }
 }
 
-DesignFlowStep_Status FindMaxCFGTransformations::Exec()
+DesignFlowStep_Status FindMaxTransformations::Exec()
 {
    size_t correct_cmt = 1;
    size_t wrong_cmt = 0;
@@ -127,10 +127,10 @@ DesignFlowStep_Status FindMaxCFGTransformations::Exec()
       const auto zero_execution = ExecuteBambu(0);
       if(not zero_execution)
       {
-         INDENT_OUT_MEX(0, 0, "Bambu fails with --cfg-max-transformations=0");
+         INDENT_OUT_MEX(0, 0, "Bambu fails with --max-transformations=0");
          return DesignFlowStep_Status::ABORTED;
       }
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Looking for upper bound of cfg max transformations");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Looking for upper bound of max transformations");
 
       while(ExecuteBambu(correct_cmt))
       {

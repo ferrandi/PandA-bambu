@@ -404,7 +404,7 @@ void Parameter::SetCommonDefaults()
    }
    setOption(OPT_seed, 0);
 
-   setOption(OPT_cfg_max_transformations, std::numeric_limits<size_t>::max());
+   setOption(OPT_max_transformations, std::numeric_limits<size_t>::max());
 }
 
 void Parameter::print(std::ostream& os) const
@@ -538,9 +538,9 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
          setOption(STR_OPT_benchmark_fake_parameters, optarg_param);
          break;
       }
-      case INPUT_OPT_CFG_MAX_TRANSFORMATIONS:
+      case INPUT_OPT_MAX_TRANSFORMATIONS:
       {
-         setOption(OPT_cfg_max_transformations, optarg_param);
+         setOption(OPT_max_transformations, optarg_param);
          break;
       }
       case INPUT_OPT_CONFIGURATION_NAME:
@@ -1733,8 +1733,8 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
       << "        (default = 1).\n\n"
       << "    --debug-classes=<classes_list>\n"
       << "        Set maximum debug level for classes in <classes_list>\n\n"
-      << "    --cfg-max-transformations=<number>\n"
-      << "        Set a maximum number of cfg transformations for each function.\n\n"
+      << "    --max-transformations=<number>\n"
+      << "        Set a maximum number of transformations.\n\n"
 #endif
       << "    --no-clean\n"
       << "        Do not remove temporary files.\n\n"

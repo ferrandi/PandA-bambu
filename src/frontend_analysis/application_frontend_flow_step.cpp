@@ -315,7 +315,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case DEAD_CODE_ELIMINATION_IPA:
 #endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FIND_MAX_TRANSFORMATIONS:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT

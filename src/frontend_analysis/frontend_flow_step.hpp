@@ -82,7 +82,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #endif
    CREATE_TREE_MANAGER,
 #if HAVE_BAMBU_BUILT
-   FIND_MAX_CFG_TRANSFORMATIONS,
+   FIND_MAX_TRANSFORMATIONS,
 #endif
    FUNCTION_ANALYSIS, //! Creation of the call graph
 #if HAVE_ZEBU_BUILT

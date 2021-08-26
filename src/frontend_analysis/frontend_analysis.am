@@ -445,9 +445,9 @@ if BUILD_BAMBU
    lib_frontend_analysis_la_CPPFLAGS += \
       -I$(top_srcdir)/src/constants
    noinst_HEADERS += \
-      frontend_analysis/find_max_cfg_transformations.hpp
+      frontend_analysis/find_max_transformations.hpp
    lib_frontend_analysis_la_SOURCES += \
-      frontend_analysis/find_max_cfg_transformations.cpp
+      frontend_analysis/find_max_transformations.cpp
 endif
 
 if BUILD_LIB_CODE_ESTIMATION
