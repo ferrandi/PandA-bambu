@@ -2165,8 +2165,8 @@ src/frontend_analysis/complete_bb_graph.cpp
 src/frontend_analysis/complete_bb_graph.hpp
 src/frontend_analysis/complete_call_graph.cpp
 src/frontend_analysis/complete_call_graph.hpp
-src/frontend_analysis/find_max_cfg_transformations.cpp
-src/frontend_analysis/find_max_cfg_transformations.hpp
+src/frontend_analysis/find_max_transformations.cpp
+src/frontend_analysis/find_max_transformations.hpp
 src/frontend_analysis/frontend_flow_step.cpp
 src/frontend_analysis/frontend_flow_step.hpp
 src/frontend_analysis/frontend_flow_step_factory.cpp
