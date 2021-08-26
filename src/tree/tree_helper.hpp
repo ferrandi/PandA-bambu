@@ -275,6 +275,14 @@ class tree_helper
    static tree_nodeConstRef CGetElements(const tree_nodeConstRef& type);
 
    /**
+    * Given two nodes tells if they have same base type (const is not considered: const double == double)
+    * @param tn0 first node to compare
+    * @param tn1 second node to compare
+    * @return true if tn0 and tn1 have the same type
+    */
+   static bool IsSameType(const tree_nodeConstRef& tn0, const tree_nodeConstRef& tn1);
+
+   /**
     * Return name of the type
     * @param TM is the tree manager
     * @param index is the index of the type

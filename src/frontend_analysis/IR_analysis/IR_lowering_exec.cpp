@@ -1128,13 +1128,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   if(be_kind == bit_and_expr_K || be_kind == bit_ior_expr_K || be_kind == bit_xor_expr_K || be_kind == plus_expr_K || be_kind == minus_expr_K || be_kind == mult_expr_K || be_kind == trunc_div_expr_K || be_kind == trunc_mod_expr_K ||
                      be_kind == sat_plus_expr_K || be_kind == sat_minus_expr_K)
                   {
-                     const auto op0_type = tree_helper::CGetType(GET_CONST_NODE(be->op0));
-                     if(op0_type->index != GET_INDEX_CONST_NODE(be->type))
+                     if(!tree_helper::IsSameType(be->op0, be->type))
                      {
                         type_cast(be->op0, be->type);
                      }
-                     const auto op1_type = tree_helper::CGetType(GET_CONST_NODE(be->op1));
-                     if(op1_type->index != GET_INDEX_CONST_NODE(be->type))
+                     if(!tree_helper::IsSameType(be->op1, be->type))
                      {
                         type_cast(be->op1, be->type);
                      }

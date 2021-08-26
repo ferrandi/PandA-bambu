@@ -102,12 +102,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-static inline bool conv_really_needed(const tree_nodeConstRef& op0t, const tree_nodeConstRef& op1t)
-{
-   return op0t->get_kind() != op1t->get_kind() || tree_helper::Size(op0t) != tree_helper::Size(op1t) || (op0t->get_kind() == integer_type_K && GetPointerS<const integer_type>(op0t)->unsigned_flag != GetPointerS<const integer_type>(op1t)->unsigned_flag) ||
-          (op0t->get_kind() == enumeral_type_K && GetPointerS<const enumeral_type>(op0t)->unsigned_flag != GetPointerS<const enumeral_type>(op1t)->unsigned_flag);
-}
-
 DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
 {
    bool changed = false;
@@ -151,7 +145,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                   {
                      const auto assigned_ssa_type_node = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the assigned ssa_name " + STR(GET_CONST_NODE(ga->op0)) + " has type " + assigned_ssa_type_node->ToString());
-                     if(conv_really_needed(ret_type_node, assigned_ssa_type_node))
+                     if(!tree_helper::IsSameType(ret_type_node, assigned_ssa_type_node))
                      {
                         const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), ret_type_node, tree_nodeRef(), tree_nodeRef());
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create ssa " + GET_CONST_NODE(new_ssa)->ToString());
@@ -236,7 +230,7 @@ bool FunctionCallTypeCleanup::ParametersTypeCleanup(const tree_managerRef& TM, c
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---formal type = " + formal_type->get_kind_text() + "\t" + formal_type->ToString());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual type = " + actual_type_node->get_kind_text() + "\t" + actual_type_node->ToString());
       tree_nodeRef ga_cleanup = nullptr;
-      if((GET_CONST_NODE(*arg_it)->get_kind() == integer_cst_K || GET_CONST_NODE(*arg_it)->get_kind() == ssa_name_K) && conv_really_needed(formal_type, actual_type_node))
+      if((GET_CONST_NODE(*arg_it)->get_kind() == integer_cst_K || GET_CONST_NODE(*arg_it)->get_kind() == ssa_name_K) && !tree_helper::IsSameType(formal_type, actual_type_node))
       {
          ga_cleanup = tree_man->CreateNopExpr(*arg_it, TM->CGetTreeReindex(formal_type->index), tree_nodeRef(), tree_nodeRef(), function_id);
       }

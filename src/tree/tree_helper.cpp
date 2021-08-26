@@ -2215,6 +2215,15 @@ tree_nodeConstRef tree_helper::CGetElements(const tree_nodeConstRef& type)
    return tree_nodeConstRef();
 }
 
+bool tree_helper::IsSameType(const tree_nodeConstRef& tn0, const tree_nodeConstRef& tn1)
+{
+   const auto tn0_type = CGetType(tn0->get_kind() == tree_reindex_K ? GET_CONST_NODE(tn0) : tn0);
+   const auto tn1_type = CGetType(tn1->get_kind() == tree_reindex_K ? GET_CONST_NODE(tn1) : tn1);
+   return tn0_type->get_kind() == tn1_type->get_kind() && tree_helper::Size(tn0_type) == tree_helper::Size(tn1_type) &&
+          (tn0_type->get_kind() != integer_type_K || GetPointerS<const integer_type>(tn0_type)->unsigned_flag == GetPointerS<const integer_type>(tn1_type)->unsigned_flag) &&
+          (tn0_type->get_kind() != enumeral_type_K || GetPointerS<const enumeral_type>(tn0_type)->unsigned_flag == GetPointerS<const enumeral_type>(tn1_type)->unsigned_flag);
+}
+
 std::string tree_helper::get_type_name(const tree_managerConstRef& TM, const unsigned int index)
 {
    const auto type = CGetType(TM->CGetTreeNode(index));
@@ -2468,6 +2477,10 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& node)
          const auto gw = GetPointer<const gimple_while>(node);
          return CGetType(GET_CONST_NODE(gw->op0));
       }
+      case CASE_TYPE_NODES:
+      {
+         return node;
+      }
       case binfo_K:
       case block_K:
       case case_label_expr_K:
@@ -2480,7 +2493,6 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& node)
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_PRAGMA_NODES:
-      case CASE_TYPE_NODES:
       case void_cst_K:
       case error_mark_K:
       default:
