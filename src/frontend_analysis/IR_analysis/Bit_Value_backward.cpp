@@ -679,7 +679,16 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          {
             res = op_bitstring;
             const auto initial_size = op_bitstring.size();
-            while(res.size() > lhs_bitstring.size())
+            auto res_size = BitLatticeManipulator::size(TM, res_nid);
+            if(lhs_bitstring.front() == bit_lattice::U)
+            {
+               res_size = std::min(res_size, static_cast<unsigned int>(lhs_bitstring.size()));
+            }
+            if(lhs_bitstring.front() == bit_lattice::X)
+            {
+               res_size = std::min(res_size, static_cast<unsigned int>(lhs_bitstring.size() - 1));
+            }
+            while(res.size() > res_size)
             {
                res.pop_front();
             }
@@ -1122,7 +1131,16 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                res = op2_bitstring;
             }
             const auto initial_size = res.size();
-            while(res.size() > lhs_bitstring.size())
+            auto res_size = BitLatticeManipulator::size(TM, res_nid);
+            if(lhs_bitstring.front() == bit_lattice::U)
+            {
+               res_size = std::min(res_size, static_cast<unsigned int>(lhs_bitstring.size()));
+            }
+            if(lhs_bitstring.front() == bit_lattice::X)
+            {
+               res_size = std::min(res_size, static_cast<unsigned int>(lhs_bitstring.size() - 1));
+            }
+            while(res.size() > res_size)
             {
                res.pop_front();
             }
