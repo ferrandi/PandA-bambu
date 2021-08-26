@@ -62,7 +62,6 @@ class eSSA : public FunctionFrontendFlowStep
 
  private:
    BBGraphRef DT;
-   unsigned int bv_ver;
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
@@ -93,8 +92,6 @@ class eSSA : public FunctionFrontendFlowStep
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
-
-   bool HasToBeExecuted() const override;
 };
 
 #endif // !ESSA_HPP

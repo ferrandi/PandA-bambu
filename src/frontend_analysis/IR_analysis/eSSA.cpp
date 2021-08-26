@@ -1331,7 +1331,7 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
    return modified;
 }
 
-eSSA::eSSA(const ParameterConstRef params, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm) : FunctionFrontendFlowStep(AM, f_id, ESSA, dfm, params), bv_ver(0)
+eSSA::eSSA(const ParameterConstRef params, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm) : FunctionFrontendFlowStep(AM, f_id, ESSA, dfm, params)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -1366,11 +1366,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          THROW_UNREACHABLE("");
    }
    return relationships;
-}
-
-bool eSSA::HasToBeExecuted() const
-{
-   return function_behavior->GetBitValueVersion() != bv_ver || FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 void eSSA::Initialize()
@@ -1537,7 +1532,6 @@ DesignFlowStep_Status eSSA::InternalExec()
    DT.reset();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
-   bv_ver = function_behavior->GetBitValueVersion();
    modified ? function_behavior->UpdateBBVersion() : 0;
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
