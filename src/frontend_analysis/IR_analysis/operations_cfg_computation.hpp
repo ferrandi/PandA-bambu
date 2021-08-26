@@ -75,7 +75,6 @@ REF_FORWARD_DECL(tree_node);
 class operations_cfg_computation : public FunctionFrontendFlowStep
 {
  private:
-   unsigned int last_bb_cfg_computation_version;
 
    /// relation between label declaration and first statement id
    std::map<unsigned int, std::string> label_decl_map;

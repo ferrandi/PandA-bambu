@@ -82,7 +82,7 @@
 #include "tree_reindex.hpp"
 
 operations_cfg_computation::operations_cfg_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, OPERATIONS_CFG_COMPUTATION, _design_flow_manager, _parameters), last_bb_cfg_computation_version(0)
+    : FunctionFrontendFlowStep(_AppM, _function_id, OPERATIONS_CFG_COMPUTATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -104,6 +104,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LUT_TRANSFORMATION, SAME_FUNCTION));
 #endif
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -140,15 +141,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 void operations_cfg_computation::Initialize()
 {
-   const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BASIC_BLOCKS_CFG_COMPUTATION, function_id);
-   const auto bb_cfg_comp_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
-   THROW_ASSERT(bb_cfg_comp_step, step_signature);
-
-   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const DesignFlowStepRef step = design_flow_graph->CGetDesignFlowStepInfo(bb_cfg_comp_step)->design_flow_step;
-
-   last_bb_cfg_computation_version = GetPointer<const FunctionFrontendFlowStep>(step)->CGetBBVersion();
-
    if(bb_version != 0)
    {
       function_behavior->ogc->Clear();

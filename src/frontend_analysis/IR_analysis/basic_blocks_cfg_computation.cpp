@@ -311,46 +311,6 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
          bbgc->AddEdge(*v, exit, CFG_SELECTOR);
       }
    }
-   const auto operations_cfg_computation_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::OPERATIONS_CFG_COMPUTATION, function_id);
-   const auto operations_cfg_computation_vertex = design_flow_manager.lock()->GetDesignFlowStep(operations_cfg_computation_signature);
-   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const auto operations_cfg_computation_step = design_flow_graph->CGetDesignFlowStepInfo(operations_cfg_computation_vertex)->design_flow_step;
-   THROW_ASSERT(operations_cfg_computation_step, operations_cfg_computation_signature);
-   if(GetPointer<const operations_cfg_computation>(operations_cfg_computation_step)->CGetBBVersion() == function_behavior->GetBBVersion())
-   {
-      const auto op_graph = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
-      const auto& tree_node_to_operation = op_graph->CGetOpGraphInfo()->tree_node_to_operation;
-      const auto bb_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
-      const auto bb_index_map = bb_graph->CGetBBGraphInfo()->bb_index_map;
-      bbgc->add_operation_to_bb(op_graph->CGetOpGraphInfo()->entry_vertex, BB_ENTRY);
-      bbgc->add_operation_to_bb(op_graph->CGetOpGraphInfo()->exit_vertex, BB_EXIT);
-      for(const auto& block : sl->list_of_bloc)
-      {
-         const auto bb_index = block.first;
-         THROW_ASSERT(bb_index_map.find(bb_index) != bb_index_map.end(), "BB" + STR(bb_index) + " is not in the graph");
-         const auto bb_vertex = bb_index_map.find(bb_index)->second;
-         const auto bb_node_info = bb_graph->GetBBNodeInfo(bb_vertex);
-         if(block.second->number == BB_ENTRY or block.second->number == BB_EXIT)
-         {
-            continue;
-         }
-         THROW_ASSERT(!(block.second->CGetStmtList().empty() && block.second->CGetPhiList().empty()), "unexpected condition: BB" + STR(bb_index));
-         for(const auto& phi : block.second->CGetPhiList())
-         {
-            const auto op_index = phi->index;
-            THROW_ASSERT(tree_node_to_operation.find(op_index) != tree_node_to_operation.end(), "Vertex of statement " + STR(op_index) + " not found");
-            const auto op_vertex = tree_node_to_operation.find(op_index)->second;
-            bb_node_info->statements_list.push_back(op_vertex);
-         }
-         for(const auto& stmt : block.second->CGetStmtList())
-         {
-            const auto op_index = stmt->index;
-            THROW_ASSERT(tree_node_to_operation.find(op_index) != tree_node_to_operation.end(), "Vertex of statement " + STR(op_index) + " not found");
-            const auto op_vertex = tree_node_to_operation.find(op_index)->second;
-            bb_node_info->statements_list.push_back(op_vertex);
-         }
-      }
-   }
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->GetBBGraph(FunctionBehavior::BB)->WriteDot("BB_CFG.dot");
