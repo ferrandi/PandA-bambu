@@ -64,9 +64,6 @@ REF_FORWARD_DECL(tree_manager);
 class dom_post_dom_computation : public FunctionFrontendFlowStep
 {
  private:
-   /// The version of the basic block graph on which dom and post dom trees have been computed
-   unsigned int bb_cfg_computation_bb_version;
-
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
@@ -98,11 +95,5 @@ class dom_post_dom_computation : public FunctionFrontendFlowStep
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 };
 #endif
