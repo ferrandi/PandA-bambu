@@ -157,7 +157,10 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    const auto it_succ_v1 = boost::adjacent_vertices(v1, *data);
    const auto it_succ_v2 = boost::adjacent_vertices(v2, *data);
 
-   static const std::vector<std::string> labels = {"mult_expr", "widen_mult_expr", "ternary_plus_expr", "ternary_mm_expr", "ternary_pm_expr", "ternary_mp_expr"};
+/// disabled input register sharing
+#if 0
+   static const std::vector<std::string> labels = {"mult_expr", "widen_mult_expr", "ternary_plus_expr", "ternary_mm_expr", "ternary_pm_expr", "ternary_mp_expr"
+   };
    for(const auto& label : labels)
    {
       // check if v1 or v2 drive complex operations
@@ -254,6 +257,7 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
          }
       }
    }
+#endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
    // ------------
 

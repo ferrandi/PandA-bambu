@@ -1,7 +1,5 @@
 #!/bin/bash
 
-. $script_dir/generic_getopt.sh
-
 BATCH_ARGS=("--simulate" "--experimental-setup=BAMBU" "--expose-globals")
 OUT_SUFFIX="bambu_specific_test6"
 

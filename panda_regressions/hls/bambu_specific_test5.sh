@@ -1,7 +1,5 @@
 #!/bin/bash
 
-. $script_dir/generic_getopt.sh
-
 BATCH_ARGS=("--evaluation=TOTAL_CYCLES,CYCLES" "--expose-globals")
 OUT_SUFFIX="bambu_specific_test5"
 

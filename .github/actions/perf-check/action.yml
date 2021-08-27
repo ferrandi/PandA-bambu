@@ -29,8 +29,10 @@ inputs:
 outputs:
   compare-csv:
     description: 'Compare output csv file'
+    value: ${{ steps.cmp.outputs.out-csv }}
   is-better:
     description: 'True if new results are better than main, false else'
+    value: ${{ steps.cmp.outputs.better }}
 runs:
   using: 'composite'
   steps:
@@ -39,12 +41,12 @@ runs:
       run: |
         set -e
         PKG_URL="${{inputs.storage-url}}/results/${{github.ref}}/${{inputs.test-id}}.csv"
-        CURL_CMD='curl -L --fail -T '
+        CURL_CMD=""
         if [[ ! -z '${{inputs.username}}' ]]; then
           CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
         fi
         if [[ -f "${{inputs.new-results}}" ]]; then
-          $CURL_CMD "${{inputs.new-results}}" "$PKG_URL"
+          curl -s -L --fail $CURL_CMD -T "${{inputs.new-results}}" "$PKG_URL"
           echo "Package successfully uploaded to $PKG_URL"
         else
           echo "Path '${{inputs.new-results}}' does not name a file or directory"
@@ -55,24 +57,25 @@ runs:
       run: |
         set -e
         PKG_URL="${{inputs.storage-url}}/results/main/${{inputs.test-id}}.csv"
-        CURL_CMD='curl -L --fail '
+        CURL_CMD=""
         if [[ ! -z '${{inputs.username}}' ]]; then
           CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
         fi
         mkdir -p main-reports
-        $CURL_CMD $PKG_URL -o main-reports/${{inputs.test-id}}.csv
+        curl -s -L --fail $CURL_CMD $PKG_URL -o main-reports/${{inputs.test-id}}.csv
     - name: Compare performance results
+      id: cmp
       shell: bash
       run: |
         COMPARE_CSV="${{inputs.test-id}}.$(echo '${{github.ref}}' | sed 's/\//_/g').csv"
         ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} -o $COMPARE_CSV --returnfail "${{inputs.new-results}}" main-reports/${{inputs.test-id}}.csv
         worse_count="$?"
         if [[ "$worse_count" != "0" ]]; then
-          echo "::set-output name=compare-csv::$COMPARE_CSV"
-          echo "::set-output name=is-better::0"
+          echo "::set-output name=out-csv::$COMPARE_CSV"
+          echo "::set-output name=better::0"
           ehco "::warning Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
         else
-          echo "::set-output name=is-better::1"
+          echo "::set-output name=better::1"
         fi
         exit 0
         

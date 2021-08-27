@@ -1,7 +1,5 @@
 #!/bin/bash
 
-. $script_dir/generic_getopt.sh
-
 BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--compiler=I386_GCC49")
 OUT_SUFFIX="bambu_specific_test"
 

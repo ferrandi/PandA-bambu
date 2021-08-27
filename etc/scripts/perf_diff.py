@@ -90,9 +90,12 @@ for bench_name in base_bench_dict:
         if is_bad:
             bad_perf.append(perf_point)
         perf_dict[bench_name] = perf_point
+    else:
+        print('Base benchmark "' + bench_name + '" not present in new results')
 
 
-print('Valid pairs compared: ' + str(pair_count))
+print('Valid pairs compared: ' + str(pair_count) +
+      '/' + str(len(base_bench_dict)))
 if pair_count == 0:
     exit(-1)
 
@@ -107,6 +110,7 @@ for idx in range(1, len(args.datapoints) + 1):
     perf_var[idx] /= pair_count
 
 if len(args.output) > 0:
+    print('Writing output csv to "' + args.output + '"')
     with open(args.output, mode='w') as result_csv:
         header = 'Bad performant,' + \
             ','.join([x + ',diff' for x in args.datapoints]) + '\n'

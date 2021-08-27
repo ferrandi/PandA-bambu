@@ -166,6 +166,7 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
+          mkdir ${{env.report-dir}}
           ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv"
       - name: Compare results
         id: perf-check

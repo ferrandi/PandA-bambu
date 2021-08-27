@@ -7,7 +7,7 @@ ggo_require_compiler=1
 BATCH_ARGS=("-lm" "--simulate")
 OUT_SUFFIX="${COMPILER}_grs"
 
-$script_dir/../../etc/scripts/test_panda.py gcc_regression_simple/900409-1.c --tool=bambu \
+$script_dir/../../etc/scripts/test_panda.py gcc_regression_simple --tool=bambu \
    --args="--configuration-name=${COMPILER}_O0 -O0 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${COMPILER}_O1 -O1 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${COMPILER}_O2 -O2 ${BATCH_ARGS[*]}" \

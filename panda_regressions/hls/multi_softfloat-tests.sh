@@ -1,7 +1,5 @@
 #!/bin/bash
 
-. $script_dir/generic_getopt.sh
-
 script_dir="$(dirname $(readlink -e $0))"
 
 BATCH_ARGS=("--soft-float" "--max-ulp=0" "--experimental-setup=BAMBU-PERFORMANCE-MP")

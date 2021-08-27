@@ -17,8 +17,6 @@ for arg in $ARGS
 do
     if [[ "$arg" = -c=--compiler=* ]]; then
         COMPILER="$(sed 's/-c=--compiler=I386_//g' <<<$arg)"
-    elif [[ "$arg" = --junitdir=* ]]; then
-        REPORT_DIR="$(sed 's/--junitdir=//g' <<<$arg)/"
     fi
 done
 

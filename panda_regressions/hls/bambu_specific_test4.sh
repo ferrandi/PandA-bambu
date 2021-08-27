@@ -1,7 +1,5 @@
 #!/bin/bash
 
-. $script_dir/generic_getopt.sh
-
 BATCH_ARGS=("--generate-interface=INFER" "-lm" "--simulate" "--expose-globals" "--compiler=I386_CLANG6")
 OUT_SUFFIX="bambu_specific_test4"
 

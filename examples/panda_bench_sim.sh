@@ -1,7 +1,5 @@
 #!/bin/bash
 
-. $script_dir/generic_getopt.sh
-
 BATCH_ARGS=("--no-iob" "--simulate")
 OUT_SUFFIX="pb_sim"
 
