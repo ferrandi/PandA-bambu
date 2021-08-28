@@ -12,7 +12,5 @@ $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${COMPILER}-soft-float-libm --libm-std-rounding ${BATCH_ARGS[*]}" \
    -llibm-tests_list \
    -o "output_${OUT_SUFFIX}" -b$script_dir \
-   --table="${REPORT_DIR}${OUT_SUFFIX}.tex" \
-   --csv="${REPORT_DIR}${OUT_SUFFIX}.csv" \
    --name="${OUT_SUFFIX}" $ARGS
 exit $?

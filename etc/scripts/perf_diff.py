@@ -159,4 +159,4 @@ else:
         perf_var[0], *["{0:.4%}".format(x) for x in perf_var[1:]]))
 
 if len(bad_perf) > 0 and args.returnfail:
-    exit(-1)
+    exit(len(bad_perf))

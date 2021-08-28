@@ -3,7 +3,7 @@ on:
   schedule:
     - cron: '0 3 * * *'
 # Run dayly, at 03:00 .
-  worflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   del_runs:
@@ -15,4 +15,4 @@ jobs:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
           retain_days: 1
-          keep_minimum_runs: 1
+          keep_minimum_runs: 10

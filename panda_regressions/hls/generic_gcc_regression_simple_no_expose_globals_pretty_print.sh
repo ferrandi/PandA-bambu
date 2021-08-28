@@ -5,7 +5,7 @@ ggo_require_compiler=1
 . $script_dir/generic_getopt.sh
 
 BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--do-not-expose-globals" "--pretty-print=output.c")
-OUT_SUFFIX="${COMPILER}_grs_no_expose_globals_pretty_preint"
+OUT_SUFFIX="${COMPILER}_grs_no_expose_globals_pretty_print"
 
 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${COMPILER}_O0 -O0 ${BATCH_ARGS[*]}" \
@@ -14,7 +14,5 @@ $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${COMPILER}_O3 -O3 ${BATCH_ARGS[*]}" \
    -ldiscrepancy_list \
    -o "output_${OUT_SUFFIX}" -b$script_dir \
-   --table="${REPORT_DIR}${OUT_SUFFIX}.tex" \
-   --csv="${REPORT_DIR}${OUT_SUFFIX}.csv" \
    --name="${OUT_SUFFIX}" $ARGS
 exit $?

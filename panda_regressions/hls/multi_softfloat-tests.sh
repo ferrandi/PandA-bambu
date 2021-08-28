@@ -16,7 +16,5 @@ $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=CLANG11 --compiler=I386_CLANG11 ${BATCH_ARGS[*]}" \
    -lsoftfloat-tests_list \
    -o "output_${OUT_SUFFIX}" -b$script_dir \
-   --table="${REPORT_DIR}${OUT_SUFFIX}.tex" \
-   --csv="${REPORT_DIR}${OUT_SUFFIX}.csv" \
    --name="${OUT_SUFFIX}" $@
 exit $?

@@ -1,0 +1,78 @@
+name: Performance check
+description: Check performance against main branch results
+inputs:
+  test-id:
+    description: 'Test id'
+    required: true
+  new-results:
+    description: 'New csv results file name'
+    required: true
+  datapoints:
+    description: 'Datapoints to compare'
+    required: false
+    default: 'CYCLES'
+  score:
+    description: 'Socre multiplier for each datapoint'
+    required: false
+    default: ''
+  storage-url:
+    description: 'Url of private storage'
+    required: true
+  username:
+    description: 'Username for private storage access'
+    required: false
+    default: ''
+  password:
+    description: 'Password for private storage access'
+    required: false
+    default: ''
+outputs:
+  compare-csv:
+    description: 'Compare output csv file'
+  is-better:
+    description: 'True if new results are better than main, false else'
+runs:
+  using: 'composite'
+  steps:
+    - name: Upload test results from current branch
+      shell: bash
+      run: |
+        set -e
+        PKG_URL="${{inputs.storage-url}}/results/${{github.ref}}/${{inputs.test-id}}.csv"
+        CURL_CMD='curl -L --fail -T '
+        if [[ ! -z '${{inputs.username}}' ]]; then
+          CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
+        fi
+        if [[ -f "${{inputs.new-results}}" ]]; then
+          $CURL_CMD "${{inputs.new-results}}" "$PKG_URL"
+          echo "Package successfully uploaded to $PKG_URL"
+        else
+          echo "Path '${{inputs.new-results}}' does not name a file or directory"
+          exit -1;
+        fi
+    - name: Download test results from main
+      shell: bash
+      run: |
+        set -e
+        PKG_URL="${{inputs.storage-url}}/results/main/${{inputs.test-id}}.csv"
+        CURL_CMD='curl -L --fail '
+        if [[ ! -z '${{inputs.username}}' ]]; then
+          CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
+        fi
+        mkdir -p main-reports
+        $CURL_CMD $PKG_URL -o main-reports/${{inputs.test-id}}.csv
+    - name: Compare performance results
+      shell: bash
+      run: |
+        COMPARE_CSV="${{inputs.test-id}}.$(echo '${{github.ref}}' | sed 's/\//_/g').csv"
+        ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} -o $COMPARE_CSV --returnfail "${{inputs.new-results}}" main-reports/${{inputs.test-id}}.csv
+        worse_count="$?"
+        if [[ "$worse_count" != "0" ]]; then
+          echo "::set-output name=compare-csv::$COMPARE_CSV"
+          echo "::set-output name=is-better::0"
+          ehco "::warning Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
+        else
+          echo "::set-output name=is-better::1"
+        fi
+        exit 0
+        

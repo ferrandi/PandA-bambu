@@ -13,6 +13,7 @@ env:
   build-args: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release
   dist-pkg: bambu-dist
   dist-dir: dist
+  report-dir: test-reports
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: '${{secrets.CI_STORAGE_USER}}'
   storage-token: '${{secrets.CI_STORAGE_TOKEN}}'
@@ -161,18 +162,32 @@ jobs:
           echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
           echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
       - name: Launch Bambu specific tests ${{matrix.id}}
-        working-directory: ./panda_regressions/hls
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          ./bambu_specific_test${{matrix.id}}.sh --returnfail --junitdir="./test-reports"
+          ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: bambu_specific_test${{matrix.id}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: bambu_specific_test${{matrix.id}}
-          path: ./panda_regressions/hls/test-reports
+          path: ${{env.report-dir}}
+          
 
   gcc_regression_simple:
     needs: [build, specific-test]
@@ -225,9 +240,9 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          mkdir test-reports
-          echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{matrix.script}} --returnfail --junitdir="./test-reports" ${{matrix.args}}
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./${{matrix.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -267,9 +282,23 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          mkdir test-reports
-          echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: gcc-4.9_regression_simple-pretty_print
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -309,9 +338,9 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          mkdir test-reports
-          echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -360,9 +389,9 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          mkdir test-reports
-          echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -418,9 +447,9 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          mkdir test-reports
-          echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -494,9 +523,9 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          mkdir test-reports
-          echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{matrix.args}} ${{env.args}}
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}} ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -535,9 +564,9 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          mkdir test-reports
-          echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}}
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -583,9 +612,9 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          mkdir test-reports
-          echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./${{env.script}} --returnfail --junitdir="./test-reports" ${{env.args}} ${{matrix.args}}
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -625,14 +654,14 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          mkdir ./test-reports 
-          ./${{matrix.device}}_10.0_O2.sh --returnfail --junitdir="./test-reports" ${{env.args}}
+          mkdir ${{env.report-dir}}
+          ./${{matrix.device}}_10.0_O2.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: omp_simd_${{matrix.device}}
-          path: ./examples/omp_simd/test-reports
+          path: ./examples/omp_simd/${{env.report-dir}}
 
   Panda-bench:
     needs: [build]
@@ -671,9 +700,9 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
-          mkdir test-reports
-          echo "::set-output name=test-reports-dir::$PWD/test-reports"
-          ./examples/panda_bench_${{matrix.test}}.sh --returnfail --junitdir="./test-reports" ${{env.args}}
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./examples/panda_bench_${{matrix.test}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
