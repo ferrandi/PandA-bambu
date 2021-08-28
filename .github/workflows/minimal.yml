@@ -237,13 +237,26 @@ jobs:
       - name: Launch GCC regression test suite
         id: grs
         shell: bash
-        working-directory: ./panda_regressions/hls
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ./${{matrix.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -279,18 +292,17 @@ jobs:
       - name: Launch GCC regression test suite with pretty-print
         id: grspp
         shell: bash
-        working-directory: ./panda_regressions/hls
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
-          test-id: gcc-4.9_regression_simple-pretty_print
+          test-id: ${{env.outname}}
           new-results: ${{env.report-dir}}/perf.csv
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
@@ -335,13 +347,26 @@ jobs:
       - name: Launch GCC regression test suite with VHDL target
         id: grsvhdl
         shell: bash
-        working-directory: ./panda_regressions/hls
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -386,13 +411,12 @@ jobs:
       - name: Launch Bambu discrepancy tests
         id: grsd
         shell: bash
-        working-directory: ./panda_regressions/hls
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -444,13 +468,26 @@ jobs:
       - name: Launch SoftFloat test suite
         id: sf
         shell: bash
-        working-directory: ./panda_regressions/hls
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -520,13 +557,12 @@ jobs:
       - name: Launch LibM test suite
         id: libm
         shell: bash
-        working-directory: ./panda_regressions/hls
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}} ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}} ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -561,13 +597,26 @@ jobs:
       - name: Launch CHStone test suite
         id: chstone
         shell: bash
-        working-directory: ./panda_regressions/hls
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -609,13 +658,12 @@ jobs:
       - name: Launch CHStone test suite
         id: chstone
         shell: bash
-        working-directory: ./panda_regressions/hls
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ./${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -627,6 +675,7 @@ jobs:
     needs: [build]
     runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
     env:
+      outname: omp_simd_${{matrix.device}}
       args: -c=--evaluation=CYCLES
       jobs: 8
     strategy:
@@ -651,31 +700,51 @@ jobs:
           echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
       - name: Launch omp simd evaluation on ${{matrix.device}}
         shell: bash
-        working-directory: ./examples/omp_simd
         run: |
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
-          ./${{matrix.device}}_10.0_O2.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./examples/omp_simd/${{matrix.device}}_10.0_O2.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
-          name: omp_simd_${{matrix.device}}
-          path: ./examples/omp_simd/${{env.report-dir}}
+          name: ${{env.outname}}
+          path: ${{env.report-dir}}
 
   Panda-bench:
     needs: [build]
     runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
     strategy:
       matrix:
-        test:
-          - altera
-          - hw
-          - lattice
-          - sim
-          - xilinx_ise
-          - xilinx_vvd
+        include:
+          - test: altera
+            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+          - test: hw
+            args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS
+            datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
+          - test: lattice
+            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+          - test: sim
+            datapoints: CYCLES
+          - test: xilinx_ise
+            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+          - test: xilinx_vvd
+            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
     env:
       outname: panda_bench_${{matrix.test}}
     steps:
@@ -703,7 +772,22 @@ jobs:
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ./examples/panda_bench_${{matrix.test}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./examples/panda_bench_${{matrix.test}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          datapoints: ${{matrix.datapoints}}
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2

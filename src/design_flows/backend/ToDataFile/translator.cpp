@@ -642,11 +642,18 @@ void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string,
    out << std::endl;
    for(const auto& row : results)
    {
-      THROW_ASSERT(static_cast<decltype(row.second.size())>(column_labels.size()) == row.second.size(), "Lines with different number of fields " + STR(row.second.size()) + " vs. " + STR(column_labels.size()));
       out << row.first;
       for(const auto& column_label : column_labels)
       {
-         out << CSV_COL_SEPARATOR << row.second.at(column_label);
+         const auto val_it = row.second.find(column_label);
+         if(val_it != row.second.end())
+         {
+            out << CSV_COL_SEPARATOR << row.second.at(column_label);
+         }
+         else
+         {
+            out << CSV_COL_SEPARATOR;
+         }
       }
       out << std::endl;
    }

@@ -67,13 +67,18 @@ runs:
       id: cmp
       shell: bash
       run: |
-        COMPARE_CSV="${{inputs.test-id}}.$(echo '${{github.ref}}' | sed 's/\//_/g').csv"
-        ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} -o $COMPARE_CSV --returnfail "${{inputs.new-results}}" main-reports/${{inputs.test-id}}.csv
-        worse_count="$?"
+        COMMIT_SHA="${{github.sha}}"
+        COMPARE_CSV="${{inputs.test-id}}.$(echo '${{github.ref}}' | sed 's/\//_/g')_${COMMIT_SHA:0:7}.csv"
+        score=""
+        if [[ ! -z "${{ inputs.score }}" ]]; then
+          score="-s ${{ inputs.score }}"
+        fi
+        worse_count="0"
+        ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} $score -o $COMPARE_CSV --returnfail "main-reports/${{inputs.test-id}}.csv" "${{inputs.new-results}}" || worse_count=$?
         if [[ "$worse_count" != "0" ]]; then
           echo "::set-output name=out-csv::$COMPARE_CSV"
           echo "::set-output name=better::0"
-          ehco "::warning Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
+          echo "::warning ::Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
         else
           echo "::set-output name=better::1"
         fi

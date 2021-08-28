@@ -13,5 +13,4 @@ $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=CLANG7-O0-wp-NN ${BATCH_ARGS[*]}" \
    -lCHStone_list \
    -o "output_${OUT_SUFFIX}" -b$script_dir \
-   --name="${OUT_SUFFIX}" $ARGS
-exit $?
+   --name="${OUT_SUFFIX}" $@

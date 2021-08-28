@@ -13,7 +13,9 @@ class SplitArgs(argparse.Action):
 parser = argparse.ArgumentParser(
     description="Compare benchmark results from two spider generated csv files", fromfile_prefix_chars="@")
 parser.add_argument(
-    "files", help="The csv spider-generated files to be compared", nargs='+', action="append")
+    "base", help="The base csv spider-generated benchmark results file", type=str)
+parser.add_argument(
+    "other", help="The other csv spider-generated benchmark results file", type=str)
 parser.add_argument('-d', "--datapoints", help="Comma separated list of row names to compare",
                     required=True, action=SplitArgs)
 parser.add_argument('-s', "--score", help="Comma separated list of weights to aggregate datapoints as a score",
@@ -31,7 +33,7 @@ score_col = 'Score'
 print('Selected datapoints: ' + ', '.join(args.datapoints))
 base_bench_dict = defaultdict(object)
 new_bench_dict = defaultdict(object)
-with open(args.files[0][0], newline='') as csv_file:
+with open(args.base, newline='') as csv_file:
     bench_dict = csv.DictReader(csv_file)
     for row in bench_dict:
         perf_point = defaultdict(object)
@@ -39,7 +41,7 @@ with open(args.files[0][0], newline='') as csv_file:
             perf_point[col.strip(' ')] = row[col]
         base_bench_dict[row[benchname_col]] = perf_point
 
-with open(args.files[0][1], newline='') as csv_file:
+with open(args.other, newline='') as csv_file:
     bench_dict = csv.DictReader(csv_file)
     for row in bench_dict:
         perf_point = defaultdict(str)
@@ -109,58 +111,59 @@ for idx in range(1, len(args.datapoints) + 1):
         perf_var[idx] += (perf_dict[bench_name][idx] - perf_mean[idx]) ** 2
     perf_var[idx] /= pair_count
 
-if len(args.output) > 0:
-    print('Writing output csv to "' + args.output + '"')
-    with open(args.output, mode='w') as result_csv:
-        header = 'Bad performant,' + \
-            ','.join([x + ',diff' for x in args.datapoints]) + '\n'
-        if use_score:
-            header = header[:-6] + '\n'
-        result_csv.write(header)
-        if use_score:
-            result_csv.write(
-                'Weights,' + ',,'.join([str(x) for x in score_weight]) + ',,\n')
+if len(bad_perf) > 0:
+    if len(args.output) > 0:
+        print('Writing output csv to "' + args.output + '"')
+        with open(args.output, mode='w') as result_csv:
+            header = 'Bad performant,' + \
+                ','.join([x + ',diff' for x in args.datapoints]) + '\n'
+            if use_score:
+                header = header[:-6] + '\n'
+            result_csv.write(header)
+            if use_score:
+                result_csv.write(
+                    'Weights,' + ',,'.join([str(x) for x in score_weight]) + ',,\n')
+            for bp in bad_perf:
+                base_perf = base_bench_dict[bp[0]]
+                new_perf = new_bench_dict[bp[0]]
+                base_line = base_perf[benchname_col]
+                new_line = ''
+                idx = 1
+                for pp in args.datapoints:
+                    if pp == score_col:
+                        base_line += ','
+                        new_line += ',' + str(bp[idx])
+                    else:
+                        base_line += ',' + base_perf[pp] + ','
+                        new_line += ',' + new_perf[pp] + \
+                            ',' + "{0:.4%}".format(bp[idx] - 1.0)
+                    idx += 1
+                result_csv.write(base_line + '\n')
+                result_csv.write(new_line + '\n')
+
+    row_format = "{:50}" + "{:<15}" * (len(args.datapoints))
+    print(row_format.format('Benchmark', *args.datapoints))
+    if use_score:
         for bp in bad_perf:
-            base_perf = base_bench_dict[bp[0]]
-            new_perf = new_bench_dict[bp[0]]
-            base_line = base_perf[benchname_col]
-            new_line = ''
-            idx = 1
-            for pp in args.datapoints:
-                if pp == score_col:
-                    base_line += ','
-                    new_line += ',' + str(bp[idx])
-                else:
-                    base_line += ',' + base_perf[pp] + ','
-                    new_line += ',' + new_perf[pp] + \
-                        ',' + "{0:.4%}".format(bp[idx] - 1.0)
-                idx += 1
-            result_csv.write(base_line + '\n')
-            result_csv.write(new_line + '\n')
-
-row_format = "{:50}" + "{:<15}" * (len(args.datapoints))
-print(row_format.format('Benchmark', *args.datapoints))
-if use_score:
-    for bp in bad_perf:
-        bp_score = bp.pop()
+            bp_score = bp.pop()
+            print(row_format.format(
+                bp[0], *["{0:.4%}".format(x - 1.0) for x in bp[1:]], "{:.4f}".format(bp_score)))
+        print('-----------------')
+        mean_score = perf_mean.pop()
+        print(row_format.format(perf_mean[0], *["{0:.4%}".format(x - 1.0)
+                                                for x in perf_mean[1:]], "{:.4f}".format(mean_score)))
+        var_score = perf_var.pop()
+        print(row_format.format(perf_var[0], *["{0:.4%}".format(x)
+                                               for x in perf_var[1:]], "{:.4f}".format(var_score)))
+    else:
+        for bp in bad_perf:
+            print(row_format.format(
+                bp[0], *["{0:.4%}".format(x - 1.0) for x in bp[1:]]))
+        print('-----------------')
         print(row_format.format(
-            bp[0], *["{0:.4%}".format(x - 1.0) for x in bp[1:]], "{:.4f}".format(bp_score)))
-    print('-----------------')
-    mean_score = perf_mean.pop()
-    print(row_format.format(perf_mean[0], *["{0:.4%}".format(x - 1.0)
-                                            for x in perf_mean[1:]], "{:.4f}".format(mean_score)))
-    var_score = perf_var.pop()
-    print(row_format.format(perf_var[0], *["{0:.4%}".format(x)
-                                           for x in perf_var[1:]], "{:.4f}".format(var_score)))
-else:
-    for bp in bad_perf:
+            perf_mean[0], *["{0:.4%}".format(x - 1.0) for x in perf_mean[1:]]))
         print(row_format.format(
-            bp[0], *["{0:.4%}".format(x - 1.0) for x in bp[1:]]))
-    print('-----------------')
-    print(row_format.format(
-        perf_mean[0], *["{0:.4%}".format(x - 1.0) for x in perf_mean[1:]]))
-    print(row_format.format(
-        perf_var[0], *["{0:.4%}".format(x) for x in perf_var[1:]]))
-
-if len(bad_perf) > 0 and args.returnfail:
-    exit(len(bad_perf))
+            perf_var[0], *["{0:.4%}".format(x) for x in perf_var[1:]]))
+    if args.returnfail:
+        exit(len(bad_perf))
+exit(0)
