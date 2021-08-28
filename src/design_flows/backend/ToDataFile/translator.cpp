@@ -89,6 +89,8 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
+#define CSV_COL_SEPARATOR ","
+
 #define SKIPPED_COLUMN ("Loop_number")("bit_expr")("comp_expr")("const_readings")("div_expr")("mult_expr")("plusminus_expr")("memory_writings")("register_accesses")("memory_readings")("register_writing")("Backward_branches")
 
 #define SKIPPING_MACRO(r, data, elem) skipping.insert(elem);
@@ -545,10 +547,10 @@ void Translator::write_to_csv(const std::map<std::string, CustomOrderedSet<std::
       for(it4 = cat_tags.begin(); it4 != it4_end; ++it4)
       {
          if(skipping.find(*it4) == skipping.end())
-            out << ", " << it2->first << "_" << *it4;
+            out << CSV_COL_SEPARATOR << it2->first << "_" << *it4;
       }
       /// writing is_main
-      out << ", " << it2->first << "_is_main";
+      out << CSV_COL_SEPARATOR << it2->first << "_is_main";
    }
    out << std::endl;
    CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>::const_iterator it, it_end = results.end();
@@ -603,17 +605,17 @@ void Translator::write_to_csv(const std::map<std::string, CustomOrderedSet<std::
                   if(normalization.find(complete_tag) != normalization.end())
                      normalization_value = normalization[complete_tag];
                   if(cat_counters.find(*it4) != cat_counters.end())
-                     out << ", " << ((cat_counters.find(*it4)->second) * normalization_value) / operations;
+                     out << CSV_COL_SEPARATOR << ((cat_counters.find(*it4)->second) * normalization_value) / operations;
                   else
-                     out << ", 0.0";
+                     out << CSV_COL_SEPARATOR "0.0";
                }
             }
          }
          /// writing is_main
          if(normalization.find("Dynamic_operations_is_main") != normalization.end())
-            out << ", " << normalization["Dynamic_operations_is_main"] / operations;
+            out << CSV_COL_SEPARATOR << normalization["Dynamic_operations_is_main"] / operations;
          else
-            out << ", " << 1 / operations;
+            out << CSV_COL_SEPARATOR << 1 / operations;
       }
       out << std::endl;
    }
@@ -632,19 +634,19 @@ void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string,
          column_labels.insert(column.first);
       }
    }
-   out << "Benchmark, ";
+   out << "Benchmark";
    for(const auto& column_label : column_labels)
    {
-      out << column_label << ", ";
+      out << CSV_COL_SEPARATOR << column_label;
    }
    out << std::endl;
    for(const auto& row : results)
    {
       THROW_ASSERT(static_cast<decltype(row.second.size())>(column_labels.size()) == row.second.size(), "Lines with different number of fields " + STR(row.second.size()) + " vs. " + STR(column_labels.size()));
-      out << row.first << ", ";
+      out << row.first;
       for(const auto& column_label : column_labels)
       {
-         out << row.second.at(column_label) << ",";
+         out << CSV_COL_SEPARATOR << row.second.at(column_label);
       }
       out << std::endl;
    }
@@ -676,7 +678,7 @@ void Translator::write_to_pa(const std::map<std::string, CustomOrderedSet<std::s
                   out << cat_counters.find(*it4)->second;
                else
                   out << "0.0";
-               out << ", ";
+               out << CSV_COL_SEPARATOR;
             }
          }
       }
