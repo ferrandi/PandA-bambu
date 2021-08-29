@@ -83,7 +83,7 @@ void Bit_Value::forward()
    CustomUnorderedSet<unsigned int> working_list_idx;
    auto push_back = [&](const tree_nodeConstRef& stmt) {
       const auto stmt_kind = stmt->get_kind();
-      if(!working_list_idx.count(stmt->index) && (stmt_kind == gimple_assign_K || stmt_kind == gimple_phi_K || stmt_kind == gimple_return_K))
+      if(!working_list_idx.count(stmt->index) && (stmt_kind == gimple_assign_K || stmt_kind == gimple_phi_K || stmt_kind == gimple_return_K || stmt_kind == gimple_asm_K))
       {
          working_list.push_back(stmt);
          working_list_idx.insert(stmt->index);
@@ -344,6 +344,22 @@ void Bit_Value::forward()
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---inf: " + bitstring_to_string(res));
                output_current = res;
+            }
+         }
+      }
+      else if(stmt_kind == gimple_asm_K)
+      {
+         const auto ga = GetPointerS<const gimple_asm>(stmt_node);
+         if(ga->out)
+         {
+            auto tl = GetPointer<const tree_list>(GET_CONST_NODE(ga->out));
+            THROW_ASSERT(tl->valu, "only the first output and so only single output gimple_asm are supported");
+            const auto output_uid = GET_INDEX_CONST_NODE(tl->valu);
+            const auto ssa = GetPointer<const ssa_name>(GET_CONST_NODE(tl->valu));
+            if(ssa && !ssa->CGetUseStmts().empty() && is_handled_by_bitvalue(output_uid))
+            {
+               THROW_ASSERT(best.count(output_uid), "");
+               current[output_uid] = best.at(output_uid);
             }
          }
       }
