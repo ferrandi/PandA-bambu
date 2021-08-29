@@ -347,6 +347,7 @@
 #define OPT_ALTERA_ROOT (1 + OPT_VERILATOR_PARALLEL)
 #define OPT_NANOXPLORE_ROOT (1 + OPT_ALTERA_ROOT)
 #define OPT_NANOXPLORE_BYPASS (1 + OPT_NANOXPLORE_ROOT)
+#define OPT_SHARED_INPUT_REGISTERS (1 + OPT_NANOXPLORE_BYPASS)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -570,6 +571,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                 exploiting a randomized approach\n"
 #endif
       << "            UNIQUE             - use a 1-to-1 binding algorithm\n\n"
+      << std::endl;
+   os << "    --shared-input-registers\n"
+      << "        The module bindings and the register binding try to share more resources by sharing the input registers\n\n"
       << std::endl;
 
    // Memory allocation options
@@ -1325,6 +1329,7 @@ int BambuParameter::Exec()
       {"nanoxplore-bypass", optional_argument, nullptr, OPT_NANOXPLORE_BYPASS},
       {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
       {"verilator-parallel", optional_argument, nullptr, OPT_VERILATOR_PARALLEL},
+      {"shared-input-registers", no_argument, nullptr, OPT_SHARED_INPUT_REGISTERS},
       GCC_LONG_OPTIONS,
       {nullptr, 0, nullptr, 0}
    };
@@ -2546,6 +2551,11 @@ int BambuParameter::Exec()
          case OPT_XILINX_ROOT:
          {
             setOption(OPT_xilinx_root, GetPath(optarg));
+            break;
+         }
+         case OPT_SHARED_INPUT_REGISTERS:
+         {
+            setOption(OPT_shared_input_registers, true);
             break;
          }
          case 0:
@@ -4362,6 +4372,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_sync_reset, "no");
    setOption(OPT_level_reset, false);
    setOption(OPT_reg_init_value, true);
+
+   setOption(OPT_shared_input_registers, false);
 
    /// Function allocation
    setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION);

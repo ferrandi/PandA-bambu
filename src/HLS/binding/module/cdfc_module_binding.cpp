@@ -1337,8 +1337,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
       // Do a preliminary register binding to help the sharing of complex operations
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Do a preliminary register binding to help the sharing of complex operations");
-#define ENABLE_PRELIMINARY_REG_BINDING 0
-      if(ENABLE_PRELIMINARY_REG_BINDING)
+      if(parameters->getOption<bool>(OPT_shared_input_registers))
       {
          DesignFlowStepRef regb;
          if(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm) == HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)

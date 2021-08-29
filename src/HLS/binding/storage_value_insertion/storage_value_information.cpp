@@ -55,6 +55,7 @@
 #include "fu_binding.hpp"
 
 /// tree includes
+#include "Parameter.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "math_function.hpp"
 #include "tree_helper.hpp"
@@ -157,107 +158,107 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    const auto it_succ_v1 = boost::adjacent_vertices(v1, *data);
    const auto it_succ_v2 = boost::adjacent_vertices(v2, *data);
 
-/// disabled input register sharing
-#if 0
-   static const std::vector<std::string> labels = {"mult_expr", "widen_mult_expr", "ternary_plus_expr", "ternary_mm_expr", "ternary_pm_expr", "ternary_mp_expr"
-   };
-   for(const auto& label : labels)
+   /// disabled input register sharing
+   if(HLS_mgr->get_parameter()->getOption<bool>(OPT_shared_input_registers))
    {
-      // check if v1 or v2 drive complex operations
-      // variable coming from the Entry vertex have to be neglected in this analysis
-      CustomOrderedSet<unsigned int> op_succ_of_v1_port0, op_succ_of_v1_port1, op_succ_of_v1_port2;
-      if(!(GET_TYPE(data, v1) & TYPE_ENTRY))
+      static const std::vector<std::string> labels = {"mult_expr", "widen_mult_expr", "ternary_plus_expr", "ternary_mm_expr", "ternary_pm_expr", "ternary_mp_expr"};
+      for(const auto& label : labels)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "-->Statement with USE first variable");
-         std::for_each(it_succ_v1.first, it_succ_v1.second, [this, &op_succ_of_v1_port0, &op_succ_of_v1_port1, &op_succ_of_v1_port2, &var1, &label](const vertex succ) {
-            const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
-            const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "---[" + STR(succ_id) + "] type: " + STR(op_label));
-            if((op_label == label))
+         // check if v1 or v2 drive complex operations
+         // variable coming from the Entry vertex have to be neglected in this analysis
+         CustomOrderedSet<unsigned int> op_succ_of_v1_port0, op_succ_of_v1_port1, op_succ_of_v1_port2;
+         if(!(GET_TYPE(data, v1) & TYPE_ENTRY))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "-->Statement with USE first variable");
+            std::for_each(it_succ_v1.first, it_succ_v1.second, [this, &op_succ_of_v1_port0, &op_succ_of_v1_port1, &op_succ_of_v1_port2, &var1, &label](const vertex succ) {
+               const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
+               const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "---[" + STR(succ_id) + "] type: " + STR(op_label));
+               if((op_label == label))
+               {
+                  std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
+                  if(std::get<0>(var_read[0]) == var1)
+                  {
+                     op_succ_of_v1_port0.insert(succ_id);
+                  }
+                  else if(std::get<0>(var_read[1]) == var1)
+                  {
+                     op_succ_of_v1_port1.insert(succ_id);
+                  }
+                  else if(var_read.size() == 3 && std::get<0>(var_read[2]) == var1)
+                  {
+                     op_succ_of_v1_port2.insert(succ_id);
+                  }
+                  else
+                  {
+                     THROW_ERROR("unexpected case:" + STR(succ_id) + "|" + STR(std::get<0>(var_read[0])) + ":" + STR(std::get<0>(var_read[1])));
+                  }
+               }
+            });
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
+         }
+
+         CustomOrderedSet<unsigned int> op_succ_of_v2_port0, op_succ_of_v2_port1, op_succ_of_v2_port2;
+         if(!(GET_TYPE(data, v2) & TYPE_ENTRY))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "-->Statement with USE second variable");
+            std::for_each(it_succ_v2.first, it_succ_v2.second, [this, &op_succ_of_v2_port0, &op_succ_of_v2_port1, &op_succ_of_v2_port2, &var2, &label](const vertex succ) {
+               const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
+               const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "---[" + STR(succ_id) + "] type: " + STR(op_label));
+               if(op_label == label)
+               {
+                  std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
+                  if(std::get<0>(var_read[0]) == var2)
+                  {
+                     op_succ_of_v2_port0.insert(succ_id);
+                  }
+                  else if(std::get<0>(var_read[1]) == var2)
+                  {
+                     op_succ_of_v2_port1.insert(succ_id);
+                  }
+                  else if(var_read.size() == 3 && std::get<0>(var_read[2]) == var2)
+                  {
+                     op_succ_of_v2_port2.insert(succ_id);
+                  }
+                  else
+                  {
+                     THROW_ERROR("unexpected case");
+                  }
+               }
+            });
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
+         }
+
+         // Check if both pilot complex operations
+         auto P0cond = !op_succ_of_v1_port0.empty() && !op_succ_of_v2_port0.empty();
+         auto P1cond = (!op_succ_of_v1_port1.empty() && !op_succ_of_v2_port1.empty());
+         auto P2cond = (!op_succ_of_v1_port2.empty() && !op_succ_of_v2_port2.empty());
+         const bool both_pilot_complex_ops = P0cond || P1cond || P2cond;
+
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "Both pilot a complex operation: " + STR(both_pilot_complex_ops));
+         if(both_pilot_complex_ops)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
+            if(P0cond)
             {
-               std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
-               if(std::get<0>(var_read[0]) == var1)
-               {
-                  op_succ_of_v1_port0.insert(succ_id);
-               }
-               else if(std::get<0>(var_read[1]) == var1)
-               {
-                  op_succ_of_v1_port1.insert(succ_id);
-               }
-               else if(var_read.size() == 3 && std::get<0>(var_read[2]) == var1)
-               {
-                  op_succ_of_v1_port2.insert(succ_id);
-               }
-               else
-               {
-                  THROW_ERROR("unexpected case:" + STR(succ_id) + "|" + STR(std::get<0>(var_read[0])) + ":" + STR(std::get<0>(var_read[1])));
-               }
+               return 6;
             }
-         });
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
-      }
-
-      CustomOrderedSet<unsigned int> op_succ_of_v2_port0, op_succ_of_v2_port1, op_succ_of_v2_port2;
-      if(!(GET_TYPE(data, v2) & TYPE_ENTRY))
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "-->Statement with USE second variable");
-         std::for_each(it_succ_v2.first, it_succ_v2.second, [this, &op_succ_of_v2_port0, &op_succ_of_v2_port1, &op_succ_of_v2_port2, &var2, &label](const vertex succ) {
-            const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
-            const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "---[" + STR(succ_id) + "] type: " + STR(op_label));
-            if(op_label == label)
+            else if(P1cond)
             {
-               std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
-               if(std::get<0>(var_read[0]) == var2)
-               {
-                  op_succ_of_v2_port0.insert(succ_id);
-               }
-               else if(std::get<0>(var_read[1]) == var2)
-               {
-                  op_succ_of_v2_port1.insert(succ_id);
-               }
-               else if(var_read.size() == 3 && std::get<0>(var_read[2]) == var2)
-               {
-                  op_succ_of_v2_port2.insert(succ_id);
-               }
-               else
-               {
-                  THROW_ERROR("unexpected case");
-               }
+               return 7;
             }
-         });
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
-      }
-
-      // Check if both pilot complex operations
-      auto P0cond = !op_succ_of_v1_port0.empty() && !op_succ_of_v2_port0.empty();
-      auto P1cond = (!op_succ_of_v1_port1.empty() && !op_succ_of_v2_port1.empty());
-      auto P2cond = (!op_succ_of_v1_port2.empty() && !op_succ_of_v2_port2.empty());
-      const bool both_pilot_complex_ops = P0cond || P1cond || P2cond;
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "Both pilot a complex operation: " + STR(both_pilot_complex_ops));
-      if(both_pilot_complex_ops)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
-         if(P0cond)
-         {
-            return 6;
-         }
-         else if(P1cond)
-         {
-            return 7;
-         }
-         else if(P2cond)
-         {
-            return 8;
-         }
-         else
-         {
-            THROW_ERROR("unexpected condition");
+            else if(P2cond)
+            {
+               return 8;
+            }
+            else
+            {
+               THROW_ERROR("unexpected condition");
+            }
          }
       }
    }
-#endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
    // ------------
 
