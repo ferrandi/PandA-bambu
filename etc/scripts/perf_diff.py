@@ -74,15 +74,18 @@ for bench_name in base_bench_dict:
         for pp in args.datapoints:
             base_val = float(base_bench[pp])
             new_val = float(new_bench[pp])
+            cmp_val = 0.0
             if base_val == 0 and new_val == 0:
                 perf_point.append(0.0)
             elif base_val == 0:
-                perf_point.append(1.0)
+                perf_point.append(new_val)
+                cmp_val = 1.0 / perf_point[idx] - 1.0
             else:
                 perf_point.append(new_val / base_val)
-            new_score += (1.0 / perf_point[idx] - 1.0) * score_weight[idx - 1]
+                cmp_val = 1.0 / perf_point[idx] - 1.0
+            new_score += cmp_val * score_weight[idx - 1]
             perf_mean[idx] += perf_point[idx]
-            if 1 / perf_point[idx] - 1.0 < 0.0:
+            if cmp_val < 0.0:
                 is_bad = True
             idx += 1
         perf_point.append(new_score)
