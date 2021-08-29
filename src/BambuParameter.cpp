@@ -263,8 +263,7 @@
 #define OPT_EVALUATION (1 + OPT_ENABLE_IOB)
 #define OPT_EVALUATION_MODE (1 + OPT_EVALUATION)
 #define OPT_EXPERIMENTAL_SETUP (1 + OPT_EVALUATION_MODE)
-#define INPUT_OPT_FIND_MAX_TRANSFORMATIONS (1 + OPT_EXPERIMENTAL_SETUP)
-#define OPT_FIXED_SCHED (1 + INPUT_OPT_FIND_MAX_TRANSFORMATIONS)
+#define OPT_FIXED_SCHED (1 + OPT_EXPERIMENTAL_SETUP)
 #define OPT_FLOPOCO (1 + OPT_FIXED_SCHED)
 #define OPT_GENERATE_VCD (1 + OPT_FLOPOCO)
 #define OPT_GENERATION (1 + OPT_GENERATE_VCD)
@@ -1313,7 +1312,6 @@ int BambuParameter::Exec()
       {"C-no-parse", required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
       {"C-python-no-parse", required_argument, nullptr, INPUT_OPT_C_PYTHON_NO_PARSE},
       {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
-      {"find-max-transformations", no_argument, nullptr, INPUT_OPT_FIND_MAX_TRANSFORMATIONS},
 #if !HAVE_UNORDERED
 #ifndef NDEBUG
       {"test-multiple-non-deterministic-flows", required_argument, nullptr, INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS},
@@ -2482,11 +2480,6 @@ int BambuParameter::Exec()
                no_parse_c_python_files += GetPath(i) + " ";
             }
             setOption(OPT_no_parse_c_python, no_parse_c_python_files);
-            break;
-         }
-         case INPUT_OPT_FIND_MAX_TRANSFORMATIONS:
-         {
-            setOption(OPT_find_max_transformations, true);
             break;
          }
 #if !HAVE_UNORDERED
@@ -4687,7 +4680,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_num_accelerators, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);
-   setOption(OPT_find_max_transformations, false);
 
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";

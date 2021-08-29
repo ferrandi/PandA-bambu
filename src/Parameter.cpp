@@ -405,6 +405,7 @@ void Parameter::SetCommonDefaults()
    setOption(OPT_seed, 0);
 
    setOption(OPT_max_transformations, std::numeric_limits<size_t>::max());
+   setOption(OPT_find_max_transformations, false);
 }
 
 void Parameter::print(std::ostream& os) const
@@ -541,6 +542,11 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
       case INPUT_OPT_MAX_TRANSFORMATIONS:
       {
          setOption(OPT_max_transformations, optarg_param);
+         break;
+      }
+      case INPUT_OPT_FIND_MAX_TRANSFORMATIONS:
+      {
+         setOption(OPT_find_max_transformations, true);
          break;
       }
       case INPUT_OPT_CONFIGURATION_NAME:
