@@ -269,18 +269,22 @@ void Bit_Value::backward()
       }
       else if(stmt_kind == gimple_return_K)
       {
-         if(!is_root_function)
+         const auto gr = GetPointerS<const gimple_return>(stmt);
+         if(gr->op && GET_CONST_NODE(gr->op)->get_kind() == ssa_name_K)
          {
-            const auto gr = GetPointerS<const gimple_return>(stmt);
-            if(gr->op && GET_CONST_NODE(gr->op)->get_kind() == ssa_name_K)
+            const auto op_nid = GET_INDEX_CONST_NODE(gr->op);
+            if(!is_handled_by_bitvalue(op_nid))
             {
-               const auto op_nid = GET_INDEX_CONST_NODE(gr->op);
-               if(!is_handled_by_bitvalue(op_nid))
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable " + STR(gr->op) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(gr->op))) + " not considered id: " + STR(op_nid));
-                  continue;
-               }
-               std::deque<bit_lattice> res;
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable " + STR(gr->op) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(gr->op))) + " not considered id: " + STR(op_nid));
+               continue;
+            }
+            std::deque<bit_lattice> res;
+            if(is_root_function)
+            {
+               res = create_u_bitstring(BitLatticeManipulator::Size(GET_CONST_NODE(gr->op)));
+            }
+            else
+            {
                // TODO: replace current with best, because IPA is updating best
                if(current.find(function_id) != current.end())
                {
@@ -293,20 +297,20 @@ void Bit_Value::backward()
                   res = best.at(op_nid);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---best: " + bitstring_to_string(res));
                }
-               THROW_ASSERT(res.size(), "");
-               auto& output_current = current[op_nid];
-               if(output_current.size())
-               {
-                  res = inf(res, output_current, op_nid);
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---inf: " + bitstring_to_string(res));
-               if(output_current != res)
-               {
-                  output_current = res;
-                  const auto ssa_var = GetPointerS<const ssa_name>(GET_CONST_NODE(gr->op));
-                  const auto nextNode = ssa_var->CGetDefStmt();
-                  push_back(GET_CONST_NODE(nextNode));
-               }
+            }
+            THROW_ASSERT(res.size(), "");
+            auto& output_current = current[op_nid];
+            if(output_current.size())
+            {
+               res = inf(res, output_current, op_nid);
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---inf: " + bitstring_to_string(res));
+            if(output_current != res)
+            {
+               output_current = res;
+               const auto ssa_var = GetPointerS<const ssa_name>(GET_CONST_NODE(gr->op));
+               const auto nextNode = ssa_var->CGetDefStmt();
+               push_back(GET_CONST_NODE(nextNode));
             }
          }
       }
