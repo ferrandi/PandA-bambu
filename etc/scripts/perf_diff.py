@@ -79,10 +79,13 @@ for bench_name in base_bench_dict:
                 perf_point.append(0.0)
             elif base_val == 0:
                 perf_point.append(new_val)
-                cmp_val = 1.0 / perf_point[idx] - 1.0
+                cmp_val = -new_val
+            elif new_val == 0:
+                perf_point.append(0.0)
+                cmp_val = base_val
             else:
                 perf_point.append(new_val / base_val)
-                cmp_val = 1.0 / perf_point[idx] - 1.0
+                cmp_val = base_val / new_val - 1.0
             new_score += cmp_val * score_weight[idx - 1]
             perf_mean[idx] += perf_point[idx]
             if cmp_val < 0.0:
