@@ -1893,11 +1893,11 @@ void tree_node_dup::operator()(const gimple_multi_way_if* obj, unsigned int& mas
                node_id = remap.find(node_id)->second;
                THROW_ASSERT(node_id, "");
             }
-            dynamic_cast<gimple_multi_way_if*>(curr_tree_node_ptr)->add_cond(TM->GetTreeReindex(node_id), cond.second);
+            dynamic_cast<gimple_multi_way_if*>(curr_tree_node_ptr)->add_cond(TM->GetTreeReindex(node_id), get_bbi(cond.second));
          }
          else
          {
-            dynamic_cast<gimple_multi_way_if*>(curr_tree_node_ptr)->add_cond(tree_nodeRef(), cond.second);
+            dynamic_cast<gimple_multi_way_if*>(curr_tree_node_ptr)->add_cond(tree_nodeRef(), get_bbi(cond.second));
          }
       }
    }
