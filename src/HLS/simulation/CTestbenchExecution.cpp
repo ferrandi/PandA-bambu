@@ -304,7 +304,30 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #endif
       )
       {
-         compiler_flags += " -g -fsanitize=address -fno-omit-frame-pointer -fno-common -static-libasan ";
+         compiler_flags += " -g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
+      }
+      if(false
+#if HAVE_I386_GCC48_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if HAVE_I386_GCC49_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if HAVE_I386_GCC5_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if HAVE_I386_GCC7_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_GCC8_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+#endif
+      )
+      {
+         compiler_flags += " -static-libasan ";
       }
       if(false
 #if HAVE_I386_GCC5_COMPILER
@@ -348,7 +371,24 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #endif
       )
       {
-         compiler_flags += " -fsanitize=undefined -fsanitize-recover=undefined -static-libubsan ";
+         compiler_flags += " -fsanitize=undefined -fsanitize-recover=undefined ";
+      }
+      if(false
+#if HAVE_I386_GCC5_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if HAVE_I386_GCC7_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_GCC8_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+#endif
+      )
+      {
+         compiler_flags += " -static-libubsan ";
       }
    }
    // setup source files
