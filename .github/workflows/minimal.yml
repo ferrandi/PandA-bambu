@@ -629,18 +629,11 @@ jobs:
     runs-on: [self-hosted, lattice, mentor]
     strategy:
       matrix:
-        include:
-          - setup: without-spec-verilog
-          - setup: without-spec-vhdl
-            args: -c=-wH
-          - setup: with-spec-verilog
-            args: -c=-s
-          - setup: with-spec-vhdl
-            args: -c=-s -c=-wH
+        compiler: [ "I386_GCC7" ]
+        args: [ "", "-c=-wH", "-c=-s", "-c=-s -c=-wH" ]
     env:
       script: generic_CHStone-memarch.sh
-      args: -c=--simulator=MODELSIM -c--compiler=I386_GCC7
-      outname: ${{matrix.setup}}_CHStone-memarch
+      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -667,11 +660,28 @@ jobs:
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
+      - name: Generate out name
+        if: ${{ always() }}
+        id: get
+        shell: bash
+        run: |
+          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch_"
+          if [[ "${{matrix.args}}" = *-c=-s* ]]; then
+            OUTNAME+="w-spec"
+          else
+            OUTNAME+="wo-spec"
+          fi
+          if [[ "${{matrix.args}}" = *-c=-wH* ]]; then
+            OUTNAME+="-vhdl"
+          else
+            OUTNAME+="-verilog"
+          fi
+          echo "::set-output name=outname::$OUTNAME"
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
-          name: ${{env.outname}}
+          name: ${{steps.get.outputs.outname}}
           path: ${{steps.chstone.outputs.test-reports-dir}}
 
   omp-simd:
