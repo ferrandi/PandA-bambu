@@ -386,6 +386,13 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
    {
       return res;
    }
+   if(bitstring_constant(best.at(res_nid)))
+   {
+      THROW_ASSERT(best.count(res_nid), "");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---backward transfer, skipping constant target");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- res: " + bitstring_to_string(best.at(res_nid)));
+      return best.at(res_nid);
+   }
    const auto& lhs = ga->op0;
    const auto lhs_nid = GET_INDEX_CONST_NODE(lhs);
    const auto lhs_size = BitLatticeManipulator::Size(lhs);
@@ -550,13 +557,13 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          const auto operation = GetPointerS<const unary_expr>(GET_CONST_NODE(rhs));
 
          const auto op_nid = GET_INDEX_NODE(operation->op);
+         THROW_ASSERT(res_nid == op_nid, "unexpected condition");
          if(!is_handled_by_bitvalue(op_nid))
          {
             break;
          }
          THROW_ASSERT(best.count(op_nid), "");
          auto op_bitstring = best.at(op_nid);
-         THROW_ASSERT(res_nid == op_nid, "unexpected condition");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---   operand(" + STR(op_nid) + "): " + bitstring_to_string(op_bitstring));
 
          if(rhs_kind == addr_expr_K)
@@ -1191,7 +1198,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
             auto f_it = formal_parms.cbegin();
             auto f_end = formal_parms.cend();
             bool found = actual_parms.empty();
-            for(; a_it != a_end and f_it != f_end; a_it++, f_it++)
+            for(; a_it != a_end && f_it != f_end; a_it++, f_it++)
             {
                if(GET_INDEX_CONST_NODE(*a_it) == res_nid)
                {
