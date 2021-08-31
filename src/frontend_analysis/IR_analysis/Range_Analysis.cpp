@@ -4941,10 +4941,18 @@ class ConstraintGraph : public NodeContainer
             RangeRef CR = getGIMPLE_range(constant);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(getGIMPLE_BW(variable)) + " and constant value is " + constant->ToString());
 
-            const auto TValues = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
+            auto TValues = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + TValues->ToString());
-
-            const auto FValues = TValues->isFullSet() ? getRangeFor(variable, Empty) : TValues->getAnti();
+            auto FValues = TValues->isFullSet() ? getRangeFor(variable, Empty) : TValues->getAnti();
+            // When dealing with eq/ne conditions it is safer to propagate only the constant branch value
+            if(bin_op->get_kind() == eq_expr_K)
+            {
+               FValues = getRangeFor(variable, Regular);
+            }
+            else if(bin_op->get_kind() == ne_expr_K)
+            {
+               TValues = getRangeFor(variable, Regular);
+            }
 
             // Create the interval using the intersection in the branch.
             const auto BT = ValueRangeRef(new ValueRange(TValues));
