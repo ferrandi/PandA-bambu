@@ -630,13 +630,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - setup: gcc-7-verilog
-            args: -c=--compiler=I386_GCC7
-          - setup: gcc-7-vhdl
-            args: -c=--compiler=I386_GCC7 -c=-wH
+          - setup: without-spec-verilog
+          - setup: without-spec-vhdl
+            args: -c=-wH
+          - setup: with-spec-verilog
+            args: -c=-s
+          - setup: with-spec-vhdl
+            args: -c=-s -c=-wH
     env:
       script: generic_CHStone-memarch.sh
-      args: -c=--simulator=MODELSIM
+      args: -c=--simulator=MODELSIM -c--compiler=I386_GCC7
       outname: ${{matrix.setup}}_CHStone-memarch
     steps:
       - name: Checkout repository
