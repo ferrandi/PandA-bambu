@@ -527,11 +527,11 @@ jobs:
           - setup: clang-4.0
             args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR
           - setup: clang-5.0
-            args: -c=--compiler=I386_CLANG5 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
           - setup: clang-6.0
             args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR
           - setup: clang-7
-            args: -c=--compiler=I386_CLANG7 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
           - setup: clang-11
             args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM
     env:
@@ -631,8 +631,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [ "I386_GCC7" ]
-        args: [ "", "-c=-wH", "-c=-s", "-c=-s -c=-wH" ]
+        include:
+            - compiler: "I386_GCC7" 
+              args: 
+            - compiler: "I386_GCC7" 
+              args: "-c=-wH"
+            - compiler: "I386_CLANG11" 
+              args: "-c=-s"
     env:
       script: generic_CHStone-memarch.sh
       args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}
