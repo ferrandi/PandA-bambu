@@ -1056,6 +1056,18 @@ namespace
          }
          return r;
       }
+      else if(const auto* rc = GetPointer<const real_cst>(tn))
+      {
+         THROW_ASSERT(bw == 64 || bw == 32, "Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
+         if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
+         {
+            return Range::fromBitValues(string_to_bitstring(convert_fp_to_string("-" + rc->valr, bw)), bw, false);
+         }
+         else
+         {
+            return Range::fromBitValues(string_to_bitstring(convert_fp_to_string(rc->valr, bw)), bw, false);
+         }
+      }
       else if(const auto* vc = GetPointer<const vector_cst>(tn))
       {
          const auto el_type = tree_helper::CGetElements(type);
