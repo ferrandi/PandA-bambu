@@ -17,7 +17,7 @@ bambu_specific_test4/ac_types2_array_7bits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8
 bambu_specific_test4/ac_types2_array_32ubits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers
 bambu_specific_test4/ac_types2_array_64ubits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
 bambu_specific_test4/ac_types2_array_128ubits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers
-bambu_specific_test4/ac_types2_array_multi_function.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --do-not-expose-globals
+bambu_specific_test4/ac_types2_array_multi_function.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers
 bambu_specific_test4/ac_types3.cpp --generate-tb=a=\"0o1234\",b=\"0x1ABCDaBCD\",c=3,d=6 --top-fname=sum3numbers --std=c++17
 bambu_specific_test4/ac_types4.cpp --generate-tb=a=2,b=3,d=0 --top-fname=mul2numbers
 bambu_specific_test4/ac_types1.cpp --benchmark-name=ac_types1-c++17 --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers --std=c++17
@@ -36,7 +36,7 @@ bambu_specific_test4/ac_types2_array_7bits.cpp --benchmark-name=ac_types2_array_
 bambu_specific_test4/ac_types2_array_32ubits.cpp --benchmark-name=ac_types2_array_32ubits-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
 bambu_specific_test4/ac_types2_array_64ubits.cpp --benchmark-name=ac_types2_array_64ubits-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
 bambu_specific_test4/ac_types2_array_128ubits.cpp --benchmark-name=ac_types2_array_128ubits-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
-bambu_specific_test4/ac_types2_array_multi_function.cpp --benchmark-name=ac_types2_array_multi_function-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --do-not-expose-globals --std=c++17
+bambu_specific_test4/ac_types2_array_multi_function.cpp --benchmark-name=ac_types2_array_multi_function-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
 bambu_specific_test4/ac_types3.cpp --benchmark-name=ac_types3-c++17 --generate-tb=a=\"0o1234\",b=\"0x1ABCDaBCD\",c=3,d=6 --top-fname=sum3numbers --std=c++17
 bambu_specific_test4/ac_types4.cpp --benchmark-name=ac_types4-c++17 --generate-tb=a=2,b=3,d=0 --top-fname=mul2numbers --std=c++17
 bambu_specific_test4/simpleif_c1_none.c --generate-tb=i1=9,i2=1,i3=5,i4=6,i5=17,i6=19,c1=2,c2=6,c3=13,c4=17,c6=9,COND1=1,COND2=1 --top-fname=kim --benchmark-name=simpleif_c1_none_no_xml
