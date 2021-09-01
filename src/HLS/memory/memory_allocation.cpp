@@ -265,7 +265,7 @@ void memory_allocation::finalize_memory_allocation()
       const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
       bool is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
       bool is_inferred_interface = parameters->isOption(OPT_interface_type) && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
-      if(function_behavior->get_has_globals() && (!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals)))
+      if(function_behavior->get_has_globals() && parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals))
       {
          has_intern_shared_data = true;
       }
@@ -379,7 +379,7 @@ void memory_allocation::finalize_memory_allocation()
             }
 
             /// check if a global variable may be accessed from an external component
-            if(!has_intern_shared_data && var && function_behavior->is_variable_mem(var) && !HLSMgr->Rmem->is_private_memory(var) && (!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals)))
+            if(!has_intern_shared_data && var && function_behavior->is_variable_mem(var) && !HLSMgr->Rmem->is_private_memory(var) && parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals))
             {
                const tree_nodeRef var_tn = TreeM->get_tree_node_const(var);
                auto* vd = GetPointer<var_decl>(var_tn);

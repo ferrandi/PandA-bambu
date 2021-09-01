@@ -132,7 +132,7 @@ DesignFlowStep_Status minimal_interface::InternalExec()
 
    build_wrapper(wrappedObj, interfaceObj, SM_minimal_interface);
 
-   if(!is_top || !parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+   if(!is_top || (parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals)))
    {
       memory::propagate_memory_parameters(HLS->top->get_circ(), SM_minimal_interface);
    }
@@ -366,7 +366,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             portsToSkip.insert(wrappedObj->find_member("Mout_Wdata_ram", port_o_K, wrappedObj));
             portsToSkip.insert(wrappedObj->find_member("Mout_data_ram_size", port_o_K, wrappedObj));
          }
-         else if(with_slave && parameters->isOption(OPT_do_not_expose_globals))
+         else if(with_slave && (!parameters->isOption(OPT_expose_globals) || !parameters->getOption<bool>(OPT_expose_globals)))
          {
             do_not_expose_globals_case();
          }
@@ -856,7 +856,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                portsToSkip.insert(wrappedObj->find_member("Mout_data_ram_size", port_o_K, wrappedObj));
             }
          }
-         else if(with_slave && parameters->isOption(OPT_do_not_expose_globals))
+         else if(with_slave && (!parameters->isOption(OPT_expose_globals) || !parameters->getOption<bool>(OPT_expose_globals)))
          {
             do_not_expose_globals_case();
          }

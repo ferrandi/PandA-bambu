@@ -587,7 +587,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
             {
                command += " -mllvm -panda-ESL=" + extern_symbols;
             }
-            if(isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals))
+            if(isWholeProgram || !Param->getOption<bool>(OPT_expose_globals))
             {
                command += " -mllvm -panda-Internalize";
             }
@@ -999,7 +999,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                command += " -panda-ESL=" + extern_symbols;
             }
 
-            if(isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals))
+            if(isWholeProgram || !Param->getOption<bool>(OPT_expose_globals))
             {
                command += " -panda-Internalize";
             }

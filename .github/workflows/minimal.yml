@@ -200,22 +200,22 @@ jobs:
       matrix:
         include:
           - setup: gcc-4.9
-            script: generic_gcc_regression_simple_ext_pipelined.sh
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
             args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR
           - setup: clang-4.0
-            script: generic_gcc_regression_simple_default.sh
+            script: generic_gcc_regression_simple_eg.sh
             args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM
           - setup: clang-5.0
-            script: generic_gcc_regression_simple_ext_pipelined.sh
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
             args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
           - setup: clang-6.0
-            script: generic_gcc_regression_simple_no_expose_globals.sh
+            script: generic_gcc_regression_simple_bambu.sh
             args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM
           - setup: clang-7
-            script: generic_gcc_regression_simple_no_expose_globals.sh
+            script: generic_gcc_regression_simple_bambu.sh
             args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
           - setup: clang-11
-            script: generic_gcc_regression_simple_no_expose_globals.sh
+            script: generic_gcc_regression_simple_bambu.sh
             args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR
     steps:
       - name: Checkout repository
@@ -269,7 +269,7 @@ jobs:
     runs-on: [self-hosted]
     env:
       setup: gcc-4.9
-      script: generic_gcc_regression_simple_no_expose_globals_pretty_print.sh
+      script: generic_gcc_regression_simple_bambu_pretty_print.sh
       args: -c=--compiler=I386_GCC49 -c=--simulator=VERILATOR
       outname: gcc-4.9_regression_simple-pretty_print
     steps:
@@ -324,7 +324,7 @@ jobs:
     runs-on: [self-hosted, mentor]
     env:
       setup: gcc-8
-      script: generic_gcc_regression_simple_no_expose_globals_vhdl.sh
+      script: generic_gcc_regression_simple_bambu_vhdl.sh
       args: -c=--compiler=I386_GCC8 -c=--simulator=MODELSIM
       outname: gcc-8_regression_simple-vhdl
     steps:
@@ -379,7 +379,7 @@ jobs:
     runs-on: [self-hosted, mentor]
     env:
       setup: gcc-7
-      script: generic_discrepancy.sh
+      script: generic_discrepancy_eg_bambu.sh
       args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM
       outname: gcc-7_discrepancy
     steps:

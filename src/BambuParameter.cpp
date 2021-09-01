@@ -242,8 +242,7 @@
 #define OPT_DISABLE_IOB (1 + OPT_DISABLE_FUNCTION_PROXY)
 #define OPT_DISTRAM_THRESHOLD (1 + OPT_DISABLE_IOB)
 #define OPT_DO_NOT_CHAIN_MEMORIES (1 + OPT_DISTRAM_THRESHOLD)
-#define OPT_DO_NOT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_CHAIN_MEMORIES)
-#define OPT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_EXPOSE_GLOBALS)
+#define OPT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_CHAIN_MEMORIES)
 #define OPT_ROM_DUPLICATION (1 + OPT_EXPOSE_GLOBALS)
 #define OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES (1 + OPT_ROM_DUPLICATION)
 #define OPT_DSE (1 + OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES)
@@ -649,8 +648,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the external memory latency when LOAD are performed (default 2).\n\n"
       << "    --mem-delay-write=value\n"
       << "        Define the external memory latency when STORE are performed (default 1).\n\n"
-      << "    --do-not-expose-globals\n"
-      << "        All global variables are considered local to the compilation units.\n\n"
       << "    --expose-globals\n"
       << "        All global variables can be accessed from outside the accelerator.\n\n"
       << "    --data-bus-bitsize=<bitsize>\n"
@@ -968,7 +965,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    --distram-threshold=256\n"
       << "                                    --DSP-allocation-coefficient=1.75\n"
-      << "                                    --do-not-expose-globals --cprf=0.875\n\n"
+      << "                                    --cprf=0.875\n\n"
       << std::endl;
    os << "  Other options:\n\n";
    os << "    --pragma-parse\n"
@@ -1196,7 +1193,6 @@ int BambuParameter::Exec()
       {"channels-number", required_argument, nullptr, 0},
       {"memory-ctrl-type", required_argument, nullptr, 0},
       {"sparse-memory", optional_argument, nullptr, 0},
-      {"do-not-expose-globals", no_argument, nullptr, OPT_DO_NOT_EXPOSE_GLOBALS},
       {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
       // interconnections
       {"interconnection", required_argument, nullptr, 'C'},
@@ -2215,14 +2211,9 @@ int BambuParameter::Exec()
             }
             break;
          }
-         case OPT_DO_NOT_EXPOSE_GLOBALS:
-         {
-            setOption(OPT_do_not_expose_globals, true);
-            break;
-         }
          case OPT_EXPOSE_GLOBALS:
          {
-            setOption(OPT_do_not_expose_globals, false);
+            setOption(OPT_expose_globals, true);
             break;
          }
          case OPT_EXPERIMENTAL_SETUP:
@@ -3647,10 +3638,10 @@ void BambuParameter::CheckParameters()
 
    if(isOption(OPT_interface_type) && getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
-      setOption(OPT_do_not_expose_globals, true);
+      setOption(OPT_expose_globals, false);
    }
 
-   if(getOption<bool>(OPT_do_not_expose_globals))
+   if(!getOption<bool>(OPT_expose_globals))
    {
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE && (!isOption(OPT_interface_type) || getOption<HLSFlowStep_Type>(OPT_interface_type) != HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
       {
@@ -3704,8 +3695,8 @@ void BambuParameter::CheckParameters()
       }
       setOption(OPT_DSP_allocation_coefficient, 1.75);
       setOption(OPT_clock_period_resource_fraction, "0.875");
-      setOption(OPT_do_not_expose_globals, true);
-      if(not isOption(OPT_distram_threshold))
+      setOption(OPT_expose_globals, false);
+      if(!isOption(OPT_distram_threshold))
       {
          setOption(OPT_distram_threshold, 256);
       }
@@ -4387,7 +4378,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_base_address, 1073741824); // 1Gbytes maximum address space reserved for the accelerator
    setOption(OPT_memory_controller_type, "D00");
    setOption(OPT_sparse_memory, true);
-   setOption(OPT_do_not_expose_globals, true);
+   setOption(OPT_expose_globals, false);
 
    /// -- Datapath -- //
    /// Datapath interconnection architecture

@@ -372,7 +372,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
                if((((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) || tree_helper::is_volatile(TM, node_id)))
                {
-                  if(!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+                  if(parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals))
                   {
                      address_externally_used = true;
                   }
@@ -1260,7 +1260,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             bool address_externally_used = false;
             if((!vd->static_flag || tree_helper::is_volatile(TM, node_id)))
             {
-               if(!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+               if(parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals))
                {
                   address_externally_used = true;
                }
@@ -1310,7 +1310,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                bool address_externally_used = false;
                if(tree_helper::is_volatile(TM, node_id))
                {
-                  if((!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals)))
+                  if(parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals))
                   {
                      address_externally_used = true;
                   }

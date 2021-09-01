@@ -4,8 +4,8 @@ script_dir="$(dirname $(readlink -e $0))"
 ggo_require_compiler=1
 . $script_dir/generic_getopt.sh
 
-BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--do-not-expose-globals")
-OUT_SUFFIX="${COMPILER}_grs_no_expose_globals"
+BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--expose-globals" "--channels-type=MEM_ACC_NN" "--memory-allocation-policy=EXT_PIPELINED_BRAM")
+OUT_SUFFIX="${COMPILER}_grs_eg_ext_pipelined"
 
 $script_dir/../../etc/scripts/test_panda.py gcc_regression_simple --tool=bambu \
    --args="--configuration-name=${COMPILER}_O0 -O0 ${BATCH_ARGS[*]}" \
