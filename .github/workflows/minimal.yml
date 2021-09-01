@@ -519,6 +519,7 @@ jobs:
     needs: [build, libm-preliminary, softfloat-tests]
     runs-on: [self-hosted, mentor]
     strategy:
+      fail-fast: false
       matrix:
         include:
           - setup: gcc-4.9
@@ -628,6 +629,7 @@ jobs:
     needs: [build, CHStone-multi]
     runs-on: [self-hosted, lattice, mentor]
     strategy:
+      fail-fast: false
       matrix:
         compiler: [ "I386_GCC7" ]
         args: [ "", "-c=-wH", "-c=-s", "-c=-s -c=-wH" ]
@@ -692,6 +694,7 @@ jobs:
       args: -c=--evaluation=CYCLES
       jobs: 8
     strategy:
+      fail-fast: false
       matrix:
         device: [5SGXEA7N2F45C1, xc7vx690t-3ffg1930-VVD]
     steps:
@@ -743,6 +746,7 @@ jobs:
     needs: [build]
     runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
     strategy:
+      fail-fast: false
       matrix:
         include:
           - test: altera
