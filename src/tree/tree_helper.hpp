@@ -1243,7 +1243,7 @@ class tree_helper
     *
     * @param obj is the call_expr node
     * @param parm_index is the index of the parameter
-    * @return tree_nodeConstRef the type of the ith formal parameter in case index_obj is a call_expr
+    * @return tree_nodeConstRef the type of the ith formal parameter in case index_obj is a call_expr (could be nullptr)
     */
    static tree_nodeConstRef GetFormalIth(const tree_nodeConstRef& obj, unsigned int parm_index);
 

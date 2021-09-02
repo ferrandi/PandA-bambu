@@ -1645,12 +1645,12 @@ tree_nodeConstRef tree_helper::GetRealType(const tree_nodeConstRef& type)
       return rt->unql;
    }
    const auto ut = GetPointer<const union_type>(GET_CONST_NODE(type));
-   if(ut && ut->unql && (not ut->name or GET_CONST_NODE(ut->name)->get_kind() == identifier_node_K))
+   if(ut && ut->unql && (!ut->name || GET_CONST_NODE(ut->name)->get_kind() == identifier_node_K))
    {
       return ut->unql;
    }
    const auto et = GetPointer<const enumeral_type>(GET_CONST_NODE(type));
-   if(et && et->unql && (not et->name or GET_CONST_NODE(et->name)->get_kind() == identifier_node_K))
+   if(et && et->unql && (!et->name || GET_CONST_NODE(et->name)->get_kind() == identifier_node_K))
    {
       return et->unql;
    }
@@ -5484,11 +5484,8 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                                    const std::string& tail)
 {
    bool skip_var_printing = false;
-   auto node_type = tree_helper::GetRealType(original_type);
-   if(node_type->get_kind() == tree_reindex_K)
-   {
-      node_type = GET_CONST_NODE(node_type);
-   }
+   const auto node_type = TM->CGetTreeNode(tree_helper::GetRealType(TM, original_type->index));
+   THROW_ASSERT(node_type, "");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing type " + STR(original_type) + "(" + STR(node_type) + ") - Var " + STR(var));
    std::string res;
    tree_nodeConstRef node_var = nullptr;
@@ -6458,8 +6455,9 @@ FunctionExpander::FunctionExpander()
    headers.insert("stdio.h");
 }
 
-tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& obj, unsigned int parm_index)
+tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsigned int parm_index)
 {
+   const auto obj = _obj->get_kind() == tree_reindex_K ? GET_CONST_NODE(_obj) : _obj;
    if(obj->get_kind() == gimple_call_K)
    {
       const auto gc = GetPointerS<const gimple_call>(obj);
@@ -6472,7 +6470,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& obj, unsign
          const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(pt->ptd));
          if(ft->varargs_flag)
          {
-            return tree_nodeRef();
+            return tree_nodeConstRef();
          }
          else if(ft->prms)
          {
@@ -6492,7 +6490,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& obj, unsign
                }
             }
             THROW_ERROR("unexpected pattern");
-            return tree_nodeRef();
+            return tree_nodeConstRef();
          }
          else
          {
@@ -6535,7 +6533,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& obj, unsign
             unsigned int ith = 0;
             if(parm_index == ith)
             {
-               return GET_NODE(tl->valu);
+               return GET_CONST_NODE(tl->valu);
             }
             while(tl->chan)
             {
@@ -6579,11 +6577,6 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& obj, unsign
          ++ith;
       }
    }
-   else if(obj->get_kind() == tree_reindex_K)
-   {
-      return GetFormalIth(GET_CONST_NODE(obj), parm_index);
-   }
-   THROW_UNREACHABLE("");
    return tree_nodeConstRef();
 }
 
