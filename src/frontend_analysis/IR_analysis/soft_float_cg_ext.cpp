@@ -517,20 +517,34 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          const auto call_stmt = ssa->CGetDefStmt();
          const auto def_node = GetPointerS<const gimple_node>(GET_CONST_NODE(call_stmt));
          const auto call_bb = sl->list_of_bloc.at(def_node->bb_index);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---View-convert for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " + def_node->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->View-convert for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " + def_node->ToString());
          const auto ssa_ridx = TreeM->GetTreeReindex(ssa->index);
          // Hardware calls are for sure dealing with standard IEEE formats only
          const auto int_ret_type = tree_helper::Size(GET_NODE(ssa->type)) == 32 ? float32_type : float64_type;
          const auto ret_vc = tree_man->create_unary_operation(int_ret_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
          const auto vc_stmt = tree_man->CreateGimpleAssign(int_ret_type, tree_nodeRef(), tree_nodeRef(), ret_vc, function_id, call_bb->number, BUILTIN_SRCP);
          const auto vc_ssa = GetPointerS<const gimple_assign>(GET_CONST_NODE(vc_stmt))->op0;
-         const auto ssa_uses = ssa->CGetUseStmts();
-         for(const auto& stmt_uses : ssa_uses)
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Added statement " + GET_CONST_NODE(vc_stmt)->ToString());
+         const auto if_info = inputInterface.find(ssa);
+         if(if_info != inputInterface.end())
          {
-            TreeM->ReplaceTreeNode(stmt_uses.first, ssa_ridx, vc_ssa);
+            const auto new_ssa = GetPointer<ssa_name>(GET_NODE(vc_ssa));
+            THROW_ASSERT(std::get<0>(if_info->second), "");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Input interface " + std::get<0>(if_info->second)->mngl() + " moved");
+            inputInterface.insert(std::make_pair(new_ssa, if_info->second));
+            inputInterface.erase(ssa);
+         }
+         const auto ssa_uses = ssa->CGetUseStmts();
+         for(const auto& stmt_use : ssa_uses)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replace use - before: " + GET_CONST_NODE(stmt_use.first)->ToString());
+            TreeM->ReplaceTreeNode(stmt_use.first, ssa_ridx, vc_ssa);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---               after: " + GET_CONST_NODE(stmt_use.first)->ToString());
          }
          call_bb->PushAfter(vc_stmt, call_stmt, AppM);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          viewConvert.erase(ssa);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       modified = true;
       hwReturn.clear();
@@ -716,7 +730,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 
          const auto convertedSSA = generate_interface(bb, defStmt, ssa, std::get<0>(if_info.second), _version->userRequired);
          const auto convertedSSA_type = TreeM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(convertedSSA))->index);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Interface from " + std::get<0>(if_info.second)->mngl() + " to " + _version->userRequired->mngl() + " generated output " + GET_NODE(convertedSSA)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Interface from " + std::get<0>(if_info.second)->mngl() + " to " + _version->userRequired->mngl() + " generated output " + GET_NODE(convertedSSA)->ToString());
 
          for(const auto& ssaUse : ssaUses)
          {
@@ -740,6 +754,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced in statement " + GET_NODE(useStmt)->ToString());
             modified = true;
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       inputInterface.clear();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1163,11 +1178,11 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    const auto t_kind = tree_helper::CGetType(GET_CONST_NODE(ssa))->get_kind();
 #endif
    THROW_ASSERT(t_kind == integer_type_K, "Cast rename should be applied on integer variables only. " + tree_node::GetString(t_kind));
-   THROW_ASSERT(inFF && outFF, "Interface IO float format must be defined.");
+   THROW_ASSERT(inFF, "Interface input float format must be defined.");
+   THROW_ASSERT(outFF, "Interface output float format must be defined.");
 
    const auto float_cast_id = TreeM->function_index(FLOAT_CAST_FU_NAME);
    THROW_ASSERT(float_cast_id, "The library miss this function " FLOAT_CAST_FU_NAME);
-   THROW_ASSERT(AppM->GetFunctionBehavior(float_cast_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
    const auto spec_suffix = inFF->mngl() + "_to_" + outFF->mngl();
    auto spec_function_id = TreeM->function_index(FLOAT_CAST_FU_NAME + spec_suffix);
    if(spec_function_id == 0)
@@ -1198,8 +1213,8 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
        TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->sign == bit_lattice::U ? -1 : (outFF->sign == bit_lattice::ONE ? 1 : 0)), int_type_index),
    };
    const auto float_cast_call = tree_man->CreateCallExpr(TreeM->GetTreeReindex(spec_function_id), args, BUILTIN_SRCP);
-   const auto out_type = tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true);
-   const auto cast_stmt = tree_man->CreateGimpleAssign(out_type, tree_nodeConstRef(), tree_nodeConstRef(), float_cast_call, function_id, bb->number, BUILTIN_SRCP);
+   const auto ret_type = tree_helper::GetFunctionReturnType(TreeM->CGetTreeNode(spec_function_id));
+   const auto cast_stmt = tree_man->CreateGimpleAssign(ret_type, tree_nodeConstRef(), tree_nodeConstRef(), float_cast_call, function_id, bb->number, BUILTIN_SRCP);
    if(stmt == nullptr)
    {
       bb->PushFront(cast_stmt, AppM);
@@ -1207,6 +1222,14 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    else
    {
       bb->PushAfter(cast_stmt, stmt, AppM);
+   }
+   auto out_var = GetPointer<const gimple_assign>(GET_CONST_NODE(cast_stmt))->op0;
+   const auto out_type = tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true);
+   if(!tree_helper::IsSameType(ret_type, out_type))
+   {
+      const auto nop_stmt = tree_man->CreateNopExpr(out_var, out_type, tree_nodeConstRef(), tree_nodeConstRef(), function_id);
+      out_var = GetPointer<const gimple_assign>(GET_CONST_NODE(nop_stmt))->op0;
+      bb->PushAfter(nop_stmt, cast_stmt, AppM);
    }
    FunctionCallInline::RequestInlineStmt(cast_stmt, function_id);
 
@@ -1218,7 +1241,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
 #endif
        funcFF.insert(std::make_pair(called_func_vertex, calledFF));
    THROW_ASSERT(res.second || res.first->second->compare(*calledFF, true) == 0, "Same function registered with different formats: " + res.first->second->ToString() + " and " + calledFF->ToString() + " (" FLOAT_CAST_FU_NAME ")");
-   return GetPointerS<const gimple_assign>(GET_CONST_NODE(cast_stmt))->op0;
+   return out_var;
 }
 
 tree_nodeRef soft_float_cg_ext::floatNegate(const tree_nodeRef& op, const FloatFormatRef& ff) const
@@ -1524,6 +1547,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   const auto iif = inputInterface.find(SSA);
                   if(iif == inputInterface.end())
                   {
+                     THROW_ASSERT(ssa_ff, "");
                      inputInterface.insert({SSA, {ssa_ff, std::vector<unsigned int>({GET_INDEX_CONST_NODE(current_statement)})}});
                   }
                   else
@@ -1536,6 +1560,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                if(!static_cast<bool>(inputInterface.count(SSA)))
                {
                   // Add current input SSA to the input cast rename list for all its uses if not already present
+                  THROW_ASSERT(ssa_ff, "");
                   inputInterface.insert({SSA, {ssa_ff, std::vector<unsigned int>()}});
                }
             }
