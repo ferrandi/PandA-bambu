@@ -480,6 +480,11 @@ class BehavioralHelper
    const std::list<unsigned int> get_parameters() const;
 
    /**
+    * Return the list of index of original parameters of the function
+    */
+   std::vector<tree_nodeRef> GetParameters() const;
+
+   /**
     * Return true if function has implementation
     */
    bool has_implementation() const;

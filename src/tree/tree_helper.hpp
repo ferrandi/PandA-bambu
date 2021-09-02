@@ -121,7 +121,10 @@ class tree_helper
     * @param tm is the tree manager
     * @param index is the treenode
     */
-   static unsigned int size(const tree_managerConstRef& tm, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsBooleanType
+       unsigned int
+       size(const tree_managerConstRef& tm, const unsigned int index);
 
    /**
     * Return the size of a tree object
@@ -135,28 +138,65 @@ class tree_helper
     * @param tm is the tree manager
     * @param index is the treenode_index
     */
-   static std::string name_type(const tree_managerConstRef& tm, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with GetTypeName
+       std::string
+       name_type(const tree_managerConstRef& tm, const unsigned int index);
 
    /**
     * Return the name of template without parameters. Ex: sc_signal<T> --> sc_signal
     * @param tm is the tree manager
     * @param index is the treenode_index of the class template (is the index of a record_type)
     */
-   static std::string name_tmpl(const tree_managerConstRef& tm, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with GetTemplateTypeName
+       std::string
+       name_tmpl(const tree_managerConstRef& tm, const unsigned int index);
+
+   /**
+    * Return the name of template without parameters. Ex: sc_signal<T> --> sc_signal
+    * @param type is the treenode of the class template (of a record_type)
+    * @return name of template without parameters
+    */
+   static std::string GetTemplateTypeName(const tree_nodeConstRef& type);
 
    /**
     * Return the name of the class.
     * @param tm is the tree manager
     * @param index is the treenode_index of the class (is the index of a record_type)
     */
-   static std::string record_name(const tree_managerConstRef& tm, unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with GetRecordTypeName
+       std::string
+       record_name(const tree_managerConstRef& tm, unsigned int index);
+
+   /**
+    * Return the name of the class.
+    * @param type is the treenode of the class (of a record_type)
+    * @return the name of the class
+    */
+   static std::string GetRecordTypeName(const tree_nodeConstRef& type);
 
    /**
     * Return the name of the function.
     * @param tm is the tree manager
     * @param index is the treenode_index of the class (is the index of a function_decl)
     */
-   static std::string name_function(const tree_managerConstRef& tm, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with GetFunctionName
+       std::string
+       name_function(const tree_managerConstRef& tm, const unsigned int index);
+
+   /**
+    * Return the name of the function.
+    * @param TM is the tree manager instance
+    * @param decl is the treenode of the class (of a function_decl)
+    * @return the name of the function
+    */
+   static
+       /// FIXME: to be remove after substitution with PrintFunctionName
+       std::string
+       GetFunctionName(const tree_managerConstRef& TM, const tree_nodeConstRef& decl);
 
    /**
     * Return where a function or a type is defined
@@ -164,13 +204,34 @@ class tree_helper
     * @param index is the index
     * @param is_system stores if function or type has been already recognized as a system one
     */
-   static std::tuple<std::string, unsigned int, unsigned int> get_definition(const tree_managerConstRef& tm, const unsigned int index, bool& is_system);
+   static
+       /// FIXME: to be remove after substitution with GetSourcePath
+       std::tuple<std::string, unsigned int, unsigned int>
+       get_definition(const tree_managerConstRef& tm, const unsigned int index, bool& is_system);
+
+   /**
+    * Return where a function or a type is defined
+    * @param node type or decl treenode
+    * @param is_system stores if function or type has been already recognized as a system one
+    * @return include name, line number, and column number tuple
+    */
+   static std::tuple<std::string, unsigned int, unsigned int> GetSourcePath(const tree_nodeConstRef& node, bool& is_system);
 
    /**
     * Return true if the function index returns a not void type, false otherwise
     * @param index is the treenode_index of the functions
     */
-   static bool has_function_return(const tree_managerConstRef& tm, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with HasReturnType
+       bool
+       has_function_return(const tree_managerConstRef& tm, const unsigned int index);
+
+   /**
+    * Return true if the function index returns a not void type, false otherwise
+    * @param type is the treenode of the functions
+    * @return true if the function returns a not void type, false otherwise
+    */
+   static bool HasReturnType(const tree_managerConstRef& tm, const unsigned int index);
 
    /**
     * Return a string describing the functino type
@@ -227,14 +288,20 @@ class tree_helper
     * @param is_a_pointer in case the treenode is a pointer return true
     * @param is_a_function in case the treenode is a function_decl return true
     */
-   static unsigned int get_type_index(const tree_managerConstRef& TM, const unsigned int index, long long int& vec_size, bool& is_a_pointer, bool& is_a_function);
+   static
+       /// FIXME: to be remove after substitution with GetType/CGetType and others to get the out variable checks
+       unsigned int
+       get_type_index(const tree_managerConstRef& TM, const unsigned int index, long long int& vec_size, bool& is_a_pointer, bool& is_a_function);
 
    /**
     * Same as previous but with two parameters.
     * @param TM is the tree_manager
     * @param index is the treenode
     */
-   static unsigned int get_type_index(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with GetType/CGetType
+       unsigned int
+       get_type_index(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
     * Return the return type of a function
@@ -265,7 +332,10 @@ class tree_helper
     * @param index is the type of the array
     * @return the type of the element
     */
-   static unsigned int GetElements(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with CGetElements
+       unsigned int
+       GetElements(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
     * Given an array or a vector return the element type
@@ -288,7 +358,17 @@ class tree_helper
     * @param index is the index of the type
     * @return the name of the type
     */
-   static std::string get_type_name(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with GetTypeName
+       std::string
+       get_type_name(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return name of the type
+    * @param type is the type tree node
+    * @return the name of the type
+    */
+   static std::string GetTypeName(const tree_nodeConstRef& type);
 
    /**
     * Return the tree node of parameter types
@@ -296,7 +376,17 @@ class tree_helper
     * @param ind is the index of the function type
     * @param params is where parameter types are stored
     */
-   static void get_parameter_types(const tree_managerConstRef& TM, const unsigned int index, std::list<unsigned int>& params);
+   static
+       /// FIXME: to be remove after substitution with GetParameterTypes
+       void
+       get_parameter_types(const tree_managerConstRef& TM, const unsigned int index, std::list<unsigned int>& params);
+
+   /**
+    * Return the tree node of parameter types
+    * @param ftype is the function type
+    * @return parameters type list
+    */
+   static std::list<unsigned int> GetParameterTypes(const tree_nodeConstRef& ftype);
 
    /**
     * Return the fields type of a variable of type struct
@@ -310,7 +400,18 @@ class tree_helper
     * @param ind is the index of the record/union type
     * @param idx is the index of the field decl
     */
-   static unsigned int get_field_idx(const tree_managerConstRef& TM, const unsigned int index, unsigned int idx);
+   static
+       /// FIXME: to be remove after substitution with GetFieldIdx
+       unsigned int
+       get_field_idx(const tree_managerConstRef& TM, const unsigned int index, unsigned int idx);
+
+   /**
+    * Return the element of the fields declared in an union or a record type
+    * @param type is the record/union type
+    * @param idx is the index of the field decl
+    * @return the field decl node
+    */
+   static tree_nodeRef GetFieldIdx(const tree_nodeConstRef& type, unsigned int idx);
 
    /**
     * Return the treenode of the type of node.
@@ -324,7 +425,17 @@ class tree_helper
     * @param index is the index of the treenode corresponding to the decl node or to the type node
     * @return true if variable or type is a system one
     */
-   static bool is_system(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsSystemType
+       bool
+       is_system(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if variable or type is a system one
+    * @param type is the treenode corresponding to the decl node or to the type node
+    * @return true if variable or type is a system one
+    */
+   static bool IsSystemType(const tree_nodeConstRef& type);
 
 #if HAVE_BAMBU_BUILT
    /**
@@ -332,7 +443,17 @@ class tree_helper
     * @param TM is the tree manager
     * @param index is the treenode index
     */
-   static bool IsInLibbambu(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsInLibbambu
+       bool
+       IsInLibbambu(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the decl node or type is in libbambu
+    * @param type is the treenode
+    * @return true if the decl node or type is in libbambu
+    */
+   static bool IsInLibbambu(const tree_nodeConstRef& type);
 #endif
 
    /**
@@ -340,14 +461,34 @@ class tree_helper
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_an_enum(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsEnumType
+       bool
+       is_an_enum(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return if treenode index is an enumeral type
+    * @param type is the treenode
+    * @return if treenode is an enumeral type
+    */
+   static bool IsEnumType(const tree_nodeConstRef& type);
 
    /**
     * Return if treenode index is a record
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_a_struct(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsStructType
+       bool
+       is_a_struct(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if treenode is a record
+    * @param type is the treenode
+    * @return true if treenode is a record
+    */
+   static bool IsStructType(const tree_nodeConstRef& type);
 
    /**
     * Return if treenode index is an union
@@ -355,7 +496,17 @@ class tree_helper
     * @param index is the treenode index
     * @return true if treenode index is an union
     */
-   static bool is_an_union(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsUnionType
+       bool
+       is_an_union(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return if treenode is an union
+    * @param type is the treenode
+    * @return true if treenode is an union
+    */
+   static bool IsUnionType(const tree_nodeConstRef& type);
 
    /**
     * Return if treenode index is a complex
@@ -363,42 +514,101 @@ class tree_helper
     * @param index is the treenode index
     * @return true if treenode index is a complex
     */
-   static bool is_a_complex(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsComplexType
+       bool
+       is_a_complex(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return if treenode is a complex
+    * @param type is the treenode
+    * @return true if treenode is a complex
+    */
+   static bool IsComplexType(const tree_nodeConstRef& type);
 
    /**
     * Return if treenode index is an array or it is equivalent to an array (record recursively having a single field ending into a single arrays)
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_an_array(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsArrayType
+       bool
+       is_an_array(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if treenode is an array or it is equivalent to an array (record recursively having a single field ending into a single arrays)
+    * @param type is the treenode
+    * @return true if treenode is an array or it is equivalent to an array
+    */
+   static bool IsArrayType(const tree_nodeConstRef& type);
 
    /**
     * @param TM is the tree_manager
     * @param index is the treenode index
     * @return the basetype of the array in case it is an array
     */
-   static tree_nodeConstRef get_array_basetype(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with CGetArrayBaseType
+       tree_nodeConstRef
+       get_array_basetype(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * @param type is the treenode
+    * @return the basetype of the array in case it is an array
+    */
+   static tree_nodeConstRef CGetArrayBaseType(const tree_nodeConstRef& type);
 
    /**
     * Return if treenode index is a pointer
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_a_pointer(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsPointerType
+       bool
+       is_a_pointer(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if treenode index is a pointer
+    * @param typw is the treenode
+    * @return true if treenode is a pointer
+    */
+   static bool IsPointerType(const tree_nodeConstRef& type);
 
    /**
     * Return if treenode index is a function_decl
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_a_function(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsFunctionDeclaration
+       bool
+       is_a_function(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if treenode is a function_decl
+    * @param type is the treenode
+    * @return true if treenode is a function_decl
+    */
+   static bool IsFunctionDeclaration(const tree_nodeConstRef& type);
 
    /**
     * Return true if the treenode index is a vector
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_a_vector(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsVectorType
+       bool
+       is_a_vector(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the treenode is a vector
+    * @param type is the treenode
+    * @return true if the treenode is a vector
+    */
+   static bool IsVectorType(const tree_nodeConstRef& type);
 
    /**
     * Return true if the treenode index is a a misaligned access to a vector data object
@@ -421,7 +631,17 @@ class tree_helper
     * @param index is the treenode index
     * @return if the type has to be declared
     */
-   static bool HasToBeDeclared(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with HasToBeDeclared
+       bool
+       HasToBeDeclared(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the type has to be declared
+    * @param type is the treenode
+    * @return if the type has to be declared
+    */
+   static bool HasToBeDeclared(const tree_nodeConstRef& type);
 
    /**
     * Return if the treenode is of const type
@@ -429,35 +649,85 @@ class tree_helper
     * @param index is the treenode index
     * @return if tree_node is of const type
     */
-   static bool is_const_type(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsConstType
+       bool
+       is_const_type(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the treenode is of const type
+    * @param type is the treenode
+    * @return true if tree_node is of const type
+    */
+   static bool IsConstType(const tree_nodeConstRef& type);
 
    /**
     * Return true if the treenode is of bool type
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_bool(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsBooleanType
+       bool
+       is_bool(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the treenode is of bool type
+    * @param type is the treenode index
+    * @return true if the treenode is of bool type
+    */
+   static bool IsBooleanType(const tree_nodeConstRef& type);
 
    /**
     * Return true if the treenode is of void type
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_a_void(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsVoidType
+       bool
+       is_a_void(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the treenode is of void type
+    * @param type is the treenode
+    * @return true if the treenode is of void type
+    */
+   static bool IsVoidType(const tree_nodeConstRef& type);
 
    /**
     * Return true if the treenode is a ssa_name greater or equal to zero
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_natural(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsPositiveIntegerValue
+       bool
+       is_natural(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the treenode is a ssa_name greater or equal to zero
+    * @param type is the treenode
+    * @return true if the treenode is a ssa_name greater or equal to zero
+    */
+   static bool IsPositiveIntegerValue(const tree_nodeConstRef& type);
 
    /**
     * Return true if the treenode is of integer type
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_int(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsSignedIntegerType
+       bool
+       is_int(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the treenode is of integer type
+    * @param type is the treenode
+    * @return true if the treenode is of integer type
+    */
+   static bool IsSignedIntegerType(const tree_nodeConstRef& type);
 
    /**
     * Return true if the treenode is of real type
@@ -465,50 +735,135 @@ class tree_helper
     * @param index is the treenode index
     * @return if index is of real type
     */
-   static bool is_real(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsRealType
+       bool
+       is_real(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the treenode is of real type
+    * @param type is the treenode
+    * @return true if treenode is of real type
+    */
+   static bool IsRealType(const tree_nodeConstRef& type);
 
    /**
     * Return true if the treenode is of unsigned integer type
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_unsigned(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsUnsignedIntegerType
+       bool
+       is_unsigned(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the treenode is of unsigned integer type
+    * @param type is the treenode
+    * @return true if the treenode is of unsigned integer type
+    */
+   static bool IsUnsignedIntegerType(const tree_nodeConstRef& type);
 
    /**
     * Return true if the treenode is an int, an unsigned, a real or a Boolean data type
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_scalar(const tree_managerConstRef& TM, const unsigned int var);
+   static
+       /// FIXME: to be remove after substitution with IsScalarType
+       bool
+       is_scalar(const tree_managerConstRef& TM, const unsigned int var);
 
-   static bool is_a_variable(const tree_managerConstRef& TM, const unsigned int index);
+   /**
+    * Return true if the treenode is an int, an unsigned, a real or a Boolean data type
+    * @param type is the treenode
+    * @return true if the treenode is an int, an unsigned, a real or a Boolean data type
+    */
+   static bool IsScalarType(const tree_nodeConstRef& type);
 
-   static bool is_static(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsVariableType
+       bool
+       is_a_variable(const tree_managerConstRef& TM, const unsigned int index);
 
-   static bool is_extern(const tree_managerConstRef& TM, const unsigned int index);
+   /**
+    * Return true if the treenode is a valid variable
+    * @param node the treenode
+    * @return true if the treenode is a valid variable
+    */
+   static bool IsVariableType(const tree_nodeConstRef& node);
+
+   static
+       /// FIXME: to be remove after substitution with IsStaticDeclaration
+       bool
+       is_static(const tree_managerConstRef& TM, const unsigned int index);
+
+   static bool IsStaticDeclaration(const tree_nodeConstRef& decl);
+
+   static
+       /// FIXME: to be remove after substitution with IsExternDeclaration
+       bool
+       is_extern(const tree_managerConstRef& TM, const unsigned int index);
+
+   static bool IsExternDeclaration(const tree_nodeConstRef& decl);
 
    /**
     * Return true if the treenode is of type function type
     * @param TM is the tree_manager
     * @param index is the treenode_index
     */
-   static bool is_function_type(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsFunctionType
+       bool
+       is_function_type(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the treenode is of type function type
+    * @param type is the treenode
+    * @return true if the treenode is of type function type
+    */
+   static bool IsFunctionType(const tree_nodeConstRef& type);
 
    /**
     * Return true if the treenode is of type function pointer type
     * @param TM is the tree_manager
     * @param index is the treenode_index
     */
-   static bool is_function_pointer_type(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsFunctionPointerType
+       bool
+       is_function_pointer_type(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return true if the treenode is of type function pointer type
+    * @param type is the treenode
+    * @return true if the treenode is of type function pointer type
+    */
+   static bool IsFunctionPointerType(const tree_nodeConstRef& type);
 
    /**
     * Retrun the base address of a memory access
     * @param TM is the tree manager
     * @param int is the index of the access
     */
-   static unsigned int get_base_index(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with GetBaseAddress
+       unsigned int
+       get_base_index(const tree_managerConstRef& TM, const unsigned int index);
 
-   static bool is_fully_resolved(const tree_managerConstRef& TM, const unsigned int index, CustomOrderedSet<unsigned int>& res_set);
+   /**
+    * Retrun the base address of a memory access
+    * @param mem is the node of the memory access
+    * @return the base address of a memory access
+    */
+   static unsigned int GetBaseAddress(const tree_nodeConstRef& mem);
+
+   static
+       /// FIXME: to be remove after substitution with IsPointerResolved
+       bool
+       is_fully_resolved(const tree_managerConstRef& TM, const unsigned int index, CustomOrderedSet<unsigned int>& res_set);
+
+   static bool IsPointerResolved(const tree_nodeConstRef& ptr, CustomOrderedSet<unsigned int>& res_set);
 
    /**
     * return the prefix given a qualifier
@@ -669,7 +1024,17 @@ class tree_helper
     * @param TM is the tree_manager
     * @param index is the array object
     */
-   static unsigned int get_array_data_bitsize(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with GetArrayElementSize
+       unsigned int
+       get_array_data_bitsize(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return the size (in bits) of the base element of the array
+    * @param node is the array object
+    * @return the size (in bits) of the base element of the array
+    */
+   static unsigned int GetArrayElementSize(const tree_nodeConstRef& node);
 
    /**
     * Return the dimension of the array
@@ -677,7 +1042,17 @@ class tree_helper
     * @param index is the array object
     * @param dims return for each dimension the number of elements
     */
-   static void get_array_dimensions(const tree_managerConstRef& TM, const unsigned int index, std::vector<unsigned int>& dims);
+   static
+       /// FIXME: to be remove after substitution with GetArrayDimensions
+       void
+       get_array_dimensions(const tree_managerConstRef& TM, const unsigned int index, std::vector<unsigned int>& dims);
+
+   /**
+    * Return the dimension of the array
+    * @param node is the array object
+    * @return for each dimension the number of elements
+    */
+   static std::vector<unsigned int> GetArrayDimensions(const tree_nodeConstRef& node);
 
    /**
     * Return the dimension of the array
@@ -686,14 +1061,27 @@ class tree_helper
     * @param dims return for each dimension the number of elements
     * @param elts_bitsize return the base type bitsize
     */
-   static void get_array_dim_and_bitsize(const tree_managerConstRef& TM, const unsigned int index, std::vector<unsigned int>& dims, unsigned int& elts_bitsize);
+   static
+       /// FIXME: to be remove after substitution with GetArrayDimensions and GetArrayElementSize
+       void
+       get_array_dim_and_bitsize(const tree_managerConstRef& TM, const unsigned int index, std::vector<unsigned int>& dims, unsigned int& elts_bitsize);
 
    /**
     * Return the total number of elements of the the base type in the array
     * @param TM is the tree_manager
     * @param index is the array object
     */
-   static unsigned int get_array_num_elements(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with GetArrayTotalSize
+       unsigned int
+       get_array_num_elements(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return the total number of elements of the the base type in the array
+    * @param node is the array object
+    * @return the total number of elements of the the base type in the array
+    */
+   static unsigned int GetArrayTotalSize(const tree_nodeConstRef& node);
 
    /**
     * Return the indexes of the array_ref
@@ -727,7 +1115,17 @@ class tree_helper
     * @param index is the index of the tree_node
     * @return true is the object is constant
     */
-   static bool is_constant(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsConstant
+       bool
+       is_constant(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * Return if a tree node is a constant object
+    * @param node is the tree_node
+    * @return true is the object is constant
+    */
+   static bool IsConstant(const tree_nodeConstRef& node);
 
    /**
     * Function return the symbol related with the operator op passed as parameter
@@ -757,7 +1155,17 @@ class tree_helper
     * @param index is the index of the type
     * @return the real type
     */
-   static unsigned int GetRealType(const tree_managerConstRef& TM, unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with GetRealType
+       unsigned int
+       GetRealType(const tree_managerConstRef& TM, unsigned int index);
+
+   /**
+    * Return the real type
+    * @param type is the type
+    * @return the real type
+    */
+   static tree_nodeConstRef GetRealType(const tree_nodeConstRef& type);
 
    /**
     * Return true if type has not default alignment
@@ -800,19 +1208,51 @@ class tree_helper
     * @param var is the variable.
     * @param vppf is the pointer to the functor used to dump the possible variable var
     * @param prefix is the string to be appended at the begining of the printing
-    * @return the printed string
+    * @return std::string the printed string
     */
-   static std::string print_type(const tree_managerConstRef& TM, unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef& vppf = var_pp_functorConstRef(),
-                                 const std::string& prefix = "", const std::string& tail = "");
+   static
+       /// FIXME: to be remove after substitution with PrintType
+       std::string
+       print_type(const tree_managerConstRef& TM, unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef& vppf = var_pp_functorConstRef(),
+                  const std::string& prefix = "", const std::string& tail = "");
+
+   /**
+    * Print a type and its variable in case var is not zero.
+    * @param type is the type of var.
+    * @param global tells if the variable is global
+    * @param print_qualifiers tells if the qualifiers (i.e. "const") have to be printed
+    * @param print_storage tells if the storage (i.e. "static") has to be printed
+    * @param var is the variable.
+    * @param vppf is the pointer to the functor used to dump the possible variable var
+    * @param prefix is the string to be appended at the begining of the printing
+    * @return std::string the printed string
+    */
+   static std::string PrintType(const tree_managerConstRef& TM, const tree_nodeConstRef& type, bool global = false, bool print_qualifiers = false, bool print_storage = false, const tree_nodeConstRef& var = nullptr,
+                                const var_pp_functorConstRef& vppf = var_pp_functorConstRef(), const std::string& prefix = "", const std::string& tail = "");
 
    /**
     * return the type of the ith formal parameter in case index_obj is a call_expr
     */
-   static unsigned int get_formal_ith(const tree_managerConstRef& TM, unsigned int index_obj, unsigned int parm_index);
+   static
+       /// FIXME: to be remove after substitution with GetFormalIth
+       unsigned int
+       get_formal_ith(const tree_managerConstRef& TM, unsigned int index_obj, unsigned int parm_index);
 
+   /**
+    * Return the type of the ith formal parameter in case index_obj is a call_expr
+    *
+    * @param obj is the call_expr node
+    * @param parm_index is the index of the parameter
+    * @return tree_nodeConstRef the type of the ith formal parameter in case index_obj is a call_expr
+    */
    static tree_nodeConstRef GetFormalIth(const tree_nodeConstRef& obj, unsigned int parm_index);
 
-   static bool is_packed(const tree_managerConstRef& TreeM, unsigned int node_index);
+   static
+       /// FIXME: to be remove after substitution with IsPackedType
+       bool
+       is_packed(const tree_managerConstRef& TreeM, unsigned int node_index);
+
+   static bool IsPackedType(const tree_nodeConstRef& type);
 
    /**
     * Check if the access is on a packed data structure or not

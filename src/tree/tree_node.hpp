@@ -775,31 +775,31 @@ struct attr
    }
 
    /// Return true if there is TOK_CONSTRUCTOR in the list of attributes
-   bool is_constructor();
+   bool is_constructor() const;
 
    /// Return true if there is TOK_DESTRUCTOR in the list of attributes
-   bool is_destructor();
+   bool is_destructor() const;
 
    /// Return true if there is TOK_MEMBER in the list of attributes
-   bool is_member();
+   bool is_member() const;
 
    /// returns true if there is a TOK_CALL in the list of attributes
-   bool is_call();
+   bool is_call() const;
 
    /// returns true if there is a TOK_NEW in the list of attributes
-   bool is_new();
+   bool is_new() const;
 
    /// returns true if there is a TOK_PUBLIC in the list of attributes
-   bool is_public();
+   bool is_public() const;
 
    /// returns true if there is a TOK_PRIVATE in the list of attributes
-   bool is_private();
+   bool is_private() const;
 
    /// returns true if there is a TOK_PROTECTED in the list of attributes
-   bool is_protected();
+   bool is_protected() const;
 
    /// returns true if there is a TOK_BITFIELD in the list of attributes
-   bool is_bitfield();
+   bool is_bitfield() const;
 
    /**
     * virtual function used to traverse the tree_node data structure.
