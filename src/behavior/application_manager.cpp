@@ -135,7 +135,7 @@ FunctionBehaviorRef application_manager::GetFunctionBehavior(unsigned int index)
 const FunctionBehaviorConstRef application_manager::CGetFunctionBehavior(unsigned int index) const
 {
    const auto& behaviors = call_graph_manager->CGetCallGraph()->CGetCallGraphInfo()->behaviors;
-   THROW_ASSERT(behaviors.find(index) != behaviors.end(), "There is no function with index " + STR(index));
+   THROW_ASSERT(behaviors.count(index), "There is no function with index " + STR(index));
    return behaviors.at(index);
 }
 

@@ -234,7 +234,9 @@ class BehavioralHelper
     * @param function_is is the index of the function
     * @return the index of the type
     */
-   unsigned int GetFunctionReturnType(unsigned int function) const;
+   unsigned int
+   /// FIXME: to be remove after substitution with tree_helper::GetFunctionReturnType
+   GetFunctionReturnType(unsigned int function) const;
 
    /**
     * Return true if index is a variable or a type of type bool

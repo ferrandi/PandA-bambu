@@ -847,16 +847,16 @@ class tree_helper
     * @param int is the index of the access
     */
    static
-       /// FIXME: to be remove after substitution with GetBaseAddress
+       /// FIXME: to be remove after substitution with GetBaseVariable
        unsigned int
        get_base_index(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
-    * Retrun the base address of a memory access
+    * Retrun the base variable of a memory access
     * @param mem is the node of the memory access
-    * @return the base address of a memory access
+    * @return the base variable of a memory access
     */
-   static unsigned int GetBaseAddress(const tree_nodeConstRef& mem);
+   static tree_nodeConstRef GetBaseVariable(const tree_nodeConstRef& mem);
 
    static
        /// FIXME: to be remove after substitution with IsPointerResolved

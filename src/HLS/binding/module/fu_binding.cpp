@@ -1797,12 +1797,12 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      unsigned int op0_tree_var = std::get<0>(vars[0]);
                      if(op0_tree_var)
                      {
-                        unsigned int var = tree_helper::get_base_index(TreeM, op0_tree_var);
-                        if(var && FB->is_variable_mem(var) && HLSMgr->Rmem->is_sds_var(var))
+                        const auto var = tree_helper::GetBaseVariable(TreeM->CGetTreeReindex(op0_tree_var));
+                        if(var && FB->is_variable_mem(GET_INDEX_CONST_NODE(var)) && HLSMgr->Rmem->is_sds_var(GET_INDEX_CONST_NODE(var)))
                         {
                            unsigned int value_bitsize = 1;
-                           unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-                           tree_helper::accessed_greatest_bitsize(TreeM->CGetTreeNode(type_index), value_bitsize);
+                           const auto type = tree_helper::CGetType(var);
+                           tree_helper::accessed_greatest_bitsize(type, value_bitsize);
                            if(value_bitsize <= 8)
                            {
                               curr_LSB = 0;
