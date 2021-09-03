@@ -909,6 +909,8 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                      case ternary_pm_expr_K:
                      case ternary_mp_expr_K:
                      case ternary_mm_expr_K:
+                     case fshl_expr_K:
+                     case fshr_expr_K:
                      case bit_ior_concat_expr_K:
                      case complex_cst_K:
                      case vector_cst_K:
@@ -1127,6 +1129,8 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                      case ternary_pm_expr_K:
                      case ternary_mp_expr_K:
                      case ternary_mm_expr_K:
+                     case fshl_expr_K:
+                     case fshr_expr_K:
                      case bit_ior_concat_expr_K:
                      case vec_cond_expr_K:
                      case vec_perm_expr_K:

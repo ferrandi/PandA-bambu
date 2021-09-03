@@ -596,6 +596,8 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_SLOT,
    TOK_SAT_PLUS_EXPR,
    TOK_SAT_MINUS_EXPR,
+   TOK_FSHL_EXPR,
+   TOK_FSHR_EXPR,
 
    /// RTL token
    TOK_RTL,

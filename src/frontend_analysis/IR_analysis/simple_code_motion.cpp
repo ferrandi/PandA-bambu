@@ -279,6 +279,27 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             return FunctionFrontendFlowStep_Movable::MOVABLE;
          }
       }
+      case fshl_expr_K:
+      case fshr_expr_K:
+      {
+         if(conservative)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No");
+            return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+         }
+         else
+         {
+            auto* te = GetPointer<ternary_expr>(right);
+            unsigned int n_bit = tree_helper::Size(GET_NODE(te->op0));
+            bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(te->op1));
+            if(n_bit > 9 && !is_constant)
+            {
+               zero_delay = false;
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
+            return FunctionFrontendFlowStep_Movable::MOVABLE;
+         }
+      }
       case mult_expr_K:
       case mult_highpart_expr_K:
       case widen_mult_expr_K:

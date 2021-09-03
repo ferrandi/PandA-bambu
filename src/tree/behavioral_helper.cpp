@@ -2937,6 +2937,73 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          res = print_node(GET_INDEX_NODE(te->op0), v, vppf) + " - " + print_node(GET_INDEX_NODE(te->op1), v, vppf) + " - " + print_node(GET_INDEX_NODE(te->op2), v, vppf);
          break;
       }
+      case fshl_expr_K:
+      case fshr_expr_K:
+      {
+         unsigned int type_index = get_type(index);
+         const tree_nodeRef type = TM->get_tree_node_const(type_index);
+         auto* te = GetPointer<ternary_expr>(node);
+         unsigned int left_op = GET_INDEX_NODE(te->op0);
+         bool left_op_cast = is_a_pointer(left_op);
+         unsigned int right_op = GET_INDEX_NODE(te->op1);
+         bool right_op_cast = is_a_pointer(right_op);
+         unsigned int shift_amount_op = GET_INDEX_NODE(te->op2);
+         res += "(";
+         if(left_op_cast)
+         {
+            res += "((unsigned long int)";
+         }
+         res += print_node(left_op, v, vppf);
+         if(left_op_cast)
+         {
+            res += ")";
+         }
+         res += " << (";
+         if(node->get_kind() == fshl_expr_K)
+         {
+            res += print_node(shift_amount_op, v, vppf);
+            res += " % ";
+            res += STR(tree_helper::Size(te->op0));
+         }
+         else
+         {
+            res += STR(tree_helper::Size(te->op0));
+            res += " - (";
+            res += print_node(shift_amount_op, v, vppf);
+            res += " % ";
+            res += STR(tree_helper::Size(te->op0));
+            res += ")";
+         }
+         res += ")) | (";
+
+         if(right_op_cast)
+         {
+            res += "((unsigned long int)";
+         }
+         res += print_node(right_op, v, vppf);
+         if(right_op_cast)
+         {
+            res += ")";
+         }
+         res += " >> (";
+         if(node->get_kind() == fshr_expr_K)
+         {
+            res += print_node(shift_amount_op, v, vppf);
+            res += " % ";
+            res += STR(tree_helper::Size(te->op0));
+         }
+         else
+         {
+            res += STR(tree_helper::Size(te->op0));
+            res += " - (";
+            res += print_node(shift_amount_op, v, vppf);
+            res += " % ";
+            res += STR(tree_helper::Size(te->op0));
+            res += ")";
+         }
+         res += "))";
+         break;
+      }
       case bit_ior_concat_expr_K:
       {
          const auto te = GetPointerS<const ternary_expr>(node);
@@ -3455,6 +3522,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case ternary_pm_expr_K:
             case ternary_mp_expr_K:
             case ternary_mm_expr_K:
+            case fshl_expr_K:
+            case fshr_expr_K:
             case bit_ior_concat_expr_K:
             case vec_cond_expr_K:
             case vec_perm_expr_K:
@@ -3647,6 +3716,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case ternary_pm_expr_K:
             case ternary_mp_expr_K:
             case ternary_mm_expr_K:
+            case fshl_expr_K:
+            case fshr_expr_K:
             case bit_ior_concat_expr_K:
             case vec_cond_expr_K:
             case vec_perm_expr_K:

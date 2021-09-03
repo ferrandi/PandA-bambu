@@ -646,6 +646,10 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, bool _deep_
          CREATE_TREE_NODE_CASE_BODY(sat_plus_expr, node_id)
       case sat_minus_expr_K:
          CREATE_TREE_NODE_CASE_BODY(sat_minus_expr, node_id)
+      case fshl_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(fshl_expr, node_id)
+      case fshr_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(fshr_expr, node_id)
       case do_stmt_K:
       case if_stmt_K:
       case for_stmt_K:

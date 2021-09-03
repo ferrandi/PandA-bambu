@@ -177,6 +177,9 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 #if HAVE_I386_CLANG11_COMPILER
          or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
+#if HAVE_I386_CLANG12_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
          or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
@@ -240,6 +243,9 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 #endif
 #if HAVE_I386_CLANG11_COMPILER
          or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
          or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD

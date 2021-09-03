@@ -562,6 +562,32 @@ void GimpleWriter::operator()(const ternary_expr* obj, unsigned int& mask)
          obj->op2->visit(this);
          break;
       }
+      case fshl_expr_K:
+      {
+         os << "(";
+         obj->op0->visit(this);
+         os << " << (";
+         obj->op2->visit(this);
+         os << "%BW)) | (";
+         obj->op1->visit(this);
+         os << " >> (BW - (";
+         obj->op2->visit(this);
+         os << " % BW)))";
+         break;
+      }
+      case fshr_expr_K:
+      {
+         os << "(";
+         obj->op0->visit(this);
+         os << " << (BW - (";
+         obj->op2->visit(this);
+         os << " % BW))) | (";
+         obj->op1->visit(this);
+         os << " << (";
+         obj->op2->visit(this);
+         os << "))";
+         break;
+      }
       case bit_ior_concat_expr_K:
       {
          obj->op0->visit(this);

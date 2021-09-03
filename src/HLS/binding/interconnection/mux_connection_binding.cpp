@@ -1307,6 +1307,8 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case ternary_pm_expr_K:
          case ternary_mp_expr_K:
          case ternary_mm_expr_K:
+         case fshl_expr_K:
+         case fshr_expr_K:
          case bit_ior_concat_expr_K:
          case obj_type_ref_K:
          case save_expr_K:
@@ -2208,6 +2210,8 @@ void mux_connection_binding::create_connections()
                   case ternary_pm_expr_K:
                   case ternary_mp_expr_K:
                   case ternary_mm_expr_K:
+                  case fshl_expr_K:
+                  case fshr_expr_K:
                   case bit_ior_concat_expr_K:
                   case abs_expr_K:
                   case addr_expr_K:

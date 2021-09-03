@@ -844,6 +844,8 @@ namespace
                case ternary_pm_expr_K:
                case ternary_mp_expr_K:
                case ternary_mm_expr_K:
+               case fshl_expr_K:
+               case fshr_expr_K:
                case CASE_QUATERNARY_EXPRESSION:
                case CASE_TYPE_NODES:
                case complex_cst_K:

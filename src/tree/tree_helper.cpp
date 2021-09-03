@@ -3452,6 +3452,8 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
       case ternary_pm_expr_K:
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
+      case fshl_expr_K:
+      case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
       case arrow_expr_K:
@@ -3957,6 +3959,8 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node)
       case ternary_pm_expr_K:
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
+      case fshl_expr_K:
+      case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
       case arrow_expr_K:
@@ -4242,6 +4246,8 @@ bool tree_helper::IsPointerResolved(const tree_nodeConstRef& _node, CustomOrdere
       case ternary_pm_expr_K:
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
+      case fshl_expr_K:
+      case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
       case arrow_expr_K:
@@ -6103,6 +6109,8 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case ternary_pm_expr_K:
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
+      case fshl_expr_K:
+      case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case error_mark_K:
       case lut_expr_K:
@@ -6672,6 +6680,8 @@ bool tree_helper::is_packed_access(const tree_managerConstRef& TreeM, unsigned i
       case ternary_pm_expr_K:
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
+      case fshl_expr_K:
+      case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
       case arrow_expr_K:
@@ -7057,6 +7067,8 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             case ternary_pm_expr_K:
             case ternary_mp_expr_K:
             case ternary_mm_expr_K:
+            case fshl_expr_K:
+            case fshr_expr_K:
             case bit_ior_concat_expr_K:
             case assert_expr_K:
             case bit_and_expr_K:
@@ -7272,6 +7284,8 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case ternary_pm_expr_K:
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
+      case fshl_expr_K:
+      case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case function_decl_K:
       case identifier_node_K:
@@ -8377,6 +8391,8 @@ void tree_helper::get_required_values(std::vector<std::tuple<unsigned int, unsig
       case ternary_pm_expr_K:
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
+      case fshl_expr_K:
+      case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case cond_expr_K:
       case vec_cond_expr_K:

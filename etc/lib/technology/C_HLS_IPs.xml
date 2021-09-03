@@ -1145,6 +1145,112 @@ assign out1 = (in1 &lt;&lt; (in2[marg2_bitsize-1:0]))|(in1 &gt;&gt; (PRECISION-(
       </circuit>
     </template>
     <template>
+      <name>ui_fshl_expr_FU</name>
+      <characterizing_constant_value>1</characterizing_constant_value>
+      <operation operation_name="fshl_expr" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <circuit>
+        <component_o id="ui_fshl_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2021 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_fshl_expr_FU"/>
+          <parameter name="PRECISION">1</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_fshl_expr_FU in1 in2 in3 out1 PRECISION" VERILOG_PROVIDED=
+"`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  parameter arg_bitsize = $clog2(PRECISION);
+`else
+  parameter arg_bitsize = log2(PRECISION);
+`endif
+parameter marg_bitsize = arg_bitsize &lt; BITSIZE_in3 ? arg_bitsize : BITSIZE_in3;
+assign out1 = (in1 &lt;&lt; (in3[marg2_bitsize-1:0]))|(in2 &gt;&gt; (PRECISION-(in3[marg_bitsize-1:0])));" VHDL_PROVIDED=
+"begin
+  out1 &lt;= resize(shift_left(resize(in1, BITSIZE_out1), to_integer(unsigned(in3) rem PRECISION)), BITSIZE_out1) or resize(shift_right(resize(in2, BITSIZE_out1), PRECISION - to_integer(unsigned(in3) rem PRECISION)), BITSIZE_out1);
+"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_fshr_expr_FU</name>
+      <characterizing_constant_value>1</characterizing_constant_value>
+      <operation operation_name="fshr_expr" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <circuit>
+        <component_o id="ui_fshr_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2021 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_fshr_expr_FU"/>
+          <parameter name="PRECISION">1</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_fshr_expr_FU in1 in2 in3 out1 PRECISION" VERILOG_PROVIDED=
+"`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  parameter arg_bitsize = $clog2(PRECISION);
+`else
+  parameter arg_bitsize = log2(PRECISION);
+`endif
+parameter marg_bitsize = arg_bitsize &lt; BITSIZE_in3 ? arg_bitsize : BITSIZE_in3;
+assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg2_bitsize-1:0])))|(in2 &gt;&gt; (in3[marg_bitsize-1:0]));" VHDL_PROVIDED=
+"begin
+  out1 &lt;= resize(shift_left(resize(in1, BITSIZE_out1), PRECISION - to_integer(unsigned(in3) rem PRECISION)), BITSIZE_out1) or resize(shift_right(resize(in2, BITSIZE_out1), to_integer(unsigned(in3) rem PRECISION)), BITSIZE_out1);
+"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
       <name>widen_mult_expr_FU</name>
       <no_constant_characterization></no_constant_characterization>
       <operation operation_name="widen_mult_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>

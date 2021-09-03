@@ -549,7 +549,9 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case ternary_plus_expr_K:    \
    case ternary_pm_expr_K:      \
    case ternary_mp_expr_K:      \
-   case ternary_mm_expr_K
+   case ternary_mm_expr_K:      \
+   case fshl_expr_K:            \
+   case fshr_expr_K
 
 /**
  * This macro collects all case labels for quaternary_expr objects.
@@ -6129,5 +6131,17 @@ CREATE_TREE_NODE_CLASS(sat_plus_expr, binary_expr);
  * Simple arithmetic.
  */
 CREATE_TREE_NODE_CLASS(sat_minus_expr, binary_expr);
+
+/**
+ * This struct specifies the fshl_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(fshl_expr, ternary_expr);
+
+/**
+ * This struct specifies the fshr_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(fshr_expr, ternary_expr);
 
 #endif

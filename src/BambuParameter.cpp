@@ -55,6 +55,10 @@
 #include "config_HAVE_I386_CLANG11_M32.hpp"
 #include "config_HAVE_I386_CLANG11_M64.hpp"
 #include "config_HAVE_I386_CLANG11_MX32.hpp"
+#include "config_HAVE_I386_CLANG12_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG12_M32.hpp"
+#include "config_HAVE_I386_CLANG12_M64.hpp"
+#include "config_HAVE_I386_CLANG12_MX32.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_M32.hpp"
 #include "config_HAVE_I386_CLANG4_M64.hpp"
@@ -2907,7 +2911,7 @@ int BambuParameter::Exec()
 #endif
       else if(file_type == Parameters_FileFormat::FF_C || file_type == Parameters_FileFormat::FF_OBJECTIVEC || file_type == Parameters_FileFormat::FF_CPP || file_type == Parameters_FileFormat::FF_FORTRAN
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
-    HAVE_I386_CLANGVVD_COMPILER
+    HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
               || file_type == Parameters_FileFormat::FF_LLVM || file_type == Parameters_FileFormat::FF_LLVM_CPP
 #endif
       )
@@ -2980,10 +2984,11 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
    /// Set the default value for OPT_gcc_m32_mx32
    if(!isOption(OPT_gcc_m32_mx32))
    {
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) ||            \
-    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) ||             \
-    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64) || \
-    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64) || (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) ||                  \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) ||                   \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64) ||       \
+    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64) || (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64) || \
+    (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
       if(false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
@@ -3030,16 +3035,20 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
+#if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64)
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
          setOption(OPT_gcc_m32_mx32, "-m64");
 #endif
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) ||            \
-    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) ||             \
-    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_MX32) || \
-    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_MX32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_MX32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32) || (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) ||                  \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) ||                   \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_MX32) ||       \
+    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_MX32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_MX32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32) || (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_MX32) || \
+    (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
       if(false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
@@ -3086,6 +3095,9 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
+#if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_MX32)
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
@@ -3127,7 +3139,7 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 #endif
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32) ||      \
     (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M32) || (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32) || \
-    (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
+    (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M32) || (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
       if(false
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
@@ -3152,6 +3164,9 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M32)
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
@@ -3816,6 +3831,9 @@ void BambuParameter::CheckParameters()
 #endif
 #if HAVE_I386_CLANG11_COMPILER
                  or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
                  or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
@@ -4504,6 +4522,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10));
 #elif HAVE_I386_CLANG11_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11));
+#elif HAVE_I386_CLANG12_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12));
 #elif HAVE_I386_CLANGVVD_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD));
 #else
@@ -4560,6 +4580,9 @@ void BambuParameter::SetDefaults()
 #endif
 #if HAVE_I386_CLANG11_COMPILER
                                            | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12)
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
                                            | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
@@ -4654,6 +4677,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_host_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10));
 #elif HAVE_I386_CLANG11_COMPILER
    setOption(OPT_host_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11));
+#elif HAVE_I386_CLANG12_COMPILER
+   setOption(OPT_host_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12));
 #elif HAVE_I386_CLANGVVD_COMPILER
    setOption(OPT_host_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD));
 #else
@@ -4812,6 +4837,12 @@ void BambuParameter::add_bambu_library(std::string lib)
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11))
    {
       setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang11" + VSuffix + ".a");
+   }
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12))
+   {
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang12" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
