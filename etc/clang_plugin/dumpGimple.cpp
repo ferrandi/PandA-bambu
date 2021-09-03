@@ -109,7 +109,7 @@
 
 #include <float.h>
 
-#define PRINT_DBG_MSG 1
+#define PRINT_DBG_MSG 0
 
 static std::string create_file_name_string(const std::string& outdir_name, const std::string& original_filename)
 {
@@ -6628,25 +6628,20 @@ namespace llvm
    }
    bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName)
    {
-      llvm::errs() << "DumpGimpleRaw::runOnModule start - 1\n";
       DL = &M.getDataLayout();
       modulePass = _modulePass;
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
       bool res = false;
       compute_eSSA(M, &res);
-      llvm::errs() << "DumpGimpleRaw::runOnModule start - 2\n";
       if(!earlyAnalysis)
          buildMetaDataMap(M);
       res = !earlyAnalysis && lowerMemIntrinsics(M);
-      llvm::errs() << "DumpGimpleRaw::runOnModule start - 3\n";
 
       auto res_RC = (!earlyAnalysis && RebuildConstants(M));
-      llvm::errs() << "DumpGimpleRaw::runOnModule start - 4\n";
 
       res = res || res_RC;
       auto res_LI = (!earlyAnalysis && lowerIntrinsics(M));
-      llvm::errs() << "DumpGimpleRaw::runOnModule start - 5\n";
       res = res || res_LI;
 #if HAVE_LIBBDD
       if(!earlyAnalysis && !onlyGlobals)
@@ -6672,9 +6667,7 @@ namespace llvm
          }
       }
 #endif
-      llvm::errs() << "DumpGimpleRaw::runOnModule start - 6\n";
       computeValueRange(M);
-      llvm::errs() << "DumpGimpleRaw::runOnModule start - 7\n";
 
 #ifdef DEBUG_RA
       assert(!llvm::verifyModule(M, &llvm::errs()));

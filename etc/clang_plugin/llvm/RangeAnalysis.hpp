@@ -127,7 +127,7 @@ namespace RangeAnalysis
    //#define SCC_DEBUG
 
    // Comment the line below to disable the dot printing of Constraint Graphs
-   #define DEBUG_RA
+   //#define DEBUG_RA
 
    // Used to enable the stats computing. Comment the below line to disable it
    //#define STATS
