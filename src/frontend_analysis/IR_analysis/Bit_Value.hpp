@@ -196,6 +196,8 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     */
    std::deque<bit_lattice> backward_transfer(const gimple_assign* ga, unsigned int output_id) const;
 
+   std::deque<bit_lattice> backward_chain(const tree_nodeConstRef& ssa) const;
+
    /**
     * Updates the bitvalues of the intermediate representation with the values taken from the input map.
     */

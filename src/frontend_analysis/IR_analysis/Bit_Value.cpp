@@ -1059,6 +1059,7 @@ DesignFlowStep_Status Bit_Value::InternalExec()
       print_bitstring_map(best);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
    } while(restart);
+   bb_topological.clear();
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of alg:");
    print_bitstring_map(best);
    auto changed = update_IR();
@@ -1079,8 +1080,8 @@ void Bit_Value::print_bitstring_map(const CustomMap<unsigned int, std::deque<bit
 #endif
 ) const
 {
-   const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
 #ifndef NDEBUG
+   const auto BH = function_behavior->CGetBehavioralHelper();
    for(const auto& m : map)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "var_uid: " + STR(m.first) + ":" + BH->PrintVariable(m.first) + " bitstring: " + bitstring_to_string(m.second));
@@ -1183,7 +1184,6 @@ void Bit_Value::initialize()
    /*
     * loop on the list of arguments and initialize best
     */
-   CustomUnorderedSet<unsigned int> parm;
    for(const auto& parm_decl_node : fd->list_of_args)
    {
       const auto parmssa_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
@@ -1197,7 +1197,6 @@ void Bit_Value::initialize()
       const auto b = p->CGetUseStmts().empty() ? create_x_bitstring(1) : (p->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(parmssa)) : string_to_bitstring(p->bit_values));
       best[parmssa_id] = b;
       arguments.insert(parmssa_id);
-      parm.insert(parmssa_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter " + STR(GET_CONST_NODE(parm_decl_node)) + "(" + STR(GET_INDEX_CONST_NODE(parm_decl_node)) + ") bound to " + parmssa->ToString() + ": " + bitstring_to_string(b) + "");
    }
 
@@ -1206,31 +1205,18 @@ void Bit_Value::initialize()
     * the function_decl from the BitValueIPA
     */
    const auto fu_type = tree_helper::CGetType(tn);
-   THROW_ASSERT(fu_type->get_kind() == function_type_K || fu_type->get_kind() == method_type_K, "node " + STR(function_id) + " is " + fu_type->get_kind_text());
-   unsigned int ret_type_id;
-   tree_nodeRef fret_type_node;
-   if(fu_type->get_kind() == function_type_K)
-   {
-      const auto ft = GetPointerS<const function_type>(fu_type);
-      ret_type_id = GET_INDEX_CONST_NODE(ft->retn);
-      fret_type_node = GET_CONST_NODE(ft->retn);
-   }
-   else
-   {
-      const auto mt = GetPointerS<const method_type>(fu_type);
-      ret_type_id = GET_INDEX_CONST_NODE(mt->retn);
-      fret_type_node = GET_CONST_NODE(mt->retn);
-   }
+   const auto fret_type_node = tree_helper::GetFunctionReturnType(fu_type);
 
-   if(!is_handled_by_bitvalue(ret_type_id))
+   if(!fret_type_node || !is_handled_by_bitvalue(fret_type_node->index))
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Function returning " + STR(fret_type_node) + " not considered");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Function returning " + (fret_type_node ? STR(fret_type_node) : "void") + " not considered");
    }
    else
    {
+      const auto is_signed = tree_helper::IsSignedIntegerType(fret_type_node);
       if(fd->bit_values.empty())
       {
-         best[function_id] = fd->range ? fd->range->getBitValues(tree_helper::is_int(TM, ret_type_id)) : create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
+         best[function_id] = fd->range ? fd->range->getBitValues(is_signed) : create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
       }
       else
       {
@@ -1238,7 +1224,7 @@ void Bit_Value::initialize()
       }
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Return value: " + bitstring_to_string(best.at(function_id)));
-      if(tree_helper::is_int(TM, ret_type_id))
+      if(is_signed)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
          signed_var.insert(function_id);
@@ -1285,7 +1271,7 @@ void Bit_Value::initialize()
                   }
                   else
                   {
-                     const auto lhs_ssa_is_signed = tree_helper::is_int(TM, ssa_node_id);
+                     const auto lhs_ssa_is_signed = tree_helper::IsSignedIntegerType(op0_node);
                      if(lhs_ssa_is_signed)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
@@ -1295,8 +1281,8 @@ void Bit_Value::initialize()
                      const auto ga_op1_kind = GET_CONST_NODE(ga->op1)->get_kind();
                      if(ga_op1_kind == array_ref_K || ga_op1_kind == mem_ref_K || ga_op1_kind == target_mem_ref_K || ga_op1_kind == target_mem_ref461_K || ga_op1_kind == var_decl_K)
                      {
-                        const auto base_index = tree_helper::get_base_index(TM, GET_INDEX_CONST_NODE(ga->op1));
                         const auto hm = GetPointer<const HLS_manager>(AppM);
+                        const auto base_index = tree_helper::get_base_index(TM, GET_INDEX_CONST_NODE(ga->op1));
                         const auto var_node = TM->GetTreeNode(base_index);
                         auto vd = GetPointer<var_decl>(var_node);
                         if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm && hm->Rmem && function_behavior->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index) && vd && vd->init)
@@ -1309,7 +1295,7 @@ void Bit_Value::initialize()
                            else if(GET_CONST_NODE(vd->init)->get_kind() == integer_cst_K)
                            {
                               const auto int_const = GetPointerS<const integer_cst>(GET_CONST_NODE(vd->init));
-                              current_inf = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)), tree_helper::is_int(TM, GET_INDEX_CONST_NODE(int_const->type)));
+                              current_inf = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)), tree_helper::IsSignedIntegerType(int_const->type));
                            }
                            else if(GET_CONST_NODE(vd->init)->get_kind() == string_cst_K)
                            {
@@ -1347,7 +1333,7 @@ void Bit_Value::initialize()
                                     else if(GET_CONST_NODE(vd->init)->get_kind() == integer_cst_K)
                                     {
                                        const auto int_const = GetPointerS<const integer_cst>(GET_CONST_NODE(vd->init));
-                                       current_inf = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)), tree_helper::is_int(TM, GET_INDEX_CONST_NODE(int_const->type)));
+                                       current_inf = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)), tree_helper::IsSignedIntegerType(int_const->type));
                                     }
                                     else if(GET_CONST_NODE(vd->init)->get_kind() == string_cst_K)
                                     {
@@ -1366,12 +1352,10 @@ void Bit_Value::initialize()
                                  for(const auto& cur_var : hm->Rmem->get_source_values(base_index))
                                  {
                                     const auto cur_node = TM->CGetTreeNode(cur_var);
-
-                                    const auto source_is_signed = tree_helper::is_int(TM, cur_node->index);
-                                    const auto loaded_is_signed = tree_helper::is_int(TM, ssa_node_id);
+                                    const auto source_is_signed = tree_helper::IsSignedIntegerType(cur_node);
                                     const auto source_type = tree_helper::CGetType(cur_node);
                                     const auto source_type_size = BitLatticeManipulator::Size(source_type);
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---source node: " + STR(cur_node) + " source is signed: " + STR(source_is_signed) + " loaded is signed: " + STR(loaded_is_signed));
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---source node: " + STR(cur_node) + " source is signed: " + STR(source_is_signed) + " loaded is signed: " + STR(lhs_ssa_is_signed));
                                     std::deque<bit_lattice> cur_bitstring;
                                     if(cur_node->get_kind() == ssa_name_K)
                                     {
@@ -1390,12 +1374,12 @@ void Bit_Value::initialize()
                                           if(cur_bitstring.size() != 0)
                                           {
                                              INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring not empty");
-                                             if(cur_bitstring.size() < source_type_size && source_is_signed != loaded_is_signed)
+                                             if(cur_bitstring.size() < source_type_size && source_is_signed != lhs_ssa_is_signed)
                                              {
                                                 cur_bitstring = sign_extend_bitstring(cur_bitstring, source_is_signed, source_type_size);
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
                                              }
-                                             sign_reduce_bitstring(cur_bitstring, loaded_is_signed);
+                                             sign_reduce_bitstring(cur_bitstring, lhs_ssa_is_signed);
                                              INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
                                           }
                                           else
@@ -1410,9 +1394,9 @@ void Bit_Value::initialize()
                                     {
                                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Integer constant");
                                        const auto cst = GetPointerS<const integer_cst>(cur_node);
-                                       cur_bitstring = create_bitstring_from_constant(cst->value, source_type_size, loaded_is_signed);
+                                       cur_bitstring = create_bitstring_from_constant(cst->value, source_type_size, lhs_ssa_is_signed);
                                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
-                                       sign_reduce_bitstring(cur_bitstring, loaded_is_signed);
+                                       sign_reduce_bitstring(cur_bitstring, lhs_ssa_is_signed);
                                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
                                     }
                                     else
@@ -1479,7 +1463,7 @@ void Bit_Value::initialize()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Use: " + STR(use_node));
       if(ssa_use)
       {
-         const auto ssa_is_signed = tree_helper::is_int(TM, node_id);
+         const auto ssa_is_signed = tree_helper::IsSignedIntegerType(use_node);
          if(ssa_is_signed)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
@@ -1495,7 +1479,7 @@ void Bit_Value::initialize()
          else if(ssa_use->var != nullptr && ((GET_CONST_NODE(def)->get_kind() == gimple_nop_K) || ssa_use->volatile_flag))
          {
             // in case of parameters
-            if(!parm.count(node_id) && GET_CONST_NODE(ssa_use->var)->get_kind() == var_decl_K)
+            if(!arguments.count(node_id) && GET_CONST_NODE(ssa_use->var)->get_kind() == var_decl_K)
             {
                // first version of an uninitialized variable
                ssa_use->bit_values.clear();
@@ -1507,13 +1491,14 @@ void Bit_Value::initialize()
       else if(GetPointer<const integer_cst>(use_node))
       {
          const auto int_const = GetPointerS<const integer_cst>(use_node);
-         best[node_id] = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(use_node), tree_helper::is_int(TM, GET_INDEX_CONST_NODE(int_const->type)));
-         if(tree_helper::is_int(TM, GET_INDEX_CONST_NODE(int_const->type)))
+         const auto is_signed = tree_helper::IsSignedIntegerType(int_const->type);
+         best[node_id] = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(use_node), is_signed);
+         if(is_signed)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
             signed_var.insert(node_id);
          }
-         sign_reduce_bitstring(best.at(node_id), tree_helper::is_int(TM, node_id));
+         sign_reduce_bitstring(best.at(node_id), is_signed);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---updated bitstring: " + bitstring_to_string(best.at(node_id)));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
@@ -1550,7 +1535,7 @@ void Bit_Value::initialize()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable " + STR(ssa) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(pn->res))) + " not considered id: " + STR(ssa_node_id));
                continue;
             }
-            if(tree_helper::is_int(TM, ssa_node_id))
+            if(tree_helper::IsSignedIntegerType(pn->res))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
                signed_var.insert(ssa_node_id);
@@ -1620,7 +1605,7 @@ void Bit_Value::initialize()
                   {
                      lhs_ssa->bit_values.clear();
                   }
-                  const auto lhs_ssa_is_signed = tree_helper::is_int(TM, ssa_node_id);
+                  const auto lhs_ssa_is_signed = tree_helper::IsSignedIntegerType(op0_node);
                   if(lhs_ssa_is_signed)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
@@ -1664,7 +1649,7 @@ void Bit_Value::initialize()
                         {
                            const auto called_fd = GetPointer<const function_decl>(fu_decl_node);
                            const auto new_bitvalue = called_fd->bit_values.empty() ?
-                                                         (called_fd->range ? called_fd->range->getBitValues(tree_helper::is_int(TM, ret_type_node->index)) : create_u_bitstring(BitLatticeManipulator::Size(GET_CONST_NODE(ga->op0)))) :
+                                                         (called_fd->range ? called_fd->range->getBitValues(tree_helper::IsSignedIntegerType(ret_type_node)) : create_u_bitstring(BitLatticeManipulator::Size(GET_CONST_NODE(ga->op0)))) :
                                                          string_to_bitstring(called_fd->bit_values);
                            if(best[ssa_node_id].empty())
                            {
@@ -1729,17 +1714,17 @@ void Bit_Value::initialize()
                   const auto output_id = GET_INDEX_CONST_NODE(tl->valu);
                   if(!is_handled_by_bitvalue(output_id))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable of type " + STR(tree_helper::CGetType(GET_CONST_NODE(tl->valu))) + " not considered");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable of type " + STR(tree_helper::CGetType(out_node)) + " not considered");
                   }
                   else
                   {
                      out_ssa->bit_values.clear();
-                     if(tree_helper::is_int(TM, output_id))
+                     if(tree_helper::IsSignedIntegerType(out_node))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
                         signed_var.insert(output_id);
                      }
-                     best[output_id] = create_u_bitstring(BitLatticeManipulator::Size(GET_CONST_NODE(tl->valu)));
+                     best[output_id] = create_u_bitstring(BitLatticeManipulator::Size(out_node));
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---updated bitstring: " + bitstring_to_string(best.at(output_id)));
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
