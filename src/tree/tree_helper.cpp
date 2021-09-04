@@ -1708,14 +1708,14 @@ tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& fu
    tree_nodeConstRef fun_type;
    switch(function->get_kind())
    {
-      case(function_decl_K):
+      case function_decl_K:
       {
          const auto fd = GetPointerS<const function_decl>(function);
          fun_type = GET_CONST_NODE(fd->type);
          break;
       }
       case method_type_K:
-      case(function_type_K):
+      case function_type_K:
       {
          fun_type = function;
          break;
@@ -1783,7 +1783,7 @@ tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& fu
          THROW_UNREACHABLE("Not supported tree node type " + function->get_kind_text());
       }
    }
-   if(fun_type->get_kind() == function_type_K)
+   if(fun_type->get_kind() == function_type_K || fun_type->get_kind() == method_type_K)
    {
       const auto ft = GetPointerS<const function_type>(fun_type);
       THROW_ASSERT(ft, "NodeId is not related to a valid function type");
@@ -1796,23 +1796,7 @@ tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& fu
          return tree_nodeConstRef();
       }
    }
-   else if(fun_type->get_kind() == method_type_K)
-   {
-      const auto mt = GetPointerS<const method_type>(fun_type);
-      THROW_ASSERT(mt, "NodeId is not related to a valid function type");
-      if(GET_CONST_NODE(mt->retn)->get_kind() != void_type_K)
-      {
-         return GET_CONST_NODE(mt->retn);
-      }
-      else
-      {
-         return tree_nodeConstRef();
-      }
-   }
-   else
-   {
-      return tree_nodeConstRef();
-   }
+   return tree_nodeConstRef();
 }
 
 unsigned int tree_helper::get_pointed_type(const tree_managerConstRef& TM, const int unsigned index)
@@ -1905,29 +1889,30 @@ unsigned int tree_helper::get_pointed_type(const tree_managerConstRef& TM, const
    return 0;
 }
 
-tree_nodeConstRef tree_helper::CGetPointedType(const tree_nodeConstRef& pointer)
+tree_nodeConstRef tree_helper::CGetPointedType(const tree_nodeConstRef& _pointer)
 {
+   const auto pointer = _pointer->get_kind() == tree_reindex_K ? GET_CONST_NODE(_pointer) : _pointer;
    switch(pointer->get_kind())
    {
-      case(pointer_type_K):
+      case pointer_type_K:
       {
          const auto pt = GetPointer<const pointer_type>(pointer);
-         return GET_NODE(pt->ptd);
+         return GET_CONST_NODE(pt->ptd);
       }
-      case(reference_type_K):
+      case reference_type_K:
       {
          const auto pt = GetPointer<const reference_type>(pointer);
-         return GET_NODE(pt->refd);
+         return GET_CONST_NODE(pt->refd);
       }
-      case(function_type_K):
+      case function_type_K:
       {
          const auto ft = GetPointer<const function_type>(pointer);
-         return CGetPointedType(GET_NODE(ft->retn));
+         return CGetPointedType(GET_CONST_NODE(ft->retn));
       }
       case method_type_K:
       {
          const auto mt = GetPointer<const method_type>(pointer);
-         return CGetPointedType(GET_NODE(mt->retn));
+         return CGetPointedType(GET_CONST_NODE(mt->retn));
       }
       case array_type_K:
       case binfo_K:
@@ -2475,7 +2460,7 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& node)
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         const auto ce = GetPointer<const call_expr>(node);
+         const auto ce = GetPointerS<const call_expr>(node);
          return GET_CONST_NODE(ce->type);
       }
       case gimple_asm_K:
@@ -2499,48 +2484,48 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& node)
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
       {
-         const auto en = GetPointer<const expr_node>(node);
+         const auto en = GetPointerS<const expr_node>(node);
          THROW_ASSERT(en && en->type, std::string("this NODE does not have a type: ") + node->get_kind_text());
          return GET_CONST_NODE(en->type);
       }
       case gimple_phi_K:
       {
-         const auto gp = GetPointer<const gimple_phi>(node);
+         const auto gp = GetPointerS<const gimple_phi>(node);
          return CGetType(GET_CONST_NODE(gp->res));
       }
       case gimple_assign_K:
       {
-         const auto gm = GetPointer<const gimple_assign>(node);
+         const auto gm = GetPointerS<const gimple_assign>(node);
          return CGetType(GET_CONST_NODE(gm->op0));
       }
       case integer_cst_K:
       {
-         const auto ic = GetPointer<const integer_cst>(node);
+         const auto ic = GetPointerS<const integer_cst>(node);
          return GET_CONST_NODE(ic->type);
       }
       case real_cst_K:
       {
-         const auto rc = GetPointer<const real_cst>(node);
+         const auto rc = GetPointerS<const real_cst>(node);
          return GET_CONST_NODE(rc->type);
       }
       case string_cst_K:
       {
-         const auto sc = GetPointer<const string_cst>(node);
+         const auto sc = GetPointerS<const string_cst>(node);
          return sc->type ? GET_CONST_NODE(sc->type) : node;
       }
       case vector_cst_K:
       {
-         const auto vc = GetPointer<const vector_cst>(node);
+         const auto vc = GetPointerS<const vector_cst>(node);
          return vc->type ? GET_CONST_NODE(vc->type) : node;
       }
       case complex_cst_K:
       {
-         const auto cc = GetPointer<const complex_cst>(node);
+         const auto cc = GetPointerS<const complex_cst>(node);
          return cc->type ? GET_CONST_NODE(cc->type) : node;
       }
       case constructor_K:
       {
-         const auto c = GetPointer<const constructor>(node);
+         const auto c = GetPointerS<const constructor>(node);
          if(c->type)
          {
             return GET_CONST_NODE(c->type);
@@ -2552,12 +2537,12 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& node)
       }
       case CASE_DECL_NODES:
       {
-         const auto dn = GetPointer<const decl_node>(node);
+         const auto dn = GetPointerS<const decl_node>(node);
          return GET_CONST_NODE(dn->type);
       }
       case ssa_name_K:
       {
-         const auto sa = GetPointer<const ssa_name>(node);
+         const auto sa = GetPointerS<const ssa_name>(node);
          if(sa->var)
          {
             return CGetType(GET_CONST_NODE(sa->var));
@@ -2569,18 +2554,18 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& node)
       }
       case target_mem_ref_K:
       {
-         const auto tm = GetPointer<const target_mem_ref>(node);
+         const auto tm = GetPointerS<const target_mem_ref>(node);
          return CGetType(GET_CONST_NODE(tm->orig));
       }
       case target_mem_ref461_K:
       {
-         const auto tm = GetPointer<const target_mem_ref461>(node);
+         const auto tm = GetPointerS<const target_mem_ref461>(node);
          return GET_CONST_NODE(tm->type);
       }
       case gimple_for_K:
       case gimple_while_K:
       {
-         const auto gw = GetPointer<const gimple_while>(node);
+         const auto gw = GetPointerS<const gimple_while>(node);
          return CGetType(GET_CONST_NODE(gw->op0));
       }
       case CASE_TYPE_NODES:
