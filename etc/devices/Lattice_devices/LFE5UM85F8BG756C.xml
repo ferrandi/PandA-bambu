@@ -20381,6 +20381,396 @@
         <operation operation_name="float_expr_64_to_64" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="700" cycles="41" initiation_time="1" stage_period="5"/>
       </cell>
       <cell>
+        <name>ui_fshl_expr_FU_0_16_16_16</name>
+        <attribute name="area" value_type="float64">57</attribute>
+        <attribute name="REGISTERS" value_type="float64">35</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">57</attribute>
+        <template name="ui_fshl_expr_FU" parameter="0 16 16 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_0_1_1_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_fshl_expr_FU" parameter="0 1 1 1"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="2.2549999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_0_32_32_32</name>
+        <attribute name="area" value_type="float64">133</attribute>
+        <attribute name="REGISTERS" value_type="float64">69</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">133</attribute>
+        <template name="ui_fshl_expr_FU" parameter="0 32 32 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:03</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_0_64_64_64</name>
+        <attribute name="area" value_type="float64">285</attribute>
+        <attribute name="REGISTERS" value_type="float64">134</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">285</attribute>
+        <template name="ui_fshl_expr_FU" parameter="0 64 64 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:03</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_0_8_8_8</name>
+        <attribute name="area" value_type="float64">17</attribute>
+        <attribute name="REGISTERS" value_type="float64">19</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">17</attribute>
+        <template name="ui_fshl_expr_FU" parameter="0 8 8 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_16_0_16_16</name>
+        <attribute name="area" value_type="float64">36</attribute>
+        <attribute name="REGISTERS" value_type="float64">36</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">36</attribute>
+        <template name="ui_fshl_expr_FU" parameter="16 0 16 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_16_16_0_16</name>
+        <attribute name="area" value_type="float64">17</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">17</attribute>
+        <template name="ui_fshl_expr_FU" parameter="16 16 0 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="1.1299999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_16_16_16_16</name>
+        <attribute name="area" value_type="float64">78</attribute>
+        <attribute name="REGISTERS" value_type="float64">51</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">78</attribute>
+        <template name="ui_fshl_expr_FU" parameter="16 16 16 16"/>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_1_0_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="ui_fshl_expr_FU" parameter="1 0 1 1"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="2.2549999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_1_1_0_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">1</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1</attribute>
+        <template name="ui_fshl_expr_FU" parameter="1 1 0 1"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_1_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="ui_fshl_expr_FU" parameter="1 1 1 1"/>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="2.2549999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_32_0_32_32</name>
+        <attribute name="area" value_type="float64">103</attribute>
+        <attribute name="REGISTERS" value_type="float64">69</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">103</attribute>
+        <template name="ui_fshl_expr_FU" parameter="32 0 32 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_32_32_0_32</name>
+        <attribute name="area" value_type="float64">33</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
+        <template name="ui_fshl_expr_FU" parameter="32 32 0 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="1.1299999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_32_32_32_32</name>
+        <attribute name="area" value_type="float64">195</attribute>
+        <attribute name="REGISTERS" value_type="float64">101</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">195</attribute>
+        <template name="ui_fshl_expr_FU" parameter="32 32 32 32"/>
+        <characterization_timestamp>2021-09-04T09:41:03</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_64_0_64_64</name>
+        <attribute name="area" value_type="float64">235</attribute>
+        <attribute name="REGISTERS" value_type="float64">134</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">235</attribute>
+        <template name="ui_fshl_expr_FU" parameter="64 0 64 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:03</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_64_64_0_64</name>
+        <attribute name="area" value_type="float64">65</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">65</attribute>
+        <template name="ui_fshl_expr_FU" parameter="64 64 0 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="1.1299999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_64_64_64_64</name>
+        <attribute name="area" value_type="float64">447</attribute>
+        <attribute name="REGISTERS" value_type="float64">198</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">447</attribute>
+        <template name="ui_fshl_expr_FU" parameter="64 64 64 64"/>
+        <characterization_timestamp>2021-09-04T09:41:05</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_8_0_8_8</name>
+        <attribute name="area" value_type="float64">13</attribute>
+        <attribute name="REGISTERS" value_type="float64">19</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">13</attribute>
+        <template name="ui_fshl_expr_FU" parameter="8 0 8 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_8_8_0_8</name>
+        <attribute name="area" value_type="float64">9</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">9</attribute>
+        <template name="ui_fshl_expr_FU" parameter="8 8 0 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.1299999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_8_8_8_8</name>
+        <attribute name="area" value_type="float64">29</attribute>
+        <attribute name="REGISTERS" value_type="float64">27</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">29</attribute>
+        <template name="ui_fshl_expr_FU" parameter="8 8 8 8"/>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_0_16_16_16</name>
+        <attribute name="area" value_type="float64">38</attribute>
+        <attribute name="REGISTERS" value_type="float64">36</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">38</attribute>
+        <template name="ui_fshr_expr_FU" parameter="0 16 16 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_0_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="ui_fshr_expr_FU" parameter="0 1 1 1"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="2.2549999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_0_32_32_32</name>
+        <attribute name="area" value_type="float64">135</attribute>
+        <attribute name="REGISTERS" value_type="float64">69</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">135</attribute>
+        <template name="ui_fshr_expr_FU" parameter="0 32 32 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:03</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_0_64_64_64</name>
+        <attribute name="area" value_type="float64">296</attribute>
+        <attribute name="REGISTERS" value_type="float64">134</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">296</attribute>
+        <template name="ui_fshr_expr_FU" parameter="0 64 64 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:04</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_0_8_8_8</name>
+        <attribute name="area" value_type="float64">16</attribute>
+        <attribute name="REGISTERS" value_type="float64">19</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">16</attribute>
+        <template name="ui_fshr_expr_FU" parameter="0 8 8 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_16_0_16_16</name>
+        <attribute name="area" value_type="float64">41</attribute>
+        <attribute name="REGISTERS" value_type="float64">36</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">41</attribute>
+        <template name="ui_fshr_expr_FU" parameter="16 0 16 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_16_16_0_16</name>
+        <attribute name="area" value_type="float64">17</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">17</attribute>
+        <template name="ui_fshr_expr_FU" parameter="16 16 0 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="1.1299999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_16_16_16_16</name>
+        <attribute name="area" value_type="float64">77</attribute>
+        <attribute name="REGISTERS" value_type="float64">51</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">77</attribute>
+        <template name="ui_fshr_expr_FU" parameter="16 16 16 16"/>
+        <characterization_timestamp>2021-09-04T09:41:02</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_1_0_1_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_fshr_expr_FU" parameter="1 0 1 1"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:11</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="2.2549999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_1_1_0_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">1</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1</attribute>
+        <template name="ui_fshr_expr_FU" parameter="1 1 0 1"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:11</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_1_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="ui_fshr_expr_FU" parameter="1 1 1 1"/>
+        <characterization_timestamp>2021-09-04T09:41:11</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="2.2549999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_32_0_32_32</name>
+        <attribute name="area" value_type="float64">102</attribute>
+        <attribute name="REGISTERS" value_type="float64">69</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">102</attribute>
+        <template name="ui_fshr_expr_FU" parameter="32 0 32 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:12</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_32_32_0_32</name>
+        <attribute name="area" value_type="float64">33</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
+        <template name="ui_fshr_expr_FU" parameter="32 32 0 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:11</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="1.1299999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_32_32_32_32</name>
+        <attribute name="area" value_type="float64">196</attribute>
+        <attribute name="REGISTERS" value_type="float64">101</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">196</attribute>
+        <template name="ui_fshr_expr_FU" parameter="32 32 32 32"/>
+        <characterization_timestamp>2021-09-04T09:41:12</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_64_0_64_64</name>
+        <attribute name="area" value_type="float64">230</attribute>
+        <attribute name="REGISTERS" value_type="float64">134</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">230</attribute>
+        <template name="ui_fshr_expr_FU" parameter="64 0 64 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:13</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_64_64_0_64</name>
+        <attribute name="area" value_type="float64">65</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">65</attribute>
+        <template name="ui_fshr_expr_FU" parameter="64 64 0 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:12</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="1.1299999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_64_64_64_64</name>
+        <attribute name="area" value_type="float64">447</attribute>
+        <attribute name="REGISTERS" value_type="float64">198</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">447</attribute>
+        <template name="ui_fshr_expr_FU" parameter="64 64 64 64"/>
+        <characterization_timestamp>2021-09-04T09:41:14</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_8_0_8_8</name>
+        <attribute name="area" value_type="float64">13</attribute>
+        <attribute name="REGISTERS" value_type="float64">18</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">13</attribute>
+        <template name="ui_fshr_expr_FU" parameter="8 0 8 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:11</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="5"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_8_8_0_8</name>
+        <attribute name="area" value_type="float64">9</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">9</attribute>
+        <template name="ui_fshr_expr_FU" parameter="8 8 0 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:41:11</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.1299999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_8_8_8_8</name>
+        <attribute name="area" value_type="float64">29</attribute>
+        <attribute name="REGISTERS" value_type="float64">27</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">29</attribute>
+        <template name="ui_fshr_expr_FU" parameter="8 8 8 8"/>
+        <characterization_timestamp>2021-09-04T09:41:11</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="5"/>
+      </cell>
+      <cell>
         <name>ui_ge_expr_FU_0_16_16</name>
         <attribute name="area" value_type="float64">17</attribute>
         <attribute name="REGISTERS" value_type="float64">31</attribute>

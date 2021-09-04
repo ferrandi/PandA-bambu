@@ -17774,6 +17774,428 @@
         <operation operation_name="float_expr_64_to_64" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="700" cycles="89" initiation_time="1" stage_period="3.8809999999999998"/>
       </cell>
       <cell>
+        <name>ui_fshl_expr_FU_0_16_16_16</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">41</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">45</attribute>
+        <attribute name="SLICE" value_type="float64">31</attribute>
+        <attribute name="BRAM" value_type="float64">7</attribute>
+        <template name="ui_fshl_expr_FU" parameter="0 16 16 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:05</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.8809999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_0_1_1_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">1</attribute>
+        <template name="ui_fshl_expr_FU" parameter="0 1 1 1"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:04</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.90400000000000003"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_0_32_32_32</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">66</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">157</attribute>
+        <attribute name="SLICE" value_type="float64">93</attribute>
+        <attribute name="BRAM" value_type="float64">30</attribute>
+        <template name="ui_fshl_expr_FU" parameter="0 32 32 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:08</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="6.9039999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_0_64_64_64</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">144</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">325</attribute>
+        <attribute name="SLICE" value_type="float64">192</attribute>
+        <attribute name="BRAM" value_type="float64">48</attribute>
+        <template name="ui_fshl_expr_FU" parameter="0 64 64 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:11</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.4909999999999997"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_0_8_8_8</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">21</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">10</attribute>
+        <attribute name="SLICE" value_type="float64">15</attribute>
+        <attribute name="BRAM" value_type="float64">3</attribute>
+        <template name="ui_fshl_expr_FU" parameter="0 8 8 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:05</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.8700000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_16_0_16_16</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">44</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">45</attribute>
+        <attribute name="SLICE" value_type="float64">37</attribute>
+        <attribute name="BRAM" value_type="float64">4</attribute>
+        <template name="ui_fshl_expr_FU" parameter="16 0 16 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:06</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.1230000000000002"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_16_16_0_16</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="SLICE" value_type="float64">24</attribute>
+        <template name="ui_fshl_expr_FU" parameter="16 16 0 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:05</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="1.194"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_16_16_16_16</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">54</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">74</attribute>
+        <attribute name="SLICE" value_type="float64">57</attribute>
+        <attribute name="BRAM" value_type="float64">10</attribute>
+        <template name="ui_fshl_expr_FU" parameter="16 16 16 16"/>
+        <characterization_timestamp>2021-09-04T09:17:07</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.5229999999999997"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_1_0_1_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">1</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <template name="ui_fshl_expr_FU" parameter="1 0 1 1"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:05</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.139"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_1_1_1_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">1</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <template name="ui_fshl_expr_FU" parameter="1 1 1 1"/>
+        <characterization_timestamp>2021-09-04T09:17:03</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.139"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_32_0_32_32</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">86</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">133</attribute>
+        <attribute name="SLICE" value_type="float64">91</attribute>
+        <attribute name="BRAM" value_type="float64">10</attribute>
+        <template name="ui_fshl_expr_FU" parameter="32 0 32 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:09</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="4.6660000000000004"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_32_32_0_32</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="SLICE" value_type="float64">48</attribute>
+        <template name="ui_fshl_expr_FU" parameter="32 32 0 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:05</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="1.161"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_32_32_32_32</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">112</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">280</attribute>
+        <attribute name="SLICE" value_type="float64">182</attribute>
+        <attribute name="BRAM" value_type="float64">16</attribute>
+        <template name="ui_fshl_expr_FU" parameter="32 32 32 32"/>
+        <characterization_timestamp>2021-09-04T09:17:08</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="6.1200000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_64_0_64_64</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">171</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">322</attribute>
+        <attribute name="SLICE" value_type="float64">191</attribute>
+        <attribute name="BRAM" value_type="float64">21</attribute>
+        <template name="ui_fshl_expr_FU" parameter="64 0 64 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:09</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="6.2750000000000004"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_64_64_0_64</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">192</attribute>
+        <attribute name="SLICE" value_type="float64">99</attribute>
+        <template name="ui_fshl_expr_FU" parameter="64 64 0 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:06</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="1.157"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_64_64_64_64</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">206</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">556</attribute>
+        <attribute name="SLICE" value_type="float64">440</attribute>
+        <attribute name="BRAM" value_type="float64">50</attribute>
+        <template name="ui_fshl_expr_FU" parameter="64 64 64 64"/>
+        <characterization_timestamp>2021-09-04T09:17:13</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="10.395"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_8_0_8_8</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">22</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">13</attribute>
+        <attribute name="SLICE" value_type="float64">15</attribute>
+        <attribute name="BRAM" value_type="float64">2</attribute>
+        <template name="ui_fshl_expr_FU" parameter="8 0 8 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:06</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.4420000000000002"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_8_8_0_8</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="SLICE" value_type="float64">12</attribute>
+        <template name="ui_fshl_expr_FU" parameter="8 8 0 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:04</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.1180000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_fshl_expr_FU_8_8_8_8</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">9</attribute>
+        <attribute name="SLICE" value_type="float64">13</attribute>
+        <attribute name="BRAM" value_type="float64">8</attribute>
+        <template name="ui_fshl_expr_FU" parameter="8 8 8 8"/>
+        <characterization_timestamp>2021-09-04T09:17:04</characterization_timestamp>
+        <operation operation_name="fshl_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.4510000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_0_16_16_16</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">40</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">49</attribute>
+        <attribute name="SLICE" value_type="float64">32</attribute>
+        <attribute name="BRAM" value_type="float64">8</attribute>
+        <template name="ui_fshr_expr_FU" parameter="0 16 16 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:05</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.157"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_0_1_1_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">1</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <template name="ui_fshr_expr_FU" parameter="0 1 1 1"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:03</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.139"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_0_32_32_32</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">112</attribute>
+        <attribute name="SLICE" value_type="float64">71</attribute>
+        <attribute name="BRAM" value_type="float64">32</attribute>
+        <template name="ui_fshr_expr_FU" parameter="0 32 32 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:08</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="6.3109999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_0_64_64_64</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">148</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">336</attribute>
+        <attribute name="SLICE" value_type="float64">198</attribute>
+        <attribute name="BRAM" value_type="float64">44</attribute>
+        <template name="ui_fshr_expr_FU" parameter="0 64 64 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:09</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.7480000000000002"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_0_8_8_8</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">20</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">10</attribute>
+        <attribute name="SLICE" value_type="float64">11</attribute>
+        <attribute name="BRAM" value_type="float64">4</attribute>
+        <template name="ui_fshr_expr_FU" parameter="0 8 8 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:04</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.7240000000000002"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_16_0_16_16</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">40</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">38</attribute>
+        <attribute name="SLICE" value_type="float64">35</attribute>
+        <attribute name="BRAM" value_type="float64">8</attribute>
+        <template name="ui_fshr_expr_FU" parameter="16 0 16 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:05</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.157"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_16_16_0_16</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="SLICE" value_type="float64">24</attribute>
+        <template name="ui_fshr_expr_FU" parameter="16 16 0 16"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:07</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="1.1579999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_16_16_16_16</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">60</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">73</attribute>
+        <attribute name="SLICE" value_type="float64">48</attribute>
+        <attribute name="BRAM" value_type="float64">4</attribute>
+        <template name="ui_fshr_expr_FU" parameter="16 16 16 16"/>
+        <characterization_timestamp>2021-09-04T09:17:07</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.194"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_1_0_1_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">1</attribute>
+        <template name="ui_fshr_expr_FU" parameter="1 0 1 1"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:54</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.90400000000000003"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_1_1_1_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">1</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <template name="ui_fshr_expr_FU" parameter="1 1 1 1"/>
+        <characterization_timestamp>2021-09-04T09:17:54</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.139"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_32_0_32_32</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">72</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">108</attribute>
+        <attribute name="SLICE" value_type="float64">69</attribute>
+        <attribute name="BRAM" value_type="float64">24</attribute>
+        <template name="ui_fshr_expr_FU" parameter="32 0 32 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:18:00</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.4740000000000002"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_32_32_0_32</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="SLICE" value_type="float64">48</attribute>
+        <template name="ui_fshr_expr_FU" parameter="32 32 0 32"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:56</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="1.157"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_32_32_32_32</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">111</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">279</attribute>
+        <attribute name="SLICE" value_type="float64">160</attribute>
+        <attribute name="BRAM" value_type="float64">17</attribute>
+        <template name="ui_fshr_expr_FU" parameter="32 32 32 32"/>
+        <characterization_timestamp>2021-09-04T09:17:59</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="6.2270000000000003"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_64_0_64_64</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">168</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">361</attribute>
+        <attribute name="SLICE" value_type="float64">266</attribute>
+        <attribute name="BRAM" value_type="float64">24</attribute>
+        <template name="ui_fshr_expr_FU" parameter="64 0 64 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:18:00</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8029999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_64_64_0_64</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">192</attribute>
+        <attribute name="SLICE" value_type="float64">103</attribute>
+        <template name="ui_fshr_expr_FU" parameter="64 64 0 64"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:57</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="1.3680000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_64_64_64_64</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">204</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">534</attribute>
+        <attribute name="SLICE" value_type="float64">450</attribute>
+        <attribute name="BRAM" value_type="float64">52</attribute>
+        <template name="ui_fshr_expr_FU" parameter="64 64 64 64"/>
+        <characterization_timestamp>2021-09-04T09:18:04</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="11.589"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_8_0_8_8</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">23</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">14</attribute>
+        <attribute name="SLICE" value_type="float64">13</attribute>
+        <attribute name="BRAM" value_type="float64">1</attribute>
+        <template name="ui_fshr_expr_FU" parameter="8 0 8 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:55</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.145"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_8_8_0_8</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="SLICE" value_type="float64">12</attribute>
+        <template name="ui_fshr_expr_FU" parameter="8 8 0 8"/>
+        <characterizing_constant_value>1</characterizing_constant_value>
+        <characterization_timestamp>2021-09-04T09:17:54</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.022"/>
+      </cell>
+      <cell>
+        <name>ui_fshr_expr_FU_8_8_8_8</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">9</attribute>
+        <attribute name="SLICE" value_type="float64">13</attribute>
+        <attribute name="BRAM" value_type="float64">8</attribute>
+        <template name="ui_fshr_expr_FU" parameter="8 8 8 8"/>
+        <characterization_timestamp>2021-09-04T09:17:55</characterization_timestamp>
+        <operation operation_name="fshr_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.7490000000000001"/>
+      </cell>
+      <cell>
         <name>ui_ge_expr_FU_0_16_16</name>
         <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">17</attribute>
