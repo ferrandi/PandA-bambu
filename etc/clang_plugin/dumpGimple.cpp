@@ -1450,7 +1450,11 @@ namespace llvm
          case llvm::Instruction::Call:
          {
             auto CallID = getIntrinsicIDTEC(inst);
-            return (CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::ssub_sat);
+            return (CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::ssub_sat
+#if __clang_major__ > 11
+                    || CallID == llvm::Intrinsic::abs
+#endif
+                    );
          }
 #endif
          default:
