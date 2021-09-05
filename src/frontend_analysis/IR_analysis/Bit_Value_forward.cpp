@@ -100,11 +100,10 @@ void Bit_Value::forward()
       for(const auto& phi : bb->CGetPhiList())
       {
          const auto phi_node = GET_CONST_NODE(phi);
-         const auto pn = GetPointerS<const gimple_phi>(phi_node);
-         if(!pn->virtual_flag)
+         const auto gp = GetPointerS<const gimple_phi>(phi_node);
+         if(!gp->virtual_flag)
          {
-            const auto output_nid = GET_INDEX_CONST_NODE(pn->res);
-            if(is_handled_by_bitvalue(output_nid))
+            if(IsHandledByBitvalue(gp->res))
             {
                push_back(phi_node);
             }
@@ -116,8 +115,7 @@ void Bit_Value::forward()
          if(stmt_node->get_kind() == gimple_assign_K)
          {
             const auto ga = GetPointerS<const gimple_assign>(stmt_node);
-            const auto output_nid = GET_INDEX_CONST_NODE(ga->op0);
-            if(is_handled_by_bitvalue(output_nid))
+            if(IsHandledByBitvalue(ga->op0))
             {
                push_back(stmt_node);
             }
@@ -140,12 +138,11 @@ void Bit_Value::forward()
          const auto ga = GetPointerS<const gimple_assign>(stmt_node);
          const auto output_nid = GET_INDEX_CONST_NODE(ga->op0);
          const auto ssa = GetPointer<const ssa_name>(GET_CONST_NODE(ga->op0));
-
          if(ssa)
          {
-            if(!is_handled_by_bitvalue(output_nid) || ssa->CGetUseStmts().empty())
+            if(!IsHandledByBitvalue(ga->op0) || ssa->CGetUseStmts().empty())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable " + STR(ssa) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(ga->op0))) + " not considered id: " + STR(output_nid));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable " + STR(ssa) + " of type " + STR(tree_helper::CGetType(ga->op0)) + " not considered");
                continue;
             }
             bool hasRequiredValues = true;
@@ -159,11 +156,11 @@ void Bit_Value::forward()
                {
                   continue;
                }
-               if(!is_handled_by_bitvalue(use_node_id))
+               const auto use_node = TM->CGetTreeNode(use_node_id);
+               if(!IsHandledByBitvalue(use_node))
                {
                   continue;
                }
-               const auto use_node = TM->CGetTreeNode(use_node_id);
                const auto ssa_use = GetPointer<const ssa_name>(use_node);
 
                if(ssa_use && !current.count(use_node_id))
@@ -172,7 +169,7 @@ void Bit_Value::forward()
                   if(GET_CONST_NODE(def_stmt)->get_kind() == gimple_nop_K)
                   {
                      THROW_ASSERT(!ssa_use->var || GET_CONST_NODE(ssa_use->var)->get_kind() != parm_decl_K, "Function parameter bitvalue must be defined before");
-                     current.insert(std::make_pair(use_node_id, create_bitstring_from_constant(0, BitLatticeManipulator::Size(use_node), tree_helper::is_int(TM, use_node_id))));
+                     current.insert(std::make_pair(use_node_id, create_bitstring_from_constant(0, BitLatticeManipulator::Size(use_node), IsSignedIntegerType(use_node))));
                   }
                   else
                   {
@@ -188,7 +185,7 @@ void Bit_Value::forward()
             {
                auto res = forward_transfer(ga);
                current.insert(std::make_pair(output_nid, best.at(output_nid)));
-               if(update_current(res, output_nid))
+               if(update_current(res, ga->op0))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---current updated: " + bitstring_to_string(current.at(output_nid)));
                   for(const auto& next_node : ssa->CGetUseStmts())
@@ -212,9 +209,9 @@ void Bit_Value::forward()
          const auto output_nid = GET_INDEX_CONST_NODE(gp->res);
          const auto ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(gp->res));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "phi: " + STR(stmt_node->index));
-         if(!is_handled_by_bitvalue(output_nid) || ssa->CGetUseStmts().empty())
+         if(!IsHandledByBitvalue(gp->res) || ssa->CGetUseStmts().empty())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable " + STR(ssa) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(gp->res))) + " not considered id: " + STR(output_nid));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable " + STR(ssa) + " of type " + STR(tree_helper::CGetType(gp->res)) + " not considered");
             continue;
          }
 
@@ -243,7 +240,7 @@ void Bit_Value::forward()
                   if(GET_CONST_NODE(def_stmt)->get_kind() == gimple_nop_K)
                   {
                      THROW_ASSERT(!def_ssa->var || GET_CONST_NODE(def_ssa->var)->get_kind() != parm_decl_K, "Function parameter bitvalue must be defined before");
-                     current.insert(std::make_pair(def_id, create_bitstring_from_constant(0, BitLatticeManipulator::Size(def_node), tree_helper::IsSignedIntegerType(def_edge.first))));
+                     current.insert(std::make_pair(def_id, create_bitstring_from_constant(0, BitLatticeManipulator::Size(def_node), IsSignedIntegerType(def_edge.first))));
                   }
                   else
                   {
@@ -264,10 +261,10 @@ void Bit_Value::forward()
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Edge " + STR(def_edge.second) + ": " + bitstring_to_string(current.at(def_id)));
 
 #if HAVE_ASSERTS
-            const auto is_signed2 = tree_helper::IsSignedIntegerType(def_edge.first);
+            const auto is_signed2 = IsSignedIntegerType(def_edge.first);
 #endif
             THROW_ASSERT(is_signed2 == is_signed1, STR(stmt_node));
-            res = inf(res, current.at(def_id), output_nid);
+            res = inf(res, current.at(def_id), gp->res);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---current res: " + bitstring_to_string(res));
          }
          if(atLeastOne)
@@ -277,7 +274,7 @@ void Bit_Value::forward()
             auto current_updated = ins.second;
             if(!current_updated)
             {
-               current_updated = update_current(res, output_nid);
+               current_updated = update_current(res, gp->res);
             }
             if(current_updated)
             {
@@ -299,7 +296,7 @@ void Bit_Value::forward()
          {
             const auto gr = GetPointerS<const gimple_return>(stmt_node);
             THROW_ASSERT(gr->op, "Empty return should not be a use of any ssa");
-            if(GET_CONST_NODE(gr->op)->get_kind() == ssa_name_K && is_handled_by_bitvalue(GET_INDEX_CONST_NODE(gr->op)))
+            if(GET_CONST_NODE(gr->op)->get_kind() == ssa_name_K && IsHandledByBitvalue(gr->op))
             {
                const auto res = get_current(gr->op);
                THROW_ASSERT(res.size(), "");
@@ -317,10 +314,10 @@ void Bit_Value::forward()
          {
             auto tl = GetPointer<const tree_list>(GET_CONST_NODE(ga->out));
             THROW_ASSERT(tl->valu, "only the first output and so only single output gimple_asm are supported");
-            const auto output_nid = GET_INDEX_CONST_NODE(tl->valu);
             const auto ssa = GetPointer<const ssa_name>(GET_CONST_NODE(tl->valu));
-            if(ssa && !ssa->CGetUseStmts().empty() && is_handled_by_bitvalue(output_nid))
+            if(ssa && !ssa->CGetUseStmts().empty() && IsHandledByBitvalue(tl->valu))
             {
+               const auto output_nid = GET_INDEX_CONST_NODE(tl->valu);
                THROW_ASSERT(best.count(output_nid), "");
                current[output_nid] = best.at(output_nid);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---current updated: " + bitstring_to_string(current.at(output_nid)));
@@ -336,7 +333,7 @@ void Bit_Value::forward()
    // Update current to perform sup with best after all return statements bitvalues have been propagated
    if(current.count(function_id))
    {
-      update_current(current.at(function_id), function_id);
+      update_current(current.at(function_id), TM->CGetTreeNode(function_id));
    }
 }
 
@@ -345,7 +342,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    std::deque<bit_lattice> res;
    const auto& lhs = ga->op0;
    const auto& rhs = ga->op1;
-   const auto lhs_nid = GET_INDEX_CONST_NODE(lhs);
+   const auto lhs_signed = IsSignedIntegerType(lhs);
    const auto lhs_size = BitLatticeManipulator::Size(lhs);
    const auto rhs_kind = GET_CONST_NODE(rhs)->get_kind();
    switch(rhs_kind)
@@ -358,22 +355,19 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       }
       case addr_expr_K:
       {
-         auto ae0 = [&] {
-            const auto ae = GetPointerS<const addr_expr>(GET_CONST_NODE(rhs));
-            const auto address_size = AppM->get_address_bitsize();
-            const auto is_pretty_print_used = parameters->isOption(OPT_pretty_print) || (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
-            const auto lt0 = lsb_to_zero(ae, is_pretty_print_used);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---address_size: " + STR(address_size) + " lt0: " + STR(lt0));
-            if(lt0 && address_size > lt0)
+         const auto ae = GetPointerS<const addr_expr>(GET_CONST_NODE(rhs));
+         const auto address_size = AppM->get_address_bitsize();
+         const auto is_pretty_print_used = parameters->isOption(OPT_pretty_print) || (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
+         const auto lt0 = lsb_to_zero(ae, is_pretty_print_used);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---address_size: " + STR(address_size) + " lt0: " + STR(lt0));
+         if(lt0 && address_size > lt0)
+         {
+            res = create_u_bitstring(address_size - lt0);
+            for(auto index = 0u; index < lt0; ++index)
             {
-               res = create_u_bitstring(address_size - lt0);
-               for(auto index = 0u; index < lt0; ++index)
-               {
-                  res.push_back(bit_lattice::ZERO);
-               }
+               res.push_back(bit_lattice::ZERO);
             }
-         };
-         ae0();
+         }
          break;
       }
       case abs_expr_K:
@@ -386,105 +380,95 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       {
          const auto operation = GetPointer<const unary_expr>(GET_CONST_NODE(rhs));
 
-         const auto op_nid = GET_INDEX_NODE(operation->op);
-         if(!is_handled_by_bitvalue(op_nid))
+         const auto op_signed = IsSignedIntegerType(operation->op);
+         if(!IsHandledByBitvalue(operation->op))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---operand " + STR(operation->op) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(operation->op))) + " not handled by bitvalue");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---operand " + STR(operation->op) + " of type " + STR(tree_helper::CGetType(operation->op)) + " not handled by bitvalue");
             res = create_u_bitstring(lhs_size);
             break;
          }
          auto op_bitstring = get_current(operation->op);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer, operand(" + STR(op_nid) + "): " + bitstring_to_string(op_bitstring));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer, operand(" + STR(GET_INDEX_NODE(operation->op)) + "): " + bitstring_to_string(op_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---=> " + tree_node::GetString(rhs_kind));
 
          if(rhs_kind == abs_expr_K)
          {
-            auto ae0 = [&] {
-               const auto op_size = BitLatticeManipulator::Size(operation->op);
-               const auto sign_bit = op_bitstring.front();
-               switch(sign_bit)
+            const auto op_size = BitLatticeManipulator::Size(operation->op);
+            const auto sign_bit = op_bitstring.front();
+            switch(sign_bit)
+            {
+               case bit_lattice::ZERO:
                {
-                  case bit_lattice::ZERO:
-                  {
-                     res = op_bitstring;
-                     break;
-                  }
-                  case bit_lattice::ONE:
-                  {
-                     bit_lattice borrow = bit_lattice::ZERO;
-                     for(const auto bit : boost::adaptors::reverse(op_bitstring))
-                     {
-                        const auto borrow_and_bit_pair = minus_expr_map.at(bit_lattice::ZERO).at(bit).at(borrow);
-                        res.push_front(borrow_and_bit_pair.back());
-                        borrow = borrow_and_bit_pair.front();
-                     }
-                     if(res.size() < op_size)
-                     {
-                        res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(op_bitstring.front()).at(borrow).back());
-                     }
-                     break;
-                  }
-                  case bit_lattice::X:
-                  case bit_lattice::U:
-                  {
-                     std::deque<bit_lattice> negated_bitstring;
-                     bit_lattice borrow = bit_lattice::ZERO;
-                     for(const auto& bit : boost::adaptors::reverse(op_bitstring))
-                     {
-                        const auto borrow_and_bit_pair = minus_expr_map.at(bit_lattice::ZERO).at(bit).at(borrow);
-                        negated_bitstring.push_front(borrow_and_bit_pair.back());
-                        borrow = borrow_and_bit_pair.front();
-                     }
-                     if(negated_bitstring.size() < op_size)
-                     {
-                        negated_bitstring.push_front(minus_expr_map.at(bit_lattice::ZERO).at(op_bitstring.front()).at(borrow).back());
-                     }
-                     res = inf(op_bitstring, negated_bitstring, lhs_nid);
-                     break;
-                  }
-                  default:
-                  {
-                     THROW_UNREACHABLE("unexpected bit lattice for sign bit " + bitstring_to_string(op_bitstring));
-                     break;
-                  }
+                  res = op_bitstring;
+                  break;
                }
-            };
-            THROW_ASSERT(tree_helper::is_int(TM, lhs_nid) && tree_helper::is_int(TM, op_nid), "lhs and rhs of an abs_expr must be signed");
-            ae0();
+               case bit_lattice::ONE:
+               {
+                  bit_lattice borrow = bit_lattice::ZERO;
+                  for(const auto bit : boost::adaptors::reverse(op_bitstring))
+                  {
+                     const auto borrow_and_bit_pair = minus_expr_map.at(bit_lattice::ZERO).at(bit).at(borrow);
+                     res.push_front(borrow_and_bit_pair.back());
+                     borrow = borrow_and_bit_pair.front();
+                  }
+                  if(res.size() < op_size)
+                  {
+                     res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(op_bitstring.front()).at(borrow).back());
+                  }
+                  break;
+               }
+               case bit_lattice::X:
+               case bit_lattice::U:
+               {
+                  std::deque<bit_lattice> negated_bitstring;
+                  bit_lattice borrow = bit_lattice::ZERO;
+                  for(const auto& bit : boost::adaptors::reverse(op_bitstring))
+                  {
+                     const auto borrow_and_bit_pair = minus_expr_map.at(bit_lattice::ZERO).at(bit).at(borrow);
+                     negated_bitstring.push_front(borrow_and_bit_pair.back());
+                     borrow = borrow_and_bit_pair.front();
+                  }
+                  if(negated_bitstring.size() < op_size)
+                  {
+                     negated_bitstring.push_front(minus_expr_map.at(bit_lattice::ZERO).at(op_bitstring.front()).at(borrow).back());
+                  }
+                  res = inf(op_bitstring, negated_bitstring, lhs);
+                  break;
+               }
+               default:
+               {
+                  THROW_UNREACHABLE("unexpected bit lattice for sign bit " + bitstring_to_string(op_bitstring));
+                  break;
+               }
+            }
+            THROW_ASSERT(lhs_signed && op_signed, "lhs and rhs of an abs_expr must be signed");
          }
          else if(rhs_kind == bit_not_expr_K)
          {
-            auto bne0 = [&] {
-               if(op_bitstring.size() == 1 && op_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, op_nid) && !tree_helper::is_int(TM, op_nid))
-               {
-                  op_bitstring.push_front(bit_lattice::ZERO);
-               }
-               if(op_bitstring.size() < lhs_size)
-               {
-                  op_bitstring = sign_extend_bitstring(op_bitstring, tree_helper::is_int(TM, op_nid), lhs_size);
-               }
+            if(op_bitstring.size() == 1 && op_bitstring.at(0) == bit_lattice::X && !tree_helper::IsBooleanType(operation->op) && !op_signed)
+            {
+               op_bitstring.push_front(bit_lattice::ZERO);
+            }
+            if(op_bitstring.size() < lhs_size)
+            {
+               op_bitstring = sign_extend_bitstring(op_bitstring, op_signed, lhs_size);
+            }
 
-               auto op_it = op_bitstring.rbegin();
-               for(unsigned bit_index = 0; bit_index < lhs_size && op_it != op_bitstring.rend(); ++op_it, ++bit_index)
-               {
-                  res.push_front(bit_xor_expr_map.at(*op_it).at(bit_lattice::ONE));
-               }
-            };
-            bne0();
+            auto op_it = op_bitstring.rbegin();
+            for(unsigned bit_index = 0; bit_index < lhs_size && op_it != op_bitstring.rend(); ++op_it, ++bit_index)
+            {
+               res.push_front(bit_xor_expr_map.at(*op_it).at(bit_lattice::ONE));
+            }
          }
          else if(rhs_kind == convert_expr_K || rhs_kind == nop_expr_K || rhs_kind == view_convert_expr_K)
          {
             res = op_bitstring;
-            const auto left_signed = tree_helper::is_int(TM, lhs_nid);
-            const auto right_signed = tree_helper::is_int(TM, op_nid);
+            const auto left_signed = lhs_signed;
+            const auto right_signed = op_signed;
             bool do_not_extend = false;
-            if(left_signed && lhs_size == 1 && tree_helper::is_bool(TM, op_nid))
+            if(left_signed && lhs_size == 1 && tree_helper::IsBooleanType(operation->op))
             {
                do_not_extend = true;
-            }
-            if(tree_helper::is_real(TM, lhs_nid) && res.size() < lhs_size)
-            {
-               res = sign_extend_bitstring(res, res.front() == bit_lattice::U, lhs_size);
             }
             if((left_signed != right_signed && !do_not_extend) && res.size() < lhs_size)
             {
@@ -494,49 +478,42 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             {
                res.pop_front();
             }
-            THROW_ASSERT(!tree_helper::is_real(TM, lhs_nid) || res.size() == lhs_size, "Real type bit value should be exact");
          }
          else if(rhs_kind == negate_expr_K)
          {
-            auto ne0 = [&] {
-               bit_lattice borrow = bit_lattice::ZERO;
-               if(!tree_helper::is_int(TM, lhs_nid) && lhs_size > op_bitstring.size())
-               {
-                  op_bitstring = sign_extend_bitstring(op_bitstring, tree_helper::is_int(TM, lhs_nid), lhs_size);
-               }
-               auto op_it = op_bitstring.rbegin();
-               for(unsigned bit_index = 0; bit_index < lhs_size && op_it != op_bitstring.rend(); ++op_it, ++bit_index)
-               {
-                  res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(*op_it).at(borrow).back());
-                  borrow = minus_expr_map.at(bit_lattice::ZERO).at(*op_it).at(borrow).front();
-               }
-               if(tree_helper::is_int(TM, lhs_nid) && res.size() < lhs_size)
-               {
-                  res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(op_bitstring.front()).at(borrow).back());
-               }
-            };
-            ne0();
+            bit_lattice borrow = bit_lattice::ZERO;
+            if(!lhs_signed && lhs_size > op_bitstring.size())
+            {
+               op_bitstring = sign_extend_bitstring(op_bitstring, lhs_signed, lhs_size);
+            }
+            auto op_it = op_bitstring.rbegin();
+            for(unsigned bit_index = 0; bit_index < lhs_size && op_it != op_bitstring.rend(); ++op_it, ++bit_index)
+            {
+               res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(*op_it).at(borrow).back());
+               borrow = minus_expr_map.at(bit_lattice::ZERO).at(*op_it).at(borrow).front();
+            }
+            if(lhs_signed && res.size() < lhs_size)
+            {
+               res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(op_bitstring.front()).at(borrow).back());
+            }
          }
          else if(rhs_kind == truth_not_expr_K)
          {
-            THROW_ASSERT(tree_helper::is_bool(TM, lhs_nid) || lhs_size == 1, "");
-            auto tne0 = [&] {
-               bit_lattice arg_left = bit_lattice::ZERO;
-               for(auto current_bit : op_bitstring)
+            THROW_ASSERT(tree_helper::IsBooleanType(lhs) || lhs_size == 1, "");
+            bit_lattice arg_left = bit_lattice::ZERO;
+            for(auto current_bit : op_bitstring)
+            {
+               if(current_bit == bit_lattice::ONE)
                {
-                  if(current_bit == bit_lattice::ONE)
-                  {
-                     arg_left = bit_lattice::ONE;
-                     break;
-                  }
-                  else if(current_bit == bit_lattice::U)
-                  {
-                     arg_left = bit_lattice::U;
-                  }
+                  arg_left = bit_lattice::ONE;
+                  break;
                }
-               res.push_front(bit_xor_expr_map.at(arg_left).at(bit_lattice::ONE));
-            };
-            tne0();
+               else if(current_bit == bit_lattice::U)
+               {
+                  arg_left = bit_lattice::U;
+               }
+            }
+            res.push_front(bit_xor_expr_map.at(arg_left).at(bit_lattice::ONE));
          }
          else
          {
@@ -576,107 +553,104 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       {
          const auto operation = GetPointer<const binary_expr>(GET_CONST_NODE(rhs));
 
-         const auto op0_nid = GET_INDEX_NODE(operation->op0);
+         const auto op0_signed = IsSignedIntegerType(operation->op0);
          auto op0_bitstring = get_current(operation->op0);
 
-         const auto op1_nid = GET_INDEX_NODE(operation->op1);
+         const auto op1_signed = IsSignedIntegerType(operation->op1);
          auto op1_bitstring = get_current(operation->op1);
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer");
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   operand0(" + STR(op0_nid) + "): " + bitstring_to_string(op0_bitstring));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   operand1(" + STR(op1_nid) + "): " + bitstring_to_string(op1_bitstring));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   operand0(" + STR(GET_INDEX_NODE(operation->op0)) + "): " + bitstring_to_string(op0_bitstring));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   operand1(" + STR(GET_INDEX_NODE(operation->op1)) + "): " + bitstring_to_string(op1_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---=> " + tree_node::GetString(rhs_kind));
 
          if(rhs_kind == bit_and_expr_K)
          {
-            auto bae0 = [&] {
-               if(lhs_size > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), lhs_size);
-               }
-               if(lhs_size > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), lhs_size);
-               }
+            if(lhs_size > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, lhs_size);
+            }
+            if(lhs_size > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, lhs_size);
+            }
 
-               auto op0_it = op0_bitstring.rbegin();
-               auto op1_it = op1_bitstring.rbegin();
-               for(auto bit_index = 0u; bit_index < lhs_size && op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend(); ++op0_it, ++op1_it, ++bit_index)
-               {
-                  res.push_front(bit_and_expr_map.at(*op0_it).at(*op1_it));
-               }
-            };
-            bae0();
+            auto op0_it = op0_bitstring.rbegin();
+            auto op1_it = op1_bitstring.rbegin();
+            for(auto bit_index = 0u; bit_index < lhs_size && op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend(); ++op0_it, ++op1_it, ++bit_index)
+            {
+               res.push_front(bit_and_expr_map.at(*op0_it).at(*op1_it));
+            }
          }
          else if(rhs_kind == bit_ior_expr_K)
          {
-            auto bie0 = [&] {
-               if(op0_bitstring.size() == 1 && op0_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, op0_nid) && !tree_helper::is_int(TM, op0_nid))
-               {
-                  op0_bitstring.push_front(bit_lattice::ZERO);
-               }
-               if(op1_bitstring.size() == 1 && op1_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, op1_nid) && !tree_helper::is_int(TM, op1_nid))
-               {
-                  op1_bitstring.push_front(bit_lattice::ZERO);
-               }
-               if(lhs_size > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), lhs_size);
-               }
-               if(lhs_size > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), lhs_size);
-               }
+            if(op0_bitstring.size() == 1 && op0_bitstring.at(0) == bit_lattice::X && !tree_helper::IsBooleanType(operation->op0) && !op0_signed)
+            {
+               op0_bitstring.push_front(bit_lattice::ZERO);
+            }
+            if(op1_bitstring.size() == 1 && op1_bitstring.at(0) == bit_lattice::X && !tree_helper::IsBooleanType(operation->op1) && !op1_signed)
+            {
+               op1_bitstring.push_front(bit_lattice::ZERO);
+            }
+            if(lhs_size > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, lhs_size);
+            }
+            if(lhs_size > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, lhs_size);
+            }
 
-               auto op0_it = op0_bitstring.rbegin();
-               auto op1_it = op1_bitstring.rbegin();
-               for(auto bit_index = 0u; bit_index < lhs_size && op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend(); ++op0_it, ++op1_it, ++bit_index)
-               {
-                  res.push_front(bit_ior_expr_map.at(*op0_it).at(*op1_it));
-               }
-            };
-            bie0();
+            auto op0_it = op0_bitstring.rbegin();
+            auto op1_it = op1_bitstring.rbegin();
+            for(auto bit_index = 0u; bit_index < lhs_size && op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend(); ++op0_it, ++op1_it, ++bit_index)
+            {
+               res.push_front(bit_ior_expr_map.at(*op0_it).at(*op1_it));
+            }
          }
          else if(rhs_kind == bit_xor_expr_K)
          {
-            auto bxe0 = [&] {
-               if(op0_bitstring.size() == 1 && op0_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, op0_nid) && !tree_helper::is_int(TM, op0_nid))
-               {
-                  op0_bitstring.push_front(bit_lattice::ZERO);
-               }
-               if(op1_bitstring.size() == 1 && op1_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, op1_nid) && !tree_helper::is_int(TM, op1_nid))
-               {
-                  op1_bitstring.push_front(bit_lattice::ZERO);
-               }
+            if(op0_bitstring.size() == 1 && op0_bitstring.at(0) == bit_lattice::X && !tree_helper::IsBooleanType(operation->op0) && !op0_signed)
+            {
+               op0_bitstring.push_front(bit_lattice::ZERO);
+            }
+            if(op1_bitstring.size() == 1 && op1_bitstring.at(0) == bit_lattice::X && !tree_helper::IsBooleanType(operation->op1) && !op1_signed)
+            {
+               op1_bitstring.push_front(bit_lattice::ZERO);
+            }
 
-               if(lhs_size > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), lhs_size);
-               }
-               if(lhs_size > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), lhs_size);
-               }
+            if(lhs_size > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, lhs_size);
+            }
+            if(lhs_size > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, lhs_size);
+            }
 
-               auto op0_it = op0_bitstring.rbegin();
-               auto op1_it = op1_bitstring.rbegin();
-               for(auto bit_index = 0u; bit_index < lhs_size && op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend(); ++op0_it, ++op1_it, ++bit_index)
-               {
-                  res.push_front(bit_xor_expr_map.at(*op0_it).at(*op1_it));
-               }
-            };
-            bxe0();
+            auto op0_it = op0_bitstring.rbegin();
+            auto op1_it = op1_bitstring.rbegin();
+            for(auto bit_index = 0u; bit_index < lhs_size && op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend(); ++op0_it, ++op1_it, ++bit_index)
+            {
+               res.push_front(bit_xor_expr_map.at(*op0_it).at(*op1_it));
+            }
          }
          else if(rhs_kind == eq_expr_K)
          {
-            auto ee0 = [&] {
+            if(tree_helper::IsRealType(operation->op0) || tree_helper::IsRealType(operation->op1))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer Error: operation unhandled yet with real type operands -> " + tree_node::GetString(rhs_kind));
+               break;
+            }
+            else
+            {
                if(op0_bitstring.size() > op1_bitstring.size())
                {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
+                  op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
                }
                if(op1_bitstring.size() > op0_bitstring.size())
                {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
+                  op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
                }
 
                auto op0_bitstring_it = op0_bitstring.begin();
@@ -705,229 +679,208 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                   // <1> is TRUE
                   res.push_front(bit_lattice::ONE);
                }
-            };
-            if(tree_helper::is_real(TM, op0_nid) || tree_helper::is_real(TM, op1_nid))
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer Error: operation unhandled yet with real type operands -> " + tree_node::GetString(rhs_kind));
-               break;
-            }
-            else
-            {
-               ee0();
             }
          }
          else if(rhs_kind == exact_div_expr_K || rhs_kind == trunc_div_expr_K)
          {
-            auto tde0 = [&] {
-               if(tree_helper::is_int(TM, op0_nid))
-               {
-                  res = create_u_bitstring(1u + static_cast<unsigned int>(op0_bitstring.size()));
-               }
-               else
-               {
-                  res = create_u_bitstring(static_cast<unsigned int>(op0_bitstring.size()));
-               }
-               while(res.size() > lhs_size)
-               {
-                  res.pop_front();
-               }
-            };
-            tde0();
+            if(op0_signed)
+            {
+               res = create_u_bitstring(1u + static_cast<unsigned int>(op0_bitstring.size()));
+            }
+            else
+            {
+               res = create_u_bitstring(static_cast<unsigned int>(op0_bitstring.size()));
+            }
+            while(res.size() > lhs_size)
+            {
+               res.pop_front();
+            }
          }
          else if(rhs_kind == ge_expr_K)
          {
-            auto ge0 = [&] {
-               if(op0_bitstring.size() > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
-               }
-               if(op1_bitstring.size() > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
-               }
+            if(op0_bitstring.size() > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
+            }
+            if(op1_bitstring.size() > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
+            }
 
-               const auto is_signed_var = tree_helper::is_int(TM, op0_nid) || tree_helper::is_int(TM, op1_nid);
-               auto op0_bitstring_it = op0_bitstring.begin();
-               auto op1_bitstring_it = op1_bitstring.begin();
-               auto computed_result = false;
-               for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end(); ++op0_bitstring_it, ++op1_bitstring_it)
+            const auto is_signed_var = op0_signed || op1_signed;
+            auto op0_bitstring_it = op0_bitstring.begin();
+            auto op1_bitstring_it = op1_bitstring.begin();
+            auto computed_result = false;
+            for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end(); ++op0_bitstring_it, ++op1_bitstring_it)
+            {
+               if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
                {
-                  if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
-                  {
-                     // <U> is UNKNOWN
-                     res.push_front(bit_lattice::U);
-                     computed_result = true;
-                     break;
-                  }
-                  else if(*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO)
-                  {
-                     if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
-                     {
-                        // <0> is FALSE
-                        res.push_front(bit_lattice::ZERO);
-                     }
-                     else
-                     {
-                        // <1> is TRUE
-                        res.push_front(bit_lattice::ONE);
-                     }
-                     computed_result = true;
-                     break;
-                  }
-                  else if(*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE)
-                  {
-                     if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
-                     {
-                        // <1> is TRUE
-                        res.push_front(bit_lattice::ONE);
-                     }
-                     else
-                     {
-                        // <0> is FALSE
-                        res.push_front(bit_lattice::ZERO);
-                     }
-                     computed_result = true;
-                     break;
-                  }
+                  // <U> is UNKNOWN
+                  res.push_front(bit_lattice::U);
+                  computed_result = true;
+                  break;
                }
-               if(!computed_result)
+               else if(*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO)
                {
-                  // If the result is not computed until now the bitstring are equal
-                  // <1> is TRUE
-                  res.push_front(bit_lattice::ONE);
+                  if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
+                  {
+                     // <0> is FALSE
+                     res.push_front(bit_lattice::ZERO);
+                  }
+                  else
+                  {
+                     // <1> is TRUE
+                     res.push_front(bit_lattice::ONE);
+                  }
+                  computed_result = true;
+                  break;
                }
-            };
-            ge0();
+               else if(*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE)
+               {
+                  if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
+                  {
+                     // <1> is TRUE
+                     res.push_front(bit_lattice::ONE);
+                  }
+                  else
+                  {
+                     // <0> is FALSE
+                     res.push_front(bit_lattice::ZERO);
+                  }
+                  computed_result = true;
+                  break;
+               }
+            }
+            if(!computed_result)
+            {
+               // If the result is not computed until now the bitstring are equal
+               // <1> is TRUE
+               res.push_front(bit_lattice::ONE);
+            }
          }
          else if(rhs_kind == gt_expr_K)
          {
-            auto gt0 = [&] {
-               if(op0_bitstring.size() > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
-               }
-               if(op1_bitstring.size() > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
-               }
+            if(op0_bitstring.size() > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
+            }
+            if(op1_bitstring.size() > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
+            }
 
-               const auto is_signed_var = tree_helper::is_int(TM, op0_nid) || tree_helper::is_int(TM, op1_nid);
-               auto op0_bitstring_it = op0_bitstring.begin();
-               auto op1_bitstring_it = op1_bitstring.begin();
-               auto computed_result = false;
-               for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end(); ++op0_bitstring_it, ++op1_bitstring_it)
+            const auto is_signed_var = op0_signed || op1_signed;
+            auto op0_bitstring_it = op0_bitstring.begin();
+            auto op1_bitstring_it = op1_bitstring.begin();
+            auto computed_result = false;
+            for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end(); ++op0_bitstring_it, ++op1_bitstring_it)
+            {
+               if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
                {
-                  if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
-                  {
-                     // <U> is UNKNOWN
-                     res.push_front(bit_lattice::U);
-                     computed_result = true;
-                     break;
-                  }
-                  else if(*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO)
-                  {
-                     if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
-                     {
-                        // <0> is FALSE
-                        res.push_front(bit_lattice::ZERO);
-                     }
-                     else
-                     {
-                        // <1> is TRUE
-                        res.push_front(bit_lattice::ONE);
-                     }
-                     computed_result = true;
-                     break;
-                  }
-                  else if(*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE)
-                  {
-                     if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
-                     {
-                        // <1> is TRUE
-                        res.push_front(bit_lattice::ONE);
-                     }
-                     else
-                     {
-                        // <0> is FALSE
-                        res.push_front(bit_lattice::ZERO);
-                     }
-                     computed_result = true;
-                     break;
-                  }
+                  // <U> is UNKNOWN
+                  res.push_front(bit_lattice::U);
+                  computed_result = true;
+                  break;
                }
-               if(!computed_result)
+               else if(*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO)
                {
-                  // If the result is not computed until now the bitstring are equal
-                  // <0> is FALSE
-                  res.push_front(bit_lattice::ZERO);
+                  if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
+                  {
+                     // <0> is FALSE
+                     res.push_front(bit_lattice::ZERO);
+                  }
+                  else
+                  {
+                     // <1> is TRUE
+                     res.push_front(bit_lattice::ONE);
+                  }
+                  computed_result = true;
+                  break;
                }
-            };
-            gt0();
+               else if(*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE)
+               {
+                  if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
+                  {
+                     // <1> is TRUE
+                     res.push_front(bit_lattice::ONE);
+                  }
+                  else
+                  {
+                     // <0> is FALSE
+                     res.push_front(bit_lattice::ZERO);
+                  }
+                  computed_result = true;
+                  break;
+               }
+            }
+            if(!computed_result)
+            {
+               // If the result is not computed until now the bitstring are equal
+               // <0> is FALSE
+               res.push_front(bit_lattice::ZERO);
+            }
          }
          else if(rhs_kind == le_expr_K)
          {
-            auto le0 = [&] {
-               if(op0_bitstring.size() > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
-               }
-               if(op1_bitstring.size() > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
-               }
+            if(op0_bitstring.size() > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
+            }
+            if(op1_bitstring.size() > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
+            }
 
-               const auto is_signed_var = tree_helper::is_int(TM, op0_nid) || tree_helper::is_int(TM, op1_nid);
-               auto op0_bitstring_it = op0_bitstring.begin();
-               auto op1_bitstring_it = op1_bitstring.begin();
-               auto computed_result = false;
-               for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end(); ++op0_bitstring_it, ++op1_bitstring_it)
+            const auto is_signed_var = op0_signed || op1_signed;
+            auto op0_bitstring_it = op0_bitstring.begin();
+            auto op1_bitstring_it = op1_bitstring.begin();
+            auto computed_result = false;
+            for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end(); ++op0_bitstring_it, ++op1_bitstring_it)
+            {
+               if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
                {
-                  if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
-                  {
-                     // <U> is UNKNOWN
-                     res.push_front(bit_lattice::U);
-                     computed_result = true;
-                     break;
-                  }
-                  else if(*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE)
-                  {
-                     if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
-                     {
-                        // <0> is FALSE
-                        res.push_front(bit_lattice::ZERO);
-                     }
-                     else
-                     {
-                        // <1> is TRUE
-                        res.push_front(bit_lattice::ONE);
-                     }
-                     computed_result = true;
-                     break;
-                  }
-                  else if(*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO)
-                  {
-                     if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
-                     {
-                        // <1> is TRUE
-                        res.push_front(bit_lattice::ONE);
-                     }
-                     else
-                     {
-                        // <0> is FALSE
-                        res.push_front(bit_lattice::ZERO);
-                     }
-                     computed_result = true;
-                     break;
-                  }
+                  // <U> is UNKNOWN
+                  res.push_front(bit_lattice::U);
+                  computed_result = true;
+                  break;
                }
-               if(!computed_result)
+               else if(*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE)
                {
-                  // If the result is not computed until now the bitstring are equal
-                  // <1> is TRUE
-                  res.push_front(bit_lattice::ONE);
+                  if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
+                  {
+                     // <0> is FALSE
+                     res.push_front(bit_lattice::ZERO);
+                  }
+                  else
+                  {
+                     // <1> is TRUE
+                     res.push_front(bit_lattice::ONE);
+                  }
+                  computed_result = true;
+                  break;
                }
-            };
-            le0();
+               else if(*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO)
+               {
+                  if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
+                  {
+                     // <1> is TRUE
+                     res.push_front(bit_lattice::ONE);
+                  }
+                  else
+                  {
+                     // <0> is FALSE
+                     res.push_front(bit_lattice::ZERO);
+                  }
+                  computed_result = true;
+                  break;
+               }
+            }
+            if(!computed_result)
+            {
+               // If the result is not computed until now the bitstring are equal
+               // <1> is TRUE
+               res.push_front(bit_lattice::ONE);
+            }
          }
          else if(rhs_kind == lrotate_expr_K)
          {
@@ -942,7 +895,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
                if(lhs_size > op0_bitstring.size())
                {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), lhs_size);
+                  op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, lhs_size);
                }
                res = op0_bitstring;
                for(unsigned int index = 0; index < arg2_value; ++index)
@@ -1009,131 +962,122 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == lt_expr_K)
          {
-            auto lt0 = [&] {
-               if(op0_bitstring.size() > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
-               }
-               if(op1_bitstring.size() > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
-               }
+            if(op0_bitstring.size() > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
+            }
+            if(op1_bitstring.size() > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
+            }
 
-               const auto is_signed_var = tree_helper::is_int(TM, op0_nid) || tree_helper::is_int(TM, op1_nid);
-               auto op0_bitstring_it = op0_bitstring.begin();
-               auto op1_bitstring_it = op1_bitstring.begin();
-               auto computed_result = false;
-               for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end(); ++op0_bitstring_it, ++op1_bitstring_it)
+            const auto is_signed_var = op0_signed || op1_signed;
+            auto op0_bitstring_it = op0_bitstring.begin();
+            auto op1_bitstring_it = op1_bitstring.begin();
+            auto computed_result = false;
+            for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end(); ++op0_bitstring_it, ++op1_bitstring_it)
+            {
+               if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
                {
-                  if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
-                  {
-                     // <U> is UNKNOWN
-                     res.push_front(bit_lattice::U);
-                     computed_result = true;
-                     break;
-                  }
-                  else if(*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE)
-                  {
-                     if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
-                     {
-                        // <0> is FALSE
-                        res.push_front(bit_lattice::ZERO);
-                     }
-                     else
-                     {
-                        // <1> is TRUE
-                        res.push_front(bit_lattice::ONE);
-                     }
-                     computed_result = true;
-                     break;
-                  }
-                  else if(*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO)
-                  {
-                     if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
-                     {
-                        // <1> is TRUE
-                        res.push_front(bit_lattice::ONE);
-                     }
-                     else
-                     {
-                        // <0> is FALSE
-                        res.push_front(bit_lattice::ZERO);
-                     }
-                     computed_result = true;
-                     break;
-                  }
+                  // <U> is UNKNOWN
+                  res.push_front(bit_lattice::U);
+                  computed_result = true;
+                  break;
                }
-               if(!computed_result)
+               else if(*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE)
                {
-                  // If the result is not computed until now the bitstring are equal
-                  // <0> is FALSE
-                  res.push_front(bit_lattice::ZERO);
+                  if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
+                  {
+                     // <0> is FALSE
+                     res.push_front(bit_lattice::ZERO);
+                  }
+                  else
+                  {
+                     // <1> is TRUE
+                     res.push_front(bit_lattice::ONE);
+                  }
+                  computed_result = true;
+                  break;
                }
-            };
-            lt0();
+               else if(*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO)
+               {
+                  if(op0_bitstring_it == op0_bitstring.begin() && is_signed_var)
+                  {
+                     // <1> is TRUE
+                     res.push_front(bit_lattice::ONE);
+                  }
+                  else
+                  {
+                     // <0> is FALSE
+                     res.push_front(bit_lattice::ZERO);
+                  }
+                  computed_result = true;
+                  break;
+               }
+            }
+            if(!computed_result)
+            {
+               // If the result is not computed until now the bitstring are equal
+               // <0> is FALSE
+               res.push_front(bit_lattice::ZERO);
+            }
          }
          else if(rhs_kind == max_expr_K || rhs_kind == min_expr_K)
          {
-            auto me0 = [&] {
-               if(op0_bitstring.size() > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
-               }
-               if(op1_bitstring.size() > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
-               }
+            if(op0_bitstring.size() > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
+            }
+            if(op1_bitstring.size() > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
+            }
 
-               THROW_ASSERT(tree_helper::is_int(TM, op0_nid) == tree_helper::is_int(TM, op1_nid), "");
-               res = inf(op0_bitstring, op1_bitstring, op0_nid);
-            };
-            me0();
+            THROW_ASSERT(op0_signed == op1_signed, "");
+            res = inf(op0_bitstring, op1_bitstring, operation->op0);
          }
          else if(rhs_kind == minus_expr_K)
          {
-            auto me0 = [&] {
-               const auto arg_size_max = std::max(op0_bitstring.size(), op1_bitstring.size());
-               if(arg_size_max > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), arg_size_max);
-               }
-               if(arg_size_max > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), arg_size_max);
-               }
+            const auto arg_size_max = std::max(op0_bitstring.size(), op1_bitstring.size());
+            if(arg_size_max > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, arg_size_max);
+            }
+            if(arg_size_max > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, arg_size_max);
+            }
 
-               auto op0_it = op0_bitstring.rbegin();
-               auto op1_it = op1_bitstring.rbegin();
-               auto borrow = bit_lattice::ZERO;
-               for(auto bit_index = 0u; bit_index < lhs_size && op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend(); ++op0_it, ++op1_it, ++bit_index)
+            auto op0_it = op0_bitstring.rbegin();
+            auto op1_it = op1_bitstring.rbegin();
+            auto borrow = bit_lattice::ZERO;
+            for(auto bit_index = 0u; bit_index < lhs_size && op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend(); ++op0_it, ++op1_it, ++bit_index)
+            {
+               res.push_front(minus_expr_map.at(*op0_it).at(*op1_it).at(borrow).back());
+               borrow = minus_expr_map.at(*op0_it).at(*op1_it).at(borrow).front();
+            }
+            if(lhs_signed && res.size() < lhs_size)
+            {
+               res.push_front(minus_expr_map.at(op0_bitstring.front()).at(op1_bitstring.front()).at(borrow).back());
+            }
+            else if(!lhs_signed)
+            {
+               while(res.size() < lhs_size)
                {
-                  res.push_front(minus_expr_map.at(*op0_it).at(*op1_it).at(borrow).back());
-                  borrow = minus_expr_map.at(*op0_it).at(*op1_it).at(borrow).front();
+                  res.push_front(borrow);
                }
-               if(tree_helper::is_int(TM, lhs_nid) && res.size() < lhs_size)
-               {
-                  res.push_front(minus_expr_map.at(op0_bitstring.front()).at(op1_bitstring.front()).at(borrow).back());
-               }
-               else if(!tree_helper::is_int(TM, lhs_nid))
-               {
-                  while(res.size() < lhs_size)
-                  {
-                     res.push_front(borrow);
-                  }
-               }
-            };
-            me0();
+            }
          }
          else if(rhs_kind == mult_expr_K || rhs_kind == widen_mult_expr_K)
          {
             //    auto mult0 = [&] {
             //       if(op0_bitstring.size() > op1_bitstring.size())
             //       {
-            //          op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
+            //          op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
             //       }
             //       if(op1_bitstring.size() > op0_bitstring.size())
             //       {
-            //          op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
+            //          op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
             //       }
             //
             //       auto op0_it = op0_bitstring.rbegin();
@@ -1173,7 +1117,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             //          res = create_u_bitstring(static_cast<unsigned int>(lenght_op0 + lenght_op1 - ta - tb - la - lb));
             //          for(unsigned int i = 0; i < ta + tb; i++)
             //             res.push_back(bit_lattice::ZERO);
-            //          if(tree_helper::is_int(TM, lhs_nid) && la > 0 && lb > 0)
+            //          if(lhs_signed && la > 0 && lb > 0)
             //             res.push_front(bit_lattice::ZERO);
             //          while(res.size() > res_bitsize)
             //             res.pop_front();
@@ -1181,70 +1125,72 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             //    };
             //    if(0)
             //       mult0();
-            auto mult1 = [&] {
-               const auto lenght_op0 = op0_bitstring.size();
-               const auto lenght_op1 = op1_bitstring.size();
-               const auto res_bitsize = std::min(lenght_op0 + lenght_op1, static_cast<size_t>(lhs_size));
-               if(res_bitsize > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), res_bitsize);
-               }
-               if(res_bitsize > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), res_bitsize);
-               }
-               while(op0_bitstring.size() > res_bitsize)
-               {
-                  op0_bitstring.pop_front();
-               }
-               while(op1_bitstring.size() > res_bitsize)
-               {
-                  op1_bitstring.pop_front();
-               }
+            const auto lenght_op0 = op0_bitstring.size();
+            const auto lenght_op1 = op1_bitstring.size();
+            const auto res_bitsize = std::min(lenght_op0 + lenght_op1, static_cast<size_t>(lhs_size));
+            if(res_bitsize > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, res_bitsize);
+            }
+            if(res_bitsize > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, res_bitsize);
+            }
+            while(op0_bitstring.size() > res_bitsize)
+            {
+               op0_bitstring.pop_front();
+            }
+            while(op1_bitstring.size() > res_bitsize)
+            {
+               op1_bitstring.pop_front();
+            }
 
-               while(res.size() < res_bitsize)
+            while(res.size() < res_bitsize)
+            {
+               res.push_front(bit_lattice::ZERO);
+            }
+            auto op1_it = op1_bitstring.crbegin();
+            for(auto pos = 0u; op1_it != op1_bitstring.crend() && pos < res_bitsize; ++op1_it, ++pos)
+            {
+               std::deque<bit_lattice> temp_op1;
+               while(temp_op1.size() < pos)
                {
-                  res.push_front(bit_lattice::ZERO);
+                  temp_op1.push_front(bit_lattice::ZERO);
                }
-               auto op1_it = op1_bitstring.crbegin();
-               for(auto pos = 0u; op1_it != op1_bitstring.crend() && pos < res_bitsize; ++op1_it, ++pos)
+               auto op0_it = op0_bitstring.crbegin();
+               for(size_t idx = 0; (idx + pos) < res_bitsize; ++idx, ++op0_it)
                {
-                  std::deque<bit_lattice> temp_op1;
-                  while(temp_op1.size() < pos)
-                  {
-                     temp_op1.push_front(bit_lattice::ZERO);
-                  }
-                  auto op0_it = op0_bitstring.crbegin();
-                  for(size_t idx = 0; (idx + pos) < res_bitsize; ++idx, ++op0_it)
-                  {
-                     temp_op1.push_front(bit_and_expr_map.at(*op0_it).at(*op1_it));
-                  }
-                  bit_lattice carry1 = bit_lattice::ZERO;
-                  std::deque<bit_lattice> temp_res;
-                  auto temp_op1_it = temp_op1.crbegin();
-                  const auto temp_op1_end = temp_op1.crend();
-                  auto res_it = res.crbegin();
-                  const auto res_end = res.crend();
-                  for(auto bit_index = 0u; bit_index < res_bitsize && temp_op1_it != temp_op1_end && res_it != res_end; temp_op1_it++, res_it++, bit_index++)
-                  {
-                     temp_res.push_front(plus_expr_map.at(*temp_op1_it).at(*res_it).at(carry1).back());
-                     carry1 = plus_expr_map.at(*temp_op1_it).at(*res_it).at(carry1).front();
-                  }
-                  res = temp_res;
+                  temp_op1.push_front(bit_and_expr_map.at(*op0_it).at(*op1_it));
                }
-            };
-            mult1();
+               bit_lattice carry1 = bit_lattice::ZERO;
+               std::deque<bit_lattice> temp_res;
+               auto temp_op1_it = temp_op1.crbegin();
+               const auto temp_op1_end = temp_op1.crend();
+               auto res_it = res.crbegin();
+               const auto res_end = res.crend();
+               for(auto bit_index = 0u; bit_index < res_bitsize && temp_op1_it != temp_op1_end && res_it != res_end; temp_op1_it++, res_it++, bit_index++)
+               {
+                  temp_res.push_front(plus_expr_map.at(*temp_op1_it).at(*res_it).at(carry1).back());
+                  carry1 = plus_expr_map.at(*temp_op1_it).at(*res_it).at(carry1).front();
+               }
+               res = temp_res;
+            }
          }
          else if(rhs_kind == ne_expr_K)
          {
-            auto ne0 = [&] {
+            if(tree_helper::IsRealType(operation->op0) && tree_helper::IsRealType(operation->op1))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer Error: operation unhandled yet with real type operands -> " + tree_node::GetString(rhs_kind));
+            }
+            else
+            {
                if(op0_bitstring.size() > op1_bitstring.size())
                {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
+                  op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
                }
                if(op1_bitstring.size() > op0_bitstring.size())
                {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
+                  op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
                }
 
                auto op0_bitstring_it = op0_bitstring.begin();
@@ -1273,25 +1219,17 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                   // <0> is FALSE
                   res.push_front(bit_lattice::ZERO);
                }
-            };
-            if(tree_helper::is_real(TM, op0_nid) && tree_helper::is_real(TM, op1_nid))
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer Error: operation unhandled yet with real type operands -> " + tree_node::GetString(rhs_kind));
-            }
-            else
-            {
-               ne0();
             }
          }
          else if(rhs_kind == plus_expr_K || rhs_kind == pointer_plus_expr_K)
          {
             if(op0_bitstring.size() > op1_bitstring.size())
             {
-               op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
             }
             if(op1_bitstring.size() > op0_bitstring.size())
             {
-               op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
             }
 
             auto op0_it = op0_bitstring.rbegin();
@@ -1304,11 +1242,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                carry1 = plus_expr_map.at(*op0_it).at(*op1_it).at(carry1).front();
             }
 
-            if(tree_helper::is_int(TM, lhs_nid) && res.size() < lhs_size)
+            if(lhs_signed && res.size() < lhs_size)
             {
                res.push_front(plus_expr_map.at(op0_bitstring.front()).at(op1_bitstring.front()).at(carry1).back());
             }
-            else if(!tree_helper::is_int(TM, lhs_nid))
+            else if(!lhs_signed)
             {
                while(res.size() < lhs_size)
                {
@@ -1330,7 +1268,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
                if(lhs_size > op0_bitstring.size())
                {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), lhs_size);
+                  op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, lhs_size);
                }
                res = op0_bitstring;
                for(unsigned int index = 0; index < op1_value; ++index)
@@ -1363,7 +1301,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
                if(op0_bitstring.size() <= static_cast<size_t>(const1->value))
                {
-                  if(tree_helper::is_int(TM, op0_nid))
+                  if(op0_signed)
                   {
                      res.push_front(op0_bitstring.front());
                   }
@@ -1390,31 +1328,28 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == trunc_mod_expr_K)
          {
-            auto tme0 = [&] {
-               if(tree_helper::is_int(TM, op0_nid))
-               {
-                  res = create_u_bitstring(1 + static_cast<unsigned int>(std::min(op0_bitstring.size(), op1_bitstring.size())));
-               }
-               else
-               {
-                  res = create_u_bitstring(static_cast<unsigned int>(std::min(op0_bitstring.size(), op1_bitstring.size())));
-               }
-               while(res.size() > lhs_size)
-               {
-                  res.pop_front();
-               }
-            };
-            tme0();
+            if(op0_signed)
+            {
+               res = create_u_bitstring(1 + static_cast<unsigned int>(std::min(op0_bitstring.size(), op1_bitstring.size())));
+            }
+            else
+            {
+               res = create_u_bitstring(static_cast<unsigned int>(std::min(op0_bitstring.size(), op1_bitstring.size())));
+            }
+            while(res.size() > lhs_size)
+            {
+               res.pop_front();
+            }
          }
          else if(rhs_kind == truth_and_expr_K || rhs_kind == truth_andif_expr_K || rhs_kind == truth_or_expr_K || rhs_kind == truth_orif_expr_K || rhs_kind == truth_xor_expr_K)
          {
             if(op0_bitstring.size() > op1_bitstring.size())
             {
-               op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
             }
             if(op1_bitstring.size() > op0_bitstring.size())
             {
-               op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
             }
 
             auto arg_left = bit_lattice::ZERO;
@@ -1462,38 +1397,35 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == extract_bit_expr_K)
          {
-            auto ebe0 = [&] {
-               THROW_ASSERT(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K, "unexpected condition");
-               const auto const1 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op1));
-               THROW_ASSERT(const1->value >= 0, "unexpected condition");
+            THROW_ASSERT(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K, "unexpected condition");
+            const auto const1 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op1));
+            THROW_ASSERT(const1->value >= 0, "unexpected condition");
 
-               if(op0_bitstring.size() <= static_cast<size_t>(const1->value))
+            if(op0_bitstring.size() <= static_cast<size_t>(const1->value))
+            {
+               if(op0_signed)
                {
-                  if(tree_helper::is_int(TM, op0_nid))
-                  {
-                     res.push_front(op0_bitstring.front());
-                  }
-                  else
-                  {
-                     res.push_front(bit_lattice::ZERO);
-                  }
+                  res.push_front(op0_bitstring.front());
                }
                else
                {
-                  const auto new_lenght = op0_bitstring.size() - static_cast<size_t>(const1->value);
-                  auto op0_it = op0_bitstring.begin();
-                  while(res.size() < new_lenght)
-                  {
-                     res.push_back(*op0_it);
-                     ++op0_it;
-                  }
-                  while(res.size() > 1)
-                  {
-                     res.pop_front();
-                  }
+                  res.push_front(bit_lattice::ZERO);
                }
-            };
-            ebe0();
+            }
+            else
+            {
+               const auto new_lenght = op0_bitstring.size() - static_cast<size_t>(const1->value);
+               auto op0_it = op0_bitstring.begin();
+               while(res.size() < new_lenght)
+               {
+                  res.push_back(*op0_it);
+                  ++op0_it;
+               }
+               while(res.size() > 1)
+               {
+                  res.pop_front();
+               }
+            }
          }
          else
          {
@@ -1510,222 +1442,212 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       {
          const auto operation = GetPointer<const ternary_expr>(GET_CONST_NODE(rhs));
 
-         const auto op0_nid = GET_INDEX_NODE(operation->op0);
+         const auto op0_signed = IsSignedIntegerType(operation->op0);
          auto op0_bitstring = get_current(operation->op0);
 
-         const auto op1_nid = GET_INDEX_NODE(operation->op1);
+         const auto op1_signed = IsSignedIntegerType(operation->op1);
          auto op1_bitstring = get_current(operation->op1);
 
-         const auto op2_nid = GET_INDEX_NODE(operation->op2);
          auto op2_bitstring = get_current(operation->op2);
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer");
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   operand0(" + STR(op0_nid) + "): " + bitstring_to_string(op0_bitstring));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   operand1(" + STR(op1_nid) + "): " + bitstring_to_string(op1_bitstring));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   operand2(" + STR(op2_nid) + "): " + bitstring_to_string(op2_bitstring));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   operand0(" + STR(GET_INDEX_NODE(operation->op0)) + "): " + bitstring_to_string(op0_bitstring));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   operand1(" + STR(GET_INDEX_NODE(operation->op1)) + "): " + bitstring_to_string(op1_bitstring));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   operand2(" + STR(GET_INDEX_NODE(operation->op2)) + "): " + bitstring_to_string(op2_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---=> " + tree_node::GetString(rhs_kind));
 
          if(rhs_kind == bit_ior_concat_expr_K)
          {
-            auto bice0 = [&] {
-               long long int offset = GetPointerS<integer_cst>(GET_NODE(operation->op2))->value;
+            long long int offset = GetPointerS<integer_cst>(GET_NODE(operation->op2))->value;
 
-               if(op0_bitstring.size() > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), op0_bitstring.size());
-               }
-               if(op1_bitstring.size() > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), op1_bitstring.size());
-               }
+            if(op0_bitstring.size() > op1_bitstring.size())
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
+            }
+            if(op1_bitstring.size() > op0_bitstring.size())
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
+            }
 
-               auto op0_it = op0_bitstring.rbegin();
-               auto op1_it = op1_bitstring.rbegin();
-               for(auto index = 0u; op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend(); ++op0_it, ++op1_it, ++index)
+            auto op0_it = op0_bitstring.rbegin();
+            auto op1_it = op1_bitstring.rbegin();
+            for(auto index = 0u; op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend(); ++op0_it, ++op1_it, ++index)
+            {
+               if(index < offset)
                {
-                  if(index < offset)
-                  {
-                     res.push_front(*op1_it);
-                  }
-                  else
-                  {
-                     res.push_front(*op0_it);
-                  }
-               }
-            };
-            bice0();
-         }
-         else if(rhs_kind == cond_expr_K)
-         {
-            auto ce0 = [&] {
-               auto arg_cond = bit_lattice::ZERO;
-               for(const auto& current_bit : op0_bitstring)
-               {
-                  if(current_bit == bit_lattice::ONE)
-                  {
-                     arg_cond = bit_lattice::ONE;
-                     break;
-                  }
-                  else if(current_bit == bit_lattice::U)
-                  {
-                     arg_cond = bit_lattice::U;
-                  }
-               }
-
-               if(arg_cond == bit_lattice::ZERO)
-               {
-                  // Condition is false return second arg (op2_bitstring)
-                  res = op2_bitstring;
-               }
-               else if(arg_cond == bit_lattice::ONE)
-               {
-                  // Condition is false return second arg (op2_bitstring)
-                  res = op1_bitstring;
+                  res.push_front(*op1_it);
                }
                else
                {
-                  // CONDITION IS UNKNOWN ---> RETURN INF OF ARGS
-                  /*
-                   * Note: forward transfer for cond_expr is the only case where it may
-                   * be necessary to compute the inf of the bitstrings of two ssa with
-                   * different signedness. For this reason the bitstrings of both ssa
-                   * must be extended with their own signedness before computing the inf.
-                   * The reason is that otherwise the inf() will sign_extend them with
-                   * the signedness of the output of the cond_expr, which is not
-                   * necessarily the same of both the inputs.
-                   */
-                  const auto inf_size = std::max(op1_bitstring.size(), op2_bitstring.size());
-                  if(op1_bitstring.size() < inf_size)
-                  {
-                     op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), inf_size);
-                  }
-                  if(op2_bitstring.size() < inf_size)
-                  {
-                     op2_bitstring = sign_extend_bitstring(op2_bitstring, tree_helper::is_int(TM, op2_nid), inf_size);
-                  }
-                  res = inf(op1_bitstring, op2_bitstring, lhs_nid);
+                  res.push_front(*op0_it);
                }
-            };
-            ce0();
+            }
+         }
+         else if(rhs_kind == cond_expr_K)
+         {
+            auto arg_cond = bit_lattice::ZERO;
+            for(const auto& current_bit : op0_bitstring)
+            {
+               if(current_bit == bit_lattice::ONE)
+               {
+                  arg_cond = bit_lattice::ONE;
+                  break;
+               }
+               else if(current_bit == bit_lattice::U)
+               {
+                  arg_cond = bit_lattice::U;
+               }
+            }
+
+            if(arg_cond == bit_lattice::ZERO)
+            {
+               // Condition is false return second arg (op2_bitstring)
+               res = op2_bitstring;
+            }
+            else if(arg_cond == bit_lattice::ONE)
+            {
+               // Condition is false return second arg (op2_bitstring)
+               res = op1_bitstring;
+            }
+            else
+            {
+               // CONDITION IS UNKNOWN ---> RETURN INF OF ARGS
+               /*
+                * Note: forward transfer for cond_expr is the only case where it may
+                * be necessary to compute the inf of the bitstrings of two ssa with
+                * different signedness. For this reason the bitstrings of both ssa
+                * must be extended with their own signedness before computing the inf.
+                * The reason is that otherwise the inf() will sign_extend them with
+                * the signedness of the output of the cond_expr, which is not
+                * necessarily the same of both the inputs.
+                */
+               const auto inf_size = std::max(op1_bitstring.size(), op2_bitstring.size());
+               if(op1_bitstring.size() < inf_size)
+               {
+                  op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, inf_size);
+               }
+               if(op2_bitstring.size() < inf_size)
+               {
+                  op2_bitstring = sign_extend_bitstring(op2_bitstring, IsSignedIntegerType(operation->op2), inf_size);
+               }
+               res = inf(op1_bitstring, op2_bitstring, lhs);
+            }
          }
          else if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_pm_expr_K || rhs_kind == ternary_mp_expr_K || rhs_kind == ternary_mm_expr_K)
          {
-            auto ternary_adders = [&] {
-               const auto arg_size_max = std::max({op0_bitstring.size(), op1_bitstring.size(), op2_bitstring.size()});
-               if(op0_bitstring.size() < arg_size_max)
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, tree_helper::is_int(TM, op0_nid), arg_size_max);
-               }
-               if(op1_bitstring.size() < arg_size_max)
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, tree_helper::is_int(TM, op1_nid), arg_size_max);
-               }
-               if(op2_bitstring.size() < arg_size_max)
-               {
-                  op2_bitstring = sign_extend_bitstring(op2_bitstring, tree_helper::is_int(TM, op2_nid), arg_size_max);
-               }
+            const auto arg_size_max = std::max({op0_bitstring.size(), op1_bitstring.size(), op2_bitstring.size()});
+            if(op0_bitstring.size() < arg_size_max)
+            {
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, arg_size_max);
+            }
+            if(op1_bitstring.size() < arg_size_max)
+            {
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, arg_size_max);
+            }
+            if(op2_bitstring.size() < arg_size_max)
+            {
+               op2_bitstring = sign_extend_bitstring(op2_bitstring, IsSignedIntegerType(operation->op2), arg_size_max);
+            }
 
-               auto op0_it = op0_bitstring.crbegin();
-               auto op1_it = op1_bitstring.crbegin();
-               const auto op0_end = op0_bitstring.crend();
-               const auto op1_end = op1_bitstring.crend();
-               auto carry1 = bit_lattice::ZERO;
-               std::deque<bit_lattice> res_int;
-               for(auto bit_index = 0u; bit_index < lhs_size && op0_it != op0_end && op1_it != op1_end; op0_it++, op1_it++, bit_index++)
+            auto op0_it = op0_bitstring.crbegin();
+            auto op1_it = op1_bitstring.crbegin();
+            const auto op0_end = op0_bitstring.crend();
+            const auto op1_end = op1_bitstring.crend();
+            auto carry1 = bit_lattice::ZERO;
+            std::deque<bit_lattice> res_int;
+            for(auto bit_index = 0u; bit_index < lhs_size && op0_it != op0_end && op1_it != op1_end; op0_it++, op1_it++, bit_index++)
+            {
+               if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_pm_expr_K)
+               {
+                  res_int.push_front(plus_expr_map.at(*op0_it).at(*op1_it).at(carry1).back());
+                  carry1 = plus_expr_map.at(*op0_it).at(*op1_it).at(carry1).front();
+               }
+               else
+               {
+                  res_int.push_front(minus_expr_map.at(*op0_it).at(*op1_it).at(carry1).back());
+                  carry1 = minus_expr_map.at(*op0_it).at(*op1_it).at(carry1).front();
+               }
+            }
+
+            if(lhs_signed && res_int.size() < lhs_size)
+            {
+               if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_pm_expr_K)
+               {
+                  res_int.push_front(plus_expr_map.at(op0_bitstring.front()).at(op1_bitstring.front()).at(carry1).back());
+               }
+               else
+               {
+                  res_int.push_front(minus_expr_map.at(op0_bitstring.front()).at(op1_bitstring.front()).at(carry1).back());
+               }
+            }
+            else if(!lhs_signed)
+            {
+               while(res_int.size() < lhs_size)
                {
                   if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_pm_expr_K)
                   {
-                     res_int.push_front(plus_expr_map.at(*op0_it).at(*op1_it).at(carry1).back());
-                     carry1 = plus_expr_map.at(*op0_it).at(*op1_it).at(carry1).front();
+                     res_int.push_front(plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
+                     carry1 = plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
                   }
                   else
                   {
-                     res_int.push_front(minus_expr_map.at(*op0_it).at(*op1_it).at(carry1).back());
-                     carry1 = minus_expr_map.at(*op0_it).at(*op1_it).at(carry1).front();
+                     res_int.push_front(minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
+                     carry1 = minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
                   }
                }
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   res_int: " + bitstring_to_string(res_int));
 
-               if(tree_helper::is_int(TM, lhs_nid) && res_int.size() < lhs_size)
+            if(res_int.size() > op2_bitstring.size())
+            {
+               op2_bitstring = sign_extend_bitstring(op2_bitstring, IsSignedIntegerType(operation->op2), res_int.size());
+            }
+            auto op2_it = op2_bitstring.crbegin();
+            auto res_int_it = res_int.crbegin();
+            const auto op2_end = op2_bitstring.crend();
+            const auto res_int_end = res_int.crend();
+            carry1 = bit_lattice::ZERO;
+            for(auto bit_index = 0u; bit_index < lhs_size && op2_it != op2_end && res_int_it != res_int_end; op2_it++, res_int_it++, bit_index++)
+            {
+               if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_mp_expr_K)
                {
-                  if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_pm_expr_K)
-                  {
-                     res_int.push_front(plus_expr_map.at(op0_bitstring.front()).at(op1_bitstring.front()).at(carry1).back());
-                  }
-                  else
-                  {
-                     res_int.push_front(minus_expr_map.at(op0_bitstring.front()).at(op1_bitstring.front()).at(carry1).back());
-                  }
+                  res.push_front(plus_expr_map.at(*res_int_it).at(*op2_it).at(carry1).back());
+                  carry1 = plus_expr_map.at(*res_int_it).at(*op2_it).at(carry1).front();
                }
-               else if(!tree_helper::is_int(TM, lhs_nid))
+               else
                {
-                  while(res_int.size() < lhs_size)
-                  {
-                     if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_pm_expr_K)
-                     {
-                        res_int.push_front(plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
-                        carry1 = plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
-                     }
-                     else
-                     {
-                        res_int.push_front(minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
-                        carry1 = minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
-                     }
-                  }
+                  res.push_front(minus_expr_map.at(*res_int_it).at(*op2_it).at(carry1).back());
+                  carry1 = minus_expr_map.at(*res_int_it).at(*op2_it).at(carry1).front();
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   res_int: " + bitstring_to_string(res_int));
+            }
 
-               if(res_int.size() > op2_bitstring.size())
+            if(lhs_signed && res.size() < lhs_size)
+            {
+               if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_mp_expr_K)
                {
-                  op2_bitstring = sign_extend_bitstring(op2_bitstring, tree_helper::is_int(TM, op2_nid), res_int.size());
+                  res.push_front(plus_expr_map.at(res_int.front()).at(op2_bitstring.front()).at(carry1).back());
                }
-               auto op2_it = op2_bitstring.crbegin();
-               auto res_int_it = res_int.crbegin();
-               const auto op2_end = op2_bitstring.crend();
-               const auto res_int_end = res_int.crend();
-               carry1 = bit_lattice::ZERO;
-               for(auto bit_index = 0u; bit_index < lhs_size && op2_it != op2_end && res_int_it != res_int_end; op2_it++, res_int_it++, bit_index++)
+               else
+               {
+                  res.push_front(minus_expr_map.at(res_int.front()).at(op2_bitstring.front()).at(carry1).back());
+               }
+            }
+            else if(!lhs_signed)
+            {
+               while(res.size() < lhs_size)
                {
                   if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_mp_expr_K)
                   {
-                     res.push_front(plus_expr_map.at(*res_int_it).at(*op2_it).at(carry1).back());
-                     carry1 = plus_expr_map.at(*res_int_it).at(*op2_it).at(carry1).front();
+                     res.push_front(plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
+                     carry1 = plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
                   }
                   else
                   {
-                     res.push_front(minus_expr_map.at(*res_int_it).at(*op2_it).at(carry1).back());
-                     carry1 = minus_expr_map.at(*res_int_it).at(*op2_it).at(carry1).front();
+                     res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
+                     carry1 = minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
                   }
                }
-
-               if(tree_helper::is_int(TM, lhs_nid) && res.size() < lhs_size)
-               {
-                  if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_mp_expr_K)
-                  {
-                     res.push_front(plus_expr_map.at(res_int.front()).at(op2_bitstring.front()).at(carry1).back());
-                  }
-                  else
-                  {
-                     res.push_front(minus_expr_map.at(res_int.front()).at(op2_bitstring.front()).at(carry1).back());
-                  }
-               }
-               else if(!tree_helper::is_int(TM, lhs_nid))
-               {
-                  while(res.size() < lhs_size)
-                  {
-                     if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_mp_expr_K)
-                     {
-                        res.push_front(plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
-                        carry1 = plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
-                     }
-                     else
-                     {
-                        res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
-                        carry1 = minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
-                     }
-                  }
-               }
-            };
-            ternary_adders();
+            }
          }
          else
          {

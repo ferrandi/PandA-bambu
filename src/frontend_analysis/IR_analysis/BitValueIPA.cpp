@@ -206,20 +206,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
       THROW_ASSERT(fd and fd->body, "Node is not a function or it hasn't a body");
       const auto fu_type = tree_helper::CGetType(fu_node);
       THROW_ASSERT(fu_type->get_kind() == function_type_K || fu_type->get_kind() == method_type_K, "node " + STR(fu_id) + " is " + fu_type->get_kind_text());
-      unsigned int fret_type_id;
-      tree_nodeRef fret_type_node;
-      if(fu_type->get_kind() == function_type_K)
-      {
-         const auto ft = GetPointer<const function_type>(fu_type);
-         fret_type_id = GET_INDEX_NODE(ft->retn);
-         fret_type_node = GET_NODE(ft->retn);
-      }
-      else
-      {
-         const auto mt = GetPointer<const method_type>(fu_type);
-         fret_type_id = GET_INDEX_NODE(mt->retn);
-         fret_type_node = GET_NODE(mt->retn);
-      }
+      const auto ft = GetPointer<const function_type>(fu_type);
+      const auto fret_type_node = GET_CONST_NODE(ft->retn);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "is_root = " + STR(root_fun_ids.find(fu_id) != root_fun_ids.end()));
 
       // -- process parameters --
@@ -231,8 +219,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
          THROW_ASSERT(parmssa->get_kind() == ssa_name_K, "expected an ssa variable");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "parm_decl ssa id: " + STR(p_decl_id) + " " + parmssa->ToString());
          const auto p = GetPointerS<ssa_name>(parmssa);
-         const auto p_type_id = GET_INDEX_CONST_NODE(p->type);
-         if(!is_handled_by_bitvalue(p_type_id))
+         if(!IsHandledByBitvalue(p->type))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "parameter type is not considered: " + STR(p_decl_id));
             continue;
@@ -240,7 +227,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
          THROW_ASSERT(!p->bit_values.empty(), "unexpected condition " + parmssa->ToString() + " for function " + fu_name);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "found bitvalue: " + p->bit_values);
          best[p_decl_id] = string_to_bitstring(p->bit_values);
-         if(tree_helper::is_int(TM, p_type_id))
+         if(tree_helper::IsSignedIntegerType(p->type))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "is signed");
             signed_var.insert(p_decl_id);
@@ -249,16 +236,16 @@ DesignFlowStep_Status BitValueIPA::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed parameters");
 
       // -- process function returned value --
-      if(!is_handled_by_bitvalue(fret_type_id) || !tree_helper::is_scalar(TM, fret_type_id))
+      if(!IsHandledByBitvalue(fret_type_node) || !tree_helper::IsScalarType(fret_type_node))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--function return type is not considered: " + STR(fret_type_id));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--function return type is not considered: " + STR(fret_type_node));
          continue;
       }
       THROW_ASSERT(!fd->bit_values.empty(), "not expected");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "found bitvalue: " + fd->bit_values);
       best[fu_id] = string_to_bitstring(fd->bit_values);
 
-      if(tree_helper::is_int(TM, fret_type_id))
+      if(tree_helper::IsSignedIntegerType(fret_type_node))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "is signed");
          signed_var.insert(fu_id);
@@ -276,20 +263,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
       const auto fu_node = TM->CGetTreeNode(fu_id);
       const auto fd = GetPointer<const function_decl>(fu_node);
-      THROW_ASSERT(fd and fd->body, "Node is not a function or it hasn't a body");
+      THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
       const auto fu_type = tree_helper::CGetType(fu_node);
       THROW_ASSERT(fu_type->get_kind() == function_type_K || fu_type->get_kind() == method_type_K, "node " + STR(fu_id) + " is " + fu_type->get_kind_text());
-      tree_nodeRef fret_type_node;
-      if(fu_type->get_kind() == function_type_K)
-      {
-         const auto ft = GetPointer<const function_type>(fu_type);
-         fret_type_node = GET_NODE(ft->retn);
-      }
-      else
-      {
-         const auto mt = GetPointer<const method_type>(fu_type);
-         fret_type_node = GET_NODE(mt->retn);
-      }
+      const auto ft = GetPointer<const function_type>(fu_type);
+      const auto fret_type_node = GET_CONST_NODE(ft->retn);
 
       if(root_fun_ids.find(fu_id) == root_fun_ids.end())
       {
@@ -348,17 +326,17 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "assigns ssa_name");
                         const auto s = GetPointer<const ssa_name>(GET_CONST_NODE(ga->op0));
                         THROW_ASSERT(s, "not ssa");
-                        THROW_ASSERT(is_handled_by_bitvalue(s->index), "ssa is not handled by bitvalue");
-                        THROW_ASSERT(tree_helper::is_int(TM, s->index) == fu_signed, "function " + AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->get_function_name() + " calls function " + fu_name +
-                                                                                         " with return type = " + STR(tree_helper::GetFunctionReturnType(TM->CGetTreeNode(fu_id))) + " and assigns the return value to ssa " + STR(s) +
-                                                                                         " of type = " + STR(tree_helper::CGetType(GET_CONST_NODE(ga->op0))) + "\ndifferent signedness!");
+                        THROW_ASSERT(IsHandledByBitvalue(ga->op0), "ssa is not handled by bitvalue");
+                        THROW_ASSERT(tree_helper::IsSignedIntegerType(ga->op0) == fu_signed, "function " + AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->get_function_name() + " calls function " + fu_name +
+                                                                                                 " with return type = " + STR(tree_helper::GetFunctionReturnType(TM->CGetTreeNode(fu_id))) + " and assigns the return value to ssa " + STR(s) +
+                                                                                                 " of type = " + STR(tree_helper::CGetType(GET_CONST_NODE(ga->op0))) + "\ndifferent signedness!");
                         THROW_ASSERT(!s->bit_values.empty(), "unexpected assignment of return value to ssa " + STR(s) + " with id " + STR(s->index) + " and empty bit_values");
                         const auto res_fanout = string_to_bitstring(s->bit_values);
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res_fanout from ssa " + STR(s) + " id: " + STR(s->index) + " bitstring: " + bitstring_to_string(res_fanout));
                         THROW_ASSERT(res_fanout.size(), "unexpected condition");
-                        res = inf(res, res_fanout, fu_id);
+                        res = inf(res, res_fanout, fu_node);
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "fu_id: " + STR(fu_id) + " bitstring: " + bitstring_to_string(res));
-                        auto res_sup = sup(best.at(fu_id), res_fanout, fu_id);
+                        auto res_sup = sup(best.at(fu_id), res_fanout, fu_node);
                         auto res_sup_string = bitstring_to_string(res_sup);
                         if(res_sup_string != s->bit_values)
                         {
@@ -384,7 +362,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined caller \"" + AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->get_function_name() + "\": id = " + STR(caller_id));
             }
 
-            update_current(res, fu_id);
+            update_current(res, fu_node);
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Backward done");
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After backward id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
@@ -418,7 +396,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
             args_n++;
             if(best.find(pd_id) != best.cend())
             {
-               THROW_ASSERT(is_handled_by_bitvalue(pd_id), "param \"" + STR(pd) + "\" id: " + STR(pd_id) + " not handled by bitvalue");
+               THROW_ASSERT(IsHandledByBitvalue(parmssa), "param \"" + STR(pd) + "\" id: " + STR(pd_id) + " not handled by bitvalue");
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Propagating bitvalue through parameter " + STR(GET_NODE(pd)) + " of function " + fu_name + " parm id: " + STR(pd_id));
 
                /*
@@ -467,9 +445,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            const auto ap_id = GET_INDEX_CONST_NODE(*ap);
                            const auto ap_node = GET_CONST_NODE(*ap);
                            const auto ap_kind = ap_node->get_kind();
-                           THROW_ASSERT(is_handled_by_bitvalue(ap_id), "actual parameter not handled by bitvalue");
-                           THROW_ASSERT(tree_helper::is_int(TM, ap_id) == parm_signed, "function " + caller_name + " calls function " + fu_name + "\nformal param " + STR(pd) + " type = " + tree_helper::CGetType(GET_CONST_NODE(pd))->ToString() +
-                                                                                           "\nactual param " + STR(ap_node) + " type = " + tree_helper::CGetType(ap_node)->ToString() + "\ndifferent signedness!");
+                           THROW_ASSERT(IsHandledByBitvalue(ap_node), "actual parameter not handled by bitvalue");
+                           THROW_ASSERT(tree_helper::IsSignedIntegerType(ap_node) == parm_signed, "function " + caller_name + " calls function " + fu_name + "\nformal param " + STR(pd) + " type = " + tree_helper::CGetType(pd)->ToString() +
+                                                                                                      "\nactual param " + STR(ap_node) + " type = " + tree_helper::CGetType(ap_node)->ToString() + "\ndifferent signedness!");
                            if(ap_kind == ssa_name_K)
                            {
                               const auto ssa = GetPointer<const ssa_name>(ap_node);
@@ -499,9 +477,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            const auto ap_id = GET_INDEX_CONST_NODE(*ap);
                            const auto ap_node = GET_CONST_NODE(*ap);
                            const auto ap_kind = ap_node->get_kind();
-                           THROW_ASSERT(is_handled_by_bitvalue(ap_id), "actual parameter not handled by bitvalue");
-                           THROW_ASSERT(tree_helper::is_int(TM, ap_id) == parm_signed, "function " + caller_name + " calls function " + fu_name + "\nformal param " + STR(pd) + " type = " + tree_helper::CGetType(GET_CONST_NODE(pd))->ToString() +
-                                                                                           "\nactual param " + STR(ap_node) + " type = " + tree_helper::CGetType(ap_node)->ToString() + "\ndifferent signedness!");
+                           THROW_ASSERT(IsHandledByBitvalue(ap_node), "actual parameter not handled by bitvalue");
+                           THROW_ASSERT(tree_helper::IsSignedIntegerType(ap_node) == parm_signed, "function " + caller_name + " calls function " + fu_name + "\nformal param " + STR(pd) + " type = " + tree_helper::CGetType(pd)->ToString() +
+                                                                                                      "\nactual param " + STR(ap_node) + " type = " + tree_helper::CGetType(ap_node)->ToString() + "\ndifferent signedness!");
                            if(ap_kind == ssa_name_K)
                            {
                               const auto ssa = GetPointer<const ssa_name>(ap_node);
@@ -528,14 +506,14 @@ DesignFlowStep_Status BitValueIPA::Exec()
                                           "no way to retrieve the actual parameters of the call");
                            THROW_UNREACHABLE("unexpected pattern: function " + fu_name + " is called by " + caller_name + " in operation " + STR(call_node));
                         }
-                        res = inf(res, res_tmp, pd_id);
+                        res = inf(res, res_tmp, parmssa);
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "param id: " + STR(pd_id) + " bitstring: " + bitstring_to_string(res));
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined call point " + STR(i));
                      }
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined caller \"" + caller_name + "\": id = " + STR(caller_id));
                   }
 
-                  update_current(res, pd_id);
+                  update_current(res, parmssa);
 
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Forward done");
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After forward id: " + STR(pd_id) + " bitstring: " + STR(bitstring_to_string(best.at(pd_id))));
@@ -579,18 +557,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
          old_bitvalue = &fd->bit_values;
          const auto fu_type = tree_helper::CGetType(tn);
          THROW_ASSERT(fu_type->get_kind() == function_type_K || fu_type->get_kind() == method_type_K, "node " + STR(tn_id) + " is " + fu_type->get_kind_text());
-         tree_nodeRef fret_type_node;
-         if(fu_type->get_kind() == function_type_K)
-         {
-            const auto ft = GetPointer<const function_type>(fu_type);
-            fret_type_node = GET_CONST_NODE(ft->retn);
-         }
-         else
-         {
-            const auto mt = GetPointer<const method_type>(fu_type);
-            fret_type_node = GET_CONST_NODE(mt->retn);
-         }
-
+         const auto ft = GetPointer<const function_type>(fu_type);
+         const auto fret_type_node = GET_CONST_NODE(ft->retn);
          size = BitLatticeManipulator::Size(fret_type_node);
          restart_fun_id = fd->index;
       }
