@@ -766,7 +766,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
 
       /// The type of the expression
-      const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(gp->res))->index);
+      const auto type_node = tree_helper::CGetType(gp->res);
 
       for(const auto& def : gp->CGetDefEdgesList())
       {
@@ -971,7 +971,7 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
 
       /// The type of the expression
-      const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(gp->res))->index);
+      const auto type_node = tree_helper::CGetType(gp->res);
 
       for(const auto& def_edge : gp->CGetDefEdgesList())
       {
@@ -1189,7 +1189,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
 
       /// The type of the expression
-      const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(gp->res))->index);
+      const auto type_node = tree_helper::CGetType(gp->res);
 
       for(const auto& def_edge : gp->CGetDefEdgesList())
       {
@@ -1431,7 +1431,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
 
       /// The type of the expression
-      const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(gp->res))->index);
+      const auto type_node = tree_helper::CGetType(gp->res);
 
       for(const auto& def_edge : gp->CGetDefEdgesList())
       {
@@ -1735,7 +1735,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
 
             /// The type of the expression
-            const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(gp->res))->index);
+            const auto type_node = tree_helper::CGetType(gp->res);
 
             for(const auto& def_edge : gp->CGetDefEdgesList())
             {

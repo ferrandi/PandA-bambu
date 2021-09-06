@@ -545,9 +545,9 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
       argsT.push_back(boolean_type);
    }
    argsT.push_back(bit_size_type);
-   if(tree_helper::is_int(TM, GET_INDEX_NODE(writeValue)))
+   if(tree_helper::IsSignedIntegerType(writeValue))
    {
-      argsT.push_back(tree_man->CreateUnsigned(tree_helper::CGetType(GET_NODE(writeValue))));
+      argsT.push_back(tree_man->CreateUnsigned(tree_helper::CGetType(writeValue)));
    }
    else
    {
@@ -565,9 +565,9 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
       args.push_back(sel_value);
    }
    args.push_back(size_value);
-   if(tree_helper::is_int(TM, GET_INDEX_NODE(writeValue)))
+   if(tree_helper::IsSignedIntegerType(writeValue))
    {
-      const auto ga_nop = tree_man->CreateNopExpr(writeValue, tree_man->CreateUnsigned(tree_helper::CGetType(GET_NODE(writeValue))), tree_nodeRef(), tree_nodeRef(), GET_INDEX_NODE(gn->scpe));
+      const auto ga_nop = tree_man->CreateNopExpr(writeValue, tree_man->CreateUnsigned(tree_helper::CGetType(writeValue)), tree_nodeRef(), tree_nodeRef(), GET_INDEX_NODE(gn->scpe));
       sl->list_of_bloc[destBB]->PushBefore(ga_nop, origStmt, AppM);
       args.push_back(GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0);
    }
@@ -1776,19 +1776,19 @@ DesignFlowStep_Status interface_infer::InternalExec()
                         DesignInterfaceArgs[argName_string] = "default";
                         continue;
                      }
-                     if(tree_helper::is_a_pointer(TM, GET_INDEX_NODE(aType)))
+                     if(tree_helper::IsPointerType(aType))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is a pointer\n");
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---list of statement that use this parameter\n");
-                        auto ptd = tree_helper::get_pointed_type(TM, GET_INDEX_NODE(aType));
+                        auto ptd_type = tree_helper::CGetPointedType(aType);
                         unsigned inputBitWidth;
-                        if(tree_helper::is_an_array(TM, ptd))
+                        if(tree_helper::IsArrayType(ptd_type))
                         {
-                           inputBitWidth = tree_helper::get_array_data_bitsize(TM, ptd);
+                           inputBitWidth = tree_helper::GetArrayElementSize(ptd_type);
                         }
                         else
                         {
-                           inputBitWidth = tree_helper::size(TM, ptd);
+                           inputBitWidth = tree_helper::Size(ptd_type);
                         }
                         bool is_signed;
                         bool is_fixed;
@@ -2029,7 +2029,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               rwsize = std::max(rwsize, tree_helper::Size(ws_ga->op1));
                               std::string instanceFname = ENCODE_FDNAME(argName_string, "_Write_" + (n_resources == 1 ? "" : (STR(IdIndex) + "_")), (interfaceType == "ovalid" ? "valid" : interfaceType));
                               operationsW.insert(instanceFname);
-                              create_Write_function(argName_string, ws, instanceFname, ws_ga->op1, aType, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature, writeVdef);
+                              create_Write_function(argName_string, ws, instanceFname, ws_ga->op1, aType, GetPointerS<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature, writeVdef);
                               if(n_resources != 1)
                               {
                                  ++IdIndex;
@@ -2085,7 +2085,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               rwsize = std::max(rwsize, tree_helper::Size(ws_ga->op1));
                               std::string instanceFname = ENCODE_FDNAME(argName_string, "_Write_" + (n_resources == 1 ? "" : (STR(IdIndex) + "_")), (interfaceType == "ovalid" ? "valid" : interfaceType));
                               operationsW.insert(instanceFname);
-                              create_Write_function(argName_string, ws, instanceFname, ws_ga->op1, aType, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature, writeVdef);
+                              create_Write_function(argName_string, ws, instanceFname, ws_ga->op1, aType, GetPointerS<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature, writeVdef);
                               if(n_resources != 1)
                               {
                                  ++IdIndex;
@@ -2121,8 +2121,8 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               rwsize = std::max(rwsize, tree_helper::Size(ws_ga->op1));
                               std::string instanceFname = ENCODE_FDNAME(argName_string, "_Write_" + (n_resources == 1 ? "" : (STR(IdIndex) + "_")), (interfaceType == "ovalid" ? "valid" : interfaceType));
                               operationsW.insert(instanceFname);
-                              auto writeType = GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type;
-                              is_real = is_real || tree_helper::is_real(TM, GET_INDEX_NODE(writeType));
+                              auto writeType = GetPointerS<mem_ref>(GET_NODE(ws_ga->op0))->type;
+                              is_real = is_real || tree_helper::IsRealType(writeType);
                               create_Write_function(argName_string, ws, instanceFname, ws_ga->op1, aType, writeType, tree_man, TM, commonRWSignature, writeVdef);
                               if(n_resources != 1)
                               {

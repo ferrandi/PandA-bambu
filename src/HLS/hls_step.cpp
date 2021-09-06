@@ -396,10 +396,10 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set, con
    const technology_managerRef TM = HLS_T->get_technology_manager();
 
    /// check if __builtin_memcpy has to be synthesized
-   if(HLSMgr->Rmem and HLSMgr->Rmem->has_implicit_memcpy())
+   if(HLSMgr->Rmem && HLSMgr->Rmem->has_implicit_memcpy())
    {
-      unsigned int memcpy_function_id = TreeM->function_index(MEMCPY);
-      functions.insert(memcpy_function_id);
+      const auto memcpy_function = TreeM->GetFunction(MEMCPY);
+      functions.insert(memcpy_function->index);
    }
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> steps_to_be_created = ComputeHLSRelationships(relationship_type);
    for(auto const& step_to_be_created : steps_to_be_created)

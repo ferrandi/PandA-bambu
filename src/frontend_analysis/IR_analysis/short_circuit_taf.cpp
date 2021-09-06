@@ -423,9 +423,9 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---First gimple cond is " + STR(cond_statement));
    const auto ce1 = GetPointer<const gimple_cond>(GET_CONST_NODE(cond_statement));
    auto cond1 = ce1->op0;
-   auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(cond1))->index);
+   auto type_node = tree_helper::CGetType(cond1);
    const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
-   if(tree_helper::is_bool(TM, type_node->index))
+   if(tree_helper::IsBooleanType(type_node))
    {
       type_node = tree_man->create_boolean_type();
    }
@@ -467,8 +467,8 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          }
 
          /// second, create the gimple assignment
-         const auto res_type = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(mc_phi->res))->index);
-         const auto cond_expr_node = tree_man->create_ternary_operation(res_type, cond1, op1, op2, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(res_type)) ? vec_cond_expr_K : cond_expr_K));
+         const auto res_type = tree_helper::CGetType(mc_phi->res);
+         const auto cond_expr_node = tree_man->create_ternary_operation(res_type, cond1, op1, op2, BUILTIN_SRCP, (tree_helper::IsVectorType(res_type) ? vec_cond_expr_K : cond_expr_K));
          const auto created_stmt = tree_man->CreateGimpleAssign(res_type, nullptr, nullptr, cond_expr_node, function_id, bb1, BUILTIN_SRCP);
          const auto ssa_cond_node = GetPointer<const gimple_assign>(GET_CONST_NODE(created_stmt))->op0;
 

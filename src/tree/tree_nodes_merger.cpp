@@ -132,18 +132,17 @@ void tree_node_reached::operator()(const gimple_node* obj, unsigned int& mask)
    {
       CHECK_AND_ADD(vover, gimple_node::vovers);
    }
-   auto vend2 = obj->pragmas.end();
-   for(auto i = obj->pragmas.begin(); i != vend2; ++i)
-      CHECK_AND_ADD(*i, gimple_node::pragmas);
-   std::vector<tree_nodeRef>::const_iterator use, use_end = obj->use_set->variables.end();
-   for(use = obj->use_set->variables.begin(); use != use_end; ++use)
+   for(const auto& i : obj->pragmas)
    {
-      CHECK_AND_ADD(*use, gimple_node::use_set);
+      CHECK_AND_ADD(i, gimple_node::pragmas);
    }
-   std::vector<tree_nodeRef>::const_iterator clobbered, clobbered_end = obj->clobbered_set->variables.end();
-   for(clobbered = obj->clobbered_set->variables.begin(); clobbered != clobbered_end; ++clobbered)
+   for(const auto& use : obj->use_set->variables)
    {
-      CHECK_AND_ADD(*clobbered, gimple_node::clobbered_set);
+      CHECK_AND_ADD(use, gimple_node::use_set);
+   }
+   for(const auto& clobbered : obj->clobbered_set->variables)
+   {
+      CHECK_AND_ADD(clobbered, gimple_node::clobbered_set);
    }
 }
 
@@ -529,10 +528,9 @@ void tree_node_reached::operator()(const ssa_name* obj, unsigned int& mask)
 
    CHECK_AND_ADD(obj->type, ssa_name::type);
    CHECK_AND_ADD(obj->var, ssa_name::var);
-   std::vector<tree_nodeRef>::const_iterator use, use_end = obj->use_set->variables.end();
-   for(use = obj->use_set->variables.begin(); use != use_end; ++use)
+   for(const auto& use : obj->use_set->variables)
    {
-      CHECK_AND_ADD(*use, ssa_name::use_set);
+      CHECK_AND_ADD(use, ssa_name::use_set);
    }
 
    for(auto const& def_stmt : obj->CGetDefStmts())

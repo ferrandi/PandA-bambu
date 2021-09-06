@@ -771,7 +771,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         }
                         tree_nodeRef phi_def_ssa_node;
                         const auto phi_gimple_stmt = tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, current_id, sn->virtual_flag);
-                        THROW_ASSERT(tree_helper::CGetType(GET_CONST_NODE(phi_def_ssa_node))->index == tree_helper::CGetType(TM->CGetTreeNode(sn->index))->index, "");
+                        THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index == tree_helper::CGetType(TM->CGetTreeReindex(sn->index))->index, "");
                         GetPointer<ssa_name>(GET_NODE(phi_def_ssa_node))->AddUseStmt(phi_gimple_stmt);
                         for(const auto& def_edge : def_edges)
                         {

@@ -52,6 +52,7 @@
 #include "technology_manager.hpp"
 #include "technology_wishbone.hpp"
 #include "tree_helper.hpp"
+#include "tree_manager.hpp"
 
 WB4Intercon_interface::WB4Intercon_interface(const ParameterConstRef P, const HLS_managerRef HLSManager, unsigned int functionId, const DesignFlowManagerConstRef _design_flow_manager)
     : WB4_interface(P, HLSManager, functionId, _design_flow_manager, HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION)
@@ -100,8 +101,8 @@ void WB4Intercon_interface::exec()
 
 static unsigned int get_data_bus_bitsize(const hlsRef HLS, const HLS_managerRef HLSMgr)
 {
-   const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(HLS->functionId);
-   const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
+   const auto function_behavior = HLSMgr->CGetFunctionBehavior(HLS->functionId);
+   const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    std::map<unsigned int, memory_symbolRef> parameters = HLSMgr->Rmem->get_function_parameters(HLS->functionId);
 
    unsigned int data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
@@ -109,7 +110,7 @@ static unsigned int get_data_bus_bitsize(const hlsRef HLS, const HLS_managerRef 
    {
       if(function_parameter.first != HLS->functionId)
       {
-         data_bus_bitsize = std::max(data_bus_bitsize, behavioral_helper->get_size(function_parameter.first));
+         data_bus_bitsize = std::max(data_bus_bitsize, tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(function_parameter.first)));
       }
    }
    return data_bus_bitsize;

@@ -562,8 +562,9 @@ namespace
       OS << GET_CONST_NODE(V)->ToString();
    }
 
-   bool isValidType(const tree_nodeConstRef& tn)
+   bool isValidType(const tree_nodeConstRef& _tn)
    {
+      const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
       switch(tn->get_kind())
       {
          case boolean_type_K:
@@ -580,8 +581,6 @@ namespace
          case CASE_DECL_NODES:
          case ssa_name_K:
             return isValidType(tree_helper::CGetType(tn));
-         case tree_reindex_K:
-            return isValidType(GET_CONST_NODE(tn));
          case real_type_K:
          case real_cst_K:
          case vector_type_K:
@@ -624,9 +623,7 @@ namespace
          case tree_list_K:
          case tree_vec_K:
          case call_expr_K:
-         case last_tree_K:
-         case none_K:
-         case placeholder_expr_K:
+         case CASE_FAKE_NODES:
          case CASE_UNARY_EXPRESSION:
          case CASE_BINARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
@@ -640,7 +637,7 @@ namespace
       return false;
    }
 
-   bool isValidInstruction(const tree_nodeConstRef& stmt, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM)
+   bool isValidInstruction(const tree_nodeConstRef& stmt, const FunctionBehaviorConstRef& FB)
    {
       tree_nodeConstRef Type = nullptr;
       switch(GET_CONST_NODE(stmt)->get_kind())
@@ -648,22 +645,22 @@ namespace
          case gimple_assign_K:
          {
             auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
-            if(tree_helper::CGetType(GET_CONST_NODE(ga->op0))->get_kind() == vector_type_K)
+            if(GET_CONST_NODE(tree_helper::CGetType(ga->op0))->get_kind() == vector_type_K)
             {
                // Vector arithmetic not yet supported
                return false;
             }
-            if(tree_helper::IsLoad(TM, stmt, FB->get_function_mem()))
+            if(tree_helper::IsLoad(stmt, FB->get_function_mem()))
             {
-               Type = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
+               Type = tree_helper::CGetType(ga->op0);
                break;
             }
-            else if(tree_helper::IsStore(TM, stmt, FB->get_function_mem()))
+            else if(tree_helper::IsStore(stmt, FB->get_function_mem()))
             {
-               Type = tree_helper::CGetType(GET_CONST_NODE(ga->op1));
+               Type = tree_helper::CGetType(ga->op1);
                break;
             }
-            Type = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
+            Type = tree_helper::CGetType(ga->op0);
 
             switch(GET_CONST_NODE(ga->op1)->get_kind())
             {
@@ -882,7 +879,7 @@ namespace
          case gimple_phi_K:
          {
             const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(stmt));
-            Type = tree_helper::CGetType(GET_CONST_NODE(phi->res));
+            Type = tree_helper::CGetType(phi->res);
          }
          break;
 
@@ -918,8 +915,9 @@ namespace
       return isValidType(Type);
    }
 
-   bool isSignedType(const tree_nodeConstRef& tn)
+   bool isSignedType(const tree_nodeConstRef& _tn)
    {
+      const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
       switch(tn->get_kind())
       {
          case enumeral_type_K:
@@ -950,8 +948,6 @@ namespace
          case void_type_K:
          case type_argument_pack_K:
             return false;
-         case tree_reindex_K:
-            return isSignedType(GET_CONST_NODE(tn));
          case CASE_CST_NODES:
          case CASE_DECL_NODES:
          case ssa_name_K:
@@ -971,9 +967,7 @@ namespace
          case tree_list_K:
          case tree_vec_K:
          case call_expr_K:
-         case last_tree_K:
-         case none_K:
-         case placeholder_expr_K:
+         case CASE_FAKE_NODES:
          case CASE_UNARY_EXPRESSION:
          case CASE_BINARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
@@ -1036,7 +1030,7 @@ namespace
 
       const auto type = getGIMPLE_Type(tn);
       bw_t bw = static_cast<bw_t>(BitLatticeManipulator::Size(type));
-      THROW_ASSERT(static_cast<bool>(bw) || tn->get_kind() == string_cst_K, "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
+      THROW_ASSERT(static_cast<bool>(bw) || tn->get_kind() == string_cst_K, "Unhandled type (" + GET_CONST_NODE(type)->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
 #ifdef BITVALUE_UPDATE
       bool sign = false;
 #endif
@@ -1087,7 +1081,7 @@ namespace
          }
          return r;
       }
-      else if(const auto* it = GetPointer<const integer_type>(type))
+      else if(const auto* it = GetPointer<const integer_type>(GET_CONST_NODE(type)))
       {
 #ifdef BITVALUE_UPDATE
          sign = !it->unsigned_flag;
@@ -1095,7 +1089,7 @@ namespace
          min = it->unsigned_flag ? APInt::getMinValue(bw) : APInt::getSignedMinValue(bw);
          max = it->unsigned_flag ? APInt::getMaxValue(bw) : APInt::getSignedMaxValue(bw);
       }
-      else if(const auto* et = GetPointer<const enumeral_type>(type))
+      else if(const auto* et = GetPointer<const enumeral_type>(GET_CONST_NODE(type)))
       {
 #ifdef BITVALUE_UPDATE
          sign = !et->unsigned_flag;
@@ -1103,25 +1097,25 @@ namespace
          min = et->unsigned_flag ? APInt::getMinValue(bw) : APInt::getSignedMinValue(bw);
          max = et->unsigned_flag ? APInt::getMaxValue(bw) : APInt::getSignedMaxValue(bw);
       }
-      else if(type->get_kind() == boolean_type_K)
+      else if(GET_CONST_NODE(type)->get_kind() == boolean_type_K)
       {
          min = 0;
          max = 1;
          bw = 1;
       }
 #ifdef INTEGER_PTR
-      else if(GetPointer<const pointer_type>(type) != nullptr)
+      else if(GetPointer<const pointer_type>(GET_CONST_NODE(type)) != nullptr)
       {
          min = APInt::getMinValue(bw);
          max = APInt::getMaxValue(bw);
       }
 #endif
-      else if(type->get_kind() == vector_type_K || type->get_kind() == array_type_K)
+      else if(GET_CONST_NODE(type)->get_kind() == vector_type_K || GET_CONST_NODE(type)->get_kind() == array_type_K)
       {
          bw = static_cast<bw_t>(BitLatticeManipulator::Size(tree_helper::CGetElements(type)));
          return RangeRef(new Range(Regular, bw));
       }
-      else if(const auto* rt = GetPointer<const record_type>(type))
+      else if(const auto* rt = GetPointer<const record_type>(GET_CONST_NODE(type)))
       {
          THROW_ASSERT(GetPointer<const integer_cst>(GET_CONST_NODE(rt->size)), "record_type has no size");
          bw = static_cast<bw_t>(tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(rt->size))));
@@ -1130,7 +1124,7 @@ namespace
       }
       else
       {
-         THROW_UNREACHABLE("Unable to define range for type " + type->get_kind_text() + " of " + tn->ToString());
+         THROW_UNREACHABLE("Unable to define range for type " + GET_CONST_NODE(type)->get_kind_text() + " of " + tn->ToString());
       }
 
 #ifdef BITVALUE_UPDATE
@@ -2622,7 +2616,7 @@ RangeRef UnaryOpNode::eval() const
          }
          case view_convert_expr_K:
          {
-            if(resultType->get_kind() != real_type_K)
+            if(GET_CONST_NODE(resultType)->get_kind() != real_type_K)
             {
                if(oprndSigned)
                {
@@ -2735,7 +2729,6 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
       auto* sink = NC->addVarNode(assign->op0, function_id);
       // Create the source.
       auto* _source = NC->addVarNode(un_op->op, function_id);
-      const auto sourceType = getGIMPLE_Type(_source->getValue());
       auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
       const auto op_kind = un_op->get_kind();
 
@@ -2766,7 +2759,7 @@ void UnaryOpNode::printDot(std::ostream& OS) const
       }
       else
       {
-         if(getGIMPLE_Type(getSource()->getValue())->get_kind() == pointer_type_K)
+         if(GET_CONST_NODE(getGIMPLE_Type(getSource()->getValue()))->get_kind() == pointer_type_K)
          {
             OS << "ptr_cast i" << bw;
          }
@@ -2786,7 +2779,7 @@ void UnaryOpNode::printDot(std::ostream& OS) const
    else if(opcode == fix_trunc_expr_K)
    {
       const auto type = getGIMPLE_Type(getSink()->getValue());
-      if(const auto* int_type = GetPointer<const integer_type>(type))
+      if(const auto* int_type = GetPointer<const integer_type>(GET_CONST_NODE(type)))
       {
          if(int_type->unsigned_flag)
          {
@@ -3908,7 +3901,7 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
    {
       return nullptr;
    }
-   if(!tree_helper::IsLoad(TM, stmt, FB->get_function_mem()))
+   if(!tree_helper::IsLoad(stmt, FB->get_function_mem()))
    {
       return nullptr;
    }
@@ -5809,7 +5802,7 @@ class ConstraintGraph : public NodeContainer
             for(const auto& stmt : phi_list)
             {
                parametersBinding(stmt, FD);
-               if(isValidInstruction(stmt, FB, TM))
+               if(isValidInstruction(stmt, FB))
                {
                   addOperation(stmt, function_id, FB, TM, AppM);
                }
@@ -5821,7 +5814,7 @@ class ConstraintGraph : public NodeContainer
          {
             for(const auto& stmt : stmt_list)
             {
-               if(!isValidInstruction(stmt, FB, TM))
+               if(!isValidInstruction(stmt, FB))
                {
                   parametersBinding(stmt, FD);
                   if(!storeFunctionCall(stmt))
@@ -6147,7 +6140,7 @@ static void TopFunctionUserHits(unsigned int function_id, const application_mana
          const auto pType = getGIMPLE_Type(p);
          if(!isValidType(pType))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " is of non-valid type (" + pType->get_kind_text() + ")");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " is of non-valid type (" + GET_CONST_NODE(pType)->get_kind_text() + ")");
             continue;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " defined as " + GET_CONST_NODE(p)->ToString());
@@ -6213,7 +6206,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
          const auto pType = getGIMPLE_Type(p);
          if(!isValidType(pType))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " is of non-valid type (" + pType->get_kind_text() + ")");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " is of non-valid type (" + GET_CONST_NODE(pType)->get_kind_text() + ")");
             continue;
          }
          parameters[i].first = p;
@@ -6245,7 +6238,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
    // value matching is done
    const auto ret_type = tree_helper::GetFunctionReturnType(fd);
    bool noReturn = ret_type == nullptr || !isValidType(ret_type);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function has " + (noReturn ? "no return type" : ("return type " + ret_type->get_kind_text())));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function has " + (noReturn ? "no return type" : ("return type " + GET_CONST_NODE(ret_type)->get_kind_text())));
 
    // Creates the data structure which receives the return values of the
    // function, if there is any

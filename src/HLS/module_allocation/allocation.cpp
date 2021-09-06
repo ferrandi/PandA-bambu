@@ -172,7 +172,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
@@ -333,7 +333,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
           * __builtin_abort.
           * In this case there is no need to add the new port.
           */
-         if(not new_sel_port)
+         if(!new_sel_port)
          {
             wrapper_SM->add_port(sel_port_name, port_o::IN, wrapper_obj, bool_signal_type);
             new_sel_port = wrapper_obj->find_member(sel_port_name, port_o_K, wrapper_obj);
@@ -343,7 +343,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    }
    // build a binary tree of ors to drive the proxy selector
    structural_objectRef selector_signal = wrapper_SM->add_sign("proxy_selector____out_sel", wrapper_obj, bool_signal_type);
-   if(not op_ports.empty())
+   if(!op_ports.empty())
    {
       structural_objectRef or_gate = wrapper_SM->add_module_from_technology_library("proxy_selector____or_gate", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), wrapper_obj, HLS->HLS_T->get_technology_manager());
       structural_objectRef or_in = or_gate->find_member("in", port_vector_o_K, or_gate);
@@ -530,7 +530,7 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
    for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if(not is_other_port(curr_port))
+      if(!is_other_port(curr_port))
       {
          const std::string port_name = curr_port->get_id();
          if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME)
@@ -572,7 +572,7 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
    for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if(not is_other_port(curr_port))
+      if(!is_other_port(curr_port))
       {
          structural_objectRef proxy_generated_port;
          const std::string proxy_port_name = PROXY_PREFIX + curr_port->get_id();
@@ -1097,7 +1097,7 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "- fu_template_parameters: \"" + fu_template_parameters + "\"");
    std::string pipeline_id =
        get_compliant_pipelined_unit(clock_period, curr_op->pipe_parameters, current_fu, curr_op->get_name(), library->get_library_name(), template_suffix, node_info->input_prec.size() > 1 ? node_info->input_prec[1] : node_info->input_prec[0]);
-   if(not curr_op->pipe_parameters.empty())
+   if(!curr_op->pipe_parameters.empty())
    {
       if(pipeline_id != "")
       {
@@ -1404,40 +1404,40 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          return GetPointer<const gimple_node>(TreeM->CGetTreeNode(node_id))->operation;
       }();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Processing operation: " + current_op + " - " + GET_NAME(g, *v) + (node_id and node_id != ENTRY_ID and node_id != EXIT_ID ? " - " + TreeM->get_tree_node_const(node_id)->ToString() : ""));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Processing operation: " + current_op + " - " + GET_NAME(g, *v) + (node_id && node_id != ENTRY_ID && node_id != EXIT_ID ? " - " + TreeM->CGetTreeNode(node_id)->ToString() : ""));
       technology_nodeRef current_fu;
       if(GET_TYPE(g, *v) & (TYPE_STORE | TYPE_LOAD))
       {
-         const tree_nodeRef curr_tn = TreeM->get_tree_node_const(node_id);
-         auto* me = GetPointer<gimple_assign>(curr_tn);
+         const auto curr_tn = TreeM->CGetTreeNode(node_id);
+         const auto me = GetPointer<const gimple_assign>(curr_tn);
          THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
-         unsigned int var = 0;
+         tree_nodeConstRef var;
          if(GET_TYPE(g, *v) & TYPE_STORE)
          {
-            var = tree_helper::get_base_index(TreeM, GET_INDEX_NODE(me->op0));
+            var = tree_helper::GetBaseVariable(me->op0);
          }
          else
          {
-            var = tree_helper::get_base_index(TreeM, GET_INDEX_NODE(me->op1));
+            var = tree_helper::GetBaseVariable(me->op1);
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable is " + (var != 0 ? TreeM->CGetTreeNode(var)->ToString() : "0"));
-         if(var == 0 ||
-            (function_vars.find(var) == function_vars.end() && (!HLSMgr->Rmem->has_proxied_internal_variables(funId) || HLSMgr->Rmem->get_proxied_internal_variables(funId).find(var) == HLSMgr->Rmem->get_proxied_internal_variables(funId).end())))
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable is " + (var ? STR(var) : "0"));
+         if(!var || (!function_vars.count(var->index) && (!HLSMgr->Rmem->has_proxied_internal_variables(funId) || !HLSMgr->Rmem->get_proxied_internal_variables(funId).count(var->index))))
          {
             if(vertex_to_analyse_partition.find(current_op) == vertex_to_analyse_partition.end())
             {
-               vertex_to_analyse_partition.insert(std::pair<std::string, OpVertexSet>(current_op, OpVertexSet(g)));
+               vertex_to_analyse_partition.insert(std::make_pair(current_op, OpVertexSet(g)));
             }
             vertex_to_analyse_partition.at(current_op).insert(*v);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Operation " + current_op + " queued for allocation");
             continue;
          }
-         THROW_ASSERT(allocation_information->vars_to_memory_units.find(var) != allocation_information->vars_to_memory_units.end(), "Not existing memory unit associated with the variable");
-         allocation_information->binding[node_id] = std::pair<std::string, unsigned int>(current_op, allocation_information->vars_to_memory_units[var]);
-         allocation_information->node_id_to_fus[std::pair<unsigned int, std::string>(node_id, node_operation)].insert(allocation_information->vars_to_memory_units[var]);
-         current_fu = allocation_information->list_of_FU[allocation_information->vars_to_memory_units[var]];
+         THROW_ASSERT(allocation_information->vars_to_memory_units.count(var->index), "Not existing memory unit associated with the variable");
+         allocation_information->binding[node_id] = std::make_pair(current_op, allocation_information->vars_to_memory_units[var->index]);
+         allocation_information->node_id_to_fus[std::make_pair(node_id, node_operation)].insert(allocation_information->vars_to_memory_units[var->index]);
+         current_fu = allocation_information->list_of_FU[allocation_information->vars_to_memory_units[var->index]];
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " + current_fu->get_name() + ", found in library " + TM->get_library(current_op) + " in position " + STR(allocation_information->vars_to_memory_units[var]));
+                        "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " + current_fu->get_name() + ", found in library " + TM->get_library(current_op) + " in position " +
+                            STR(allocation_information->vars_to_memory_units[var->index]));
       }
       else if(GIMPLE_RETURN == current_op)
       {
@@ -1457,8 +1457,8 @@ DesignFlowStep_Status allocation::InternalExec()
          {
             current_fu = allocation_information->list_of_FU[gimple_return_current_id];
          }
-         allocation_information->binding[node_id] = std::pair<std::string, unsigned int>(current_op, gimple_return_current_id);
-         allocation_information->node_id_to_fus[std::pair<unsigned int, std::string>(node_id, node_operation)].insert(gimple_return_current_id);
+         allocation_information->binding[node_id] = std::make_pair(current_op, gimple_return_current_id);
+         allocation_information->node_id_to_fus[std::make_pair(node_id, node_operation)].insert(gimple_return_current_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " + current_fu->get_name() + ", found in library " + TM->get_library(current_op) + " in position " + STR(gimple_return_current_id));
       }
@@ -1467,33 +1467,32 @@ DesignFlowStep_Status allocation::InternalExec()
               GIMPLE_LABEL == current_op || GIMPLE_GOTO == current_op || GIMPLE_PRAGMA == current_op || ENTRY == current_op || EXIT == current_op || NOP == current_op || GIMPLE_PHI == current_op || GIMPLE_NOP == current_op ||
               VIEW_CONVERT_EXPR == current_op || EXTRACT_BIT_EXPR == current_op || LUT_EXPR == current_op)
       {
-         unsigned int current_size = allocation_information->get_number_fu_types();
+         const auto current_size = allocation_information->get_number_fu_types();
          if(current_op == ASSIGN)
          {
-            unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
-            tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto* gms = GetPointer<gimple_assign>(modify_node);
-            const auto left_type_index = tree_helper::CGetType(GET_CONST_NODE(gms->op0))->index;
-            if(tree_helper::is_a_complex(TreeM, left_type_index))
+            const auto& modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
+            const auto left_type = tree_helper::CGetType(gms->op0);
+            if(tree_helper::IsComplexType(left_type))
             {
                current_fu = get_fu(ASSIGN_VECTOR_BOOL_STD);
             }
-            else if(tree_helper::is_int(TreeM, left_type_index))
+            else if(tree_helper::IsSignedIntegerType(left_type))
             {
                current_fu = get_fu(ASSIGN_SIGNED_STD);
             }
-            else if(tree_helper::is_real(TreeM, left_type_index))
+            else if(tree_helper::IsRealType(left_type))
             {
                current_fu = get_fu(ASSIGN_REAL_STD);
             }
-            else if(tree_helper::is_a_vector(TreeM, left_type_index))
+            else if(tree_helper::IsVectorType(left_type))
             {
-               const unsigned int element_type = tree_helper::GetElements(TreeM, left_type_index);
-               if(tree_helper::is_int(TreeM, element_type))
+               const auto element_type = tree_helper::CGetElements(left_type);
+               if(tree_helper::IsSignedIntegerType(element_type))
                {
                   current_fu = get_fu(ASSIGN_VEC_SIGNED_STD);
                }
-               else if(tree_helper::is_unsigned(TreeM, element_type))
+               else if(tree_helper::IsUnsignedIntegerType(element_type))
                {
                   current_fu = get_fu(ASSIGN_VEC_UNSIGNED_STD);
                }
@@ -1509,15 +1508,14 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          else if(current_op == ASSERT_EXPR)
          {
-            unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
-            tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto* gms = GetPointer<gimple_assign>(modify_node);
-            const auto left_type_index = tree_helper::CGetType(GET_CONST_NODE(gms->op0))->index;
-            if(tree_helper::is_int(TreeM, left_type_index))
+            const auto& modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
+            const auto left_type = tree_helper::CGetType(gms->op0);
+            if(tree_helper::IsSignedIntegerType(left_type))
             {
                current_fu = get_fu(ASSERT_EXPR_SIGNED_STD);
             }
-            else if(tree_helper::is_real(TreeM, left_type_index))
+            else if(tree_helper::IsRealType(left_type))
             {
                current_fu = get_fu(ASSERT_EXPR_REAL_STD);
             }
@@ -1528,12 +1526,10 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          else if(current_op == EXTRACT_BIT_EXPR)
          {
-            unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
-            tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto* gms = GetPointer<gimple_assign>(modify_node);
-            auto ebe = GetPointer<extract_bit_expr>(GET_NODE(gms->op1));
-            ;
-            bool intOP0 = tree_helper::is_int(TreeM, GET_INDEX_NODE(ebe->op0));
+            const auto& modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
+            const auto ebe = GetPointerS<const extract_bit_expr>(GET_CONST_NODE(gms->op1));
+            const auto intOP0 = tree_helper::IsSignedIntegerType(ebe->op0);
             if(intOP0)
             {
                current_fu = get_fu(EXTRACT_BIT_EXPR_SIGNED_STD);
@@ -1553,32 +1549,28 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          else if(current_op == NOP_EXPR)
          {
-            unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
+            const auto modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
+            const auto ne = GetPointerS<const nop_expr>(GET_CONST_NODE(gms->op1));
+            const auto left_type = tree_helper::CGetType(gms->op0);
+            const auto right_type = tree_helper::CGetType(ne->op);
 
-            // std::cout << NOP_EXPR << "->" << modify_tree_index << std::endl;
-            tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto* gms = GetPointer<gimple_assign>(modify_node);
+            const auto unsignedR = tree_helper::IsUnsignedIntegerType(right_type);
+            const auto unsignedL = tree_helper::IsUnsignedIntegerType(left_type);
+            const auto intR = tree_helper::IsSignedIntegerType(right_type);
+            const auto intL = tree_helper::IsSignedIntegerType(left_type);
+            const auto enumR = tree_helper::IsEnumType(right_type);
+            const auto enumL = tree_helper::IsEnumType(left_type);
+            const auto boolR = tree_helper::IsBooleanType(right_type);
+            const auto boolL = tree_helper::IsBooleanType(left_type);
+            const auto is_a_pointerR = tree_helper::IsPointerType(right_type);
+            const auto is_a_pointerL = tree_helper::IsPointerType(left_type);
+            const auto is_realR = tree_helper::IsRealType(right_type);
+            const auto is_realL = tree_helper::IsRealType(left_type);
 
-            const auto left_type_index = tree_helper::CGetType(GET_CONST_NODE(gms->op0))->index;
-            auto* ne = GetPointer<nop_expr>(GET_NODE(gms->op1));
-            const auto right_type_index = tree_helper::CGetType(GET_CONST_NODE(ne->op))->index;
-
-            bool unsignedR = tree_helper::is_unsigned(TreeM, right_type_index);
-            bool unsignedL = tree_helper::is_unsigned(TreeM, left_type_index);
-            bool intR = tree_helper::is_int(TreeM, right_type_index);
-            bool intL = tree_helper::is_int(TreeM, left_type_index);
-            bool enumR = tree_helper::is_an_enum(TreeM, right_type_index);
-            bool enumL = tree_helper::is_an_enum(TreeM, left_type_index);
-            bool boolR = tree_helper::is_bool(TreeM, right_type_index);
-            bool boolL = tree_helper::is_bool(TreeM, left_type_index);
-            bool is_a_pointerR = tree_helper::is_a_pointer(TreeM, right_type_index);
-            bool is_a_pointerL = tree_helper::is_a_pointer(TreeM, left_type_index);
-            bool is_realR = tree_helper::is_real(TreeM, right_type_index);
-            bool is_realL = tree_helper::is_real(TreeM, left_type_index);
-
-            bool vector_boolR = tree_helper::is_a_vector(TreeM, right_type_index) and tree_helper::is_bool(TreeM, tree_helper::GetElements(TreeM, tree_helper::get_type_index(TreeM, right_type_index)));
-            bool vector_intL = tree_helper::is_a_vector(TreeM, left_type_index) and tree_helper::is_int(TreeM, tree_helper::GetElements(TreeM, tree_helper::get_type_index(TreeM, left_type_index)));
-            bool vector_unsignedL = tree_helper::is_a_vector(TreeM, left_type_index) and tree_helper::is_unsigned(TreeM, tree_helper::GetElements(TreeM, tree_helper::get_type_index(TreeM, left_type_index)));
+            const auto vector_boolR = tree_helper::IsVectorType(right_type) && tree_helper::IsBooleanType(tree_helper::CGetElements(tree_helper::CGetType(right_type)));
+            const auto vector_intL = tree_helper::IsVectorType(left_type) && tree_helper::IsSignedIntegerType(tree_helper::CGetElements(tree_helper::CGetType(left_type)));
+            const auto vector_unsignedL = tree_helper::IsVectorType(left_type) && tree_helper::IsUnsignedIntegerType(tree_helper::CGetElements(tree_helper::CGetType(left_type)));
 
             if((unsignedR || is_a_pointerR || boolR) && (unsignedL || is_a_pointerL || boolL))
             {
@@ -1604,8 +1596,8 @@ DesignFlowStep_Status allocation::InternalExec()
                }
                else if(!skip_softfloat_resources)
                {
-                  unsigned int prec_in = tree_helper::size(TreeM, right_type_index);
-                  unsigned int prec_out = tree_helper::size(TreeM, left_type_index);
+                  const auto prec_in = tree_helper::Size(right_type);
+                  const auto prec_out = tree_helper::Size(left_type);
                   allocation_information->extract_bambu_provided_name(prec_in, prec_out, HLSMgr, current_fu);
                }
                else
@@ -1613,39 +1605,35 @@ DesignFlowStep_Status allocation::InternalExec()
                   THROW_ERROR("missing resource for floating point to floating point conversion");
                }
             }
-            else if(vector_boolR and vector_intL)
+            else if(vector_boolR && vector_intL)
             {
                current_fu = get_fu(BIVECTOR_CONVERTER_STD);
             }
-            else if(vector_boolR and vector_unsignedL)
+            else if(vector_boolR && vector_unsignedL)
             {
                current_fu = get_fu(BUVECTOR_CONVERTER_STD);
             }
             else
             {
-               THROW_ERROR(std::string("Nop_Expr pattern not supported ") + STR(modify_tree_index) + " - Left type " + STR(left_type_index) + " is " + TreeM->get_tree_node_const(left_type_index)->ToString() + " - Right type " + STR(right_type_index) +
-                           " is " + TreeM->get_tree_node_const(right_type_index)->ToString());
+               THROW_ERROR(std::string("Nop_Expr pattern not supported ") + STR(modify_node) + " - Left type is " + STR(left_type) + " - Right type is " + STR(right_type));
             }
          }
          else if(current_op == CONVERT_EXPR)
          {
-            unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
+            const auto modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
+            const auto ce = GetPointerS<const convert_expr>(GET_CONST_NODE(gms->op1));
+            const auto left_type = tree_helper::CGetType(gms->op0);
+            const auto right_type = tree_helper::CGetType(ce->op);
 
-            // std::cout << CONVERT_EXPR << "->" << modify_tree_index << std::endl;
-            tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto* gms = GetPointer<gimple_assign>(modify_node);
-            unsigned int left_type_index = tree_helper::CGetType(GET_CONST_NODE(gms->op0))->index;
-            auto* ce = GetPointer<convert_expr>(GET_NODE(gms->op1));
-            unsigned int right_type_index = tree_helper::CGetType(GET_CONST_NODE(ce->op))->index;
-
-            bool unsignedR = tree_helper::is_unsigned(TreeM, right_type_index);
-            bool unsignedL = tree_helper::is_unsigned(TreeM, left_type_index);
-            bool intR = tree_helper::is_int(TreeM, right_type_index);
-            bool intL = tree_helper::is_int(TreeM, left_type_index);
-            bool boolR = tree_helper::is_bool(TreeM, right_type_index);
-            bool boolL = tree_helper::is_bool(TreeM, left_type_index);
-            bool is_a_pointerR = tree_helper::is_a_pointer(TreeM, right_type_index);
-            bool is_a_pointerL = tree_helper::is_a_pointer(TreeM, left_type_index);
+            const auto unsignedR = tree_helper::IsUnsignedIntegerType(right_type);
+            const auto unsignedL = tree_helper::IsUnsignedIntegerType(left_type);
+            const auto intR = tree_helper::IsSignedIntegerType(right_type);
+            const auto intL = tree_helper::IsSignedIntegerType(left_type);
+            const auto boolR = tree_helper::IsBooleanType(right_type);
+            const auto boolL = tree_helper::IsBooleanType(left_type);
+            const auto is_a_pointerR = tree_helper::IsPointerType(right_type);
+            const auto is_a_pointerL = tree_helper::IsPointerType(left_type);
 
             if((unsignedR || is_a_pointerR || boolR) && (unsignedL || is_a_pointerL || boolL))
             {
@@ -1665,8 +1653,7 @@ DesignFlowStep_Status allocation::InternalExec()
             }
             else
             {
-               THROW_UNREACHABLE("CONVERT_EXPR pattern not supported in statement " + STR(modify_tree_index) + ". Left type is " + STR(left_type_index) + " " + STR(TreeM->CGetTreeNode(left_type_index)) + " - Right type is " + STR(right_type_index) + " " +
-                                 STR(TreeM->CGetTreeNode(right_type_index)));
+               THROW_UNREACHABLE("CONVERT_EXPR pattern not supported in statement " + STR(modify_node) + ". Left type is " + STR(left_type) + " - Right type is " + STR(right_type));
             }
          }
          else if(current_op == READ_COND)
@@ -1715,16 +1702,15 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          else if(current_op == VIEW_CONVERT_EXPR)
          {
-            unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
-            tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto* gms = GetPointer<gimple_assign>(modify_node);
-            auto* vce = GetPointer<view_convert_expr>(GET_NODE(gms->op1));
-            unsigned int right_type_index = tree_helper::CGetType(GET_NODE(vce->op))->index;
-            if(tree_helper::is_int(TreeM, right_type_index))
+            const auto& modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
+            const auto vce = GetPointerS<const view_convert_expr>(GET_CONST_NODE(gms->op1));
+            const auto right_type = tree_helper::CGetType(vce->op);
+            if(tree_helper::IsSignedIntegerType(right_type))
             {
                current_fu = get_fu(VIEW_CONVERT_STD_INT);
             }
-            else if(tree_helper::is_real(TreeM, right_type_index))
+            else if(tree_helper::IsRealType(right_type))
             {
                current_fu = get_fu(VIEW_CONVERT_STD_REAL);
             }
@@ -1765,16 +1751,16 @@ DesignFlowStep_Status allocation::InternalExec()
          unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, *v);
          if(out_var)
          {
-            unsigned int type_index = tree_helper::get_type_index(TreeM, out_var);
-            if(tree_helper::is_a_vector(TreeM, type_index))
+            const auto type = tree_helper::CGetType(TreeM->CGetTreeReindex(out_var));
+            if(tree_helper::IsVectorType(type))
             {
-               const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-               const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
+               const auto element_type = tree_helper::CGetElements(type);
+               const auto element_size = tree_helper::Size(element_type);
                allocation_information->precision_map[current_size] = element_size;
             }
             else
             {
-               allocation_information->precision_map[current_size] = tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var));
+               allocation_information->precision_map[current_size] = tree_helper::Size(type);
             }
          }
          else
@@ -1816,16 +1802,16 @@ DesignFlowStep_Status allocation::InternalExec()
                unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, *v);
                if(out_var)
                {
-                  unsigned int type_index = tree_helper::get_type_index(TreeM, out_var);
-                  if(tree_helper::is_a_vector(TreeM, type_index))
+                  const auto type = tree_helper::CGetType(TreeM->CGetTreeReindex(out_var));
+                  if(tree_helper::IsVectorType(type))
                   {
-                     const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-                     const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
+                     const auto element_type = tree_helper::CGetElements(type);
+                     const auto element_size = tree_helper::Size(element_type);
                      allocation_information->precision_map[current_size] = element_size;
                   }
                   else
                   {
-                     allocation_information->precision_map[current_size] = tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var));
+                     allocation_information->precision_map[current_size] = tree_helper::Size(type);
                   }
                }
                else
@@ -1852,16 +1838,16 @@ DesignFlowStep_Status allocation::InternalExec()
             unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, *v);
             if(out_var)
             {
-               unsigned int type_index = tree_helper::get_type_index(TreeM, out_var);
-               if(tree_helper::is_a_vector(TreeM, type_index))
+               const auto type = tree_helper::CGetType(TreeM->CGetTreeReindex(out_var));
+               if(tree_helper::IsVectorType(type))
                {
-                  const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-                  const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
+                  const auto element_type = tree_helper::CGetElements(type);
+                  const auto element_size = tree_helper::Size(element_type);
                   allocation_information->precision_map[current_size] = element_size;
                }
                else
                {
-                  allocation_information->precision_map[current_size] = tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var));
+                  allocation_information->precision_map[current_size] = tree_helper::Size(type);
                }
             }
             else
@@ -1986,7 +1972,7 @@ DesignFlowStep_Status allocation::InternalExec()
                {
                   continue;
                }
-               else if((not lib_is_proxy_or_work) && TM->get_fu(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()), WORK_LIBRARY) && GET_TYPE(g, vert) != TYPE_MEMCPY)
+               else if((!lib_is_proxy_or_work) && TM->get_fu(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()), WORK_LIBRARY) && GET_TYPE(g, vert) != TYPE_MEMCPY)
                {
                   continue;
                }
@@ -2268,7 +2254,7 @@ DesignFlowStep_Status allocation::InternalExec()
    {
       for(const auto& ve : ve_op.second)
       {
-         if(vertex_analysed.find(ve) != vertex_analysed.end())
+         if(vertex_analysed.count(ve))
          {
             continue;
          }
@@ -2730,7 +2716,7 @@ void allocation::IntegrateTechnologyLibraries()
       THROW_ASSERT(allocation_information->tech_constraints.size() == allocation_information->list_of_FU.size(), "Something of wrong happened");
       allocation_information->vars_to_memory_units[var] = current_size;
       allocation_information->memory_units[current_size] = var;
-      allocation_information->memory_units_sizes[current_size] = tree_helper::size(TreeM, var) / 8;
+      allocation_information->memory_units_sizes[current_size] = tree_helper::Size(TreeM->CGetTreeReindex(var)) / 8;
       allocation_information->precision_map[current_size] = 0;
       /// check clock constraints compatibility
       auto* fu_br = GetPointer<functional_unit>(current_fu);
@@ -2933,7 +2919,7 @@ bool allocation::HasToBeExecuted() const
          const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(called_function);
          cur_bb_ver[called_function] = FB->GetBBVersion();
       }
-      return not std::equal(cur_bb_ver.begin(), cur_bb_ver.end(), last_bb_ver.begin());
+      return !std::equal(cur_bb_ver.begin(), cur_bb_ver.end(), last_bb_ver.begin());
    }
 }
 

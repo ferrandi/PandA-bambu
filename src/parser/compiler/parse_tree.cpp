@@ -69,6 +69,7 @@
 
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
+#include "tree_reindex.hpp"
 
 // exit_code is stored in zebu.cpp
 extern int exit_code;
@@ -155,14 +156,14 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                            THROW_ERROR("malformed pipeline infer file");
                         }
                      }
-                     auto findex = TM->function_index(fname);
-                     if(!findex)
+                     const auto fu_node = TM->GetFunction(fname);
+                     if(!fu_node)
                      {
                         // the function is not present in the tree manager
                         continue;
                      }
-                     auto my_node = GetPointer<function_decl>(TM->get_tree_node_const(findex));
-                     THROW_ASSERT(my_node->get_kind() == function_decl_K, "Not a function_decl");
+                     auto my_node = GetPointer<function_decl>(GET_NODE(fu_node));
+                     THROW_ASSERT(my_node, "Not a function_decl");
                      my_node->set_pipelining(!is_pipelined.compare("yes"));
                      my_node->set_simple_pipeline(!simple_pipeline.compare(("yes")));
                      my_node->set_initiation_time(std::stoi(initiation_time));

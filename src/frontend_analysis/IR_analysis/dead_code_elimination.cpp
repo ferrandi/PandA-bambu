@@ -504,8 +504,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   {
                      auto* mr = GetPointer<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
-                     auto type_w_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1));
-                     auto written_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TM, type_w_index));
+                     auto type_w = tree_helper::CGetType(ga->op1);
+                     auto written_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(type_w));
                      if(written_bw == 1)
                      {
                         written_bw = 8;
@@ -583,8 +583,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                          const auto mr_used = GetPointer<mem_ref>(GET_NODE(ga_used->op1));
                                                          if(GetPointer<integer_cst>(GET_NODE(mr->op1))->value == GetPointer<integer_cst>(GET_NODE(mr_used->op1))->value)
                                                          {
-                                                            auto type_r_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga_used->op0));
-                                                            auto read_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TM, type_r_index));
+                                                            auto type_r = tree_helper::CGetType(ga_used->op0);
+                                                            auto read_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(type_r));
                                                             if(read_bw == 1)
                                                             {
                                                                read_bw = 8;

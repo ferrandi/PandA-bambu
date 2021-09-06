@@ -293,7 +293,7 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int& mask)
             else
             {
                os << "MEM[(";
-               tree_helper::CGetType(GET_CONST_NODE(obj->op1))->visit(this);
+               GET_CONST_NODE(tree_helper::CGetType(obj->op1))->visit(this);
                os << ")";
                obj->op0->visit(this);
                os << ") + ";

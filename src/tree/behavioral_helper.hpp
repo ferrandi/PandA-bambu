@@ -71,7 +71,9 @@ CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(var_pp_functor);
+class TreeNodeConstSet;
 //@}
 
 using tree_class = unsigned int;
@@ -146,6 +148,7 @@ class BehavioralHelper
     * @param bool tells if the type hype has been already recognized as system
     * @return a pair composed by the filename and the line:column of the definition
     */
+   /// FIXME: to be remove after substitution with tree_helper::GetSourcePath
    virtual std::tuple<std::string, unsigned int, unsigned int> get_definition(unsigned int index, bool& is_system) const;
 
    /**
@@ -474,7 +477,7 @@ class BehavioralHelper
     * Returns the types of the parameters
     * @return the types of the parameters
     */
-   virtual const CustomUnorderedSet<unsigned int> GetParameterTypes() const;
+   virtual TreeNodeConstSet GetParameterTypes() const;
 
    /**
     * Return the list of index of original parameters of the function
@@ -667,11 +670,11 @@ class BehavioralHelper
    static void clear_renaming_table();
 
    /**
-    * return the types used in type casting by nodeid
-    * @param nodeid is the statement analyzed
-    * @param types is the set of types type-casted by nodeid
+    * return the types used in type casting by tn
+    * @param tn is the statement analyzed
+    * @param types is the set of types type-casted by tn
     */
-   virtual void get_typecast(unsigned int nodeid, CustomUnorderedSet<unsigned int>& types) const;
+   virtual void GetTypecast(const tree_nodeConstRef& tn, TreeNodeConstSet& types) const;
 
    /**
     * Return true if node is the default ssa_name

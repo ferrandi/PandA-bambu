@@ -305,7 +305,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          size_t tree_field_index = 0;
          for(const auto& field : sequence->fields)
          {
-            ComputeAddress(field.second, tree_helper::CGetType(GET_NODE(tree_fields[tree_field_index]))->index, bambu_address, taste_address, registers, false, little_endianess);
+            ComputeAddress(field.second, tree_helper::CGetType(tree_fields[tree_field_index])->index, bambu_address, taste_address, registers, false, little_endianess);
             const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
             THROW_ASSERT(field_bpos % 8 == 0, "Bitfield not supported");
             const auto current_field_beginning = field_bpos / 8;
@@ -332,7 +332,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          const auto element_type = aadl_information->CGetAsnType(sequenceof->element);
          for(size_t counter = 0; counter < sequenceof->size; counter++)
          {
-            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->get_tree_node_const(tree_parameter_type))->index, bambu_address, taste_address, registers, false, little_endianess);
+            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->CGetTreeReindex(tree_parameter_type))->index, bambu_address, taste_address, registers, false, little_endianess);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          break;
@@ -340,12 +340,12 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
       case AsnType_Kind::SET:
       {
          const auto set = GetPointer<const SetAsnType>(asn_type);
-         const auto tree_record_type = GetPointer<const record_type>(TreeM->get_tree_node_const(tree_parameter_type));
+         const auto tree_record_type = GetPointer<const record_type>(TreeM->CGetTreeNode(tree_parameter_type));
          const auto tree_fields = tree_record_type->list_of_flds;
          size_t tree_field_index = 0;
          for(const auto& field : set->fields)
          {
-            ComputeAddress(field.second, tree_helper::CGetType(GET_NODE(tree_fields[tree_field_index]))->index, bambu_address, taste_address, registers, false, little_endianess);
+            ComputeAddress(field.second, tree_helper::CGetType(tree_fields[tree_field_index])->index, bambu_address, taste_address, registers, false, little_endianess);
             const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
             THROW_ASSERT(field_bpos % 8 == 0, "Bitfield not supported");
             const auto current_field_beginning = field_bpos / 8;
@@ -371,7 +371,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          const auto element_type = aadl_information->CGetAsnType(setof->element);
          for(size_t counter = 0; counter < setof->size; counter++)
          {
-            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->get_tree_node_const(tree_parameter_type))->index, bambu_address, taste_address, registers, false, little_endianess);
+            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->CGetTreeReindex(tree_parameter_type))->index, bambu_address, taste_address, registers, false, little_endianess);
          }
          break;
       }
@@ -396,7 +396,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
 
       THROW_ASSERT(aadl_information->function_parameters.find("PI_" + top_function_name) != aadl_information->function_parameters.end(), top_function_name);
       auto& function_parameters = aadl_information->function_parameters.find("PI_" + top_function_name)->second;
-      const auto function_id = TreeM->function_index(top_function_name);
+      const auto function_node = TreeM->GetFunction(top_function_name);
       address_translation = IndentedOutputStreamRef(new IndentedOutputStream());
       address_translation->Append("unsigned int " STR_CST_taste_address_translation + top_function_name + "(unsigned int arg)\n");
       address_translation->Append("{\n");
@@ -418,14 +418,14 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       unsigned long long int taste_address = 4;
       /// Build the map between parameter name and index type
       CustomMap<std::string, unsigned int> parameter_to_type;
-      THROW_ASSERT(function_id, "Function " + top_function_name + " not found in tree");
-      const auto fd = GetPointer<const function_decl>(TreeM->CGetTreeNode(function_id));
+      THROW_ASSERT(function_node, "Function " + top_function_name + " not found in tree");
+      const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(function_node));
       for(const auto& arg : fd->list_of_args)
       {
          const auto pd = GetPointer<const parm_decl>(GET_NODE(arg));
          const auto id = GetPointer<const identifier_node>(GET_NODE(pd->name));
          const auto param_name = id->strg;
-         parameter_to_type[param_name] = tree_helper::CGetType(GET_NODE(arg))->index;
+         parameter_to_type[param_name] = tree_helper::CGetType(arg)->index;
       }
       const auto ft = GetPointer<const function_type>(GET_NODE(fd->type));
       if(ft->retn)

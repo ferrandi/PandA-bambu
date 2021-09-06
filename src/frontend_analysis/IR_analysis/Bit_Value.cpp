@@ -1187,7 +1187,7 @@ void Bit_Value::initialize()
    for(const auto& parm_decl_node : fd->list_of_args)
    {
       const auto parmssa_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
-      const auto parm_type = tree_helper::CGetType(GET_CONST_NODE(parm_decl_node));
+      const auto parm_type = tree_helper::CGetType(parm_decl_node);
       if(!IsHandledByBitvalue(parm_type))
       {
          continue;
@@ -1735,7 +1735,7 @@ void Bit_Value::initialize()
          }
 
          std::vector<std::tuple<unsigned int, unsigned int>> vars_read;
-         tree_helper::get_required_values(TM, vars_read, GET_NODE(stmt), GET_INDEX_CONST_NODE(stmt));
+         tree_helper::get_required_values(vars_read, stmt);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Requires " + STR(vars_read.size()) + " values");
          for(const auto& var_pair : vars_read)
          {

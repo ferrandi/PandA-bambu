@@ -72,6 +72,7 @@
 /// tree includes
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
+#include "tree_reindex.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
@@ -361,23 +362,24 @@ bool ParallelMemoryFuBinding::manage_module_ports(const HLS_managerRef HLSMgr, c
    const auto memory_enabled = curr_gate->find_member("memory_enabled", port_o_K, curr_gate);
    if(memory_enabled)
    {
-      GetPointer<port_o>(memory_enabled)->set_is_memory(false);
-      GetPointer<port_o>(memory_enabled)->set_is_global(false);
-      GetPointer<port_o>(memory_enabled)->set_is_extern(false);
+      GetPointerS<port_o>(memory_enabled)->set_is_memory(false);
+      GetPointerS<port_o>(memory_enabled)->set_is_global(false);
+      GetPointerS<port_o>(memory_enabled)->set_is_extern(false);
    }
-   const auto& parallelized_functions = GetPointer<const OmpFunctions>(HLSMgr->Rfuns)->parallelized_functions;
-   if(TM->function_index(curr_gate->get_typeRef()->id_type))
+   const auto& parallelized_functions = GetPointerS<const OmpFunctions>(HLSMgr->Rfuns)->parallelized_functions;
+   const auto fu_node = TM->GetFunction(curr_gate->get_typeRef()->id_type);
+   if(fu_node)
    {
-      const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(TM->function_index(curr_gate->get_typeRef()->id_type)));
+      const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fu_node));
       if(fd->omp_atomic)
       {
          const auto access_allowed = curr_gate->find_member("access_allowed", port_o_K, curr_gate);
          if(access_allowed)
          {
             access_allowed_killeds.insert(curr_gate);
-            GetPointer<port_o>(access_allowed)->set_is_memory(false);
-            GetPointer<port_o>(access_allowed)->set_is_global(false);
-            GetPointer<port_o>(access_allowed)->set_is_extern(false);
+            GetPointerS<port_o>(access_allowed)->set_is_memory(false);
+            GetPointerS<port_o>(access_allowed)->set_is_global(false);
+            GetPointerS<port_o>(access_allowed)->set_is_extern(false);
          }
       }
    }
@@ -386,17 +388,17 @@ bool ParallelMemoryFuBinding::manage_module_ports(const HLS_managerRef HLSMgr, c
       const auto access_request = curr_gate->find_member("access_request", port_o_K, curr_gate);
       if(access_request)
       {
-         GetPointer<port_o>(access_request)->set_is_memory(false);
-         GetPointer<port_o>(access_request)->set_is_global(false);
-         GetPointer<port_o>(access_request)->set_is_extern(false);
+         GetPointerS<port_o>(access_request)->set_is_memory(false);
+         GetPointerS<port_o>(access_request)->set_is_global(false);
+         GetPointerS<port_o>(access_request)->set_is_extern(false);
       }
       const auto access_allowed = curr_gate->find_member("access_allowed", port_o_K, curr_gate);
       if(access_allowed)
       {
          access_allowed_killeds.insert(curr_gate);
-         GetPointer<port_o>(access_allowed)->set_is_memory(false);
-         GetPointer<port_o>(access_allowed)->set_is_global(false);
-         GetPointer<port_o>(access_allowed)->set_is_extern(false);
+         GetPointerS<port_o>(access_allowed)->set_is_memory(false);
+         GetPointerS<port_o>(access_allowed)->set_is_global(false);
+         GetPointerS<port_o>(access_allowed)->set_is_extern(false);
       }
    }
    return fu_binding::manage_module_ports(HLSMgr, HLS, SM, curr_gate, num);

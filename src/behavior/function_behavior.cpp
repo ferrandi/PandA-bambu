@@ -720,25 +720,16 @@ CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const appli
    VertexIterator v, vEnd;
    for(boost::tie(v, vEnd) = boost::vertices(*cfg); v != vEnd; v++)
    {
-      CustomSet<unsigned int> varsTemp = cfg->CGetOpNodeInfo(*v)->cited_variables;
+      const auto& varsTemp = cfg->CGetOpNodeInfo(*v)->cited_variables;
       vars.insert(varsTemp.begin(), varsTemp.end());
    }
-   const std::list<unsigned int>& funParams = helper->get_parameters();
-   for(unsigned int funParam : funParams)
+   for(const auto& funParam : helper->GetParameters())
    {
-      if(vars.find(funParam) != vars.end())
-      {
-         vars.erase(funParam);
-      }
+      vars.erase(funParam->index);
    }
-
-   const CustomSet<unsigned int>& gblVariables = AppM->get_global_variables();
-   for(unsigned int gblVariable : gblVariables)
+   for(const auto& gblVariable : AppM->GetGlobalVariables())
    {
-      if(vars.find(gblVariable) != vars.end())
-      {
-         vars.erase(gblVariable);
-      }
+      vars.erase(gblVariable->index);
    }
    return vars;
 }

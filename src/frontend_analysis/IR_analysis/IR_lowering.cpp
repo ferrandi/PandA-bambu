@@ -776,7 +776,7 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
    tree_nodeRef accum, tem;
    int opno;
 #if HAVE_ASSERTS
-   unsigned data_bitsize = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(type)));
+   unsigned data_bitsize = tree_helper::Size(tree_helper::CGetType(type));
    unsigned long long int data_mask = data_bitsize >= 64 ? ~0ULL : (1ULL << data_bitsize) - 1;
 #endif
    tree_nodeRef tem_ga;
@@ -1181,7 +1181,7 @@ tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree
       {
          struct algorithm alg;
          enum mult_variant variant;
-         short int max_cost = mult_plus_ratio; // static_cast<short int>(tree_helper::size(TM, tree_helper::get_type_index(TM,GET_INDEX_NODE(type_expr)))/mult_cost_divisor);
+         short int max_cost = mult_plus_ratio; // static_cast<short int>(tree_helper::Size(tree_helper::CGetType(type_expr))/mult_cost_divisor);
          if(choose_mult_variant(data_bitsize, -ext_op1, alg, variant, max_cost, TM))
          {
             tree_nodeRef temp_expr = expand_mult_const(op0, static_cast<unsigned long long int>(-ext_op1), alg, variant, stmt, block, type_expr, srcp_default);
@@ -1209,7 +1209,7 @@ tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree
          {
             struct algorithm alg;
             enum mult_variant variant;
-            short int max_cost = mult_plus_ratio; // static_cast<short int>(tree_helper::size(TM, tree_helper::get_type_index(TM,GET_INDEX_NODE(type_expr)))/mult_cost_divisor);
+            short int max_cost = mult_plus_ratio; // static_cast<short int>(tree_helper::Size(tree_helper::CGetType(type_expr))/mult_cost_divisor);
 
             if(choose_mult_variant(data_bitsize, static_cast<long long int>(coeff), alg, variant, max_cost, TM))
             {
@@ -1638,7 +1638,7 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    block.second->PushBefore(ae_ga, *it_los, AppM);
 
    tree_nodeRef offset_type = tree_man->create_size_type();
-   unsigned int ar_op1_type_index = tree_helper::CGetType(GET_CONST_NODE(AR->op1))->index;
+   unsigned int ar_op1_type_index = tree_helper::CGetType(AR->op1)->index;
    tree_nodeRef offset_node;
    if(ar_op1_type_index != GET_INDEX_NODE(offset_type))
    {
@@ -1652,12 +1652,11 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    {
       offset_node = AR->op1;
    }
-   const auto ar_op0_type_node = tree_helper::CGetType(GET_CONST_NODE(AR->op0));
-   THROW_ASSERT(ar_op0_type_node->get_kind() == array_type_K, "array_type expected: @" + STR(ar_op0_type_node->index));
-   unsigned int data_bitsize = tree_helper::get_array_data_bitsize(TM, ar_op0_type_node->index);
+   const auto ar_op0_type_node = tree_helper::CGetType(AR->op0);
+   THROW_ASSERT(GET_CONST_NODE(ar_op0_type_node)->get_kind() == array_type_K, "array_type expected: @" + STR(ar_op0_type_node->index));
+   unsigned int data_bitsize = tree_helper::GetArrayElementSize(ar_op0_type_node);
    unsigned int n_byte = compute_n_bytes(data_bitsize);
-   std::vector<unsigned int> dims;
-   tree_helper::get_array_dimensions(TM, ar_op0_type_node->index, dims);
+   const auto dims = tree_helper::GetArrayDimensions(ar_op0_type_node);
    for(size_t ind = 1; ind < dims.size(); ++ind)
    {
       n_byte *= dims.at(ind);

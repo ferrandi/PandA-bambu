@@ -161,48 +161,48 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initialization string is " + test_v);
 
-         unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
+         const auto lnode = TM->CGetTreeReindex(*l);
+         auto reserved_bytes = tree_helper::Size(lnode) / 8;
          if(reserved_bytes == 0)
          {
             reserved_bytes = 1;
          }
 
-         if(tree_helper::is_a_pointer(TM, *l) && !is_memory)
+         if(tree_helper::IsPointerType(lnode) && !is_memory)
          {
-            unsigned int base_type = tree_helper::get_type_index(TM, *l);
-            tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
+            const auto pt_node = tree_helper::CGetType(lnode);
             if(flag_cpp)
             {
-               unsigned int ptd_base_type = 0;
-               if(pt_node->get_kind() == pointer_type_K)
+               tree_nodeConstRef ptd_base_type;
+               if(GET_CONST_NODE(pt_node)->get_kind() == pointer_type_K)
                {
-                  ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
+                  ptd_base_type = GetPointer<const pointer_type>(GET_CONST_NODE(pt_node))->ptd;
                }
-               else if(pt_node->get_kind() == reference_type_K)
+               else if(GET_CONST_NODE(pt_node)->get_kind() == reference_type_K)
                {
-                  ptd_base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
+                  ptd_base_type = GetPointer<const reference_type>(GET_CONST_NODE(pt_node))->refd;
                }
                else
                {
                   THROW_ERROR("A pointer type is expected");
                }
-               unsigned int base_type_byte_size;
 
-               if(behavioral_helper->is_a_struct(ptd_base_type) || behavioral_helper->is_an_union(ptd_base_type))
+               unsigned int base_type_byte_size;
+               if(tree_helper::IsStructType(ptd_base_type) || tree_helper::IsUnionType(ptd_base_type))
                {
-                  base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
+                  base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
                }
-               else if(behavioral_helper->is_an_array(ptd_base_type))
+               else if(tree_helper::IsArrayType(ptd_base_type))
                {
-                  base_type_byte_size = tree_helper::get_array_data_bitsize(TM, ptd_base_type) / 8;
+                  base_type_byte_size = tree_helper::GetArrayElementSize(ptd_base_type) / 8;
                }
-               else if(tree_helper::size(TM, ptd_base_type) == 1)
+               else if(tree_helper::Size(ptd_base_type) == 1)
                {
                   base_type_byte_size = 1;
                }
                else
                {
-                  base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
+                  base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
                }
 
                if(base_type_byte_size == 0)
@@ -214,7 +214,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             }
             else
             {
-               const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new ComputeReservedMemory(TM, TM->CGetTreeNode(*l)));
+               const CInitializationParserFunctorRef c_initialization_parser_functor(new ComputeReservedMemory(TM, lnode));
                c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
                reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
             }

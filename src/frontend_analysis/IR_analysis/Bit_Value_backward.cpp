@@ -85,7 +85,7 @@ std::deque<bit_lattice> Bit_Value::backward_chain(const tree_nodeConstRef& ssa_n
          const auto ga = GetPointerS<const gimple_assign>(user_stmt);
          if(!IsHandledByBitvalue(ga->op0))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable " + STR(GET_CONST_NODE(ga->op0)) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(ga->op0))) + " not considered");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable " + STR(GET_CONST_NODE(ga->op0)) + " of type " + STR(tree_helper::CGetType(ga->op0)) + " not considered");
             user_res = create_u_bitstring(BitLatticeManipulator::Size(ssa_node));
          }
          else
@@ -253,7 +253,7 @@ void Bit_Value::backward()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---current updated: " + bitstring_to_string(current.at(lhs->index)));
             std::vector<std::tuple<unsigned int, unsigned int>> vars_read;
-            tree_helper::get_required_values(TM, vars_read, TM->GetTreeNode(stmt->index), stmt->index);
+            tree_helper::get_required_values(vars_read, TM->GetTreeNode(stmt->index));
             for(const auto& var_pair : vars_read)
             {
                const auto in_ssa_nid = std::get<0>(var_pair);
@@ -287,7 +287,7 @@ void Bit_Value::backward()
       const auto parmssa = TM->CGetTreeReindex(parmssa_id);
       if(!IsHandledByBitvalue(parmssa))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument " + STR(parmssa) + " of type " + STR(tree_helper::CGetType(GET_CONST_NODE(parmssa))) + " not considered id: " + STR(parmssa_id));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--argument " + STR(parmssa) + " of type " + STR(tree_helper::CGetType(parmssa)) + " not considered id: " + STR(parmssa_id));
          continue;
       }
       auto res = get_current_or_best(parmssa);

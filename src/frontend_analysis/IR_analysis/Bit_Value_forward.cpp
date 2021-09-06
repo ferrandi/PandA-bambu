@@ -147,7 +147,7 @@ void Bit_Value::forward()
             }
             bool hasRequiredValues = true;
             std::vector<std::tuple<unsigned int, unsigned int>> vars_read;
-            tree_helper::get_required_values(TM, vars_read, TM->GetTreeNode(stmt_node->index), stmt_node->index);
+            tree_helper::get_required_values(vars_read, TM->GetTreeNode(stmt_node->index));
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Requires " + STR(vars_read.size()) + " values");
             for(const auto& var_pair : vars_read)
             {

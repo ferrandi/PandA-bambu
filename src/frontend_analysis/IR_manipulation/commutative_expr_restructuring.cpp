@@ -144,8 +144,8 @@ bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn
       return false;
    }
    auto opKind = GET_NODE(ga->op1)->get_kind();
-   auto Type = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
-   if(!GetPointer<const integer_type>(Type))
+   auto Type = tree_helper::CGetType(ga->op0);
+   if(!GetPointer<const integer_type>(GET_CONST_NODE(Type)))
    {
       return false;
    }
@@ -316,7 +316,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(*stmt));
 
          /// Inserting first commutative expression after the last one
-         const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(*stmt))->index);
+         const auto type_node = tree_helper::CGetType(*stmt);
          auto first_value = first_operand_of_second ? second_be->op1 : second_be->op0;
          auto second_value = first_operand_of_first ? first_be->op1 : first_be->op0;
          if(!first_operand_of_first)

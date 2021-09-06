@@ -171,11 +171,11 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    auto root_functions = CG->GetRootFunctions();
    if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
    {
-      const auto top_rtldesign_function_id = HLSMgr->get_tree_manager()->function_index(parameters->getOption<std::string>(OPT_top_design_name));
-      if(top_rtldesign_function_id != 0 and root_functions.find(top_rtldesign_function_id) != root_functions.end())
+      const auto top_rtldesign_function = HLSMgr->get_tree_manager()->GetFunction(parameters->getOption<std::string>(OPT_top_design_name));
+      if(top_rtldesign_function && root_functions.count(top_rtldesign_function->index))
       {
          root_functions.clear();
-         root_functions.insert(top_rtldesign_function_id);
+         root_functions.insert(top_rtldesign_function->index);
       }
    }
    if(parameters->isOption(OPT_disable_function_proxy) and parameters->getOption<bool>(OPT_disable_function_proxy))
@@ -396,8 +396,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    }
 
    /// really allocate
-   const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
-   const technology_managerRef TM = HLS_T->get_technology_manager();
+   const auto HLS_T = HLSMgr->get_HLS_target();
+   const auto TM = HLS_T->get_technology_manager();
 
    for(const auto& funID : reached_fu_ids)
    {
@@ -410,7 +410,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Skipped " + fun_name + " because called only by one other function");
             continue;
          }
-         if(HLSMgr->hasToBeInterfaced(HLSMgr->get_tree_manager()->function_index(fun_name)))
+         const auto fu_node = HLSMgr->get_tree_manager()->GetFunction(fun_name);
+         if(fu_node && HLSMgr->hasToBeInterfaced(fu_node->index))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Skipped " + fun_name + " because it has to be interfaced");
             continue;
@@ -435,16 +436,16 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
 
          HLSMgr->Rfuns->map_shared_function(funID, fun_name);
 
-         const FunctionBehaviorConstRef cur_function_behavior = HLSMgr->CGetFunctionBehavior(funID);
-         const BehavioralHelperConstRef cur_BH = cur_function_behavior->CGetBehavioralHelper();
+         const auto cur_function_behavior = HLSMgr->CGetFunctionBehavior(funID);
+         const auto cur_BH = cur_function_behavior->CGetBehavioralHelper();
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Adding proxy wrapper: " + fun_name + " in function " + cur_BH->get_function_name());
          /// add proxies
          for(const auto& wu_id : where_used.at(fun_name))
          {
             if(wu_id != funID)
             {
-               const FunctionBehaviorConstRef wiu_function_behavior = HLSMgr->CGetFunctionBehavior(wu_id);
-               const BehavioralHelperConstRef wiu_BH = wiu_function_behavior->CGetBehavioralHelper();
+               const auto wiu_function_behavior = HLSMgr->CGetFunctionBehavior(wu_id);
+               const auto wiu_BH = wiu_function_behavior->CGetBehavioralHelper();
                PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Adding proxy function: " + fun_name + " in function " + wiu_BH->get_function_name());
                HLSMgr->Rfuns->add_shared_function_proxy(wu_id, fun_name);
             }

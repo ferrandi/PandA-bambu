@@ -119,7 +119,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
 
    /// Root functions
    CustomOrderedSet<unsigned int> functions;
-   const unsigned int main_index = TM->function_index("main");
+   const auto main = TM->GetFunction("main");
    /// If top function option has been passed
    if(parameters->isOption(OPT_top_functions_names))
    {
@@ -127,38 +127,38 @@ DesignFlowStep_Status call_graph_computation::Exec()
       const auto top_functions_names = parameters->getOption<const std::list<std::string>>(OPT_top_functions_names);
       for(const auto& top_function_name : top_functions_names)
       {
-         const unsigned int top_function_index = TM->function_index(top_function_name);
-         if(top_function_index == 0)
+         const auto top_function = TM->GetFunction(top_function_name);
+         if(!top_function)
          {
             THROW_ERROR("Function " + top_function_name + " not found");
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root function " + STR(top_function_index));
-            functions.insert(top_function_index);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root function " + STR(top_function->index));
+            functions.insert(top_function->index);
          }
       }
    }
    /// If not -c option has been passed we assume that whole program has been passed, so the main must be present
-   else if(not parameters->getOption<bool>(OPT_gcc_c))
+   else if(!parameters->getOption<bool>(OPT_gcc_c))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Expected main");
       /// Main not found
-      if(not main_index)
+      if(!main)
       {
          THROW_ERROR("No main function found, but -c option not passed");
       }
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---main found");
-         functions.insert(main_index);
+         functions.insert(main->index);
       }
    }
    /// If there is the main, we return it
-   else if(main_index)
+   else if(main)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---main was not expected but is present: " + STR(main_index));
-      functions.insert(main_index);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---main was not expected but is present: " + STR(main->index));
+      functions.insert(main->index);
    }
    /// Return all the functions not called by any other function
    else
@@ -177,19 +177,19 @@ DesignFlowStep_Status call_graph_computation::Exec()
          continue;
       }
       // avoid nested functions
-      const tree_nodeRef fun = TM->get_tree_node_const(f_id);
-      const auto* fd = GetPointer<const function_decl>(fun);
-      if(fd->scpe and GET_NODE(fd->scpe)->get_kind() == function_decl_K)
+      const auto fun = TM->CGetTreeNode(f_id);
+      const auto fd = GetPointerS<const function_decl>(fun);
+      if(fd->scpe && GET_NODE(fd->scpe)->get_kind() == function_decl_K)
       {
          THROW_ERROR_CODE(NESTED_FUNCTIONS_EC, "Nested functions not yet supported " + STR(f_id));
       }
 
       // add the function to the call graph if necessary
-      if(not AppM->GetCallGraphManager()->IsVertex(f_id))
+      if(!AppM->GetCallGraphManager()->IsVertex(f_id))
       {
          bool has_body = TM->get_implementation_node(f_id) != 0;
-         BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, f_id, has_body, parameters));
-         FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
+         const auto helper = BehavioralHelperRef(new BehavioralHelper(AppM, f_id, has_body, parameters));
+         const auto FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
          AppM->GetCallGraphManager()->AddFunction(f_id, FB);
          CallGraphManager::expandCallGraphFromFunction(already_visited, AppM, f_id, debug_level);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Added function " + STR(f_id) + " " + fu_name + " to call graph");
@@ -200,7 +200,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
       }
    }
 
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC or parameters->getOption<bool>(OPT_print_dot))
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC || parameters->getOption<bool>(OPT_print_dot))
    {
       AppM->GetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph.dot");
    }

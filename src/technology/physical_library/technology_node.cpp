@@ -157,7 +157,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
                type_precs.push_back(type_uint);
             }
          }
-         supported_types.insert(make_pair(type_name, type_precs));
+         supported_types.insert(std::make_pair(type_name, type_precs));
       }
    }
    if(CE_XVM(pipe_parameters, Enode))
@@ -346,22 +346,15 @@ void operation::print(std::ostream& os) const
    os << (bounded ? " bounded" : " unbounded") << "]";
 }
 
-bool operation::is_type_supported(std::string type_name) const
+bool operation::is_type_supported(const std::string& type_name) const
 {
-   if(supported_types.begin() != supported_types.end())
-   {
-      /// if there is at least one supported type, the given type has to be in the list
-      if(supported_types.find(type_name) == supported_types.end())
-      {
-         return false;
-      }
-   }
-   return true;
+   /// if there is at least one supported type, the given type has to be in the list
+   return supported_types.empty() || supported_types.count(type_name);
 }
 
-bool operation::is_type_supported(std::string type_name, unsigned int type_prec) const
+bool operation::is_type_supported(const std::string& type_name, unsigned int type_prec) const
 {
-   if(supported_types.begin() != supported_types.end())
+   if(!supported_types.empty())
    {
       if(!is_type_supported(type_name))
       {
@@ -369,7 +362,7 @@ bool operation::is_type_supported(std::string type_name, unsigned int type_prec)
       }
       /// check also for the precision
       auto supported_type = supported_types.find(type_name);
-      if(supported_type->second.size() > 0 && std::find(supported_type->second.begin(), supported_type->second.end(), type_prec) == supported_type->second.end())
+      if(!supported_type->second.empty() && std::find(supported_type->second.begin(), supported_type->second.end(), type_prec) == supported_type->second.end())
       {
          return false;
       }
@@ -379,8 +372,7 @@ bool operation::is_type_supported(std::string type_name, unsigned int type_prec)
 
 bool operation::is_type_supported(const std::string& type_name, const std::vector<unsigned int>& type_prec, const std::vector<unsigned int>& /*type_n_element*/) const
 {
-   unsigned int max_prec = type_prec.begin() == type_prec.end() ? 0 : *max_element(type_prec.begin(), type_prec.end());
-
+   const auto max_prec = type_prec.empty() ? 0 : *max_element(type_prec.begin(), type_prec.end());
    return is_type_supported(type_name, max_prec);
 }
 

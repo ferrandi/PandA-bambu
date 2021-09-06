@@ -216,12 +216,11 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
                      {
                         if(GET_NODE(*arg_it)->get_kind() == integer_cst_K or GET_NODE(*arg_it)->get_kind() == ssa_name_K)
                         {
-                           unsigned int formal_type_id = tree_helper::get_formal_ith(TreeM, ce->index, arg_n);
-                           const tree_nodeConstRef formal_type_node = TreeM->get_tree_node_const(formal_type_id);
-                           const tree_nodeConstRef actual_type_node = tree_helper::CGetType(GET_NODE(*arg_it));
-                           if(formal_type_id != actual_type_node->index)
+                           const auto formal_type_node = tree_helper::GetFormalIth(ue->op, arg_n);
+                           const auto actual_type_node = tree_helper::CGetType(*arg_it);
+                           if(formal_type_node->index != actual_type_node->index)
                            {
-                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, TreeM->CGetTreeReindex(formal_type_node->index), tree_nodeRef(), tree_nodeRef(), function_id);
+                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, formal_type_node, tree_nodeRef(), tree_nodeRef(), function_id);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
                               it->second->PushBefore(ga_nop, *it_los, AppM);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---old call statement " + GET_NODE(*it_los)->ToString());
@@ -230,7 +229,7 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
                               auto tmp_arg_it = ce->args.begin();
                               for(; tmp_arg_it != ce->args.end(); tmp_arg_it++, k++)
                               {
-                                 if(GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and tree_helper::get_formal_ith(TreeM, ce->index, k) == formal_type_id)
+                                 if(GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) && tree_helper::GetFormalIth(ue->op, k)->index == formal_type_node->index)
                                  {
                                     TreeM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, *it_los, false);
                                     tmp_arg_it = std::next(ce->args.begin(), static_cast<int>(k));
@@ -243,10 +242,9 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
                            }
                         }
                      }
-                     unsigned int type_index = tree_helper::get_type_index(TreeM, GET_INDEX_NODE(ue->op));
-                     tree_nodeRef op_type = TreeM->GetTreeReindex(type_index);
-                     tree_nodeRef op_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), ue->op, function_id, it->first, srcp_default);
-                     tree_nodeRef op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
+                     const auto op_type = tree_helper::CGetType(ue->op);
+                     const auto op_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), ue->op, function_id, it->first, srcp_default);
+                     const auto op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
                      it->second->PushBefore(op_ga, *it_los, AppM);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(op_ga)->ToString());
                      TreeM->ReplaceTreeNode(*it_los, ue->op, op_vd);
@@ -357,10 +355,10 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             case trunc_mod_expr_K:
             {
                std::string fu_suffix;
-               const auto expr_type = tree_helper::CGetType(GET_CONST_NODE(be->op0));
-               unsigned int bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(be->op0)));
-               unsigned int bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(be->op1)));
-               unsigned int bitsize = std::max(bitsize0, bitsize1);
+               const auto expr_type = tree_helper::CGetType(be->op0);
+               const auto bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op0));
+               const auto bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op1));
+               const auto bitsize = std::max(bitsize0, bitsize1);
 
                bool is_constant_second_par = false;
 
@@ -373,7 +371,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   }
                }
 
-               if(!is_constant_second_par && expr_type->get_kind() == integer_type_K && (bitsize == 32 || bitsize == 64))
+               if(!is_constant_second_par && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && (bitsize == 32 || bitsize == 64))
                {
                   switch(curr_tn->get_kind())
                   {
@@ -392,17 +390,17 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                         break;
                   }
                   std::string bitsize_str = bitsize == 32 ? "s" : "d";
-                  bool unsignedp = tree_helper::is_unsigned(TreeM, expr_type->index);
+                  bool unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
                   std::string fu_name = STR("__") + (unsignedp ? "u" : "") + fu_suffix + bitsize_str + "i3" + ((bitsize0 == 64 && bitsize1 == 32) ? "6432" : "");
-                  unsigned int called_function_id = TreeM->function_index(fu_name);
-                  THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
-                  THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(called_function_id) != 0, "inconsistent behavioral helper");
+                  const auto called_function = TreeM->GetFunction(fu_name);
+                  THROW_ASSERT(called_function, "The library miss this function " + fu_name);
+                  THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(called_function->index) != 0, "inconsistent behavioral helper");
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
                   std::vector<tree_nodeRef> args;
                   args.push_back(be->op0);
                   args.push_back(be->op1);
-                  auto callExpr = tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp);
-                  bool CEunsignedp = tree_helper::is_unsigned(TreeM, GET_INDEX_NODE(callExpr));
+                  auto callExpr = tree_man->CreateCallExpr(called_function, args, current_srcp);
+                  bool CEunsignedp = tree_helper::IsUnsignedIntegerType(callExpr);
                   if(CEunsignedp != unsignedp)
                   {
                      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
@@ -417,11 +415,11 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   TreeM->ReplaceTreeNode(current_statement, current_tree_node, callExpr);
 
                   const CustomOrderedSet<unsigned int> called_by_set = AppM->CGetCallGraphManager()->get_called_by(function_id);
-                  if(called_by_set.find(called_function_id) == called_by_set.end())
+                  if(!called_by_set.count(called_function->index))
                   {
                      changed_call_graph = true;
                   }
-                  CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, debug_level);
+                  CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, debug_level);
                }
                break;
             }
@@ -429,23 +427,23 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             {
                if(use64bitMul)
                {
-                  const auto expr_type = tree_helper::CGetType(GET_CONST_NODE(be->op0));
-                  unsigned int bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(be->op0)));
-                  unsigned int bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(be->op1)));
-                  unsigned int bitsize = std::max(bitsize0, bitsize1);
-                  if(expr_type->get_kind() == integer_type_K && bitsize == 64)
+                  const auto expr_type = tree_helper::CGetType(be->op0);
+                  const auto bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op0));
+                  const auto bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op1));
+                  const auto bitsize = std::max(bitsize0, bitsize1);
+                  if(GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 64)
                   {
-                     bool unsignedp = tree_helper::is_unsigned(TreeM, expr_type->index);
+                     bool unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
                      std::string fu_name = "__umul64";
-                     unsigned int called_function_id = TreeM->function_index(fu_name);
-                     THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
-                     THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(called_function_id) != 0, "inconsistent behavioral helper");
+                     const auto called_function = TreeM->GetFunction(fu_name);
+                     THROW_ASSERT(called_function, "The library miss this function " + fu_name);
+                     THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(called_function->index) != 0, "inconsistent behavioral helper");
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
                      std::vector<tree_nodeRef> args;
                      args.push_back(be->op0);
                      args.push_back(be->op1);
-                     auto callExpr = tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp);
-                     bool CEunsignedp = tree_helper::is_unsigned(TreeM, GET_INDEX_NODE(callExpr));
+                     auto callExpr = tree_man->CreateCallExpr(called_function, args, current_srcp);
+                     bool CEunsignedp = tree_helper::IsUnsignedIntegerType(callExpr);
                      if(CEunsignedp != unsignedp)
                      {
                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
@@ -459,12 +457,12 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                      }
                      TreeM->ReplaceTreeNode(current_statement, current_tree_node, callExpr);
 
-                     const CustomOrderedSet<unsigned int> called_by_set = AppM->CGetCallGraphManager()->get_called_by(function_id);
-                     if(called_by_set.find(called_function_id) == called_by_set.end())
+                     const auto called_by_set = AppM->CGetCallGraphManager()->get_called_by(function_id);
+                     if(!called_by_set.count(called_function->index))
                      {
                         changed_call_graph = true;
                      }
-                     CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function_id, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, debug_level);
+                     CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, debug_level);
                   }
                }
                break;
@@ -545,11 +543,9 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
       case constructor_K:
       {
          const constructor* co = GetPointer<constructor>(curr_tn);
-         const std::vector<std::pair<tree_nodeRef, tree_nodeRef>>& list_of_idx_valu = co->list_of_idx_valu;
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator it, it_end = list_of_idx_valu.end();
-         for(it = list_of_idx_valu.begin(); it != it_end; ++it)
+         for(const auto& iv : co->list_of_idx_valu)
          {
-            recursive_examinate(it->second, current_statement, tree_man);
+            recursive_examinate(iv.second, current_statement, tree_man);
          }
          break;
       }
@@ -692,5 +688,5 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
 
 bool hls_div_cg_ext::HasToBeExecuted() const
 {
-   return not already_executed;
+   return !already_executed;
 }

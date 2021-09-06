@@ -103,6 +103,7 @@
 /// tree includes
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "tree_node.hpp"
 #include "var_pp_functor.hpp"
 
 /// Utility include
@@ -199,11 +200,11 @@ void CBackend::WriteGlobalDeclarations()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing function prototypes");
    for(const auto extBeg : functions_to_be_declared)
    {
-      const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(extBeg)->CGetBehavioralHelper();
+      const auto BH = AppM->CGetFunctionBehavior(extBeg)->CGetBehavioralHelper();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing external function prototype: " + BH->get_function_name());
       if(BH->function_has_to_be_printed(extBeg))
       {
-         writer->DeclareFunctionTypes(extBeg);
+         writer->DeclareFunctionTypes(TM->CGetTreeReindex(extBeg));
          writer->WriteFunctionDeclaration(extBeg);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written external function prototype: " + BH->get_function_name());
@@ -212,7 +213,7 @@ void CBackend::WriteGlobalDeclarations()
    CustomOrderedSet<unsigned int> functions = functions_to_be_defined;
    for(const auto it : functions)
    {
-      const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(it)->CGetBehavioralHelper();
+      const auto BH = AppM->CGetFunctionBehavior(it)->CGetBehavioralHelper();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing function prototype of " + BH->get_function_name());
 
 #if HAVE_BAMBU_BUILT
@@ -228,7 +229,7 @@ void CBackend::WriteGlobalDeclarations()
 
       if(BH->function_has_to_be_printed(it))
       {
-         writer->DeclareFunctionTypes(it);
+         writer->DeclareFunctionTypes(TM->CGetTreeReindex(it));
          writer->WriteFunctionDeclaration(it);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written function prototype of " + BH->get_function_name());
@@ -262,44 +263,47 @@ void CBackend::writeIncludes()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing includes for external functions");
    for(const auto f_id : functions_to_be_defined)
    {
-      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(f_id);
-      const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+      const auto FB = AppM->CGetFunctionBehavior(f_id);
+      const auto BH = FB->CGetBehavioralHelper();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing includes for " + BH->get_function_name());
-      AnalyzeInclude(f_id, BH, includes_to_write);
+      AnalyzeInclude(TM->CGetTreeReindex(f_id), BH, includes_to_write);
 
-      CustomUnorderedSet<unsigned int> decl_nodes;
-      const CustomSet<unsigned int>& tmp_vars = writer->GetLocalVariables(f_id);
-      decl_nodes.insert(tmp_vars.begin(), tmp_vars.end());
-      const std::list<unsigned int>& funParams = BH->get_parameters();
+      TreeNodeConstSet decl_nodes;
+      const auto& tmp_vars = writer->GetLocalVariables(f_id);
+      for(const auto& tmp_var : tmp_vars)
+      {
+         decl_nodes.insert(TM->CGetTreeReindex(tmp_var));
+      }
+      const auto funParams = BH->GetParameters();
       decl_nodes.insert(funParams.begin(), funParams.end());
-      const CustomSet<unsigned int> vars = AppM->get_global_variables();
+      const auto& vars = AppM->GetGlobalVariables();
       decl_nodes.insert(vars.begin(), vars.end());
 
       for(const auto& v : decl_nodes)
       {
-         const unsigned int variable_type = BH->get_type(v);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing includes for variable " + BH->PrintVariable(v) + " of type " + STR(variable_type));
+         const auto variable_type = tree_helper::CGetType(v);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing includes for variable " + BH->PrintVariable(v->index) + " of type " + STR(variable_type));
          AnalyzeInclude(variable_type, BH, includes_to_write);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed includes for variable " + BH->PrintVariable(v) + " of type " + STR(variable_type));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed includes for variable " + BH->PrintVariable(v->index) + " of type " + STR(variable_type));
       }
 
-      const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::DFG);
+      const auto op_graph = FB->CGetOpGraph(FunctionBehavior::DFG);
       VertexIterator v, vEnd;
       for(boost::tie(v, vEnd) = boost::vertices(*op_graph); v != vEnd; v++)
       {
-         const unsigned int index = op_graph->CGetOpNodeInfo(*v)->GetNodeId();
-         if(index != ENTRY_ID and index != EXIT_ID)
+         const auto& node = op_graph->CGetOpNodeInfo(*v)->node;
+         if(node)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing includes for operation " + STR(*v));
-            CustomUnorderedSet<unsigned int> types;
-            BH->get_typecast(index, types);
-            for(const auto type_id : types)
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing includes for operation " + STR(node));
+            TreeNodeConstSet types;
+            BH->GetTypecast(node, types);
+            for(const auto& type : types)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing includes for type " + STR(type_id));
-               AnalyzeInclude(type_id, BH, includes_to_write);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed includes for type " + STR(type_id));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing includes for type " + STR(type));
+               AnalyzeInclude(type, BH, includes_to_write);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed includes for type " + STR(type));
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed includes for operation " + STR(*v));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed includes for operation " + STR(node));
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed includes for " + BH->get_function_name());
@@ -315,20 +319,20 @@ void CBackend::writeIncludes()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written includes");
 }
 
-void CBackend::AnalyzeInclude(unsigned int index, const BehavioralHelperConstRef BH, CustomOrderedSet<std::string>& includes_to_write)
+void CBackend::AnalyzeInclude(const tree_nodeConstRef& tn, const BehavioralHelperConstRef& BH, CustomOrderedSet<std::string>& includes_to_write)
 {
-   if(already_visited.find(index) != already_visited.end())
+   if(already_visited.count(tn->index))
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipped already analyzed " + STR(index));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipped already analyzed " + STR(tn->index));
       return;
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing include for (" + STR(index) + ")" + STR(TM->CGetTreeNode(index)));
-   already_visited.insert(index);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing include for " + STR(tn->index) + " " + (tree_helper::IsFunctionDeclaration(tn) ? "" : STR(tn)));
+   already_visited.insert(tn->index);
    bool is_system;
-   const std::string decl = std::get<0>(BH->get_definition(index, is_system));
-   if(not decl.empty() and decl != "<built-in>" and is_system
+   const auto decl = std::get<0>(tree_helper::GetSourcePath(tn, is_system));
+   if(!decl.empty() && decl != "<built-in>" && is_system
 #if HAVE_BAMBU_BUILT
-      and not tree_helper::IsInLibbambu(TM, index)
+      && !tree_helper::IsInLibbambu(tn)
 #endif
    )
    {
@@ -337,14 +341,14 @@ void CBackend::AnalyzeInclude(unsigned int index, const BehavioralHelperConstRef
    }
    else
    {
-      const unsigned int type = tree_helper::get_type_index(TM, index);
-      const auto types_to_be_declared_before = tree_helper::GetTypesToBeDeclaredBefore(TM, type, parameters->getOption<bool>(OPT_without_transformation));
-      for(const auto type_to_be_declared : types_to_be_declared_before)
+      const auto type = tree_helper::CGetType(tn);
+      const auto types_to_be_declared_before = tree_helper::GetTypesToBeDeclaredBefore(type, parameters->getOption<bool>(OPT_without_transformation));
+      for(const auto& type_to_be_declared : types_to_be_declared_before)
       {
          AnalyzeInclude(type_to_be_declared, BH, includes_to_write);
       }
-      const auto types_to_be_declared_after = tree_helper::GetTypesToBeDeclaredAfter(TM, type, parameters->getOption<bool>(OPT_without_transformation));
-      for(const auto type_to_be_declared : types_to_be_declared_after)
+      const auto types_to_be_declared_after = tree_helper::GetTypesToBeDeclaredAfter(type, parameters->getOption<bool>(OPT_without_transformation));
+      for(const auto& type_to_be_declared : types_to_be_declared_after)
       {
          AnalyzeInclude(type_to_be_declared, BH, includes_to_write);
       }
@@ -360,20 +364,18 @@ void CBackend::compute_variables(const OpGraphConstRef inGraph, const CustomUnor
    VertexIterator v, vEnd;
    for(boost::tie(v, vEnd) = boost::vertices(*inGraph); v != vEnd; v++)
    {
-      const CustomSet<unsigned int> vars_temp = inGraph->CGetOpNodeInfo(*v)->cited_variables;
+      const auto& vars_temp = inGraph->CGetOpNodeInfo(*v)->cited_variables;
       vars.insert(vars_temp.begin(), vars_temp.end());
    }
 
    // I have to take out the variables global to the whole program and the function parameters
-   CustomUnorderedSet<unsigned int>::const_iterator it, it_end = gblVariables.end();
-   for(it = gblVariables.begin(); it != it_end; ++it)
+   for(const auto var : gblVariables)
    {
-      vars.erase(*it);
+      vars.erase(var);
    }
-   std::list<unsigned int>::const_iterator it2, it2_end = funParams.end();
-   for(it2 = funParams.begin(); it2 != it2_end; ++it2)
+   for(const auto var : funParams)
    {
-      vars.erase(*it2);
+      vars.erase(var);
    }
 }
 
@@ -449,7 +451,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
             case CB_SEQUENTIAL:
             {
                CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
-               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BAMBU_FRONTEND_FLOW, FrontendFlowStep::WHOLE_APPLICATION));
+               frontend_relationships.insert(std::make_pair(BAMBU_FRONTEND_FLOW, FrontendFlowStep::WHOLE_APPLICATION));
                FrontendFlowStep::CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
                break;
             }
@@ -457,12 +459,12 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
             case(CB_BBP):
             {
                CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
-               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
-               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(DEAD_CODE_ELIMINATION_IPA, FrontendFlowStep::WHOLE_APPLICATION));
-               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(LOOP_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
-               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(NI_SSA_LIVENESS, FrontendFlowStep::ALL_FUNCTIONS));
-               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(OPERATIONS_CFG_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
-               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(VAR_ANALYSIS, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, FrontendFlowStep::WHOLE_APPLICATION));
+               frontend_relationships.insert(std::make_pair(LOOP_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::make_pair(NI_SSA_LIVENESS, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::make_pair(OPERATIONS_CFG_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::make_pair(VAR_ANALYSIS, FrontendFlowStep::ALL_FUNCTIONS));
                FrontendFlowStep::CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
                break;
             }
@@ -504,8 +506,8 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef()));
 
                relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef()));
-               const bool is_hw_discrepancy = parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw);
-               if(c_backend_type == CB_DISCREPANCY_ANALYSIS and not is_hw_discrepancy)
+               const bool is_hw_discrepancy = parameters->isOption(OPT_discrepancy_hw) && parameters->getOption<bool>(OPT_discrepancy_hw);
+               if(c_backend_type == CB_DISCREPANCY_ANALYSIS && !is_hw_discrepancy)
                {
                   relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef()));
                }
@@ -559,7 +561,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
             {
 #if HAVE_BAMBU_BUILT
                CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
-               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FrontendFlowStepType::MULTIPLE_ENTRY_IF_REDUCTION, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::make_pair(FrontendFlowStepType::MULTIPLE_ENTRY_IF_REDUCTION, FrontendFlowStep::ALL_FUNCTIONS));
                FrontendFlowStep::CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
                if(c_backend_type == CB_SEQUENTIAL)
                {

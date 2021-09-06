@@ -127,7 +127,7 @@ void OmpAllocation::AddPandaPthreadMutex()
    fu->area_m = area_model::create_model(TargetDevice_Type::FPGA, parameters);
    structural_type_descriptorRef boolean_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    CM->add_port(START_PORT_NAME, port_o::IN, top, boolean_type);
-   const auto behavioral_helper = HLSMgr->CGetFunctionBehavior(TreeM->function_index("panda_pthread_mutex"))->CGetBehavioralHelper();
+   const auto behavioral_helper = HLSMgr->CGetFunctionBehavior(TreeM->GetFunction("panda_pthread_mutex")->index)->CGetBehavioralHelper();
    size_t parameter_index = 0;
    const auto function_parameters = behavioral_helper->get_parameters();
    THROW_ASSERT(function_parameters.size() == 2, STR(function_parameters.size()));

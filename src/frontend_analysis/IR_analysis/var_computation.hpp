@@ -86,7 +86,7 @@ class VarComputation : public FunctionFrontendFlowStep
     * @param tree_node is the tree node to be examined
     * @param access_type is the type of the access
     */
-   void RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef tree_node, const FunctionBehavior_VariableAccessType access_type) const;
+   void RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef& tree_node, const FunctionBehavior_VariableAccessType access_type) const;
 
    /**
     * Analyze virtual operands associated with a gimple node

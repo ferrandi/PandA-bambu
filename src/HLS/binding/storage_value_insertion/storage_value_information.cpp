@@ -348,14 +348,16 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
 
 bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const
 {
-   auto var1 = get_variable_index(storage_value_index1);
-   auto var2 = get_variable_index(storage_value_index2);
-   auto TM = HLS_mgr->get_tree_manager();
-   auto isInt1 = tree_helper::is_int(TM, var1);
-   auto isInt2 = tree_helper::is_int(TM, var2);
-   auto isReal1 = tree_helper::is_real(TM, var1);
-   auto isReal2 = tree_helper::is_real(TM, var2);
-   auto size1 = tree_helper::size(TM, var1);
-   auto size2 = tree_helper::size(TM, var2);
+   const auto var1_nid = get_variable_index(storage_value_index1);
+   const auto var2_nid = get_variable_index(storage_value_index2);
+   const auto TM = HLS_mgr->get_tree_manager();
+   const auto var1 = TM->CGetTreeReindex(var1_nid);
+   const auto var2 = TM->CGetTreeReindex(var2_nid);
+   const auto isInt1 = tree_helper::IsSignedIntegerType(var1);
+   const auto isInt2 = tree_helper::IsSignedIntegerType(var2);
+   const auto isReal1 = tree_helper::IsRealType(var1);
+   const auto isReal2 = tree_helper::IsRealType(var2);
+   const auto size1 = tree_helper::Size(var1);
+   const auto size2 = tree_helper::Size(var2);
    return isInt1 == isInt2 && isReal1 == isReal2 && (((isInt1 && isInt2) || (isReal1 && isReal2)) ? size1 == size2 : resize_to_1_8_16_32_64_128_256_512(size1) == resize_to_1_8_16_32_64_128_256_512(size2));
 }

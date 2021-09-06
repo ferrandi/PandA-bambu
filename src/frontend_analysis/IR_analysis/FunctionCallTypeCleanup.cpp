@@ -140,17 +140,17 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
                   const auto ret_type_node = tree_helper::GetFunctionReturnType(fu_decl_node);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is a call_expr with LHS " + GET_CONST_NODE(ga->op0)->ToString());
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the called function returns type " + ret_type_node->ToString());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the called function returns type " + STR(ret_type_node));
                   if(code0 == ssa_name_K)
                   {
-                     const auto assigned_ssa_type_node = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the assigned ssa_name " + STR(GET_CONST_NODE(ga->op0)) + " has type " + assigned_ssa_type_node->ToString());
+                     const auto assigned_ssa_type_node = tree_helper::CGetType(ga->op0);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the assigned ssa_name " + STR(GET_CONST_NODE(ga->op0)) + " has type " + STR(assigned_ssa_type_node));
                      if(!tree_helper::IsSameType(ret_type_node, assigned_ssa_type_node))
                      {
                         const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), ret_type_node, tree_nodeRef(), tree_nodeRef());
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create ssa " + GET_CONST_NODE(new_ssa)->ToString());
 
-                        const auto ga_nop = tree_man->CreateNopExpr(new_ssa, TM->CGetTreeReindex(assigned_ssa_type_node->index), tree_nodeRef(), tree_nodeRef(), function_id);
+                        const auto ga_nop = tree_man->CreateNopExpr(new_ssa, assigned_ssa_type_node, tree_nodeRef(), tree_nodeRef(), function_id);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create nop " + GET_CONST_NODE(ga_nop)->ToString());
 
                         const auto cast_ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_nop));
@@ -225,21 +225,20 @@ bool FunctionCallTypeCleanup::ParametersTypeCleanup(const tree_managerRef& TM, c
    for(; arg_it != args.cend(); arg_it++, arg_n++)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining arg " + GET_CONST_NODE(*arg_it)->ToString() + " " + GET_CONST_NODE(*arg_it)->get_kind_text());
-      const auto formal_type = tree_helper::GetFormalIth(GET_CONST_NODE(stmt), arg_n);
-      const auto actual_type_node = tree_helper::CGetType(GET_CONST_NODE(*arg_it));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---formal type = " + formal_type->get_kind_text() + "\t" + formal_type->ToString());
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual type = " + actual_type_node->get_kind_text() + "\t" + actual_type_node->ToString());
+      const auto formal_type = tree_helper::GetFormalIth(stmt, arg_n);
+      const auto actual_type = tree_helper::CGetType(*arg_it);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---formal type = " + GET_CONST_NODE(formal_type)->get_kind_text() + "\t" + STR(formal_type));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual type = " + GET_CONST_NODE(actual_type)->get_kind_text() + "\t" + STR(actual_type));
       tree_nodeRef ga_cleanup = nullptr;
-      if((GET_CONST_NODE(*arg_it)->get_kind() == integer_cst_K || GET_CONST_NODE(*arg_it)->get_kind() == ssa_name_K) && !tree_helper::IsSameType(formal_type, actual_type_node))
+      if((GET_CONST_NODE(*arg_it)->get_kind() == integer_cst_K || GET_CONST_NODE(*arg_it)->get_kind() == ssa_name_K) && !tree_helper::IsSameType(formal_type, actual_type))
       {
          ga_cleanup = tree_man->CreateNopExpr(*arg_it, TM->CGetTreeReindex(formal_type->index), tree_nodeRef(), tree_nodeRef(), function_id);
       }
       else if(GET_CONST_NODE(*arg_it)->get_kind() == addr_expr_K || GET_CONST_NODE(*arg_it)->get_kind() == nop_expr_K || GET_CONST_NODE(*arg_it)->get_kind() == view_convert_expr_K) /// required by CLANG/LLVM
       {
-         const auto formal_type_reindex = TM->CGetTreeReindex(formal_type->index);
          const auto parm_ue = GetPointerS<const unary_expr>(GET_CONST_NODE(*arg_it));
-         const auto ue_expr = tree_man->create_unary_operation(formal_type_reindex, parm_ue->op, srcp, GET_CONST_NODE(*arg_it)->get_kind()); /// It is required to de-share some IR nodes
-         ga_cleanup = tree_man->CreateGimpleAssign(formal_type_reindex, tree_nodeRef(), tree_nodeRef(), ue_expr, function_id, block->number, srcp);
+         const auto ue_expr = tree_man->create_unary_operation(formal_type, parm_ue->op, srcp, GET_CONST_NODE(*arg_it)->get_kind()); /// It is required to de-share some IR nodes
+         ga_cleanup = tree_man->CreateGimpleAssign(formal_type, tree_nodeRef(), tree_nodeRef(), ue_expr, function_id, block->number, srcp);
       }
       if(ga_cleanup)
       {
@@ -251,7 +250,7 @@ bool FunctionCallTypeCleanup::ParametersTypeCleanup(const tree_managerRef& TM, c
          auto tmp_arg_it = args.begin();
          for(; tmp_arg_it != args.end(); tmp_arg_it++, k++)
          {
-            if(GET_INDEX_CONST_NODE(*arg_it) == GET_INDEX_CONST_NODE(*tmp_arg_it) && tree_helper::GetFormalIth(GET_CONST_NODE(stmt), k)->index == formal_type->index)
+            if(GET_INDEX_CONST_NODE(*arg_it) == GET_INDEX_CONST_NODE(*tmp_arg_it) && tree_helper::GetFormalIth(stmt, k)->index == formal_type->index)
             {
                TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
                tmp_arg_it = std::next(args.begin(), static_cast<int>(k));

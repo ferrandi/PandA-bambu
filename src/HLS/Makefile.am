@@ -351,6 +351,7 @@ lib_hls_chaining_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/virtual_components \
    -I$(top_srcdir)/src/intermediate_representations \
    -I$(top_srcdir)/src/intermediate_representations/hls \
+   -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
 

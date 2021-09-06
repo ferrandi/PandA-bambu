@@ -310,7 +310,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          {
             transformations[tree_node->index] = NONE;
          }
-         else if(tree_helper::CGetType(tree_node)->get_kind() == pointer_type_K or sa->virtual_flag)
+         else if(GET_CONST_NODE(tree_helper::CGetType(tree_node))->get_kind() == pointer_type_K or sa->virtual_flag)
          {
             transformations[tree_node->index] = SCALAR;
          }
@@ -392,7 +392,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          /// Check if the phi is in the header of an outer loop
          else if(loop->GetId() == gp->bb_index and simd_loop_type[loop->GetId()] == SIMD_OUTER)
          {
-            if(gp->virtual_flag or tree_helper::CGetType(GET_NODE(gp->res))->get_kind() == boolean_type_K)
+            if(gp->virtual_flag || GET_CONST_NODE(tree_helper::CGetType(gp->res))->get_kind() == boolean_type_K)
             {
                transformations[gp->index] = SIMD;
             }
@@ -561,7 +561,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          const auto* fd = GetPointer<const function_decl>(GET_NODE(ae->op));
          const auto* in = GetPointer<const identifier_node>(GET_NODE(fd->name));
          const std::string function_name = in->strg;
-         transformations[tree_node->index] = TM->function_index("parallel_" + function_name) ? SIMD : SCALAR;
+         transformations[tree_node->index] = TM->GetFunction("parallel_" + function_name) ? SIMD : SCALAR;
          break;
       }
       case bit_ior_concat_expr_K:
@@ -1112,7 +1112,7 @@ void Vectorize::FixPhis()
          CustomMap<unsigned int, tree_nodeRef> new_defs;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing phi " + STR(phi));
          auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
-         const auto type = TM->CGetTreeReindex(tree_helper::CGetType(GET_NODE(gp->res))->index);
+         const auto type = tree_helper::CGetType(gp->res);
          THROW_ASSERT(type, "");
          for(const auto source : phi_inputs)
          {
@@ -1581,7 +1581,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
                      plus_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + STR(line_number) + ":" + STR(column_number);
                      plus_tree_node_schema[TOK(TOK_OP0)] = STR(def_edge.first->index);
-                     plus_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType((GET_NODE(def_edge.first)))->index);
+                     plus_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(def_edge.first)->index);
                      THROW_ASSERT(iv_increment.find(gp->res->index) != iv_increment.end(), "Increment variable of " + gp->res->ToString() + " is unknown");
                      const long long int increment = iv_increment.find(gp->res->index)->second * static_cast<long long int>(i - 1);
                      const tree_nodeRef new_ic = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), increment, TM->new_tree_node_id());
@@ -1632,7 +1632,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      previous_block->PushBack(TM->GetTreeReindex(gimple_tree_node_index), AppM);
                   }
                   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> constructor_tree_node_schema, gimple_tree_node_schema, ssa_tree_node_schema;
-                  constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(tree_helper::CGetType(GET_NODE(gp->res))->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(tree_helper::CGetType(gp->res)->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   unsigned int constructor_index = TM->new_tree_node_id();
                   TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
                   auto* constr = GetPointer<constructor>(TM->get_tree_node_const(constructor_index));
@@ -1699,13 +1699,13 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             /// Build bit_field_ref to extract the scalar
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, ssa_tree_node_schema, gimple_assign_tree_node_schema;
             unsigned int bit_field_ref_index = TM->new_tree_node_id();
-            const auto element_type = tree_helper::CGetType(GET_NODE(gp->res));
+            const auto element_type = tree_helper::CGetType(gp->res);
             /// vector of Boolean types are mapped on vector of unsigned integer
-            const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
+            const unsigned int bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
             const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), ((static_cast<long long int>(scalar) - 1) * bit_size), TM->new_tree_node_id());
             const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
             bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + STR(line_number) + ":" + STR(column_number);
-            bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(GET_NODE(gp->res))->index);
+            bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(gp->res)->index);
             bit_field_ref_tree_node_schema[TOK(TOK_OP0)] = STR(Transform(gp->res->index, parallel_degree, 0, new_stmt_list, new_phi_list));
             bit_field_ref_tree_node_schema[TOK(TOK_OP1)] = STR(size->index);
             bit_field_ref_tree_node_schema[TOK(TOK_OP2)] = STR(offset->index);
@@ -1774,7 +1774,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          THROW_ASSERT(GET_NODE(new_ga->op1)->get_kind() == plus_expr_K or GET_NODE(new_ga->op1)->get_kind() == minus_expr_K, "Loop increment operation is not a plus expression nor a minus expression");
          auto* be = GetPointer<binary_expr>(GET_NODE(new_ga->op1));
          THROW_ASSERT(GET_NODE(be->op1)->get_kind() == vector_cst_K, "Increment is not constant");
-         const tree_nodeConstRef type = GetPointer<const vector_type>(tree_helper::CGetType(GET_NODE(be->op1)))->elts;
+         const auto type = GetPointer<const vector_type>(GET_CONST_NODE(tree_helper::CGetType(be->op1)))->elts;
          const long long int new_increment = increment * static_cast<long long int>(parallel_degree);
          const tree_nodeRef new_ic = tree_man->CreateIntegerCst(type, new_increment, TM->new_tree_node_id());
          be->op1 = TM->GetTreeReindex(Transform(new_ic->index, parallel_degree, 0, new_stmt_list, new_phi_list));
@@ -1802,9 +1802,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             /// Build bit_field_ref to extract the scalar
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, ssa_tree_node_schema, gimple_assign_tree_node_schema;
             unsigned int bit_field_ref_index = TM->new_tree_node_id();
-            const auto element_type = tree_helper::CGetType(GET_NODE(ga->op0));
+            const auto element_type = tree_helper::CGetType(ga->op0);
             /// vector of Boolean types are mapped on vector of integer
-            const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
+            const unsigned int bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
             const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), ((static_cast<long long int>(scalar) - 1) * bit_size), TM->new_tree_node_id());
             const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
             bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + STR(line_number) + ":" + STR(column_number);
@@ -1931,7 +1931,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
                   /// Build constructor for right part
                   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> constructor_tree_node_schema;
-                  constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(tree_helper::CGetType(GET_NODE(ga->op0))->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(tree_helper::CGetType(ga->op0)->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   unsigned int constructor_index = TM->new_tree_node_id();
                   TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
                   auto* constr = GetPointer<constructor>(TM->get_tree_node_const(constructor_index));
@@ -2276,9 +2276,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   /// Build bit_field_ref to extract the scalar
                   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, gimple_assign_tree_node_schema;
                   unsigned int bit_field_ref_index = TM->new_tree_node_id();
-                  const auto element_type = tree_helper::CGetType(GET_NODE(ga->op0));
+                  const auto element_type = tree_helper::CGetType(ga->op0);
                   /// vector of Boolean types are mapped on vector of integer
-                  const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
+                  const unsigned int bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
                   const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>((scalar - 1) * bit_size), TM->new_tree_node_id());
                   const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
                   bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + STR(line_number) + ":" + STR(column_number);
@@ -2743,7 +2743,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   temp_tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
                   temp_tree_node_schema[TOK(TOK_OP1)] = STR(constr->index);
                   temp_tree_node_schema[TOK(TOK_OP0)] = STR(ssa_tree_node_index);
-                  temp_tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(tree_helper::CGetType(GET_NODE(be->op1))->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  temp_tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(tree_helper::CGetType(be->op1)->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   unsigned int temp_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(temp_tree_node_index, gimple_assign_K, temp_tree_node_schema);
                   auto* new_ga = GetPointer<gimple_assign>(TM->get_tree_node_const(temp_tree_node_index));
@@ -2832,13 +2832,12 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   {
                      /// Build bit_field_ref to extract the scalar
                      const auto new_srcp = include_name + ":" + STR(line_number) + ":" + STR(column_number);
-                     const auto element_type = tree_helper::CGetType(GET_CONST_NODE(gp->res));
+                     const auto element_type = tree_helper::CGetType(gp->res);
                      /// vector of Boolean types are mapped on vector of integer
-                     const auto bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32U;
+                     const auto bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32U;
                      const auto offset = TM->CreateUniqueIntegerCst((static_cast<long long int>(scalar) - 1) * bit_size, GET_INDEX_CONST_NODE(tree_man->create_default_unsigned_integer_type()));
                      const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), GET_INDEX_CONST_NODE(tree_man->create_default_unsigned_integer_type()));
-                     const auto bit_field_ref_node =
-                         tree_man->create_ternary_operation(TM->GetTreeReindex(element_type->index), TM->GetTreeReindex(Transform(gp->res->index, parallel_degree, 0, new_stmt_list, new_phi_list)), size, offset, new_srcp, bit_field_ref_K);
+                     const auto bit_field_ref_node = tree_man->create_ternary_operation(element_type, TM->GetTreeReindex(Transform(gp->res->index, parallel_degree, 0, new_stmt_list, new_phi_list)), size, offset, new_srcp, bit_field_ref_K);
 
                      const auto gimple_new_tree_node = tree_man->create_gimple_modify_stmt(TM->GetTreeReindex(Transform(gp->res->index, parallel_degree, scalar, new_stmt_list, new_phi_list)), bit_field_ref_node, function_id, new_srcp, 0);
                      /// Split of phi node goes to the beginning of the list of statement

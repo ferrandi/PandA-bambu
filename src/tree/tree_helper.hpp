@@ -69,6 +69,7 @@ struct function_decl;
 struct ssa_name;
 template <typename value>
 class TreeNodeMap;
+class TreeNodeConstSorter;
 enum class TreeVocabularyTokenTypes_TokenEnum;
 CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manager);
@@ -95,15 +96,14 @@ class tree_helper
    static const std::set<std::string> TLM_SC_builtin_scalar_type;
 
    /**
-    * Return the type to be declared before declaring index type
-    * @param TM is the tree_manager
-    * @param index is the starting type
-    * @param recursive must be set to true in recursive call
+    * Return the types to be declared before/after declaring type
+    * @param returned_types is the set of type declarations
+    * @param type is the starting type
+    * @param recursion must be set to true in recursive call
     * @param without_transformation specifies if we are not restructuring the code
-    * @param before is true if we are computing types which must be declared before index
-    * @return the types to be declared
+    * @param before is true/false if we are computing types which must be declared before/after type
     */
-   static CustomUnorderedSet<unsigned int> RecursiveGetTypesToBeDeclared(const tree_managerConstRef& TM, const unsigned int index, const bool recursion, const bool without_transformation, const bool before);
+   static void RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, TreeNodeConstSorter>& returned_types, const tree_nodeConstRef& type, const bool recursion, const bool without_transformation, const bool before);
 
    /**
     * recursively compute the references to the ssa_name variables used in a statement
@@ -200,17 +200,6 @@ class tree_helper
 
    /**
     * Return where a function or a type is defined
-    * @param tm is the tree manager
-    * @param index is the index
-    * @param is_system stores if function or type has been already recognized as a system one
-    */
-   static
-       /// FIXME: to be remove after substitution with GetSourcePath
-       std::tuple<std::string, unsigned int, unsigned int>
-       get_definition(const tree_managerConstRef& tm, const unsigned int index, bool& is_system);
-
-   /**
-    * Return where a function or a type is defined
     * @param node type or decl treenode
     * @param is_system stores if function or type has been already recognized as a system one
     * @return include name, line number, and column number tuple
@@ -264,21 +253,19 @@ class tree_helper
 
    /**
     * Return the types to be declared before declaring index type
-    * @param TM is the tree_manager
-    * @param index is the starting type
+    * @param tn is the starting type
     * @param without_transformation specifies if we are not restructuring the code
     * @return the types to be declared
     */
-   static CustomUnorderedSet<unsigned int> GetTypesToBeDeclaredBefore(const tree_managerConstRef& TM, const unsigned int index, const bool without_transformation);
+   static std::set<tree_nodeConstRef, TreeNodeConstSorter> GetTypesToBeDeclaredBefore(const tree_nodeConstRef& tn, const bool without_transformation);
 
    /**
     * Return the types to be declared after declaring index type
-    * @param TM is the tree_manager
-    * @param index is the starting type
+    * @param tn is the starting type
     * @param without_transformation specifies if we are not restructuring the code
     * @return the types to be declared
     */
-   static CustomUnorderedSet<unsigned int> GetTypesToBeDeclaredAfter(const tree_managerConstRef& TM, const unsigned int index, const bool without_transformation);
+   static std::set<tree_nodeConstRef, TreeNodeConstSorter> GetTypesToBeDeclaredAfter(const tree_nodeConstRef& tn, const bool without_transformation);
 
    /**
     * Return the treenode index of the type of index
@@ -386,7 +373,7 @@ class tree_helper
     * @param ftype is the function type
     * @return parameters type list
     */
-   static std::list<unsigned int> GetParameterTypes(const tree_nodeConstRef& ftype);
+   static std::vector<tree_nodeConstRef> GetParameterTypes(const tree_nodeConstRef& ftype);
 
    /**
     * Return the fields type of a variable of type struct
@@ -544,16 +531,6 @@ class tree_helper
    static bool IsArrayType(const tree_nodeConstRef& type);
 
    /**
-    * @param TM is the tree_manager
-    * @param index is the treenode index
-    * @return the basetype of the array in case it is an array
-    */
-   static
-       /// FIXME: to be remove after substitution with CGetArrayBaseType
-       tree_nodeConstRef
-       get_array_basetype(const tree_managerConstRef& TM, const unsigned int index);
-
-   /**
     * @param type is the treenode
     * @return the basetype of the array in case it is an array
     */
@@ -627,21 +604,10 @@ class tree_helper
 
    /**
     * Return true if the type has to be declared
-    * @param TM is the tree_manager
-    * @param index is the treenode index
-    * @return if the type has to be declared
-    */
-   static
-       /// FIXME: to be remove after substitution with HasToBeDeclared
-       bool
-       HasToBeDeclared(const tree_managerConstRef& TM, const unsigned int index);
-
-   /**
-    * Return true if the type has to be declared
     * @param type is the treenode
     * @return if the type has to be declared
     */
-   static bool HasToBeDeclared(const tree_nodeConstRef& type);
+   static bool HasToBeDeclared(const tree_managerConstRef& TM, const tree_nodeConstRef& type);
 
    /**
     * Return if the treenode is of const type
@@ -986,7 +952,17 @@ class tree_helper
     * @param index is the id of a variable/ssa_name
     * @return true in case the variable/ssa_name is a volatile object
     */
-   static bool is_volatile(const tree_managerConstRef& TM, const unsigned int index);
+   static
+       /// FIXME: to be remove after substitution with IsVolatile
+       bool
+       is_volatile(const tree_managerConstRef& TM, const unsigned int index);
+
+   /**
+    * return true in case the tree node corresponds to a volatile variable
+    * @param tn is the tree node
+    * @return true in case the variable/ssa_name is a volatile object
+    */
+   static bool IsVolatile(const tree_nodeConstRef& tn);
 
    /**
     * return true in case the index corresponds to a parameter in ssa form or not
@@ -1172,6 +1148,8 @@ class tree_helper
     */
    static bool IsAligned(const tree_managerConstRef& TM, unsigned int type);
 
+   static bool IsAligned(const tree_nodeConstRef& tn);
+
    /**
     * Return the var alignment
     * @param TM is the tree manager
@@ -1265,12 +1243,12 @@ class tree_helper
    /**
     * return the maximum bitsize associated with the elements accessible through type_node
     */
-   static void accessed_greatest_bitsize(const tree_nodeConstRef& type_node, unsigned int& bitsize);
+   static unsigned int AccessedMaximumBitsize(const tree_nodeConstRef& type_node, unsigned int bitsize);
 
    /**
     * return the minimum bitsize associated with the elements accessible through type_node
     */
-   static void accessed_minimum_bitsize(const tree_nodeConstRef& type_node, unsigned int& bitsize);
+   static unsigned int AccessedMinimunBitsize(const tree_nodeConstRef& type_node, unsigned int bitsize);
 
    /**
     * Compute the memory (in bytes) to be allocated to store a parameter or a variable
@@ -1308,9 +1286,9 @@ class tree_helper
     */
    static TreeNodeMap<size_t> ComputeSsaUses(const tree_nodeRef& tn);
 
-   static bool is_a_nop_function_decl(function_decl* fd);
+   static bool is_a_nop_function_decl(const function_decl* fd);
 
-   static void get_required_values(const tree_managerConstRef& TM, std::vector<std::tuple<unsigned int, unsigned int>>& required, const tree_nodeRef& tn, unsigned int index);
+   static void get_required_values(std::vector<std::tuple<unsigned int, unsigned int>>& required, const tree_nodeRef& tn);
 
    /**
     * Return true if statement must be the last of a basic block
@@ -1337,21 +1315,19 @@ class tree_helper
 
    /**
     * Return true if the tree node is a gimple_assign writing something which will be allocated in memory
-    * @param TM is the tree manager
     * @param tn is the tree node
     * @param fun_mem_data is the set of memory variables of the function
     * @return true if tn operation is a store
     */
-   static bool IsStore(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const CustomOrderedSet<unsigned int>& fun_mem_data);
+   static bool IsStore(const tree_nodeConstRef& tn, const CustomOrderedSet<unsigned int>& fun_mem_data);
 
    /**
     * Return true if the tree node is a gimple_assign reading something which will be allocated in memory
-    * @param TM is the tree manager
     * @param tn is the tree node
     * @param fun_mem_data is the set of memory variables of the function
     * @return true if tn operation is a load
     */
-   static bool IsLoad(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const CustomOrderedSet<unsigned int>& fun_mem_data);
+   static bool IsLoad(const tree_nodeConstRef& tn, const CustomOrderedSet<unsigned int>& fun_mem_data);
 
    /**
     * Return true in case the right operation is a lut_expr
@@ -1359,7 +1335,7 @@ class tree_helper
     * @param tn is the tree node
     * @return if tn operation is a lut_expr
     */
-   static bool IsLut(const tree_managerConstRef& TM, const tree_nodeConstRef& tn);
+   static bool IsLut(const tree_nodeConstRef& tn);
 
    /// Constructor
    tree_helper();

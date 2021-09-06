@@ -594,10 +594,10 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   alignment = (1ull << n_last_zerobits) * 8;
                   std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(fun_id, *v);
                   unsigned int size_var = std::get<0>(var_read[0]);
-                  unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
-                  value_bitsize = tree_helper::size(TreeM, size_type_index);
-                  auto* fd = GetPointer<field_decl>(TreeM->get_tree_node_const(size_type_index));
-                  if(!fd or !fd->is_bitfield())
+                  const auto size_type = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
+                  value_bitsize = tree_helper::Size(size_type);
+                  const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
+                  if(!fd || !fd->is_bitfield())
                   {
                      value_bitsize = std::max(8u, value_bitsize);
                   }
@@ -645,10 +645,10 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   alignment = (1ull << n_last_zerobits) * 8;
                   unsigned int size_var = HLSMgr->get_produced_value(fun_id, *v);
-                  unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
-                  value_bitsize = tree_helper::size(TreeM, size_type_index);
-                  auto* fd = GetPointer<field_decl>(TreeM->get_tree_node_const(size_type_index));
-                  if(!fd or !fd->is_bitfield())
+                  const auto size_type = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
+                  value_bitsize = tree_helper::Size(size_type);
+                  const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
+                  if(!fd || !fd->is_bitfield())
                   {
                      value_bitsize = std::max(8u, value_bitsize);
                   }
@@ -656,18 +656,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
 
                if(var_size.find(var) == var_size.end())
                {
-                  unsigned int elmt_bitsize = 1;
-                  unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-                  bool is_a_struct_union = (tree_helper::is_a_struct(TreeM, type_index) && !tree_helper::is_an_array(TreeM, type_index)) || (tree_helper::is_an_union(TreeM, type_index) && !tree_helper::is_an_array(TreeM, type_index)) ||
-                                           tree_helper::is_a_complex(TreeM, type_index);
-                  const auto type_node = TreeM->CGetTreeNode(type_index);
-                  tree_helper::accessed_greatest_bitsize(type_node, elmt_bitsize);
-                  unsigned int mim_elmt_bitsize = elmt_bitsize;
-                  tree_helper::accessed_minimum_bitsize(type_node, mim_elmt_bitsize);
+                  const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
+                  bool is_a_struct_union = (tree_helper::IsStructType(type_node) && !tree_helper::IsArrayType(type_node)) || (tree_helper::IsUnionType(type_node) && !tree_helper::IsArrayType(type_node)) || tree_helper::IsComplexType(type_node);
+                  const auto elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
+                  const auto mim_elmt_bitsize = tree_helper::AccessedMinimunBitsize(type_node, elmt_bitsize);
                   unsigned int elts_size = elmt_bitsize;
-                  if(tree_helper::is_an_array(TreeM, type_index))
+                  if(tree_helper::IsArrayType(type_node))
                   {
-                     elts_size = tree_helper::get_array_data_bitsize(TreeM, type_index);
+                     elts_size = tree_helper::GetArrayElementSize(type_node);
                   }
                   if(unaligned_access_p)
                   {
@@ -1061,8 +1057,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
          else
          {
-            const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(funID);
-            const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
+            const auto function_behavior = HLSMgr->CGetFunctionBehavior(funID);
+            const auto BH = function_behavior->CGetBehavioralHelper();
             is_dynamic_address_used = true;
             if(assume_aligned_access_p)
             {
@@ -1074,8 +1070,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var_index) + " not sds-C");
             }
          }
-         const tree_nodeRef curr_tn = TreeM->get_tree_node_const(var_index);
-         auto* vd = GetPointer<var_decl>(curr_tn);
+         const auto vd = GetPointer<const var_decl>(TreeM->CGetTreeNode(var_index));
          if((HLSMgr->get_written_objects().find(var_index) == HLSMgr->get_written_objects().end()) && (!is_dynamic_address_used || (vd && vd->readonly_flag)))
          {
             HLSMgr->Rmem->add_read_only_variable(var_index);
@@ -1096,7 +1091,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             THROW_ASSERT(var_index, "null var index unexpected");
             if(pair.second && (!HLSMgr->Rmem->is_private_memory(var_index) || null_pointer_check))
             {
-               unsigned int curr_size = compute_n_bytes(tree_helper::size(TreeM, var_index));
+               unsigned int curr_size = compute_n_bytes(tree_helper::Size(TreeM->CGetTreeReindex(var_index)));
                max_byte_size = std::max(curr_size, max_byte_size);
             }
          }
@@ -1120,6 +1115,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       {
          unsigned int var_index = mem_map.first;
          THROW_ASSERT(var_index, "null var index unexpected");
+         const auto var_node = TreeM->CGetTreeReindex(var_index);
          bool is_internal = mem_map.second;
          std::string var_index_string;
          bool is_dynamic_address_used = false;
@@ -1137,8 +1133,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             {
                const FunctionBehaviorConstRef cur_function_behavior = HLSMgr->CGetFunctionBehavior(*wiu_it);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing function " + cur_function_behavior->CGetBehavioralHelper()->get_function_name());
-               if(cur_function_behavior->get_dynamic_address().find(var_index) != cur_function_behavior->get_dynamic_address().end() ||
-                  (GetPointer<var_decl>(TreeM->get_tree_node_const(var_index)) && GetPointer<var_decl>(TreeM->get_tree_node_const(var_index))->addr_taken))
+               if(cur_function_behavior->get_dynamic_address().count(var_index) || (GetPointer<const var_decl>(GET_CONST_NODE(var_node)) && GetPointer<const var_decl>(GET_CONST_NODE(var_node))->addr_taken))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Found dynamic use of variable: " + cur_function_behavior->CGetBehavioralHelper()->PrintVariable(var_index) + " - " + STR(var_index) + " - " + var_index_string + " in function " +
@@ -1147,8 +1142,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                }
             }
 
-            if(!is_dynamic_address_used &&                                                          /// we never have &(var_index_object)
-               HLSMgr->get_written_objects().find(var_index) == HLSMgr->get_written_objects().end() /// read only memory
+            if(!is_dynamic_address_used &&                     /// we never have &(var_index_object)
+               !HLSMgr->get_written_objects().count(var_index) /// read only memory
                && ((!parameters->IsParameter("no-private-mem") || parameters->GetParameter<int>("no-private-mem") == 0) && (!parameters->IsParameter("no-local-mem") || parameters->GetParameter<int>("no-local-mem") == 0)))
             {
                for(auto wiu_it = where_used[var_index].begin(); wiu_it != wiu_it_end; ++wiu_it)
@@ -1195,12 +1190,12 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             HLSMgr->Rmem->add_external_variable(var_index, BH->PrintVariable(var_index));
             is_dynamic_address_used = true;
          }
-         bool is_packed = GetPointer<decl_node>(TreeM->get_tree_node_const(var_index)) && tree_helper::is_packed(TreeM, var_index);
+         bool is_packed = GetPointer<const decl_node>(GET_CONST_NODE(var_node)) && tree_helper::IsPackedType(var_node);
          HLSMgr->Rmem->set_packed_vars(is_packed);
 
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Id: " + STR(var_index));
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Base Address: " + STR(HLSMgr->Rmem->get_base_address(var_index, funID)));
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Size: " + STR(compute_n_bytes(tree_helper::size(TreeM, var_index))));
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Size: " + STR(compute_n_bytes(tree_helper::Size(var_node))));
          if(HLSMgr->Rmem->is_private_memory(var_index))
          {
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Is a private memory");
@@ -1232,28 +1227,27 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          if(HLSMgr->Rmem->is_sds_var(var_index))
          {
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---The variable is always accessed with the same data size");
-            const tree_nodeRef curr_tn = TreeM->get_tree_node_const(var_index);
-            auto* vd = GetPointer<var_decl>(curr_tn);
+            auto* vd = GetPointer<const var_decl>(GET_CONST_NODE(var_node));
             if(vd && vd->bit_values.size() != 0)
             {
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---The variable has been trimmed to bitsize: " + STR(vd->bit_values.size()) + " with bit-value pattern: " + vd->bit_values);
             }
          }
-         if(var_referring_vertex_map.find(var_index) != var_referring_vertex_map.end())
+         if(var_referring_vertex_map.count(var_index))
          {
-            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Number of functions in which is used: " + STR(var_referring_vertex_map.find(var_index)->second.size()));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Number of functions in which is used: " + STR(var_referring_vertex_map.at(var_index).size()));
             size_t max_references = 0;
-            for(auto fun_vertex_set : var_referring_vertex_map.find(var_index)->second)
+            for(const auto& fun_vertex_set : var_referring_vertex_map.at(var_index))
             {
                max_references = max_references > static_cast<size_t>(fun_vertex_set.second.size()) ? max_references : static_cast<size_t>(fun_vertex_set.second.size());
             }
             HLSMgr->Rmem->set_maximum_references(var_index, max_references);
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Maximum number of references per function: " + STR(max_references));
          }
-         if(var_load_vertex_map.find(var_index) != var_load_vertex_map.end())
+         if(var_load_vertex_map.count(var_index))
          {
             size_t max_loads = 0;
-            for(auto fun_vertex_set : var_load_vertex_map.find(var_index)->second)
+            for(const auto& fun_vertex_set : var_load_vertex_map.at(var_index))
             {
                max_loads = max_loads > static_cast<size_t>(fun_vertex_set.second.size()) ? max_loads : static_cast<size_t>(fun_vertex_set.second.size());
             }
@@ -1266,13 +1260,13 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
       }
-      if(funID and HLSMgr->hasToBeInterfaced(funID) and top_functions.find(funID) == top_functions.end())
+      if(funID && HLSMgr->hasToBeInterfaced(funID) && !top_functions.count(funID))
       {
          allocate_parameters(funID);
       }
       else
 
-          if(funID and top_functions.find(funID) != top_functions.end() and (parameters->getOption<bool>(OPT_memory_mapped_top) || (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)))
+          if(funID && top_functions.count(funID) && (parameters->getOption<bool>(OPT_memory_mapped_top) || (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)))
       {
          allocate_parameters(funID);
       }

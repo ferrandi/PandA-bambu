@@ -123,19 +123,14 @@ void WishboneInterfaceTestbench::write_wishbone_input_signal_declaration(const t
             writer->write("[" + STR(GetPointer<port_o>(mod->get_in_port(i))->get_ports_size() - 1 + lsb) + ":" + STR(lsb) + "] ");
          }
          writer->write(HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id()) + ";\n");
-         if(port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TreeM, port_obj->get_typeRef()->treenode))
+         if(port_obj->get_typeRef()->treenode > 0 && tree_helper::IsPointerType(TreeM->CGetTreeReindex(port_obj->get_typeRef()->treenode)))
          {
-            unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, port_obj->get_typeRef()->treenode));
-            tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
-            if(GetPointer<array_type>(pt_node))
+            auto pt_node = tree_helper::CGetPointedType(tree_helper::CGetType(TreeM->CGetTreeReindex(port_obj->get_typeRef()->treenode)));
+            while(GetPointer<const array_type>(GET_CONST_NODE(pt_node)))
             {
-               while(GetPointer<array_type>(pt_node))
-               {
-                  pt_type_index = GET_INDEX_NODE(GetPointer<array_type>(pt_node)->elts);
-                  pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
-               }
+               pt_node = GetPointer<const array_type>(GET_CONST_NODE(pt_node))->elts;
             }
-            long long int bitsize = tree_helper::size(TreeM, pt_type_index);
+            const auto bitsize = tree_helper::Size(pt_node);
             writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
          }
       }
@@ -552,26 +547,23 @@ void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM,
    const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
    for(auto const& function_parameter : function_parameters)
    {
-      unsigned int var = function_parameter.first;
-      std::string variableName = (var == behavioral_helper->GetFunctionReturnType(topFunctionId)) ? RETURN_PORT_NAME : behavioral_helper->PrintVariable(var);
-      unsigned int variableType = tree_helper::get_type_index(TreeM, var);
-      unsigned int variableBitSize = tree_helper::size(TreeM, variableType);
-      unsigned int expectedVariableBitSize = tree_helper::size(TreeM, variableType);
-      if(tree_helper::is_a_pointer(TreeM, var))
+      const auto var = function_parameter.first;
+      const auto var_node = TreeM->CGetTreeReindex(var);
+      const auto ret_type_index = behavioral_helper->GetFunctionReturnType(topFunctionId);
+      std::string variableName = (var == ret_type_index) ? RETURN_PORT_NAME : behavioral_helper->PrintVariable(var);
+      const auto variableType = tree_helper::CGetType(var_node);
+      const auto variableBitSize = tree_helper::Size(variableType);
+      auto expectedVariableBitSize = variableBitSize;
+      if(tree_helper::IsPointerType(variableType))
       {
-         unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, var));
-         tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
-         if(GetPointer<array_type>(pt_node))
+         auto pt_type = tree_helper::CGetPointedType(variableType);
+         while(GetPointer<const array_type>(GET_CONST_NODE(pt_type)))
          {
-            while(GetPointer<array_type>(pt_node))
-            {
-               pt_type_index = GET_INDEX_NODE(GetPointer<array_type>(pt_node)->elts);
-               pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
-            }
+            pt_type = GetPointer<const array_type>(GET_CONST_NODE(pt_type))->elts;
          }
-         expectedVariableBitSize = tree_helper::size(TreeM, pt_type_index);
+         expectedVariableBitSize = tree_helper::Size(pt_type);
       }
-      if(var == behavioral_helper->GetFunctionReturnType(topFunctionId))
+      if(var == ret_type_index)
       {
          writer->write_comment(variableName + " -> " + STR(function_parameter.first) + "\n");
          writer->write("reg [" + STR(expectedVariableBitSize) + "-1:0] ex_" + variableName + ";\n");
@@ -583,11 +575,11 @@ void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM,
          writer->write_comment(variableName + " -> " + STR(var) + "\n");
          writer->write("reg [" + STR(variableBitSize) + "-1:0] " + HDL_manager::convert_to_identifier(writer.get(), variableName) + ";\n");
          writer->write("parameter ADDRESS_OFFSET_" + variableName + " = " + STR(mem->get_parameter_base_address(topFunctionId, var)) + ";\n");
-         if(tree_helper::is_a_pointer(TreeM, var))
+         if(tree_helper::IsPointerType(variableType))
          {
-            unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, var));
+            const auto pt_type = tree_helper::CGetPointedType(variableType);
             /// FIXME: real numbers at the moment have to be considered differently because of computation of ulp; c++ code is still managed in the old way
-            if(tree_helper::is_real(TreeM, pt_type_index))
+            if(tree_helper::IsRealType(pt_type))
             {
                writer->write("reg [" + STR(expectedVariableBitSize - 1) + ":0] ex_" + variableName + ";\n");
             }

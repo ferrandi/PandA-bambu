@@ -72,6 +72,7 @@
 
 /// tree include
 #include "tree_node.hpp"
+#include "tree_reindex.hpp"
 
 /// we start to allocate from internal_base_address_alignment byte to align address to internal_base_address_alignment bits
 /// we can use address 0 in some cases but it is not safe in general.
@@ -137,19 +138,19 @@ std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() cons
 
 void memory::compute_next_base_address(unsigned long long int& address, unsigned int var, unsigned int alignment)
 {
-   const tree_nodeRef node = TreeM->get_tree_node_const(var);
+   const auto node = TreeM->CGetTreeReindex(var);
    unsigned int size = 0;
 
    // The __builtin_wait_call associate an address to the call site to
    // identify it.  For this case we are allocating a word.
-   if(GetPointer<gimple_call>(node))
+   if(GetPointer<const gimple_call>(GET_CONST_NODE(node)))
    {
       size = (bus_addr_bitsize % 8 == 0) ? bus_addr_bitsize / 8 : (bus_addr_bitsize / 8) + 1;
    }
    else
    {
       /// compute the next base address
-      size = compute_n_bytes(tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, var)));
+      size = compute_n_bytes(tree_helper::Size(tree_helper::CGetType(node)));
    }
    address += size;
    /// align the memory address
@@ -228,7 +229,7 @@ void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, con
    THROW_ASSERT(in_vars.find(var) == in_vars.end() || is_private_memory(var), "variable already allocated inside this module");
 
    internal[funID_scope][var] = m_sym;
-   if(GetPointer<gimple_call>(TreeM->get_tree_node_const(var)))
+   if(GetPointer<const gimple_call>(TreeM->CGetTreeNode(var)))
    {
       callSites[var] = m_sym;
    }
@@ -239,7 +240,7 @@ void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, con
 
    if(is_private_memory(var))
    {
-      unsigned long long int allocated_memory = compute_n_bytes(tree_helper::size(TreeM, var));
+      unsigned long long int allocated_memory = compute_n_bytes(tree_helper::Size(TreeM->CGetTreeReindex(var)));
       rangesize[var] = allocated_memory;
       align(rangesize[var], internal_base_address_alignment);
       total_amount_of_private_memory += allocated_memory;
@@ -501,7 +502,7 @@ unsigned long long int memory::get_last_address(unsigned int funId, const applic
       unsigned int var = internalVar.first;
       if(!is_private_memory(var) && !has_parameter_base_address(var, funId) && has_base_address(var))
       {
-         maxAddress = std::max(maxAddress, internalVar.second->get_address() + tree_helper::size(TreeM, var) / 8);
+         maxAddress = std::max(maxAddress, internalVar.second->get_address() + tree_helper::Size(TreeM->CGetTreeReindex(var)) / 8);
       }
    }
    if(AppMgr->hasToBeInterfaced(funId))
@@ -510,7 +511,7 @@ unsigned long long int memory::get_last_address(unsigned int funId, const applic
       for(const auto& itr : paramsVar)
       {
          unsigned int var = itr.first;
-         maxAddress = std::max(maxAddress, itr.second->get_address() + tree_helper::size(TreeM, var) / 8);
+         maxAddress = std::max(maxAddress, itr.second->get_address() + tree_helper::Size(TreeM->CGetTreeReindex(var)) / 8);
       }
    }
    for(unsigned int Itr : calledSet)

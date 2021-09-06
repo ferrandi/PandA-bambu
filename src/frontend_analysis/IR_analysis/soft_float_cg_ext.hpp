@@ -133,7 +133,7 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    static tree_nodeRef float64_type;
    static tree_nodeRef float64_ptr_type;
 
-   static bool lowering_needed(const tree_managerRef& TreeM, const ssa_name* ssa);
+   static bool lowering_needed(const ssa_name* ssa);
 
    tree_nodeRef int_type_for(const tree_nodeRef& type, bool use_internal) const;
 

@@ -375,7 +375,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       nop_IR_schema[TOK(TOK_SCPE)] = STR(function_id);
       TM->create_tree_node(nop_id, gimple_nop_K, nop_IR_schema);
 
-      const auto volatile_sn = tree_man->create_ssa_name(sn->var, tree_helper::CGetType(TM->CGetTreeNode(sn->index)), nullptr, nullptr, true, true);
+      const auto volatile_sn = tree_man->create_ssa_name(sn->var, tree_helper::CGetType(TM->CGetTreeReindex(sn->index)), nullptr, nullptr, true, true);
       GetPointer<ssa_name>(GET_NODE(volatile_sn))->SetDefStmt(TM->GetTreeReindex(nop_id));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created volatile ssa _" + STR(GetPointerS<const ssa_name>(GET_CONST_NODE(volatile_sn))->vers));
 
@@ -523,7 +523,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                }
                tree_nodeRef phi_def_ssa_node;
                const auto phi_gimple_stmt = tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
-               THROW_ASSERT(tree_helper::CGetType(GET_CONST_NODE(phi_def_ssa_node))->index == tree_helper::CGetType(TM->CGetTreeNode(sn->index))->index, "");
+               THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index == tree_helper::CGetType(TM->CGetTreeReindex(sn->index))->index, "");
                GetPointerS<ssa_name>(GET_NODE(phi_def_ssa_node))->AddUseStmt(phi_gimple_stmt);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa _" + STR(GetPointerS<const ssa_name>(GET_CONST_NODE(phi_def_ssa_node))->vers));
                for(const auto& def_edge : def_edges)

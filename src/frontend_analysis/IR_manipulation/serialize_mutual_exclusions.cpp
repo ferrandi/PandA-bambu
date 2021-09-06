@@ -286,7 +286,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
                gimple_phi::DefEdgeList end_if_new_def_edge_list;
 
-               const auto type = tree_helper::CGetType(GET_NODE(gp->res));
+               const auto type = tree_helper::CGetType(gp->res);
 
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_schema;
                auto ssa_vers = TM->get_next_vers();
@@ -306,16 +306,16 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                const auto gimple_phi_id = TM->new_tree_node_id();
                gimple_phi_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                gimple_phi_schema[TOK(TOK_SCPE)] = STR(function_id);
-               gimple_phi_schema[TOK(TOK_TYPE)] = STR(type);
+               gimple_phi_schema[TOK(TOK_TYPE)] = STR(GET_CONST_NODE(type));
                gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
                TM->create_tree_node(gimple_phi_id, gimple_phi_K, gimple_phi_schema);
                auto new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(gimple_phi_id));
                new_gp->SetSSAUsesComputed();
 
                const auto zero = [&]() -> tree_nodeRef {
-                  if(type->get_kind() == integer_type_K)
+                  if(GET_CONST_NODE(type)->get_kind() == integer_type_K)
                   {
-                     return tree_man->CreateIntegerCst(TM->GetTreeReindex(type->index), 0, TM->new_tree_node_id());
+                     return tree_man->CreateIntegerCst(type, 0, TM->new_tree_node_id());
                   }
                   THROW_UNREACHABLE("");
                   return tree_nodeRef();

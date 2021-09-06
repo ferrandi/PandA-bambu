@@ -89,11 +89,11 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
    auto root_functions = call_graph_manager->GetRootFunctions();
    if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
    {
-      const auto top_rtldesign_function_id = HLSMgr->get_tree_manager()->function_index(parameters->getOption<std::string>(OPT_top_design_name));
-      if(top_rtldesign_function_id != 0 and root_functions.find(top_rtldesign_function_id) != root_functions.end())
+      const auto top_rtldesign_function = HLSMgr->get_tree_manager()->GetFunction(parameters->getOption<std::string>(OPT_top_design_name));
+      if(top_rtldesign_function && root_functions.count(top_rtldesign_function->index))
       {
          root_functions.clear();
-         root_functions.insert(top_rtldesign_function_id);
+         root_functions.insert(top_rtldesign_function->index);
       }
    }
    CustomUnorderedSet<vertex> vertex_subset;

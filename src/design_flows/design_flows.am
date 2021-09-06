@@ -189,6 +189,7 @@ if BUILD_LIB_TO_HDL
                         -I$(top_srcdir)/src/technology/physical_library \
                         -I$(top_srcdir)/src/technology/target_device \
                         -I$(top_srcdir)/src/technology/target_device/FPGA \
+                        -I$(top_srcdir)/src/tree \
                         -I$(top_srcdir)/src/utility \
                         $(AM_CPPFLAGS)
 if BUILD_FLOPOCO
@@ -317,6 +318,7 @@ endif
    -I$(top_srcdir)/src/technology/physical_library/models \
    -I$(top_srcdir)/src/technology/physical_library/models/area \
    -I$(top_srcdir)/src/technology/target_device \
+   -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_builddir)/src/design_flows/technology \
    $(AM_CPPFLAGS)

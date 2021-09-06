@@ -114,7 +114,7 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
       {
          const auto last_stmt = stmt_list.back();
          auto gc = GetPointer<gimple_cond>(GET_NODE(last_stmt));
-         if(gc && (!tree_helper::is_bool(TM, GET_INDEX_NODE(gc->op0)) || (GET_NODE(gc->op0)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(gc->op0)))))
+         if(gc && (!tree_helper::IsBooleanType(gc->op0) || (GET_NODE(gc->op0)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(gc->op0)))))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---fixing gimple cond: " + last_stmt->ToString());
             auto new_gc_cond = tree_man->ExtractCondition(last_stmt, block.second, function_id);

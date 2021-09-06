@@ -83,6 +83,7 @@ class OpVertexSet;
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(tree_node);
 
 /**
  * Class simply used to drive the backend in order to print C code
@@ -119,11 +120,11 @@ class CBackend : public DesignFlowStep
 
    /**
     * Analyze a variable or a type to identify the includes to be added
-    * @param index is the index of the variable or of the type
+    * @param tn is the variable or the type
     * @param BH is the behavioral helper
     * @param includes is where include has to be inseted
     */
-   virtual void AnalyzeInclude(unsigned int index, const BehavioralHelperConstRef BH, CustomOrderedSet<std::string>& includes);
+   virtual void AnalyzeInclude(const tree_nodeConstRef& tn, const BehavioralHelperConstRef& BH, CustomOrderedSet<std::string>& includes);
 
    /**
     * Writes the file header, i.e the comments at the beginning of the file

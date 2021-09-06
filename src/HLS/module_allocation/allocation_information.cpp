@@ -1191,7 +1191,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    unsigned int first_valid_id = 0;
    unsigned int index = 0;
    constant_id = HLS_manager::io_binding_type(0, 0);
-   if(vars_read.size() == 0)
+   if(vars_read.empty())
    {
       return;
    }
@@ -1199,23 +1199,22 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    std::string current_op = tree_helper::normalized_ID(g->CGetOpNodeInfo(node)->GetOperation());
 
    bool is_a_pointer = false;
-   unsigned int type_index = 0;
+   tree_nodeConstRef type;
    bool is_second_constant = false;
-   bool has_formal_parameter = false;
-   unsigned int formal_parameter_type = 0;
+   tree_nodeConstRef formal_parameter_type;
    unsigned int max_size_in = 0;
    unsigned int min_n_elements = 0;
    bool is_cond_expr_bool_test = false;
    for(auto itr = vars_read.begin(), end = vars_read.end(); itr != end; ++itr, ++index)
    {
-      unsigned int id = std::get<0>(*itr);
+      const auto id = std::get<0>(*itr);
       if(id && !first_valid_id)
       {
          first_valid_id = id;
       }
-      if(current_op == "cond_expr" && id && !tree_helper::is_constant(TreeM, id))
+      if(current_op == "cond_expr" && id && !tree_helper::IsConstant(TreeM->CGetTreeReindex(id)))
       {
-         if(tree_helper::size(TreeM, id) == 1)
+         if(tree_helper::Size(TreeM->CGetTreeReindex(id)) == 1)
          {
             is_cond_expr_bool_test = true;
          }
@@ -1228,8 +1227,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       { /// no constant characterization for cond expr
          is_second_constant = true;
       }
-      if(id == 0 || ((tree_helper::is_constant(TreeM, id) || tree_helper::is_concat_bit_ior_expr(TreeM, g->CGetOpNodeInfo(node)->GetNodeId())) && !is_constrained && !is_second_constant && vars_read.size() != 1 && current_op != "mult_expr" &&
-                     current_op != "widen_mult_expr" && (index == 1 || current_op != "lut_expr" || current_op != "extract_bit_expr")))
+      if(id == 0 || ((tree_helper::IsConstant(TreeM->CGetTreeReindex(id)) || tree_helper::is_concat_bit_ior_expr(TreeM, g->CGetOpNodeInfo(node)->GetNodeId())) && !is_constrained && !is_second_constant && vars_read.size() != 1 &&
+                     current_op != "mult_expr" && current_op != "widen_mult_expr" && (index == 1 || current_op != "lut_expr" || current_op != "extract_bit_expr")))
       {
          info->input_prec.push_back(0);
          info->real_input_nelem.push_back(0);
@@ -1238,11 +1237,12 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          constant_id = *itr;
          if(id)
          {
-            type_index = tree_helper::get_type_index(TreeM, id);
-            if(tree_helper::is_a_vector(TreeM, type_index))
+            const auto var_node = TreeM->CGetTreeReindex(id);
+            type = tree_helper::CGetType(var_node);
+            if(tree_helper::IsVectorType(type))
             {
-               const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-               const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
+               const auto element_type = tree_helper::CGetElements(type);
+               const auto element_size = tree_helper::Size(element_type);
                max_size_in = std::max(max_size_in, element_size);
                if(min_n_elements == 0 or ((128 / element_size) < min_n_elements))
                {
@@ -1251,14 +1251,15 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
             }
             else
             {
-               max_size_in = std::max(max_size_in, tree_helper::size(TreeM, id));
+               max_size_in = std::max(max_size_in, tree_helper::Size(var_node));
             }
          }
       }
       else
       {
-         type_index = tree_helper::get_type_index(TreeM, id);
-         if(tree_helper::is_an_array(TreeM, id) || tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index) /*|| tree_helper::is_a_complex(TreeM, type_index)*/)
+         const auto var_node = TreeM->CGetTreeReindex(id);
+         type = tree_helper::CGetType(var_node);
+         if(tree_helper::IsArrayType(type) || tree_helper::IsStructType(type) || tree_helper::IsUnionType(type) /*|| tree_helper::IsComplexType(type)*/)
          {
             info->input_prec.push_back(32);
             info->real_input_nelem.push_back(0);
@@ -1266,27 +1267,26 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          }
          else
          {
-            unsigned int node_id = g->CGetOpNodeInfo(node)->GetNodeId();
-            unsigned int form_par_type = tree_helper::get_formal_ith(TreeM, node_id, index);
-            unsigned int size_tree_var = id == 0 ? 0 : tree_helper::size(TreeM, id);
-            unsigned int size_form_par = form_par_type == 0 ? 0 : tree_helper::size(TreeM, form_par_type);
-            unsigned int size_value = size_form_par ? size_form_par : size_tree_var;
+            const auto& op_node = g->CGetOpNodeInfo(node)->node;
+            const auto form_par_type = tree_helper::GetFormalIth(op_node, index);
+            const auto size_tree_var = tree_helper::Size(var_node);
+            const auto size_form_par = form_par_type ? tree_helper::Size(form_par_type) : 0;
+            const auto size_value = size_form_par ? size_form_par : size_tree_var;
             if(form_par_type && index == 0)
             {
                formal_parameter_type = form_par_type;
-               has_formal_parameter = true;
             }
-            if(tree_helper::is_a_vector(TreeM, type_index))
+            if(tree_helper::IsVectorType(type))
             {
-               const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-               const unsigned int vector_size = static_cast<unsigned int>(tree_helper::size(TreeM, type_index));
-               const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
+               const auto element_type = tree_helper::CGetElements(type);
+               const auto vector_size = tree_helper::Size(type);
+               const auto element_size = tree_helper::Size(element_type);
                info->real_input_nelem.push_back(vector_size / element_size);
                info->base128_input_nelem.push_back(128 / element_size);
                info->input_prec.push_back(element_size);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Type is " + STR(type_index) + " " + TreeM->CGetTreeNode(type_index)->ToString() + " - Number of input elements (base128): " + STR(128 / element_size) +
-                                  " - Number of real input elements: " + STR(vector_size / element_size) + " - Input precision: " + STR(element_size));
+                              "---Type is " + STR(type->index) + " " + STR(type) + " - Number of input elements (base128): " + STR(128 / element_size) + " - Number of real input elements: " + STR(vector_size / element_size) +
+                                  " - Input precision: " + STR(element_size));
             }
             else
             {
@@ -1299,62 +1299,61 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    }
 
    THROW_ASSERT(first_valid_id, "Unexpected pattern");
-   if(has_formal_parameter)
+   if(formal_parameter_type)
    {
-      is_a_pointer = tree_helper::is_a_pointer(TreeM, formal_parameter_type);
-      type_index = formal_parameter_type;
+      type = formal_parameter_type;
+      is_a_pointer = tree_helper::IsPointerType(type);
    }
    else
    {
-      long long int vec_size = 0;
-      bool is_a_function = false;
-      type_index = tree_helper::get_type_index(TreeM, first_valid_id, vec_size, is_a_pointer, is_a_function);
+      type = tree_helper::CGetType(TreeM->CGetTreeReindex(first_valid_id));
+      is_a_pointer = tree_helper::IsPointerType(type);
    }
-   if(is_a_pointer || tree_helper::is_an_array(TreeM, type_index) || tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index))
+   if(is_a_pointer || tree_helper::IsArrayType(type) || tree_helper::IsStructType(type) || tree_helper::IsUnionType(type) || tree_helper::IsComplexType(type))
    {
       info->node_kind = "VECTOR_BOOL";
    }
-   else if(tree_helper::is_int(TreeM, type_index))
+   else if(tree_helper::IsSignedIntegerType(type))
    {
       info->node_kind = "INT";
    }
-   else if(tree_helper::is_real(TreeM, type_index))
+   else if(tree_helper::IsRealType(type))
    {
       info->node_kind = "REAL";
    }
-   else if(tree_helper::is_unsigned(TreeM, type_index))
+   else if(tree_helper::IsUnsignedIntegerType(type))
    {
       info->node_kind = "UINT";
    }
-   else if(tree_helper::is_bool(TreeM, type_index))
+   else if(tree_helper::IsBooleanType(type))
    {
       info->node_kind = "VECTOR_BOOL";
    }
-   else if(tree_helper::is_a_vector(TreeM, type_index))
+   else if(tree_helper::IsVectorType(type))
    {
-      const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-      if(tree_helper::is_int(TreeM, element_type))
+      const auto element_type = tree_helper::CGetElements(type);
+      if(tree_helper::IsSignedIntegerType(element_type))
       {
          info->node_kind = "VECTOR_INT";
       }
-      else if(tree_helper::is_unsigned(TreeM, element_type))
+      else if(tree_helper::IsUnsignedIntegerType(element_type))
       {
          info->node_kind = "VECTOR_UINT";
       }
-      else if(tree_helper::is_real(TreeM, element_type))
+      else if(tree_helper::IsRealType(element_type))
       {
          info->node_kind = "VECTOR_REAL";
       }
    }
    else
    {
-      THROW_UNREACHABLE("not supported type: " + STR(type_index) + " - " + TreeM->CGetTreeNode(type_index)->ToString());
+      THROW_UNREACHABLE("not supported type: " + STR(type->index) + " - " + STR(type));
    }
 
    const auto max_size_in_true = std::max(max_size_in, *std::max_element(info->input_prec.begin(), info->input_prec.end()));
    for(const auto n_elements : info->base128_input_nelem)
    {
-      if(n_elements and (min_n_elements == 0 or (n_elements < min_n_elements)))
+      if(n_elements && (min_n_elements == 0 || (n_elements < min_n_elements)))
       {
          min_n_elements = n_elements;
       }
@@ -1369,13 +1368,14 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    /// DSPs based components have to be managed in a different way
    if(current_op == "widen_mult_expr" || current_op == "mult_expr")
    {
-      unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
-      type_index = tree_helper::get_type_index(TreeM, nodeOutput_id);
-      if(tree_helper::is_a_vector(TreeM, type_index))
+      const auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
+      const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
+      type = tree_helper::CGetType(out_node);
+      if(tree_helper::IsVectorType(type))
       {
-         const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-         const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
-         unsigned int output_size = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TreeM, nodeOutput_id));
+         const auto element_type = tree_helper::CGetElements(type);
+         const auto element_size = tree_helper::Size(element_type);
+         const auto output_size = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(out_node));
          info->real_output_nelem = output_size / element_size;
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
@@ -1385,7 +1385,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       else
       {
          THROW_ASSERT(info->input_prec.size() == 2, "unexpected number of inputs");
-         unsigned int output_size_true = static_cast<unsigned int>(tree_helper::size(TreeM, nodeOutput_id));
+         const auto output_size_true = tree_helper::Size(out_node);
          if(output_size_true < info->input_prec[0])
          {
             info->input_prec[0] = output_size_true;
@@ -1402,11 +1402,11 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
 
          const auto resized_second_index = resize_to_1_8_16_32_64_128_256_512(info->input_prec[1]);
          /// After first match we exit to prevent matching with larger mults
-         for(size_t ind = 0; ind < DSP_y_db.size() and not resized; ind++)
+         for(size_t ind = 0; ind < DSP_y_db.size() && !resized; ind++)
          {
             const auto y_dsp_size = DSP_y_db[ind];
             const auto resized_y_dsp_size = resize_to_1_8_16_32_64_128_256_512(y_dsp_size);
-            if(info->input_prec[1] < y_dsp_size and resized_y_dsp_size == resized_second_index)
+            if(info->input_prec[1] < y_dsp_size && resized_y_dsp_size == resized_second_index)
             {
                if(info->input_prec[0] < DSP_x_db[ind])
                {
@@ -1416,7 +1416,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                }
             }
          }
-         if(not resized)
+         if(!resized)
          {
             max_size_in = std::max(info->input_prec[0], info->input_prec[1]);
             max_size_in = resize_to_1_8_16_32_64_128_256_512(max_size_in);
@@ -1450,19 +1450,20 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       if(nodeOutput_id)
       {
-         type_index = tree_helper::get_type_index(TreeM, nodeOutput_id);
-         if(tree_helper::is_an_array(TreeM, type_index) || tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index) /*|| tree_helper::is_a_complex(TreeM, type_index)*/)
+         const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
+         type = tree_helper::CGetType(out_node);
+         if(tree_helper::IsArrayType(type) || tree_helper::IsStructType(type) || tree_helper::IsUnionType(type) /*|| tree_helper::IsComplexType(type)*/)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Output precision is 32");
             info->output_prec = 32;
          }
          else
          {
-            info->output_prec = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TreeM, nodeOutput_id));
-            if(tree_helper::is_a_vector(TreeM, type_index))
+            info->output_prec = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(out_node));
+            if(tree_helper::IsVectorType(type))
             {
-               const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-               const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
+               const auto element_type = tree_helper::CGetElements(type);
+               const auto element_size = tree_helper::Size(element_type);
                info->base128_output_nelem = 128 / element_size;
                info->real_output_nelem = info->output_prec / element_size;
                info->output_prec = element_size;
@@ -1496,13 +1497,14 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    {
       unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
-      type_index = tree_helper::get_type_index(TreeM, nodeOutput_id);
-      auto out_prec = tree_helper::size(TreeM, nodeOutput_id);
-      if(tree_helper::is_a_vector(TreeM, type_index))
+      const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
+      type = tree_helper::CGetType(out_node);
+      auto out_prec = tree_helper::Size(out_node);
+      if(tree_helper::IsVectorType(type))
       {
-         const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-         const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
-         unsigned int output_size = resize_to_1_8_16_32_64_128_256_512(out_prec);
+         const auto element_type = tree_helper::CGetElements(type);
+         const auto element_size = tree_helper::Size(element_type);
+         const auto output_size = resize_to_1_8_16_32_64_128_256_512(out_prec);
          info->real_output_nelem = output_size / element_size;
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
@@ -1544,17 +1546,18 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    {
       unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
-      type_index = tree_helper::get_type_index(TreeM, nodeOutput_id);
-      info->output_prec = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TreeM, nodeOutput_id));
-      if(tree_helper::is_a_vector(TreeM, type_index))
+      const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
+      type = tree_helper::CGetType(out_node);
+      info->output_prec = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(out_node));
+      if(tree_helper::IsVectorType(type))
       {
-         const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-         const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
+         const auto element_type = tree_helper::CGetElements(type);
+         const auto element_size = tree_helper::Size(element_type);
          info->real_output_nelem = info->output_prec / element_size;
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Type is " + STR(type_index) + " " + STR(TreeM->CGetTreeNode(type_index)) + " - Number of output elements (base128): " + STR(info->base128_output_nelem) + " - Number of real output elements: " + STR(info->real_output_nelem) +
+                        "---Type is " + STR(type->index) + " " + STR(type) + " - Number of output elements (base128): " + STR(info->base128_output_nelem) + " - Number of real output elements: " + STR(info->real_output_nelem) +
                             " - Output precision: " + STR(info->output_prec));
       }
       else
@@ -1611,8 +1614,6 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          std::swap(info->real_input_nelem[2], info->real_input_nelem[1]);
       }
    }
-   // std::cerr << "current_op: " << current_op << "\n";
-   // info->print(std::cerr);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got node type precision of " + GET_NAME(g, node));
 }
 
@@ -2347,9 +2348,9 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
    }
    const auto statement = TreeM->CGetTreeNode(statement_index);
    THROW_ASSERT(statement->get_kind() == gimple_assign_K, statement->ToString());
-   const auto sn = GET_CONST_NODE(GetPointer<const gimple_assign>(statement)->op0);
-   THROW_ASSERT(sn, GetPointer<const gimple_assign>(statement)->op0->ToString());
-   const auto precision = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TreeM, sn->index));
+   const auto sn = GetPointerS<const gimple_assign>(statement)->op0;
+   THROW_ASSERT(sn, "");
+   const auto precision = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(sn));
    const auto mux_time = estimate_muxNto1_delay(precision, static_cast<unsigned int>(phi_in_degree));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Delay (" + STR(phi_in_degree) + " with " + STR(precision) + " bits) is " + STR(mux_time));
    return mux_time;
@@ -2357,13 +2358,13 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
 
 double AllocationInformation::GetCondExprTimeLatency(const unsigned int operation_index) const
 {
-   const auto tn = TreeM->CGetTreeNode(operation_index);
-   const auto gp = GetPointer<const gimple_phi>(tn);
-   THROW_ASSERT(gp, "Tree node is " + tn->ToString());
+   const auto tn = TreeM->CGetTreeReindex(operation_index);
+   const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(tn));
+   THROW_ASSERT(gp, "Tree node is " + STR(tn));
    /// Computing time of cond_expr as time of cond_expr_FU - setup_time
    /// In this way we are correctly estimating only phi with two inputs
-   const auto type = tree_helper::get_type_index(TreeM, gp->index);
-   const auto data_bitsize = tree_helper::size(TreeM, type);
+   const auto type = tree_helper::CGetType(tn);
+   const auto data_bitsize = tree_helper::Size(type);
    const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
    return mux_time_unit(fu_prec);
 }
@@ -2585,14 +2586,12 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       }
       is_single_variable = single_var_lambda(var);
 
-      elmt_bitsize = 1;
-      unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-      tree_helper::accessed_greatest_bitsize(TreeM->CGetTreeNode(type_index), elmt_bitsize);
+      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
+      elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
 #if ARRAY_CORRECTION
-      if(tree_helper::is_an_array(TreeM, type_index))
+      if(tree_helper::IsArrayType(type_node))
       {
-         std::vector<unsigned int> dims;
-         tree_helper::get_array_dimensions(TreeM, type_index, dims);
+         const auto dims = tree_helper::GetArrayDimensions(type_node);
          unsigned int n_not_power_of_two = 0;
          for(auto idx : dims)
             if(idx & (idx - 1))
@@ -2621,14 +2620,12 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       unsigned var = get_memory_var(fu);
       is_single_variable = single_var_lambda(var);
 
-      elmt_bitsize = 1;
-      unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-      tree_helper::accessed_greatest_bitsize(TreeM->CGetTreeNode(type_index), elmt_bitsize);
+      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
+      elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
 #if ARRAY_CORRECTION
-      if(tree_helper::is_an_array(TreeM, type_index))
+      if(tree_helper::IsArrayType(type_node))
       {
-         std::vector<unsigned int> dims;
-         tree_helper::get_array_dimensions(TreeM, type_index, dims);
+         const auto dims = tree_helper::GetArrayDimensions(type_node);
          unsigned int n_not_power_of_two = 0;
          for(auto idx : dims)
             if(idx & (idx - 1))
@@ -2662,11 +2659,11 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       }
       is_single_variable = single_var_lambda(var);
 
-      auto* fu_cur = GetPointer<functional_unit>(current_fu);
+      auto* fu_cur = GetPointerS<functional_unit>(current_fu);
       technology_nodeRef op_cur_node = fu_cur->get_operation(operation_name);
       std::string latency_postfix = (memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN) ? "" : get_latency_string(fu_cur->bram_load_latency);
 
-      auto* op_cur = GetPointer<operation>(op_cur_node);
+      auto* op_cur = GetPointerS<operation>(op_cur_node);
       double cur_exec_time = op_cur->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_cur) : time_m_execution_time(op_cur);
       double cur_exec_delta;
       technology_nodeRef f_unit_sds;
@@ -2709,9 +2706,8 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             }
          }
 
-         elmt_bitsize = 1;
-         unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-         tree_helper::accessed_greatest_bitsize(TreeM->CGetTreeNode(type_index), elmt_bitsize);
+         const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
+         elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
       }
       else
       {
@@ -2731,11 +2727,10 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       res_value = res_value + cur_exec_delta;
 
 #if ARRAY_CORRECTION
-      unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-      if(tree_helper::is_an_array(TreeM, type_index))
+      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
+      if(tree_helper::IsArrayType(type_node))
       {
-         std::vector<unsigned int> dims;
-         tree_helper::get_array_dimensions(TreeM, type_index, dims);
+         const auto dims = tree_helper::GetArrayDimensions(type_node);
          unsigned int n_not_power_of_two = 0;
          for(auto idx : dims)
             if(idx & (idx - 1))
@@ -3303,9 +3298,9 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing overall connection time " + STR(first_operation) + "-->" + STR(second_operation) + " Second operation has registered inputs");
       const auto second_operation_tn = TreeM->CGetTreeNode(second_operation);
       const auto second_operation_name = GetPointer<const gimple_node>(second_operation_tn)->operation;
-      const auto called_function_id = TreeM->function_index(second_operation_name);
-      THROW_ASSERT(called_function_id, STR(second_operation_tn) + " has registered inputs but it is not a call");
-      const auto called_hls = hls_manager->get_HLS(called_function_id);
+      const auto called_function = TreeM->GetFunction(second_operation_name);
+      THROW_ASSERT(called_function, STR(second_operation_tn) + " has registered inputs but it is not a call");
+      const auto called_hls = hls_manager->get_HLS(called_function->index);
       const auto called_sites_number = called_hls->call_sites_number;
 
       double mux_delay = 0.0;
@@ -3576,7 +3571,7 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
    if(vd)
    {
       const auto array_type_node = tree_helper::CGetType(var_node);
-      if(GetPointer<const array_type>(array_type_node))
+      if(GetPointer<const array_type>(GET_CONST_NODE(array_type_node)))
       {
          std::vector<unsigned int> dims;
          unsigned int elts_size;
@@ -3790,21 +3785,18 @@ void AllocationInformation::Initialize()
    mux_time_multiplier = HLS_T->get_target_device()->has_parameter("mux_time_multiplier") ? HLS_T->get_target_device()->get_parameter<double>("mux_time_multiplier") : 1.0;
    memory_correction_coefficient = HLS_T->get_target_device()->has_parameter("memory_correction_coefficient") ? HLS_T->get_target_device()->get_parameter<double>("memory_correction_coefficient") : 0.7;
 
-   connection_offset = parameters->IsParameter("ConnectionOffset") ? parameters->GetParameter<double>("ConnectionOffset") :
-                                                                     parameters->IsParameter("RelativeConnectionOffset") ?
-                                                                     parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-                                                                     HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ?
-                                                                     HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-                                                                     HLS_T->get_target_device()->has_parameter("ConnectionOffset") ? HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") : NUM_CST_allocation_default_connection_offset;
+   connection_offset = parameters->IsParameter("ConnectionOffset")                           ? parameters->GetParameter<double>("ConnectionOffset") :
+                       parameters->IsParameter("RelativeConnectionOffset")                   ? parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                       HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ? HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                       HLS_T->get_target_device()->has_parameter("ConnectionOffset")         ? HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") :
+                                                                                               NUM_CST_allocation_default_connection_offset;
 
-   output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio") ?
-                                    parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
-                                    HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
-                                                                                                            NUM_CST_allocation_default_output_DSP_connection_ratio * get_setup_hold_time();
-   output_carry_connection_time = parameters->IsParameter("OutputCarryConnectionRatio") ?
-                                      parameters->GetParameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
-                                      HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
-                                                                                                                NUM_CST_allocation_default_output_carry_connection_ratio * get_setup_hold_time();
+   output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio")                   ? parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
+                                HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
+                                                                                                        NUM_CST_allocation_default_output_DSP_connection_ratio * get_setup_hold_time();
+   output_carry_connection_time = parameters->IsParameter("OutputCarryConnectionRatio")                   ? parameters->GetParameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
+                                  HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio") ? HLS_T->get_target_device()->get_parameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
+                                                                                                            NUM_CST_allocation_default_output_carry_connection_ratio * get_setup_hold_time();
    fanout_coefficient = parameters->IsParameter("FanOutCoefficient") ? parameters->GetParameter<double>("FanOutCoefficient") : NUM_CST_allocation_default_fanout_coefficent;
    max_fanout_size = parameters->IsParameter("MaxFanOutSize") ? parameters->GetParameter<size_t>("MaxFanOutSize") : NUM_CST_allocation_default_max_fanout_size;
    DSPs_margin = HLS_T->get_target_device()->has_parameter("DSPs_margin") && parameters->getOption<double>(OPT_DSP_margin_combinational) == 1.0 ? HLS_T->get_target_device()->get_parameter<double>("DSPs_margin") :

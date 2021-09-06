@@ -223,9 +223,9 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    }
    else if(kind == function_decl_K)
    {
-      THROW_ASSERT(node_type->get_kind() == function_type_K || node_type->get_kind() == method_type_K, "node " + STR(out_node) + " is " + node_type->get_kind_text());
-      const auto ft = GetPointerS<const function_type>(node_type);
-      out_type_size = Size(GET_CONST_NODE(ft->retn));
+      THROW_ASSERT(GET_CONST_NODE(node_type)->get_kind() == function_type_K || GET_CONST_NODE(node_type)->get_kind() == method_type_K, "node " + STR(out_node) + " is " + node_type->get_kind_text());
+      const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(node_type));
+      out_type_size = Size(ft->retn);
    }
    else
    {
@@ -329,9 +329,9 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>
    }
    else if(kind == function_decl_K)
    {
-      THROW_ASSERT(node_type->get_kind() == function_type_K || node_type->get_kind() == method_type_K, "node " + STR(out_node) + " is " + node_type->get_kind_text());
-      const auto ft = GetPointerS<const function_type>(node_type);
-      out_type_size = Size(GET_CONST_NODE(ft->retn));
+      THROW_ASSERT(GET_CONST_NODE(node_type)->get_kind() == function_type_K || GET_CONST_NODE(node_type)->get_kind() == method_type_K, "node " + STR(out_node) + " is " + node_type->get_kind_text());
+      const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(node_type));
+      out_type_size = Size(ft->retn);
    }
    else
    {

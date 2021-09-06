@@ -423,7 +423,7 @@ struct operation : public technology_node
     * If the attribute "supported_types" is not defined, it will always return true.
     * @param type_name is the name of the type
     */
-   bool is_type_supported(std::string type_name) const;
+   bool is_type_supported(const std::string& type_name) const;
 
    /**
     * Checks if the specified type name is supported
@@ -431,7 +431,7 @@ struct operation : public technology_node
     * @param type_name is the name of the type
     * @param type_prec is the type precision
     */
-   bool is_type_supported(std::string type_name, unsigned int type_prec) const;
+   bool is_type_supported(const std::string& type_name, unsigned int type_prec) const;
 
    /**
     * Checks if the specified type name is supported with the max precision in type_prec.

@@ -352,12 +352,12 @@ class CWriter
     * is a non built_in type and, in case the non built_in type hasn't been
     * declared yet, it declares it; this method is used to declared new types
     * with scope limited to a routine (be it a function of a task)
-    * @param varType the index of the type to be declared
+    * @param varType the type to be declared
     * @param BH the behavioral helper associated to the function which declare type
     * @param locally_declared_type is the set of type already declared in this function
     * @param routine_name is the name of the routina (function or thread)
     */
-   virtual void DeclareType(unsigned int varType, const BehavioralHelperConstRef behavioral_helper, CustomSet<std::string>& locally_declared_type);
+   virtual void DeclareType(const tree_nodeConstRef& varType, const BehavioralHelperConstRef& behavioral_helper, CustomSet<std::string>& locally_declared_type);
 
    /**
     * Declares the local variable; in case the variable used in the intialization of
@@ -368,7 +368,7 @@ class CWriter
     * @param behavioral_helper is the behavioral helper
     * @param varFunc is the printer functor
     */
-   virtual void DeclareVariable(unsigned int curVar, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& locally_declared_type, const BehavioralHelperConstRef behavioral_helper, const var_pp_functorConstRef varFunc);
+   virtual void DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& locally_declared_type, const BehavioralHelperConstRef& behavioral_helper, const var_pp_functorConstRef& varFunc);
 
    /**
     * Declare all the types used in conversions
@@ -393,7 +393,7 @@ class CWriter
     * Declares the types of the parameters of a function
     * @param fun_id is the index of the function
     */
-   virtual void DeclareFunctionTypes(const unsigned int);
+   virtual void DeclareFunctionTypes(const tree_nodeConstRef& tn);
 
    /**
     * Writes the final C file

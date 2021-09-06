@@ -182,8 +182,8 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(ga->op0));
                if(ssa_defined->CGetNumberUses() > 1)
                {
-                  const auto assigned_ssa_type_node = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the assigned ssa_name " + STR(GET_NODE(ga->op0)) + " has type " + assigned_ssa_type_node->ToString());
+                  const auto assigned_ssa_type_node = tree_helper::CGetType(ga->op0);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the assigned ssa_name " + STR(GET_NODE(ga->op0)) + " has type " + STR(assigned_ssa_type_node));
                   bool is_first_stmt = true;
                   std::list<tree_nodeRef> list_of_dest_statements;
                   for(auto dest_statement : ssa_defined->CGetUseStmts())

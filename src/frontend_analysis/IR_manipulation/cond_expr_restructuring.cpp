@@ -312,7 +312,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(*stmt));
 
          /// Inserting first cond expr after the last one
-         const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(*stmt))->index);
+         const auto type_node = tree_helper::CGetType(*stmt);
          auto first_value = first_operand_of_second ? second_ce->op2 : second_ce->op1;
          auto second_value = first_operand_of_first ? first_ce->op2 : first_ce->op1;
          if(!first_operand_of_first)

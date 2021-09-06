@@ -163,7 +163,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
       /// create the new ssa
       auto* ssa_var = GetPointer<ssa_name>(GET_NODE(phi->res));
       THROW_ASSERT(ssa_var, "unexpected condition " + STR(GET_INDEX_NODE(phi->res)));
-      const auto type_node = TM->CGetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(phi->res))->index);
+      const auto type_node = tree_helper::CGetType(phi->res);
       const auto res = tree_man->create_ssa_name(type_node, ssa_var->var, nullptr, nullptr);
 
       /// substitute the def with the new ssa

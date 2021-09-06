@@ -125,7 +125,7 @@ void HLSCWriter::WriteHeader()
    indented_output_stream->Append("typedef bool _Bool;\n\n");
    indented_output_stream->Append("#else\n");
    indented_output_stream->Append("#include <stdio.h>\n\n");
-   if(not is_discrepancy)
+   if(!is_discrepancy)
    {
       indented_output_stream->Append("#include <stdlib.h>\n\n");
    }
@@ -141,8 +141,8 @@ void HLSCWriter::WriteHeader()
    const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
    const auto function_id = *(top_function_ids.begin());
-   auto fnode = TM->get_tree_node_const(function_id);
-   auto fd = GetPointer<function_decl>(fnode);
+   const auto fnode = TM->CGetTreeNode(function_id);
+   const auto fd = GetPointerS<const function_decl>(fnode);
    std::string fname;
    tree_helper::get_mangled_fname(fd, fname);
    auto& DesignInterfaceInclude = hls_c_backend_information->HLSMgr->design_interface_typenameinclude;
@@ -338,7 +338,7 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef behavioral_helper
    hls_c_backend_information->HLSMgr->RSim->simulationArgSignature.clear();
    if(flag_cpp)
    {
-      auto fnode = TM->get_tree_node_const(behavioral_helper->get_function_index());
+      auto fnode = TM->GetTreeNode(behavioral_helper->get_function_index());
       auto fd = GetPointer<function_decl>(fnode);
       std::string fname;
       tree_helper::get_mangled_fname(fd, fname);
@@ -347,21 +347,21 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef behavioral_helper
       {
          const auto& DesignInterfaceArgsTypename = DesignInterfaceTypename.find(fname)->second;
          unsigned int pIndex = 0;
-         for(const auto& p : behavioral_helper->get_parameters())
+         for(const auto& par : behavioral_helper->GetParameters())
          {
-            unsigned int type_id = behavioral_helper->get_type(p);
-            type = behavioral_helper->print_type(type_id);
-            param = behavioral_helper->PrintVariable(p);
+            const auto par_type = tree_helper::CGetType(par);
+            type = behavioral_helper->print_type(par_type->index);
+            param = behavioral_helper->PrintVariable(par->index);
             hls_c_backend_information->HLSMgr->RSim->simulationArgSignature.push_back(param);
 
-            if(tree_helper::is_a_vector(TM, type_id))
+            if(tree_helper::IsVectorType(par_type))
             {
                THROW_ERROR("parameter " + param + " of function under test " + behavioral_helper->get_function_name() + " has type " + type +
                            "\n"
                            "co-simulation does not support vectorized parameters at top level");
             }
             THROW_ASSERT(DesignInterfaceArgsTypename.find(param) != DesignInterfaceArgsTypename.end(), "unexpected condition");
-            auto argTypename = DesignInterfaceArgsTypename.find(param)->second;
+            auto argTypename = DesignInterfaceArgsTypename.at(param);
             if(argTypename.find("const ") == 0)
             {
                argTypename = argTypename.substr(std::string("const ").size());
@@ -379,23 +379,23 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef behavioral_helper
    if(doStandardWay)
    {
       indented_output_stream->Append("// parameters declaration\n");
-      for(const auto& p : behavioral_helper->get_parameters())
+      for(const auto& par : behavioral_helper->GetParameters())
       {
-         unsigned int type_id = behavioral_helper->get_type(p);
-         type = behavioral_helper->print_type(type_id);
-         param = behavioral_helper->PrintVariable(p);
+         const auto par_type = tree_helper::CGetType(par);
+         type = behavioral_helper->print_type(par_type->index);
+         param = behavioral_helper->PrintVariable(par->index);
          hls_c_backend_information->HLSMgr->RSim->simulationArgSignature.push_back(param);
 
-         if(tree_helper::is_a_vector(TM, type_id))
+         if(tree_helper::IsVectorType(par_type))
          {
             THROW_ERROR("parameter " + param + " of function under test " + behavioral_helper->get_function_name() + " has type " + type +
                         "\n"
                         "co-simulation does not support vectorized parameters at top level");
          }
-         if(behavioral_helper->is_a_pointer(p))
+         if(tree_helper::IsPointerType(par))
          {
             var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
-            std::string type_declaration = tree_helper::print_type(TM, type_id, false, false, false, p, var_functor);
+            std::string type_declaration = tree_helper::PrintType(TM, par_type, false, false, false, par, var_functor);
             indented_output_stream->Append(type_declaration + ";\n");
          }
          else
@@ -408,13 +408,13 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef behavioral_helper
 
 void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned int v_idx)
 {
-   for(const auto& p : behavioral_helper->get_parameters())
+   for(const auto& par : behavioral_helper->GetParameters())
    {
-      unsigned int type_id = behavioral_helper->get_type(p);
-      std::string type = behavioral_helper->print_type(type_id);
-      const std::string param = behavioral_helper->PrintVariable(p);
+      const auto par_type = tree_helper::CGetType(par);
+      const auto type = tree_helper::PrintType(TM, par_type);
+      const auto param = behavioral_helper->PrintVariable(GET_INDEX_CONST_NODE(par));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization of " + param);
-      if(behavioral_helper->is_a_pointer(p))
+      if(tree_helper::IsPointerType(par_type))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Pointer");
 
@@ -428,15 +428,17 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
          bool is_a_true_pointer = true;
          if(flag_cpp)
          {
-            auto fnode = TM->get_tree_node_const(behavioral_helper->get_function_index());
-            auto fd = GetPointer<function_decl>(fnode);
+            const auto fnode = TM->CGetTreeNode(behavioral_helper->get_function_index());
+            const auto fd = GetPointerS<const function_decl>(fnode);
             std::string fname;
             tree_helper::get_mangled_fname(fd, fname);
             auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
             if(DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end())
             {
-               const auto& DesignInterfaceArgsTypename = DesignInterfaceTypename.find(fname)->second;
-               auto argTypename = DesignInterfaceArgsTypename.find(param)->second;
+               THROW_ASSERT(DesignInterfaceTypename.count(fname), "");
+               const auto& DesignInterfaceArgsTypename = DesignInterfaceTypename.at(fname);
+               THROW_ASSERT(DesignInterfaceArgsTypename.count(param), "");
+               const auto& argTypename = DesignInterfaceArgsTypename.at(param);
                if((*argTypename.rbegin()) == '*')
                {
                   temp_variable = argTypename.substr(0, argTypename.size() - 1) + " " + param + "_temp[]";
@@ -457,10 +459,10 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
          }
          if(temp_variable == "")
          {
-            var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
-            auto ptd = tree_helper::get_pointed_type(TM, tree_helper::get_type_index(TM, p));
-            temp_variable = tree_helper::print_type(TM, ptd, false, false, false, p, var_functor);
-            if(tree_helper::is_a_void(TM, ptd))
+            const auto var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
+            const auto ptd = tree_helper::CGetPointedType(par_type);
+            temp_variable = tree_helper::PrintType(TM, ptd, false, false, false, par, var_functor);
+            if(tree_helper::IsVoidType(ptd))
             {
                boost::replace_all(temp_variable, "void ", "char ");
             }
@@ -477,8 +479,8 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
 
          if(test_v.size() > 4 && test_v.substr(test_v.size() - 4) == ".dat")
          {
-            var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
-            std::string type_declaration = tree_helper::print_type(TM, type_id, false, false, false, p, var_functor);
+            const auto var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
+            auto type_declaration = tree_helper::PrintType(TM, par_type, false, false, false, par, var_functor);
             type_declaration = type_declaration.substr(0, type_declaration.find('*') + 1);
             const auto fp = param + "_fp";
             indented_output_stream->Append("FILE* " + fp + " = fopen(\"" + test_v + "\", \"rb\");\n");
@@ -497,14 +499,14 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
          }
          else
          {
-            auto temp_initialization = temp_variable + " = " + ((test_v.front() != '{' && test_v.back() != '}' && is_a_true_pointer) ? "{" + test_v + "}" : test_v) + ";\n";
+            const auto temp_initialization = temp_variable + " = " + ((test_v.front() != '{' && test_v.back() != '}' && is_a_true_pointer) ? "{" + test_v + "}" : test_v) + ";\n";
             indented_output_stream->Append(temp_initialization);
             indented_output_stream->Append(param + " = " + param + "_temp;\n");
          }
 
          std::string memory_addr;
-         THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.find(p) != hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.end(), "parameter does not have an address");
-         memory_addr = STR(hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.find(p)->second);
+         THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_address.at(v_idx).find(GET_INDEX_CONST_NODE(par)) != hls_c_backend_information->HLSMgr->RSim->param_address.at(v_idx).end(), "parameter does not have an address");
+         memory_addr = STR(hls_c_backend_information->HLSMgr->RSim->param_address.at(v_idx).at(GET_INDEX_CONST_NODE(par)));
 
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " + param + " value: " + memory_addr + "\\n\");\n");
 
@@ -519,9 +521,10 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
             THROW_ERROR("Value of " + param + " is missing in test vector");
          }
 
-         if(type_id && behavioral_helper->is_real(type_id) && curr_test_vector.find(param)->second == "-0")
+         THROW_ASSERT(curr_test_vector.count(param), "");
+         if(par_type && tree_helper::IsRealType(par_type) && curr_test_vector.at(param) == "-0")
          {
-            if(tree_helper::size(TM, type_id) == 32)
+            if(tree_helper::Size(par_type) == 32)
             {
                indented_output_stream->Append(param + " = copysignf(0.0, -1.0);\n");
             }
@@ -536,9 +539,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
          }
 
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " + param + " value: " + curr_test_vector.find(param)->second + "\\n\");\n");
-
-         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + ConvertInBinary(curr_test_vector.find(param)->second, tree_helper::size(TM, type_id), behavioral_helper->is_real(type_id), behavioral_helper->is_unsigned(type_id)) +
-                                        "\\n\");\n");
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + ConvertInBinary(curr_test_vector.at(param), tree_helper::Size(par_type), tree_helper::IsRealType(par_type), tree_helper::IsUnsignedIntegerType(par_type)) + "\\n\");\n");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written initialization of " + param);
    }
@@ -661,21 +662,19 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
 void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned v_idx)
 {
    const HLSFlowStep_Type interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
-   auto fnode = TM->get_tree_node_const(behavioral_helper->get_function_index());
-   auto fd = GetPointer<function_decl>(fnode);
+   const auto fnode = TM->CGetTreeReindex(behavioral_helper->get_function_index());
+   const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fnode));
    std::string fname;
    tree_helper::get_mangled_fname(fd, fname);
    auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
    bool hasInterface = DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end();
    bool is_fortran = (Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_FORTRAN);
 
-   const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(behavioral_helper->get_function_index());
-
-   for(const auto& p : behavioral_helper->get_parameters())
+   for(const auto& par : behavioral_helper->GetParameters())
    {
-      std::string param = behavioral_helper->PrintVariable(p);
+      const auto param = behavioral_helper->PrintVariable(GET_INDEX_CONST_NODE(par));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating code for expected results of " + param);
-      if(behavioral_helper->is_a_pointer(p))
+      if(tree_helper::IsPointerType(par))
       {
          std::string test_v = "{0}";
          if(curr_test_vector.find(param) != curr_test_vector.end())
@@ -683,28 +682,28 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
             test_v = curr_test_vector.find(param)->second;
          }
          bool reference_type_p = false;
-         unsigned int base_type = tree_helper::get_type_index(TM, p);
-         auto pt_node = TM->CGetTreeNode(base_type);
-         if(pt_node->get_kind() == pointer_type_K)
+         auto base_type = tree_helper::CGetType(par);
+         auto pt_node = base_type;
+         if(GET_CONST_NODE(pt_node)->get_kind() == pointer_type_K)
          {
             reference_type_p = false;
-            base_type = GET_INDEX_NODE(GetPointerS<const pointer_type>(pt_node)->ptd);
+            base_type = GetPointerS<const pointer_type>(GET_CONST_NODE(pt_node))->ptd;
          }
-         else if(pt_node->get_kind() == reference_type_K)
+         else if(GET_CONST_NODE(pt_node)->get_kind() == reference_type_K)
          {
             reference_type_p = !is_fortran;
-            base_type = GET_INDEX_NODE(GetPointerS<const reference_type>(pt_node)->refd);
+            base_type = GetPointerS<const reference_type>(GET_CONST_NODE(pt_node))->refd;
          }
          else
          {
             THROW_ERROR("A pointer type is expected");
          }
-         unsigned int base_type_bitsize = tree_helper::size(TM, base_type);
+         auto base_type_bitsize = tree_helper::Size(base_type);
          bool is_acType = false;
          if(flag_cpp && hasInterface)
          {
-            auto argTypename = DesignInterfaceTypename.find(fname)->second.find(param)->second;
-            if((*argTypename.rbegin()) != '*')
+            auto argTypename = DesignInterfaceTypename.at(fname).at(param);
+            if(argTypename.back() != '*')
             {
                reference_type_p = true;
             }
@@ -721,12 +720,12 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
          {
             std::vector<std::string> splitted = SplitString(test_v, ",");
 
-            if(behavioral_helper->is_real(base_type) || is_acType)
+            if(tree_helper::IsRealType(base_type) || is_acType)
             {
                if(splitted.size() == 1 && flag_cpp && reference_type_p)
                {
-                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + ": %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " +
-                                                 (behavioral_helper->is_real(base_type) ? std::string("") : std::string("(int)")) + param + ");\n");
+                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + ": %" + (tree_helper::IsRealType(base_type) ? std::string("g") : std::string("d")) + "\\n\", " +
+                                                 (tree_helper::IsRealType(base_type) ? std::string("") : std::string("(int)")) + param + ");\n");
                   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
                   indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&" + param + ", " + STR(base_type_bitsize) + ");\n");
                   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
@@ -736,8 +735,8 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                   indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " + STR(splitted.size()) + "; ++__testbench_index2)\n{\n");
                   if(output_level > OUTPUT_LEVEL_MINIMUM)
                   {
-                     indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + "[__testbench_index2]: %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " +
-                                                    (behavioral_helper->is_real(base_type) ? std::string("") : std::string("(int)")) + param + "[__testbench_index2]);\n");
+                     indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + "[__testbench_index2]: %" + (tree_helper::IsRealType(base_type) ? std::string("g") : std::string("d")) + "\\n\", " +
+                                                    (tree_helper::IsRealType(base_type) ? std::string("") : std::string("(int)")) + param + "[__testbench_index2]);\n");
                   }
                   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
                   indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&" + param + "[__testbench_index2], " + STR(base_type_bitsize) + ");\n");
@@ -745,27 +744,27 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                   indented_output_stream->Append("}\n");
                }
             }
-            else if(!reference_type_p && behavioral_helper->is_an_array(base_type) && !behavioral_helper->is_a_struct(base_type) && !behavioral_helper->is_an_union(base_type))
+            else if(!reference_type_p && tree_helper::IsArrayType(base_type) && !tree_helper::IsStructType(base_type) && !tree_helper::IsUnionType(base_type))
             {
                indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " + STR(splitted.size()) + "; ++__testbench_index2)\n{\n");
-               unsigned int data_bitsize = tree_helper::get_array_data_bitsize(TM, base_type);
-               unsigned int num_elements = tree_helper::get_array_num_elements(TM, base_type);
-               unsigned int elmts_type = behavioral_helper->GetElements(base_type);
-               while(behavioral_helper->is_an_array(elmts_type))
+               const auto data_bitsize = tree_helper::GetArrayElementSize(base_type);
+               const auto num_elements = tree_helper::GetArrayTotalSize(base_type);
+               auto elmts_type = tree_helper::CGetElements(base_type);
+               while(tree_helper::IsArrayType(elmts_type))
                {
-                  elmts_type = behavioral_helper->GetElements(elmts_type);
+                  elmts_type = tree_helper::CGetElements(elmts_type);
                }
                if(output_level > OUTPUT_LEVEL_MINIMUM)
                {
-                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output (*(((" + behavioral_helper->print_type(elmts_type) + "*)" + param + ")+ __testbench_index2)): %" +
-                                                 (behavioral_helper->is_real(elmts_type) ? std::string("g") : std::string("d")) + "\\n\", (*(((" + behavioral_helper->print_type(elmts_type) + "*)" + param + ")+ __testbench_index2)));\n");
+                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output (*(((" + tree_helper::PrintType(TM, elmts_type) + "*)" + param + ")+ __testbench_index2)): %" +
+                                                 (tree_helper::IsRealType(elmts_type) ? std::string("g") : std::string("d")) + "\\n\", (*(((" + tree_helper::PrintType(TM, elmts_type) + "*)" + param + ")+ __testbench_index2)));\n");
                }
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
                if(splitted.size() == 1)
                {
                   for(unsigned int l = 0; l < num_elements; l++)
                   {
-                     if(behavioral_helper->is_real(elmts_type))
+                     if(tree_helper::IsRealType(elmts_type))
                      {
                         indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, "
                                                        "(unsigned char*)&(*" +
@@ -781,17 +780,17 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                }
                else
                {
-                  if(behavioral_helper->is_real(elmts_type))
+                  if(tree_helper::IsRealType(elmts_type))
                   {
                      indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, "
                                                     "(unsigned char*)&(*(((" +
-                                                    behavioral_helper->print_type(elmts_type) + "*)" + param + ")+ __testbench_index2)), " + STR(data_bitsize) + ");\n");
+                                                    tree_helper::PrintType(TM, elmts_type) + "*)" + param + ")+ __testbench_index2)), " + STR(data_bitsize) + ");\n");
                   }
                   else
                   {
                      indented_output_stream->Append("_Dec2Bin_(__bambu_testbench_fp, "
                                                     "(*(((" +
-                                                    behavioral_helper->print_type(elmts_type) + "*)" + param + ") + __testbench_index2)), " + STR(data_bitsize) + ");\n");
+                                                    tree_helper::PrintType(TM, elmts_type) + "*)" + param + ") + __testbench_index2)), " + STR(data_bitsize) + ");\n");
                   }
                }
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
@@ -803,8 +802,8 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                {
                   if(output_level > OUTPUT_LEVEL_MINIMUM)
                   {
-                     indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + ": %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " +
-                                                    (behavioral_helper->is_real(base_type) ? std::string("") : std::string("(int)")) + param + ");\n");
+                     indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + ": %" + (tree_helper::IsRealType(base_type) ? std::string("g") : std::string("d")) + "\\n\", " +
+                                                    (tree_helper::IsRealType(base_type) ? std::string("") : std::string("(int)")) + param + ");\n");
                   }
                   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
                   indented_output_stream->Append("_Dec2Bin_(__bambu_testbench_fp, " + param + ", " + STR(base_type_bitsize) + ");\n");
@@ -815,7 +814,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                   indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " + STR(splitted.size()) + "; ++__testbench_index2)\n{\n");
                   if(output_level > OUTPUT_LEVEL_MINIMUM)
                   {
-                     indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + "[%d]: %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", __testbench_index2, " + param +
+                     indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + "[%d]: %" + (tree_helper::IsRealType(base_type) ? std::string("g") : std::string("d")) + "\\n\", __testbench_index2, " + param +
                                                     "[__testbench_index2]);\n");
                   }
                   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
@@ -830,7 +829,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
          {
             /// Retrieve the space to be reserved in memory
             const auto pointedType_node = tree_helper::CGetPointedType(pt_node);
-            const auto reserved_mem_bytes = hls_c_backend_information->HLSMgr->RSim->param_mem_size.at(v_idx).at(p);
+            const auto reserved_mem_bytes = hls_c_backend_information->HLSMgr->RSim->param_mem_size.at(v_idx).at(GET_INDEX_CONST_NODE(par));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reserved memory " + STR(reserved_mem_bytes) + " bytes");
             const auto element_size = tree_helper::Size(pointedType_node) / 8;
             THROW_ASSERT(reserved_mem_bytes % element_size == 0, STR(reserved_mem_bytes) + "/" + STR(element_size));
@@ -855,15 +854,16 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated code for expected results of " + param);
    }
 
-   if(return_type_index)
+   const auto ret_type = tree_helper::GetFunctionReturnType(fnode);
+   if(ret_type)
    {
       if(output_level > OUTPUT_LEVEL_MINIMUM)
       {
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for return value\\n\");\n");
       }
       indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
-      unsigned int base_type_bitsize = tree_helper::size(TM, return_type_index);
-      if(behavioral_helper->is_real(return_type_index) || behavioral_helper->is_a_struct(return_type_index) || behavioral_helper->is_an_union(return_type_index))
+      const auto base_type_bitsize = tree_helper::Size(ret_type);
+      if(tree_helper::IsRealType(ret_type) || tree_helper::IsStructType(ret_type) || tree_helper::IsUnionType(ret_type))
       {
          indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&" + std::string(RETURN_PORT_NAME) + ", " + STR(base_type_bitsize) + ");\n");
       }
@@ -903,12 +903,12 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    std::transform(address.begin(), address.end(), std::back_inserter(mem), [](const std::pair<unsigned long long, unsigned int>& ma) { return ma.second; });
 
    std::string fname;
-   tree_helper::get_mangled_fname(GetPointer<const function_decl>(TM->CGetTreeNode(function_id)), fname);
+   tree_helper::get_mangled_fname(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id)), fname);
    const auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
    const auto& DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
 
-   const auto& parameters = behavioral_helper->get_parameters();
    std::vector<unsigned int> mem_interface;
+   const auto& parameters = behavioral_helper->get_parameters();
    for(const auto& p : parameters)
    {
       // if the function has some pointer parameters some memory needs to be
@@ -1010,7 +1010,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          const auto reserved_mem_bytes = [&]() -> size_t {
             if(is_memory)
             {
-               const auto ret_value = tree_helper::size(TM, l) / 8;
+               const auto ret_value = tree_helper::Size(TM->CGetTreeReindex(l)) / 8;
                return ret_value ? ret_value : 1;
             }
             else
@@ -1115,7 +1115,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                      }
                      else
                      {
-                        unsigned int base_type = tree_helper::get_type_index(TM, l);
+                        const auto base_type = tree_helper::CGetType(TM->CGetTreeReindex(l));
                         std::string binary_string;
                         std::string init_value_copy = initial_string;
                         boost::replace_all(init_value_copy, "\\", "\\\\");
@@ -1125,77 +1125,74 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                         {
                            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable " + param /*+ " value: " + init_value_copy */ + "\\n\");\n");
                         }
-                        tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-                        tree_nodeRef ptd_base_type_node;
-                        if(pt_node->get_kind() == pointer_type_K)
+                        tree_nodeConstRef ptd_base_type_node;
+                        if(GET_CONST_NODE(base_type)->get_kind() == pointer_type_K)
                         {
-                           ptd_base_type_node = GET_NODE(GetPointer<pointer_type>(pt_node)->ptd);
+                           ptd_base_type_node = GetPointerS<const pointer_type>(GET_CONST_NODE(base_type))->ptd;
                         }
-                        else if(pt_node->get_kind() == reference_type_K)
+                        else if(GET_CONST_NODE(base_type)->get_kind() == reference_type_K)
                         {
-                           ptd_base_type_node = GET_NODE(GetPointer<reference_type>(pt_node)->refd);
+                           ptd_base_type_node = GetPointerS<const reference_type>(GET_CONST_NODE(base_type))->refd;
                         }
                         else
                         {
                            THROW_ERROR("A pointer type is expected");
                         }
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed base type is " + ptd_base_type_node->get_kind_text());
-                        unsigned int data_bitsize = tree_helper::Size(ptd_base_type_node);
-                        if(behavioral_helper->is_a_struct(ptd_base_type_node->index))
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed base type is " + GET_CONST_NODE(ptd_base_type_node)->get_kind_text());
+                        auto data_bitsize = tree_helper::Size(ptd_base_type_node);
+                        if(tree_helper::IsStructType(ptd_base_type_node))
                         {
-                           std::vector<std::string> splitted_fields = SplitString(initial_string, "|");
+                           const auto splitted_fields = SplitString(initial_string, "|");
                            const auto fields = tree_helper::CGetFieldTypes(ptd_base_type_node);
-                           size_t n_values = splitted_fields.size();
+                           const auto n_values = splitted_fields.size();
                            unsigned int index = 0;
                            for(auto it = fields.begin(); it != fields.end(); ++it, ++index)
                            {
-                              const tree_nodeConstRef field_type = *it;
-                              unsigned int field_size = tree_helper::Size(field_type);
+                              const auto field_type = *it;
+                              const auto field_size = tree_helper::Size(field_type);
                               if(index < n_values)
                               {
-                                 binary_string = ConvertInBinary(argTypename + splitted_fields[index], field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
+                                 binary_string = ConvertInBinary(argTypename + splitted_fields[index], field_size, tree_helper::IsRealType(field_type), tree_helper::IsUnsignedIntegerType(field_type));
                               }
                               else
                               {
-                                 binary_string = ConvertInBinary(argTypename + "0", field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
+                                 binary_string = ConvertInBinary(argTypename + "0", field_size, tree_helper::IsRealType(field_type), tree_helper::IsUnsignedIntegerType(field_type));
                               }
 
                               printed_bytes += WriteBinaryMemoryInit(binary_string, field_size, bits_offset);
                            }
                         }
-                        else if(behavioral_helper->is_an_union(ptd_base_type_node->index))
+                        else if(tree_helper::IsUnionType(ptd_base_type_node))
                         {
-                           unsigned int max_bitsize_field = 0;
-                           tree_helper::accessed_greatest_bitsize(ptd_base_type_node, max_bitsize_field);
+                           const auto max_bitsize_field = tree_helper::AccessedMaximumBitsize(ptd_base_type_node, 0);
                            binary_string = ConvertInBinary(argTypename + "0", max_bitsize_field, false, false);
                            printed_bytes += WriteBinaryMemoryInit(binary_string, max_bitsize_field, bits_offset);
                         }
-                        else if(behavioral_helper->is_an_array(ptd_base_type_node->index))
+                        else if(tree_helper::IsArrayType(ptd_base_type_node))
                         {
-                           unsigned int elmts_type = behavioral_helper->GetElements(ptd_base_type_node->index);
-
-                           while(behavioral_helper->is_an_array(elmts_type))
+                           auto elmts_type = tree_helper::CGetElements(ptd_base_type_node);
+                           while(tree_helper::IsArrayType(elmts_type))
                            {
-                              elmts_type = behavioral_helper->GetElements(elmts_type);
+                              elmts_type = tree_helper::CGetElements(elmts_type);
                            }
 
-                           data_bitsize = tree_helper::get_array_data_bitsize(TM, ptd_base_type_node->index);
+                           data_bitsize = tree_helper::GetArrayElementSize(ptd_base_type_node);
 
                            unsigned int num_elements = 1;
                            if(splitted.size() == 1)
                            {
-                              num_elements = tree_helper::get_array_num_elements(TM, ptd_base_type_node->index);
+                              num_elements = tree_helper::GetArrayTotalSize(ptd_base_type_node);
                            }
 
                            indented_output_stream->Append("for (__testbench_index0 = 0; __testbench_index0 < " + STR(num_elements) + "; ++__testbench_index0)\n{\n");
 
-                           binary_string = ConvertInBinary(argTypename + initial_string, data_bitsize, behavioral_helper->is_real(elmts_type), behavioral_helper->is_unsigned(elmts_type));
+                           binary_string = ConvertInBinary(argTypename + initial_string, data_bitsize, tree_helper::IsRealType(elmts_type), tree_helper::IsUnsignedIntegerType(elmts_type));
                            printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
                            indented_output_stream->Append("}\n");
                         }
                         else
                         {
-                           binary_string = ConvertInBinary(argTypename + initial_string, data_bitsize, behavioral_helper->is_real(ptd_base_type_node->index), behavioral_helper->is_unsigned(ptd_base_type_node->index));
+                           binary_string = ConvertInBinary(argTypename + initial_string, data_bitsize, tree_helper::IsRealType(ptd_base_type_node), tree_helper::IsUnsignedIntegerType(ptd_base_type_node));
 
                            if(data_bitsize == 1)
                            {
@@ -1235,15 +1232,15 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          else
          {
             /// Call the parser to translate C initialization to values.txt initialization
-            const auto type = TM->CGetTreeNode(tree_helper::get_type_index(TM, l));
-            const CInitializationParserFunctorRef c_initialization_parser_functor =
-                CInitializationParserFunctorRef(new MemoryInitializationCWriter(indented_output_stream, TM, behavioral_helper, reserved_mem_bytes, type, TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION, Param));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parsing initialization of " + param + "(" + type->get_kind_text() + " - " + STR(type->index) + "): " + test_v);
+            const auto type = tree_helper::CGetType(TM->CGetTreeReindex(l));
+            const CInitializationParserFunctorRef c_initialization_parser_functor(new MemoryInitializationCWriter(indented_output_stream, TM, behavioral_helper, reserved_mem_bytes, type, TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION, Param));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parsing initialization of " + param + "(" + GET_CONST_NODE(type)->get_kind_text() + " - " + STR(type->index) + "): " + test_v);
             c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
          }
 
-         size_t next_object_offset = hls_c_backend_information->HLSMgr->RSim->param_next_off.find(v_idx)->second.find(l)->second;
-
+         THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_next_off.count(v_idx), "");
+         THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_next_off.at(v_idx).count(l), "");
+         const auto next_object_offset = hls_c_backend_information->HLSMgr->RSim->param_next_off.at(v_idx).at(l);
          if(next_object_offset > reserved_mem_bytes)
          {
             indented_output_stream->Append("// next_object_offset > reserved_mem_bytes\n");

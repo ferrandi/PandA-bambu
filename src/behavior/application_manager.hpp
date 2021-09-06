@@ -54,6 +54,7 @@
 #include "custom_set.hpp" // for CustomSet
 #include "graph.hpp"      // for vertex
 #include "refcount.hpp"   // for REF_FORWARD_DECL
+#include "tree_node.hpp"
 
 CONSTREF_FORWARD_DECL(ActorGraphManager);
 REF_FORWARD_DECL(ActorGraphManager);
@@ -66,8 +67,6 @@ CONSTREF_FORWARD_DECL(FunctionExpander);
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(pragma_manager);
 REF_FORWARD_DECL(tree_manager);
-CONSTREF_FORWARD_DECL(tree_node);
-REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(Discrepancy);
 
 class application_manager
@@ -91,7 +90,7 @@ class application_manager
    const ParameterConstRef Param;
 
    /// set of global variables
-   CustomSet<unsigned int> global_variables;
+   TreeNodeConstSet global_variables;
 
    unsigned int address_bitsize;
 
@@ -118,7 +117,13 @@ class application_manager
    /**
     * Returns the values produced by a vertex (recursive version)
     */
+   /// FIXME: to be remove after substitution with GetProducedValue
    unsigned int get_produced_value(const tree_nodeRef& tn) const;
+
+   /**
+    * Returns the values produced by a vertex (recursive version)
+    */
+   tree_nodeConstRef GetProducedValue(const tree_nodeConstRef& tn) const;
 
  public:
 #if HAVE_FROM_DISCREPANCY_BUILT
@@ -200,13 +205,13 @@ class application_manager
     * Adds a global variable
     * @param var is the global variable to be added
     */
-   void add_global_variable(unsigned int var);
+   void AddGlobalVariable(const tree_nodeConstRef& var);
 
    /**
     * Returns the set of original global variables
     * @return a set containing the identified of the global variables
     */
-   const CustomSet<unsigned int>& get_global_variables() const;
+   const TreeNodeConstSet& GetGlobalVariables() const;
 
 #if HAVE_PRAGMA_BUILT
    /**
@@ -218,7 +223,13 @@ class application_manager
    /**
     * Returns the value produced by a vertex
     */
+   /// FIXME: to be remove after substitution with GetProducedValue
    unsigned int get_produced_value(unsigned int fun_id, const vertex& v) const;
+
+   /**
+    * Returns the value produced by a vertex
+    */
+   tree_nodeConstRef GetProducedValue(unsigned int fun_id, const vertex& v) const;
 
    /**
     * Returns the parameter datastructure
