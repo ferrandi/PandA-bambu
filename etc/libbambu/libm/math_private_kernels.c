@@ -357,7 +357,7 @@ recompute:
  * return the remainder of x rem pi/2 in y[0]+y[1]
  * use __hide_kernel_rem_pio2()
  */
-int __hide_ieee754_rem_pio2(double x, double* y)
+__attribute__((always_inline)) static inline int __hide_ieee754_rem_pio2(double x, double* y)
 {
    /*
     * Table of constants for 2/pi, 396 Hex digits (476 decimal) of 2/pi
