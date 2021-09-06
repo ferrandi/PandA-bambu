@@ -77,16 +77,17 @@ cd build
 cd ..
 echo "::endgroup::"
 
-echo "::group::Build application package"
+echo "::group::Build Bambu"
 make --directory=build -j$J install-strip DESTDIR="$workspace_dir/dist"
+echo "::endgroup"
 
+echo "::group::Package Appimage"
 echo "Inflating python interpreter..."
-wget https://github.com/niess/python-appimage/releases/download/python3.9/python3.9.6-cp39-cp39-manylinux1_x86_64.AppImage -q
-chmod +x python*-cp39-cp39-manylinux1_x86_64.AppImage
-./python*-cp39-cp39-manylinux1_x86_64.AppImage --appimage-extract 2>&1> /dev/null
+chmod +x python*.AppImage
+./python*.AppImage --appimage-extract 2>&1> /dev/null
 rm squashfs-root/python.png squashfs-root/python*.desktop squashfs-root/usr/share/metainfo/python*.appdata.xml squashfs-root/AppRun
 rsync -a squashfs-root/ dist
-rm -rf squashfs-root python*-cp39-cp39-manylinux1_x86_64.AppImage
+rm -rf squashfs-root python*.AppImage
 
 rm -f `find dist -type f -name clang-tidy`
 rm -f `find dist -type f -name clang-query`
@@ -136,10 +137,9 @@ EOF
 chmod a+x dist/usr/bin/bambu_wrapper.sh
 
 echo "Generating appimage..."
-curl -L https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64 -o dist/AppRun
+curl -L https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64 -o dist/AppRun -s
 chmod +x dist/AppRun
 ARCH=x86_64 appimagetool dist 2> /dev/null
 
 echo "::set-output name=appimage::$(ls *.AppImage)"
 echo "::set-output name=dist-dir::dist"
-echo "::endgroup::"

@@ -75,11 +75,11 @@ jobs:
           set -e
           export XZ_OPT='-T0'
           mkdir ${{env.dist-dir}}
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
           wait
       - name: Download gcc 4.9
         uses: ./.github/actions/storage-download
@@ -169,11 +169,11 @@ jobs:
           set -e
           export XZ_OPT='-T0'
           mkdir ${{env.dist-dir}}
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -q -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
           wait
       - name: Download gcc 4.9
         uses: ./.github/actions/storage-download
