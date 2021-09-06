@@ -625,6 +625,7 @@ etc/libbambu/libm/s_significand.c
 etc/libbambu/libm/s_sin.c
 etc/libbambu/libm/s_tan.c
 etc/libbambu/libm/s_tanh.c
+etc/libbambu/libm/s_trigon.c
 etc/libbambu/libm/sf_asinh.c
 etc/libbambu/libm/sf_atan.c
 etc/libbambu/libm/sf_cbrt.c
@@ -673,6 +674,17 @@ etc/libbambu/libm/sf_tan.c
 etc/libbambu/libm/sf_tanh.c
 etc/libbambu/libm/sf_trigon.c
 etc/libbambu/libm/sf_trunc.c
+etc/libbambu/libm/tf_copysign.c
+etc/libbambu/libm/tf_fpclassify.c
+etc/libbambu/libm/tf_inf.c
+etc/libbambu/libm/tf_isfinite.c
+etc/libbambu/libm/tf_isinf.c
+etc/libbambu/libm/tf_isinf_sign.c
+etc/libbambu/libm/tf_isnan.c
+etc/libbambu/libm/tf_isnormal.c
+etc/libbambu/libm/tf_nan.c
+etc/libbambu/libm/tf_nans.c
+etc/libbambu/libm/tf_signbit.c
 etc/libbambu/libm/w_exp.c
 etc/libbambu/libm/w_log.c
 etc/libbambu/libm/w_scalb.c
