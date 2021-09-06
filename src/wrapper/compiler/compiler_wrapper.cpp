@@ -3513,8 +3513,8 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
                                            const std::string&
 #if HAVE_I386_CLANG4_COMPILER
                                                //|| HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||
-                                               //HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
-                                                   GepiCanon_plugin_name
+                                               // HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
+                                               GepiCanon_plugin_name
 #endif
                                            ,
                                            const std::string&
@@ -3525,8 +3525,8 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
                                            const std::string&
 #if HAVE_I386_CLANG4_COMPILER
                                                //|| HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||
-                                               //HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
-                                                   CSROA_plugin_name
+                                               // HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
+                                               CSROA_plugin_name
 #endif
                                            ,
                                            const std::string& fname)
