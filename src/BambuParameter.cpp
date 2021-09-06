@@ -487,7 +487,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        formulation. Default: off.\n\n"
 #endif
       << "    --speculative-sdc-scheduling,-s\n"
-      << "        Perform scheduling by using speculative sdc.\n\n"
+      << "        Perform scheduling by using speculative SDC.\n"
+      << "        The speculative SDC is more conservative, in case --panda-parameter=enable-conservative-sdc=1 is passed.\n\n"
 #endif
       << "    --pipelining,-p\n"
       << "        Perform functional pipelining starting from the top function.\n\n"
