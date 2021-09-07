@@ -102,6 +102,7 @@ static const FloatFormatRef float32FF(new FloatFormat(8, 23, -127));
 static const FloatFormatRef float64FF(new FloatFormat(11, 52, -1023));
 
 static const std::set<std::string> supported_libm_calls = {"copysign", "finite", "fpclassify", "huge_val", "inf", "infinity", "isfinite", "isinf", "isinf_sign", "isnan", "isnormal", "nan", "nans", "signbit"};
+static const std::set<std::string> supported_libm_calls_inlined = {"copysign"};
 
 /**
  * @brief List of low level implementation libm functions. Composite functions are not present since fp format can be safely propagated there.
@@ -1425,6 +1426,12 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                const auto specFF = _version->ieee_format() ? (is_f32 ? float32FF : float64FF) : _version->userRequired;
                replaceWithCall(specFF, "__" + tf_fname, ce->args, current_statement, ga->op1, current_srcp);
                RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_NONE);
+               if(supported_libm_calls_inlined.count(tf_fname))
+               {
+                  FunctionCallInline::RequestInlineStmt(current_statement, function_id);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
+               }
+               modified = true;
             }
             else
             {
@@ -1624,8 +1631,8 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                      const auto fu_name = "__" + std::string(is_unsigned ? "u" : "") + "int" + bitsize_str_in + "_to_float" + bitsize_str_out;
                      THROW_ASSERT(!_version->ieee_format() || outFF, "");
                      replaceWithCall(_version->ieee_format() ? outFF : _version->userRequired, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
-                     FunctionCallInline::RequestInlineStmt(current_statement, function_id);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
+                     // FunctionCallInline::RequestInlineStmt(current_statement, function_id);
+                     // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
                      modified = true;
                   }
                   break;
@@ -1644,6 +1651,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   THROW_ASSERT(ff, "Float format should be defined here");
                   const auto float_negate = floatAbs(ue->op, ff);
                   TreeM->ReplaceTreeNode(current_statement, current_tree_node, float_negate);
+                  modified = true;
                   break;
                }
                case negate_expr_K:
@@ -1654,6 +1662,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   THROW_ASSERT(ff, "Float format should be defined here");
                   const auto float_negate = floatNegate(ue->op, ff);
                   TreeM->ReplaceTreeNode(current_statement, current_tree_node, float_negate);
+                  modified = true;
                   break;
                }
                case nop_expr_K:
@@ -2298,6 +2307,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
 
             // Perform static constant value cast and replace real type constant with converted unsigned integer type constant
             TreeM->ReplaceTreeNode(current_statement, current_tree_node, int_cst);
+            modified = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Real type constant " + curr_tn->ToString() + " converted to " + GET_NODE(int_cst)->ToString());
          }
          break;
