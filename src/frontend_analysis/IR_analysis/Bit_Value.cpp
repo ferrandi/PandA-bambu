@@ -925,10 +925,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
-         relationships.insert(std::make_pair(ESSA, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(BIT_VALUE, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(PARM2SSA, SAME_FUNCTION));
-         relationships.insert(std::make_pair(PARM2SSA, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
          relationships.insert(std::make_pair(CALL_GRAPH_BUILTIN_CALL, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
