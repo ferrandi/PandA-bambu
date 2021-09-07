@@ -44,6 +44,7 @@
 #include "NP_functionality.hpp"       // for NP_functionalityRef
 #include "Parameter.hpp"              // for ParameterConstRef
 #include "allocation_information.hpp" // for technology_nodeRef, node_kin...
+#include "application_frontend_flow_step.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "clb_model.hpp"
@@ -51,8 +52,12 @@
 #include "config_HAVE_FLOPOCO.hpp"      // for HAVE_FLOPOCO
 #include "cpu_time.hpp"                 // for START_TIME, STOP_TIME
 #include "dbgPrintHelper.hpp"           // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
 #include "design_flow_step_factory.hpp" // for DesignFlowManagerConstRef
 #include "exceptions.hpp"               // for THROW_ASSERT, THROW_ERROR
+#include "frontend_flow_step_factory.hpp"
+#include "function_frontend_flow_step.hpp"
 #include "functions.hpp"
 #include "hls.hpp"                   // for HLS_constraintsRef
 #include "hls_constraints.hpp"       // for ENCODE_FU_LIB
@@ -192,6 +197,21 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          THROW_UNREACHABLE("");
    }
    return ret;
+}
+void allocation::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+{
+   if(relationship_type == DEPENDENCE_RELATIONSHIP)
+   {
+      if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+      {
+         const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+         const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, funId));
+         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_step = frontend_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step : frontend_flow_step_factory->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);
+         relationship.insert(design_flow_step);
+      }
+   }
+   HLSFunctionStep::ComputeRelationships(relationship, relationship_type);
 }
 
 technology_nodeRef allocation::extract_bambu_provided(const std::string& library_name, operation* curr_op, const std::string& bambu_provided_resource_)
@@ -2349,18 +2369,6 @@ DesignFlowStep_Status allocation::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
 
-   const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-   const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);
-   for(auto const called_function : called_functions)
-   {
-      if(called_function == funId)
-      {
-         continue;
-      }
-      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(called_function);
-      last_bb_ver[called_function] = FB->GetBBVersion();
-   }
-
    return DesignFlowStep_Status::SUCCESS;
 }
 
@@ -2891,35 +2899,6 @@ void allocation::IntegrateTechnologyLibraries()
             }
          }
       }
-   }
-}
-
-bool allocation::HasToBeExecuted() const
-{
-   if(HLSFunctionStep::HasToBeExecuted())
-   {
-      return true;
-   }
-   else
-   {
-      std::map<unsigned int, unsigned int> cur_bb_ver;
-      const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-      const auto& funcs = call_graph_manager->GetReachedBodyFunctions();
-      if(funId and funcs.find(funId) == funcs.end())
-      {
-         return false;
-      }
-      const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);
-      for(auto const called_function : called_functions)
-      {
-         if(called_function == funId)
-         {
-            continue;
-         }
-         const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(called_function);
-         cur_bb_ver[called_function] = FB->GetBBVersion();
-      }
-      return !std::equal(cur_bb_ver.begin(), cur_bb_ver.end(), last_bb_ver.begin());
    }
 }
 

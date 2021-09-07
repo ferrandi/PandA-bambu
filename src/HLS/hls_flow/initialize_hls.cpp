@@ -53,7 +53,6 @@
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-
 #include "memory_allocation.hpp"
 
 /// technology include
@@ -62,7 +61,7 @@
 /// technology/physical_library include
 #include "technology_node.hpp"
 
-/// tree include
+#include "call_graph_manager.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"

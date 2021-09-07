@@ -50,6 +50,12 @@
 class HLSFunctionStep : public HLS_step
 {
  protected:
+   /// last bb version of the called functions
+   std::map<unsigned int, unsigned int> last_bb_ver;
+
+   /// The version of bit value IR representation on which this step was applied
+   std::map<unsigned int, unsigned int> last_bitvalue_ver;
+
    /// identifier of the function to be processed (0 means that it is a global step)
    const unsigned int funId;
 
@@ -58,6 +64,9 @@ class HLSFunctionStep : public HLS_step
 
    /// The version of bb intermediate representation on which this step was applied
    unsigned int bb_version;
+
+   /// The version of bitvalue on which this step was applied
+   unsigned int bitvalue_version;
 
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;

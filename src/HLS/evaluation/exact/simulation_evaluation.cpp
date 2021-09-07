@@ -69,7 +69,7 @@
 #include "utility.hpp"
 
 SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager)
-    : EvaluationBaseStep(_Param, _hls_mgr, 0, _design_flow_manager, HLSFlowStep_Type::SIMULATION_EVALUATION), already_executed(false)
+    : EvaluationBaseStep(_Param, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::SIMULATION_EVALUATION), already_executed(false)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
 }
@@ -102,7 +102,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-DesignFlowStep_Status SimulationEvaluation::InternalExec()
+DesignFlowStep_Status SimulationEvaluation::Exec()
 {
    THROW_ASSERT(not already_executed, "simulation cannot be executed multiple times!");
 

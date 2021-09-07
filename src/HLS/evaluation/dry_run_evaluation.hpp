@@ -61,15 +61,9 @@ class DryRunEvaluation : public EvaluationBaseStep
    ~DryRunEvaluation() override;
 
    /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
-
-   /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status Exec() override;
 };
 #endif

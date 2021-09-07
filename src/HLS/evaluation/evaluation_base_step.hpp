@@ -37,17 +37,16 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Superclass include
-#include "hls_function_step.hpp"
-
 #ifndef EVALUATION_BASE_STEP_HPP
 #define EVALUATION_BASE_STEP_HPP
+
+/// Superclass include
+#include "hls_step.hpp"
 
 /**
  * This class is the base class of evaluation steps
  */
-class EvaluationBaseStep : public HLSFunctionStep
+class EvaluationBaseStep : public HLS_step
 {
  protected:
    /// List of steps performing evaluations
@@ -67,12 +66,18 @@ class EvaluationBaseStep : public HLSFunctionStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type the particular type of evaluation
     */
-   EvaluationBaseStep(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   EvaluationBaseStep(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor
     */
    ~EvaluationBaseStep() override;
+
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 
    /**
     * Returns the results of the evaluation

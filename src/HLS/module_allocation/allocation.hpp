@@ -102,8 +102,6 @@ enum class Allocation_MinMax
 class allocation : public HLSFunctionStep
 {
  protected:
-   std::map<unsigned int, unsigned int> last_bb_ver;
-
    /// The allocation solution
    AllocationInformationRef allocation_information;
    friend struct updatecopy_HLS_constraints_functor;
@@ -197,6 +195,8 @@ class allocation : public HLSFunctionStep
     */
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+
  public:
    /**
     * @name Constructors and destructors.
@@ -224,11 +224,6 @@ class allocation : public HLSFunctionStep
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 
    /**
     * Dump the initial intermediate representation
