@@ -77,6 +77,7 @@ ext/sollya/configure
 ext/sollya/m4/
 QTCreator-PandA-GitHub.creator.user
 lconfig.h.in
+lconfig.h.in~
 
 build/
 build_release/

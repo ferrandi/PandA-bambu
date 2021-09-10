@@ -49,6 +49,7 @@ jobs:
           set -e
           export XZ_OPT='-T0'
           mkdir ${{env.dist-dir}}
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
           wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
           wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
           wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
@@ -225,6 +226,9 @@ jobs:
           - setup: clang-11
             script: generic_gcc_regression_simple_bambu.sh
             args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR
+          - setup: clang-12
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
+            args: -c=--compiler=I386_CLANG12 -c=--simulator=VERILATOR
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -542,6 +546,8 @@ jobs:
             args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
           - setup: clang-11
             args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM
+          - setup: clang-12
+            args: -c=--compiler=I386_CLANG12 -c=--simulator=VERILATOR
     env:
       script: generic_libm-tests.sh
       args: -c=--speculative-sdc-scheduling
