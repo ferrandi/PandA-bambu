@@ -887,6 +887,14 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
             {
                res.pop_front();
             }
+            if(tree_helper::IsSignedIntegerType(operation->op0) && (lhs_bitstring.size() + shift_value) > lhs_size)
+            {
+               const auto lhs_sign_extend_end = lhs_bitstring.begin() + static_cast<decltype(lhs_bitstring)::difference_type>(lhs_bitstring.size() + shift_value - lhs_size);
+               if(std::find(lhs_bitstring.begin(), lhs_sign_extend_end, bit_lattice::U) != lhs_sign_extend_end)
+               {
+                  res.front() = bit_lattice::U;
+               }
+            }
          }
          else if(rhs_kind == truth_and_expr_K || rhs_kind == truth_andif_expr_K || rhs_kind == truth_or_expr_K || rhs_kind == truth_orif_expr_K || rhs_kind == truth_xor_expr_K)
          {
