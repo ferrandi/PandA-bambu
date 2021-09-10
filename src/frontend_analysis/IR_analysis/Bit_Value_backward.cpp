@@ -1188,6 +1188,9 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case unle_expr_K:
       case unlt_expr_K:
       case unordered_expr_K:
+      // Ternary expressions
+      case fshl_expr_K:
+      case fshr_expr_K:
       case lut_expr_K:
       {
          // Do nothing

@@ -1439,6 +1439,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case ternary_pm_expr_K:
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
+      case fshl_expr_K:
+      case fshr_expr_K:
       {
          const auto operation = GetPointer<const ternary_expr>(GET_CONST_NODE(rhs));
 
@@ -1647,6 +1649,74 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                      carry1 = minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
                   }
                }
+            }
+         }
+         else if(rhs_kind == fshl_expr_K)
+         {
+            if(GET_CONST_NODE(operation->op2)->get_kind() == ssa_name_K)
+            {
+               res = create_u_bitstring(lhs_size);
+            }
+            else if(GET_CONST_NODE(operation->op2)->get_kind() == integer_cst_K)
+            {
+               const auto const2 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op2));
+               const auto arg2_value = static_cast<unsigned int>(const2->value) % lhs_size;
+
+               if(lhs_size > op0_bitstring.size())
+               {
+                  op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, lhs_size);
+               }
+               if(lhs_size > op1_bitstring.size())
+               {
+                  op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, lhs_size);
+               }
+               std::merge(op0_bitstring.begin(), op0_bitstring.end(), op1_bitstring.begin(), op1_bitstring.end(), std::inserter(res, res.begin()));
+               for(unsigned int index = 0; index < arg2_value; ++index)
+               {
+                  res.pop_front();
+               }
+               while(res.size() > lhs_size)
+               {
+                  res.pop_back();
+               }
+            }
+            else
+            {
+               THROW_ERROR("unexpected case");
+            }
+         }
+         else if(rhs_kind == fshr_expr_K)
+         {
+            if(GET_CONST_NODE(operation->op2)->get_kind() == ssa_name_K)
+            {
+               res = create_u_bitstring(lhs_size);
+            }
+            else if(GET_CONST_NODE(operation->op2)->get_kind() == integer_cst_K)
+            {
+               const auto const2 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op2));
+               const auto arg2_value = static_cast<unsigned int>(const2->value) % lhs_size;
+
+               if(lhs_size > op0_bitstring.size())
+               {
+                  op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, lhs_size);
+               }
+               if(lhs_size > op1_bitstring.size())
+               {
+                  op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, lhs_size);
+               }
+               std::merge(op0_bitstring.begin(), op0_bitstring.end(), op1_bitstring.begin(), op1_bitstring.end(), std::inserter(res, res.begin()));
+               for(unsigned int index = 0; index < arg2_value; ++index)
+               {
+                  res.pop_back();
+               }
+               while(res.size() > lhs_size)
+               {
+                  res.pop_front();
+               }
+            }
+            else
+            {
+               THROW_ERROR("unexpected case");
             }
          }
          else
