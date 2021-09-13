@@ -995,7 +995,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed current basic block");
                      }
 
-                     indented_output_stream->Append("case " + local_rec_behavioral_helper->print_constant(*eIdBeg));
+                     indented_output_stream->Append("case " + local_rec_behavioral_helper->PrintConstant(TM->CGetTreeReindex(*eIdBeg)));
                   }
                   indented_output_stream->Append(":\n");
                }

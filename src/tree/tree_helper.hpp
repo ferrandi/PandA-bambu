@@ -1108,7 +1108,7 @@ class tree_helper
     * @param op is the tree node of the expression
     * @return the string corresponding to the operator
     */
-   static std::string op_symbol(const tree_nodeRef& op);
+   static std::string op_symbol(const tree_nodeConstRef& op);
 
    /**
     * Function return the symbol related with the operator op passed as parameter

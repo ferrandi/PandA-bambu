@@ -162,10 +162,10 @@ class BehavioralHelper
 
    /**
     * Print the initialization part
-    * @param index is the initialization expression.
+    * @param var is the initialization expression.
     * @param vppf is the functor used to dump the variable var.
     */
-   virtual std::string print_init(unsigned int var, const var_pp_functorConstRef vppf) const;
+   virtual std::string PrintInit(const tree_nodeConstRef& var, const var_pp_functorConstRef vppf) const;
 
    /**
     * Print the attributes associated to a variable
@@ -188,11 +188,11 @@ class BehavioralHelper
    void InvaildateVariableName(const unsigned int index);
 
    /**
-    * Print the constant associated with index.
-    * @param index is the constant id.
+    * Print the constant associated with var
+    * @param var is the constant tree node
     * @param vppf is the functor used to dump the variable var.
     */
-   virtual std::string print_constant(unsigned int var, const var_pp_functorConstRef vppf = var_pp_functorConstRef()) const;
+   virtual std::string PrintConstant(const tree_nodeConstRef& var, const var_pp_functorConstRef vppf = var_pp_functorConstRef()) const;
 
    /**
     * Print a type and its variable in case var is not zero.
@@ -611,13 +611,15 @@ class BehavioralHelper
 
    /**
     * Print the operations corresponding to the node
-    * @param index is the index of the node
+    * @param node is the node to print
     * @param v is the vertex of the operation
     * @param vppf is the functor used to dump the variable var.
     * The stream on which string is printed is the one associate with the identer
     * @return the string corrisponding to the node
     */
-   virtual std::string print_node(unsigned int index, vertex v, const var_pp_functorConstRef vppf) const;
+   virtual std::string PrintNode(const tree_nodeConstRef& node, vertex v, const var_pp_functorConstRef vppf) const;
+
+   virtual std::string PrintNode(unsigned int node_id, vertex v, const var_pp_functorConstRef vppf) const;
 
    /**
     * This method returns true if the node specified in the parameters is
@@ -646,7 +648,7 @@ class BehavioralHelper
     * when the variable var is equal to 4(a) and the vppf is an instance of std_var_pp_functor.
     * @param var is the considered variable.
     * @param vppf is the functor used to dump the variable var.
-    * @param print_init tells if the init has to be printed
+    * @param init_has_to_be_printed tells if the init has to be printed
     */
    std::string PrintVarDeclaration(unsigned int var, const var_pp_functorConstRef vppf, bool init_has_to_be_printed) const;
 

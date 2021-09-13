@@ -4759,7 +4759,7 @@ bool tree_helper::IsConstant(const tree_nodeConstRef& _node)
    return false;
 }
 
-std::string tree_helper::op_symbol(const tree_nodeRef& op)
+std::string tree_helper::op_symbol(const tree_nodeConstRef& op)
 {
    return op_symbol(op.get());
 }
@@ -4792,19 +4792,19 @@ std::string tree_helper::op_symbol(const tree_node* op)
       {
          if(dynamic_cast<const addr_expr*>(op))
          {
-            const auto ae = dynamic_cast<const addr_expr*>(op);
-            tree_nodeRef tn = GET_NODE(ae->op);
-            if(GetPointer<array_ref>(tn))
+            const auto ae = static_cast<const addr_expr*>(op);
+            const auto tn = GET_CONST_NODE(ae->op);
+            if(GetPointer<const array_ref>(tn))
             {
-               const auto ar = GetPointer<array_ref>(tn);
-               tree_nodeRef base = GET_NODE(ar->op0);
-               tree_nodeRef offset = GET_NODE(ar->op1);
-               if(base->get_kind() == string_cst_K and offset->get_kind() == integer_cst_K and !tree_helper::get_integer_cst_value(GetPointer<integer_cst>(offset)))
+               const auto ar = GetPointerS<const array_ref>(tn);
+               const auto base = GET_CONST_NODE(ar->op0);
+               const auto offset = GET_CONST_NODE(ar->op1);
+               if(base->get_kind() == string_cst_K && offset->get_kind() == integer_cst_K && !tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(offset)))
                {
                   return "";
                }
             }
-            if(GetPointer<string_cst>(tn))
+            if(GetPointer<const string_cst>(tn))
             {
                return "";
             }

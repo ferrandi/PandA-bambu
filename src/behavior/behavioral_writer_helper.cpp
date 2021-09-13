@@ -144,7 +144,7 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
                res += " " + schedule->PrintTimingInformation(phi->index) + " ";
             }
 #endif
-            res += " -> " + helper->print_node(phi->index, nullptr, svpf);
+            res += " -> " + helper->PrintNode(phi, nullptr, svpf);
             std::string temp;
             for(char re : res)
             {
@@ -176,7 +176,7 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
                res += " " + schedule->PrintTimingInformation(statement->index) + " ";
             }
 #endif
-            res += " -> " + helper->print_node(statement->index, nullptr, svpf);
+            res += " -> " + helper->PrintNode(statement, nullptr, svpf);
             const tree_nodeRef node = GET_NODE(statement);
             switch(node->get_kind())
             {

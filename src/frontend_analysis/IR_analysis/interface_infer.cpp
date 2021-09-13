@@ -470,7 +470,7 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
       {
          data_value = tree_man->CreateIntegerCst(readType, 0, data_value_id);
       }
-      else if(GET_NODE(readType)->get_kind() == real_type_K)
+      else if(tree_helper::IsRealType(readType))
       {
          data_value = tree_man->CreateRealCst(readType, 0.l, data_value_id);
       }
