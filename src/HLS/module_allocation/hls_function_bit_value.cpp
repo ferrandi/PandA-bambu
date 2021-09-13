@@ -144,7 +144,10 @@ DesignFlowStep_Status HLSFunctionBitValue::InternalExec()
    const auto default_address_bitsize = parameters->isOption(OPT_addr_bus_bitsize) ? parameters->getOption<unsigned int>(OPT_addr_bus_bitsize) : 32;
    if(default_address_bitsize != curr_address_bitsize)
    {
-      const auto design_flow_step = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);
+      const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, funId));
+      const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+      const auto design_flow_step = frontend_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+                                                                   GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);
       HLSMgr->Rmem->set_enable_hls_bit_value(true);
       design_flow_step->Initialize();
       const auto return_status = design_flow_step->Exec();

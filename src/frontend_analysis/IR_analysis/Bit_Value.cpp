@@ -1283,7 +1283,8 @@ void Bit_Value::initialize()
                         const auto base_index = tree_helper::get_base_index(TM, GET_INDEX_CONST_NODE(ga->op1));
                         const auto var_node = TM->GetTreeNode(base_index);
                         auto vd = GetPointer<var_decl>(var_node);
-                        if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm && hm->Rmem && function_behavior->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index) && vd && vd->init)
+                        if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm && hm->Rmem && hm->Rmem->get_enable_hls_bit_value() && function_behavior->is_variable_mem(base_index) &&
+                           hm->Rmem->is_sds_var(base_index) && vd && vd->init)
                         {
                            std::deque<bit_lattice> current_inf;
                            if(GET_CONST_NODE(vd->init)->get_kind() == constructor_K)
@@ -1540,6 +1541,7 @@ void Bit_Value::initialize()
             if(bb_version == 0 || bb_version != function_behavior->GetBBVersion())
             {
                ssa->bit_values.clear();
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bit_values cleared : " + STR(ssa));
             }
 
             if(ssa->CGetUseStmts().empty())
@@ -1601,6 +1603,7 @@ void Bit_Value::initialize()
                   if(bb_version == 0 || bb_version != function_behavior->GetBBVersion())
                   {
                      lhs_ssa->bit_values.clear();
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bit_values cleared : " + STR(lhs_ssa));
                   }
                   const auto lhs_signed = tree_helper::IsSignedIntegerType(lhs);
                   if(lhs_signed)
@@ -1715,6 +1718,7 @@ void Bit_Value::initialize()
                   else
                   {
                      out_ssa->bit_values.clear();
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bit_values cleared : " + STR(out_ssa));
                      if(tree_helper::IsSignedIntegerType(out_node))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
