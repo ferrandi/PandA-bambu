@@ -88,16 +88,16 @@ bool HLSFunctionStep::HasToBeExecuted() const
    {
       return true;
    }
-   //   if(bitvalue_version == 0 or bitvalue_version != FB->GetBitValueVersion())
-   //   {
-   //      return true;
-   //   }
+   if(bitvalue_version == 0 or bitvalue_version != FB->GetBitValueVersion())
+   {
+      return true;
+   }
    if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
    {
       return true;
    }
    std::map<unsigned int, unsigned int> cur_bb_ver;
-   // std::map<unsigned int, unsigned int> cur_bitvalue_ver;
+   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
    THROW_ASSERT(funId, "unexpected case");
    const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);
@@ -109,9 +109,9 @@ bool HLSFunctionStep::HasToBeExecuted() const
       }
       const FunctionBehaviorConstRef FBCalled = HLSMgr->CGetFunctionBehavior(called_function);
       cur_bb_ver[called_function] = FBCalled->GetBBVersion();
-      // cur_bitvalue_ver[called_function] = FBCalled->GetBitValueVersion();
+      cur_bitvalue_ver[called_function] = FBCalled->GetBitValueVersion();
    }
-   return cur_bb_ver != last_bb_ver /*|| cur_bitvalue_ver != last_bitvalue_ver*/;
+   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
 }
 
 void HLSFunctionStep::Initialize()
