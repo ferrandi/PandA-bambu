@@ -2928,7 +2928,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
       case fshr_expr_K:
       {
          const auto te = GetPointerS<const ternary_expr>(node);
-         const auto type = tree_helper::CGetType(_node);
+         const auto type_size = tree_helper::Size(te->type);
          const auto left_op_cast = tree_helper::IsPointerType(te->op0);
          const auto right_op_cast = tree_helper::IsPointerType(te->op1);
          res += "(";
@@ -2946,15 +2946,15 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          {
             res += PrintNode(te->op2, v, vppf);
             res += " % ";
-            res += STR(tree_helper::Size(te->op0));
+            res += STR(type_size);
          }
          else
          {
-            res += STR(tree_helper::Size(te->op0));
+            res += STR(type_size);
             res += " - (";
             res += PrintNode(te->op2, v, vppf);
             res += " % ";
-            res += STR(tree_helper::Size(te->op0));
+            res += STR(type_size);
             res += ")";
          }
          res += ")) | (";
@@ -2973,15 +2973,15 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          {
             res += PrintNode(te->op2, v, vppf);
             res += " % ";
-            res += STR(tree_helper::Size(te->op0));
+            res += STR(type_size);
          }
          else
          {
-            res += STR(tree_helper::Size(te->op0));
+            res += STR(type_size);
             res += " - (";
             res += PrintNode(te->op2, v, vppf);
             res += " % ";
-            res += STR(tree_helper::Size(te->op0));
+            res += STR(type_size);
             res += ")";
          }
          res += "))";

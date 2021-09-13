@@ -1075,12 +1075,16 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                }
                break;
             }
+            if(op0_nid == op1_nid)
+            {
+               res = create_u_bitstring(lhs_size);
+               break;
+            }
 
             const auto offset = static_cast<size_t>(tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op2))) % lhs_size);
             if(op0_nid == res_nid)
             {
                res = create_u_bitstring(static_cast<size_t>(lhs_size - offset));
-               res.push_front(bit_lattice::X);
             }
             else
             {
