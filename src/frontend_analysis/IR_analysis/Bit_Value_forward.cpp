@@ -1660,7 +1660,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             else if(GET_CONST_NODE(operation->op2)->get_kind() == integer_cst_K)
             {
                const auto const2 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op2));
-               const auto arg2_value = static_cast<unsigned int>(const2->value) % lhs_size;
+               const auto offset = static_cast<unsigned int>(const2->value) % lhs_size;
 
                if(lhs_size > op0_bitstring.size())
                {
@@ -1670,15 +1670,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                {
                   op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, lhs_size);
                }
-               std::merge(op0_bitstring.begin(), op0_bitstring.end(), op1_bitstring.begin(), op1_bitstring.end(), std::inserter(res, res.begin()));
-               for(unsigned int index = 0; index < arg2_value; ++index)
-               {
-                  res.pop_front();
-               }
-               while(res.size() > lhs_size)
-               {
-                  res.pop_back();
-               }
+               res.insert(res.end(), op0_bitstring.begin() + offset, op0_bitstring.end());
+               res.insert(res.end(), op1_bitstring.begin(), op1_bitstring.begin() + offset);
+               THROW_ASSERT(res.size() == lhs_size, "");
             }
             else
             {
@@ -1694,7 +1688,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             else if(GET_CONST_NODE(operation->op2)->get_kind() == integer_cst_K)
             {
                const auto const2 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op2));
-               const auto arg2_value = static_cast<unsigned int>(const2->value) % lhs_size;
+               const auto offset = static_cast<unsigned int>(const2->value) % lhs_size;
 
                if(lhs_size > op0_bitstring.size())
                {
@@ -1704,15 +1698,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                {
                   op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, lhs_size);
                }
-               std::merge(op0_bitstring.begin(), op0_bitstring.end(), op1_bitstring.begin(), op1_bitstring.end(), std::inserter(res, res.begin()));
-               for(unsigned int index = 0; index < arg2_value; ++index)
-               {
-                  res.pop_back();
-               }
-               while(res.size() > lhs_size)
-               {
-                  res.pop_front();
-               }
+               res.insert(res.end(), op0_bitstring.begin() + offset, op0_bitstring.end());
+               res.insert(res.end(), op1_bitstring.begin(), op1_bitstring.begin() + offset);
+               THROW_ASSERT(res.size() == lhs_size, "");
             }
             else
             {

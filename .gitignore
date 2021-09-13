@@ -33,6 +33,7 @@ Makefile.in
 /texinfo.tex
 
 autoreconf_log
+configure~
 etc/aclocal.m4
 etc/autom4te.cache/
 etc/autoreconf_log

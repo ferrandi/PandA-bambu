@@ -54,6 +54,7 @@
 
 // include boost range adaptors
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "math_function.hpp"  // for ceil_log2
 #include "string_manipulation.hpp"
 #include <boost/range/adaptors.hpp>
 
@@ -946,6 +947,8 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       // Ternary expressions
       case bit_ior_concat_expr_K:
       case cond_expr_K:
+      case fshl_expr_K:
+      case fshr_expr_K:
       case ternary_plus_expr_K:
       case ternary_pm_expr_K:
       case ternary_mp_expr_K:
@@ -1060,6 +1063,30 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                const auto arg1_sign = op1_bitstring.front();
                res.pop_front();
                res.push_front(arg1_sign);
+            }
+         }
+         else if(rhs_kind == fshl_expr_K || rhs_kind == fshr_expr_K)
+         {
+            if(GET_CONST_NODE(operation->op2)->get_kind() != integer_cst_K)
+            {
+               if(op2_nid == res_nid)
+               {
+                  res = create_u_bitstring(static_cast<size_t>(ceil_log2(lhs_size)));
+               }
+               break;
+            }
+
+            const auto offset = static_cast<size_t>(tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op2))) % lhs_size);
+            if(op0_nid == res_nid)
+            {
+               res = create_u_bitstring(static_cast<size_t>(lhs_size - offset));
+               res.push_front(bit_lattice::X);
+            }
+            else
+            {
+               THROW_ASSERT(op1_nid == res_nid, "");
+               res = create_u_bitstring(offset);
+               res.insert(res.end(), static_cast<size_t>(lhs_size - offset), bit_lattice::X);
             }
          }
          else if(rhs_kind == ternary_plus_expr_K || rhs_kind == ternary_pm_expr_K || rhs_kind == ternary_mp_expr_K || rhs_kind == ternary_mm_expr_K)
@@ -1189,8 +1216,6 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case unlt_expr_K:
       case unordered_expr_K:
       // Ternary expressions
-      case fshl_expr_K:
-      case fshr_expr_K:
       case lut_expr_K:
       {
          // Do nothing
