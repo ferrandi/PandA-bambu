@@ -240,7 +240,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "<--");
 
       // Propagate floating-point format specialization over to called functions
-      if(parameters->isOption(OPT_propagate_fp_format) && parameters->getOption<bool>(OPT_propagate_fp_format))
+      if(parameters->isOption(OPT_fp_format_propagate) && parameters->getOption<bool>(OPT_fp_format_propagate))
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "Soft-float fp format propagation enabled:");
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "-->");
@@ -423,7 +423,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 {
    THROW_ASSERT(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float), "Floating-point lowering should not be executed");
 
-   static const auto ff_already_propagated = parameters->isOption(OPT_propagate_fp_format) && parameters->getOption<bool>(OPT_propagate_fp_format);
+   static const auto ff_already_propagated = parameters->isOption(OPT_fp_format_propagate) && parameters->getOption<bool>(OPT_fp_format_propagate);
    // Check if current function needs IO fp format interface (avoid check if fp format propagation has already been computed)
    if(!ff_already_propagated && !_version->ieee_format())
    {
@@ -552,10 +552,11 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    }
 
    // Design top function signatures must not be modified, thus a view-convert operation for real_type parameters and return value must be added inside the function body
-   if(isTopFunction && _version->ieee_format())
+   if(isTopFunction && (!parameters->isOption(OPT_fp_format_interface) || !parameters->getOption<bool>(OPT_fp_format_interface)))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameters binding " + STR(bindingCompleted ? "" : "partially ") + "completed on " + STR(paramBinding.size()) + " arguments");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+
       const auto entry_bb = sl->list_of_bloc.at(bloc::ENTRY_BLOCK_ID);
       const auto first_bb = sl->list_of_bloc.at(entry_bb->list_of_succ.front());
       for(const auto& parm : paramBinding)
@@ -578,9 +579,15 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                {
                   const auto vc = tree_man->create_unary_operation(parm_type, parm_ridx, BUILTIN_SRCP, view_convert_expr_K);
                   vc_stmt = tree_man->CreateGimpleAssign(parm_type, tree_nodeRef(), tree_nodeRef(), vc, function_id, first_bb->number, BUILTIN_SRCP);
+                  if(!_version->ieee_format())
+                  {
+                     const auto ssa_ff = tree_helper::Size(GET_CONST_NODE(parmSSA->type)) == 32 ? float32FF : float64FF;
+                     inputInterface.insert({GetPointerS<ssa_name>(GET_CONST_NODE(GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0)), {ssa_ff, std::vector<unsigned int>()}});
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Input interface required for current parameter");
+                  }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Lowering statement added to BB" + STR(first_bb->number) + ": " + GET_NODE(vc_stmt)->ToString());
-               const auto lowered_parm = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
+               auto lowered_parm = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
                const auto parm_uses = parmSSA->CGetUseStmts();
                for(const auto& stmt_uses : parm_uses)
                {
@@ -608,6 +615,12 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          {
             const auto vc = tree_man->create_unary_operation(ret_ssa->type, gr->op, BUILTIN_SRCP, view_convert_expr_K);
             vc_stmt = tree_man->CreateGimpleAssign(ret_ssa->type, tree_nodeRef(), tree_nodeRef(), vc, function_id, bb->number, BUILTIN_SRCP);
+            if(!_version->ieee_format())
+            {
+               const auto ssa_ff = tree_helper::Size(GET_CONST_NODE(ret_ssa->type)) == 32 ? float32FF : float64FF;
+               outputInterface.insert({ret_ssa, {ssa_ff, std::vector<tree_nodeRef>({vc_stmt})}});
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Output interface required for current variable use");
+            }
          }
          const auto lowered_ret = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
          bb->PushBefore(vc_stmt, ret_stmt, AppM);

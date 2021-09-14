@@ -338,8 +338,9 @@
 #define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
 #define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
 #define OPT_FP_FORMAT (1 + OPT_RANGE_ANALYSIS_MODE)
-#define OPT_PROPAGATE_FP_FORMAT (1 + OPT_FP_FORMAT)
-#define OPT_PARALLEL_BACKEND (1 + OPT_PROPAGATE_FP_FORMAT)
+#define OPT_FP_FORMAT_PROPAGATE (1 + OPT_FP_FORMAT)
+#define OPT_FP_FORMAT_INTERFACE (1 + OPT_FP_FORMAT_PROPAGATE)
+#define OPT_PARALLEL_BACKEND (1 + OPT_FP_FORMAT_INTERFACE)
 #define OPT_INTERFACE_XML_FILENAME (1 + OPT_PARALLEL_BACKEND)
 #define OPT_LATTICE_ROOT (1 + OPT_INTERFACE_XML_FILENAME)
 #define OPT_XILINX_ROOT (1 + OPT_LATTICE_ROOT)
@@ -835,7 +836,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "              one    - Floating-point representation will exploit hidden-one convention (default=1)\n"
       << "              sub    - Floating-point representation will exploit subnormals (default=0)\n"
       << "           sign_bit  - Set sign bit to a fixed value (1 or 0) or leave it data dependant (default=U)\n\n"
-      << "    --propagate-fp-format\n"
+      << "    --fp-format-interface\n"
+      << "        User-defined floating-point format is applied to top interface signature if required (default modifies top function body only)\n\n"
+      << "    --fp-format-propagate\n"
       << "        Propagate user-defined floating-point format to called function when possible\n\n"
       << "    --hls-div=<method>\n"
       << "        Perform the high-level synthesis of integer division and modulo\n"
@@ -1304,7 +1307,8 @@ int BambuParameter::Exec()
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
       {"range-analysis-mode", optional_argument, nullptr, OPT_RANGE_ANALYSIS_MODE},
       {"fp-format", optional_argument, nullptr, OPT_FP_FORMAT},
-      {"propagate-fp-format", optional_argument, nullptr, OPT_PROPAGATE_FP_FORMAT},
+      {"fp-format-propagate", optional_argument, nullptr, OPT_FP_FORMAT_PROPAGATE},
+      {"fp-format-interface", optional_argument, nullptr, OPT_FP_FORMAT_INTERFACE},
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
@@ -2411,9 +2415,14 @@ int BambuParameter::Exec()
             setOption(OPT_fp_format, optarg);
             break;
          }
-         case OPT_PROPAGATE_FP_FORMAT:
+         case OPT_FP_FORMAT_PROPAGATE:
          {
-            setOption(OPT_propagate_fp_format, true);
+            setOption(OPT_fp_format_propagate, true);
+            break;
+         }
+         case OPT_FP_FORMAT_INTERFACE:
+         {
+            setOption(OPT_fp_format_interface, true);
             break;
          }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
@@ -4638,7 +4647,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_bitvalue_ipa, true);
    setOption(OPT_range_analysis_mode, "");
    setOption(OPT_fp_format, "");
-   setOption(OPT_propagate_fp_format, false);
+   setOption(OPT_fp_format_propagate, false);
    setOption(OPT_parallel_backend, false);
 
 #if HAVE_HOST_PROFILING_BUILT
