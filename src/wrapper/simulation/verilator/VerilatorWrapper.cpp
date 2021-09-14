@@ -164,7 +164,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    }
    else
    {
-      script << R"( OPT_FAST="-O0" OPT="-march=native")";
+      script << R"( OPT_FAST="-O0 -fstrict-aliasing" OPT="-march=native")";
    }
    script << " -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
 #ifdef _WIN32
