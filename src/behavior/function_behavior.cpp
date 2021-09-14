@@ -203,11 +203,11 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       initiation_time = decl_node->get_initiation_time();
       if(pipeline_enabled && simple_pipeline)
       {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Reuired pipelining with II=1 for function: " + fname);
       }
       else if(pipeline_enabled)
       {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Reuired pipelining with II=" + STR(initiation_time) + " for function: " + fname);
       }
    }
    else
@@ -221,29 +221,32 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       {
          pipeline_enabled = true;
          simple_pipeline = true;
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Reuired pipelining with II=1 for function: " + fname);
       }
       else
       {
-         std::vector<std::string> funcs_values = convert_string_to_vector<std::string>(tmp_string, std::string(","));
+         const auto funcs_values = convert_string_to_vector<std::string>(tmp_string, ",");
          for(const auto& fun_pipeline : funcs_values)
          {
-            std::vector<std::string> splitted = SplitString(fun_pipeline, "=");
-            if(splitted.size() == 1 && fname == splitted.at(0))
+            const auto splitted = SplitString(fun_pipeline, "=");
+            if(!splitted.empty() && (fname == splitted.at(0) || (fname.find("__float") == 0 && fname.find(splitted.at(0)) == 0)))
             {
-               pipeline_enabled = true;
-               simple_pipeline = true;
-               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
-            }
-            else if(splitted.size() == 2 && fname == splitted.at(0))
-            {
-               pipeline_enabled = true;
-               initiation_time = boost::lexical_cast<int>(splitted.at(1));
-               if(initiation_time == 1)
+               if(splitted.size() == 1)
                {
+                  pipeline_enabled = true;
                   simple_pipeline = true;
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Reuired pipelining with II=1 for function: " + fname);
                }
-               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
+               else if(splitted.size() == 2)
+               {
+                  pipeline_enabled = true;
+                  initiation_time = boost::lexical_cast<int>(splitted.at(1));
+                  if(initiation_time == 1)
+                  {
+                     simple_pipeline = true;
+                  }
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Reuired pipelining with II=" + STR(initiation_time) + " for function: " + fname);
+               }
             }
          }
       }
