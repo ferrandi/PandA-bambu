@@ -158,14 +158,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "ln -s " + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
    script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j";
-   if(Param->getOption<bool>(OPT_verilator_parallel))
-   {
-      script << R"( OPT_FAST="-fstrict-aliasing" OPT_SLOW="-fstrict-aliasing" OPT="-march=native")";
-   }
-   else
-   {
-      script << R"( OPT_FAST="-O0 -fstrict-aliasing" OPT="-march=native")";
-   }
+   script << " OPT=\"-fstrict-aliasing\"";
    script << " -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
