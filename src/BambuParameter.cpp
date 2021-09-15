@@ -351,6 +351,7 @@
 #define OPT_NANOXPLORE_ROOT (1 + OPT_ALTERA_ROOT)
 #define OPT_NANOXPLORE_BYPASS (1 + OPT_NANOXPLORE_ROOT)
 #define OPT_SHARED_INPUT_REGISTERS (1 + OPT_NANOXPLORE_BYPASS)
+#define OPT_INLINE_FUNCTIONS (1 + OPT_SHARED_INPUT_REGISTERS)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -409,6 +410,10 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the top function to be synthesized.\n\n"
       << "    --top-rtldesign-name=<top_name>\n"
       << "        Define the top module name for the RTL backend.\n\n"
+      << "    --inline-fname=<fun_name>[,<fun_name>]*\n"
+      << "        Define functions to be always inlined.\n"
+      << "        Automatic inlining is always performed using internal metrics.\n"
+      << "        Maximum cost to allow function inlining is defined through --panda-parameter=inline-max-cost=<value>. (default=100)\n\n"
       << "    --file-input-data=<file_list>\n"
       << "        A comma-separated list of input files used by the C specification.\n\n"
       << "    --C-no-parse=<file>\n"
@@ -1337,6 +1342,7 @@ int BambuParameter::Exec()
       {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
       {"verilator-parallel", optional_argument, nullptr, OPT_VERILATOR_PARALLEL},
       {"shared-input-registers", no_argument, nullptr, OPT_SHARED_INPUT_REGISTERS},
+      {"inline-fname", no_argument, nullptr, OPT_INLINE_FUNCTIONS},
       GCC_LONG_OPTIONS,
       {nullptr, 0, nullptr, 0}
    };
@@ -2558,6 +2564,11 @@ int BambuParameter::Exec()
          case OPT_SHARED_INPUT_REGISTERS:
          {
             setOption(OPT_shared_input_registers, true);
+            break;
+         }
+         case OPT_INLINE_FUNCTIONS:
+         {
+            setOption(OPT_inline_functions, std::string(optarg));
             break;
          }
          case 0:

@@ -48,6 +48,7 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 
+class statement_list;
 REF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 CONSTREF_FORWARD_DECL(Parameter);
@@ -56,16 +57,41 @@ CONSTREF_FORWARD_DECL(tree_node);
 class FunctionCallInline : public FunctionFrontendFlowStep
 {
  private:
+   /// Set of always inlined functions
+   static CustomSet<unsigned int> always_inline;
+
+   static CustomMap<unsigned int, CustomSet<unsigned int>> inline_call;
+
+   static size_t max_inline_cost;
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   /// Set of always inlined functions
-   static CustomSet<unsigned int> always_inline;
+   /**
+    * Compute function body cost based on statements' types
+    * @param body function body to be considered
+    * @return size_t Cost value
+    */
+   static size_t compute_cost(const statement_list* body);
 
-   static CustomMap<unsigned int, CustomSet<unsigned int>> inline_call;
+   /**
+    * Check if given call statement performs a call with all constant arguments
+    * @param call_stmt considered call statement
+    * @return true If all arguments of the call are constants
+    * @return false If any argument is not constant
+    */
+   static bool HasConstantArgs(const tree_nodeConstRef& call_stmt);
+
+   /**
+    * Check if given function body has loops
+    * @param body function body to be considered
+    * @return true If body has loops between its basic blocks
+    * @return false If no loops where detected in the cfg
+    */
+   size_t detect_loops(const statement_list* body) const;
 
  public:
    /**
