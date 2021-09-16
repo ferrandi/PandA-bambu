@@ -49,7 +49,6 @@
 #include "call_graph_manager.hpp"
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
-#include "loops.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -169,7 +168,13 @@ DesignFlowStep_Status FunctionCallInline::InternalExec()
                if(std::find_if(bb->CGetStmtList().cbegin(), bb->CGetStmtList().cend(), [&](const tree_nodeRef& tn) { return GET_INDEX_CONST_NODE(tn) == stmt_id; }) != bb->CGetStmtList().cend())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inlining required for call statement " + GET_CONST_NODE(stmt)->ToString());
+                  if(!AppM->ApplyNewTransformation())
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Max transformations reached, skipping function inlining...");
+                     break;
+                  }
                   tree_man->InlineFunctionCall(stmt, bb, fd);
+                  AppM->RegisterTransformation(GetName(), nullptr);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function inlined successfully");
                   modified = true;
                }
@@ -208,50 +213,58 @@ DesignFlowStep_Status FunctionCallInline::InternalExec()
       }
       return call_points;
    }();
-   if(call_count == 0)
+   if(call_count != 0)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Current function has zero call points, skipping analysis...");
-      return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
-   }
-   const auto loop_count = detect_loops(sl);
-   const auto body_cost = compute_cost(sl);
-   const bool force_inline = always_inline.count(function_id) || (body_cost < max_inline_cost && call_count < 5);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function information:");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal loops : " + STR(loop_count));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call points    : " + STR(call_count));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Body cost      : " + STR(body_cost));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Force inline   : " + STR(force_inline ? "true" : "false"));
-   InEdgeIterator ie, ie_end;
-   for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ++ie)
-   {
-      const auto caller_id = CGM->get_function(ie->m_source);
-      const auto caller_info = CG->CGetFunctionEdgeInfo(*ie);
-      for(const auto& call_id : caller_info->direct_call_points)
+      const auto loop_count = detect_loops(sl);
+      const auto body_cost = compute_cost(sl);
+      const bool force_inline = always_inline.count(function_id) || (body_cost < max_inline_cost && call_count < 5);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function information:");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal loops : " + STR(loop_count));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call points    : " + STR(call_count));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Body cost      : " + STR(body_cost));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Force inline   : " + STR(force_inline ? "yes" : "no"));
+      InEdgeIterator ie, ie_end;
+      for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ++ie)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing direct call point " + STR(TM->CGetTreeNode(call_id)));
-         if(force_inline)
+         const auto caller_id = CGM->get_function(ie->m_source);
+         const auto caller_info = CG->CGetFunctionEdgeInfo(*ie);
+         for(const auto& call_id : caller_info->direct_call_points)
          {
-            inline_call[caller_id].insert(call_id);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Forced inlining required for this function");
-            continue;
-         }
-         if(call_count == 1)
-         {
-            inline_call[caller_id].insert(call_id);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current call point is unique for this function, inlining required");
-            continue;
-         }
-         const auto all_const_args = HasConstantArgs(TM->CGetTreeReindex(call_id));
-         if(all_const_args && loop_count == 0)
-         {
-            inline_call[caller_id].insert(call_id);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current call has all constant arguments, inlining required");
-            continue;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing direct call point " + STR(TM->CGetTreeNode(call_id)));
+            if(force_inline)
+            {
+               inline_call[caller_id].insert(call_id);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Forced inlining required for this function");
+               continue;
+            }
+            if(call_count == 1 && body_cost < (max_inline_cost * 10ULL))
+            {
+               inline_call[caller_id].insert(call_id);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current call point is unique for this function, inlining required");
+               continue;
+            }
+            const auto all_const_args = HasConstantArgs(TM->CGetTreeReindex(call_id));
+            if(all_const_args && loop_count == 0)
+            {
+               inline_call[caller_id].insert(call_id);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current call has all constant arguments, inlining required");
+               continue;
+            }
          }
       }
    }
+   else
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function has zero call points, skipping analysis...");
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
+   if(modified)
+   {
+      function_behavior->UpdateBBVersion();
+      function_behavior->UpdateBitValueVersion();
+      return DesignFlowStep_Status::SUCCESS;
+   }
+   return DesignFlowStep_Status::UNCHANGED;
 }
 
 void FunctionCallInline::RequestInlineStmt(const tree_nodeConstRef& call_stmt, unsigned int caller_id)
