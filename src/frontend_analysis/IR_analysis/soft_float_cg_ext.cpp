@@ -858,7 +858,7 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
    const auto is_ptr_type = decl_type->get_kind() == pointer_type_K;
    // Tree node decoupling is necessary when directly modifying a type node
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
-   const auto dup_ft = tree_node_dup(remapping, TreeM).create_tree_node(is_ptr_type ? GET_NODE(GetPointerS<pointer_type>(decl_type)->ptd) : decl_type, true);
+   const auto dup_ft = tree_node_dup(remapping, AppM).create_tree_node(is_ptr_type ? GET_NODE(GetPointerS<pointer_type>(decl_type)->ptd) : decl_type, tree_node_dup_mode::RENAME);
    const auto f_type = TreeM->CGetTreeReindex(dup_ft);
 
    tree_list* prms = nullptr;

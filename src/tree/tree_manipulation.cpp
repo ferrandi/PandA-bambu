@@ -2681,7 +2681,7 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
    }
    auto funID_name = create_identifier_node(function_name + funNameSuffix);
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
-   tree_node_dup tnd(remapping, TreeM);
+   tree_node_dup tnd(remapping, AppM);
    remapping[GET_INDEX_NODE(funDecl->name)] = GET_INDEX_NODE(funID_name);
    if(funDecl->mngl)
    {
@@ -2690,7 +2690,7 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
       auto funID_name_mngl = create_identifier_node(function_name_mngl + funNameSuffix);
       remapping[GET_INDEX_NODE(funDecl->mngl)] = GET_INDEX_NODE(funID_name_mngl);
    }
-   const unsigned int new_functionDecl = tnd.create_tree_node(GET_NODE(tn), true);
+   const unsigned int new_functionDecl = tnd.create_tree_node(GET_NODE(tn), tree_node_dup_mode::FULL);
    return TreeM->GetTreeReindex(new_functionDecl);
 }
 
@@ -2780,8 +2780,8 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
    remapping.insert(std::make_pair(inline_fd->index, fd->index));
    std::for_each(inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(), [&](const tree_nodeRef& tn) { remapping.insert(std::make_pair(GET_INDEX_CONST_NODE(tn), GET_INDEX_CONST_NODE(tn))); });
-   tree_node_dup tnd(remapping, TreeM, splitBBI + 1, max_loop_id + 1, true);
-   const auto dup_sl_id = tnd.create_tree_node(GET_NODE(inline_fd->body), true);
+   tree_node_dup tnd(remapping, AppM, splitBBI + 1, max_loop_id + 1, true);
+   const auto dup_sl_id = tnd.create_tree_node(GET_NODE(inline_fd->body), tree_node_dup_mode::RENAME);
    const auto dup_sl = GetPointer<const statement_list>(TreeM->CGetTreeNode(dup_sl_id));
    THROW_ASSERT(dup_sl, "");
 

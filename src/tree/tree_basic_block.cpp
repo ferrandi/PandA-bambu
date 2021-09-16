@@ -116,16 +116,17 @@ bool bloc::check_function_call(const tree_nodeRef statement, gimple_assign* ga, 
 gimple_assign* bloc::manageCallGraph(const application_managerRef AppM, const tree_nodeRef statement)
 {
    auto* ga = GetPointer<gimple_assign>(GET_NODE(statement));
-   if(AppM && ((ga && (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)) || (GetPointer<gimple_call>(GET_NODE(statement)))))
+   if((ga && (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)) || (GetPointer<gimple_call>(GET_NODE(statement))))
    {
+      THROW_ASSERT(AppM, "");
       const CallGraphManagerRef cg_man = AppM->GetCallGraphManager();
       THROW_ASSERT(cg_man, "");
       THROW_ASSERT(GetPointer<gimple_node>(GET_NODE(statement)), "");
-      THROW_ASSERT(GetPointer<gimple_node>(GET_NODE(statement))->scpe, "statement " + statement->ToString());
+      THROW_ASSERT(GetPointerS<gimple_node>(GET_NODE(statement))->scpe, "statement " + statement->ToString());
       unsigned int called_function_id;
       if(check_function_call(statement, ga, called_function_id))
       {
-         auto function_id = GET_INDEX_NODE(GetPointer<gimple_node>(GET_NODE(statement))->scpe);
+         auto function_id = GET_INDEX_NODE(GetPointerS<gimple_node>(GET_NODE(statement))->scpe);
          CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function_id, GET_INDEX_CONST_NODE(statement), FunctionEdgeInfo::CallType::direct_call, 0);
       }
    }
@@ -545,7 +546,8 @@ void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef
             }
          }
          THROW_ASSERT(to_remove.size() || tree_helper::print_function_name(AppM->get_tree_manager(), GetPointer<const function_decl>(AppM->get_tree_manager()->CGetTreeNode(called_function_id))) == BUILTIN_WAIT_CALL,
-                      "Call to be removed not found in call graph " + STR(call_id) + " " + STR(fun_id) + GET_NODE(statement)->get_kind_text() + " |" + GetPointer<gimple_node>(GET_NODE(statement))->scpe->ToString());
+                      "Call to be removed not found in call graph " + STR(call_id) + " " + STR(fun_id) + " " + STR(statement) + " | " +
+                          tree_helper::print_function_name(AppM->get_tree_manager(), GetPointerS<function_decl>(GET_NODE(GetPointerS<gimple_node>(GET_NODE(statement))->scpe))));
          for(const auto& e : to_remove)
          {
             cg_man->RemoveCallPoint(e, call_id);

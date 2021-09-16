@@ -691,7 +691,7 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
    const auto ssa_tree_node = tree_man->create_ssa_name(sa->var, sa->type, sa->min, sa->max, sa->volatile_flag, sa->virtual_flag);
 
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
-   tree_node_dup tnd(remapping, TM);
+   tree_node_dup tnd(remapping, AppM);
    remapping[ga->op0->index] = GET_INDEX_CONST_NODE(ssa_tree_node);
 
    /// Duplicate increment

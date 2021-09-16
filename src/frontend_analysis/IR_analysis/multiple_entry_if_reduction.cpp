@@ -400,7 +400,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       CustomMap<unsigned int, tree_node_dupRef> tree_node_dups;
       for(const auto& copy : copy_ids)
       {
-         tree_node_dups[copy.second] = tree_node_dupRef(new tree_node_dup(remaps[copy.second], TM));
+         tree_node_dups[copy.second] = tree_node_dupRef(new tree_node_dup(remaps[copy.second], AppM));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified basic block graph");
 
