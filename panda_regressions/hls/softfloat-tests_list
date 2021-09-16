@@ -1,11 +1,11 @@
-softfloat-tests/fdiv.c --benchmark-name=fdiv --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fdiv.xml
-softfloat-tests/fdiv.c --benchmark-name=fdivG --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fdivG.xml --hls-fpdiv=G
-softfloat-tests/fsum.c --benchmark-name=fsum --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fsum.xml
-softfloat-tests/fsub.c --benchmark-name=fsub --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fsub.xml
-softfloat-tests/fmul.c --benchmark-name=fmul --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fmul.xml
+softfloat-tests/fdiv.c --top-fname=single_prec_division       --benchmark-name=fdiv  --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fdiv.xml
+softfloat-tests/fdiv.c --top-fname=single_prec_division       --benchmark-name=fdivG --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fdivG.xml --hls-fpdiv=G
+softfloat-tests/fsum.c --top-fname=single_prec_addition       --benchmark-name=fsum  --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fsum.xml
+softfloat-tests/fsub.c --top-fname=single_prec_subtraction    --benchmark-name=fsub  --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fsub.xml
+softfloat-tests/fmul.c --top-fname=single_prec_multiplication --benchmark-name=fmul  --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.fmul.xml
 
-softfloat-tests/f64div.c --benchmark-name=f64div --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64div.xml
-softfloat-tests/f64div.c --benchmark-name=f64divG --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64divG.xml --hls-fpdiv=G
-softfloat-tests/f64sum.c --benchmark-name=f64sum --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64sum.xml
-softfloat-tests/f64sub.c --benchmark-name=f64sub --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64sub.xml
-softfloat-tests/f64mul.c --benchmark-name=f64mul --simulate --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64mul.xml
+softfloat-tests/f64div.c --top-fname=double_prec_division       --benchmark-name=f64div  --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64div.xml
+softfloat-tests/f64div.c --top-fname=double_prec_division       --benchmark-name=f64divG --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64divG.xml --hls-fpdiv=G
+softfloat-tests/f64sum.c --top-fname=double_prec_addition       --benchmark-name=f64sum  --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64sum.xml
+softfloat-tests/f64sub.c --top-fname=double_prec_subtraction    --benchmark-name=f64sub  --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64sub.xml
+softfloat-tests/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=f64mul  --generate-tb=BENCHMARKS_ROOT/softfloat-tests/test.f64mul.xml
