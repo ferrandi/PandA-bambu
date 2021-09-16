@@ -2810,7 +2810,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       {
          continue;
       }
-      auto bb = ibb.second;
+      auto& bb = ibb.second;
       sl->add_bloc(bb);
       for(auto it = bb->list_of_pred.begin(); it != bb->list_of_pred.end(); ++it)
       {
@@ -2822,7 +2822,28 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       }
       for(auto it = bb->list_of_succ.begin(); it != bb->list_of_succ.end(); ++it)
       {
-         if(*it == bloc::EXIT_BLOCK_ID)
+         const auto has_abort_call = [&]() -> bool {
+            if(!bb->CGetStmtList().empty())
+            {
+               const auto& last_stmt = bb->CGetStmtList().back();
+               if(GET_CONST_NODE(last_stmt)->get_kind() == gimple_call_K)
+               {
+                  const auto gc = GetPointerS<const gimple_call>(GET_CONST_NODE(last_stmt));
+                  auto call_fd = gc->fn;
+                  const auto ae = GetPointer<addr_expr>(GET_CONST_NODE(call_fd));
+                  if(ae)
+                  {
+                     call_fd = ae->op;
+                  }
+                  if(tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(call_fd))) == "abort")
+                  {
+                     return true;
+                  }
+               }
+            }
+            return false;
+         }();
+         if(*it == bloc::EXIT_BLOCK_ID && !has_abort_call)
          {
             *it = splitBB->number;
             splitBB->list_of_pred.push_back(bb->number);
