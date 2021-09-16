@@ -323,8 +323,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                      {
                         THROW_ASSERT(GET_CONST_NODE(ga->op1)->get_kind() == call_expr_K || GET_CONST_NODE(ga->op1)->get_kind() == aggr_init_expr_K, GET_CONST_NODE(ga->op1)->ToString() + " kind = " + GET_CONST_NODE(ga->op1)->get_kind_text());
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "assigns ssa_name");
-                        const auto s = GetPointer<const ssa_name>(GET_CONST_NODE(ga->op0));
-                        THROW_ASSERT(s, "not ssa");
+                        const auto s = GetPointerS<const ssa_name>(GET_CONST_NODE(ga->op0));
                         THROW_ASSERT(IsHandledByBitvalue(ga->op0), "ssa is not handled by bitvalue");
                         THROW_ASSERT(tree_helper::IsSignedIntegerType(ga->op0) == fu_signed, "function " + AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->get_function_name() + " calls function " + fu_name +
                                                                                                  " with return type = " + STR(tree_helper::GetFunctionReturnType(fu_node)) + " and assigns the return value to ssa " + STR(s) +
@@ -450,15 +449,12 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            if(ap_kind == ssa_name_K)
                            {
                               const auto ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(ap_node));
-                              THROW_ASSERT(ssa, "not ssa");
-                              THROW_ASSERT(!ssa->bit_values.empty(), "unexpected assignment of return value to ssa " + STR(ssa) + " with id " + STR(ssa->index) + " and empty bit_values");
-                              res_tmp = string_to_bitstring(ssa->bit_values);
+                              res_tmp = ssa->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(ap_node)) : string_to_bitstring(ssa->bit_values);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ssa) + " id: " + STR(ssa->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else if(ap_kind == integer_cst_K)
                            {
                               const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ap_node));
-                              THROW_ASSERT(ic, "not an integer_cst");
                               res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(ap_node), parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ic) + " is a constant value id: " + STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
@@ -482,14 +478,12 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            if(ap_kind == ssa_name_K)
                            {
                               const auto ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(ap_node));
-                              THROW_ASSERT(ssa, "not ssa");
                               res_tmp = ssa->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(ap_node)) : string_to_bitstring(ssa->bit_values);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ssa) + " id: " + STR(ssa->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else if(ap_kind == integer_cst_K)
                            {
                               const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ap_node));
-                              THROW_ASSERT(ic, "not an integer_cst");
                               res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(ap_node), parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ic) + " is a constant value id: " + STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
