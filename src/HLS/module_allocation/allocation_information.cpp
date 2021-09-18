@@ -2453,7 +2453,7 @@ double AllocationInformation::EstimateControllerDelay() const
    {
       delay = 2 * get_setup_hold_time();
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Controller delay is " + STR(delay) + " while n_states is " + STR(n_states));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 10, "---Controller delay is " + STR(delay) + " while n_states is " + STR(n_states));
    return delay;
 }
 
