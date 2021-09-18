@@ -2319,8 +2319,14 @@ DesignFlowStep_Status allocation::InternalExec()
       {
          for(auto fu_unit : op.second)
          {
-            allocation_information->n_complex_operations += static_cast<unsigned int>(allocation_information->get_DSPs(fu_unit));
             allocation_information->fus_to_node_id[fu_unit].insert(op.first.first);
+            if(op.first.first != ENTRY_ID && op.first.first != EXIT_ID)
+            {
+               if(!allocation_information->is_operation_bounded(op.first.first, fu_unit) || allocation_information->get_cycles(fu_unit, op.first.first) > 1 || allocation_information->get_DSPs(fu_unit) > 0 || allocation_information->is_indirect_access_memory_unit(fu_unit) || allocation_information->is_memory_unit(fu_unit))
+               {
+                  allocation_information->n_complex_operations += 1;
+               }
+            }
          }
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of complex operations: " + STR(allocation_information->n_complex_operations));

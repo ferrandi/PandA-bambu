@@ -2419,7 +2419,7 @@ double AllocationInformation::estimate_mux_area(unsigned int fu_name) const
 
 double AllocationInformation::estimate_controller_delay_fb() const
 {
-   return 0.5 * EstimateControllerDelay();
+   return EstimateControllerDelay();
 }
 
 double AllocationInformation::EstimateControllerDelay() const
@@ -2429,7 +2429,7 @@ double AllocationInformation::EstimateControllerDelay() const
    {
       return 0.0;
    }
-   size_t n_states = boost::num_vertices(*hls_manager->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB));
+   size_t n_states = boost::num_vertices(*hls_manager->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB)) + get_n_complex_operations();
    double n_states_factor = static_cast<double>(n_states) / NUM_CST_allocation_default_states_number_normalization_BB;
    if(hls->STG && hls->STG->get_number_of_states())
    {
@@ -2453,7 +2453,7 @@ double AllocationInformation::EstimateControllerDelay() const
    {
       delay = 2 * get_setup_hold_time();
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Controller delay is " + STR(delay) + " while n_states is " + STR(n_states));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 10, "---Controller delay is " + STR(delay) + " while n_states is " + STR(n_states));
    return delay;
 }
 
