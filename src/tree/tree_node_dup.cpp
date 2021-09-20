@@ -1184,11 +1184,6 @@ void tree_node_dup::operator()(const field_decl* obj, unsigned int& mask)
 void tree_node_dup::operator()(const function_decl* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
-   if(mode)
-   {
-      // Avoid recursvie function_decl duplication
-      mode = tree_node_dup_mode::RENAME;
-   }
    tree_node_mask::operator()(obj, mask);
    SET_VALUE(operator_flag, function_decl);
    if(!GetPointer<function_decl>(source_tn)->list_of_op_names.empty())
@@ -1225,6 +1220,11 @@ void tree_node_dup::operator()(const function_decl* obj, unsigned int& mask)
    SET_VALUE(omp_critical, function_decl);
    SET_VALUE(omp_for_wrapper, function_decl);
 #endif
+   if(mode)
+   {
+      // Avoid recursvie function_decl duplication
+      mode = tree_node_dup_mode::RENAME;
+   }
    SET_NODE_ID(body, function_decl);
    SET_NODE_ID(inline_body, function_decl);
 }
