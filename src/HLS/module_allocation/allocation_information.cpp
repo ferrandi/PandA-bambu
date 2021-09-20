@@ -2419,7 +2419,7 @@ double AllocationInformation::estimate_mux_area(unsigned int fu_name) const
 
 double AllocationInformation::estimate_controller_delay_fb() const
 {
-   return EstimateControllerDelay();
+   return 0.5 * EstimateControllerDelay();
 }
 
 double AllocationInformation::EstimateControllerDelay() const
@@ -2448,7 +2448,7 @@ double AllocationInformation::EstimateControllerDelay() const
    technology_nodeRef op_node = fu->get_operation("mult_expr");
    auto* op = GetPointer<operation>(op_node);
    double delay = time_m_execution_time(op);
-   delay = delay * controller_delay_multiplier * 1.1 * (1 - exp(-n_states_factor));
+   delay = delay * controller_delay_multiplier * ((1 - exp(-n_states_factor)) + n_states_factor / NUM_CST_allocation_default_states_number_normalization_linear_factor);
    if(delay < 2 * get_setup_hold_time())
    {
       delay = 2 * get_setup_hold_time();

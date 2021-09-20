@@ -2322,7 +2322,8 @@ DesignFlowStep_Status allocation::InternalExec()
             allocation_information->fus_to_node_id[fu_unit].insert(op.first.first);
             if(op.first.first != ENTRY_ID && op.first.first != EXIT_ID)
             {
-               if(!allocation_information->is_operation_bounded(op.first.first, fu_unit) || allocation_information->get_cycles(fu_unit, op.first.first) > 1 || allocation_information->get_DSPs(fu_unit) > 0 || allocation_information->is_indirect_access_memory_unit(fu_unit) || allocation_information->is_memory_unit(fu_unit))
+               if(!allocation_information->is_operation_bounded(op.first.first, fu_unit) || allocation_information->get_cycles(fu_unit, op.first.first) > 1 || allocation_information->get_DSPs(fu_unit) > 0 ||
+                  allocation_information->is_indirect_access_memory_unit(fu_unit) || allocation_information->is_memory_unit(fu_unit))
                {
                   allocation_information->n_complex_operations += 1;
                }
