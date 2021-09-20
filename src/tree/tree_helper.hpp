@@ -67,6 +67,7 @@ struct binfo;
 struct integer_cst;
 struct function_decl;
 struct ssa_name;
+struct statement_list;
 template <typename value>
 class TreeNodeMap;
 class TreeNodeConstSorter;
@@ -1336,6 +1337,14 @@ class tree_helper
     * @return if tn operation is a lut_expr
     */
    static bool IsLut(const tree_nodeConstRef& tn);
+
+   /**
+    * Check if omp simd pragmas are present in given statement list
+    * @param sl statement list to analyse
+    * @return true If omp simd pragmas where found
+    * @return false If no omp simd pragmas are present
+    */
+   static bool has_omp_simd(const statement_list* sl);
 
    /// Constructor
    tree_helper();

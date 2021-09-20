@@ -49,10 +49,10 @@
 REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_manager);
-class statement_list;
-class function_decl;
-class parm_decl;
-class ssa_name;
+struct statement_list;
+struct function_decl;
+struct parm_decl;
+struct ssa_name;
 
 #include "custom_set.hpp"
 #include <list>

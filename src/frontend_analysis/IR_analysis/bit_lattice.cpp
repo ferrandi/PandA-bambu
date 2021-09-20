@@ -489,8 +489,12 @@ bool BitLatticeManipulator::mix()
          {
             b.second = sup_lattice;
             updated = true;
+#ifndef NDEBUG
+            const auto tn = TM->CGetTreeNode(b.first);
+#endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, bl_debug_level,
-                           "Changes in " + STR(TM->CGetTreeNode(b.first)) + " Cur is " + bitstring_to_string(cur_lattice) + " Best is " + bitstring_to_string(best_lattice) + " Sup is " + bitstring_to_string(sup_lattice));
+                           "Changes in " + STR(tn->get_kind() == function_decl_K ? (tree_helper::print_function_name(TM, GetPointerS<const function_decl>(tn)) + " return value") : STR(tn)) + " Cur is " + bitstring_to_string(cur_lattice) + " Best is " +
+                               bitstring_to_string(best_lattice) + " Sup is " + bitstring_to_string(sup_lattice));
          }
       }
    }

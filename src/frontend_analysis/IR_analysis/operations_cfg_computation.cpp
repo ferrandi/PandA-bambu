@@ -98,13 +98,13 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          if(parameters->getOption<bool>(OPT_parse_pragma))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
+            relationships.insert(std::make_pair(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
          }
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
 #if HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LUT_TRANSFORMATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(LUT_TRANSFORMATION, SAME_FUNCTION));
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -116,19 +116,19 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #if HAVE_BAMBU_BUILT
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT2, SAME_FUNCTION));
+            relationships.insert(std::make_pair(BIT_VALUE_OPT, SAME_FUNCTION));
+            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
          }
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
 #if HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
 #endif
 #if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_ANALYSIS_ZEBU, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOP_REGIONS_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(LOOPS_ANALYSIS_ZEBU, SAME_FUNCTION));
+         relationships.insert(std::make_pair(LOOP_REGIONS_COMPUTATION, SAME_FUNCTION));
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));
+         relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));
          break;
       }
       default:

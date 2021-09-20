@@ -49,7 +49,7 @@
 
 //@{
 REF_FORWARD_DECL(tree_manager);
-class function_decl;
+struct function_decl;
 //@}
 
 /**

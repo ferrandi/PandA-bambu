@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file FunctionCallInline.hpp
+ * @file FunctionCallOpt.hpp
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
@@ -45,6 +45,8 @@
 
 #include "function_frontend_flow_step.hpp"
 
+#include <utility>
+
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 
@@ -54,28 +56,30 @@ CONSTREF_FORWARD_DECL(DesignFlowManager);
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(tree_node);
 
-class FunctionCallInline : public FunctionFrontendFlowStep
+enum FunctionOptType
+{
+   INLINE,
+   VERSION
+};
+
+class FunctionCallOpt : public FunctionFrontendFlowStep
 {
  private:
-   /// Set of always inlined functions
-   static CustomSet<unsigned int> always_inline;
+   static CustomMap<unsigned int, CustomSet<std::tuple<unsigned int, FunctionOptType>>> opt_call;
 
-   static CustomMap<unsigned int, CustomSet<unsigned int>> inline_call;
+   static unsigned int version_uid;
 
    static size_t max_inline_cost;
+
+   CustomMap<unsigned int, unsigned int> caller_bb;
+
+   CustomUnorderedSet<unsigned int> already_visited;
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
-   /**
-    * Compute function body cost based on statements' types
-    * @param body function body to be considered
-    * @return size_t Cost value
-    */
-   static size_t compute_cost(const statement_list* body);
 
    /**
     * Check if given call statement performs a call with all constant arguments
@@ -86,6 +90,13 @@ class FunctionCallInline : public FunctionFrontendFlowStep
    static bool HasConstantArgs(const tree_nodeConstRef& call_stmt);
 
    /**
+    * Compute function body cost based on statements' types
+    * @param body function body to be considered
+    * @return size_t Cost value
+    */
+   size_t compute_cost(const statement_list* body, bool& has_simd, bool& has_memory);
+
+   /**
     * Check if given function body has loops
     * @param body function body to be considered
     * @return true If body has loops between its basic blocks
@@ -94,6 +105,21 @@ class FunctionCallInline : public FunctionFrontendFlowStep
    size_t detect_loops(const statement_list* body) const;
 
  public:
+   /// Set of always inlined functions
+   static CustomSet<unsigned int> always_inline;
+
+   /// Set of never inlined functions
+   static CustomSet<unsigned int> never_inline;
+
+   /**
+    * @brief Request optimization for given call statement
+    *
+    * @param call_stmt the call statement optimize
+    * @param caller_id id of the function where the call_stmt is present
+    * @param opt type of optimization to apply
+    */
+   static void RequestCallOpt(const tree_nodeConstRef& call_stmt, unsigned int caller_id, FunctionOptType opt);
+
    /**
     * Constructor.
     * @param Param is the set of the parameters
@@ -101,12 +127,14 @@ class FunctionCallInline : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   FunctionCallInline(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   FunctionCallOpt(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor
     */
-   ~FunctionCallInline() override;
+   ~FunctionCallOpt() override;
+
+   void Initialize() override;
 
    /**
     * Computes the operations CFG graph data structure.
@@ -115,13 +143,5 @@ class FunctionCallInline : public FunctionFrontendFlowStep
    DesignFlowStep_Status InternalExec() override;
 
    bool HasToBeExecuted() const override;
-
-   /**
-    * @brief Request inlining for given call statement
-    *
-    * @param call_stmt the call statement to inline
-    * @param caller_id id of the function where the call_stmt is present
-    */
-   static void RequestInlineStmt(const tree_nodeConstRef& call_stmt, unsigned int caller_id);
 };
 #endif

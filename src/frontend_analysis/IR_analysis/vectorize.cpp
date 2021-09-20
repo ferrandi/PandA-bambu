@@ -78,7 +78,9 @@
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/algorithm/string/replace.hpp>
-std::string ToString(Transformation transformation)
+
+#ifndef NDEBUG
+static std::string ToString(Transformation transformation)
 {
    switch(transformation)
    {
@@ -103,6 +105,7 @@ std::string ToString(Transformation transformation)
    }
    return "";
 }
+#endif
 
 Vectorize::Vectorize(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, VECTORIZE, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TM, _parameters, _AppM))
@@ -111,6 +114,205 @@ Vectorize::Vectorize(const application_managerRef _AppM, unsigned int _function_
 }
 
 Vectorize::~Vectorize() = default;
+
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> Vectorize::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   switch(relationship_type)
+   {
+      case(DEPENDENCE_RELATIONSHIP):
+      {
+         relationships.insert(std::make_pair(BB_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_ORDER_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PREDICATE_STATEMENTS, SAME_FUNCTION));
+         const auto is_simd = tree_helper::has_omp_simd(GetPointerS<const statement_list>(GET_CONST_NODE(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id))->body)));
+         if(is_simd)
+         {
+            relationships.insert(std::make_pair(SERIALIZE_MUTUAL_EXCLUSIONS, SAME_FUNCTION));
+         }
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
+      {
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
+         {
+            relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+            relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
+            relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
+         }
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
+         relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
+         break;
+      }
+      default:
+      {
+         THROW_UNREACHABLE("");
+      }
+   }
+   return relationships;
+}
+
+DesignFlowStep_Status Vectorize::InternalExec()
+{
+   if(parameters->IsParameter("vectorize") and parameters->GetParameter<std::string>("vectorize") == "disable")
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
+
+   /// Classify loop
+   ClassifyLoop(function_behavior->GetLoops()->GetLoop(0), 0);
+
+   /// Add the guards
+   AddGuards();
+#ifndef NDEBUG
+   if(debug_level > DEBUG_LEVEL_VERY_PEDANTIC)
+   {
+      WriteBBGraphDot("BB_Inside_" + GetName() + "_Guards.dot");
+   }
+#endif
+
+   /// Fix the phi
+   FixPhis();
+#ifndef NDEBUG
+   if(debug_level > DEBUG_LEVEL_VERY_PEDANTIC)
+   {
+      WriteBBGraphDot("BB_Inside_" + GetName() + "_FixPhis.dot");
+   }
+#endif
+   /// Predicate instructions which cannot be speculated
+   SetPredication();
+#ifndef NDEBUG
+   if(debug_level > DEBUG_LEVEL_VERY_PEDANTIC)
+   {
+      WriteBBGraphDot("BB_Inside_" + GetName() + "_Predicated.dot");
+   }
+#endif
+
+   /// Classify statement
+   const BBGraphRef bb_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
+   VertexIterator bb, bb_end;
+   for(boost::tie(bb, bb_end) = boost::vertices(*bb_graph); bb != bb_end; bb++)
+   {
+      const BBNodeInfoConstRef bb_node_info = bb_graph->CGetBBNodeInfo(*bb);
+      if(simd_loop_type[bb_node_info->loop_id] != SIMD_NONE)
+      {
+         const blocRef block = bb_node_info->block;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Classifying statement of BB" + STR(block->number));
+         for(const auto& statement : block->CGetStmtList())
+         {
+            ClassifyTreeNode(bb_node_info->loop_id, GET_CONST_NODE(statement));
+         }
+         for(const auto& phi : block->CGetPhiList())
+         {
+            ClassifyTreeNode(bb_node_info->loop_id, GET_CONST_NODE(phi));
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Classified statement of BB" + STR(block->number));
+      }
+   }
+
+   /// Duplicate the increment operation when necessary
+   for(boost::tie(bb, bb_end) = boost::vertices(*bb_graph); bb != bb_end; bb++)
+   {
+      const BBNodeInfoConstRef bb_node_info = bb_graph->CGetBBNodeInfo(*bb);
+      if(simd_loop_type[bb_node_info->loop_id] != SIMD_NONE)
+      {
+         const blocRef block = bb_node_info->block;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Transforming increment statement of BB" + STR(block->number));
+         for(const auto& statement : block->CGetStmtList())
+         {
+            if(transformations.find(statement->index)->second == INC)
+            {
+               if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+               {
+                  const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "before_" + STR(statement->index) + "_expansion.gimple";
+                  std::ofstream gimple_file(file_name.c_str());
+                  TM->PrintGimple(gimple_file, false);
+                  gimple_file.close();
+               }
+               const auto new_statement = DuplicateIncrement(bb_node_info->loop_id, GET_NODE(statement));
+               block->PushBefore(TM->GetTreeReindex(new_statement), statement, AppM);
+               ClassifyTreeNode(bb_node_info->loop_id, TM->get_tree_node_const(new_statement));
+               transformations[new_statement] = INC;
+               if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+               {
+                  const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_" + STR(statement->index) + "_expansion.gimple";
+                  std::ofstream gimple_file(file_name.c_str());
+                  TM->PrintGimple(gimple_file, false);
+                  gimple_file.close();
+               }
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed increment statement of BB" + STR(block->number));
+      }
+   }
+#ifndef NDEBUG
+   if(debug_level > DEBUG_LEVEL_VERY_PEDANTIC)
+   {
+      WriteBBGraphDot("BB_Inside_" + GetName() + "_Duplicated.dot");
+   }
+#endif
+
+   /// Perform the transformation
+   for(boost::tie(bb, bb_end) = boost::vertices(*bb_graph); bb != bb_end; bb++)
+   {
+      const BBNodeInfoConstRef bb_node_info = bb_graph->CGetBBNodeInfo(*bb);
+      if(simd_loop_type[bb_node_info->loop_id] != SIMD_NONE)
+      {
+         const blocRef block = bb_node_info->block;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Transforming statement of BB" + STR(block->number) + " - Loop " + STR(bb_node_info->loop_id) + " - Parallel degree " + STR(loop_parallel_degree[bb_node_info->loop_id]));
+         std::list<tree_nodeRef> new_statement_list;
+         std::vector<tree_nodeRef> new_phi_list;
+         for(const auto& statement : block->CGetStmtList())
+         {
+            TM->GetTreeReindex(Transform(statement->index, loop_parallel_degree[bb_node_info->loop_id], 0, new_statement_list, new_phi_list));
+         }
+         for(const auto& phi : block->CGetPhiList())
+         {
+            TM->GetTreeReindex(Transform(phi->index, loop_parallel_degree[bb_node_info->loop_id], 0, new_statement_list, new_phi_list));
+         }
+         /// Remove old statements
+         const auto& old_statement_list = block->CGetStmtList();
+         while(old_statement_list.size())
+         {
+            block->RemoveStmt(old_statement_list.front(), AppM);
+         }
+         /// Remove old phis
+         const auto& old_phi_list = block->CGetPhiList();
+         while(old_phi_list.size())
+         {
+            block->RemovePhi(old_phi_list.front());
+         }
+         /// Add new statements
+         for(const auto& new_stmt : new_statement_list)
+         {
+            block->PushBack(new_stmt, AppM);
+         }
+         /// Add new phis
+         for(const auto& new_phi : new_phi_list)
+         {
+            block->AddPhi(new_phi);
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed statement of BB" + STR(block->number));
+      }
+   }
+
+   iv_increment.clear();
+   simd_loop_type.clear();
+   loop_parallel_degree.clear();
+   basic_block_divergence.clear();
+   transformations.clear();
+   function_behavior->UpdateBBVersion();
+   guards.clear();
+   return DesignFlowStep_Status::SUCCESS;
+}
 
 void Vectorize::ClassifyLoop(const LoopConstRef loop, const size_t parallel_degree)
 {
@@ -1218,224 +1420,6 @@ void Vectorize::SetPredication()
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created predicated statements");
-}
-
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> Vectorize::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
-{
-   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
-   switch(relationship_type)
-   {
-      case(DEPENDENCE_RELATIONSHIP):
-      {
-         relationships.insert(std::make_pair(BB_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, SAME_FUNCTION));
-         relationships.insert(std::make_pair(BB_ORDER_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(PREDICATE_STATEMENTS, SAME_FUNCTION));
-         const auto is_simd = [&]() -> bool {
-            const auto sl = GetPointer<const statement_list>(GET_NODE(GetPointer<const function_decl>(TM->CGetTreeNode(function_id))->body));
-            THROW_ASSERT(sl, "");
-            for(const auto& block : sl->list_of_bloc)
-            {
-               for(const auto& stmt : block.second->CGetStmtList())
-               {
-                  const auto gp = GetPointer<const gimple_pragma>(GET_NODE(stmt));
-                  if(gp and gp->scope and GetPointer<const omp_pragma>(GET_NODE(gp->scope)))
-                  {
-                     const auto* sp = GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive));
-                     if(sp)
-                     {
-                        return true;
-                     }
-                  }
-               }
-            }
-            return false;
-         }();
-         if(is_simd)
-         {
-            relationships.insert(std::make_pair(SERIALIZE_MUTUAL_EXCLUSIONS, SAME_FUNCTION));
-         }
-         break;
-      }
-      case(INVALIDATION_RELATIONSHIP):
-      {
-         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
-         {
-            relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-            relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
-            relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-         }
-         break;
-      }
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
-         relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
-         break;
-      }
-      default:
-      {
-         THROW_UNREACHABLE("");
-      }
-   }
-   return relationships;
-}
-
-DesignFlowStep_Status Vectorize::InternalExec()
-{
-   if(parameters->IsParameter("vectorize") and parameters->GetParameter<std::string>("vectorize") == "disable")
-   {
-      return DesignFlowStep_Status::UNCHANGED;
-   }
-
-   /// Classify loop
-   ClassifyLoop(function_behavior->GetLoops()->GetLoop(0), 0);
-
-   /// Add the guards
-   AddGuards();
-#ifndef NDEBUG
-   if(debug_level > DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Inside_" + GetName() + "_Guards.dot");
-   }
-#endif
-
-   /// Fix the phi
-   FixPhis();
-#ifndef NDEBUG
-   if(debug_level > DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Inside_" + GetName() + "_FixPhis.dot");
-   }
-#endif
-   /// Predicate instructions which cannot be speculated
-   SetPredication();
-#ifndef NDEBUG
-   if(debug_level > DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Inside_" + GetName() + "_Predicated.dot");
-   }
-#endif
-
-   /// Classify statement
-   const BBGraphRef bb_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
-   VertexIterator bb, bb_end;
-   for(boost::tie(bb, bb_end) = boost::vertices(*bb_graph); bb != bb_end; bb++)
-   {
-      const BBNodeInfoConstRef bb_node_info = bb_graph->CGetBBNodeInfo(*bb);
-      if(simd_loop_type[bb_node_info->loop_id] != SIMD_NONE)
-      {
-         const blocRef block = bb_node_info->block;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Classifying statement of BB" + STR(block->number));
-         for(const auto& statement : block->CGetStmtList())
-         {
-            ClassifyTreeNode(bb_node_info->loop_id, GET_CONST_NODE(statement));
-         }
-         for(const auto& phi : block->CGetPhiList())
-         {
-            ClassifyTreeNode(bb_node_info->loop_id, GET_CONST_NODE(phi));
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Classified statement of BB" + STR(block->number));
-      }
-   }
-
-   /// Duplicate the increment operation when necessary
-   for(boost::tie(bb, bb_end) = boost::vertices(*bb_graph); bb != bb_end; bb++)
-   {
-      const BBNodeInfoConstRef bb_node_info = bb_graph->CGetBBNodeInfo(*bb);
-      if(simd_loop_type[bb_node_info->loop_id] != SIMD_NONE)
-      {
-         const blocRef block = bb_node_info->block;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Transforming increment statement of BB" + STR(block->number));
-         for(const auto& statement : block->CGetStmtList())
-         {
-            if(transformations.find(statement->index)->second == INC)
-            {
-               if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-               {
-                  const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "before_" + STR(statement->index) + "_expansion.gimple";
-                  std::ofstream gimple_file(file_name.c_str());
-                  TM->PrintGimple(gimple_file, false);
-                  gimple_file.close();
-               }
-               const auto new_statement = DuplicateIncrement(bb_node_info->loop_id, GET_NODE(statement));
-               block->PushBefore(TM->GetTreeReindex(new_statement), statement, AppM);
-               ClassifyTreeNode(bb_node_info->loop_id, TM->get_tree_node_const(new_statement));
-               transformations[new_statement] = INC;
-               if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-               {
-                  const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_" + STR(statement->index) + "_expansion.gimple";
-                  std::ofstream gimple_file(file_name.c_str());
-                  TM->PrintGimple(gimple_file, false);
-                  gimple_file.close();
-               }
-            }
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed increment statement of BB" + STR(block->number));
-      }
-   }
-#ifndef NDEBUG
-   if(debug_level > DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Inside_" + GetName() + "_Duplicated.dot");
-   }
-#endif
-
-   /// Perform the transformation
-   for(boost::tie(bb, bb_end) = boost::vertices(*bb_graph); bb != bb_end; bb++)
-   {
-      const BBNodeInfoConstRef bb_node_info = bb_graph->CGetBBNodeInfo(*bb);
-      if(simd_loop_type[bb_node_info->loop_id] != SIMD_NONE)
-      {
-         const blocRef block = bb_node_info->block;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Transforming statement of BB" + STR(block->number) + " - Loop " + STR(bb_node_info->loop_id) + " - Parallel degree " + STR(loop_parallel_degree[bb_node_info->loop_id]));
-         std::list<tree_nodeRef> new_statement_list;
-         std::vector<tree_nodeRef> new_phi_list;
-         for(const auto& statement : block->CGetStmtList())
-         {
-            TM->GetTreeReindex(Transform(statement->index, loop_parallel_degree[bb_node_info->loop_id], 0, new_statement_list, new_phi_list));
-         }
-         for(const auto& phi : block->CGetPhiList())
-         {
-            TM->GetTreeReindex(Transform(phi->index, loop_parallel_degree[bb_node_info->loop_id], 0, new_statement_list, new_phi_list));
-         }
-         /// Remove old statements
-         const auto& old_statement_list = block->CGetStmtList();
-         while(old_statement_list.size())
-         {
-            block->RemoveStmt(old_statement_list.front(), AppM);
-         }
-         /// Remove old phis
-         const auto& old_phi_list = block->CGetPhiList();
-         while(old_phi_list.size())
-         {
-            block->RemovePhi(old_phi_list.front());
-         }
-         /// Add new statements
-         for(const auto& new_stmt : new_statement_list)
-         {
-            block->PushBack(new_stmt, AppM);
-         }
-         /// Add new phis
-         for(const auto& new_phi : new_phi_list)
-         {
-            block->AddPhi(new_phi);
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed statement of BB" + STR(block->number));
-      }
-   }
-
-   iv_increment.clear();
-   simd_loop_type.clear();
-   loop_parallel_degree.clear();
-   basic_block_divergence.clear();
-   transformations.clear();
-   function_behavior->UpdateBBVersion();
-   guards.clear();
-   return DesignFlowStep_Status::SUCCESS;
 }
 
 unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size_t parallel_degree, const size_t scalar_index, std::list<tree_nodeRef>& new_stmt_list, std::vector<tree_nodeRef>& new_phi_list)

@@ -55,8 +55,8 @@
 REF_FORWARD_DECL(Bit_Value_opt);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);
-class function_decl;
-class ssa_name;
+struct function_decl;
+struct ssa_name;
 //@}
 
 /**

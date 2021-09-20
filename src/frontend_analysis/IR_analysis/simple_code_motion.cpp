@@ -32,7 +32,7 @@
  */
 /**
  * @file simple_code_motion.cpp
- * @brief * @brief Analysis step that performs some simple code motions over the IR
+ * @brief Analysis step that performs some simple code motions over the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$

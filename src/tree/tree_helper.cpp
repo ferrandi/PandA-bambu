@@ -8957,3 +8957,24 @@ bool tree_helper::IsLut(const tree_nodeConstRef& _tn)
    const auto op1 = GET_CONST_NODE(ga->op1);
    return op1->get_kind() == lut_expr_K;
 }
+
+bool tree_helper::has_omp_simd(const statement_list* sl)
+{
+   THROW_ASSERT(sl, "");
+   for(const auto& block : sl->list_of_bloc)
+   {
+      for(const auto& stmt : block.second->CGetStmtList())
+      {
+         const auto gp = GetPointer<const gimple_pragma>(GET_NODE(stmt));
+         if(gp && gp->scope && GetPointer<const omp_pragma>(GET_NODE(gp->scope)))
+         {
+            const auto sp = GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive));
+            if(sp)
+            {
+               return true;
+            }
+         }
+      }
+   }
+   return false;
+}

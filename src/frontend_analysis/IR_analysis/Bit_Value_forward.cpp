@@ -1760,6 +1760,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       }
       case lut_expr_K:
       {
+         // lut_transformation will take care of this
          res = create_u_bitstring(1);
          break;
       }

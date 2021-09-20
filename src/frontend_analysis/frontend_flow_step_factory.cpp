@@ -149,7 +149,7 @@
 #endif
 #if HAVE_BAMBU_BUILT
 #include "FixStructsPassedByValue.hpp"
-#include "FunctionCallInline.hpp"
+#include "FunctionCallOpt.hpp"
 #include "FunctionCallTypeCleanup.hpp"
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
@@ -1194,7 +1194,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       }
       case FUNCTION_CALL_INLINE:
       {
-         return DesignFlowStepRef(new FunctionCallInline(parameters, AppM, function_id, design_flow_manager.lock()));
+         return DesignFlowStepRef(new FunctionCallOpt(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
 #if HAVE_ZEBU_BUILT
