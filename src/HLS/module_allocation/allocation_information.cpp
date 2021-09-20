@@ -2419,7 +2419,7 @@ double AllocationInformation::estimate_mux_area(unsigned int fu_name) const
 
 double AllocationInformation::estimate_controller_delay_fb() const
 {
-   return EstimateControllerDelay();
+   return 0.5 * EstimateControllerDelay();
 }
 
 double AllocationInformation::EstimateControllerDelay() const
