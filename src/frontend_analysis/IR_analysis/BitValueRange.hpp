@@ -31,8 +31,8 @@
  *
  */
 /**
- * @file Bit_Value_opt.hpp
- * @brief Class performing some optimizations on the IR exploiting Bit Value analysis.
+ * @file BitValueRange.hpp
+ * @brief Class performing some optimizations on the IR exploiting Bit Value analysis but executed after Range Analysis.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -41,44 +41,24 @@
  *
  */
 
-#ifndef BIT_VALUE_OPT_HPP
-#define BIT_VALUE_OPT_HPP
+#ifndef BITVALUERANGE_HPP
+#define BITVALUERANGE_HPP
 
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
-#include "tree_basic_block.hpp"
 /**
  * @name forward declarations
  */
 //@{
-REF_FORWARD_DECL(Bit_Value_opt);
 REF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_manipulation);
-struct function_decl;
 struct ssa_name;
 //@}
 
-/**
- * @brief Class performing some optimizations on the IR exploiting Bit Value analysis.
- */
-class Bit_Value_opt : public FunctionFrontendFlowStep
+class BitValueRange : public FunctionFrontendFlowStep
 {
  private:
-   /// when true IR has been modified
-   bool modified;
-
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
-   /**
-    * do bit value based optimization such as:
-    * - constant propagation
-    * @param fd is the function declaration
-    * @param TM is the tree manager
-    */
-   void optimize(const function_decl* fd, tree_managerRef TM, tree_manipulationRef IRman);
-
-   void propagateValue(const ssa_name* ssa, tree_managerRef TM, tree_nodeRef old_val, tree_nodeRef new_val);
 
  public:
    /**
@@ -88,15 +68,15 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   Bit_Value_opt(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   BitValueRange(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor
     */
-   ~Bit_Value_opt() override;
+   ~BitValueRange() override;
 
    /**
-    * Optimize IR after the BitValue/BitValueIPA has been executed
+    * Optimize IR after the RA has been executed
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;
@@ -106,7 +86,5 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
-
-   static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM);
 };
-#endif /* Bit_Value_opt_HPP */
+#endif /* BITVALUERANGE_HPP */

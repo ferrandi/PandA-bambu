@@ -117,24 +117,18 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+            relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
          }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         if(parameters->getOption<int>(OPT_gcc_openmp_simd))
-         {
-            relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
-            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
-         }
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
-         relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

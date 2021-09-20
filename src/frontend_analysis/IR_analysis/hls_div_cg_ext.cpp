@@ -94,12 +94,6 @@ hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const applic
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-void hls_div_cg_ext::Initialize()
-{
-   changed_call_graph = false;
-   fix_nop = false;
-}
-
 hls_div_cg_ext::~hls_div_cg_ext() = default;
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> hls_div_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -111,16 +105,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+            relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
          }
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
-         {
-            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
-         }
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
@@ -162,6 +152,17 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
    }
    return relationships;
+}
+
+bool hls_div_cg_ext::HasToBeExecuted() const
+{
+   return !already_executed;
+}
+
+void hls_div_cg_ext::Initialize()
+{
+   changed_call_graph = false;
+   fix_nop = false;
 }
 
 DesignFlowStep_Status hls_div_cg_ext::InternalExec()
@@ -684,9 +685,4 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated recursively " + boost::lexical_cast<std::string>(GET_INDEX_NODE(current_tree_node)) + " " + GET_NODE(current_tree_node)->ToString());
    return;
-}
-
-bool hls_div_cg_ext::HasToBeExecuted() const
-{
-   return !already_executed;
 }

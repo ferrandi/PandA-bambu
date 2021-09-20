@@ -1,3 +1,4 @@
+
 build/config.h
 build/config_headers/config_ABC_EXEC.hpp
 build/config_headers/config_ARM_CPP_EXE.hpp
@@ -433,15 +434,15 @@ build/src/parser/aadl/aadl_yparser.hpp
 build/src/parser/asn/asn_lexer.cpp
 build/src/parser/asn/asn_yparser.cpp
 build/src/parser/asn/asn_yparser.hpp
+build/src/parser/compiler/treeLexer.cpp
+build/src/parser/compiler/treeParser.cpp
+build/src/parser/compiler/treeParser.hpp
 build/src/parser/discrepancy/discrepancyLexer.cpp
 build/src/parser/discrepancy/discrepancyParser.cpp
 build/src/parser/discrepancy/discrepancyParser.hpp
 build/src/parser/polixml/xmlLexer.cpp
 build/src/parser/polixml/xmlParser.cpp
 build/src/parser/polixml/xmlParser.hpp
-build/src/parser/compiler/treeLexer.cpp
-build/src/parser/compiler/treeParser.cpp
-build/src/parser/compiler/treeParser.hpp
 build/src/revision_hash.hpp
 etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp
 etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
@@ -1885,6 +1886,8 @@ src/constant_strings.hpp
 src/constants/aadl_constants.hpp
 src/constants/allocation_constants.hpp
 src/constants/bambu_results_xml.hpp
+src/constants/compiler_constants.hpp
+src/constants/compiler_xml.hpp
 src/constants/constants.hpp
 src/constants/constraints_xml.hpp
 src/constants/copyrights_strings.hpp
@@ -1900,8 +1903,6 @@ src/constants/synthesis_constants.hpp
 src/constants/taste_constants.hpp
 src/constants/technology_xml.hpp
 src/constants/testbench_generation_constants.hpp
-src/constants/compiler_constants.hpp
-src/constants/compiler_xml.hpp
 src/constants/weights_xml.hpp
 src/design_flows/backend/ToC/c_backend_information.cpp
 src/design_flows/backend/ToC/c_backend_information.hpp
@@ -1988,6 +1989,8 @@ src/frontend_analysis/IR_analysis/APInt.cpp
 src/frontend_analysis/IR_analysis/APInt.hpp
 src/frontend_analysis/IR_analysis/BitValueIPA.cpp
 src/frontend_analysis/IR_analysis/BitValueIPA.hpp
+src/frontend_analysis/IR_analysis/BitValueRange.cpp
+src/frontend_analysis/IR_analysis/BitValueRange.hpp
 src/frontend_analysis/IR_analysis/Bit_Value.cpp
 src/frontend_analysis/IR_analysis/Bit_Value.hpp
 src/frontend_analysis/IR_analysis/Bit_Value_backward.cpp
@@ -2009,6 +2012,10 @@ src/frontend_analysis/IR_analysis/IR_lowering.hpp
 src/frontend_analysis/IR_analysis/IR_lowering_exec.cpp
 src/frontend_analysis/IR_analysis/NI_SSA_liveness.cpp
 src/frontend_analysis/IR_analysis/NI_SSA_liveness.hpp
+src/frontend_analysis/IR_analysis/Range.cpp
+src/frontend_analysis/IR_analysis/Range.hpp
+src/frontend_analysis/IR_analysis/RangeAnalysis.cpp
+src/frontend_analysis/IR_analysis/RangeAnalysis.hpp
 src/frontend_analysis/IR_analysis/Range_Analysis.cpp
 src/frontend_analysis/IR_analysis/Range_Analysis.hpp
 src/frontend_analysis/IR_analysis/basic_blocks_cfg_computation.cpp
@@ -2071,10 +2078,6 @@ src/frontend_analysis/IR_analysis/pipeline_infer.cpp
 src/frontend_analysis/IR_analysis/pipeline_infer.hpp
 src/frontend_analysis/IR_analysis/pragma_analysis.cpp
 src/frontend_analysis/IR_analysis/pragma_analysis.hpp
-src/frontend_analysis/IR_analysis/RangeAnalysis.cpp
-src/frontend_analysis/IR_analysis/RangeAnalysis.hpp
-src/frontend_analysis/IR_analysis/Range.cpp
-src/frontend_analysis/IR_analysis/Range.hpp
 src/frontend_analysis/IR_analysis/rebuild_initializations.cpp
 src/frontend_analysis/IR_analysis/rebuild_initializations.hpp
 src/frontend_analysis/IR_analysis/remove_clobber_ga.cpp
@@ -2234,6 +2237,13 @@ src/parser/asn/asn_parser.hpp
 src/parser/asn/asn_parser_node.cpp
 src/parser/asn/asn_parser_node.hpp
 src/parser/asn/asn_yparser.ypp
+src/parser/compiler/parse_tree.cpp
+src/parser/compiler/parse_tree.hpp
+src/parser/compiler/token_interface.cpp
+src/parser/compiler/token_interface.hpp
+src/parser/compiler/treeLexer.hpp
+src/parser/compiler/treeLexer.lpp
+src/parser/compiler/treeParser.ypp
 src/parser/data_xml/data_xml_parser.cpp
 src/parser/data_xml/data_xml_parser.hpp
 src/parser/discrepancy/DiscrepancyOpInfo.cpp
@@ -2254,13 +2264,6 @@ src/parser/polixml/xml_dom_parser.cpp
 src/parser/polixml/xml_dom_parser.hpp
 src/parser/pragma/PragmaParser.cpp
 src/parser/pragma/PragmaParser.hpp
-src/parser/compiler/parse_tree.cpp
-src/parser/compiler/parse_tree.hpp
-src/parser/compiler/token_interface.cpp
-src/parser/compiler/token_interface.hpp
-src/parser/compiler/treeLexer.hpp
-src/parser/compiler/treeLexer.lpp
-src/parser/compiler/treeParser.ypp
 src/parser/vcd/sig_variation.cpp
 src/parser/vcd/sig_variation.hpp
 src/parser/vcd/vcd_parser.cpp
@@ -2390,6 +2393,8 @@ src/utility/visitor.hpp
 src/utility/xml_helper.hpp
 src/wrapper/ToolManager.cpp
 src/wrapper/ToolManager.hpp
+src/wrapper/compiler/compiler_wrapper.cpp
+src/wrapper/compiler/compiler_wrapper.hpp
 src/wrapper/flopoco/FPAssign.cpp
 src/wrapper/flopoco/FPAssign.hpp
 src/wrapper/flopoco/FPge_expr.cpp
@@ -2476,5 +2481,3 @@ src/wrapper/synthesis/xilinx/xilinx_taste_backend_flow.cpp
 src/wrapper/synthesis/xilinx/xilinx_taste_backend_flow.hpp
 src/wrapper/synthesis/xml_script_command.cpp
 src/wrapper/synthesis/xml_script_command.hpp
-src/wrapper/compiler/compiler_wrapper.cpp
-src/wrapper/compiler/compiler_wrapper.hpp

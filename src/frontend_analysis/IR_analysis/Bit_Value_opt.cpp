@@ -106,9 +106,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(PARM2SSA, SAME_FUNCTION));
          relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
@@ -118,6 +116,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             }
          }
          relationships.insert(std::make_pair(BIT_VALUE_OPT, CALLED_FUNCTIONS));
+         relationships.insert(std::make_pair(PARM2SSA, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -2480,65 +2480,4 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
          }
       }
    }
-}
-
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> Bit_Value_opt2::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
-{
-   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
-   switch(relationship_type)
-   {
-      case DEPENDENCE_RELATIONSHIP:
-      {
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
-         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-         {
-            relationships.insert(std::make_pair(BIT_VALUE_OPT, SAME_FUNCTION));
-            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
-         }
-         relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(BIT_VALUE_OPT2, CALLED_FUNCTIONS));
-         break;
-      }
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         break;
-      }
-      case(INVALIDATION_RELATIONSHIP):
-      {
-         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
-         {
-            if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-            {
-               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
-            }
-         }
-         break;
-      }
-      default:
-         THROW_UNREACHABLE("");
-   }
-   return relationships;
-}
-
-Bit_Value_opt2::Bit_Value_opt2(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, BIT_VALUE_OPT2, _design_flow_manager, _parameters)
-{
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-}
-
-Bit_Value_opt2::~Bit_Value_opt2() = default;
-
-DesignFlowStep_Status Bit_Value_opt2::InternalExec()
-{
-   const auto design_flow_step = GetPointerS<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, function_id);
-   design_flow_step->Initialize();
-   const auto return_status = design_flow_step->Exec();
-   return_status == DesignFlowStep_Status::SUCCESS ? function_behavior->UpdateBBVersion() : 0;
-   return return_status;
-}
-
-bool Bit_Value_opt2::HasToBeExecuted() const
-{
-   return (FunctionFrontendFlowStep::HasToBeExecuted() || bitvalue_version != function_behavior->GetBitValueVersion());
 }

@@ -218,8 +218,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, CallGraphBuiltinCall::F
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(HWCALL_INJECTION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(HWCALL_INJECTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):

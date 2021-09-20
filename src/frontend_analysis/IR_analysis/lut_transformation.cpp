@@ -1847,16 +1847,50 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
 #endif
 
+lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param), max_lut_size(NUM_CST_allocation_default_max_lut_size)
+{
+   debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+}
+
 lut_transformation::~lut_transformation() = default;
 
-void lut_transformation::Initialize()
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   TM = AppM->get_tree_manager();
-   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
-   max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   switch(relationship_type)
+   {
+      case(DEPENDENCE_RELATIONSHIP):
+      {
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
+         }
+         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
+      {
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
+         {
+            if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+            {
+               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+            }
+            relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         }
+         break;
+      }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   return relationships;
 }
 
 void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
@@ -1886,10 +1920,30 @@ void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship, c
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param), max_lut_size(NUM_CST_allocation_default_max_lut_size)
+bool lut_transformation::HasToBeExecuted() const
 {
-   debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
+   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
+   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
+   auto max_lut_size0 = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+   if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd))
+   {
+      return FunctionFrontendFlowStep::HasToBeExecuted();
+   }
+   else
+   {
+      return false;
+   }
+}
+
+void lut_transformation::Initialize()
+{
+   TM = AppM->get_tree_manager();
+   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
+   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
+   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
+   max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
 }
 
 DesignFlowStep_Status lut_transformation::InternalExec()
@@ -1923,63 +1977,9 @@ DesignFlowStep_Status lut_transformation::InternalExec()
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
-{
-   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
-   switch(relationship_type)
-   {
-      case(DEPENDENCE_RELATIONSHIP):
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
-         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-         {
-            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
-         }
-         break;
-      case(INVALIDATION_RELATIONSHIP):
-         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
-         {
-            relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-            if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-            {
-               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
-            }
-         }
-         break;
-      case(PRECEDENCE_RELATIONSHIP):
-         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-         {
-            relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
-            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
-         }
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         break;
-      default:
-         THROW_UNREACHABLE("");
-   }
-   return relationships;
-}
-
 #if HAVE_STDCXX_17
 #pragma endregion
 
 #pragma GCC diagnostic pop
 
 #endif
-
-bool lut_transformation::HasToBeExecuted() const
-{
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
-   auto max_lut_size0 = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
-   if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd))
-   {
-      return FunctionFrontendFlowStep::HasToBeExecuted();
-   }
-   else
-   {
-      return false;
-   }
-}

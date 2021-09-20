@@ -98,7 +98,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+               if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
                {
                   relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
                }
@@ -125,8 +125,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
          break;
       }
       default:

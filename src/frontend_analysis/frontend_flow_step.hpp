@@ -126,7 +126,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    BIT_VALUE,
    BIT_VALUE_OPT,
-   BIT_VALUE_OPT2,
+   BITVALUE_RANGE,
    BIT_VALUE_IPA,
 #endif
    BLOCK_FIX,

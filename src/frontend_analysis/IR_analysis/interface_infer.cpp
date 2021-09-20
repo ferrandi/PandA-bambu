@@ -101,6 +101,14 @@
 #define EPSILON 0.000000001
 #define ENCODE_FDNAME(argName_string, MODE, interfaceType) ((argName_string) + STR_CST_interface_parameter_keyword + (MODE) + (interfaceType))
 
+interface_infer::interface_infer(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, INTERFACE_INFER, _design_flow_manager, _parameters)
+{
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+}
+
+interface_infer::~interface_infer() = default;
+
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> interface_infer::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -108,9 +116,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, CALLED_FUNCTIONS));
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, CALLED_FUNCTIONS));
          break;
@@ -159,14 +167,6 @@ void interface_infer::ComputeRelationships(DesignFlowStepSet& relationship, cons
    }
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
-
-interface_infer::interface_infer(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, INTERFACE_INFER, _design_flow_manager, _parameters)
-{
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-}
-
-interface_infer::~interface_infer() = default;
 
 void interface_infer::Computepar2ssa(const statement_list* sl, std::map<unsigned, unsigned>& par2ssa)
 {

@@ -94,7 +94,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case BIT_VALUE:
       case BIT_VALUE_OPT:
-      case BIT_VALUE_OPT2:
+      case BITVALUE_RANGE:
 #endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:

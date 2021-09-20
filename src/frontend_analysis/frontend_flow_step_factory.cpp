@@ -89,6 +89,7 @@
 #include "bb_reachability_computation.hpp"
 #if HAVE_BAMBU_BUILT
 #include "BitValueIPA.hpp"
+#include "BitValueRange.hpp"
 #include "Bit_Value.hpp"
 #include "Bit_Value_opt.hpp"
 #endif
@@ -367,7 +368,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case BIT_VALUE:
       case BIT_VALUE_OPT:
-      case BIT_VALUE_OPT2:
+      case BITVALUE_RANGE:
 #endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
@@ -767,7 +768,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case BIT_VALUE:
       case BIT_VALUE_OPT:
-      case BIT_VALUE_OPT2:
+      case BITVALUE_RANGE:
 #endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
@@ -1052,9 +1053,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       {
          return DesignFlowStepRef(new Bit_Value_opt(parameters, AppM, function_id, design_flow_manager.lock()));
       }
-      case BIT_VALUE_OPT2:
+      case BITVALUE_RANGE:
       {
-         return DesignFlowStepRef(new Bit_Value_opt2(parameters, AppM, function_id, design_flow_manager.lock()));
+         return DesignFlowStepRef(new BitValueRange(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
       case BLOCK_FIX:

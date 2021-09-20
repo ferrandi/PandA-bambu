@@ -70,11 +70,11 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(represented_frontend_flow_step_type, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(represented_frontend_flow_step_type, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
 #if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_POINTER_CALLGRAPH_COMPUTATION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FUNCTION_POINTER_CALLGRAPH_COMPUTATION, WHOLE_APPLICATION));
 #endif
          break;
       }

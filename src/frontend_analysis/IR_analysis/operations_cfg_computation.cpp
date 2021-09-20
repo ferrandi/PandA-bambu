@@ -116,8 +116,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #if HAVE_BAMBU_BUILT
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            relationships.insert(std::make_pair(BIT_VALUE_OPT, SAME_FUNCTION));
-            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
+            relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
          }
 #endif
          relationships.insert(std::make_pair(BUILD_VIRTUAL_PHI, SAME_FUNCTION));

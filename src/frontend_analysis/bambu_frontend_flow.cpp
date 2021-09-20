@@ -139,14 +139,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(PHI_OPT, WHOLE_APPLICATION));
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            if(parameters->isOption(OPT_bitvalue_ipa) && parameters->getOption<bool>(OPT_bitvalue_ipa))
-            {
-               relationships.insert(std::make_pair(BIT_VALUE_IPA, WHOLE_APPLICATION));
-            }
-            relationships.insert(std::make_pair(BIT_VALUE, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(BIT_VALUE_OPT, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(BIT_VALUE_OPT2, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(BITVALUE_RANGE, WHOLE_APPLICATION));
          }
          relationships.insert(std::make_pair(MULTIPLE_ENTRY_IF_REDUCTION, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, WHOLE_APPLICATION));
@@ -201,9 +194,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
 #endif
          relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
-         if(parameters->isOption(OPT_soft_float) and parameters->getOption<bool>(OPT_soft_float))
+         if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SOFT_FLOAT_CG_EXT, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, WHOLE_APPLICATION));
          }
          if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
          {
