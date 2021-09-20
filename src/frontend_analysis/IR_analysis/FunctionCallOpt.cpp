@@ -90,7 +90,7 @@ static CustomUnorderedMap<kind, size_t> op_costs = {{mult_expr_K, DEAFULT_MAX_IN
                                                     {call_expr_K, 8}};
 
 FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, FUNCTION_CALL_INLINE, _design_flow_manager, Param), caller_bb()
+    : FunctionFrontendFlowStep(_AppM, _function_id, FUNCTION_CALL_OPT, _design_flow_manager, Param), caller_bb()
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    if(Param->IsParameter(PARAMETER_INLINE_MAX_COST))
@@ -131,7 +131,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(COMPLETE_BB_GRAPH, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, CALLED_FUNCTIONS));
+         relationships.insert(std::make_pair(FUNCTION_CALL_OPT, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          break;
       }

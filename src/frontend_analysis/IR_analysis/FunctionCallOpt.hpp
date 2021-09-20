@@ -40,8 +40,8 @@
  *
  */
 
-#ifndef FUNCTION_CALL_INLINE_HPP
-#define FUNCTION_CALL_INLINE_HPP
+#ifndef FUNCTION_CALL_OPT_HPP
+#define FUNCTION_CALL_OPT_HPP
 
 #include "function_frontend_flow_step.hpp"
 

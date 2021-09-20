@@ -135,7 +135,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
          relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
          relationships.insert(std::make_pair(FANOUT_OPT, SAME_FUNCTION));
-         relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FUNCTION_CALL_OPT, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));

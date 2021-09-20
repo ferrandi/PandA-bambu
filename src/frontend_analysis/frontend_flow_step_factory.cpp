@@ -421,7 +421,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case EXTRACT_PATTERNS:
       case FUNCTION_CALL_TYPE_CLEANUP:
-      case FUNCTION_CALL_INLINE:
+      case FUNCTION_CALL_OPT:
       case FIX_STRUCTS_PASSED_BY_VALUE:
 #endif
 #if HAVE_ZEBU_BUILT
@@ -821,7 +821,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case EXTRACT_PATTERNS:
       case FUNCTION_CALL_TYPE_CLEANUP:
-      case FUNCTION_CALL_INLINE:
+      case FUNCTION_CALL_OPT:
       case FIX_STRUCTS_PASSED_BY_VALUE:
 #endif
 #if HAVE_ZEBU_BUILT
@@ -1192,7 +1192,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       {
          return DesignFlowStepRef(new FunctionCallTypeCleanup(parameters, AppM, function_id, design_flow_manager.lock()));
       }
-      case FUNCTION_CALL_INLINE:
+      case FUNCTION_CALL_OPT:
       {
          return DesignFlowStepRef(new FunctionCallOpt(parameters, AppM, function_id, design_flow_manager.lock()));
       }

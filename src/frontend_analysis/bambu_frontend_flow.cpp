@@ -88,7 +88,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, WHOLE_APPLICATION));
          if(!parameters->IsParameter("no-inline"))
          {
-            relationships.insert(std::make_pair(FUNCTION_CALL_INLINE, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(FUNCTION_CALL_OPT, WHOLE_APPLICATION));
          }
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(CHECK_SYSTEM_TYPE, WHOLE_APPLICATION));
