@@ -6909,7 +6909,7 @@ unsigned int tree_helper::AccessedMinimunBitsize(const tree_nodeConstRef& _type_
                bitsize = AccessedMinimunBitsize(fli, bitsize);
             }
          }
-         break;
+         return bitsize;
       }
       case union_type_K:
       {
