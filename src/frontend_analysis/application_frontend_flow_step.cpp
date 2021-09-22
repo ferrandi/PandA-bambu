@@ -94,7 +94,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case BIT_VALUE:
       case BIT_VALUE_OPT:
-      case BIT_VALUE_OPT2:
+      case BITVALUE_RANGE:
 #endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
@@ -149,6 +149,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case EXTRACT_PATTERNS:
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FUNCTION_CALL_TYPE_CLEANUP:
+      case FUNCTION_CALL_OPT:
 #endif
 #if HAVE_ZEBU_BUILT
       case GLOBAL_VARIABLES_ANALYSIS:
@@ -314,7 +315,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case DEAD_CODE_ELIMINATION_IPA:
 #endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FIND_MAX_TRANSFORMATIONS:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT

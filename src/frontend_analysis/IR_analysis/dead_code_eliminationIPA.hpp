@@ -49,7 +49,7 @@
 
 //@{
 REF_FORWARD_DECL(tree_manager);
-class function_decl;
+struct function_decl;
 //@}
 
 /**
@@ -89,11 +89,6 @@ class dead_code_eliminationIPA : public ApplicationFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
 };
 
 #endif

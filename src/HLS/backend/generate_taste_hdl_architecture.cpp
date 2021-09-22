@@ -148,8 +148,8 @@ DesignFlowStep_Status GenerateTasteHDLArchitecture::Exec()
    writer->write("\n");
    for(const auto& top_function : HLSMgr->aadl_information->top_functions_names)
    {
-      const auto function_id = TreeM->function_index(top_function);
-      const auto SM = HLSMgr->get_HLS(function_id)->top;
+      const auto function_node = TreeM->GetFunction(top_function);
+      const auto SM = HLSMgr->get_HLS(function_node->index)->top;
       const auto circuit = SM->get_circ();
       writer->write_component_declaration(circuit);
    }

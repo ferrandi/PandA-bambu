@@ -219,7 +219,6 @@
 /// HLS/module_allocation includes
 #include "add_library.hpp"
 #include "allocation.hpp"
-#include "hls_bit_value.hpp"
 #include "hls_function_bit_value.hpp"
 #if HAVE_FROM_PRAGMA_BUILT
 #include "omp_allocation.hpp"
@@ -532,11 +531,6 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          break;
       }
 #endif
-      case HLSFlowStep_Type::HLS_BIT_VALUE:
-      {
-         design_flow_step = DesignFlowStepRef(new HLSBitValue(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
       case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
       {
          design_flow_step = DesignFlowStepRef(new HLSFunctionBitValue(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -875,7 +869,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const CustomUnord
          case HLSFlowStep_Type::DRY_RUN_EVALUATION:
          case HLSFlowStep_Type::EVALUATION:
          case HLSFlowStep_Type::GENERATE_HDL:
-         case HLSFlowStep_Type::HLS_BIT_VALUE:
          case HLSFlowStep_Type::TEST_VECTOR_PARSER:
          case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION:

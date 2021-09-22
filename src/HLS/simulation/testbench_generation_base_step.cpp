@@ -181,30 +181,29 @@ DesignFlowStep_Status TestbenchGenerationBaseStep::Exec()
 std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem)
 {
    std::vector<std::string> init_els;
-   const tree_nodeRef& tn = TreeM->get_tree_node_const(var);
+   const auto tn = TreeM->CGetTreeReindex(var);
    tree_nodeRef init_node;
-   auto* vd = GetPointer<var_decl>(tn);
+   auto* vd = GetPointer<var_decl>(GET_CONST_NODE(tn));
    if(vd && vd->init)
    {
-      init_node = GET_NODE(vd->init);
+      init_node = vd->init;
    }
 
-   if(init_node && (!GetPointer<constructor>(init_node) || GetPointer<constructor>(init_node)->list_of_idx_valu.size()))
+   if(init_node && (!GetPointer<constructor>(GET_NODE(init_node)) || GetPointer<constructor>(GET_NODE(init_node))->list_of_idx_valu.size()))
    {
       fu_binding::write_init(TreeM, tn, init_node, init_els, mem, 0);
    }
-   else if(GetPointer<string_cst>(tn) || GetPointer<integer_cst>(tn) || GetPointer<real_cst>(tn))
+   else if(GET_CONST_NODE(tn)->get_kind() == string_cst_K || GET_CONST_NODE(tn)->get_kind() == integer_cst_K || GET_CONST_NODE(tn)->get_kind() == real_cst_K)
    {
       fu_binding::write_init(TreeM, tn, tn, init_els, mem, 0);
    }
-   else if(!GetPointer<gimple_call>(tn))
+   else if(!GetPointer<gimple_call>(GET_CONST_NODE(tn)))
    {
-      if(tree_helper::is_an_array(TreeM, var) && !tree_helper::is_a_struct(TreeM, var) && !tree_helper::is_an_union(TreeM, var))
+      if(tree_helper::IsArrayType(tn) && !tree_helper::IsStructType(tn) && !tree_helper::IsUnionType(tn))
       {
-         unsigned int type_index;
-         tree_helper::get_type_node(tn, type_index);
-         unsigned int data_bitsize = tree_helper::get_array_data_bitsize(TreeM, type_index);
-         unsigned int num_elements = tree_helper::get_array_num_elements(TreeM, type_index);
+         const auto type = tree_helper::CGetType(tn);
+         const auto data_bitsize = tree_helper::GetArrayElementSize(type);
+         const auto num_elements = tree_helper::GetArrayTotalSize(type);
          std::string value;
          for(unsigned int l = 0; l < num_elements; l++)
          {
@@ -218,7 +217,7 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
       }
       else
       {
-         unsigned int data_bitsize = tree_helper::size(TreeM, var);
+         const auto data_bitsize = tree_helper::Size(tn);
          std::string value;
          for(unsigned int i = 0; i < data_bitsize; i++)
          {
@@ -241,7 +240,7 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
 
 std::string TestbenchGenerationBaseStep::verilator_testbench() const
 {
-   if(not parameters->getOption<bool>(OPT_generate_testbench))
+   if(!parameters->getOption<bool>(OPT_generate_testbench))
    {
       return "";
    }
@@ -249,7 +248,7 @@ std::string TestbenchGenerationBaseStep::verilator_testbench() const
 
    PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "  . Generation of the Verilator testbench");
 
-   if(not boost::filesystem::exists(simulation_values_path))
+   if(!boost::filesystem::exists(simulation_values_path))
    {
       THROW_ERROR("Error in generating Verilator testbench, values file missing!");
    }
@@ -767,22 +766,23 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             std::string output_name = "ex_" + unmangled_name;
             long long int bitsize;
             bool is_real;
-            if(tree_helper::is_an_array(TreeM, portInst->get_typeRef()->treenode))
+            const auto pi_node = TreeM->CGetTreeReindex(portInst->get_typeRef()->treenode);
+            if(tree_helper::IsArrayType(pi_node))
             {
-               unsigned int pt_type_index = tree_helper::get_array_basetype(TreeM, portInst->get_typeRef()->treenode)->index;
-               bitsize = tree_helper::size(TreeM, pt_type_index);
-               is_real = tree_helper::is_real(TreeM, pt_type_index);
+               const auto pt_type = tree_helper::CGetArrayBaseType(pi_node);
+               bitsize = tree_helper::Size(pt_type);
+               is_real = tree_helper::IsRealType(pt_type);
             }
             else
             {
-               unsigned int port_type = tree_helper::get_type_index(TreeM, portInst->get_typeRef()->treenode);
-               unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, port_type);
-               if(tree_helper::is_an_array(TreeM, pt_type_index))
+               const auto port_type = tree_helper::CGetType(pi_node);
+               auto pt_type = tree_helper::CGetPointedType(port_type);
+               if(tree_helper::IsArrayType(pt_type))
                {
-                  pt_type_index = tree_helper::get_array_basetype(TreeM, pt_type_index)->index;
+                  pt_type = tree_helper::CGetArrayBaseType(pt_type);
                }
-               bitsize = tree_helper::size(TreeM, pt_type_index);
-               is_real = tree_helper::is_real(TreeM, pt_type_index);
+               bitsize = tree_helper::Size(pt_type);
+               is_real = tree_helper::IsRealType(pt_type);
             }
             writer->write("\n");
             writer->write_comment("OPTIONAL - Read a value for " + unmangled_name + " --------------------------------------------------------------\n");
@@ -1280,25 +1280,26 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
       const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
       for(auto const& function_parameter : function_parameters)
       {
-         unsigned int var = function_parameter.first;
-         if(tree_helper::is_a_pointer(TreeM, var) && var != behavioral_helper->GetFunctionReturnType(topFunctionId))
+         const auto var = function_parameter.first;
+         const auto var_node = TreeM->CGetTreeReindex(var);
+         if(tree_helper::IsPointerType(var_node) && var != behavioral_helper->GetFunctionReturnType(topFunctionId))
          {
-            std::string variableName = behavioral_helper->PrintVariable(var);
-            std::string port_name = HDL_manager::convert_to_identifier(writer.get(), variableName);
-            std::string output_name = "ex_" + variableName;
+            const auto variableName = behavioral_helper->PrintVariable(var);
+            const auto port_name = HDL_manager::convert_to_identifier(writer.get(), variableName);
+            const auto output_name = "ex_" + variableName;
             long long int bitsize;
             bool is_real;
-            if(tree_helper::is_an_array(TreeM, var))
+            if(tree_helper::IsArrayType(var_node))
             {
-               unsigned int pt_type_index = GET_INDEX_CONST_NODE(tree_helper::get_array_basetype(TreeM, var));
-               bitsize = tree_helper::size(TreeM, pt_type_index);
-               is_real = tree_helper::is_real(TreeM, pt_type_index);
+               const auto pt_type = tree_helper::CGetArrayBaseType(var_node);
+               bitsize = tree_helper::Size(pt_type);
+               is_real = tree_helper::IsRealType(pt_type);
             }
             else
             {
-               unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, var));
-               bitsize = tree_helper::size(TreeM, pt_type_index);
-               is_real = tree_helper::is_real(TreeM, pt_type_index);
+               const auto pt_type = tree_helper::CGetPointedType(tree_helper::CGetType(var_node));
+               bitsize = tree_helper::Size(pt_type);
+               is_real = tree_helper::IsRealType(pt_type);
             }
 
             writer->write("\n");

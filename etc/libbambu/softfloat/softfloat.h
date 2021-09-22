@@ -47,6 +47,7 @@ these four paragraphs for those parts of this code that are retained.
 *----------------------------------------------------------------------------*/
 #define __float32 __bits32
 #define __float64 __bits64
+#define __float __bits64
 #ifdef FLOATX80
 typedef struct
 {
@@ -163,17 +164,6 @@ __float128 __float32_to_float128_ieee(__float32);
 | Software IEC/IEEE single-precision operations.
 *----------------------------------------------------------------------------*/
 __float32 __float32_round_to_int_ieee(__float32);
-__float32 __float32_add(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __float32_sub(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __float32_mul(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __float32_divSRT4(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __float32_divG(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float32_eq(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float32_le(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float32_lt(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float32_ge(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float32_gt(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float32_ltgt_quiet(__float32, __float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 
 // __float32 __float32_muladd_ieee(__float32 uiA, __float32 uiB, __float32 uiC);
 
@@ -195,20 +185,25 @@ __float128 __float64_to_float128_ieee(__float64);
 #endif
 
 /*----------------------------------------------------------------------------
-| Software IEC/IEEE double-precision operations.
+| Software IEC/IEEE arbitrary precision conversion routines.
 *----------------------------------------------------------------------------*/
-__float64 __float64_add(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float64 __float64_sub(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float64 __float64_mul(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float64 __float64_divSRT4(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float64 __float64_divG(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float64_eq(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float64_le(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float64_lt(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float64_ge(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float64_gt(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__float __float_cast(__float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+
+/*----------------------------------------------------------------------------
+| Software IEC/IEEE arbitrary precision operations.
+*----------------------------------------------------------------------------*/
+__float __float_add(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__float __float_sub(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__float __float_mul(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__float __float_divSRT4(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__float __float_divG(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__flag __float_eq(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__flag __float_le(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__flag __float_lt(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__flag __float_ge(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__flag __float_gt(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 __flag __float64_is_signaling_nan(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float64_ltgt_quiet(__float64, __float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__flag __float_ltgt_quiet(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 
 #ifdef FLOATX80
 

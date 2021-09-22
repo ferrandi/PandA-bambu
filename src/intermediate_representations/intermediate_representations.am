@@ -42,6 +42,7 @@ if BUILD_LIB_HLS
     -I$(top_srcdir)/src/graph \
     -I$(top_srcdir)/src/HLS \
     -I$(top_srcdir)/src/intermediate_representations \
+    -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     $(AM_CPPFLAGS)
   lib_hls_la_SOURCES = \

@@ -627,7 +627,9 @@ void DesignFlowManager::Exec()
             }
          }
 #endif
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "<--Ended execution of " + step->GetName() + " in " + print_cpu_time(step_execution_time) + " seconds" + memory_usage);
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
+                        "<--Ended execution of " + step->GetName() + (design_flow_step_info->status == DesignFlowStep_Status::UNCHANGED ? ":=" : (design_flow_step_info->status == DesignFlowStep_Status::SUCCESS ? ":+" : "")) + " in " +
+                            print_cpu_time(step_execution_time) + " seconds" + memory_usage);
 #ifndef NDEBUG
          THROW_ASSERT(indentation_before == indentation, "Not closed indentation");
 #endif

@@ -55,6 +55,10 @@
 #include "config_HAVE_I386_CLANG11_M32.hpp"
 #include "config_HAVE_I386_CLANG11_M64.hpp"
 #include "config_HAVE_I386_CLANG11_MX32.hpp"
+#include "config_HAVE_I386_CLANG12_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG12_M32.hpp"
+#include "config_HAVE_I386_CLANG12_M64.hpp"
+#include "config_HAVE_I386_CLANG12_MX32.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_M32.hpp"
 #include "config_HAVE_I386_CLANG4_M64.hpp"
@@ -242,8 +246,7 @@
 #define OPT_DISABLE_IOB (1 + OPT_DISABLE_FUNCTION_PROXY)
 #define OPT_DISTRAM_THRESHOLD (1 + OPT_DISABLE_IOB)
 #define OPT_DO_NOT_CHAIN_MEMORIES (1 + OPT_DISTRAM_THRESHOLD)
-#define OPT_DO_NOT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_CHAIN_MEMORIES)
-#define OPT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_EXPOSE_GLOBALS)
+#define OPT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_CHAIN_MEMORIES)
 #define OPT_ROM_DUPLICATION (1 + OPT_EXPOSE_GLOBALS)
 #define OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES (1 + OPT_ROM_DUPLICATION)
 #define OPT_DSE (1 + OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES)
@@ -263,8 +266,7 @@
 #define OPT_EVALUATION (1 + OPT_ENABLE_IOB)
 #define OPT_EVALUATION_MODE (1 + OPT_EVALUATION)
 #define OPT_EXPERIMENTAL_SETUP (1 + OPT_EVALUATION_MODE)
-#define INPUT_OPT_FIND_MAX_CFG_TRANSFORMATIONS (1 + OPT_EXPERIMENTAL_SETUP)
-#define OPT_FIXED_SCHED (1 + INPUT_OPT_FIND_MAX_CFG_TRANSFORMATIONS)
+#define OPT_FIXED_SCHED (1 + OPT_EXPERIMENTAL_SETUP)
 #define OPT_FLOPOCO (1 + OPT_FIXED_SCHED)
 #define OPT_GENERATE_VCD (1 + OPT_FLOPOCO)
 #define OPT_GENERATION (1 + OPT_GENERATE_VCD)
@@ -336,8 +338,9 @@
 #define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
 #define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
 #define OPT_FP_FORMAT (1 + OPT_RANGE_ANALYSIS_MODE)
-#define OPT_PROPAGATE_FP_FORMAT (1 + OPT_FP_FORMAT)
-#define OPT_PARALLEL_BACKEND (1 + OPT_PROPAGATE_FP_FORMAT)
+#define OPT_FP_FORMAT_PROPAGATE (1 + OPT_FP_FORMAT)
+#define OPT_FP_FORMAT_INTERFACE (1 + OPT_FP_FORMAT_PROPAGATE)
+#define OPT_PARALLEL_BACKEND (1 + OPT_FP_FORMAT_INTERFACE)
 #define OPT_INTERFACE_XML_FILENAME (1 + OPT_PARALLEL_BACKEND)
 #define OPT_LATTICE_ROOT (1 + OPT_INTERFACE_XML_FILENAME)
 #define OPT_XILINX_ROOT (1 + OPT_LATTICE_ROOT)
@@ -347,6 +350,8 @@
 #define OPT_ALTERA_ROOT (1 + OPT_VERILATOR_PARALLEL)
 #define OPT_NANOXPLORE_ROOT (1 + OPT_ALTERA_ROOT)
 #define OPT_NANOXPLORE_BYPASS (1 + OPT_NANOXPLORE_ROOT)
+#define OPT_SHARED_INPUT_REGISTERS (1 + OPT_NANOXPLORE_BYPASS)
+#define OPT_INLINE_FUNCTIONS (1 + OPT_SHARED_INPUT_REGISTERS)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -388,7 +393,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
    PrintGeneralOptionsUsage(os);
    PrintOutputOptionsUsage(os);
    os << "    --pretty-print=<file>\n"
-      << "        C-based pretty print of the internal IR.\n\n"
+      << "        C-based pretty print of the internal IRx\\n"
       << "    --writer,-w<language>\n"
       << "        Output RTL language:\n"
       << "            V - Verilog (default)\n"
@@ -405,6 +410,10 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the top function to be synthesized.\n\n"
       << "    --top-rtldesign-name=<top_name>\n"
       << "        Define the top module name for the RTL backend.\n\n"
+      << "    --inline-fname=<fun_name>[,<fun_name>]*\n"
+      << "        Define functions to be always inlined.\n"
+      << "        Automatic inlining is always performed using internal metrics.\n"
+      << "        Maximum cost to allow function inlining is defined through --panda-parameter=inline-max-cost=<value>. (default=100)\n\n"
       << "    --file-input-data=<file_list>\n"
       << "        A comma-separated list of input files used by the C specification.\n\n"
       << "    --C-no-parse=<file>\n"
@@ -484,10 +493,15 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        formulation. Default: off.\n\n"
 #endif
       << "    --speculative-sdc-scheduling,-s\n"
-      << "        Perform scheduling by using speculative sdc.\n\n"
+      << "        Perform scheduling by using speculative SDC.\n"
+      << "        The speculative SDC is more conservative, in case --panda-parameter=enable-conservative-sdc=1 is passed.\n\n"
 #endif
       << "    --pipelining,-p\n"
       << "        Perform functional pipelining starting from the top function.\n\n"
+      << "    --pipelining,-p=<func_name>[=<init_interval>][,<func_name>[=<init_interval>]]*\n"
+      << "        Perform pipelining of comma separated list of specified functions with optional initiation interval (default II=1).\n"
+      << "        To inline softfloat operators it is possible to specify the __float_<op_name> prefix \n"
+      << "        or simply __float to pipeline all softfloat library.\n\n"
       << "    --fixed-scheduling=<file>\n"
       << "        Provide scheduling as an XML file.\n\n"
       << "    --no-chaining\n"
@@ -571,6 +585,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
       << "            UNIQUE             - use a 1-to-1 binding algorithm\n\n"
       << std::endl;
+   os << "    --shared-input-registers\n"
+      << "        The module bindings and the register binding try to share more resources by sharing the input registers\n\n"
+      << std::endl;
 
    // Memory allocation options
    os << "  Memory allocation:\n\n"
@@ -646,8 +663,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the external memory latency when LOAD are performed (default 2).\n\n"
       << "    --mem-delay-write=value\n"
       << "        Define the external memory latency when STORE are performed (default 1).\n\n"
-      << "    --do-not-expose-globals\n"
-      << "        All global variables are considered local to the compilation units.\n\n"
       << "    --expose-globals\n"
       << "        All global variables can be accessed from outside the accelerator.\n\n"
       << "    --data-bus-bitsize=<bitsize>\n"
@@ -694,33 +709,15 @@ void BambuParameter::PrintHelp(std::ostream& os) const
    os << "  Evaluation of HLS results:\n\n"
       << "    --simulate\n"
       << "        Simulate the RTL implementation.\n\n"
-      << "    --mentor-visualizer\n"
-      << "        Simulate the RTL implementation and then open Mentor Visualizer.\n"
-      << "        (Mentor root has to be correctly set, see --mentor-root)\n\n"
-      << "    --mentor-optimizer=<0|1>\n"
-      << "        Enable or disable mentor optimizer. (default=enabled)\n\n"
-      << "    --nanoxplore-bypass=<name>\n"
-      << "        Define NanoXplore bypass when using NanoXplore. User may set NANOXPLORE_BYPASS variable otherwise.\n\n"
-      << "    --verilator-parallel\n"
-      << "        Enable multi-threaded simulation when using verilator\n\n"
       << "    --simulator=<type>\n"
       << "        Specify the simulator used in generated simulation scripts:\n"
       << "            MODELSIM - Mentor Modelsim\n"
       << "            XSIM - Xilinx XSim\n"
       << "            ISIM - Xilinx iSim\n"
       << "            ICARUS - Verilog Icarus simulator\n"
-      << "            VERILATOR - Verilator simulator\n"
-      << "\n"
-      << "    --altera-root=<path>\n"
-      << "        Define Altera tools path. Given path is searched for Quartus. (default=/opt/altera:/opt/intelFPGA)\n\n"
-      << "    --lattice-root=<path>\n"
-      << "        Define Lattice tools path. Given path is searched for Diamond. (default=/opt/diamond:/usr/local/diamond)\n\n"
-      << "    --mentor-root=<path>\n"
-      << "        Define Mentor tools path. Given directory is searched for Modelsim and Visualizer (default=/opt/mentor)\n\n"
-      << "    --nanoxplore-root=<path>\n"
-      << "        Define NanoXplore tools path. Given directory is searched for NXMap. (default=/opt/NanoXplore/NXMap)\n\n"
-      << "    --xilinx-root=<path>\n"
-      << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado (default=/opt/Xilinx)\n\n"
+      << "            VERILATOR - Verilator simulator\n\n"
+      << "    --verilator-parallel\n"
+      << "        Enable multi-threaded simulation when using verilator\n\n"
       << "    --max-sim-cycles=<cycles>\n"
       << "        Specify the maximum number of cycles a HDL simulation may run.\n"
       << "        (default 20000000).\n\n"
@@ -839,7 +836,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define arbitrary precision floating-point format by type or by function.\n"
       << "        <func_name>*<exp_bits>*<frac_bits>*<exp_bias>*<round>*<nan>*<one>*<sub>*<sign>* (use comma separated list for multiple definitions)\n"
       << "           func_name - Set arbitrary floating-point format for a specific function\n"
-      << "                       (Arbitrary floating-point format will apply to specified function only, use --propaget-fp-format to extend it to called functions)"
+      << "                       (Arbitrary floating-point format will apply to specified function only, use --propaget-fp-format to extend it to called functions)\n"
       << "            exp_bits - Number of bits used by the exponent\n"
       << "           frac_bits - Number of bits used by the fractional value\n"
       << "            exp_bias - Bias applied to the unsigned value represented by the exponent bits\n"
@@ -848,7 +845,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "              one    - Floating-point representation will exploit hidden-one convention (default=1)\n"
       << "              sub    - Floating-point representation will exploit subnormals (default=0)\n"
       << "           sign_bit  - Set sign bit to a fixed value (1 or 0) or leave it data dependant (default=U)\n\n"
-      << "    --propagate-fp-format\n"
+      << "    --fp-format-interface\n"
+      << "        User-defined floating-point format is applied to top interface signature if required (default modifies top function body only)\n\n"
+      << "    --fp-format-propagate\n"
       << "        Propagate user-defined floating-point format to called function when possible\n\n"
       << "    --hls-div=<method>\n"
       << "        Perform the high-level synthesis of integer division and modulo\n"
@@ -983,7 +982,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    --distram-threshold=256\n"
       << "                                    --DSP-allocation-coefficient=1.75\n"
-      << "                                    --do-not-expose-globals --cprf=0.875\n\n"
+      << "                                    --cprf=0.875\n\n"
       << std::endl;
    os << "  Other options:\n\n";
    os << "    --pragma-parse\n"
@@ -1079,6 +1078,26 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --assert-debug\n"
       << "        Enable assertion debugging performed by Modelsim.\n"
       << "        (Mentor Modelsim should be selected to use this option)\n\n"
+      << std::endl;
+   // options defining where backend tools could be found
+   os << "  Backend configuration:\n\n"
+      << "    --mentor-visualizer\n"
+      << "        Simulate the RTL implementation and then open Mentor Visualizer.\n"
+      << "        (Mentor root has to be correctly set, see --mentor-root)\n\n"
+      << "    --mentor-optimizer=<0|1>\n"
+      << "        Enable or disable mentor optimizer. (default=enabled)\n\n"
+      << "    --nanoxplore-bypass=<name>\n"
+      << "        Define NanoXplore bypass when using NanoXplore. User may set NANOXPLORE_BYPASS variable otherwise.\n\n"
+      << "    --altera-root=<path>\n"
+      << "        Define Altera tools path. Given path is searched for Quartus. (default=/opt/altera:/opt/intelFPGA)\n\n"
+      << "    --lattice-root=<path>\n"
+      << "        Define Lattice tools path. Given path is searched for Diamond. (default=/opt/diamond:/usr/local/diamond)\n\n"
+      << "    --mentor-root=<path>\n"
+      << "        Define Mentor tools path. Given directory is searched for Modelsim and Visualizer (default=/opt/mentor)\n\n"
+      << "    --nanoxplore-root=<path>\n"
+      << "        Define NanoXplore tools path. Given directory is searched for NXMap. (default=/opt/NanoXplore/NXMap)\n\n"
+      << "    --xilinx-root=<path>\n"
+      << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado (default=/opt/Xilinx)\n\n"
       << std::endl;
 }
 
@@ -1191,7 +1210,6 @@ int BambuParameter::Exec()
       {"channels-number", required_argument, nullptr, 0},
       {"memory-ctrl-type", required_argument, nullptr, 0},
       {"sparse-memory", optional_argument, nullptr, 0},
-      {"do-not-expose-globals", no_argument, nullptr, OPT_DO_NOT_EXPOSE_GLOBALS},
       {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
       // interconnections
       {"interconnection", required_argument, nullptr, 'C'},
@@ -1298,7 +1316,8 @@ int BambuParameter::Exec()
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
       {"range-analysis-mode", optional_argument, nullptr, OPT_RANGE_ANALYSIS_MODE},
       {"fp-format", optional_argument, nullptr, OPT_FP_FORMAT},
-      {"propagate-fp-format", optional_argument, nullptr, OPT_PROPAGATE_FP_FORMAT},
+      {"fp-format-propagate", optional_argument, nullptr, OPT_FP_FORMAT_PROPAGATE},
+      {"fp-format-interface", optional_argument, nullptr, OPT_FP_FORMAT_INTERFACE},
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
@@ -1307,7 +1326,6 @@ int BambuParameter::Exec()
       {"C-no-parse", required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
       {"C-python-no-parse", required_argument, nullptr, INPUT_OPT_C_PYTHON_NO_PARSE},
       {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
-      {"find-max-cfg-transformations", no_argument, nullptr, INPUT_OPT_FIND_MAX_CFG_TRANSFORMATIONS},
 #if !HAVE_UNORDERED
 #ifndef NDEBUG
       {"test-multiple-non-deterministic-flows", required_argument, nullptr, INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS},
@@ -1323,6 +1341,8 @@ int BambuParameter::Exec()
       {"nanoxplore-bypass", optional_argument, nullptr, OPT_NANOXPLORE_BYPASS},
       {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
       {"verilator-parallel", optional_argument, nullptr, OPT_VERILATOR_PARALLEL},
+      {"shared-input-registers", no_argument, nullptr, OPT_SHARED_INPUT_REGISTERS},
+      {"inline-fname", no_argument, nullptr, OPT_INLINE_FUNCTIONS},
       GCC_LONG_OPTIONS,
       {nullptr, 0, nullptr, 0}
    };
@@ -2210,14 +2230,9 @@ int BambuParameter::Exec()
             }
             break;
          }
-         case OPT_DO_NOT_EXPOSE_GLOBALS:
-         {
-            setOption(OPT_do_not_expose_globals, true);
-            break;
-         }
          case OPT_EXPOSE_GLOBALS:
          {
-            setOption(OPT_do_not_expose_globals, false);
+            setOption(OPT_expose_globals, true);
             break;
          }
          case OPT_EXPERIMENTAL_SETUP:
@@ -2410,9 +2425,14 @@ int BambuParameter::Exec()
             setOption(OPT_fp_format, optarg);
             break;
          }
-         case OPT_PROPAGATE_FP_FORMAT:
+         case OPT_FP_FORMAT_PROPAGATE:
          {
-            setOption(OPT_propagate_fp_format, true);
+            setOption(OPT_fp_format_propagate, true);
+            break;
+         }
+         case OPT_FP_FORMAT_INTERFACE:
+         {
+            setOption(OPT_fp_format_interface, true);
             break;
          }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
@@ -2477,11 +2497,6 @@ int BambuParameter::Exec()
             setOption(OPT_no_parse_c_python, no_parse_c_python_files);
             break;
          }
-         case INPUT_OPT_FIND_MAX_CFG_TRANSFORMATIONS:
-         {
-            setOption(OPT_find_max_cfg_transformations, true);
-            break;
-         }
 #if !HAVE_UNORDERED
 #ifndef NDEBUG
          case INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS:
@@ -2544,6 +2559,16 @@ int BambuParameter::Exec()
          case OPT_XILINX_ROOT:
          {
             setOption(OPT_xilinx_root, GetPath(optarg));
+            break;
+         }
+         case OPT_SHARED_INPUT_REGISTERS:
+         {
+            setOption(OPT_shared_input_registers, true);
+            break;
+         }
+         case OPT_INLINE_FUNCTIONS:
+         {
+            setOption(OPT_inline_functions, std::string(optarg));
             break;
          }
          case 0:
@@ -2911,7 +2936,7 @@ int BambuParameter::Exec()
 #endif
       else if(file_type == Parameters_FileFormat::FF_C || file_type == Parameters_FileFormat::FF_OBJECTIVEC || file_type == Parameters_FileFormat::FF_CPP || file_type == Parameters_FileFormat::FF_FORTRAN
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
-    HAVE_I386_CLANGVVD_COMPILER
+    HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
               || file_type == Parameters_FileFormat::FF_LLVM || file_type == Parameters_FileFormat::FF_LLVM_CPP
 #endif
       )
@@ -2984,10 +3009,11 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
    /// Set the default value for OPT_gcc_m32_mx32
    if(!isOption(OPT_gcc_m32_mx32))
    {
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) ||            \
-    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) ||             \
-    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64) || \
-    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64) || (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) ||                  \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) ||                   \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64) ||       \
+    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64) || (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64) || \
+    (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
       if(false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
@@ -3034,16 +3060,20 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
+#if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64)
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
          setOption(OPT_gcc_m32_mx32, "-m64");
 #endif
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) ||            \
-    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) ||             \
-    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_MX32) || \
-    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_MX32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_MX32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32) || (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) ||                  \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) ||                   \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_MX32) ||       \
+    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_MX32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_MX32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32) || (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_MX32) || \
+    (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
       if(false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
@@ -3090,6 +3120,9 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
+#if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_MX32)
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
@@ -3131,7 +3164,7 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 #endif
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32) ||      \
     (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M32) || (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32) || \
-    (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
+    (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M32) || (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
       if(false
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
@@ -3156,6 +3189,9 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M32)
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
          || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
@@ -3642,10 +3678,10 @@ void BambuParameter::CheckParameters()
 
    if(isOption(OPT_interface_type) && getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
-      setOption(OPT_do_not_expose_globals, true);
+      setOption(OPT_expose_globals, false);
    }
 
-   if(getOption<bool>(OPT_do_not_expose_globals))
+   if(!getOption<bool>(OPT_expose_globals))
    {
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE && (!isOption(OPT_interface_type) || getOption<HLSFlowStep_Type>(OPT_interface_type) != HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
       {
@@ -3699,8 +3735,8 @@ void BambuParameter::CheckParameters()
       }
       setOption(OPT_DSP_allocation_coefficient, 1.75);
       setOption(OPT_clock_period_resource_fraction, "0.875");
-      setOption(OPT_do_not_expose_globals, true);
-      if(not isOption(OPT_distram_threshold))
+      setOption(OPT_expose_globals, false);
+      if(!isOption(OPT_distram_threshold))
       {
          setOption(OPT_distram_threshold, 256);
       }
@@ -3820,6 +3856,9 @@ void BambuParameter::CheckParameters()
 #endif
 #if HAVE_I386_CLANG11_COMPILER
                  or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
                  or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
@@ -4361,6 +4400,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_level_reset, false);
    setOption(OPT_reg_init_value, true);
 
+   setOption(OPT_shared_input_registers, false);
+
    /// Function allocation
    setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION);
 
@@ -4380,7 +4421,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_base_address, 1073741824); // 1Gbytes maximum address space reserved for the accelerator
    setOption(OPT_memory_controller_type, "D00");
    setOption(OPT_sparse_memory, true);
-   setOption(OPT_do_not_expose_globals, true);
+   setOption(OPT_expose_globals, false);
 
    /// -- Datapath -- //
    /// Datapath interconnection architecture
@@ -4506,6 +4547,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10));
 #elif HAVE_I386_CLANG11_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11));
+#elif HAVE_I386_CLANG12_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12));
 #elif HAVE_I386_CLANGVVD_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD));
 #else
@@ -4563,6 +4606,9 @@ void BambuParameter::SetDefaults()
 #if HAVE_I386_CLANG11_COMPILER
                                            | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
 #endif
+#if HAVE_I386_CLANG12_COMPILER
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12)
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
                                            | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
 #endif
@@ -4616,7 +4662,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_bitvalue_ipa, true);
    setOption(OPT_range_analysis_mode, "");
    setOption(OPT_fp_format, "");
-   setOption(OPT_propagate_fp_format, false);
+   setOption(OPT_fp_format_propagate, false);
    setOption(OPT_parallel_backend, false);
 
 #if HAVE_HOST_PROFILING_BUILT
@@ -4656,6 +4702,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_host_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10));
 #elif HAVE_I386_CLANG11_COMPILER
    setOption(OPT_host_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11));
+#elif HAVE_I386_CLANG12_COMPILER
+   setOption(OPT_host_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12));
 #elif HAVE_I386_CLANGVVD_COMPILER
    setOption(OPT_host_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD));
 #else
@@ -4673,7 +4721,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_num_accelerators, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);
-   setOption(OPT_find_max_cfg_transformations, false);
 
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";
@@ -4815,6 +4862,12 @@ void BambuParameter::add_bambu_library(std::string lib)
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11))
    {
       setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang11" + VSuffix + ".a");
+   }
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12))
+   {
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang12" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER

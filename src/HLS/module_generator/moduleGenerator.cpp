@@ -400,13 +400,12 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       tree_nodeRef hasreturn_node = GetPointer<gimple_call>(call)->args[1];
       long long int hasreturn_value = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(hasreturn_node)));
       tree_nodeRef addrExpr = GET_NODE(calledFunction);
-      unsigned int type_index;
-      tree_nodeRef Type = tree_helper::get_type_node(addrExpr, type_index);
-      tree_nodeRef functionType = GET_NODE(GetPointer<pointer_type>(Type)->ptd);
-      tree_nodeRef return_type = GetPointer<function_type>(functionType)->retn;
-      if(return_type && GET_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
+      const auto Type = tree_helper::CGetType(addrExpr);
+      const auto functionType = GetPointerS<const pointer_type>(GET_CONST_NODE(Type))->ptd;
+      const auto return_type = GetPointerS<const function_type>(GET_CONST_NODE(functionType))->retn;
+      if(return_type && GET_CONST_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
       {
-         specializing_string = STR(tree_helper::size(TreeM, GET_INDEX_NODE(return_type)));
+         specializing_string = STR(tree_helper::Size(return_type));
       }
    }
    else if(cfg->CGetOpNodeInfo(ve)->GetOperation().find(STR_CST_interface_parameter_keyword) != std::string::npos && boost::algorithm::ends_with(cfg->CGetOpNodeInfo(ve)->GetOperation(), "_array"))

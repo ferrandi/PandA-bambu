@@ -762,22 +762,17 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
             port_name = START_PORT_NAME;
          }
          writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
-         if(port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TreeM, port_obj->get_typeRef()->treenode))
+         if(port_obj->get_typeRef()->treenode > 0 && tree_helper::IsPointerType(TreeM->CGetTreeReindex(port_obj->get_typeRef()->treenode)))
          {
-            unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, port_obj->get_typeRef()->treenode));
-            tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
-            if(GetPointer<array_type>(pt_node))
+            auto pt_node = tree_helper::CGetPointedType(tree_helper::CGetType(TreeM->CGetTreeReindex(port_obj->get_typeRef()->treenode)));
+            while(GetPointer<const array_type>(GET_CONST_NODE(pt_node)))
             {
-               while(GetPointer<array_type>(pt_node))
-               {
-                  pt_type_index = GET_INDEX_NODE(GetPointer<array_type>(pt_node)->elts);
-                  pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
-               }
+               pt_node = GetPointer<const array_type>(GET_CONST_NODE(pt_node))->elts;
             }
 
-            if(tree_helper::is_real(TreeM, pt_type_index))
+            if(tree_helper::IsRealType(pt_node))
             {
-               long long int bitsize = tree_helper::size(TreeM, pt_type_index);
+               long long int bitsize = tree_helper::Size(pt_node);
                writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
             }
             else

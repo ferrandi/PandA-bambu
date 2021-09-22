@@ -34,7 +34,7 @@
  * @file Range.cpp
  * @brief
  *
- * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -44,6 +44,7 @@
 #include "Range.hpp"
 
 #include "exceptions.hpp"
+#include "math_function.hpp"
 #include "string_manipulation.hpp"
 #include "tree_node.hpp"
 
@@ -1276,14 +1277,15 @@ RangeRef Range::shl(const RangeConstRef& other) const
    }
    if(this->isConstant() && other->isConstant())
    {
-      const auto c = (this->getLower() << other->getLower()).extOrTrunc(bw, true);
+      const auto c = (this->getLower() << other->getLower().extOrTrunc(static_cast<APInt::bw_t>(ceil_log2(bw)), false)).extOrTrunc(bw, true);
       return RangeRef(new Range(Regular, bw, c, c));
    }
 
    const auto a = this->getLower();
    const auto b = this->getUpper();
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
+   const auto fix = other->zextOrTrunc(static_cast<bw_t>(ceil_log2(bw)));
+   const auto c = fix->getUnsignedMin();
+   const auto d = fix->getUnsignedMax();
 
    if(c >= bw)
    {
@@ -1326,8 +1328,9 @@ RangeRef Range::shr(const RangeConstRef& other, bool sign) const
       return RangeRef(new Range(Regular, bw));
    }
 
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
+   const auto fix = other->zextOrTrunc(static_cast<bw_t>(ceil_log2(bw)));
+   const auto c = fix->getUnsignedMin();
+   const auto d = fix->getUnsignedMax();
 
    if(sign)
    {

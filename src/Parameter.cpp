@@ -56,6 +56,10 @@
 #include "config_HAVE_I386_CLANG11_M32.hpp"
 #include "config_HAVE_I386_CLANG11_M64.hpp"
 #include "config_HAVE_I386_CLANG11_MX32.hpp"
+#include "config_HAVE_I386_CLANG12_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG12_M32.hpp"
+#include "config_HAVE_I386_CLANG12_M64.hpp"
+#include "config_HAVE_I386_CLANG12_MX32.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_M32.hpp"
 #include "config_HAVE_I386_CLANG4_M64.hpp"
@@ -123,6 +127,7 @@
 #include "config_HAVE_WEIGHT_MODELS_XML.hpp"
 #include "config_I386_CLANG10_VERSION.hpp"
 #include "config_I386_CLANG11_VERSION.hpp"
+#include "config_I386_CLANG12_VERSION.hpp"
 #include "config_I386_CLANG4_VERSION.hpp"
 #include "config_I386_CLANG5_VERSION.hpp"
 #include "config_I386_CLANG6_VERSION.hpp"
@@ -404,7 +409,8 @@ void Parameter::SetCommonDefaults()
    }
    setOption(OPT_seed, 0);
 
-   setOption(OPT_cfg_max_transformations, std::numeric_limits<size_t>::max());
+   setOption(OPT_max_transformations, std::numeric_limits<size_t>::max());
+   setOption(OPT_find_max_transformations, false);
 }
 
 void Parameter::print(std::ostream& os) const
@@ -538,9 +544,14 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
          setOption(STR_OPT_benchmark_fake_parameters, optarg_param);
          break;
       }
-      case INPUT_OPT_CFG_MAX_TRANSFORMATIONS:
+      case INPUT_OPT_MAX_TRANSFORMATIONS:
       {
-         setOption(OPT_cfg_max_transformations, optarg_param);
+         setOption(OPT_max_transformations, optarg_param);
+         break;
+      }
+      case INPUT_OPT_FIND_MAX_TRANSFORMATIONS:
+      {
+         setOption(OPT_find_max_transformations, true);
          break;
       }
       case INPUT_OPT_CONFIGURATION_NAME:
@@ -655,6 +666,12 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
             if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11))
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, I386_CLANG11_VERSION);
+            }
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+            if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12))
+            {
+               PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, I386_CLANG12_VERSION);
             }
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
@@ -844,10 +861,11 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             const std::string opt_level = std::string(optarg_param);
             if(opt_level == "32")
             {
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32) ||            \
-    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32) ||             \
-    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M32) || \
-    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32) || (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32) ||                  \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32) ||                   \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M32) ||       \
+    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32) || (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M32) || \
+    (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
                if(false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
                   || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
@@ -893,6 +911,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32)
                   || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M32)
+                  || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
                   || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
@@ -955,6 +976,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32)
                   || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
+#if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_MX32)
+                  || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
                   || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
@@ -966,10 +990,11 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             }
             else if(opt_level == "64")
             {
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) ||            \
-    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) ||             \
-    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64) || \
-    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64) || (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) ||                  \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) ||                   \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64) ||       \
+    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64) || (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64) || \
+    (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
                if(false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
                   || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
@@ -1015,6 +1040,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64)
                   || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64)
+                  || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
                   || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
@@ -1300,6 +1328,13 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
          if(std::string(optarg_param) == "I386_CLANG11")
          {
             setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11));
+            break;
+         }
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG12")
+         {
+            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12));
             break;
          }
 #endif
@@ -1733,8 +1768,13 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
       << "        (default = 1).\n\n"
       << "    --debug-classes=<classes_list>\n"
       << "        Set maximum debug level for classes in <classes_list>\n\n"
-      << "    --cfg-max-transformations=<number>\n"
-      << "        Set a maximum number of cfg transformations for each function.\n\n"
+      << "    --max-transformations=<number>\n"
+      << "        Set a maximum number of transformations.\n\n"
+      << "        To reduce the disk usage two PandA parameter could be used:\n"
+      << "          --panda-parameter=disable-print-tree-manager=1\n"
+      << "          --panda-parameter=disable-print-dot-FF=1\n\n"
+      << "    --find-max-transformations\n"
+      << "        Find the maximum number of transformations raising an exception.\n\n"
 #endif
       << "    --no-clean\n"
       << "        Do not remove temporary files.\n\n"
@@ -1824,6 +1864,9 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
 #endif
 #if HAVE_I386_CLANG11_COMPILER
       << "            I386_CLANG11\n"
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+      << "            I386_CLANG12\n"
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
       << "            I386_CLANGVVD\n"

@@ -82,7 +82,7 @@
 #include "tree_reindex.hpp"
 
 operations_cfg_computation::operations_cfg_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, OPERATIONS_CFG_COMPUTATION, _design_flow_manager, _parameters), last_bb_cfg_computation_version(0)
+    : FunctionFrontendFlowStep(_AppM, _function_id, OPERATIONS_CFG_COMPUTATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -98,12 +98,13 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          if(parameters->getOption<bool>(OPT_parse_pragma))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
+            relationships.insert(std::make_pair(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
          }
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
 #if HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LUT_TRANSFORMATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(LUT_TRANSFORMATION, SAME_FUNCTION));
 #endif
+         relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -115,19 +116,18 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #if HAVE_BAMBU_BUILT
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT2, SAME_FUNCTION));
+            relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
          }
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
 #if HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
 #endif
 #if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_ANALYSIS_ZEBU, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOP_REGIONS_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(LOOPS_ANALYSIS_ZEBU, SAME_FUNCTION));
+         relationships.insert(std::make_pair(LOOP_REGIONS_COMPUTATION, SAME_FUNCTION));
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));
+         relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));
          break;
       }
       default:
@@ -140,15 +140,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 void operations_cfg_computation::Initialize()
 {
-   const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BASIC_BLOCKS_CFG_COMPUTATION, function_id);
-   const auto bb_cfg_comp_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
-   THROW_ASSERT(bb_cfg_comp_step, step_signature);
-
-   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const DesignFlowStepRef step = design_flow_graph->CGetDesignFlowStepInfo(bb_cfg_comp_step)->design_flow_step;
-
-   last_bb_cfg_computation_version = GetPointer<const FunctionFrontendFlowStep>(step)->CGetBBVersion();
-
    if(bb_version != 0)
    {
       function_behavior->ogc->Clear();
@@ -185,7 +176,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
    ogc->add_type(EXIT, TYPE_EXIT);
 
    std::string res;
-   std::string f_name = helper->get_function_name() + "_" + boost::lexical_cast<std::string>(function_id);
+   std::string f_name = helper->get_function_name() + "_" + STR(function_id);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing label map");
    /// first cycle to compute the label_decl_map and the first_statement maps.
@@ -207,7 +198,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
          gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
          TM->create_tree_node(new_tree_node_id, gimple_nop_K, gimple_nop_schema);
-         auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(new_tree_node_id));
+         auto gn = GetPointer<gimple_nop>(TM->GetTreeNode(new_tree_node_id));
          gn->bb_index = block->number;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created gimple_nop " + TM->get_tree_node_const(new_tree_node_id)->ToString());
          block->PushBack(TM->GetTreeReindex(new_tree_node_id), AppM);
@@ -258,7 +249,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       }
       const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*v_iter);
       const auto block = bb_node_info->block;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Building operation of basic block BB" + boost::lexical_cast<std::string>(block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Building operation of basic block BB" + STR(block->number));
       bool skip_first_stmt = false;
       if(block->CGetStmtList().size())
       {
@@ -422,7 +413,7 @@ std::string operations_cfg_computation::get_first_node(const tree_nodeRef& tn, c
    }
    unsigned int ind = GET_INDEX_NODE(tn);
    std::string src;
-   src = f_name + "_" + boost::lexical_cast<std::string>(ind);
+   src = f_name + "_" + STR(ind);
 
    switch(curr_tn->get_kind())
    {
@@ -432,7 +423,7 @@ std::string operations_cfg_computation::get_first_node(const tree_nodeRef& tn, c
       {
          auto* cle = GetPointer<case_label_expr>(curr_tn);
          ind = GET_INDEX_NODE(cle->got);
-         THROW_ASSERT(label_decl_map.find(ind) != label_decl_map.end(), "Label " + boost::lexical_cast<std::string>(ind) + " doesn't exist");
+         THROW_ASSERT(label_decl_map.find(ind) != label_decl_map.end(), "Label " + STR(ind) + " doesn't exist");
          return label_decl_map.find(ind)->second;
       }
       case binfo_K:
@@ -461,7 +452,7 @@ std::string operations_cfg_computation::get_first_node(const tree_nodeRef& tn, c
       case CASE_UNARY_EXPRESSION:
       case lut_expr_K:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, std::string("Node not supported (") + boost::lexical_cast<std::string>(ind) + std::string("): ") + curr_tn->get_kind_text());
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, std::string("Node not supported (") + STR(ind) + std::string("): ") + curr_tn->get_kind_text());
    }
    return "";
 }
@@ -490,13 +481,10 @@ void operations_cfg_computation::init_start_nodes(const std::string& start_node)
 void operations_cfg_computation::connect_start_nodes(const operations_graph_constructorRef ogc, const std::string& next, bool true_edge, bool false_edge, unsigned int nodeid)
 {
    const auto root_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
-   std::string Start_node;
-   auto s_end = start_nodes.end();
-   for(auto s = start_nodes.begin(); s != s_end; ++s)
+   for(const auto& Start_node : start_nodes)
    {
-      Start_node = *s;
       /// Mark first operation of the application
-      if(root_functions.find(function_id) != root_functions.end() and Start_node == ENTRY)
+      if(root_functions.count(function_id) && Start_node == ENTRY)
       {
          ogc->add_type(next, TYPE_FIRST_OP);
       }
@@ -504,7 +492,7 @@ void operations_cfg_computation::connect_start_nodes(const operations_graph_cons
       ogc->AddEdge(ogc->getIndex(Start_node), ogc->getIndex(next), CFG_SELECTOR);
       if(true_edge && false_edge)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding label " + boost::lexical_cast<std::string>(nodeid));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding label " + STR(nodeid));
          ogc->add_edge_info(ogc->getIndex(Start_node), ogc->getIndex(next), CFG_SELECTOR, nodeid);
       }
       if(true_edge && !false_edge)
@@ -520,9 +508,9 @@ void operations_cfg_computation::connect_start_nodes(const operations_graph_cons
 
 void operations_cfg_computation::build_operation_recursive(const tree_managerRef TM, const operations_graph_constructorRef ogc, const tree_nodeRef tn, const std::string& f_name, unsigned int bb_index)
 {
-   const tree_nodeRef& curr_tn = GET_NODE(tn);
-   unsigned int ind = GET_INDEX_NODE(tn);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Building CFG of node " + boost::lexical_cast<std::string>(ind) + " of type " + curr_tn->get_kind_text());
+   const auto curr_tn = GET_NODE(tn);
+   const auto ind = GET_INDEX_NODE(tn);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Building CFG of node " + STR(ind) + " of type " + curr_tn->get_kind_text());
    switch(curr_tn->get_kind())
    {
       case gimple_return_K:
@@ -533,23 +521,21 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case gimple_assign_K:
       {
-         auto* me = GetPointer<gimple_assign>(curr_tn);
+         const auto me = GetPointerS<const gimple_assign>(curr_tn);
+         const auto op0_kind = GET_NODE(me->op0)->get_kind();
+         const auto op1_kind = GET_NODE(me->op1)->get_kind();
+         const auto op0_type = tree_helper::CGetType(me->op0);
+         const auto op1_type = tree_helper::CGetType(me->op1);
+         const auto& fun_mem_data = function_behavior->get_function_mem();
 
-         tree_nodeRef op0 = GET_NODE(me->op0);
-         tree_nodeRef op1 = GET_NODE(me->op1);
-         tree_nodeRef op0_type = tree_helper::get_type_node(op0);
-         tree_nodeRef op1_type = tree_helper::get_type_node(op1);
-         const CustomOrderedSet<unsigned int>& fun_mem_data = function_behavior->get_function_mem();
+         const auto load_candidate = tree_helper::IsLoad(tn, fun_mem_data);
+         const auto store_candidate = tree_helper::IsStore(tn, fun_mem_data);
 
-         const bool load_candidate = tree_helper::IsLoad(TM, curr_tn, fun_mem_data);
-         const bool store_candidate = tree_helper::IsStore(TM, curr_tn, fun_mem_data);
-
-         if(not me->clobber and not tree_helper::is_a_vector(TM, op0->index) and ((((tree_helper::is_an_array(TM, op0->index) and not tree_helper::is_a_pointer(TM, op0->index))) or op1->get_kind() == constructor_K)))
+         if(!me->clobber && !tree_helper::IsVectorType(me->op0) && ((((tree_helper::IsArrayType(me->op0) && !tree_helper::IsPointerType(me->op0))) || op1_kind == constructor_K)))
          {
-            if(not tree_helper::is_an_array(TM, op0->index) or
-               (((op1->get_kind() == constructor_K or (op1->get_kind() == var_decl_K and GetPointer<const var_decl>(op1)->init) or op1->get_kind() == string_cst_K)) and (GetPointer<const decl_node>(op0) or op0->get_kind() == ssa_name_K)))
+            if(!tree_helper::IsArrayType(me->op0) || (((op1_kind == constructor_K || (op1_kind == var_decl_K && GetPointerS<const var_decl>(me->op1)->init) || op1_kind == string_cst_K)) && (GetPointer<const decl_node>(me->op0) || op0_kind == ssa_name_K)))
             {
-               function_behavior->GetBehavioralHelper()->add_initialization(op0->index, op1->index);
+               function_behavior->GetBehavioralHelper()->add_initialization(me->op0->index, me->op1->index);
                ogc->add_type(actual_name, TYPE_INIT);
             }
          }
@@ -559,12 +545,12 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             ogc->AddOperation(TM, actual_name, NOP, bb_index, me->index);
             ogc->add_type(actual_name, TYPE_NOP);
          }
-         else if(op1->get_kind() == float_expr_K)
+         else if(op1_kind == float_expr_K)
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - set as float_expr_xx_to_xxx operation");
-            auto* fe = GetPointer<float_expr>(op1);
-            unsigned int size_dest = tree_helper::size(TM, GET_INDEX_NODE(fe->type));
-            unsigned int size_from = tree_helper::size(TM, GET_INDEX_NODE(fe->op));
+            const auto fe = GetPointerS<const float_expr>(GET_CONST_NODE(me->op1));
+            unsigned int size_dest = tree_helper::Size(fe->type);
+            unsigned int size_from = tree_helper::Size(fe->op);
             if(size_from < 32)
             {
                size_from = 32;
@@ -576,13 +562,13 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             ogc->AddOperation(TM, actual_name, FLOAT_EXPR + STR("_") + STR(size_from) + "_to_" + STR(size_dest), bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
-         else if(op1->get_kind() == fix_trunc_expr_K)
+         else if(op1_kind == fix_trunc_expr_K)
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - set as fix_trunc_expr_xx_to_xxx operation");
-            auto* fte = GetPointer<fix_trunc_expr>(op1);
-            unsigned int size_dest = tree_helper::size(TM, GET_INDEX_NODE(fte->type));
-            bool is_unsigned = tree_helper::is_unsigned(TM, GET_INDEX_NODE(fte->type));
-            unsigned int size_from = tree_helper::size(TM, GET_INDEX_NODE(fte->op));
+            const auto fte = GetPointerS<const fix_trunc_expr>(GET_CONST_NODE(me->op1));
+            auto size_dest = tree_helper::Size(fte->type);
+            const auto is_unsigned = tree_helper::IsUnsignedIntegerType(fte->type);
+            const auto size_from = tree_helper::Size(fte->op);
             if(size_dest < 32)
             {
                size_dest = 32;
@@ -594,32 +580,31 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             ogc->AddOperation(TM, actual_name, FIX_TRUNC_EXPR + STR("_") + STR(size_from) + "_to_" + (is_unsigned ? "u" : "") + STR(size_dest), bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
-         else if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(me->op0)) && op1->get_kind() == constructor_K)
+         else if(tree_helper::IsVectorType(me->op0) && op1_kind == constructor_K)
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - set as VECTOR CONCATENATION operation");
-            auto* co = GetPointer<constructor>(op1);
-            unsigned int size_obj = tree_helper::size(TM, GET_INDEX_NODE(co->type));
-            unsigned int n_byte = size_obj / 8;
+            const auto co = GetPointerS<const constructor>(GET_CONST_NODE(me->op1));
+            const auto size_obj = tree_helper::Size(co->type);
+            const auto n_byte = size_obj / 8;
             ogc->AddOperation(TM, actual_name, VECT_CONCATENATION + STR("_") + STR(n_byte) + "_" + STR(co->list_of_idx_valu.size()), bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
-         else if(op1->get_kind() == complex_expr_K)
+         else if(op1_kind == complex_expr_K)
          {
-            ogc->AddOperation(TM, actual_name, op1->get_kind_text(), bb_index, me->index);
+            ogc->AddOperation(TM, actual_name, tree_node::GetString(op1_kind), bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
-         else if(!store_candidate && (op0->get_kind() == realpart_expr_K || op0->get_kind() == imagpart_expr_K))
+         else if(!store_candidate && (op0_kind == realpart_expr_K || op0_kind == imagpart_expr_K))
          {
-            ogc->AddOperation(TM, actual_name, op0->get_kind_text() + "_write", bb_index, me->index);
+            ogc->AddOperation(TM, actual_name, tree_node::GetString(op0_kind) + "_write", bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
          else if(op0_type && op1_type &&
-                 ((op0_type->get_kind() == record_type_K && op1_type->get_kind() == record_type_K && op1->get_kind() != view_convert_expr_K) ||
-                  (op0_type->get_kind() == union_type_K && op1_type->get_kind() == union_type_K && op1->get_kind() != view_convert_expr_K) || (op0_type->get_kind() == array_type_K) ||
-                  (fun_mem_data.find(GET_INDEX_NODE(me->op0)) != fun_mem_data.end() && fun_mem_data.find(GET_INDEX_NODE(me->op1)) != fun_mem_data.end()) || (fun_mem_data.find(GET_INDEX_NODE(me->op0)) != fun_mem_data.end() && load_candidate) ||
-                  (store_candidate && fun_mem_data.find(GET_INDEX_NODE(me->op1)) != fun_mem_data.end())))
+                 ((GET_CONST_NODE(op0_type)->get_kind() == record_type_K && GET_CONST_NODE(op1_type)->get_kind() == record_type_K && op1_kind != view_convert_expr_K) ||
+                  (GET_CONST_NODE(op0_type)->get_kind() == union_type_K && GET_CONST_NODE(op1_type)->get_kind() == union_type_K && op1_kind != view_convert_expr_K) || (GET_CONST_NODE(op0_type)->get_kind() == array_type_K) ||
+                  (fun_mem_data.count(GET_INDEX_NODE(me->op0)) && fun_mem_data.count(GET_INDEX_NODE(me->op1))) || (fun_mem_data.count(GET_INDEX_NODE(me->op0)) && load_candidate) || (store_candidate && fun_mem_data.count(GET_INDEX_NODE(me->op1)))))
          {
-            if(op1->get_kind() == constructor_K && GetPointer<constructor>(op1) && GetPointer<constructor>(op1)->list_of_idx_valu.size() == 0)
+            if(op1_kind == constructor_K && GetPointer<const constructor>(GET_CONST_NODE(me->op1)) && GetPointer<const constructor>(GET_CONST_NODE(me->op1))->list_of_idx_valu.empty())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---set as MEMSET operation");
                ogc->AddOperation(TM, actual_name, MEMSET, bb_index, me->index);
@@ -632,13 +617,13 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                ogc->add_type(actual_name, TYPE_MEMCPY);
             }
          }
-         else if(store_candidate || fun_mem_data.find(GET_INDEX_NODE(me->op0)) != fun_mem_data.end())
+         else if(store_candidate || fun_mem_data.count(GET_INDEX_NODE(me->op0)))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---set as STORE operation");
             ogc->AddOperation(TM, actual_name, "STORE", bb_index, me->index);
             ogc->add_type(actual_name, TYPE_STORE);
          }
-         else if(load_candidate || fun_mem_data.find(GET_INDEX_NODE(me->op1)) != fun_mem_data.end())
+         else if(load_candidate || fun_mem_data.count(GET_INDEX_NODE(me->op1)))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---set as LOAD operation");
             ogc->AddOperation(TM, actual_name, "LOAD", bb_index, me->index);
@@ -648,10 +633,6 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          {
             ogc->AddOperation(TM, actual_name, ASSIGN, bb_index, me->index);
             ogc->add_type(actual_name, TYPE_ASSIGN);
-            if(me->orig)
-            {
-               ogc->add_type(actual_name, TYPE_WAS_GIMPLE_PHI);
-            }
             build_operation_recursive(TM, ogc, me->op1, f_name, bb_index);
          }
          if(me->predicate)
@@ -670,20 +651,18 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         auto* ce = GetPointer<call_expr>(curr_tn);
-         tree_nodeRef temp_node = GET_NODE(ce->fn);
-         function_decl* fd = nullptr;
+         const auto ce = GetPointerS<const call_expr>(curr_tn);
+         const function_decl* fd = nullptr;
 
-         if(temp_node->get_kind() == addr_expr_K)
+         if(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K)
          {
-            auto* ue = GetPointer<unary_expr>(temp_node);
-            temp_node = ue->op;
-            fd = GetPointer<function_decl>(GET_NODE(temp_node));
+            const auto ue = GetPointerS<const unary_expr>(GET_CONST_NODE(ce->fn));
+            fd = GetPointerS<const function_decl>(GET_CONST_NODE(ue->op));
          }
-         else if(temp_node->get_kind() == obj_type_ref_K)
+         else if(GET_CONST_NODE(ce->fn)->get_kind() == obj_type_ref_K)
          {
-            temp_node = tree_helper::find_obj_type_ref_function(ce->fn);
-            fd = GetPointer<function_decl>(GET_NODE(temp_node));
+            const auto fu_node = tree_helper::find_obj_type_ref_function(GET_CONST_NODE(ce->fn));
+            fd = GetPointerS<const function_decl>(GET_CONST_NODE(fu_node));
          }
          if(fd)
          {
@@ -692,7 +671,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             // const std::string builtin_prefix("__builtin_");
             // if(fun_name.find(builtin_prefix) == 0)
             //   fun_name = fun_name.substr(builtin_prefix.size());
-            const unsigned int call_id = GET_INDEX_NODE(temp_node);
+
             // Creating node of call
             ogc->AddOperation(TM, actual_name, fun_name, bb_index, 0);
             unsigned type_external = TYPE_EXTERNAL;
@@ -712,7 +691,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                ogc->add_type(actual_name, TYPE_ATOMIC);
             }
 #endif
-            ogc->add_called_function(actual_name, call_id);
+            ogc->add_called_function(actual_name, fd->index);
          }
          else
          {
@@ -725,20 +704,18 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case gimple_call_K:
       {
-         auto* ce = GetPointer<gimple_call>(curr_tn);
-         tree_nodeRef temp_node = GET_NODE(ce->fn);
-         function_decl* fd = nullptr;
+         const auto ce = GetPointerS<const gimple_call>(curr_tn);
+         const function_decl* fd = nullptr;
 
-         if(temp_node->get_kind() == addr_expr_K)
+         if(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K)
          {
-            auto* ue = GetPointer<unary_expr>(temp_node);
-            temp_node = ue->op;
-            fd = GetPointer<function_decl>(GET_NODE(temp_node));
+            const auto ue = GetPointerS<const unary_expr>(GET_CONST_NODE(ce->fn));
+            fd = GetPointerS<const function_decl>(GET_CONST_NODE(ue->op));
          }
-         else if(temp_node->get_kind() == obj_type_ref_K)
+         else if(GET_CONST_NODE(ce->fn)->get_kind() == obj_type_ref_K)
          {
-            temp_node = tree_helper::find_obj_type_ref_function(ce->fn);
-            fd = GetPointer<function_decl>(GET_NODE(temp_node));
+            const auto fu_node = tree_helper::find_obj_type_ref_function(GET_CONST_NODE(ce->fn));
+            fd = GetPointerS<const function_decl>(GET_CONST_NODE(fu_node));
          }
          if(fd)
          {
@@ -754,10 +731,10 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                // const std::string builtin_prefix("__builtin_");
                // if(fun_name.find(builtin_prefix) == 0)
                //   fun_name = fun_name.substr(builtin_prefix.size());
-               const unsigned int call_id = GET_INDEX_NODE(temp_node);
+
                // Creating node of call
                ogc->AddOperation(TM, actual_name, fun_name, bb_index, ce->index);
-               unsigned type_external = TYPE_EXTERNAL;
+               unsigned int type_external = TYPE_EXTERNAL;
                if(fd->writing_memory || fd->reading_memory)
                {
                   type_external = type_external | TYPE_RW;
@@ -773,7 +750,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                   ogc->add_type(actual_name, TYPE_ATOMIC);
                }
 #endif
-               ogc->add_called_function(actual_name, call_id);
+               ogc->add_called_function(actual_name, fd->index);
             }
          }
          else
@@ -794,9 +771,9 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       case gimple_label_K:
       {
          ogc->AddOperation(TM, actual_name, curr_tn->get_kind_text(), bb_index, curr_tn->index);
-         auto* le = GetPointer<gimple_label>(curr_tn);
+         const auto le = GetPointerS<const gimple_label>(curr_tn);
          THROW_ASSERT(le->op, "expected a gimple_label operand");
-         auto* ld = GetPointer<label_decl>(GET_NODE(le->op));
+         const auto ld = GetPointerS<const label_decl>(GET_CONST_NODE(le->op));
          if(ld->artificial_flag)
          {
             ogc->add_type(actual_name, TYPE_NOP);
@@ -809,7 +786,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case gimple_cond_K:
       {
-         auto* gc = GetPointer<gimple_cond>(curr_tn);
+         const auto gc = GetPointerS<const gimple_cond>(curr_tn);
          ogc->AddOperation(TM, actual_name, READ_COND, bb_index, gc->index);
          build_operation_recursive(TM, ogc, gc->op0, f_name, bb_index);
          ogc->add_type(actual_name, TYPE_IF);
@@ -823,7 +800,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case gimple_while_K:
       {
-         auto* we = GetPointer<gimple_while>(curr_tn);
+         const auto we = GetPointerS<const gimple_while>(curr_tn);
          ogc->AddOperation(TM, actual_name, READ_COND, bb_index, curr_tn->index);
          build_operation_recursive(TM, ogc, we->op0, f_name, bb_index);
          ogc->add_type(actual_name, TYPE_WHILE);
@@ -837,56 +814,55 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case gimple_switch_K:
       {
-         auto* se = GetPointer<gimple_switch>(curr_tn);
+         const auto se = GetPointerS<const gimple_switch>(curr_tn);
 
          ogc->AddOperation(TM, actual_name, SWITCH_COND, bb_index, curr_tn->index);
          build_operation_recursive(TM, ogc, se->op0, actual_name, bb_index);
          ogc->add_type(actual_name, TYPE_SWITCH);
 
-         tree_nodeRef case_label_exprs;
+         tree_nodeConstRef case_label_exprs;
          if(se->op1)
          {
-            case_label_exprs = GET_NODE(se->op1);
+            case_label_exprs = GET_CONST_NODE(se->op1);
          }
          else
          {
-            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, std::string("op2 in gimple_switch not yet supported (") + boost::lexical_cast<std::string>(ind) + std::string(")"));
+            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, std::string("op2 in gimple_switch not yet supported (") + STR(ind) + std::string(")"));
          }
          if(case_label_exprs->get_kind() == tree_vec_K)
          {
-            auto* tv = GetPointer<tree_vec>(case_label_exprs);
-            auto end = tv->list_of_op.end();
-            for(auto i = tv->list_of_op.begin(); i != end; ++i)
+            const auto tv = GetPointerS<const tree_vec>(case_label_exprs);
+            for(const auto& i : tv->list_of_op)
             {
-               std::string res = get_first_node(*i, f_name);
-               THROW_ASSERT(res != "", "Impossible to find first operation of case " + boost::lexical_cast<std::string>(GET_INDEX_NODE(*i)));
-               if(GET_NODE(*i)->get_kind() == case_label_expr_K)
+               const auto res = get_first_node(i, f_name);
+               THROW_ASSERT(res != "", "Impossible to find first operation of case " + STR(GET_INDEX_CONST_NODE(i)));
+               if(GET_CONST_NODE(i)->get_kind() == case_label_expr_K)
                {
-                  auto* cl = GetPointer<case_label_expr>(GET_NODE(*i));
+                  const auto cl = GetPointerS<const case_label_expr>(GET_CONST_NODE(i));
                   if(cl->default_flag)
                   {
                      connect_start_nodes(ogc, res, true, true, default_COND);
                   }
                   else
                   {
-                     connect_start_nodes(ogc, res, true, true, GET_INDEX_NODE(*i));
+                     connect_start_nodes(ogc, res, true, true, GET_INDEX_CONST_NODE(i));
                   }
                }
                else
                {
-                  connect_start_nodes(ogc, res, true, true, GET_INDEX_NODE(*i));
+                  connect_start_nodes(ogc, res, true, true, GET_INDEX_CONST_NODE(i));
                }
             }
          }
          else
          {
-            THROW_ERROR(std::string("expected tree_vec in op1 in gimple_switch (") + boost::lexical_cast<std::string>(ind) + std::string(")"));
+            THROW_ERROR(std::string("expected tree_vec in op1 in gimple_switch (") + STR(ind) + std::string(")"));
          }
          break;
       }
       case CASE_UNARY_EXPRESSION:
       {
-         const unary_expr* ue = GetPointer<unary_expr>(curr_tn);
+         const auto ue = GetPointerS<const unary_expr>(curr_tn);
          build_operation_recursive(TM, ogc, ue->op, f_name, bb_index);
          ogc->AddOperation(TM, actual_name, curr_tn->get_kind_text(), bb_index, 0);
          ogc->add_type(actual_name, TYPE_GENERIC);
@@ -894,7 +870,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case CASE_BINARY_EXPRESSION:
       {
-         const binary_expr* be = GetPointer<binary_expr>(curr_tn);
+         const auto be = GetPointerS<const binary_expr>(curr_tn);
          build_operation_recursive(TM, ogc, be->op0, f_name, bb_index);
          build_operation_recursive(TM, ogc, be->op1, f_name, bb_index);
          ogc->AddOperation(TM, actual_name, curr_tn->get_kind_text(), bb_index, 0);
@@ -903,7 +879,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
+         const auto te = GetPointerS<const ternary_expr>(curr_tn);
          build_operation_recursive(TM, ogc, te->op0, f_name, bb_index);
          if(te->op1)
          {
@@ -919,7 +895,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
+         const auto qe = GetPointerS<const quaternary_expr>(curr_tn);
          build_operation_recursive(TM, ogc, qe->op0, f_name, bb_index);
          if(qe->op1)
          {
@@ -939,7 +915,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case lut_expr_K:
       {
-         auto* le = GetPointer<lut_expr>(curr_tn);
+         const auto le = GetPointerS<const lut_expr>(curr_tn);
          build_operation_recursive(TM, ogc, le->op0, f_name, bb_index);
          build_operation_recursive(TM, ogc, le->op1, f_name, bb_index);
          if(le->op2)
@@ -990,7 +966,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case gimple_asm_K:
       {
-         auto* ae = GetPointer<gimple_asm>(curr_tn);
+         const auto ae = GetPointerS<const gimple_asm>(curr_tn);
          if(!ae->volatile_flag && (ae->in && ae->out))
          {
             ogc->add_type(actual_name, TYPE_GENERIC);
@@ -1004,7 +980,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       }
       case gimple_phi_K:
       {
-         auto* phi = GetPointer<gimple_phi>(curr_tn);
+         const auto phi = GetPointerS<const gimple_phi>(curr_tn);
          ogc->AddOperation(TM, actual_name, curr_tn->get_kind_text(), bb_index, curr_tn->index);
          ogc->add_type(actual_name, phi->virtual_flag ? TYPE_VPHI : TYPE_PHI);
          break;
@@ -1036,5 +1012,5 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          THROW_UNREACHABLE("");
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Built CFG of node " + boost::lexical_cast<std::string>(ind));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Built CFG of node " + STR(ind));
 }

@@ -159,14 +159,15 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
    return HLSMgr->hlsMap[functionId];
 }
 
-std::string HLS_manager::get_constant_string(unsigned int node, unsigned int precision)
+std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int precision)
 {
    std::string trimmed_value;
-   if(tree_helper::is_real(TM, tree_helper::get_type_index(TM, node)))
+   const auto node = TM->CGetTreeReindex(node_id);
+   const auto node_type = tree_helper::CGetType(node);
+   if(tree_helper::IsRealType(node_type))
    {
-      THROW_ASSERT(tree_helper::size(TM, tree_helper::get_type_index(TM, node)) == precision, "real precision mismatch");
-      tree_nodeRef rc_node = TM->get_tree_node_const(node);
-      auto* rc = GetPointer<real_cst>(rc_node);
+      THROW_ASSERT(tree_helper::Size(node_type) == precision, "real precision mismatch");
+      const auto rc = GetPointerS<const real_cst>(GET_CONST_NODE(node));
       std::string C_value = rc->valr;
       if(C_value == "Inf")
       {
@@ -178,10 +179,9 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
       }
       trimmed_value = convert_fp_to_string(C_value, precision);
    }
-   else if(tree_helper::is_a_vector(TM, tree_helper::get_type_index(TM, node)))
+   else if(tree_helper::IsVectorType(node_type))
    {
-      tree_nodeRef vc_node = TM->get_tree_node_const(node);
-      auto* vc = GetPointer<vector_cst>(vc_node);
+      const auto vc = GetPointerS<const vector_cst>(GET_CONST_NODE(node));
       auto n_elm = static_cast<unsigned int>(vc->list_of_valu.size());
       unsigned int elm_prec = precision / n_elm;
       trimmed_value = "";
@@ -190,10 +190,9 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
          trimmed_value = get_constant_string(GET_INDEX_NODE(vc->list_of_valu[i]), elm_prec) + trimmed_value;
       }
    }
-   else if(tree_helper::is_a_complex(TM, tree_helper::get_type_index(TM, node)))
+   else if(tree_helper::IsComplexType(node_type))
    {
-      tree_nodeRef cc_node = TM->get_tree_node_const(node);
-      auto* cc = GetPointer<complex_cst>(cc_node);
+      const auto cc = GetPointerS<const complex_cst>(GET_CONST_NODE(node));
       auto* rcc = GetPointer<real_cst>(GET_NODE(cc->real));
       std::string trimmed_value_r;
       if(rcc)
@@ -207,7 +206,7 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
       }
       else
       {
-         auto* ic = GetPointer<integer_cst>(GET_NODE(cc->real));
+         auto* ic = GetPointerS<integer_cst>(GET_NODE(cc->real));
          THROW_ASSERT(ic, "expected an integer_cst");
          auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
          trimmed_value_r = convert_to_binary(ull_value, precision / 2);
@@ -225,7 +224,7 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
       }
       else
       {
-         auto* ic = GetPointer<integer_cst>(GET_NODE(cc->imag));
+         auto* ic = GetPointerS<integer_cst>(GET_NODE(cc->imag));
          THROW_ASSERT(ic, "expected an integer_cst");
          auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
          trimmed_value_i = convert_to_binary(ull_value, precision / 2);
@@ -234,8 +233,7 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
    }
    else
    {
-      tree_nodeRef ic_node = TM->get_tree_node_const(node);
-      auto* ic = GetPointer<integer_cst>(ic_node);
+      const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(node));
       auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
       trimmed_value = convert_to_binary(ull_value, precision);
    }
@@ -286,11 +284,11 @@ void HLS_manager::xwrite(const std::string& filename)
 std::vector<HLS_manager::io_binding_type> HLS_manager::get_required_values(unsigned int fun_id, const vertex& v) const
 {
    const OpGraphConstRef cfg = CGetFunctionBehavior(fun_id)->CGetOpGraph(FunctionBehavior::CFG);
-   const unsigned int node_id = cfg->CGetOpNodeInfo(v)->GetNodeId();
+   const auto& node = cfg->CGetOpNodeInfo(v)->node;
    std::vector<io_binding_type> required;
-   if(node_id != ENTRY_ID and node_id != EXIT_ID)
+   if(node)
    {
-      tree_helper::get_required_values(TM, required, TM->get_tree_node_const(node_id), node_id);
+      tree_helper::get_required_values(required, node);
    }
    return required;
 }

@@ -9,7 +9,7 @@
       <channels_type>MEM_ACC_P1N</channels_type>
       <memory_ctrl_type>D00</memory_ctrl_type>
       <circuit>
-        <component_o id="MEMORY_CTRL_PIN">
+        <component_o id="MEMORY_CTRL_P1N">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2021 Politecnico di Milano</copyright>
           <authors>Vito Giovanni Castellana</authors>

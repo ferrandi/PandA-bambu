@@ -201,13 +201,13 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_na
          do
          {
             ++it;
-         } while(it != splitted.end() and it->size() == 0);
+         } while(it != splitted.end() && it->size() == 0);
          THROW_ASSERT(it != splitted.end(), "Something wrong");
          std::string HW_component = *it;
          do
          {
             ++it;
-         } while(it != splitted.end() and it->size() == 0);
+         } while(it != splitted.end() && it->size() == 0);
          const MappingAnnotationRef mapping_annotation = MappingAnnotationRef(new UnimodalMappingAnnotation(GetPointer<PartitioningManager>(application_manager)->CGetArchitectureManager()->get_machineRef_by_name(HW_component), param));
          GetPointer<PartitioningManager>(application_manager)->GetMappingAnnotations()->AddPragmaMappingAnnotation(function_name, mapping_annotation);
          continue;
@@ -328,12 +328,12 @@ CustomUnorderedMapUnstable<std::string, std::string> pragma_manager::ExtractClau
          {
             break;
          }
-         for(; index > 0 and trimmed_clauses[index - 1] == ' '; index--)
+         for(; index > 0 && trimmed_clauses[index - 1] == ' '; index--)
          {
             trimmed_clauses.erase(index - 1, 1);
          }
       }
-      else if(trimmed_clauses[index - 1] == ' ' and inside_parentheses)
+      else if(trimmed_clauses[index - 1] == ' ' && inside_parentheses)
       {
          trimmed_clauses.erase(index - 1, 1);
       }
@@ -383,7 +383,7 @@ bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, cons
          if(GET_NODE(stmt)->get_kind() == gimple_pragma_K)
          {
             auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
-            if(pn->scope and GetPointer<omp_pragma>(GET_NODE(pn->scope)))
+            if(pn->scope && GetPointer<omp_pragma>(GET_NODE(pn->scope)))
             {
                auto* fp = GetPointer<omp_for_pragma>(GET_NODE(pn->directive));
                if(fp)
@@ -403,26 +403,28 @@ bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, cons
 
 void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex, const application_managerRef AppM)
 {
-   const BBGraphConstRef bb_cfg = application_manager->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB);
+   const auto bb_cfg = application_manager->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB);
    vertex current = bb_operation_vertex;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Looking for an openmp associated with loop " + boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
    while(boost::in_degree(current, *bb_cfg) == 1)
    {
-      const BBNodeInfoConstRef info = bb_cfg->CGetBBNodeInfo(current);
+      const auto info = bb_cfg->CGetBBNodeInfo(current);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing BB" + STR(info->block->number));
       for(const auto& stmt : info->block->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analzying " + STR(stmt));
          if(GET_NODE(stmt)->get_kind() == gimple_pragma_K)
          {
-            auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
-            if(pn->scope and GetPointer<omp_pragma>(GET_NODE(pn->scope)))
+            const auto pn = GetPointerS<gimple_pragma>(GET_NODE(stmt));
+            if(pn->scope && GetPointer<omp_pragma>(GET_NODE(pn->scope)))
             {
-               auto* fp = GetPointer<omp_for_pragma>(GET_NODE(pn->directive));
+               const auto fp = GetPointer<omp_for_pragma>(GET_NODE(pn->directive));
                if(fp)
                {
                   info->block->RemoveStmt(stmt, AppM);
-                  application_manager->GetFunctionBehavior(function_index)->GetLoops()->GetLoop(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number)->loop_type |= DOALL_LOOP;
+                  const auto FB = application_manager->GetFunctionBehavior(function_index);
+                  FB->GetLoops()->GetLoop(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number)->loop_type |= DOALL_LOOP;
+                  // FB->UpdateBBVersion();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Found");
                   return;
                }
@@ -438,8 +440,8 @@ void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const ver
 
 void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex, const application_managerRef AppM)
 {
-   const BBGraphRef bb_cfg = application_manager->GetFunctionBehavior(function_index)->GetBBGraph(FunctionBehavior::BB);
-   const unsigned int current_loop_id = bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->loop_id;
+   const auto bb_cfg = application_manager->GetFunctionBehavior(function_index)->GetBBGraph(FunctionBehavior::BB);
+   const auto current_loop_id = bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->loop_id;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Looking for an openmp simd associated with loop " + boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
    if(boost::in_degree(bb_operation_vertex, *bb_cfg) != 1)
    {
@@ -451,23 +453,23 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
    vertex current = boost::source(*ei, *bb_cfg);
    while(boost::in_degree(current, *bb_cfg) == 1)
    {
-      const BBNodeInfoRef info = bb_cfg->GetBBNodeInfo(current);
+      const auto info = bb_cfg->GetBBNodeInfo(current);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing BB" + STR(info->block->number));
       for(const auto& stmt : info->block->CGetStmtList())
       {
          if(GET_NODE(stmt)->get_kind() == gimple_pragma_K)
          {
-            auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
-            if(pn->scope and GetPointer<omp_pragma>(GET_NODE(pn->scope)))
+            const auto pn = GetPointerS<gimple_pragma>(GET_NODE(stmt));
+            if(pn->scope && GetPointer<omp_pragma>(GET_NODE(pn->scope)))
             {
-               auto* sp = GetPointer<omp_simd_pragma>(GET_NODE(pn->directive));
+               const auto sp = GetPointer<omp_simd_pragma>(GET_NODE(pn->directive));
                if(sp)
                {
                   info->block->RemoveStmt(stmt, AppM);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing vdef");
                   if(pn->vdef)
                   {
-                     auto ssa_vdef = GetPointer<ssa_name>(GET_NODE(pn->vdef));
+                     const auto ssa_vdef = GetPointerS<ssa_name>(GET_NODE(pn->vdef));
                      while(ssa_vdef->CGetUseStmts().size())
                      {
                         auto use_stmt = (ssa_vdef->CGetUseStmts().begin())->first;
@@ -476,7 +478,9 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
                      }
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed vdef");
-                  application_manager->GetFunctionBehavior(function_index)->GetLoops()->GetLoop(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number)->loop_type |= DOALL_LOOP;
+                  const auto FB = application_manager->GetFunctionBehavior(function_index);
+                  FB->GetLoops()->GetLoop(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number)->loop_type |= DOALL_LOOP;
+                  // FB->UpdateBBVersion();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Found");
                   return;
                }
@@ -485,7 +489,7 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
       }
       boost::tie(ei, ei_end) = boost::in_edges(current, *bb_cfg);
       current = boost::source(*ei, *bb_cfg);
-      if(boost::out_degree(current, *bb_cfg) != 1 or bb_cfg->CGetBBNodeInfo(current)->loop_id != current_loop_id)
+      if(boost::out_degree(current, *bb_cfg) != 1 || bb_cfg->CGetBBNodeInfo(current)->loop_id != current_loop_id)
       {
          break;
       }

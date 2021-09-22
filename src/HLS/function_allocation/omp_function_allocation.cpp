@@ -85,11 +85,11 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
    auto root_functions = call_graph_manager->GetRootFunctions();
    if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
    {
-      const auto top_rtldesign_function_id = HLSMgr->get_tree_manager()->function_index(parameters->getOption<std::string>(OPT_top_design_name));
-      if(top_rtldesign_function_id != 0 and root_functions.find(top_rtldesign_function_id) != root_functions.end())
+      const auto top_rtldesign_function = HLSMgr->get_tree_manager()->GetFunction(parameters->getOption<std::string>(OPT_top_design_name));
+      if(top_rtldesign_function && root_functions.count(top_rtldesign_function->index))
       {
          root_functions.clear();
-         root_functions.insert(top_rtldesign_function_id);
+         root_functions.insert(top_rtldesign_function->index);
       }
    }
    CustomUnorderedSet<vertex> vertex_subset;
@@ -126,7 +126,7 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
          }
       }
    }
-   const auto panda_pthread_mutex = call_graph_manager->GetVertex(TM->function_index("panda_pthread_mutex"));
+   const auto panda_pthread_mutex = call_graph_manager->GetVertex(TM->GetFunction("panda_pthread_mutex")->index);
    InEdgeIterator ie, ie_end;
    for(boost::tie(ie, ie_end) = boost::in_edges(panda_pthread_mutex, *call_graph); ie != ie_end; ie++)
    {

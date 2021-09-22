@@ -141,7 +141,7 @@ namespace llvm
               DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                   DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                          DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                          DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3) DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -158,7 +158,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3) DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) TYPE,
@@ -173,7 +173,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3) DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) NARGS,
@@ -188,7 +188,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3) DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 
@@ -199,7 +199,7 @@ namespace llvm
     (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ? GIMPLE_BINARY_RHS :                                                                                                                     \
     GT(SYM) == GT(TRUTH_NOT_EXPR)                                                                    ? GIMPLE_UNARY_RHS :                                                                                                                      \
     (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) || GT(SYM) == GT(VEC_COND_EXPR) || \
-     GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) || GT(SYM) == GT(FMA_EXPR)) ?                                                                                                                                              \
+     GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) || GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR)) ?                                                                                      \
                                                                                                                                                                                         GIMPLE_TERNARY_RHS :                                   \
     (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) || GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ? GIMPLE_SINGLE_RHS :                                    \
                                                                                                                                                                                         GIMPLE_INVALID_RHS),
@@ -215,7 +215,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3) DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)};
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
 
@@ -483,6 +483,12 @@ namespace llvm
                   case llvm::Intrinsic::usub_sat:
                      return assignCode(t, GT(GIMPLE_ASSIGN));
 #endif
+#if __clang_major__ > 11
+                  case llvm::Intrinsic::fshl:
+                  case llvm::Intrinsic::fshr:
+                  case llvm::Intrinsic::abs:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));
+#endif
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
                      ci->print(llvm::errs(), true);
@@ -646,6 +652,14 @@ namespace llvm
             return "__llvm_ssub_sat";
          case llvm::Intrinsic::usub_sat:
             return "__llvm_usub_sat";
+#endif
+#if __clang_major__ > 11
+         case llvm::Intrinsic::fshl:
+            return "__llvm_fshl";
+         case llvm::Intrinsic::fshr:
+            return "__llvm_fshr";
+         case llvm::Intrinsic::abs:
+            return "__llvm_abs";
 #endif
          case llvm::Intrinsic::rint:
          {
@@ -1141,6 +1155,14 @@ namespace llvm
                return GT(SAT_PLUS_EXPR);
             else if(CallID == llvm::Intrinsic::ssub_sat || CallID == llvm::Intrinsic::usub_sat)
                return GT(SAT_MINUS_EXPR);
+#if __clang_major__ > 11
+            else if(CallID == llvm::Intrinsic::fshl)
+               return GT(FSHL_EXPR);
+            else if(CallID == llvm::Intrinsic::fshr)
+               return GT(FSHR_EXPR);
+            else if(CallID == llvm::Intrinsic::abs)
+               return GT(ABS_EXPR);
+#endif
             else
 #endif
                return GT(CALL_EXPR);
@@ -1428,7 +1450,11 @@ namespace llvm
          case llvm::Instruction::Call:
          {
             auto CallID = getIntrinsicIDTEC(inst);
-            return (CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::ssub_sat);
+            return (CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::ssub_sat
+#if __clang_major__ > 11
+                    || CallID == llvm::Intrinsic::abs
+#endif
+                    );
          }
 #endif
          default:
@@ -3369,7 +3395,11 @@ namespace llvm
                if(i < active_size)
                   active_size = i;
             }
-            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+            llvm::ConstantRange range = LVI.getConstantRange(inst,
+#if __clang_major__ < 12
+                                                             BB,
+#endif
+                                                             inst);
             //            if(!range.isFullSet() && !isSigned)
             //            {
             //               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
@@ -3514,7 +3544,11 @@ namespace llvm
                if(i < active_size)
                   active_size = i;
             }
-            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+            llvm::ConstantRange range = LVI.getConstantRange(inst,
+#if __clang_major__ < 12
+                                                             BB,
+#endif
+                                                             inst);
             //            if(!range.isFullSet() && !isSigned)
             //            {
             //               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
@@ -4763,7 +4797,6 @@ namespace llvm
             serialize_string_field("strg", IDENTIFIER_POINTER(t));
             serialize_int("lngt", IDENTIFIER_LENGTH(t));
             break;
-
          case GT(TREE_LIST):
             serialize_child("purp", TREE_PURPOSE(t));
             serialize_child("valu", TREE_VALUE(t));
@@ -4778,7 +4811,6 @@ namespace llvm
             }
             break;
          }
-
          case GT(SIGNEDPOINTERTYPE):
          case GT(INTEGER_TYPE):
          case GT(ENUMERAL_TYPE):
@@ -4791,24 +4823,20 @@ namespace llvm
             if(code == GT(ENUMERAL_TYPE))
                serialize_child("csts", TYPE_VALUES(t));
             break;
-
          case GT(COMPLEX_TYPE):
             if(TYPE_UNSIGNED(t))
                serialize_string("unsigned");
             if(COMPLEX_FLOAT_TYPE_P(t))
                serialize_string("real");
             break;
-
          case GT(REAL_TYPE):
             serialize_int("prec", TYPE_PRECISION(t));
             break;
-
          case GT(FIXED_POINT_TYPE):
             serialize_int("prec", TYPE_PRECISION(t));
             serialize_string_field("sign", TYPE_UNSIGNED(t) ? "unsigned" : "signed");
             serialize_string_field("saturating", TYPE_SATURATING(t) ? "saturating" : "non-saturating");
             break;
-
          case GT(POINTER_TYPE):
             serialize_child("ptd", TREE_TYPE(t));
             break;
@@ -4822,7 +4850,6 @@ namespace llvm
             serialize_child("prms", TYPE_ARG_TYPES(t));
             serialize_child("clas", TYPE_METHOD_BASETYPE(t));
             break;
-
          case GT(FUNCTION_TYPE):
          {
             serialize_child("retn", TREE_TYPE(t));
@@ -4836,7 +4863,6 @@ namespace llvm
             serialize_child("elts", TREE_TYPE(t));
             serialize_child("domn", TYPE_DOMAIN(t));
             break;
-
          case GT(VECTOR_TYPE):
             serialize_child("elts", TREE_TYPE(t));
             break;
@@ -4863,7 +4889,6 @@ namespace llvm
             }
             break;
          }
-
          case GT(SSA_NAME):
          {
             queue_and_serialize_type(t);
@@ -4984,12 +5009,10 @@ namespace llvm
             /* These nodes are unary, but do not have code class `1'.  */
             serialize_child("op", TREE_OPERAND(t, 0));
             break;
-
          case GT(MEM_REF):
             serialize_child("op", TREE_OPERAND(t, 0));
             serialize_child("op", TREE_OPERAND(t, 1));
             break;
-
          case GT(MISALIGNED_INDIRECT_REF):
             serialize_child("op", TREE_OPERAND(t, 0));
             break;
@@ -4998,7 +5021,12 @@ namespace llvm
             serialize_child("op", TREE_OPERAND(t, 1));
             serialize_child("op", TREE_OPERAND(t, 2));
             break;
-
+         case GT(FSHL_EXPR):
+         case GT(FSHR_EXPR):
+            serialize_child("op", TREE_OPERAND(t, 0));
+            serialize_child("op", TREE_OPERAND(t, 1));
+            serialize_child("op", TREE_OPERAND(t, 2));
+            break;
          case GT(CALL_EXPR):
          {
             serialize_child("fn", call_expr_fn(t));
@@ -5105,6 +5133,11 @@ namespace llvm
          case llvm::Intrinsic::uadd_sat:
          case llvm::Intrinsic::ssub_sat:
          case llvm::Intrinsic::usub_sat:
+#endif
+#if __clang_major__ > 11
+         case llvm::Intrinsic::fshl:
+         case llvm::Intrinsic::fshr:
+         case llvm::Intrinsic::abs:
 #endif
             return true;
          default:
@@ -6103,7 +6136,9 @@ namespace llvm
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
-#if __clang_major__ >= 6
+#if __clang_major__ >= 12
+               llvm::simplifyCFG(&*BBIt++, TTI);
+#elif __clang_major__ >= 6
                llvm::simplifyCFG(&*BBIt++, TTI, 1);
 #else
                llvm::SimplifyCFG(&*BBIt++, TTI, 1);
@@ -6192,8 +6227,10 @@ namespace llvm
 
    void DumpGimpleRaw::computeValueRange(const llvm::Module& M)
    {
+#if __clang_major__ < 12
       RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
       RA->runOnModule(M, modulePass, PtoSets_AA);
+#endif
    }
 
    void DumpGimpleRaw::ValueRangeOptimizer(llvm::Module& M)
@@ -6606,6 +6643,7 @@ namespace llvm
       res = !earlyAnalysis && lowerMemIntrinsics(M);
 
       auto res_RC = (!earlyAnalysis && RebuildConstants(M));
+
       res = res || res_RC;
       auto res_LI = (!earlyAnalysis && lowerIntrinsics(M));
       res = res || res_LI;
@@ -6634,6 +6672,7 @@ namespace llvm
       }
 #endif
       computeValueRange(M);
+
 #ifdef DEBUG_RA
       assert(!llvm::verifyModule(M, &llvm::errs()));
 #endif

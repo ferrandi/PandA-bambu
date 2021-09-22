@@ -69,7 +69,7 @@ class extract_patterns : public FunctionFrontendFlowStep
     * @param sl is the statement list
     * @param TM is the tree manager
     */
-   void ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM);
+   bool ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM);
 
  public:
    /**

@@ -57,6 +57,7 @@
  */
 //@{
 REF_FORWARD_DECL(Bit_Value);
+REF_FORWARD_DECL(bloc);
 class binary_expr;
 enum class bit_lattice;
 class gimple_assign;
@@ -64,6 +65,7 @@ class ssa_name;
 class statement_list;
 class addr_expr;
 REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_manager);
 //@}
 
@@ -106,6 +108,11 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
    bool not_frontend;
 
    /**
+    * Topologically ordered basic blocks
+    */
+   std::vector<blocRef> bb_topological;
+
+   /**
     * Maps the id of a gimple statement to the id of the function called in
     * that statement. This relationship is created only for direct calls,
     * because for indirect calls there is not a one-to-one relationship
@@ -121,7 +128,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     * Debugging function used to print the contents of the current and best maps.
     * @param map map to be printed
     */
-   void print_bitstring_map(const CustomUnorderedMap<unsigned int, std::deque<bit_lattice>>& map) const;
+   void print_bitstring_map(const CustomMap<unsigned int, std::deque<bit_lattice>>& map) const;
 
    unsigned int pointer_resizing(unsigned int output_id) const;
 
@@ -189,31 +196,26 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     */
    std::deque<bit_lattice> backward_transfer(const gimple_assign* ga, unsigned int output_id) const;
 
+   std::deque<bit_lattice> backward_chain(const tree_nodeConstRef& ssa) const;
+
    /**
     * Updates the bitvalues of the intermediate representation with the values taken from the input map.
     */
    bool update_IR();
 
    /**
-    * Given a binary operation, fetches the uid of the arguments and the relative bitstrings.
-    * @param operation where the inputs are going to be extracted from.
-    * @param arg1_uid where the uid of the first argument is going to be stored
-    * @param arg2_uid where the uid of the second argument is going to be stored
-    * @param arg1_bitstring where the bitstring ( taken from best ) relative to argument 1 is going to be saved.
-    * @param arg2_bitstring where the bitstring ( taken from best ) relative to argument 2 is going to be saved.
-    * @return TRUE, if the operation was successful, FALSE otherwise.
+    * Given an operand, returns its current bitvalue
+    * @param tn Operand node
+    * @return std::deque<bit_lattice> Current bitvalue for given operand
     */
-   bool manage_forward_binary_operands(const binary_expr* operation, unsigned int& arg1_uid, unsigned int& arg2_uid, std::deque<bit_lattice>& arg1_bitstring, std::deque<bit_lattice>& arg2_bitstring) const;
+   std::deque<bit_lattice> get_current(const tree_nodeConstRef& tn) const;
 
    /**
-    * Given an ssa_name it computes the resulting bitstring from backward
-    * propagation from the places where that ssa is used
-    * @param ssa the ssa_name to process
-    * @param sl is the statment list of the function where ssa is defined
-    * @param bb_loop_id is the loop_id of the basic block where ssa is defined
-    * @return the computed bitstring
+    * Given an operand, returns its current bitvalue, or its best if current is not available
+    * @param tn Operand node
+    * @return std::deque<bit_lattice> Current or best bitvalue for given operand
     */
-   std::deque<bit_lattice> backward_compute_result_from_uses(const ssa_name& ssa, const statement_list& sl, unsigned int bb_loop_id) const;
+   std::deque<bit_lattice> get_current_or_best(const tree_nodeConstRef& tn) const;
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 

@@ -322,7 +322,7 @@ DesignFlowStep_Status top_entity::InternalExec()
    this->add_command_signals(circuit);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tCommand ports added!");
 
-   if(!is_top || !parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+   if(!is_top || (parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals)))
    {
       memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
    }

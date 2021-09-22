@@ -584,6 +584,10 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          CREATE_TREE_NODE_CASE_BODY(sat_plus_expr, node_id)
       case sat_minus_expr_K:
          CREATE_TREE_NODE_CASE_BODY(sat_minus_expr, node_id)
+      case fshl_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(fshl_expr, node_id)
+      case fshr_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(fshr_expr, node_id)
       case assert_expr_K:
       case do_stmt_K:
       case for_stmt_K:
@@ -1053,7 +1057,6 @@ void tree_node_factory::operator()(const gimple_assign* obj, unsigned int& mask)
    SET_NODE_ID(TOK_OP0, op0, gimple_assign);
    SET_NODE_ID(TOK_OP1, op1, gimple_assign);
    SET_NODE_ID_OPT(TOK_PREDICATE, predicate, gimple_assign);
-   SET_NODE_ID_OPT(TOK_ORIG, orig, gimple_assign);
    SET_VALUE_OPT(TOK_INIT, init_assignment, gimple_assign, bool);
    SET_VALUE_OPT(TOK_CLOBBER, clobber, gimple_assign, bool);
    SET_VALUE_OPT(TOK_ADDR, temporary_address, gimple_assign, bool);

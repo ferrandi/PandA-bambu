@@ -56,6 +56,7 @@
  */
 //@{
 REF_FORWARD_DECL(type_casting);
+class TreeNodeConstSet;
 //@}
 
 #define LOCAL_OBJ_NOT_SPECIALIZED_SEQ                                                                                                                                                                                                                         \
@@ -73,7 +74,7 @@ REF_FORWARD_DECL(type_casting);
 struct type_casting : public tree_node_visitor
 {
    /// default constructor
-   explicit type_casting(CustomUnorderedSet<unsigned int>& _types) : types(_types)
+   explicit type_casting(TreeNodeConstSet& _types) : types(_types)
    {
    }
 
@@ -86,7 +87,7 @@ struct type_casting : public tree_node_visitor
 
  private:
    /// set of types used in type casting
-   CustomUnorderedSet<unsigned int>& types;
+   TreeNodeConstSet& types;
 
    /// already visited
    CustomUnorderedSet<unsigned int> visited;

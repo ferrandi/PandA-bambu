@@ -450,7 +450,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          bool print_phi_now = ((GET_TYPE(cfgGraph, *vIter) & (TYPE_IF | TYPE_WHILE | TYPE_FOR | TYPE_SWITCH | TYPE_MULTIIF))) || behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block);
          if(add_phi_nodes_assignment && isLastIntruction && print_phi_now)
          {
-            indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
+            indented_output_stream->Append(basic_block_tail.at(bb_number));
          }
          if((GET_TYPE(cfgGraph, *vIter) & (TYPE_VPHI)) == 0)
          {
@@ -1084,7 +1084,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed current basic block");
                      }
 
-                     indented_output_stream->Append("case " + behavioral_helper->print_constant(*eIdBeg));
+                     indented_output_stream->Append("case " + behavioral_helper->PrintConstant(TM->CGetTreeReindex(*eIdBeg)));
                   }
                   indented_output_stream->Append(":\n");
                }

@@ -80,7 +80,7 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 VarDeclFix::VarDeclFix(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters, const FrontendFlowStepType _frontend_flow_step_type)
-    : FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters), modified(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -125,6 +125,7 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    /// Already considered decl_node
    CustomUnorderedSet<unsigned int> already_examinated_decls;
+   modified = false;
 
    /// Already found variable and parameter names
    CustomUnorderedSet<std::string> already_examinated_names;
@@ -151,7 +152,7 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
          recursive_examinate(stmt, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
       }
    }
-   return DesignFlowStep_Status::SUCCESS;
+   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
 void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& already_examinated_decls, CustomUnorderedSet<std::string>& already_examinated_names, CustomUnorderedSet<std::string>& already_examinated_type_names,
@@ -245,6 +246,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                   tree_nodeRef tr_new_id = TM->GetTreeReindex(var_decl_name_nid);
                   dn->name = tr_new_id;
                   function_behavior->GetBehavioralHelper()->InvaildateVariableName(dn->index);
+                  modified = true;
                }
             }
          }
@@ -449,6 +451,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                   IR_schema.clear();
                   tree_nodeRef tr_new_id = TM->GetTreeReindex(var_decl_name_nid);
                   ty->name = tr_new_id;
+                  modified = true;
                }
             }
          }
@@ -481,6 +484,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                IR_schema.clear();
                tree_nodeRef tr_new_id = TM->GetTreeReindex(var_decl_name_nid);
                td->name = tr_new_id;
+               modified = true;
             }
          }
          break;

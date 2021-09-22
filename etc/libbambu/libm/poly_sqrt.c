@@ -490,7 +490,7 @@ double __hide_ieee754_sqrt(double x)
 #ifdef CHECK_SQRT_FUNCTION
 int main_test_sqrt()
 {
-   int nT = 8;
+   int nT = 4;
    unsigned long long s = 0;
    unsigned long long e = 0;
 #ifdef DEBUG_STATS

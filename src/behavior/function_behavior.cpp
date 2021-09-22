@@ -203,11 +203,11 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       initiation_time = decl_node->get_initiation_time();
       if(pipeline_enabled && simple_pipeline)
       {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Reuired pipelining with II=1 for function: " + fname);
       }
       else if(pipeline_enabled)
       {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Reuired pipelining with II=" + STR(initiation_time) + " for function: " + fname);
       }
    }
    else
@@ -221,29 +221,32 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       {
          pipeline_enabled = true;
          simple_pipeline = true;
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Reuired pipelining with II=1 for function: " + fname);
       }
       else
       {
-         std::vector<std::string> funcs_values = convert_string_to_vector<std::string>(tmp_string, std::string(","));
+         const auto funcs_values = convert_string_to_vector<std::string>(tmp_string, ",");
          for(const auto& fun_pipeline : funcs_values)
          {
-            std::vector<std::string> splitted = SplitString(fun_pipeline, "=");
-            if(splitted.size() == 1 && fname == splitted.at(0))
+            const auto splitted = SplitString(fun_pipeline, "=");
+            if(!splitted.empty() && (fname == splitted.at(0) || (fname.find("__float") == 0 && fname.find(splitted.at(0)) == 0)))
             {
-               pipeline_enabled = true;
-               simple_pipeline = true;
-               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
-            }
-            else if(splitted.size() == 2 && fname == splitted.at(0))
-            {
-               pipeline_enabled = true;
-               initiation_time = boost::lexical_cast<int>(splitted.at(1));
-               if(initiation_time == 1)
+               if(splitted.size() == 1)
                {
+                  pipeline_enabled = true;
                   simple_pipeline = true;
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Reuired pipelining with II=1 for function: " + fname);
                }
-               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
+               else if(splitted.size() == 2)
+               {
+                  pipeline_enabled = true;
+                  initiation_time = boost::lexical_cast<int>(splitted.at(1));
+                  if(initiation_time == 1)
+                  {
+                     simple_pipeline = true;
+                  }
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Reuired pipelining with II=" + STR(initiation_time) + " for function: " + fname);
+               }
             }
          }
       }
@@ -720,25 +723,16 @@ CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const appli
    VertexIterator v, vEnd;
    for(boost::tie(v, vEnd) = boost::vertices(*cfg); v != vEnd; v++)
    {
-      CustomSet<unsigned int> varsTemp = cfg->CGetOpNodeInfo(*v)->cited_variables;
+      const auto& varsTemp = cfg->CGetOpNodeInfo(*v)->cited_variables;
       vars.insert(varsTemp.begin(), varsTemp.end());
    }
-   const std::list<unsigned int>& funParams = helper->get_parameters();
-   for(unsigned int funParam : funParams)
+   for(const auto& funParam : helper->GetParameters())
    {
-      if(vars.find(funParam) != vars.end())
-      {
-         vars.erase(funParam);
-      }
+      vars.erase(funParam->index);
    }
-
-   const CustomSet<unsigned int>& gblVariables = AppM->get_global_variables();
-   for(unsigned int gblVariable : gblVariables)
+   for(const auto& gblVariable : AppM->GetGlobalVariables())
    {
-      if(vars.find(gblVariable) != vars.end())
-      {
-         vars.erase(gblVariable);
-      }
+      vars.erase(gblVariable->index);
    }
    return vars;
 }

@@ -23,6 +23,10 @@ inputs:
     description: 'Custom storage path'
     required: false
     default: ''
+  storage-compression:
+    description: 'Specify if compression is required'
+    required: false
+    default: true
 runs:
   using: 'composite'
   steps:
@@ -38,18 +42,23 @@ runs:
             PKG_NAME="$(basename $(dirname "${{inputs.path}}"))"
           fi
         fi
-        PKG_FILE="$PKG_NAME.tar.xz"
+        TAR_OPT="-cf"
+        if [[ "${{inputs.storage-compression}}" != "false" ]]; then
+          TAR_OPT="-cJf"
+        fi
+        PKG_FILE="$PKG_NAME.gh.pkg"
+        if [[ ! -z "${{inputs.storage-path}}" ]]; then
+          PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/$PKG_FILE"
+        else
+          PKG_URL="${{inputs.storage-url}}/${{github.ref}}/$PKG_FILE"
+        fi
+        CURL_CMD='curl -L --fail -T- '
+        if [[ ! -z '${{inputs.username}}' ]]; then
+          CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
+        fi
         if [[ -f "${{inputs.path}}" || -d "${{inputs.path}}" ]]; then 
-          if [[ ! -z "${{inputs.storage-path}}" ]]; then
-            PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/$PKG_FILE"
-          else
-            PKG_URL="${{inputs.storage-url}}/${{github.ref}}/$PKG_FILE"
-          fi
-          if [[ -z '${{inputs.username}}' ]]; then
-            tar -C "$(dirname ${{inputs.path}})" "$(basename ${{inputs.path}})" --mode="u+rwX,g+rwX,o+rX" -cJf - | curl -L --fail -T- "$PKG_URL";
-          else
-            tar -C "$(dirname ${{inputs.path}})" "$(basename ${{inputs.path}})" --mode="u+rwX,g+rwX,o+rX" -cJf - | curl -u '${{inputs.username}}':'${{inputs.password}}' -L --fail -T- "$PKG_URL";
-          fi
+          tar -C "$(dirname ${{inputs.path}})" "$(basename ${{inputs.path}})" --mode="u+rwX,g+rwX,o+rX" $TAR_OPT - | $CURL_CMD "$PKG_URL"
+          echo "${{inputs.storage-compression}}" | $CURL_CMD "$PKG_URL.nfo"
           echo "Package successfully uploaded to $PKG_URL"
         else 
           echo "Path '${{inputs.path}}' does not name a file or directory"

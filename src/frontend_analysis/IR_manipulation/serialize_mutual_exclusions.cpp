@@ -84,23 +84,23 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS)
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
+            relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
       default:
@@ -118,7 +118,7 @@ bool SerializeMutualExclusions::HasToBeExecuted() const
 
 DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
 {
-   const tree_managerRef TM = AppM->get_tree_manager();
+   const auto TM = AppM->get_tree_manager();
    const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
    bool bb_modified = false;
    const auto cdg_bb_graph = function_behavior->CGetBBGraph(FunctionBehavior::CDG_BB);
@@ -129,7 +129,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
    std::deque<vertex> basic_blocks;
    cdg_bb_graph->ReverseTopologicalSort(basic_blocks);
    /// Check if the control flow graph is structured
-   for(const auto basic_block : basic_blocks)
+   for(const auto& basic_block : basic_blocks)
    {
       if(boost::in_degree(basic_block, *cdg_bb_graph) > 1)
       {
@@ -144,20 +144,20 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
       {
          break;
       }
-      if(basic_block == cfg_bb_graph->CGetBBGraphInfo()->entry_vertex or basic_block == cfg_bb_graph->CGetBBGraphInfo()->exit_vertex)
+      if(basic_block == cfg_bb_graph->CGetBBGraphInfo()->entry_vertex || basic_block == cfg_bb_graph->CGetBBGraphInfo()->exit_vertex)
       {
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->number));
       const auto bb_node_info = cfg_bb_graph->CGetBBNodeInfo(basic_block)->block;
-      if(not bb_node_info->loop_id)
+      if(!bb_node_info->loop_id)
       {
          // For the moment this pass is exploited only by vectorize; if we are outside loops, this is not necessary and does not work after split_return
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skip because in loop 0");
          continue;
       }
       /// NOTE: here cfg_bb_graph is correct
-      if(boost::out_degree(basic_block, *cfg_bb_graph) == 2 and GET_CONST_NODE(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back())->get_kind() == gimple_cond_K)
+      if(boost::out_degree(basic_block, *cfg_bb_graph) == 2 && GET_CONST_NODE(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back())->get_kind() == gimple_cond_K)
       {
          OutEdgeIterator oe, oe_end;
          vertex true_vertex = NULL_VERTEX, false_vertex = NULL_VERTEX;
@@ -183,22 +183,24 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
          else if(function_behavior->CheckBBReachability(false_vertex, true_vertex))
          {
             std::swap(bb_node_info->true_edge, bb_node_info->false_edge);
-            auto last_stmt = bb_node_info->CGetStmtList().back();
-            bb_node_info->RemoveStmt(last_stmt, AppM);
-            auto gc = GetPointer<gimple_cond>(GET_NODE(last_stmt));
+            const auto last_stmt = bb_node_info->CGetStmtList().back();
+            const auto gc = GetPointer<const gimple_cond>(GET_CONST_NODE(last_stmt));
             THROW_ASSERT(gc, "");
-            auto new_cond = tree_man->CreateNotExpr(gc->op0, bb_node_info, function_id);
-            gc->op0 = new_cond;
-            bb_node_info->PushBack(last_stmt, AppM);
+            const auto srcp = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
+            const auto not_cond = tree_man->CreateNotExpr(gc->op0, bb_node_info, function_id);
+            const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr, not_cond, function_id, bb_node_info->number, srcp);
+            const auto new_cond = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cond))->op0;
+            bb_node_info->PushBefore(ga_cond, last_stmt, AppM);
+            TM->ReplaceTreeNode(last_stmt, gc->op0, new_cond);
             bb_modified = true;
          }
          else
          {
             const auto basic_block_id = bb_node_info->number;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Subgraph dominated by BB" + STR(basic_block_id) + " has to be restructured");
-            auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
-            auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
-            auto new_block = blocRef(new bloc(sl->list_of_bloc.rbegin()->first + 1));
+            const auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
+            auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+            const blocRef new_block(new bloc(sl->list_of_bloc.rbegin()->first + 1));
             new_block->SetSSAUsesComputed();
             sl->list_of_bloc[new_block->number] = new_block;
 
@@ -210,9 +212,9 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             const auto end_if_id = end_if_block->number;
 
             const auto true_bb_id = bb_node_info->true_edge;
-            const auto true_bb = bb_index_map.find(true_bb_id)->second;
+            const auto true_bb = bb_index_map.at(true_bb_id);
             const auto false_bb_id = bb_node_info->false_edge;
-            const auto false_bb = bb_index_map.find(false_bb_id)->second;
+            const auto false_bb = bb_index_map.at(false_bb_id);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---True BB is " + STR(true_bb_id));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---False BB is " + STR(false_bb_id));
 
@@ -224,7 +226,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                {
                   continue;
                }
-               if(source == true_bb or function_behavior->CheckBBReachability(true_bb, source))
+               if(source == true_bb || function_behavior->CheckBBReachability(true_bb, source))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inserting BB" + STR(cfg_bb_graph->CGetBBNodeInfo(source)->block->number) + " into then part");
                   true_bb_ends.insert(source);
@@ -273,25 +275,22 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             THROW_ASSERT(bb_node_info->CGetStmtList().size(), "");
             const auto gc = GetPointer<const gimple_cond>(GET_NODE(bb_node_info->CGetStmtList().back()));
             THROW_ASSERT(gc, "");
-            const auto cond = gc->op0;
-            const auto not_cond = tree_man->CreateNotExpr(cond, new_block, function_id);
-
-            std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
-            tree_node_schema[TOK(TOK_SRCP)] = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
-            tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
-            tree_node_schema[TOK(TOK_OP0)] = STR(not_cond->index);
-            unsigned int new_tree_node_index = TM->new_tree_node_id();
-            TM->create_tree_node(new_tree_node_index, gimple_cond_K, tree_node_schema);
-            new_block->PushBack(TM->GetTreeReindex(new_tree_node_index), AppM);
+            const auto srcp = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
+            const auto not_cond = tree_man->CreateNotExpr(gc->op0, new_block, function_id);
+            const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr, not_cond, function_id, bb_node_info->number, srcp);
+            new_block->PushBack(ga_cond, AppM);
+            const auto new_cond = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cond))->op0;
+            const auto new_tree_node = tree_man->create_gimple_cond(new_cond, function_id, srcp, new_block->number);
+            new_block->PushBack(new_tree_node, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixed basic blocks connections");
 
             /// Fix the phi in end if and create the phi in new block
             for(const auto& phi : end_if_block->CGetPhiList())
             {
-               auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
+               const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
                gimple_phi::DefEdgeList end_if_new_def_edge_list;
 
-               const auto type = tree_helper::CGetType(GET_NODE(gp->res));
+               const auto type = tree_helper::CGetType(gp->res);
 
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_schema;
                auto ssa_vers = TM->get_next_vers();
@@ -311,16 +310,16 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                const auto gimple_phi_id = TM->new_tree_node_id();
                gimple_phi_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                gimple_phi_schema[TOK(TOK_SCPE)] = STR(function_id);
-               gimple_phi_schema[TOK(TOK_TYPE)] = STR(type);
+               gimple_phi_schema[TOK(TOK_TYPE)] = STR(GET_CONST_NODE(type));
                gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
                TM->create_tree_node(gimple_phi_id, gimple_phi_K, gimple_phi_schema);
                auto new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(gimple_phi_id));
                new_gp->SetSSAUsesComputed();
 
                const auto zero = [&]() -> tree_nodeRef {
-                  if(type->get_kind() == integer_type_K)
+                  if(GET_CONST_NODE(type)->get_kind() == integer_type_K)
                   {
-                     return tree_man->CreateIntegerCst(TM->GetTreeReindex(type->index), 0, TM->new_tree_node_id());
+                     return tree_man->CreateIntegerCst(type, 0, TM->new_tree_node_id());
                   }
                   THROW_UNREACHABLE("");
                   return tree_nodeRef();

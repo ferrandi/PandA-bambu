@@ -95,7 +95,7 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 CSE::CSE(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, CSE_STEP, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager()), restart_phi_opt(false)
+    : FunctionFrontendFlowStep(_AppM, _function_id, CSE_STEP, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager()), restart_phi_opt(false), restart_bit_value(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -113,23 +113,22 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
+         }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         if(parameters->getOption<int>(OPT_gcc_openmp_simd))
-         {
-            relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
-            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
-         }
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
-#endif
          relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+         relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
+#endif
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -140,7 +139,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             {
                if(restart_phi_opt)
                {
+                  relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
                   relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               }
+               if(restart_bit_value && !parameters->getOption<int>(OPT_gcc_openmp_simd))
+               {
+                  relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
                }
                relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
                break;
@@ -180,6 +184,7 @@ DesignFlowStep_Status CSE::InternalExec()
 {
    bool IR_changed = false;
    restart_phi_opt = false;
+   restart_bit_value = false;
    size_t n_equiv_stmt = 0;
    const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    /// define a map relating variables and columns
@@ -249,7 +254,7 @@ DesignFlowStep_Status CSE::InternalExec()
          THROW_ASSERT(unique_table.find(bb_dominator_map.at(bb)) != unique_table.end(), "unexpected condition");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding dominator equiv: " + STR(bb_domGraph->CGetBBNodeInfo(bb_dominator_map.at(bb))->block->number));
 
-         for(auto key_value_pair : unique_table.at(bb_dominator_map.at(bb)))
+         for(const auto& key_value_pair : unique_table.at(bb_dominator_map.at(bb)))
          {
             unique_table.at(bb)[key_value_pair.first] = key_value_pair.second;
          }
@@ -278,7 +283,13 @@ DesignFlowStep_Status CSE::InternalExec()
             {
                ref_ssa->use_set = dead_ssa->use_set;
             }
-            const auto ga_op_type = TM->GetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(ref_ga->op0))->index);
+            const auto ga_op_type = tree_helper::CGetType(ref_ga->op0);
+            if(ref_ssa->bit_values != dead_ssa->bit_values)
+            {
+               restart_bit_value = true;
+               ref_ssa->bit_values.clear();
+            }
+
             bool same_range = false;
             if(GET_CONST_NODE(ga_op_type)->get_kind() == integer_type_K && ref_ssa->min && ref_ssa->max && dead_ssa->min && dead_ssa->max)
             {
@@ -329,6 +340,7 @@ DesignFlowStep_Status CSE::InternalExec()
                }
                to_be_removed.insert(stmt);
             }
+
             AppM->RegisterTransformation(GetName(), stmt);
             IR_changed = true;
             ++n_equiv_stmt;
@@ -365,14 +377,14 @@ DesignFlowStep_Status CSE::InternalExec()
 bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tree_nodeRef right_part)
 {
    const auto& fun_mem_data = function_behavior->get_function_mem();
-   const auto op0_type = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
+   const auto op0_type = tree_helper::CGetType(ga->op0);
    const auto op1_type = tree_helper::CGetType(right_part);
    bool is_a_vector_bitfield = false;
    /// check for bit field ref of vector type
    if(right_part->get_kind() == bit_field_ref_K)
    {
       const auto bfr = GetPointerS<const bit_field_ref>(right_part);
-      if(tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(bfr->op0)))
+      if(tree_helper::IsVectorType(bfr->op0))
       {
          is_a_vector_bitfield = true;
       }
@@ -397,26 +409,26 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
    if(right_part->get_kind() == view_convert_expr_K)
    {
       const auto vc = GetPointerS<const view_convert_expr>(right_part);
-      const auto vc_op_type = tree_helper::CGetType(GET_CONST_NODE(vc->op));
-      if(op0_type->get_kind() == record_type_K || op0_type->get_kind() == union_type_K)
+      const auto vc_op_type = tree_helper::CGetType(vc->op);
+      if(GET_CONST_NODE(op0_type)->get_kind() == record_type_K || GET_CONST_NODE(op0_type)->get_kind() == union_type_K)
       {
          skip_check = true;
       }
-      if(vc_op_type->get_kind() == record_type_K || vc_op_type->get_kind() == union_type_K)
+      if(GET_CONST_NODE(vc_op_type)->get_kind() == record_type_K || GET_CONST_NODE(vc_op_type)->get_kind() == union_type_K)
       {
          skip_check = true;
       }
 
-      if(vc_op_type->get_kind() == array_type_K && op0_type->get_kind() == vector_type_K)
+      if(GET_CONST_NODE(vc_op_type)->get_kind() == array_type_K && GET_CONST_NODE(op0_type)->get_kind() == vector_type_K)
       {
          skip_check = true;
       }
-      if(vc_op_type->get_kind() == vector_type_K && op0_type->get_kind() == array_type_K)
+      if(GET_CONST_NODE(vc_op_type)->get_kind() == vector_type_K && GET_CONST_NODE(op0_type)->get_kind() == array_type_K)
       {
          skip_check = true;
       }
    }
-   if((!tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(ga->op0))) && tree_helper::is_an_array(TM, GET_INDEX_CONST_NODE(ga->op0)) && (!tree_helper::is_a_pointer(TM, GET_INDEX_CONST_NODE(ga->op0))))
+   if(!tree_helper::IsVectorType(ga->op0) && tree_helper::IsArrayType(ga->op0) && !tree_helper::IsPointerType(ga->op0))
    {
       skip_check = true;
    }
@@ -425,8 +437,8 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
       skip_check = true;
    }
    if(op0_type && op1_type &&
-      ((op0_type->get_kind() == record_type_K && op1_type->get_kind() == record_type_K && right_part->get_kind() != view_convert_expr_K) ||
-       (op0_type->get_kind() == union_type_K && op1_type->get_kind() == union_type_K && right_part->get_kind() != view_convert_expr_K) || (op0_type->get_kind() == array_type_K)))
+      ((GET_CONST_NODE(op0_type)->get_kind() == record_type_K && GET_CONST_NODE(op1_type)->get_kind() == record_type_K && right_part->get_kind() != view_convert_expr_K) ||
+       (GET_CONST_NODE(op0_type)->get_kind() == union_type_K && GET_CONST_NODE(op1_type)->get_kind() == union_type_K && right_part->get_kind() != view_convert_expr_K) || (GET_CONST_NODE(op0_type)->get_kind() == array_type_K)))
    {
       skip_check = true;
    }
@@ -473,10 +485,8 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* s
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked loads: null");
          return tree_nodeRef();
       }
-      /// we add as first parameter the bitwidth of ga->op0
-      ins.push_back(tree_helper::Size(ga->op0));
       /// We add type of right part; load from same address with different types must be considered different
-      ins.push_back(tree_helper::CGetType(GET_CONST_NODE(ga->op1))->index);
+      ins.push_back(tree_helper::CGetType(ga->op1)->index);
 
       if(ga->vuses.size())
       {
@@ -521,8 +531,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* s
       {
          const auto ue = GetPointerS<const unary_expr>(right_part);
          ins.push_back(GET_INDEX_CONST_NODE(ue->op));
-         unsigned int type_index;
-         tree_helper::get_type_node(GET_CONST_NODE(ga->op0), type_index);
+         const auto type_index = tree_helper::CGetType(ga->op0)->index;
          ins.push_back(type_index);
       }
       else if(GetPointer<const unary_expr>(right_part))

@@ -82,7 +82,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #endif
    CREATE_TREE_MANAGER,
 #if HAVE_BAMBU_BUILT
-   FIND_MAX_CFG_TRANSFORMATIONS,
+   FIND_MAX_TRANSFORMATIONS,
 #endif
    FUNCTION_ANALYSIS, //! Creation of the call graph
 #if HAVE_ZEBU_BUILT
@@ -126,7 +126,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    BIT_VALUE,
    BIT_VALUE_OPT,
-   BIT_VALUE_OPT2,
+   BITVALUE_RANGE,
    BIT_VALUE_IPA,
 #endif
    BLOCK_FIX,
@@ -187,6 +187,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    EXTRACT_PATTERNS,
    FIX_STRUCTS_PASSED_BY_VALUE,
    FUNCTION_CALL_TYPE_CLEANUP,
+   FUNCTION_CALL_OPT,
    FANOUT_OPT,
 #endif
 #if HAVE_ZEBU_BUILT

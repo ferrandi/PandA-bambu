@@ -35,6 +35,7 @@
  * @brief Step that extends the call graph with the soft-float calls where appropriate.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 #ifndef SOFT_FLOAT_CG_EXT_HPP
@@ -97,8 +98,6 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    std::vector<tree_nodeRef> topReturn;
    bool bindingCompleted;
    std::vector<tree_nodeRef> paramBinding;
-   /// when true IR has been modified
-   bool modified;
 
    FunctionVersionRef _version;
 
@@ -134,7 +133,7 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    static tree_nodeRef float64_type;
    static tree_nodeRef float64_ptr_type;
 
-   static bool lowering_needed(const tree_managerRef& TreeM, const ssa_name* ssa);
+   static bool lowering_needed(const ssa_name* ssa);
 
    tree_nodeRef int_type_for(const tree_nodeRef& type, bool use_internal) const;
 
@@ -159,8 +158,9 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * @param current_statement is the current analyzed statement
     * @param current_tree_node is the current tree node
     * @param castRename is the required interface type bitmask reported using InterfaceType enum
+    * @return bool True if IR has been modified, else false
     */
-   void RecursiveExaminate(const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, int castRename);
+   bool RecursiveExaminate(const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, int castRename);
 
    /**
     * Generate necessary statements to convert ssa variable from inFF to outFF and insert them after stmt in bb

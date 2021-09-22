@@ -131,14 +131,14 @@ DesignFlowStep_Status UpdateSchedule::InternalExec()
    const auto TM = AppM->get_tree_manager();
    auto* fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->BB" + STR(block.first));
-      for(auto phi : block.second->CGetPhiList())
+      for(const auto& phi : block.second->CGetPhiList())
       {
          schedule->UpdateTime(phi->index);
       }
-      for(auto statement : block.second->CGetStmtList())
+      for(const auto& statement : block.second->CGetStmtList())
       {
          schedule->UpdateTime(statement->index);
       }

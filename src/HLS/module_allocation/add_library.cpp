@@ -277,17 +277,15 @@ DesignFlowStep_Status add_library::InternalExec()
          op->time_m->set_execution_time(exec_time, min_cycles);
          if(max_cycles > 1)
          {
-            op->time_m->set_stage_period(call_delay);
-            //+1 prevents chaining of two operations mapped on the same functional unit
-            const ControlStep ii(max_cycles + 1);
-            const ControlStep jj(1);
-            if(not simple_pipeline)
+            if(simple_pipeline)
             {
-               op->time_m->set_initiation_time(ii);
+               op->time_m->set_stage_period(call_delay);
+               const ControlStep jj(1);
+               op->time_m->set_initiation_time(jj);
             }
             else
             {
-               op->time_m->set_initiation_time(jj);
+               op->time_m->set_stage_period(0.0);
             }
          }
          else

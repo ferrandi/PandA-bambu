@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "single.h"
-#include "soft-fp.h"
-
-SFtype __negsf2(SFtype a)
+static __FORCE_INLINE SFtype __negsf2(SFtype a)
 {
    FP_DECL_S(A);
    FP_DECL_S(R);

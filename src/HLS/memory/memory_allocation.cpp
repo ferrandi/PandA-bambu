@@ -248,8 +248,8 @@ void memory_allocation::finalize_memory_allocation()
 
    if(HLSMgr->Rmem->has_implicit_memcpy())
    {
-      unsigned int memcpy_function_id = TreeM->function_index(MEMCPY);
-      func_list.insert(memcpy_function_id);
+      const auto memcpy_function = TreeM->GetFunction(MEMCPY);
+      func_list.insert(memcpy_function->index);
    }
 
    unsigned int maximum_bus_size = 0;
@@ -265,7 +265,7 @@ void memory_allocation::finalize_memory_allocation()
       const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
       bool is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
       bool is_inferred_interface = parameters->isOption(OPT_interface_type) && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
-      if(function_behavior->get_has_globals() && (!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals)))
+      if(function_behavior->get_has_globals() && parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals))
       {
          has_intern_shared_data = true;
       }
@@ -296,15 +296,15 @@ void memory_allocation::finalize_memory_allocation()
       const CustomOrderedSet<unsigned int>& parm_decl_stored = function_behavior->get_parm_decl_stored();
       for(unsigned int p : parm_decl_stored)
       {
-         maximum_bus_size = std::max(maximum_bus_size, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, p)));
+         maximum_bus_size = std::max(maximum_bus_size, tree_helper::Size(tree_helper::CGetType(TreeM->CGetTreeReindex(p))));
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "param with maximum_bus_size=" + STR(maximum_bus_size));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Analyzing function for bus size: " + behavioral_helper->get_function_name());
       const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
       graph::vertex_iterator v, v_end;
       const auto TM = HLSMgr->get_tree_manager();
-      auto fnode = TM->get_tree_node_const(fun_id);
-      auto fd = GetPointer<function_decl>(fnode);
+      const auto fnode = TM->CGetTreeReindex(fun_id);
+      const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fnode));
       std::string fname;
       tree_helper::get_mangled_fname(fd, fname);
       CustomUnorderedSet<vertex> RW_stmts;
@@ -379,7 +379,7 @@ void memory_allocation::finalize_memory_allocation()
             }
 
             /// check if a global variable may be accessed from an external component
-            if(!has_intern_shared_data && var && function_behavior->is_variable_mem(var) && !HLSMgr->Rmem->is_private_memory(var) && (!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals)))
+            if(!has_intern_shared_data && var && function_behavior->is_variable_mem(var) && !HLSMgr->Rmem->is_private_memory(var) && parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals))
             {
                const tree_nodeRef var_tn = TreeM->get_tree_node_const(var);
                auto* vd = GetPointer<var_decl>(var_tn);
@@ -391,16 +391,16 @@ void memory_allocation::finalize_memory_allocation()
             unsigned int value_bitsize;
             if(GET_TYPE(g, *v) & TYPE_STORE)
             {
-               unsigned int size_var = std::get<0>(var_read[0]);
-               unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
-               value_bitsize = tree_helper::size(TreeM, size_type_index);
+               const auto size_var = std::get<0>(var_read[0]);
+               const auto size_type = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
+               value_bitsize = tree_helper::Size(size_type);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "store with value_bitsize=" + STR(value_bitsize));
             }
             else
             {
-               unsigned int size_var = HLSMgr->get_produced_value(fun_id, *v);
-               unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
-               value_bitsize = tree_helper::size(TreeM, size_type_index);
+               const auto size_var = HLSMgr->get_produced_value(fun_id, *v);
+               const auto size_type = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
+               value_bitsize = tree_helper::Size(size_type);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "load with value_bitsize=" + STR(value_bitsize));
             }
             if(!(function_behavior->is_variable_mem(var) && HLSMgr->Rmem->is_private_memory(var)))
@@ -427,26 +427,24 @@ void memory_allocation::finalize_memory_allocation()
                unsigned int var = std::get<0>(*vr_it);
                if(var && tree_helper::is_a_pointer(TreeM, var))
                {
-                  unsigned int type_index;
-                  const tree_nodeRef var_node = TreeM->get_tree_node_const(var);
-                  const tree_nodeRef type_node = tree_helper::get_type_node(var_node, type_index);
+                  const auto var_node = TreeM->CGetTreeReindex(var);
+                  const auto type_node = tree_helper::CGetType(var_node);
                   tree_nodeRef type_node_ptd;
-                  if(type_node->get_kind() == pointer_type_K)
+                  if(GET_CONST_NODE(type_node)->get_kind() == pointer_type_K)
                   {
-                     type_node_ptd = GetPointer<pointer_type>(type_node)->ptd;
+                     type_node_ptd = GetPointerS<const pointer_type>(GET_CONST_NODE(type_node))->ptd;
                   }
-                  else if(type_node->get_kind() == reference_type_K)
+                  else if(GET_CONST_NODE(type_node)->get_kind() == reference_type_K)
                   {
-                     type_node_ptd = GetPointer<reference_type>(type_node)->refd;
+                     type_node_ptd = GetPointerS<const reference_type>(GET_CONST_NODE(type_node))->refd;
                   }
                   else
                   {
                      THROW_ERROR("A pointer type is expected");
                   }
-                  unsigned bitsize = 1;
-                  tree_helper::accessed_greatest_bitsize(TreeM, GET_NODE(type_node_ptd), GET_INDEX_NODE(type_node_ptd), bitsize);
+                  const auto bitsize = tree_helper::AccessedMaximumBitsize(type_node_ptd, 1);
                   maximum_bus_size = std::max(maximum_bus_size, bitsize);
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size) + " " + TreeM->get_tree_node_const(g->CGetOpNodeInfo(*v)->GetNodeId())->ToString());
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size) + " " + g->CGetOpNodeInfo(*v)->node->ToString());
                }
             }
          }
@@ -467,23 +465,23 @@ void memory_allocation::finalize_memory_allocation()
          {
             addr_bus_bitsize = 32;
          }
-         for(auto par : behavioral_helper->get_parameters())
+         for(const auto& par : behavioral_helper->GetParameters())
          {
-            unsigned int type_index = tree_helper::get_type_index(TreeM, par);
-            bool is_a_struct_union = tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
+            const auto type = tree_helper::CGetType(par);
+            bool is_a_struct_union = tree_helper::IsStructType(type) || tree_helper::IsUnionType(type) || tree_helper::IsComplexType(type);
             if(is_a_struct_union)
             {
                maximum_bus_size = std::max(addr_bus_bitsize, maximum_bus_size);
             }
             else
             {
-               maximum_bus_size = std::max(tree_helper::size(TreeM, par), maximum_bus_size);
+               maximum_bus_size = std::max(tree_helper::Size(par), maximum_bus_size);
             }
          }
-         const unsigned int function_return = behavioral_helper->GetFunctionReturnType(fun_id);
+         const auto function_return = tree_helper::GetFunctionReturnType(fnode);
          if(function_return)
          {
-            maximum_bus_size = std::max(tree_helper::size(TreeM, function_return), maximum_bus_size);
+            maximum_bus_size = std::max(tree_helper::Size(function_return), maximum_bus_size);
          }
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Analyzed function for bus size: " + behavioral_helper->get_function_name());
@@ -630,7 +628,7 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Parameter " + par_name + " of Function " + functionName);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Id: " + STR(*itr));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, *itr)));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Size: " + STR(tree_helper::size(HLSMgr->get_tree_manager(), *itr) / 8));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Size: " + STR(tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(*itr)) / 8));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
    }
 
@@ -641,7 +639,7 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Return parameter for Function: " + functionName);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Id: " + STR(function_return));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, function_return)));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Size: " + STR(tree_helper::size(HLSMgr->get_tree_manager(), function_return) / 8));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Size: " + STR(tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(function_return)) / 8));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
    }
 }
@@ -653,15 +651,15 @@ bool memory_allocation::HasToBeExecuted() const
       return true;
    }
    std::map<unsigned int, unsigned int> cur_bb_ver;
-   // std::map<unsigned int, unsigned int> cur_bitvalue_ver;
+   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
       cur_bb_ver[i] = FB->GetBBVersion();
-      // cur_bitvalue_ver[i] = FB->GetBitValueVersion();
+      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
    }
-   return cur_bb_ver != last_bb_ver /*|| cur_bitvalue_ver != last_bitvalue_ver*/;
+   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
 }
 
 DesignFlowStep_Status memory_allocation::Exec()

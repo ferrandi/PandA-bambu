@@ -122,44 +122,44 @@ int_fast64_t subj_f16_to_i64_rx_minMag(float16_t a)
 float16_t subj_f16_add(float16_t a, float16_t b)
 {
    float16_t f16;
-   f16.v = __float32_add(a.v, b.v, IEEE16_SUBJ_SPEC);
+   f16.v = __float_add(a.v, b.v, IEEE16_SUBJ_SPEC);
    return f16;
 }
 
 float16_t subj_f16_sub(float16_t a, float16_t b)
 {
    float16_t f16;
-   f16.v = __float32_sub(a.v, b.v, IEEE16_SUBJ_SPEC);
+   f16.v = __float_sub(a.v, b.v, IEEE16_SUBJ_SPEC);
    return f16;
 }
 
 float16_t subj_f16_mul(float16_t a, float16_t b)
 {
    float16_t f16;
-   f16.v = __float32_mul(a.v, b.v, IEEE16_SUBJ_SPEC);
+   f16.v = __float_mul(a.v, b.v, IEEE16_SUBJ_SPEC);
    return f16;
 }
 
 float16_t subj_f16_div(float16_t a, float16_t b)
 {
    float16_t f16;
-   f16.v = __float32_divSRT4(a.v, b.v, IEEE16_SUBJ_SPEC);
+   f16.v = __float_divSRT4(a.v, b.v, IEEE16_SUBJ_SPEC);
    return f16;
 }
 
 bool subj_f16_eq(float16_t a, float16_t b)
 {
-   return __float32_eq(a.v, b.v, IEEE16_SUBJ_SPEC);
+   return __float_eq(a.v, b.v, IEEE16_SUBJ_SPEC);
 }
 
 bool subj_f16_le(float16_t a, float16_t b)
 {
-   return __float32_le(a.v, b.v, IEEE16_SUBJ_SPEC);
+   return __float_le(a.v, b.v, IEEE16_SUBJ_SPEC);
 }
 
 bool subj_f16_lt(float16_t a, float16_t b)
 {
-   return __float32_lt(a.v, b.v, IEEE16_SUBJ_SPEC);
+   return __float_lt(a.v, b.v, IEEE16_SUBJ_SPEC);
 }
 
 #endif
@@ -218,44 +218,44 @@ int_fast64_t subj_f32_to_i64_rx_minMag(float32_t a)
 float32_t subj_f32_add(float32_t a, float32_t b)
 {
    float32_t f32;
-   f32.v = __float32_add(a.v, b.v, IEEE32_SUBJ_SPEC);
+   f32.v = __float_add(a.v, b.v, IEEE32_SUBJ_SPEC);
    return f32;
 }
 
 float32_t subj_f32_sub(float32_t a, float32_t b)
 {
    float32_t f32;
-   f32.v = __float32_sub(a.v, b.v, IEEE32_SUBJ_SPEC);
+   f32.v = __float_sub(a.v, b.v, IEEE32_SUBJ_SPEC);
    return f32;
 }
 
 float32_t subj_f32_mul(float32_t a, float32_t b)
 {
    float32_t f32;
-   f32.v = __float32_mul(a.v, b.v, IEEE32_SUBJ_SPEC);
+   f32.v = __float_mul(a.v, b.v, IEEE32_SUBJ_SPEC);
    return f32;
 }
 
 float32_t subj_f32_div(float32_t a, float32_t b)
 {
    float32_t f32;
-   f32.v = __float32_divSRT4(a.v, b.v, IEEE32_SUBJ_SPEC);
+   f32.v = __float_divSRT4(a.v, b.v, IEEE32_SUBJ_SPEC);
    return f32;
 }
 
 bool subj_f32_eq(float32_t a, float32_t b)
 {
-   return __float32_eq(a.v, b.v, IEEE32_SUBJ_SPEC);
+   return __float_eq(a.v, b.v, IEEE32_SUBJ_SPEC);
 }
 
 bool subj_f32_le(float32_t a, float32_t b)
 {
-   return __float32_le(a.v, b.v, IEEE32_SUBJ_SPEC);
+   return __float_le(a.v, b.v, IEEE32_SUBJ_SPEC);
 }
 
 bool subj_f32_lt(float32_t a, float32_t b)
 {
-   return __float32_lt(a.v, b.v, IEEE32_SUBJ_SPEC);
+   return __float_lt(a.v, b.v, IEEE32_SUBJ_SPEC);
 }
 
 /*----------------------------------------------------------------------------
@@ -328,44 +328,44 @@ float32_t subj_f64_to_f32(float64_t a)
 float64_t subj_f64_add(float64_t a, float64_t b)
 {
    float64_t f64;
-   f64.v = __float64_add(a.v, b.v, IEEE64_SUBJ_SPEC);
+   f64.v = __float_add(a.v, b.v, IEEE64_SUBJ_SPEC);
    return f64;
 }
 
 float64_t subj_f64_sub(float64_t a, float64_t b)
 {
    float64_t f64;
-   f64.v = __float64_sub(a.v, b.v, IEEE64_SUBJ_SPEC);
+   f64.v = __float_sub(a.v, b.v, IEEE64_SUBJ_SPEC);
    return f64;
 }
 
 float64_t subj_f64_mul(float64_t a, float64_t b)
 {
    float64_t f64;
-   f64.v = __float64_mul(a.v, b.v, IEEE64_SUBJ_SPEC);
+   f64.v = __float_mul(a.v, b.v, IEEE64_SUBJ_SPEC);
    return f64;
 }
 
 float64_t subj_f64_div(float64_t a, float64_t b)
 {
    float64_t f64;
-   f64.v = __float64_divSRT4(a.v, b.v, IEEE64_SUBJ_SPEC);
+   f64.v = __float_divSRT4(a.v, b.v, IEEE64_SUBJ_SPEC);
    return f64;
 }
 
 bool subj_f64_eq(float64_t a, float64_t b)
 {
-   return __float64_eq(a.v, b.v, IEEE64_SUBJ_SPEC);
+   return __float_eq(a.v, b.v, IEEE64_SUBJ_SPEC);
 }
 
 bool subj_f64_le(float64_t a, float64_t b)
 {
-   return __float64_le(a.v, b.v, IEEE64_SUBJ_SPEC);
+   return __float_le(a.v, b.v, IEEE64_SUBJ_SPEC);
 }
 
 bool subj_f64_lt(float64_t a, float64_t b)
 {
-   return __float64_lt(a.v, b.v, IEEE64_SUBJ_SPEC);
+   return __float_lt(a.v, b.v, IEEE64_SUBJ_SPEC);
 }
 
 #endif

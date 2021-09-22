@@ -159,35 +159,31 @@
 
 bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const
 {
-   auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
-   auto type_id0 = b0->index;
-   if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   auto b0 = tree_helper::CGetType(be->op0);
+   if(tree_helper::IsRealType(b0) || tree_helper::IsComplexType(b0) || tree_helper::IsVectorType(b0) || tree_helper::IsStructType(b0))
    {
       return false;
    }
-   auto b1 = tree_helper::CGetType(GET_CONST_NODE(be->op1));
-   auto type_id1 = b1->index;
-   if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+   auto b1 = tree_helper::CGetType(be->op1);
+   if(tree_helper::IsRealType(b1) || tree_helper::IsComplexType(b1) || tree_helper::IsVectorType(b1) || tree_helper::IsStructType(b1))
    {
       return false;
    }
-   if(tree_helper::is_int(TM, GET_INDEX_NODE((be->op0))) || tree_helper::is_int(TM, GET_INDEX_NODE((be->op1))))
+   if(tree_helper::IsSignedIntegerType(be->op0) || tree_helper::IsSignedIntegerType(be->op1))
    {
       return false;
    }
-   return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
+   return tree_helper::Size(be->op0) == 1 && tree_helper::Size(be->op1) == 1;
 }
 bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const
 {
-   auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
-   auto type_id0 = b0->index;
-   if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   auto b0 = tree_helper::CGetType(be->op0);
+   if(tree_helper::IsRealType(b0) || tree_helper::IsComplexType(b0) || tree_helper::IsVectorType(b0) || tree_helper::IsStructType(b0))
    {
       return false;
    }
-   auto b1 = tree_helper::CGetType(GET_CONST_NODE(be->op1));
-   auto type_id1 = b1->index;
-   if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+   auto b1 = tree_helper::CGetType(be->op1);
+   if(tree_helper::IsRealType(b1) || tree_helper::IsComplexType(b1) || tree_helper::IsVectorType(b1) || tree_helper::IsStructType(b1))
    {
       return false;
    }
@@ -200,41 +196,38 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
       auto k = be->get_kind();
       return (k == lt_expr_K || k == gt_expr_K) && int_const->value == 0;
    }();
-   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max) || (is_simple_case && !parameters->isOption(OPT_context_switch));
+   return (tree_helper::Size(be->op0) <= max && tree_helper::Size(be->op1) <= max) || (is_simple_case && !parameters->isOption(OPT_context_switch));
 }
 bool lut_transformation::CHECK_COND_EXPR_SIZE(cond_expr* ce) const
 {
-   auto c0 = tree_helper::CGetType(GET_CONST_NODE(ce->op1));
-   auto type_id0 = c0->index;
-   if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   auto c0 = tree_helper::CGetType(ce->op1);
+   if(tree_helper::IsRealType(c0) || tree_helper::IsComplexType(c0) || tree_helper::IsVectorType(c0) || tree_helper::IsStructType(c0))
    {
       return false;
    }
-   auto c1 = tree_helper::CGetType(GET_CONST_NODE(ce->op2));
-   auto type_id1 = c1->index;
-   if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+   auto c1 = tree_helper::CGetType(ce->op2);
+   if(tree_helper::IsRealType(c1) || tree_helper::IsComplexType(c1) || tree_helper::IsVectorType(c1) || tree_helper::IsStructType(c1))
    {
       return false;
    }
-   if(tree_helper::is_int(TM, GET_INDEX_NODE((ce->op1))) || tree_helper::is_int(TM, GET_INDEX_NODE((ce->op2))))
+   if(tree_helper::IsSignedIntegerType(ce->op1) || tree_helper::IsSignedIntegerType(ce->op2))
    {
       return false;
    }
-   return tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1;
+   return tree_helper::Size(ce->op1) == 1 && tree_helper::Size(ce->op2) == 1;
 }
 bool lut_transformation::CHECK_NOT_EXPR_SIZE(unary_expr* ne) const
 {
-   auto c0 = tree_helper::CGetType(GET_CONST_NODE(ne->op));
-   auto type_id0 = c0->index;
-   if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   auto c0 = tree_helper::CGetType(ne->op);
+   if(tree_helper::IsRealType(c0) || tree_helper::IsComplexType(c0) || tree_helper::IsVectorType(c0) || tree_helper::IsStructType(c0))
    {
       return false;
    }
-   if(tree_helper::is_int(TM, GET_INDEX_NODE((ne->op))))
+   if(tree_helper::IsSignedIntegerType(ne->op))
    {
       return false;
    }
-   return (tree_helper::Size(GET_NODE((ne)->op)) == 1);
+   return tree_helper::Size(ne->op) == 1;
 }
 
 #define VECT_CONTAINS(v, x) (std::find((v).begin(), (v).end(), x) != (v).end())
@@ -244,10 +237,10 @@ bool lut_transformation::cannotBeLUT(tree_nodeRef op) const
    auto op_node = GET_NODE(op);
    auto code = op_node->get_kind();
 
-   return not(GetPointer<lut_expr>(op_node) || (GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) || (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
-              (GetPointer<cond_expr>(op_node) && CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(op_node))) ||
-              (VECT_CONTAINS(lutBooleanExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(op_node))) ||
-              (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE"))));
+   return !(GetPointer<lut_expr>(op_node) || (GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) || (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
+            (GetPointer<cond_expr>(op_node) && CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(op_node))) ||
+            (VECT_CONTAINS(lutBooleanExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(op_node))) ||
+            (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE"))));
 }
 
 #pragma endregion
@@ -1215,6 +1208,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
                   kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  modified = true;
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1249,8 +1243,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          // mockturtle::write_bench(klut_e, std::cout);
          // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LUT found");
-
-         modified = true;
          continue;
       }
 
@@ -1662,12 +1654,12 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                operand = pis.at(in);
                auto operand_offset = pis_offset.at(in);
 
-               if(tree_helper::Size(GET_NODE(operand)) == 1 && !tree_helper::is_bool(TM, GET_INDEX_NODE(operand)))
+               if(tree_helper::Size(operand) == 1 && !tree_helper::IsBooleanType(operand))
                {
                   THROW_ASSERT(operand_offset == 0, "unexpected condition");
                   operand = CreateBitSelectionNodeOrCast(operand, 0, BB_index, prev_stmts_to_add);
                }
-               else if(tree_helper::Size(GET_NODE(operand)) > 1)
+               else if(tree_helper::Size(operand) > 1)
                {
                   operand = CreateBitSelectionNodeOrCast(operand, operand_offset, BB_index, prev_stmts_to_add);
                }
@@ -1751,7 +1743,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             else if(lut.fan_in.size() == 1 && lut.lut_constant == 2)
             {
-               auto op1_type_node = tree_helper::CGetType(GET_CONST_NODE(op1));
+               auto op1_type_node = tree_helper::CGetType(op1);
                if(GET_INDEX_NODE(ssa_ga_op0->type) == op1_type_node->index)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
@@ -1766,7 +1758,25 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             else
             {
-               if(tree_helper::is_bool(TM, GET_INDEX_NODE(gimpleAssign->op0)))
+               auto boolType = tree_man->create_boolean_type();
+               /// check if operands are of bool type
+               auto check_lut_compatibility = [&](tree_nodeRef& lut_operand) {
+                  if(lut_operand && !tree_helper::IsBooleanType(lut_operand))
+                  {
+                     tree_nodeRef ga_nop = tree_man->CreateNopExpr(lut_operand, boolType, tree_nodeRef(), tree_nodeRef(), function_id);
+                     block.second->PushBefore(ga_nop, po_stmpt, AppM);
+                     lut_operand = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+                  }
+               };
+               check_lut_compatibility(op1);
+               check_lut_compatibility(op2);
+               check_lut_compatibility(op3);
+               check_lut_compatibility(op4);
+               check_lut_compatibility(op5);
+               check_lut_compatibility(op6);
+               check_lut_compatibility(op7);
+               check_lut_compatibility(op8);
+               if(tree_helper::IsBooleanType(gimpleAssign->op0))
                {
                   tree_nodeRef new_op1 = tree_man->create_lut_expr(ssa_ga_op0->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
@@ -1774,7 +1784,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                }
                else
                {
-                  auto boolType = tree_man->create_boolean_type();
                   tree_nodeRef lut_node = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
                   auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), lut_node, function_id, BB_index, srcp_default);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(lut_ga)->ToString());
@@ -1790,8 +1799,25 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
          else
          {
-            const std::string srcp_default("built-in:0:0");
             auto boolType = tree_man->create_boolean_type();
+            /// check if operands are of bool type
+            auto check_lut_compatibility = [&](tree_nodeRef& lut_operand) {
+               if(lut_operand && !tree_helper::IsBooleanType(lut_operand))
+               {
+                  tree_nodeRef ga_nop = tree_man->CreateNopExpr(lut_operand, boolType, tree_nodeRef(), tree_nodeRef(), function_id);
+                  prev_stmts_to_add.push_back(ga_nop);
+                  lut_operand = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+               }
+            };
+            check_lut_compatibility(op1);
+            check_lut_compatibility(op2);
+            check_lut_compatibility(op3);
+            check_lut_compatibility(op4);
+            check_lut_compatibility(op5);
+            check_lut_compatibility(op6);
+            check_lut_compatibility(op7);
+            check_lut_compatibility(op8);
+            const std::string srcp_default("built-in:0:0");
             tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
             auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), new_op1, function_id, BB_index, srcp_default);
             auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
@@ -1821,16 +1847,50 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
 #endif
 
+lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param), max_lut_size(NUM_CST_allocation_default_max_lut_size)
+{
+   debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+}
+
 lut_transformation::~lut_transformation() = default;
 
-void lut_transformation::Initialize()
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   TM = AppM->get_tree_manager();
-   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
-   max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   switch(relationship_type)
+   {
+      case(DEPENDENCE_RELATIONSHIP):
+      {
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
+         }
+         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
+      {
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
+         {
+            if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+            {
+               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+            }
+            relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         }
+         break;
+      }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   return relationships;
 }
 
 void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
@@ -1860,15 +1920,35 @@ void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship, c
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param), max_lut_size(NUM_CST_allocation_default_max_lut_size)
+bool lut_transformation::HasToBeExecuted() const
 {
-   debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
+   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
+   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
+   auto max_lut_size0 = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+   if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd))
+   {
+      return FunctionFrontendFlowStep::HasToBeExecuted();
+   }
+   else
+   {
+      return false;
+   }
+}
+
+void lut_transformation::Initialize()
+{
+   TM = AppM->get_tree_manager();
+   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
+   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
+   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
+   max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
 }
 
 DesignFlowStep_Status lut_transformation::InternalExec()
 {
-   if(parameters->IsParameter("disable-lut-transformation") && parameters->GetParameter<int>("disable-lut-transformation") == 1)
+   if(parameters->IsParameter("disable-lut-transformation") && parameters->GetParameter<unsigned int>("disable-lut-transformation") == 1)
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
@@ -1897,55 +1977,9 @@ DesignFlowStep_Status lut_transformation::InternalExec()
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
-{
-   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
-   switch(relationship_type)
-   {
-      case(DEPENDENCE_RELATIONSHIP):
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
-         break;
-      case(INVALIDATION_RELATIONSHIP):
-         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
-         {
-            relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         }
-         break;
-      case(PRECEDENCE_RELATIONSHIP):
-         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-         {
-            relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
-            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
-         }
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         break;
-      default:
-         THROW_UNREACHABLE("");
-   }
-   return relationships;
-}
-
 #if HAVE_STDCXX_17
 #pragma endregion
 
 #pragma GCC diagnostic pop
 
 #endif
-
-bool lut_transformation::HasToBeExecuted() const
-{
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
-   auto max_lut_size0 = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
-   if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd))
-   {
-      return FunctionFrontendFlowStep::HasToBeExecuted();
-   }
-   else
-   {
-      return false;
-   }
-}

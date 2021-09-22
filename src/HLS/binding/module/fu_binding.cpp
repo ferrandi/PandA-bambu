@@ -589,7 +589,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          SM->add_connection(dest_sign, out_port);
          SM->add_connection(dest, dest_sign);
          structural_objectRef n = GetPointer<module>(curr_gate)->find_member("len", port_o_K, curr_gate);
-         structural_objectRef n_obj = SM->add_constant("constant_len_" + STR(function_parameter), circuit, n->get_typeRef(), STR(tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, function_parameter)) / 8));
+         structural_objectRef n_obj = SM->add_constant("constant_len_" + STR(function_parameter), circuit, n->get_typeRef(), STR(tree_helper::Size(tree_helper::CGetType(TreeM->CGetTreeReindex(function_parameter))) / 8));
          SM->add_connection(n, n_obj);
          THROW_ASSERT(in_chain, "missing in chain element");
          structural_objectRef start_obj = GetPointer<module>(curr_gate)->find_member(START_PORT_NAME, port_o_K, curr_gate);
@@ -1612,10 +1612,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       bool has_misaligned_indirect_ref = false;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ar is true");
       {
-         unsigned int elmt_bitsize = 1;
-         unsigned int type_index = tree_helper::get_type_index(TreeM, ar);
-         tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
-         tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
+         const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(ar));
+         const auto elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
 
          if(allocation_information->is_direct_access_memory_unit(fu))
          {
@@ -1647,7 +1645,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             if(GET_TYPE(data, mapped_operation) & TYPE_STORE)
             {
                THROW_ASSERT(std::get<0>(vars[0]), "Expected a tree node in case of a value to store");
-               required_variables[0] = std::max(required_variables[0], tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, std::get<0>(vars[0]))));
+               required_variables[0] = std::max(required_variables[0], tree_helper::Size(tree_helper::CGetType(TreeM->CGetTreeReindex(std::get<0>(vars[0])))));
                if(tree_helper::is_a_misaligned_vector(TreeM, std::get<0>(vars[0])))
                {
                   has_misaligned_indirect_ref = true;
@@ -1656,7 +1654,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             else if(GET_TYPE(data, mapped_operation) & TYPE_LOAD)
             {
                THROW_ASSERT(out_var, "Expected a tree node in case of a value to load");
-               produced_variables = std::max(produced_variables, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var)));
+               produced_variables = std::max(produced_variables, tree_helper::Size(tree_helper::CGetType(TreeM->CGetTreeReindex(out_var))));
                if(tree_helper::is_a_misaligned_vector(TreeM, out_var))
                {
                   has_misaligned_indirect_ref = true;
@@ -1714,12 +1712,12 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             if(GET_TYPE(data, mapped_operation) & TYPE_STORE)
             {
                THROW_ASSERT(std::get<0>(vars[0]), "Expected a tree node in case of a value to store");
-               mem_var_size_in = std::max(mem_var_size_in, tree_helper::size(HLSMgr->get_tree_manager(), tree_helper::get_type_index(HLSMgr->get_tree_manager(), std::get<0>(vars[0]))));
+               mem_var_size_in = std::max(mem_var_size_in, tree_helper::Size(tree_helper::CGetType(TreeM->CGetTreeReindex(std::get<0>(vars[0])))));
             }
             else if(GET_TYPE(data, mapped_operation) & TYPE_LOAD)
             {
                THROW_ASSERT(out_var, "Expected a tree node in case of a value to load");
-               mem_var_size_out = std::max(mem_var_size_out, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var)));
+               mem_var_size_out = std::max(mem_var_size_out, tree_helper::Size(tree_helper::CGetType(TreeM->CGetTreeReindex(out_var))));
             }
             /// specializing MEMORY_STD ports
             required_variables.insert(std::make_pair(0, 0));
@@ -1751,12 +1749,13 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   continue;
                }
                required_variables.insert(std::make_pair(i, 0));
-               if(tree_helper::is_a_vector(TreeM, tree_var))
+               const auto var_node = TreeM->CGetTreeReindex(tree_var);
+               if(tree_helper::IsVectorType(var_node))
                {
-                  unsigned int type_index = tree_helper::get_type_index(TreeM, tree_var);
-                  const unsigned int size = static_cast<unsigned int>(tree_helper::size(TreeM, type_index));
-                  const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-                  const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
+                  const auto type = tree_helper::CGetType(var_node);
+                  const auto size = tree_helper::Size(type);
+                  const auto element_type = tree_helper::CGetElements(type);
+                  const auto element_size = tree_helper::Size(element_type);
                   required_variables[i] = std::max(required_variables[i], element_size);
 
                   if(num_elements.find(i) == num_elements.end())
@@ -1770,7 +1769,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                }
                else
                {
-                  unsigned int bitsize = tree_helper::size(TreeM, tree_var);
+                  unsigned int bitsize = tree_helper::Size(var_node);
                   if(is_float_expr && is_flopoco)
                   {
                      if(bitsize < 32)
@@ -1798,13 +1797,11 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      unsigned int op0_tree_var = std::get<0>(vars[0]);
                      if(op0_tree_var)
                      {
-                        unsigned int var = tree_helper::get_base_index(TreeM, op0_tree_var);
-                        if(var && FB->is_variable_mem(var) && HLSMgr->Rmem->is_sds_var(var))
+                        const auto var = tree_helper::GetBaseVariable(TreeM->CGetTreeReindex(op0_tree_var));
+                        if(var && FB->is_variable_mem(GET_INDEX_CONST_NODE(var)) && HLSMgr->Rmem->is_sds_var(GET_INDEX_CONST_NODE(var)))
                         {
-                           unsigned int value_bitsize = 1;
-                           unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-                           tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
-                           tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, value_bitsize);
+                           const auto type = tree_helper::CGetType(var);
+                           const auto value_bitsize = tree_helper::AccessedMaximumBitsize(type, 1);
                            if(value_bitsize <= 8)
                            {
                               curr_LSB = 0;
@@ -1984,18 +1981,19 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             }
             if(out_var)
             {
-               if(tree_helper::is_a_vector(TreeM, out_var))
+               const auto out_node = TreeM->CGetTreeNode(out_var);
+               if(tree_helper::IsVectorType(out_node))
                {
-                  unsigned int type_index = tree_helper::get_type_index(TreeM, out_var);
-                  const unsigned int size = static_cast<unsigned int>(tree_helper::size(TreeM, type_index));
-                  const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-                  const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
+                  const auto type = tree_helper::CGetType(out_node);
+                  const auto size = tree_helper::Size(type);
+                  const auto element_type = tree_helper::CGetElements(type);
+                  const auto element_size = tree_helper::Size(element_type);
                   n_out_elements = size / element_size;
                   produced_variables = element_size;
                }
                else
                {
-                  produced_variables = std::max(produced_variables, tree_helper::size(TreeM, out_var));
+                  produced_variables = std::max(produced_variables, tree_helper::Size(out_node));
                }
                /// check for precision parameter
                if(np)
@@ -2007,7 +2005,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   {
                      if(*it == "PRECISION")
                      {
-                        unsigned int sizetype = tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var));
+                        unsigned int sizetype = tree_helper::Size(tree_helper::CGetType(out_node));
                         if(sizetype == 1)
                         {
                            sizetype = 8;
@@ -2175,48 +2173,47 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
 void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar, long long int& vec_size, unsigned int& elts_size, const memoryRef mem, bool is_memory_splitted, bool is_sds, module* fu_module)
 {
    unsigned int bram_bitsize;
-   unsigned int type_index;
-   tree_nodeRef ar_node = TreeM->get_tree_node_const(ar);
+   const auto ar_node = TreeM->CGetTreeReindex(ar);
    tree_nodeRef init_node;
-   auto* vd = GetPointer<var_decl>(ar_node);
+   const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(ar_node));
    if(vd && vd->init)
    {
-      init_node = GET_NODE(vd->init);
+      init_node = vd->init;
    }
-   else if(GetPointer<string_cst>(ar_node))
+   else if(GetPointer<const string_cst>(GET_CONST_NODE(ar_node)))
    {
       init_node = ar_node;
    }
-   tree_nodeRef array_type_node = tree_helper::get_type_node(ar_node, type_index);
+   const auto array_type_node = tree_helper::CGetType(ar_node);
    unsigned int element_precision = 0;
-   if(tree_helper::is_an_array(TreeM, type_index))
+   if(tree_helper::IsArrayType(array_type_node))
    {
       std::vector<unsigned int> dims;
-      tree_helper::get_array_dim_and_bitsize(TreeM, type_index, dims, elts_size);
+      tree_helper::get_array_dim_and_bitsize(TreeM, array_type_node->index, dims, elts_size);
       THROW_ASSERT(dims.size(), "something of wrong happen");
       vec_size = std::accumulate(dims.begin(), dims.end(), 1, [](unsigned int a, unsigned int b) { return a * b; });
    }
-   else if(GetPointer<integer_type>(array_type_node) || GetPointer<real_type>(array_type_node) || GetPointer<enumeral_type>(array_type_node) || GetPointer<pointer_type>(array_type_node) || GetPointer<reference_type>(array_type_node) ||
-           GetPointer<record_type>(array_type_node) || GetPointer<union_type>(array_type_node) || GetPointer<complex_type>(array_type_node))
+   else if(GetPointer<const integer_type>(GET_CONST_NODE(array_type_node)) || tree_helper::IsRealType(array_type_node) || tree_helper::IsEnumType(array_type_node) || tree_helper::IsPointerType(array_type_node) ||
+           tree_helper::IsStructType(array_type_node) || tree_helper::IsUnionType(array_type_node) || tree_helper::IsComplexType(array_type_node))
    {
-      elts_size = tree_helper::size(TreeM, type_index);
+      elts_size = tree_helper::Size(array_type_node);
       vec_size = 1;
    }
-   else if(GetPointer<boolean_type>(array_type_node))
+   else if(tree_helper::IsBooleanType(array_type_node))
    {
       elts_size = 8;
       vec_size = 1;
    }
-   else if(GetPointer<vector_type>(array_type_node))
+   else if(tree_helper::IsVectorType(array_type_node))
    {
-      elts_size = static_cast<unsigned int>(tree_helper::Size(array_type_node));
-      const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
-      element_precision = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
+      elts_size = tree_helper::Size(array_type_node);
+      const auto element_type = tree_helper::CGetElements(array_type_node);
+      element_precision = tree_helper::Size(element_type);
       vec_size = 1;
    }
    else
    {
-      THROW_ERROR("Type not supported: " + array_type_node->get_kind_text());
+      THROW_ERROR("Type not supported: " + GET_CONST_NODE(array_type_node)->get_kind_text());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---elts_size " + STR(elts_size));
    if(is_sds)
@@ -2239,8 +2236,8 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
 
    unsigned int nbyte_on_memory = bram_bitsize / 8;
 
-   if(init_node && ((GetPointer<constructor>(init_node) && GetPointer<constructor>(init_node)->list_of_idx_valu.size()) || (GetPointer<string_cst>(init_node) && GetPointer<string_cst>(init_node)->strg != "") ||
-                    (!GetPointer<constructor>(init_node) && !GetPointer<string_cst>(init_node))))
+   if(init_node && ((GetPointer<constructor>(GET_NODE(init_node)) && GetPointer<constructor>(GET_NODE(init_node))->list_of_idx_valu.size()) || (GetPointer<string_cst>(GET_NODE(init_node)) && GetPointer<string_cst>(GET_NODE(init_node))->strg != "") ||
+                    (!GetPointer<constructor>(GET_NODE(init_node)) && !GetPointer<string_cst>(GET_NODE(init_node)))))
    {
       std::vector<std::string> init_string;
       write_init(TreeM, ar_node, init_node, init_string, mem, element_precision);
@@ -2467,18 +2464,17 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    }
 }
 
-void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef init_node, std::vector<std::string>& init_file, const memoryRef mem, unsigned int element_precision)
+void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef _init_node, std::vector<std::string>& init_file, const memoryRef mem, unsigned int element_precision)
 {
    std::string trimmed_value;
-
+   THROW_ASSERT(!var_node || var_node->get_kind() == tree_reindex_K, "");
+   const auto init_node = GET_CONST_NODE(_init_node);
    switch(init_node->get_kind())
    {
       case real_cst_K:
       {
-         unsigned int type_index;
-         tree_helper::get_type_node(init_node, type_index);
-         unsigned int precision = tree_helper::size(TreeM, type_index);
-         auto* rc = GetPointer<real_cst>(init_node);
+         unsigned int precision = tree_helper::Size(tree_helper::CGetType(_init_node));
+         const auto rc = GetPointerS<const real_cst>(init_node);
          std::string C_value = rc->valr;
          trimmed_value = convert_fp_to_string(C_value, precision);
          init_file.push_back(trimmed_value);
@@ -2486,12 +2482,10 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case integer_cst_K:
       {
-         auto* ic = GetPointer<integer_cst>(init_node);
+         auto* ic = GetPointerS<const integer_cst>(init_node);
          auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
          trimmed_value = "";
-         unsigned int type_index;
-         tree_helper::get_type_node(init_node, type_index);
-         unsigned int precision = std::max(8u, tree_helper::size(TreeM, type_index));
+         unsigned int precision = std::max(8u, tree_helper::Size(tree_helper::CGetType(_init_node)));
          THROW_ASSERT(precision, "expected a size greater than 0");
          if(element_precision)
          {
@@ -2506,10 +2500,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case complex_cst_K:
       {
-         unsigned int type_index;
-         tree_helper::get_type_node(init_node, type_index);
-         unsigned int precision = tree_helper::size(TreeM, type_index);
-         auto* rp = GetPointer<real_cst>(GET_NODE(GetPointer<complex_cst>(init_node)->real));
+         unsigned int precision = tree_helper::Size(tree_helper::CGetType(_init_node));
+         auto* rp = GetPointer<const real_cst>(GET_CONST_NODE(GetPointerS<const complex_cst>(init_node)->real));
          std::string trimmed_value_r;
          if(rp)
          {
@@ -2518,7 +2510,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          else
          {
-            auto* ic = GetPointer<integer_cst>(GET_NODE(GetPointer<complex_cst>(init_node)->real));
+            auto* ic = GetPointerS<const integer_cst>(GET_CONST_NODE(GetPointerS<const complex_cst>(init_node)->real));
             THROW_ASSERT(ic, "expected an integer_cst");
             auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
             for(unsigned int ind = 0; ind < precision / 2; ind++)
@@ -2526,7 +2518,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                trimmed_value_r = trimmed_value_r + (((1LLU << (precision / 2 - ind - 1)) & ull_value) ? '1' : '0');
             }
          }
-         auto* ip = GetPointer<real_cst>(GET_NODE(GetPointer<complex_cst>(init_node)->imag));
+         auto* ip = GetPointer<const real_cst>(GET_CONST_NODE(GetPointerS<const complex_cst>(init_node)->imag));
          std::string trimmed_value_i;
          if(ip)
          {
@@ -2535,7 +2527,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          else
          {
-            auto* ic = GetPointer<integer_cst>(GET_NODE(GetPointer<complex_cst>(init_node)->imag));
+            auto* ic = GetPointerS<const integer_cst>(GET_CONST_NODE(GetPointerS<const complex_cst>(init_node)->imag));
             THROW_ASSERT(ic, "expected an integer_cst");
             auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
             for(unsigned int ind = 0; ind < precision / 2; ind++)
@@ -2549,7 +2541,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case constructor_K:
       {
-         auto* co = GetPointer<constructor>(init_node);
+         auto* co = GetPointerS<const constructor>(init_node);
          auto i = co->list_of_idx_valu.begin();
          auto vend = co->list_of_idx_valu.end();
          bool designated_initializers_used = false;
@@ -2562,20 +2554,20 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          tree_nodeRef firstnode = (i != vend) ? co->list_of_idx_valu.begin()->first : tree_nodeRef();
          if(firstnode && GET_NODE(firstnode)->get_kind() == field_decl_K)
          {
-            auto* fd = GetPointer<field_decl>(GET_NODE(firstnode));
+            auto* fd = GetPointerS<field_decl>(GET_NODE(firstnode));
             tree_nodeRef scpe = GET_NODE(fd->scpe);
 
             if(scpe->get_kind() == record_type_K)
             {
-               field_list = &(GetPointer<record_type>(scpe)->list_of_flds);
+               field_list = &(GetPointerS<record_type>(scpe)->list_of_flds);
                // struct_or_union_align = GetPointer<record_type>(scpe)->algn;
                is_struct = true;
             }
             else if(scpe->get_kind() == union_type_K)
             {
-               field_list = &(GetPointer<union_type>(scpe)->list_of_flds);
+               field_list = &(GetPointerS<union_type>(scpe)->list_of_flds);
                is_union = true;
-               union_size = tree_helper::size(TreeM, GET_INDEX_NODE(fd->scpe));
+               union_size = tree_helper::Size(fd->scpe);
             }
             else
             {
@@ -2619,19 +2611,19 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
 
                if(GetPointer<field_decl>(GET_NODE(*fli))->is_bitfield())
                {
-                  unsigned int size_type_index = tree_helper::get_type_index(TreeM, GET_INDEX_NODE(*fli));
+                  const auto size_type = tree_helper::CGetType(*fli);
                   // fix the element precision to pass to write_init
-                  element_precision = tree_helper::size(TreeM, size_type_index);
+                  element_precision = tree_helper::Size(size_type);
                }
 
                if(i != vend && GET_INDEX_NODE(i->first) == GET_INDEX_NODE(*fli))
                {
-                  write_init(TreeM, GET_NODE(i->first), GET_NODE(i->second), init_file, mem, element_precision);
+                  write_init(TreeM, i->first, i->second, init_file, mem, element_precision);
                   ++i;
                }
                else
                {
-                  write_init(TreeM, GET_NODE(*fli), GET_NODE(*fli), init_file, mem, element_precision);
+                  write_init(TreeM, *fli, *fli, init_file, mem, element_precision);
                }
 
                if(GetPointer<field_decl>(GET_NODE(*fli))->is_bitfield())
@@ -2644,25 +2636,21 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                {
                   /// check if padding is needed
                   unsigned long long int nbits;
-                  unsigned int type_index;
                   integer_cst* ic;
                   if(inext != flend)
                   {
                      tree_nodeRef idx_next = GET_NODE(*inext);
-                     auto* idx_next_fd = GetPointer<field_decl>(idx_next);
-                     ic = GetPointer<integer_cst>(GET_NODE(idx_next_fd->bpos));
+                     auto* idx_next_fd = GetPointerS<field_decl>(idx_next);
+                     ic = GetPointerS<integer_cst>(GET_NODE(idx_next_fd->bpos));
                      nbits = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                   }
                   else
                   {
-                     type_index = GET_INDEX_NODE(co->type);
-                     nbits = tree_helper::size(TreeM, type_index);
+                     nbits = tree_helper::Size(co->type);
                   }
-                  tree_nodeRef idx_curr = GET_NODE(*fli);
-                  auto* idx_curr_fd = GetPointer<field_decl>(idx_curr);
-                  tree_helper::get_type_node(idx_curr, type_index);
-                  unsigned int field_decl_size = tree_helper::size(TreeM, type_index);
-                  ic = GetPointer<integer_cst>(GET_NODE(idx_curr_fd->bpos));
+                  auto* idx_curr_fd = GetPointer<field_decl>(GET_NODE(*fli));
+                  unsigned int field_decl_size = tree_helper::Size(tree_helper::CGetType(*fli));
+                  ic = GetPointerS<integer_cst>(GET_NODE(idx_curr_fd->bpos));
                   nbits = nbits - static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                   nbits = nbits - field_decl_size;
                   if(nbits > 0)
@@ -2695,11 +2683,11 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                }
                if(is_struct and GetPointer<field_decl>(GET_NODE(i->first))->is_bitfield())
                {
-                  unsigned int size_type_index = tree_helper::get_type_index(TreeM, GET_INDEX_NODE(i->first));
+                  const auto size_type = tree_helper::CGetType(i->first);
                   // fix the element precision to pass to write_init
-                  element_precision = tree_helper::size(TreeM, size_type_index);
+                  element_precision = tree_helper::Size(size_type);
                }
-               write_init(TreeM, i->first ? GET_NODE(i->first) : tree_nodeRef(), GET_NODE(i->second), init_file, mem, element_precision);
+               write_init(TreeM, i->first, i->second, init_file, mem, element_precision);
                if(is_struct and GetPointer<field_decl>(GET_NODE(i->first))->is_bitfield())
                {
                   // reset the element_precision to the main value
@@ -2710,25 +2698,21 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                {
                   /// check if padding is needed
                   unsigned long long int nbits;
-                  unsigned int type_index;
                   integer_cst* ic;
                   if(inext != vend)
                   {
                      tree_nodeRef idx_next = GET_NODE(inext->first);
-                     auto* idx_next_fd = GetPointer<field_decl>(idx_next);
-                     ic = GetPointer<integer_cst>(GET_NODE(idx_next_fd->bpos));
+                     auto* idx_next_fd = GetPointerS<field_decl>(idx_next);
+                     ic = GetPointerS<integer_cst>(GET_NODE(idx_next_fd->bpos));
                      nbits = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                   }
                   else
                   {
-                     type_index = GET_INDEX_NODE(co->type);
-                     nbits = tree_helper::size(TreeM, type_index);
+                     nbits = tree_helper::Size(co->type);
                   }
-                  tree_nodeRef idx_curr = GET_NODE(i->first);
-                  auto* idx_curr_fd = GetPointer<field_decl>(idx_curr);
-                  tree_helper::get_type_node(idx_curr, type_index);
-                  unsigned int field_decl_size = tree_helper::size(TreeM, type_index);
-                  ic = GetPointer<integer_cst>(GET_NODE(idx_curr_fd->bpos));
+                  auto* idx_curr_fd = GetPointerS<field_decl>(GET_NODE(i->first));
+                  unsigned int field_decl_size = tree_helper::Size(tree_helper::CGetType(i->first));
+                  ic = GetPointerS<integer_cst>(GET_NODE(idx_curr_fd->bpos));
                   nbits = nbits - static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                   nbits = nbits - field_decl_size;
                   if(nbits > 0)
@@ -2746,9 +2730,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                {
                   /// check if padding is needed
                   THROW_ASSERT(co->list_of_idx_valu.size() == 1, "just one initializer is possible");
-                  unsigned int type_index;
-                  tree_helper::get_type_node(GET_NODE(i->first), type_index);
-                  unsigned int field_decl_size = tree_helper::size(TreeM, type_index);
+                  unsigned int field_decl_size = tree_helper::Size(i->first);
                   if(field_decl_size != union_size)
                   {
                      /// add padding
@@ -2763,13 +2745,12 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                }
             }
          }
-         unsigned int type_index;
-         tree_nodeRef type_n = tree_helper::get_type_node(var_node, type_index);
-         if(GetPointer<array_type>(type_n))
+         const auto type_n = tree_helper::CGetType(var_node);
+         if(GetPointer<const array_type>(GET_CONST_NODE(type_n)))
          {
             unsigned int size_of_data;
             std::vector<unsigned int> dims;
-            tree_helper::get_array_dim_and_bitsize(TreeM, type_index, dims, size_of_data);
+            tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
             if(element_precision)
             {
                size_of_data = std::min(size_of_data, element_precision);
@@ -2795,7 +2776,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case string_cst_K:
       {
-         auto* sc = GetPointer<string_cst>(init_node);
+         auto* sc = GetPointerS<const string_cst>(init_node);
          std::string string_value = sc->strg;
          std::string tmp;
          for(unsigned int index = 0; index < string_value.size(); ++index)
@@ -2848,12 +2829,11 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             trimmed_value = trimmed_value + '0';
          }
          init_file.push_back(trimmed_value);
-         unsigned int type_index;
-         tree_nodeRef type_n = tree_helper::get_type_node(var_node, type_index);
-         THROW_ASSERT(GetPointer<array_type>(type_n), "expected an array_type");
+         const auto type_n = tree_helper::CGetType(var_node);
+         THROW_ASSERT(GetPointer<const array_type>(GET_CONST_NODE(type_n)), "expected an array_type");
          unsigned int size_of_data;
          dims.clear();
-         tree_helper::get_array_dim_and_bitsize(TreeM, type_index, dims, size_of_data);
+         tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
          THROW_ASSERT(size_of_data == elmt_bitsize, "something of wrong happen");
          unsigned int num_elements = std::accumulate(dims.begin(), dims.end(), 1U, [](unsigned int a, unsigned int b) { return a * b; });
          std::string value;
@@ -2876,17 +2856,15 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case view_convert_expr_K:
       case nop_expr_K:
       {
-         auto* ue = GetPointer<unary_expr>(init_node);
+         auto* ue = GetPointerS<unary_expr>(init_node);
          if(GetPointer<addr_expr>(GET_NODE(ue->op)))
          {
-            write_init(TreeM, GET_NODE(ue->op), GET_NODE(ue->op), init_file, mem, element_precision);
+            write_init(TreeM, ue->op, ue->op, init_file, mem, element_precision);
          }
          else if(GetPointer<integer_cst>(GET_NODE(ue->op)))
          {
-            unsigned int type_index;
-            tree_helper::get_type_node(init_node, type_index);
-            unsigned int precision = std::max(std::max(8u, element_precision), tree_helper::size(TreeM, type_index));
-            write_init(TreeM, GET_NODE(ue->op), GET_NODE(ue->op), init_file, mem, precision);
+            unsigned int precision = std::max(std::max(8u, element_precision), tree_helper::Size(tree_helper::CGetType(init_node)));
+            write_init(TreeM, ue->op, ue->op, init_file, mem, precision);
          }
          else
          {
@@ -2896,13 +2874,11 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case addr_expr_K:
       {
-         auto* ae = GetPointer<addr_expr>(init_node);
+         auto* ae = GetPointerS<addr_expr>(init_node);
          tree_nodeRef addr_expr_op = GET_NODE(ae->op);
          unsigned int addr_expr_op_idx = GET_INDEX_NODE(ae->op);
          unsigned long long int ull_value = 0;
-         unsigned int type_index;
-         tree_helper::get_type_node(init_node, type_index);
-         unsigned int precision = tree_helper::size(TreeM, type_index);
+         unsigned int precision = tree_helper::Size(tree_helper::CGetType(_init_node));
          switch(addr_expr_op->get_kind())
          {
             case ssa_name_K:
@@ -2916,7 +2892,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             }
             case array_ref_K:
             {
-               auto* ar = GetPointer<array_ref>(addr_expr_op);
+               auto* ar = GetPointerS<array_ref>(addr_expr_op);
                tree_nodeRef aridx = GET_NODE(ar->op1);
                if(aridx->get_kind() == integer_cst_K && GetPointer<integer_cst>(aridx))
                {
@@ -2927,8 +2903,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      case parm_decl_K:
                      case string_cst_K:
                      {
-                        unsigned int step = tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, addr_expr_op_idx)) / 8;
-                        ull_value = mem->get_base_address(GET_INDEX_NODE(ar->op0), 0) + step * static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(aridx)));
+                        const auto step = tree_helper::Size(tree_helper::CGetType(ae->op)) / 8;
+                        ull_value = mem->get_base_address(GET_INDEX_NODE(ar->op0), 0) + step * static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointerS<integer_cst>(aridx)));
                         break;
                      }
                      case binfo_K:
@@ -2990,7 +2966,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             {
                if(addr_expr_op->get_kind() == mem_ref_K)
                {
-                  auto* mr = GetPointer<mem_ref>(addr_expr_op);
+                  auto* mr = GetPointerS<mem_ref>(addr_expr_op);
                   tree_nodeRef offset = GET_NODE(mr->op1);
                   if(offset->get_kind() == integer_cst_K)
                   {
@@ -3001,18 +2977,18 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      if(base_code == var_decl_K)
                      {
                         THROW_ASSERT(mem->has_base_address(base_index), "missing base address for: " + mr->ToString());
-                        ull_value = mem->get_base_address(base_index, 0) + static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(offset)));
+                        ull_value = mem->get_base_address(base_index, 0) + static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointerS<integer_cst>(offset)));
                      }
                      else if(base_code == addr_expr_K)
                      {
-                        auto base1 = GetPointer<addr_expr>(base_node)->op;
+                        auto base1 = GetPointerS<addr_expr>(base_node)->op;
                         auto base1_index = GET_INDEX_NODE(base1);
                         auto base1_node = GET_NODE(base1);
                         auto base1_code = base1_node->get_kind();
                         if(base1_code == var_decl_K)
                         {
                            THROW_ASSERT(mem->has_base_address(base1_index), "missing base address for: " + base1->ToString());
-                           ull_value = mem->get_base_address(base1_index, 0) + static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(offset)));
+                           ull_value = mem->get_base_address(base1_index, 0) + static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointerS<integer_cst>(offset)));
                         }
                         else
                         {
@@ -3052,6 +3028,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             case ternary_pm_expr_K:
             case ternary_mp_expr_K:
             case ternary_mm_expr_K:
+            case fshl_expr_K:
+            case fshr_expr_K:
             case bit_ior_concat_expr_K:
             case field_decl_K:
             case identifier_node_K:
@@ -3099,9 +3077,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case field_decl_K:
       {
-         unsigned int type_index;
-         tree_helper::get_type_node(init_node, type_index);
-         unsigned int field_decl_size = tree_helper::size(TreeM, type_index);
+         unsigned int field_decl_size = tree_helper::Size(tree_helper::CGetType(_init_node));
          std::string init_string;
          for(unsigned int j = 0; j < field_decl_size; ++j)
          {
@@ -3115,10 +3091,10 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case vector_cst_K:
       {
-         auto* vc = GetPointer<vector_cst>(init_node);
-         for(auto& i : (vc->list_of_valu)) // vector elements
+         auto* vc = GetPointerS<vector_cst>(init_node);
+         for(auto& i : vc->list_of_valu) // vector elements
          {
-            write_init(TreeM, GET_NODE(i), GET_NODE(i), init_file, mem, element_precision);
+            write_init(TreeM, i, i, init_file, mem, element_precision);
          }
          break;
       }
@@ -3195,7 +3171,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case CASE_TERNARY_EXPRESSION:
       case CASE_TYPE_NODES:
       default:
-         THROW_ERROR("elements not yet supported: " + init_node->get_kind_text() + init_node->ToString() + (var_node ? var_node->ToString() : ""));
+         THROW_ERROR("elements not yet supported: " + init_node->get_kind_text() + init_node->ToString() + (var_node ? STR(var_node) : ""));
    }
 }
 

@@ -59,7 +59,7 @@ REF_FORWARD_DECL(virtual_phi_nodes_split);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(bloc);
-REF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(tree_manipulation);
 //@}
 
 /**
@@ -68,6 +68,8 @@ REF_FORWARD_DECL(tree_manager);
 class virtual_phi_nodes_split : public FunctionFrontendFlowStep
 {
  private:
+   tree_manipulationRef tree_man;
+
    /// flag to check if initial tree has been dumped
    static bool tree_dumped;
 

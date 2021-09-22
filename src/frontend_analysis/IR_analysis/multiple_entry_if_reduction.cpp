@@ -144,14 +144,14 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
          break;
       }
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -160,8 +160,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
+               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
                break;
             }
             case DesignFlowStep_Status::SKIPPED:
@@ -399,7 +400,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       CustomMap<unsigned int, tree_node_dupRef> tree_node_dups;
       for(const auto& copy : copy_ids)
       {
-         tree_node_dups[copy.second] = tree_node_dupRef(new tree_node_dup(remaps[copy.second], TM));
+         tree_node_dups[copy.second] = tree_node_dupRef(new tree_node_dup(remaps[copy.second], AppM));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified basic block graph");
 
@@ -738,32 +739,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                      else
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---PHI has to be built");
-                        unsigned int phi_ssa_vers = TM->get_next_vers();
-                        unsigned int phi_def_ssa_node_nid = TM->new_tree_node_id();
-                        std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-                        IR_schema[TOK(TOK_TYPE)] = STR(tree_helper::get_type_index(TM, sn->index));
-                        IR_schema[TOK(TOK_VERS)] = STR(phi_ssa_vers);
-                        if(sn->var)
-                        {
-                           IR_schema[TOK(TOK_VAR)] = STR(sn->var->index);
-                        }
-                        IR_schema[TOK(TOK_VOLATILE)] = STR(false);
-                        IR_schema[TOK(TOK_VIRTUAL)] = STR(sn->virtual_flag);
-                        TM->create_tree_node(phi_def_ssa_node_nid, ssa_name_K, IR_schema);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa _" + STR(phi_ssa_vers));
-                        IR_schema.clear();
-                        tree_nodeRef phi_def_ssa_node = TM->GetTreeReindex(phi_def_ssa_node_nid);
 
-                        unsigned int phi_gimple_stmt_id = TM->new_tree_node_id();
-                        IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-                        IR_schema[TOK(TOK_SCPE)] = STR(function_id);
-                        IR_schema[TOK(TOK_RES)] = boost::lexical_cast<std::string>(phi_def_ssa_node_nid);
-                        IR_schema[TOK(TOK_VIRTUAL)] = STR(sn->virtual_flag);
-                        TM->create_tree_node(phi_gimple_stmt_id, gimple_phi_K, IR_schema);
-                        auto new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(phi_gimple_stmt_id));
-                        new_gp->SetSSAUsesComputed();
-                        reaching_defs[current_id] = TM->GetTreeReindex(phi_def_ssa_node_nid);
-
+                        std::vector<gimple_phi::DefEdge> def_edges;
                         for(boost::tie(ie, ie_end) = boost::in_edges(current, *bb_fcfg); ie != ie_end; ie++)
                         {
                            const auto source = boost::source(*ie, *bb_fcfg);
@@ -774,7 +751,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                               {
                                  THROW_ASSERT(reaching_defs.find(copy_id.second) != reaching_defs.end(), "");
                                  THROW_ASSERT(reaching_defs.find(copy_id.second)->second, "");
-                                 new_gp->AddDefEdge(TM, gimple_phi::DefEdge(reaching_defs[copy_id.second], copy_id.second));
+                                 def_edges.push_back(gimple_phi::DefEdge(reaching_defs[copy_id.second], copy_id.second));
                               }
                            }
                            else
@@ -783,23 +760,36 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                               {
                                  THROW_ASSERT(reaching_defs.find(source_id) != reaching_defs.end(), "");
                                  THROW_ASSERT(reaching_defs.find(source_id)->second, "");
-                                 new_gp->AddDefEdge(TM, gimple_phi::DefEdge(reaching_defs[source_id], source_id));
+                                 def_edges.push_back(gimple_phi::DefEdge(reaching_defs[source_id], source_id));
                               }
                               else
                               {
                                  THROW_ASSERT(bb_fcfg->CGetBBNodeInfo(current)->loop_id == bb_fcfg->CGetBBNodeInfo(current)->block->number, "");
-                                 new_gp->AddDefEdge(TM, gimple_phi::DefEdge(reaching_defs[current_id], source_id));
+                                 def_edges.push_back(gimple_phi::DefEdge(reaching_defs[current_id], source_id));
                               }
                            }
                         }
-                        TM->GetTreeReindex(phi_gimple_stmt_id);
-                        bb_cfg->GetBBNodeInfo(current)->block->AddPhi(TM->GetTreeReindex(phi_gimple_stmt_id));
-                        reaching_defs[current_id] = TM->GetTreeReindex(phi_def_ssa_node_nid);
-                        added_phis[current] = TM->GetTreeReindex(phi_gimple_stmt_id);
+                        tree_nodeRef phi_def_ssa_node;
+                        const auto phi_gimple_stmt = tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, current_id, sn->virtual_flag);
+                        THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index == tree_helper::CGetType(TM->CGetTreeReindex(sn->index))->index, "");
+                        GetPointer<ssa_name>(GET_NODE(phi_def_ssa_node))->AddUseStmt(phi_gimple_stmt);
+                        for(const auto& def_edge : def_edges)
+                        {
+                           if(GET_CONST_NODE(def_edge.first)->get_kind() == ssa_name_K)
+                           {
+                              GetPointerS<ssa_name>(GET_NODE(def_edge.first))->AddUseStmt(phi_gimple_stmt);
+                           }
+                        }
+                        auto new_gp = GetPointer<gimple_phi>(GET_NODE(phi_gimple_stmt));
+                        new_gp->SetSSAUsesComputed();
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa_" + STR(GetPointer<const ssa_name>(GET_CONST_NODE(phi_def_ssa_node))->vers));
+                        bb_cfg->GetBBNodeInfo(current)->block->AddPhi(phi_gimple_stmt);
+                        reaching_defs[current_id] = phi_def_ssa_node;
+                        added_phis[current] = phi_gimple_stmt;
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + new_gp->ToString());
                      }
                   }
-                  for(auto local_phi : bb_cfg->CGetBBNodeInfo(current)->block->CGetPhiList())
+                  for(const auto& local_phi : bb_cfg->CGetBBNodeInfo(current)->block->CGetPhiList())
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + STR(local_phi));
                      auto uses = tree_helper::ComputeSsaUses(local_phi);

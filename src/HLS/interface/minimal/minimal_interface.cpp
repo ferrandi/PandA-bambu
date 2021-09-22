@@ -132,7 +132,7 @@ DesignFlowStep_Status minimal_interface::InternalExec()
 
    build_wrapper(wrappedObj, interfaceObj, SM_minimal_interface);
 
-   if(!is_top || !parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+   if(!is_top || (parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals)))
    {
       memory::propagate_memory_parameters(HLS->top->get_circ(), SM_minimal_interface);
    }
@@ -209,31 +209,30 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    if(!DesignInterface.empty())
    {
       const auto TM = HLSMgr->get_tree_manager();
-      auto fnode = TM->get_tree_node_const(funId);
-      auto fd = GetPointer<function_decl>(fnode);
+      const auto fnode = TM->CGetTreeNode(funId);
+      const auto fd = GetPointerS<const function_decl>(fnode);
       std::string fname;
       tree_helper::get_mangled_fname(fd, fname);
       if(DesignInterface.find(fname) != DesignInterface.end())
       {
-         const auto& DesignInterfaceArgs = DesignInterface.find(fname)->second;
-         for(auto arg : fd->list_of_args)
+         const auto& DesignInterfaceArgs = DesignInterface.at(fname);
+         for(const auto& arg : fd->list_of_args)
          {
-            auto a = GetPointer<parm_decl>(GET_NODE(arg));
-            auto argName = GET_NODE(a->name);
-            THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
-            const std::string& argName_string = GetPointer<identifier_node>(argName)->strg;
+            const auto a = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
+            const auto argName = GET_CONST_NODE(a->name);
+            THROW_ASSERT(GetPointer<const identifier_node>(argName), "unexpected condition");
+            const auto& argName_string = GetPointerS<const identifier_node>(argName)->strg;
             THROW_ASSERT(DesignInterfaceArgs.find(argName_string) != DesignInterfaceArgs.end(), "unexpected condition:" + argName_string);
-            auto interfaceType = DesignInterfaceArgs.find(argName_string)->second;
+            const auto interfaceType = DesignInterfaceArgs.find(argName_string)->second;
             if(interfaceType != "default")
             {
-               auto argTypeNode = GET_NODE(a->type);
-               if(tree_helper::is_a_pointer(TM, GET_INDEX_NODE(a->type)))
+               if(tree_helper::IsPointerType(a->type))
                {
-                  auto p = wrappedObj->find_member(argName_string, port_o_K, wrappedObj);
+                  const auto p = wrappedObj->find_member(argName_string, port_o_K, wrappedObj);
                   THROW_ASSERT(p, "unexpected condition");
-                  bool is_direct = interfaceType == "m_axi" && HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() &&
-                                   HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string) != HLSMgr->design_interface_attribute2.find(fname)->second.end() &&
-                                   HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string)->second == "direct";
+                  const auto is_direct = interfaceType == "m_axi" && HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() &&
+                                         HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string) != HLSMgr->design_interface_attribute2.find(fname)->second.end() &&
+                                         HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string)->second == "direct";
                   if(!is_direct)
                   {
                      portsToConstant.insert(p);
@@ -366,7 +365,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             portsToSkip.insert(wrappedObj->find_member("Mout_Wdata_ram", port_o_K, wrappedObj));
             portsToSkip.insert(wrappedObj->find_member("Mout_data_ram_size", port_o_K, wrappedObj));
          }
-         else if(with_slave && parameters->isOption(OPT_do_not_expose_globals))
+         else if(with_slave && (!parameters->isOption(OPT_expose_globals) || !parameters->getOption<bool>(OPT_expose_globals)))
          {
             do_not_expose_globals_case();
          }
@@ -500,7 +499,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                std::vector<std::string> splitted = SplitString(init_v, ",");
                unsigned int byte_allocated = 0;
-               unsigned long long int actual_byte = tree_helper::size(HLSMgr->get_tree_manager(), m->first) / 8;
+               unsigned long long int actual_byte = tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(m->first)) / 8;
                std::vector<std::string> eightbit_string;
                for(const auto& i : splitted)
                {
@@ -856,7 +855,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                portsToSkip.insert(wrappedObj->find_member("Mout_data_ram_size", port_o_K, wrappedObj));
             }
          }
-         else if(with_slave && parameters->isOption(OPT_do_not_expose_globals))
+         else if(with_slave && (!parameters->isOption(OPT_expose_globals) || !parameters->getOption<bool>(OPT_expose_globals)))
          {
             do_not_expose_globals_case();
          }
@@ -1057,15 +1056,17 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
                THROW_ASSERT(int_port, "unexpected condition");
-               auto tnIndex = int_port->get_typeRef()->treenode;
-               auto TreeM = HLSMgr->get_tree_manager();
-               if(tnIndex > 0 && tree_helper::is_a_pointer(TreeM, tnIndex))
+               const auto tnIndex = int_port->get_typeRef()->treenode;
+               if(tnIndex > 0)
                {
-                  unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, tnIndex));
-                  tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
-                  structural_type_descriptorRef Intype = structural_type_descriptorRef(new structural_type_descriptor("bool", tree_helper::Size(pt_node)));
-                  ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, Intype);
-                  GetPointer<port_o>(ext_port)->set_port_interface(port_o::port_interface::PI_RNONE);
+                  const auto tn = HLSMgr->get_tree_manager()->CGetTreeReindex(tnIndex);
+                  if(tree_helper::IsPointerType(tn))
+                  {
+                     const auto pt_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
+                     const structural_type_descriptorRef Intype(new structural_type_descriptor("bool", tree_helper::Size(pt_type)));
+                     ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, Intype);
+                     GetPointerS<port_o>(ext_port)->set_port_interface(port_o::port_interface::PI_RNONE);
+                  }
                }
             }
          }

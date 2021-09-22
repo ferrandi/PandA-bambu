@@ -89,6 +89,7 @@
 #include "bb_reachability_computation.hpp"
 #if HAVE_BAMBU_BUILT
 #include "BitValueIPA.hpp"
+#include "BitValueRange.hpp"
 #include "Bit_Value.hpp"
 #include "Bit_Value_opt.hpp"
 #endif
@@ -127,7 +128,7 @@
 #include "dead_code_eliminationIPA.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
-#include "find_max_cfg_transformations.hpp"
+#include "find_max_transformations.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "determine_memory_accesses.hpp"
@@ -149,6 +150,7 @@
 #endif
 #if HAVE_BAMBU_BUILT
 #include "FixStructsPassedByValue.hpp"
+#include "FunctionCallOpt.hpp"
 #include "FunctionCallTypeCleanup.hpp"
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
@@ -366,7 +368,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case BIT_VALUE:
       case BIT_VALUE_OPT:
-      case BIT_VALUE_OPT2:
+      case BITVALUE_RANGE:
 #endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
@@ -420,6 +422,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case EXTRACT_PATTERNS:
       case FUNCTION_CALL_TYPE_CLEANUP:
+      case FUNCTION_CALL_OPT:
       case FIX_STRUCTS_PASSED_BY_VALUE:
 #endif
 #if HAVE_ZEBU_BUILT
@@ -586,7 +589,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case DEAD_CODE_ELIMINATION_IPA:
 #endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FIND_MAX_TRANSFORMATIONS:
 #endif
       case FUNCTION_ANALYSIS:
 #if HAVE_ZEBU_BUILT
@@ -674,9 +677,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       }
 #endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FIND_MAX_TRANSFORMATIONS:
       {
-         return DesignFlowStepRef(new FindMaxCFGTransformations(AppM, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(new FindMaxTransformations(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
       case(FUNCTION_ANALYSIS):
@@ -765,7 +768,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case BIT_VALUE:
       case BIT_VALUE_OPT:
-      case BIT_VALUE_OPT2:
+      case BITVALUE_RANGE:
 #endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
@@ -819,6 +822,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case EXTRACT_PATTERNS:
       case FUNCTION_CALL_TYPE_CLEANUP:
+      case FUNCTION_CALL_OPT:
       case FIX_STRUCTS_PASSED_BY_VALUE:
 #endif
 #if HAVE_ZEBU_BUILT
@@ -1049,9 +1053,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       {
          return DesignFlowStepRef(new Bit_Value_opt(parameters, AppM, function_id, design_flow_manager.lock()));
       }
-      case BIT_VALUE_OPT2:
+      case BITVALUE_RANGE:
       {
-         return DesignFlowStepRef(new Bit_Value_opt2(parameters, AppM, function_id, design_flow_manager.lock()));
+         return DesignFlowStepRef(new BitValueRange(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
       case BLOCK_FIX:
@@ -1188,6 +1192,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case FUNCTION_CALL_TYPE_CLEANUP:
       {
          return DesignFlowStepRef(new FunctionCallTypeCleanup(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
+      case FUNCTION_CALL_OPT:
+      {
+         return DesignFlowStepRef(new FunctionCallOpt(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
 #if HAVE_ZEBU_BUILT
@@ -1552,7 +1560,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case DEAD_CODE_ELIMINATION_IPA:
 #endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FIND_MAX_TRANSFORMATIONS:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT

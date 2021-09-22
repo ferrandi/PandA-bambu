@@ -122,6 +122,10 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #endif
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
    script << " -O3";
+   if(!generate_vcd_output)
+   {
+      script << " --x-assign fast --x-initial fast --noassert";
+   }
 #endif
    unsigned int nThreads = Param->getOption<bool>(OPT_verilator_parallel) ? std::thread::hardware_concurrency() : 1;
    if(nThreads > 1)
@@ -154,14 +158,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "ln -s " + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
    script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j";
-   if(Param->getOption<bool>(OPT_verilator_parallel))
-   {
-      script << R"( OPT_FAST="-fstrict-aliasing -march=native" OPT_SLOW="-fstrict-aliasing" OPT="-march=native")";
-   }
-   else
-   {
-      script << " OPT_FAST=\"-O1 -fstrict-aliasing -march=native\"";
-   }
+   script << " OPT=\"-fstrict-aliasing\"";
    script << " -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl

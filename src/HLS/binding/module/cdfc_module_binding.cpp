@@ -1337,6 +1337,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
       // Do a preliminary register binding to help the sharing of complex operations
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Do a preliminary register binding to help the sharing of complex operations");
+      if(parameters->getOption<bool>(OPT_shared_input_registers))
       {
          DesignFlowStepRef regb;
          if(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm) == HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
@@ -1685,7 +1686,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
       /// solve the binding problem for all the partitions
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---solve the binding problem for all the partitions");
-      const unsigned int number_of_iterations = n_vert > OP_THRESHOLD ? 1 : 10;
+      const unsigned int number_of_iterations = n_vert > OP_THRESHOLD ? 2 : 10;
       const std::map<unsigned int, unsigned int> numModule_initial = numModule;
       const size_t total_modules_allocated_initial = total_modules_allocated;
       const double total_resource_area_initial = total_resource_area;

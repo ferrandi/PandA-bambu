@@ -10,6 +10,7 @@ EOF
 }
 
 COMPILER=""
+REPORT_DIR=""
 ARGS=$@
 
 for arg in $ARGS
@@ -19,7 +20,7 @@ do
     fi
 done
 
-if [[ -z "$COMPILER" ]]; then
+if [[ -z "$COMPILER" && "$ggo_require_compiler" == "1" ]]; then
     showHelp
     exit -1
 fi

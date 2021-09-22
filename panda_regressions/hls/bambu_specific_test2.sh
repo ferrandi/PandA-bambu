@@ -10,7 +10,5 @@ $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=O3 -O3 ${BATCH_ARGS[*]}" \
    -lbambu_specific_test2_list \
    -o "output_${OUT_SUFFIX}" -b$(dirname $0) \
-   --table="${OUT_SUFFIX}.tex" \
-   --csv="${OUT_SUFFIX}.csv" \
    --name="${OUT_SUFFIX}" "$@"
 exit $?

@@ -1093,5 +1093,6 @@ struct node_kind_prec_info
    node_kind_prec_info() : output_prec(0), base128_output_nelem(0), real_output_nelem(0), is_single_bool_test_cond_expr(false), is_simple_pointer_plus_expr(false)
    {
    }
+   void print(std::ostream& os) const;
 };
 #endif

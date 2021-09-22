@@ -73,6 +73,7 @@
 
 /// tree/ include
 #include "behavioral_helper.hpp"
+#include "tree_helper.hpp"
 
 /// utility includes
 #include "dbgPrintHelper.hpp"
@@ -145,20 +146,20 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
       xml_element* nodeRoot = document.create_root_node("function");
       xml_element* node = nodeRoot->add_child_element("testbench");
 
-      for(const auto function_parameter : behavioral_helper->get_parameters())
+      for(const auto& function_parameter : behavioral_helper->GetParameters())
       {
-         if(behavioral_helper->is_a_pointer(function_parameter))
+         if(tree_helper::IsPointerType(function_parameter))
          {
             continue;
          }
-         std::string param = behavioral_helper->PrintVariable(function_parameter);
+         std::string param = behavioral_helper->PrintVariable(function_parameter->index);
 
          long long int value = (rand() % 20);
-         if(behavioral_helper->is_bool(function_parameter))
+         if(tree_helper::IsBooleanType(function_parameter))
          {
             value = value % 2;
          }
-         node->set_attribute(param, boost::lexical_cast<std::string>(value));
+         node->set_attribute(param, STR(value));
       }
 
       document.write_to_file_formatted(input_xml_filename);
@@ -189,7 +190,7 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + param + (behavioral_helper->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
                if((Enode)->get_attribute(param))
                {
-                  test_vector[param] = boost::lexical_cast<std::string>((Enode)->get_attribute(param)->get_value());
+                  test_vector[param] = STR((Enode)->get_attribute(param)->get_value());
                }
                else if((Enode)->get_attribute(param + ":init_file"))
                {
@@ -262,11 +263,11 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
 
 size_t TestVectorParser::ParseTestVectors(std::vector<std::map<std::string, std::string>>& test_vectors) const
 {
-   if(not input_xml_filename.empty())
+   if(!input_xml_filename.empty())
    {
       ParseXMLFile(test_vectors);
    }
-   else if(not user_input_string.empty())
+   else if(!user_input_string.empty())
    {
       ParseUserString(test_vectors);
    }

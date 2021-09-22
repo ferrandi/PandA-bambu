@@ -132,18 +132,17 @@ void tree_node_reached::operator()(const gimple_node* obj, unsigned int& mask)
    {
       CHECK_AND_ADD(vover, gimple_node::vovers);
    }
-   auto vend2 = obj->pragmas.end();
-   for(auto i = obj->pragmas.begin(); i != vend2; ++i)
-      CHECK_AND_ADD(*i, gimple_node::pragmas);
-   std::vector<tree_nodeRef>::const_iterator use, use_end = obj->use_set->variables.end();
-   for(use = obj->use_set->variables.begin(); use != use_end; ++use)
+   for(const auto& i : obj->pragmas)
    {
-      CHECK_AND_ADD(*use, gimple_node::use_set);
+      CHECK_AND_ADD(i, gimple_node::pragmas);
    }
-   std::vector<tree_nodeRef>::const_iterator clobbered, clobbered_end = obj->clobbered_set->variables.end();
-   for(clobbered = obj->clobbered_set->variables.begin(); clobbered != clobbered_end; ++clobbered)
+   for(const auto& use : obj->use_set->variables)
    {
-      CHECK_AND_ADD(*clobbered, gimple_node::clobbered_set);
+      CHECK_AND_ADD(use, gimple_node::use_set);
+   }
+   for(const auto& clobbered : obj->clobbered_set->variables)
+   {
+      CHECK_AND_ADD(clobbered, gimple_node::clobbered_set);
    }
 }
 
@@ -379,7 +378,6 @@ void tree_node_reached::operator()(const gimple_assign* obj, unsigned int& mask)
    CHECK_AND_ADD(obj->op0, gimple_assign::op0);
    CHECK_AND_ADD(obj->op1, gimple_assign::op1);
    CHECK_AND_ADD(obj->predicate, gimple_assign::predicate);
-   CHECK_AND_ADD(obj->orig, gimple_assign::orig);
 }
 
 void tree_node_reached::operator()(const gimple_goto* obj, unsigned int& mask)
@@ -530,10 +528,9 @@ void tree_node_reached::operator()(const ssa_name* obj, unsigned int& mask)
 
    CHECK_AND_ADD(obj->type, ssa_name::type);
    CHECK_AND_ADD(obj->var, ssa_name::var);
-   std::vector<tree_nodeRef>::const_iterator use, use_end = obj->use_set->variables.end();
-   for(use = obj->use_set->variables.begin(); use != use_end; ++use)
+   for(const auto& use : obj->use_set->variables)
    {
-      CHECK_AND_ADD(*use, ssa_name::use_set);
+      CHECK_AND_ADD(use, ssa_name::use_set);
    }
 
    for(auto const& def_stmt : obj->CGetDefStmts())
@@ -1389,6 +1386,10 @@ void tree_node_index_factory::create_tree_node(const unsigned int node_id, const
          CREATE_TREE_NODE_CASE_BODY(sat_plus_expr, node_id)
       case sat_minus_expr_K:
          CREATE_TREE_NODE_CASE_BODY(sat_minus_expr, node_id)
+      case fshl_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(fshl_expr, node_id)
+      case fshr_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(fshr_expr, node_id)
       case do_stmt_K:
       case for_stmt_K:
       case if_stmt_K:
@@ -1878,7 +1879,6 @@ void tree_node_index_factory::operator()(const gimple_assign* obj, unsigned int&
    SET_NODE_ID(op0, gimple_assign);
    SET_NODE_ID(op1, gimple_assign);
    SET_NODE_ID(predicate, gimple_assign);
-   SET_NODE_ID(orig, gimple_assign);
    SET_VALUE(init_assignment, gimple_assign);
    SET_VALUE(clobber, gimple_assign);
    SET_VALUE(temporary_address, gimple_assign);

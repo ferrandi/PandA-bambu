@@ -6,6 +6,7 @@ report_dir="$1"
 shift
 
 function cleanup {
+   echo "::endgroup::"
    make --directory=$workspace_dir -f Makefile.init clean
 }
 trap cleanup EXIT
@@ -67,7 +68,7 @@ done
 cd $workspace_dir
 
 echo "Initializing build environment..."
-make -j -f Makefile.init
+make -f Makefile.init
 echo "::endgroup::"
 
 echo "::group::Configure build environment"
@@ -78,11 +79,11 @@ cd ..
 echo "::endgroup::"
 
 echo "::group::Compile external libraries"
-make --directory=build/ext -j
+make --directory=build/ext -j$J
 echo "::endgroup::"
 
 echo "::group::Scan build Bambu sources"
-scan-build-$CLANG_VERSION -v -v --use-cc=/usr/bin/clang-$CLANG_VERSION --use-c++=/usr/bin/clang++-$CLANG_VERSION --use-analyzer=/usr/bin/clang-$CLANG_VERSION -o "$report_dir" make --directory=build/src -j
+scan-build-$CLANG_VERSION -v -v --use-cc=/usr/bin/clang-$CLANG_VERSION --use-c++=/usr/bin/clang++-$CLANG_VERSION --use-analyzer=/usr/bin/clang-$CLANG_VERSION -o "$report_dir" make --directory=build/src -j$J
 echo "::endgroup"
 
 mkdir -p "$report_dir"

@@ -93,7 +93,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

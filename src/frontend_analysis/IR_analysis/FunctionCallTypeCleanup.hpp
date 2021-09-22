@@ -34,6 +34,7 @@
  * @file FunctionCallTypeCleanup.hpp
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -45,9 +46,16 @@
 
 #include "function_frontend_flow_step.hpp"
 
+#include <string>
+#include <vector>
+
 REF_FORWARD_DECL(application_manager);
+REF_FORWARD_DECL(bloc);
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 CONSTREF_FORWARD_DECL(Parameter);
+REF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(tree_manipulation);
+REF_FORWARD_DECL(tree_node);
 
 class FunctionCallTypeCleanup : public FunctionFrontendFlowStep
 {
@@ -57,6 +65,20 @@ class FunctionCallTypeCleanup : public FunctionFrontendFlowStep
     * @param relationship_type is the type of relationship to be considered
     */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   /**
+    * @brief
+    *
+    * @param TM is the tree manager
+    * @param tree_man is the tree manipulation
+    * @param block is the call statement basic block
+    * @param stmt is the call statement
+    * @param args is the reference of the args vector from the call statement
+    * @param srcp is the default srcp
+    * @return true when parameters have been modified
+    * @return false when no modification is applied
+    */
+   bool ParametersTypeCleanup(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const blocRef& block, const tree_nodeRef& stmt, std::vector<tree_nodeRef>& args, const std::string& srcp) const;
 
  public:
    /**

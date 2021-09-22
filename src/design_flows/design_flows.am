@@ -189,6 +189,7 @@ if BUILD_LIB_TO_HDL
                         -I$(top_srcdir)/src/technology/physical_library \
                         -I$(top_srcdir)/src/technology/target_device \
                         -I$(top_srcdir)/src/technology/target_device/FPGA \
+                        -I$(top_srcdir)/src/tree \
                         -I$(top_srcdir)/src/utility \
                         $(AM_CPPFLAGS)
 if BUILD_FLOPOCO
@@ -317,11 +318,12 @@ endif
    -I$(top_srcdir)/src/technology/physical_library/models \
    -I$(top_srcdir)/src/technology/physical_library/models/area \
    -I$(top_srcdir)/src/technology/target_device \
+   -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_builddir)/src/design_flows/technology \
    $(AM_CPPFLAGS)
 design_flows/technology/load_default_technology.cpp : design_flows/technology/C_COMPLEX_IPs.data design_flows/technology/C_FP_IPs.data design_flows/technology/C_HLS_IPs.data design_flows/technology/C_IO_IPs.data design_flows/technology/C_MEM_IPs.data \
-    design_flows/technology/C_PROFILING_IPs.data design_flows/technology/CS_COMPONENT.data design_flows/technology/C_STD_IPs.data design_flows/technology/C_VEC_IPs.data design_flows/technology/NC_HLS_IPs.data design_flows/technology/NC_MEM_IPs.data design_flows/technology/NC_PC_IPs.data\
+    design_flows/technology/C_PROFILING_IPs.data design_flows/technology/CS_COMPONENT.data design_flows/technology/C_STD_IPs.data design_flows/technology/C_VEC_IPs.data design_flows/technology/NC_HLS_IPs.data design_flows/technology/NC_MEM_IPs.data design_flows/technology/NC_PC_IPs.data design_flows/technology/C_PC_IPs.data\
     design_flows/technology/NC_SF_IPs.data design_flows/technology/NC_STD_IPs.data design_flows/technology/NC_VEC_IPs.data design_flows/technology/NC_wishbone_IPs.data
 
 #The tab in this rule can't be replaced by blanks
@@ -361,6 +363,9 @@ design_flows/technology/NC_MEM_IPs.data: $(top_srcdir)/etc/lib/technology/NC_MEM
 design_flows/technology/NC_PC_IPs.data: $(top_srcdir)/etc/lib/technology/NC_PC_IPs.xml
 	gzip -c  $(top_srcdir)/etc/lib/technology/NC_PC_IPs.xml > design_flows/technology/NC_PC_IPs.data
 
+design_flows/technology/C_PC_IPs.data: $(top_srcdir)/etc/lib/technology/C_PC_IPs.xml
+	gzip -c  $(top_srcdir)/etc/lib/technology/C_PC_IPs.xml > design_flows/technology/C_PC_IPs.data
+
 design_flows/technology/NC_SF_IPs.data: $(top_srcdir)/etc/lib/technology/NC_SF_IPs.xml
 	gzip -c  $(top_srcdir)/etc/lib/technology/NC_SF_IPs.xml > design_flows/technology/NC_SF_IPs.data
 
@@ -378,7 +383,7 @@ design_flows/technology/NC_wishbone_IPs.data: $(top_srcdir)/etc/lib/technology/N
 design_flows_dir = $(pkgdatadir)/design_flows
 design_flows_technology_dir = $(design_flows_dir)/technology
 design_flows_technology__DATA =  design_flows/technology/C_COMPLEX_IPs.data design_flows/technology/CS_COMPONENT.data design_flows/technology/C_FP_IPs.data design_flows/technology/C_HLS_IPs.data design_flows/technology/C_IO_IPs.data design_flows/technology/C_MEM_IPs.data \
-                                 design_flows/technology/C_PROFILING_IPs.data design_flows/technology/C_STD_IPs.data design_flows/technology/C_VEC_IPs.data design_flows/technology/NC_HLS_IPs.data design_flows/technology/NC_MEM_IPs.data design_flows/technology/NC_PC_IPs.data \
+                                 design_flows/technology/C_PROFILING_IPs.data design_flows/technology/C_STD_IPs.data design_flows/technology/C_VEC_IPs.data design_flows/technology/NC_HLS_IPs.data design_flows/technology/NC_MEM_IPs.data design_flows/technology/NC_PC_IPs.data design_flows/technology/C_PC_IPs.data\
                                  design_flows/technology/NC_SF_IPs.data design_flows/technology/NC_STD_IPs.data design_flows/technology/NC_VEC_IPs.data design_flows/technology/NC_wishbone_IPs.data
 
 endif

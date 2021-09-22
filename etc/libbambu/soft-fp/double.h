@@ -29,7 +29,6 @@
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
-#include "soft-fp.h"
 
 #if _FP_W_TYPE_SIZE < 32
 #error "Here's a nickel kid.  Go buy yourself a real computer."
@@ -65,7 +64,8 @@ typedef float DFtype __attribute__((mode(DF)));
 
 #if _FP_W_TYPE_SIZE < 64
 
-union _FP_UNION_D {
+union _FP_UNION_D
+{
    DFtype flt;
    struct _FP_STRUCT_LAYOUT
    {
@@ -176,7 +176,8 @@ union _FP_UNION_D {
 
 #else
 
-union _FP_UNION_D {
+union _FP_UNION_D
+{
    DFtype flt;
    struct _FP_STRUCT_LAYOUT
    {

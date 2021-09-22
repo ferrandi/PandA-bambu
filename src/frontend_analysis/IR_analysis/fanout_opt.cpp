@@ -98,7 +98,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+               if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
                {
                   relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
                }
@@ -125,8 +125,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
          break;
       }
       default:
@@ -182,9 +182,8 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(ga->op0));
                if(ssa_defined->CGetNumberUses() > 1)
                {
-                  unsigned assigned_ssa_type_index;
-                  const tree_nodeRef assigned_ssa_type_node = tree_helper::get_type_node(GET_NODE(ga->op0), assigned_ssa_type_index);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the assigned ssa_name " + STR(GET_NODE(ga->op0)) + " has type " + assigned_ssa_type_node->ToString());
+                  const auto assigned_ssa_type_node = tree_helper::CGetType(ga->op0);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the assigned ssa_name " + STR(GET_NODE(ga->op0)) + " has type " + STR(assigned_ssa_type_node));
                   bool is_first_stmt = true;
                   std::list<tree_nodeRef> list_of_dest_statements;
                   for(auto dest_statement : ssa_defined->CGetUseStmts())

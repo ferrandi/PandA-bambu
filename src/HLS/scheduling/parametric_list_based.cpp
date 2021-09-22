@@ -378,7 +378,7 @@ void parametric_list_based::CheckSchedulabilityConditions(const CustomUnorderedS
                                                           CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time,
                                                           double scheduling_mux_margins, bool unbounded, bool RWFunctions, bool nonDirectLoadStore, const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict, unsigned int fu_type,
                                                           const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond,
-                                                          bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond, bool& proxyFunCond)
+                                                          bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond, bool& proxyFunCond)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and current_ASAP.find(current_vertex)->second > current_cycle;
    if(predecessorsCond)
@@ -449,6 +449,40 @@ void parametric_list_based::CheckSchedulabilityConditions(const CustomUnorderedS
    proxyFunCond = (curr_vertex_type & TYPE_EXTERNAL) && (proxy_functions_used.find(curr_node_name) != proxy_functions_used.end() ||
                                                          (reachable_proxy_functions.find(curr_node_name) != reachable_proxy_functions.end() && has_element_in_common(proxy_functions_used, reachable_proxy_functions.at(curr_node_name))));
    if(proxyFunCond)
+   {
+      return;
+   }
+   cannotBeChained3 = (curr_vertex_type & TYPE_EXTERNAL) && !is_pipelined && n_cycles > 1 && !HLS->allocation_information->is_operation_PI_registered(flow_graph, current_vertex, fu_type);
+   if(cannotBeChained3)
+   {
+      bool is_chained = false;
+      InEdgeIterator ei, ei_end;
+      for(boost::tie(ei, ei_end) = boost::in_edges(current_vertex, *flow_graph); ei != ei_end; ei++)
+      {
+         vertex from_vertex = boost::source(*ei, *flow_graph);
+         if(operations.find(from_vertex) == operations.end())
+         {
+            continue;
+         }
+         if(GET_TYPE(flow_graph, from_vertex) & (TYPE_PHI | TYPE_VPHI))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping phi predecessor " + GET_NAME(flow_graph, from_vertex));
+            continue;
+         }
+         const auto cs_prev = schedule->get_cstep(from_vertex).second;
+         if(cs_prev == current_cycle)
+         {
+            is_chained = true;
+            break;
+         }
+      }
+      cannotBeChained3 = false;
+      if(is_chained)
+      {
+         cannotBeChained3 = current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time + HLS->allocation_information->EstimateControllerDelay() > current_cycle_ending_time;
+      }
+   }
+   if(cannotBeChained3)
    {
       return;
    }
@@ -921,11 +955,12 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                double phi_extra_time;
                CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_map;
 
-               bool predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond, proxyFunCond;
+               bool predecessorsCond = false, pipeliningCond = false, cannotBeChained0 = false, chainingRetCond = false, cannotBeChained1 = false, asyncCond = false, cannotBeChained2 = false, cannotBeChained3 = false, MultiCond0 = false,
+                    MultiCond1 = false, nonDirectMemCond = false, unboundedFunctionsCond = false, proxyFunCond = false;
 
                CheckSchedulabilityConditions(operations, current_vertex, current_cycle, current_starting_time, current_ending_time, current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time, setup_hold_time,
                                              phi_extra_time, scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore, proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCond, pipeliningCond,
-                                             cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond, proxyFunCond);
+                                             cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond, proxyFunCond);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -1091,6 +1126,16 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
                }*/
+               else if(cannotBeChained3)
+               {
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  cannot be chained because critical path of the current function plus the one of the called function are not compatible with the clock ");
+                  if(black_list.find(fu_type) == black_list.end())
+                  {
+                     black_list.emplace(fu_type, OpVertexSet(flow_graph));
+                  }
+                  black_list.at(fu_type).insert(current_vertex);
+                  continue;
+               }
 
                bool restarted = false;
                if(RW_stmts.find(current_vertex) != RW_stmts.end())
@@ -1118,14 +1163,14 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                            }
                            else if(std::find(queue.begin(), queue.end(), op) != queue.end())
                            {
-                              bool predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal,
-                                  unboundedFunctionsCondLocal, proxyFunCondLocal;
+                              bool predecessorsCondLocal = false, pipeliningCondLocal = false, cannotBeChained0Local = false, chainingRetCondLocal = false, cannotBeChained1Local = false, asyncCondLocal = false, cannotBeChained2Local = false,
+                                   cannotBeChained3Local = false, MultiCond0Local = false, MultiCond1Local = false, nonDirectMemCondLocal = false, unboundedFunctionsCondLocal = false, proxyFunCondLocal = false;
                               double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, phi_extra_timeLocal;
                               CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_mapLocal;
                               CheckSchedulabilityConditions(operations, op, current_cycle, current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, local_connection_mapLocal, current_cycle_starting_time, current_cycle_ending_time,
                                                             setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore, proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding,
-                                                            schedule, predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local,
-                                                            nonDirectMemCondLocal, unboundedFunctionsCondLocal, proxyFunCondLocal);
+                                                            schedule, predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, cannotBeChained3Local,
+                                                            MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal, unboundedFunctionsCondLocal, proxyFunCondLocal);
                               if(!predecessorsCondLocal && !pipeliningCondLocal && !cannotBeChained0Local && !chainingRetCondLocal && !cannotBeChained1Local && !asyncCondLocal && !cannotBeChained2Local && !MultiCond0Local && !MultiCond1Local &&
                                  !nonDirectMemCondLocal && !unboundedFunctionsCondLocal && !proxyFunCondLocal)
                               {
@@ -2932,6 +2977,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
             ret.insert(std::make_tuple(HLSFlowStep_Type::SDC_SCHEDULING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
 #endif
+         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:

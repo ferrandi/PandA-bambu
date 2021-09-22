@@ -66,7 +66,7 @@
 #include "BackendFlow.hpp"
 
 SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager)
-    : EvaluationBaseStep(_Param, _hls_mgr, 0, _design_flow_manager, HLSFlowStep_Type::SYNTHESIS_EVALUATION)
+    : EvaluationBaseStep(_Param, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::SYNTHESIS_EVALUATION)
 {
 }
 
@@ -115,7 +115,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-DesignFlowStep_Status SynthesisEvaluation::InternalExec()
+DesignFlowStep_Status SynthesisEvaluation::Exec()
 {
    HLSMgr->get_backend_flow()->ExecuteSynthesis();
    auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);

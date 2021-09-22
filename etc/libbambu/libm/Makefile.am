@@ -1,16 +1,16 @@
 #this file is libbambu/libm/Makefile.am
-EXTRA_DIST=math_constants.h math_privatef.h math_private.h math_privatetf.h ef_rem_pio2.c sf_sin.c sf_cos.c wf_sincos.c sf_tan.c kf_rem_pio2.c erf_lgamma.c COPYING.LIB COPYING.LIBM_PANDA README_PANDA.txt
+EXTRA_DIST=math_constants.h math_privatef.h math_private.h math_privatetf.h ef_rem_pio2.c sf_sin.c sf_cos.c wf_sincos.c sf_tan.c kf_rem_pio2.c erf_lgamma.c math_private_kernels.c s_sin.c s_cos.c s_tan.c w_sincos.c COPYING.LIB COPYING.LIBM_PANDA README_PANDA.txt
 
 METASOURCES = AUTO
 CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 AM_CFLAGS=
 pkglib_LIBRARIES = 
-common_libm_src = math_private_kernels.c s_tanh.c s_modf.c s_ilogb.c s_sin.c s_scalbn.c s_common.c s_floor.c s_lfloor.c s_atan.c s_expm1.c s_significand.c s_frexp.c s_nextafter.c \
- s_log1p.c s_tan.c s_cos.c s_logb.c s_cbrt.c s_ldexp.c s_rint.c s_lrint.c s_llrint.c s_erf.c s_asinh.c s_ceil.c s_lceil.c s_nearbyint.c \
+common_libm_src = s_trigon.c s_tanh.c s_modf.c s_ilogb.c s_scalbn.c s_common.c s_floor.c s_lfloor.c s_atan.c s_expm1.c s_significand.c s_frexp.c s_nextafter.c \
+ s_log1p.c s_logb.c s_cbrt.c s_ldexp.c s_rint.c s_lrint.c s_llrint.c s_erf.c s_asinh.c s_ceil.c s_lceil.c s_nearbyint.c \
  s_fmin.c s_fmax.c \
  ew_acos.c ew_acosh.c ew_log10.c ew_asin.c ew_sinh.c ew_atanh.c ew_atan2.c ew_cosh.c ew_fmod.c ew_gamma.c ew_hypot.c ew_j0.c ew_remainder.c \
- w_scalb.c w_sincos.c \
+ w_scalb.c \
  s_round.c \
  kf_sin.c kf_cos.c kf_tan.c\
  ef_acos.c ef_acosh.c ef_asin.c ef_atan2.c ef_atanh.c ef_cosh.c ef_fmod.c ef_hypot.c ef_j0.c ef_j1.c ef_jn.c \
@@ -365,6 +365,24 @@ libm_clangvvd_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I3
 libm_clangvvd_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
 libm_clangvvd_subnormals_std_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANGVVD
 libm_clangvvd_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANGVVD $(common_treegccflags_clang) -C
+endif
+
+if BUILD_I386_CLANG12
+pkglib_LIBRARIES += libm_clang12.a libm_clang12_std.a
+libm_clang12_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
+libm_clang12_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG12
+libm_clang12_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG12 $(common_treegccflags_clang) -C
+libm_clang12_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
+libm_clang12_std_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG12
+libm_clang12_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG12 $(common_treegccflags_clang) -C
+
+pkglib_LIBRARIES += libm_clang12_subnormals.a libm_clang12_subnormals_std.a
+libm_clang12_subnormals_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
+libm_clang12_subnormals_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG12
+libm_clang12_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG12 $(common_treegccflags_clang) -C
+libm_clang12_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
+libm_clang12_subnormals_std_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG12
+libm_clang12_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG12 $(common_treegccflags_clang) -C
 endif
 
 

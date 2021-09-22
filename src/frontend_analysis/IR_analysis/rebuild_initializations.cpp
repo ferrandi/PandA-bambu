@@ -119,10 +119,10 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
          {
             auto* ga = GetPointerS<gimple_assign>(GET_NODE(*it_los));
             enum kind code0 = GET_NODE(ga->op0)->get_kind();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Left part of assignment " + GET_NODE(ga->op0)->get_kind_text() + (code0 == array_ref_K ? " - Type is " + tree_helper::CGetType(GET_NODE(ga->op0))->get_kind_text() : ""));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Left part of assignment " + GET_NODE(ga->op0)->get_kind_text() + (code0 == array_ref_K ? " - Type is " + GET_CONST_NODE(tree_helper::CGetType(ga->op0))->get_kind_text() : ""));
 
             /// NOTE: the check has to be performed on the type of the elements of the array and not on the constant in the right part to avoid rebuilding of array of pointers
-            if(code0 == array_ref_K and tree_helper::CGetType(GET_NODE(ga->op0))->get_kind() == integer_type_K)
+            if(code0 == array_ref_K && GET_CONST_NODE(tree_helper::CGetType(ga->op0))->get_kind() == integer_type_K)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "check for an initialization such as var[const_index] = const_value; " + STR(GET_INDEX_NODE(ga->op0)));
                auto* ar = GetPointerS<array_ref>(GET_NODE(ga->op0));
@@ -172,13 +172,13 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Rebuilding init of " + STR(init.first));
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> constructor_tree_node_schema;
-      const auto array_type = behavioral_helper->get_type(init.first->index);
-      constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(array_type);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Type is " + STR(TM->CGetTreeNode(array_type)));
-      const auto element_type = TM->GetTreeReindex(tree_helper::GetElements(TM, array_type));
+      const auto array_type = tree_helper::CGetType(init.first);
+      constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(array_type->index);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Type is " + STR(array_type));
+      const auto element_type = tree_helper::CGetElements(array_type);
       unsigned int constructor_index = TM->new_tree_node_id();
       TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
-      auto* constr = GetPointerS<constructor>(TM->get_tree_node_const(constructor_index));
+      auto* constr = GetPointerS<constructor>(TM->GetTreeNode(constructor_index));
       const long long int last_index = init.second.rbegin()->first;
       long long int index = 0;
       for(index = 0; index <= last_index; index++)
@@ -190,7 +190,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
          }
          else
          {
-            THROW_ASSERT(GET_NODE(element_type)->get_kind() == integer_type_K, "Type not supported " + STR(element_type));
+            THROW_ASSERT(GET_CONST_NODE(element_type)->get_kind() == integer_type_K, "Type not supported " + STR(element_type));
             const auto default_value = tree_man->CreateIntegerCst(element_type, 0, TM->new_tree_node_id());
             constr->add_idx_valu(tree_man->CreateIntegerCst(integer_type, index, TM->new_tree_node_id()), default_value);
          }
@@ -752,8 +752,7 @@ bool rebuild_initialization2::look_for_ROMs()
                            {
                               std::vector<unsigned int> dims;
                               unsigned int elts_size;
-                              unsigned int type_index;
-                              tree_nodeRef array_type_node = tree_helper::get_type_node(GET_NODE(vd_node), type_index);
+                              unsigned int type_index = tree_helper::CGetType(vd_node)->index;
                               tree_helper::get_array_dim_and_bitsize(TM, type_index, dims, elts_size);
                               if(dims.size() == 1)
                               {
@@ -1014,7 +1013,7 @@ bool rebuild_initialization2::look_for_ROMs()
                auto resolved = extract_var_decl(me, vd_index, vd_node, dummy_var);
                if(resolved)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable read: " + TM->get_tree_node_const(vd_index)->ToString());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable read: " + TM->CGetTreeNode(vd_index)->ToString());
                   VarsReadSeen.insert(vd_index);
                }
                else
@@ -1141,7 +1140,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      auto BB_written = var_written.second;
                      if(GCC_bb_graph->IsReachable(inverse_vertex_map[BB_written], inverse_vertex_map[B->number]))
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable is not constant(7): " + TM->get_tree_node_const(var_written.first)->ToString());
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable is not constant(7): " + TM->CGetTreeNode(var_written.first)->ToString());
                         foundNonConstant(var_written.first);
                      }
                   }
@@ -1157,7 +1156,7 @@ bool rebuild_initialization2::look_for_ROMs()
                   auto BB_written = var_written.second;
                   if(GCC_bb_graph->IsReachable(inverse_vertex_map[BB_written], inverse_vertex_map[B->number]))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable is not constant(8): " + TM->get_tree_node_const(var_written.first)->ToString());
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable is not constant(8): " + TM->CGetTreeNode(var_written.first)->ToString());
                      foundNonConstant(var_written.first);
                   }
                }
@@ -1260,13 +1259,13 @@ bool rebuild_initialization2::look_for_ROMs()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Rebuilding init of " + STR(init.first));
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> constructor_tree_node_schema;
-      const auto array_type = behavioral_helper->get_type(init.first->index);
-      constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(array_type);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Type is " + STR(TM->CGetTreeNode(array_type)));
-      const auto element_type = TM->GetTreeReindex(tree_helper::GetElements(TM, array_type));
+      const auto array_type = tree_helper::CGetType(init.first);
+      constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(array_type->index);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Type is " + STR(array_type));
+      const auto element_type = tree_helper::CGetElements(array_type);
       unsigned int constructor_index = TM->new_tree_node_id();
       TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
-      auto* constr = GetPointerS<constructor>(TM->get_tree_node_const(constructor_index));
+      auto* constr = GetPointerS<constructor>(TM->GetTreeNode(constructor_index));
       const long long int last_index = init.second.rbegin()->first;
       long long int index = 0;
       for(index = 0; index <= last_index; index++)
@@ -1278,7 +1277,7 @@ bool rebuild_initialization2::look_for_ROMs()
          }
          else
          {
-            THROW_ASSERT(GET_NODE(element_type)->get_kind() == integer_type_K, "Type not supported " + STR(element_type));
+            THROW_ASSERT(GET_CONST_NODE(element_type)->get_kind() == integer_type_K, "Type not supported " + STR(element_type));
             const auto default_value = tree_man->CreateIntegerCst(element_type, 0, TM->new_tree_node_id());
             constr->add_idx_valu(tree_man->CreateIntegerCst(integer_type, index, TM->new_tree_node_id()), default_value);
          }

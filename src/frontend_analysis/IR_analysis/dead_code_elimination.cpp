@@ -93,17 +93,18 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            relationships.insert(std::make_pair(BIT_VALUE_OPT, SAME_FUNCTION));
-            relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
-            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(BIT_VALUE_OPT2, SAME_FUNCTION));
+            relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
          }
          relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
+         if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
+         {
+            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
+         }
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, CALLING_FUNCTIONS));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
@@ -125,19 +126,17 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             {
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
             }
-            if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING ||
-               (GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch))
+            if(restart_if_opt)
             {
-               if(restart_if_opt)
-               {
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-               }
-               if(restart_mwi_opt)
-               {
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-               }
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+            }
+            if(restart_mwi_opt)
+            {
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
             }
             if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
@@ -502,8 +501,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   {
                      auto* mr = GetPointer<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
-                     auto type_w_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1));
-                     auto written_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TM, type_w_index));
+                     auto type_w = tree_helper::CGetType(ga->op1);
+                     auto written_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(type_w));
                      if(written_bw == 1)
                      {
                         written_bw = 8;
@@ -581,8 +580,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                          const auto mr_used = GetPointer<mem_ref>(GET_NODE(ga_used->op1));
                                                          if(GetPointer<integer_cst>(GET_NODE(mr->op1))->value == GetPointer<integer_cst>(GET_NODE(mr_used->op1))->value)
                                                          {
-                                                            auto type_r_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga_used->op0));
-                                                            auto read_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TM, type_r_index));
+                                                            auto type_r = tree_helper::CGetType(ga_used->op0);
+                                                            auto read_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(type_r));
                                                             if(read_bw == 1)
                                                             {
                                                                read_bw = 8;
@@ -1320,16 +1319,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
 
    if(restart_mem || modified || restart_if_opt || restart_mwi_opt)
    {
-      if((restart_mem || modified) || parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING ||
-         (GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch))
-      {
-         function_behavior->UpdateBBVersion();
-         return DesignFlowStep_Status::SUCCESS;
-      }
-      else
-      {
-         return DesignFlowStep_Status::UNCHANGED;
-      }
+      function_behavior->UpdateBBVersion();
+      return DesignFlowStep_Status::SUCCESS;
    }
    else
    {

@@ -184,7 +184,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "BitValue";
       case(BIT_VALUE_OPT):
          return "BitValueOpt";
-      case(BIT_VALUE_OPT2):
+      case(BITVALUE_RANGE):
          return "BitValueOpt2";
       case BIT_VALUE_IPA:
          return "BitValueIPA";
@@ -282,8 +282,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "ExtractPatterns";
 #endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
-         return "FindMaxCfgTransformations";
+      case FIND_MAX_TRANSFORMATIONS:
+         return "FindMaxTransformations";
 #endif
       case(FUNCTION_ANALYSIS):
          return "CallGraphComputation";
@@ -292,6 +292,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "FixStructsPassedByValue";
       case FUNCTION_CALL_TYPE_CLEANUP:
          return "FunctionCallTypeCleanup";
+      case FUNCTION_CALL_OPT:
+         return "FunctionCallOpt";
 #endif
 #if HAVE_ZEBU_BUILT
       case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):
@@ -561,10 +563,16 @@ void FrontendFlowStep::PrintTreeManager(const bool before) const
 
 void FrontendFlowStep::PrintInitialIR() const
 {
-   PrintTreeManager(true);
+   if(!parameters->IsParameter("disable-print-tree-manager"))
+   {
+      PrintTreeManager(true);
+   }
 }
 
 void FrontendFlowStep::PrintFinalIR() const
 {
-   PrintTreeManager(false);
+   if(!parameters->IsParameter("disable-print-tree-manager"))
+   {
+      PrintTreeManager(false);
+   }
 }

@@ -75,13 +75,9 @@ class CleanVirtualPhi : public FunctionFrontendFlowStep
    DesignFlowStep_Status InternalExec() override;
 
    /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
     */
-   void Initialize() override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };

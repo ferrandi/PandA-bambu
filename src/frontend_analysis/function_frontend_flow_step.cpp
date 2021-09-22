@@ -278,7 +278,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    const auto fd = GetPointer<const function_decl>(function_tree_node);
    const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
    /// add vertices
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
    }
@@ -369,17 +369,23 @@ unsigned int FunctionFrontendFlowStep::CGetBBVersion() const
 
 unsigned int FunctionFrontendFlowStep::GetBitValueVersion() const
 {
-   return bb_version;
+   return bitvalue_version;
 }
 
 void FunctionFrontendFlowStep::PrintInitialIR() const
 {
-   WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
+   if(!parameters->IsParameter("disable-print-dot-FF"))
+   {
+      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
+   }
    FrontendFlowStep::PrintInitialIR();
 }
 
 void FunctionFrontendFlowStep::PrintFinalIR() const
 {
-   WriteBBGraphDot("BB_After_" + GetName() + ".dot");
+   if(!parameters->IsParameter("disable-print-dot-FF"))
+   {
+      WriteBBGraphDot("BB_After_" + GetName() + ".dot");
+   }
    FrontendFlowStep::PrintFinalIR();
 }

@@ -89,9 +89,13 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          HLSFlowStep_Type synthesis_flow = HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW;
 #if HAVE_EXPERIMENTAL
          if(parameters->isOption("explore-mux") && parameters->getOption<bool>("explore-mux"))
+         {
             synthesis_flow = HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW;
+         }
          if(parameters->isOption("explore-fu-reg") && parameters->getOption<bool>("explore-fu-reg"))
+         {
             synthesis_flow = HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW;
+         }
 #endif
          ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));

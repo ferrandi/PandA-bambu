@@ -32,7 +32,7 @@
  */
 /**
  * @file simple_code_motion.cpp
- * @brief * @brief Analysis step that performs some simple code motions over the IR
+ * @brief Analysis step that performs some simple code motions over the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -85,7 +85,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_node_dup.hpp"
 #include "tree_reindex.hpp"
 
 /// utility include
@@ -102,7 +101,10 @@ simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, cons
       schedule(ScheduleRef()),
       conservative(
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-          (parameters->isOption(OPT_scheduling_algorithm) and parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING) ? true : false
+          (parameters->IsParameter("enable-conservative-sdc") && parameters->GetParameter<bool>("enable-conservative-sdc") && parameters->isOption(OPT_scheduling_algorithm) and
+           parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING) ?
+              true :
+              false
 #else
           false
 #endif
@@ -143,21 +145,22 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PREDICATE_STATEMENTS, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PREDICATE_STATEMENTS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CHECK_CRITICAL_SESSION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CHECK_CRITICAL_SESSION, SAME_FUNCTION));
 #endif
 #if HAVE_ILP_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -166,9 +169,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
          {
             if(restart_ifmwi_opt)
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
+               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
+               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
             }
          }
          break;
@@ -223,7 +227,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
-   CustomOrderedSet<ssa_name*> rhs_ssa_uses;
+   CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
    tree_helper::compute_ssa_uses_rec_ptr(ga->op1, rhs_ssa_uses);
    tree_nodeRef right = GET_NODE(ga->op1);
 
@@ -287,6 +291,27 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             return FunctionFrontendFlowStep_Movable::MOVABLE;
          }
       }
+      case fshl_expr_K:
+      case fshr_expr_K:
+      {
+         if(conservative)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No");
+            return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+         }
+         else
+         {
+            auto* te = GetPointer<ternary_expr>(right);
+            unsigned int n_bit = tree_helper::Size(GET_NODE(te->op0));
+            bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(te->op1));
+            if(n_bit > 9 && !is_constant)
+            {
+               zero_delay = false;
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
+            return FunctionFrontendFlowStep_Movable::MOVABLE;
+         }
+      }
       case mult_expr_K:
       case mult_highpart_expr_K:
       case widen_mult_expr_K:
@@ -325,12 +350,10 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case nop_expr_K:
       {
          auto* ne = GetPointer<nop_expr>(right);
-         unsigned int left_type_index;
-         tree_helper::get_type_node(GET_NODE(ga->op0), left_type_index);
-         unsigned int right_type_index;
-         tree_helper::get_type_node(GET_NODE(ne->op), right_type_index);
-         bool is_realR = tree_helper::is_real(TM, right_type_index);
-         bool is_realL = tree_helper::is_real(TM, left_type_index);
+         const auto left_type = tree_helper::CGetType(ga->op0);
+         const auto right_type = tree_helper::CGetType(ne->op);
+         const auto is_realR = tree_helper::IsRealType(right_type);
+         const auto is_realL = tree_helper::IsRealType(left_type);
          if(is_realR || is_realL)
          {
             zero_delay = false;
@@ -644,7 +667,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    CustomUnorderedMap<vertex, unsigned int> direct_vertex_map;
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
-   for(auto block : list_of_bloc)
+   for(const auto& block : list_of_bloc)
    {
       inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
       direct_vertex_map[inverse_vertex_map[block.first]] = block.first;
@@ -681,7 +704,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    std::list<vertex> bb_sorted_vertices;
    cyclic_topological_sort(*GCC_bb_graph, std::front_inserter(bb_sorted_vertices));
    static size_t counter = 0;
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
    {
       GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_simple_code_motion_" + STR(counter) + ".dot");
@@ -804,7 +827,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       bool restart_bb_code_motion = false;
       do
       {
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
          {
             GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_simple_code_motion_" + STR(counter) + ".dot");
@@ -838,7 +861,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             }
 
             /// compute the SSA variables used by stmt
-            CustomOrderedSet<ssa_name*> stmt_ssa_uses;
+            CustomOrderedSet<const ssa_name*> stmt_ssa_uses;
             tree_helper::compute_ssa_uses_rec_ptr(*statement, stmt_ssa_uses);
             for(auto vo : gn->vovers)
             {
@@ -858,10 +881,10 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                }
             }
 
-            const CustomOrderedSet<ssa_name*>::const_iterator ssu_it_end = stmt_ssa_uses.end();
-            for(auto ssu_it = stmt_ssa_uses.begin(); ssu_it != ssu_it_end; ++ssu_it)
+            const auto ssu_it_end = stmt_ssa_uses.cend();
+            for(auto ssu_it = stmt_ssa_uses.cbegin(); ssu_it != ssu_it_end; ++ssu_it)
             {
-               ssa_name* sn = *ssu_it;
+               const auto sn = *ssu_it;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---for variable " + sn->ToString());
                for(auto const& def_stmt : sn->CGetDefStmts())
                {
@@ -1055,7 +1078,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
             /// check if the current uses in dest_bb_index are due only to phis
             bool only_phis = true;
-            for(auto sn : stmt_ssa_uses)
+            for(const auto sn : stmt_ssa_uses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking definition of " + sn->ToString());
                for(auto const& def_stmt : sn->CGetDefStmts())
@@ -1253,7 +1276,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             list_of_bloc[curr_bb]->PushFront(adding_front, AppM);
          }
          restart_bb_code_motion = (!to_be_added_back.empty()) or (!to_be_added_front.empty());
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
          {
             GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_simple_code_motion_" + STR(counter) + ".dot");

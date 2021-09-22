@@ -208,49 +208,49 @@ void attr::visit(tree_node_visitor* const v) const
    (*v)(this, mask);
 }
 
-bool attr::is_constructor()
+bool attr::is_constructor() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_CONSTRUCTOR)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_CONSTRUCTOR);
 }
 
-bool attr::is_destructor()
+bool attr::is_destructor() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_DESTRUCTOR)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_DESTRUCTOR);
 }
 
-bool attr::is_member()
+bool attr::is_member() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_MEMBER)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_MEMBER);
 }
 
-bool attr::is_call()
+bool attr::is_call() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_CALL)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_CALL);
 }
 
-bool attr::is_new()
+bool attr::is_new() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_NEW)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_NEW);
 }
 
-bool attr::is_public()
+bool attr::is_public() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_PUBLIC)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_PUBLIC);
 }
 
-bool attr::is_protected()
+bool attr::is_protected() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_PROTECTED)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_PROTECTED);
 }
 
-bool attr::is_private()
+bool attr::is_private() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_PRIVATE)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_PRIVATE);
 }
 
-bool attr::is_bitfield()
+bool attr::is_bitfield() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_BITFIELD)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_BITFIELD);
 }
 
 srcp::~srcp() = default;
@@ -853,7 +853,6 @@ void gimple_assign::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, op0, visit(v));
    VISIT_MEMBER(mask, op1, visit(v));
    VISIT_MEMBER(mask, predicate, visit(v));
-   VISIT_MEMBER(mask, orig, visit(v));
 }
 
 void gimple_nop::visit(tree_node_visitor* const v) const

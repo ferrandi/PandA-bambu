@@ -100,7 +100,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
+            relationships.insert(std::make_pair(BIT_VALUE_OPT, ALL_FUNCTIONS));
          }
          break;
       }
@@ -154,25 +154,25 @@ bool dead_code_eliminationIPA::HasToBeExecuted() const
 
 DesignFlowStep_Status dead_code_eliminationIPA::Exec()
 {
-   if(not AppM->ApplyNewTransformation())
+   if(!AppM->ApplyNewTransformation())
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
    fun_id_to_restart.clear();
    fun_id_to_restartParm.clear();
-   auto TM = AppM->get_tree_manager();
-   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   const auto TM = AppM->get_tree_manager();
+   const auto CGMan = AppM->CGetCallGraphManager();
    const auto reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
-   for(auto fu_id : reached_body_fun_ids)
+   for(const auto fu_id : reached_body_fun_ids)
    {
       const auto is_root = AppM->CGetCallGraphManager()->GetRootFunctions().count(fu_id) || AppM->CGetCallGraphManager()->GetAddressedFunctions().count(fu_id);
       if(!is_root)
       {
-         const std::string fu_name = AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
+         const auto fu_name = AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
-         tree_nodeRef fu_node = TM->get_tree_node_const(fu_id);
-         function_decl* fd = GetPointer<function_decl>(fu_node);
-         THROW_ASSERT(fd and fd->body, "Node is not a function or it hasn't a body");
+         const auto fu_node = TM->GetTreeNode(fu_id);
+         auto fd = GetPointerS<function_decl>(fu_node);
+         THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
          if(!fd->list_of_args.empty())
          {
             signature_opt(TM, fd, fu_id, reached_body_fun_ids);
@@ -181,10 +181,6 @@ DesignFlowStep_Status dead_code_eliminationIPA::Exec()
       }
    }
    return fun_id_to_restart.empty() && fun_id_to_restartParm.empty() ? DesignFlowStep_Status::UNCHANGED : DesignFlowStep_Status::SUCCESS;
-}
-
-void dead_code_eliminationIPA::Initialize()
-{
 }
 
 bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function_decl* fd, unsigned int function_id, const CustomOrderedSet<unsigned int>& rFunctions)

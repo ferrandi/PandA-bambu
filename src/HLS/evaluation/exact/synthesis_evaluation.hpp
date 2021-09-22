@@ -77,6 +77,6 @@ class SynthesisEvaluation : public EvaluationBaseStep
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status Exec() override;
 };
 #endif

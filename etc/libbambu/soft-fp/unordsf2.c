@@ -27,10 +27,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "single.h"
-#include "soft-fp.h"
-
-CMPtype __unordsf2(SFtype a, SFtype b)
+static __FORCE_INLINE CMPtype __unordsf2(SFtype a, SFtype b)
 {
    FP_DECL_EX;
    FP_DECL_S(A);

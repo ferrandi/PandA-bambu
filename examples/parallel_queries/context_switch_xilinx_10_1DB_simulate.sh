@@ -1,5 +1,5 @@
 #!/bin/bash
-COMMONARGS="--simulator=MODELSIM --compiler=I386_GCC49 --std=c99 --experimental-set=BAMBU -O3 -fno-delete-null-pointer-checks -fopenmp --pragma-parse --mem-delay-read=20 --mem-delay-write=20 --channels-type=MEM_ACC_11 --memory-allocation-policy=NO_BRAM --no-iob --device-name=xc7vx690t-3ffg1930-VVD --clock-period=10 -DMAX_VERTEX_NUMBER=26455 -DMAX_EDGE_NUMBER=100573 --simulate"
+COMMONARGS="--simulator=MODELSIM --compiler=I386_GCC49 --std=c99 --experimental-setup=BAMBU -O3 -fno-delete-null-pointer-checks -fopenmp --pragma-parse --mem-delay-read=20 --mem-delay-write=20 --channels-type=MEM_ACC_11 --memory-allocation-policy=NO_BRAM --no-iob --device-name=xc7vx690t-3ffg1930-VVD --clock-period=10 -DMAX_VERTEX_NUMBER=26455 -DMAX_EDGE_NUMBER=100573 --simulate"
  NAME=`basename $0 .sh`
 `dirname $0`/../../etc/scripts/test_panda.py --spider-style="../lib/latex_format_bambu_results_xilinx.xml" --tool=bambu -l`dirname $0`/list_1DB -ooutput_$NAME --commonargs="$COMMONARGS" \
       --args="--configuration-name=02W-04CH-2C-01CS -DN_THREADS=2  --num-accelerators=2  --memory-banks-number=4  --channels-number=2 --context_switch=1"\

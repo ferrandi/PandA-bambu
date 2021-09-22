@@ -263,12 +263,12 @@ void TransitionInfo::print(std::ostream& os, const int detail_level) const
       {
          if(first)
          {
-            os << BH->print_node(label, op, std);
+            os << BH->PrintNode(label, op, std);
             first = false;
          }
          else
          {
-            os << "," << BH->print_node(label, op, std);
+            os << "," << BH->PrintNode(label, op, std);
          }
       }
       if(has_default)

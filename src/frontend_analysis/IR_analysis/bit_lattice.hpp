@@ -41,9 +41,6 @@
 #ifndef _BIT_LATTICE_HPP_
 #define _BIT_LATTICE_HPP_
 
-/// Header include
-#include "frontend_flow_step.hpp"
-
 /// STD include
 #include <string>
 
@@ -76,21 +73,23 @@ class BitLatticeManipulator
     * @brief Map of the current bit-values of each variable.
     * Map storing the current bit-values of the variables at the end of each iteration of forward_transfer or backward_transfer.
     */
-   CustomUnorderedMap<unsigned int, std::deque<bit_lattice>> current;
+   CustomMap<unsigned int, std::deque<bit_lattice>> current;
 
    /**
     * @brief Map of the best bit-values of each variable.
     * Map storing the best bit-values of the variables at the end of all the iterations of forward_transfer or backward_transfer.
     */
-   CustomUnorderedMap<unsigned int, std::deque<bit_lattice>> best;
+   CustomMap<unsigned int, std::deque<bit_lattice>> best;
 
    /**
     * @brief Set storing the signed ssa
     */
-   CustomUnorderedSet<unsigned int> signed_var;
+   CustomSet<unsigned int> signed_var;
 
    /// The debug level of methods of this class - it cannot be named debug_level because of ambiguity of FrontendFlowStep::debug_level derived classes
    const int bl_debug_level;
+
+   bool IsSignedIntegerType(const tree_nodeConstRef& tn) const;
 
    /**
     * Computes the sup between two bitstrings
@@ -99,8 +98,9 @@ class BitLatticeManipulator
     * @param output_uid is the id of the tree node for which the bitvalue is * computed
     * @return the sup of the two bitstrings.
     */
-
    std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const unsigned int output_uid) const;
+
+   std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const tree_nodeConstRef& out_node) const;
 
    /**
     * Computes the inf between two bitstrings
@@ -110,6 +110,8 @@ class BitLatticeManipulator
     * @return inf between the two bitstrings
     */
    std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const unsigned int output_uid) const;
+
+   std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const tree_nodeConstRef& out_node) const;
 
    /**
     * auxiliary function used to build the bitstring lattice for read-only arrays
@@ -129,7 +131,7 @@ class BitLatticeManipulator
     * Returns true if the type identified by type_id is handled by bitvalue
     * analysis
     */
-   bool is_handled_by_bitvalue(unsigned int type_id) const;
+   bool IsHandledByBitvalue(const tree_nodeConstRef& tn) const;
 
    /**
     * Mixes the content of current and best using the sup operation, storing
@@ -143,7 +145,7 @@ class BitLatticeManipulator
     * functions checks if it is necessary to update the bistring stored in
     * the current map used by the bitvalue analysis algorithm.
     */
-   bool update_current(std::deque<bit_lattice>& res, unsigned int output_uid);
+   bool update_current(std::deque<bit_lattice>& res, const tree_nodeConstRef& tn);
 
    /**
     * Clean up the internal data structures
@@ -187,7 +189,7 @@ class BitLatticeManipulator
 
    static std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
 
-   static unsigned int Size(const tree_nodeConstRef t);
+   static unsigned int Size(const tree_nodeConstRef& t);
 
    static unsigned int size(const tree_managerConstRef tm, unsigned int index);
 

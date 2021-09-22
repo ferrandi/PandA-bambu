@@ -168,7 +168,11 @@ static void loadPassLate(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining >);
    PM.add(llvm::createDeadStoreEliminationPass());
    PM.add(llvm::createEarlyCSEPass(true));
+#if __clang_major__ >= 12
+   PM.add(llvm::createSCCPPass());
+#else
    PM.add(llvm::createConstantPropagationPass());
+#endif
    PM.add(llvm::createIPSCCPPass());
    PM.add(llvm::createGlobalDCEPass());
    PM.add(llvm::createPromoteMemoryToRegisterPass());

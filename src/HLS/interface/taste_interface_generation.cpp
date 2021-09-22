@@ -650,64 +650,65 @@ void TasteInterfaceGeneration::ComputeRelationships(DesignFlowStepSet& relations
       const auto hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
       const auto TM = HLSMgr->get_tree_manager();
 
-      const auto reg_status_function_id = TM->function_index(STR_CST_taste_reg_status);
-      THROW_ASSERT(reg_status_function_id, STR_CST_taste_reg_status);
-      const auto reg_status_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), reg_status_function_id);
+      const auto reg_status_function = TM->GetFunction(STR_CST_taste_reg_status);
+      THROW_ASSERT(reg_status_function, STR_CST_taste_reg_status);
+      const auto reg_status_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), reg_status_function->index);
       const auto reg_status_vertex = design_flow_manager.lock()->GetDesignFlowStep(reg_status_signature);
       const auto reg_status_step = reg_status_vertex != NULL_VERTEX ? design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(reg_status_vertex)->design_flow_step :
-                                                                      hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, reg_status_function_id, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
+                                                                      hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, reg_status_function->index, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
       relationship.insert(reg_status_step);
 
-      const auto endianess_inversion_function_id = TM->function_index(STR_CST_taste_endianess_inversion);
-      THROW_ASSERT(endianess_inversion_function_id, "");
-      const auto endianess_inversion_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), endianess_inversion_function_id);
+      const auto endianess_inversion_function = TM->GetFunction(STR_CST_taste_endianess_inversion);
+      THROW_ASSERT(endianess_inversion_function, "");
+      const auto endianess_inversion_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), endianess_inversion_function->index);
       const auto endianess_inversion_vertex = design_flow_manager.lock()->GetDesignFlowStep(endianess_inversion_signature);
       const auto endianess_inversion_step = endianess_inversion_vertex != NULL_VERTEX ?
                                                 design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(endianess_inversion_vertex)->design_flow_step :
-                                                hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, endianess_inversion_function_id, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
+                                                hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, endianess_inversion_function->index, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
       relationship.insert(endianess_inversion_step);
 
-      const auto endianess_check_function_id = TM->function_index(STR_CST_taste_endianess_check + function_name);
-      THROW_ASSERT(endianess_check_function_id, "");
-      const auto endianess_check_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), endianess_check_function_id);
+      const auto endianess_check_function = TM->GetFunction(STR_CST_taste_endianess_check + function_name);
+      THROW_ASSERT(endianess_check_function, "");
+      const auto endianess_check_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), endianess_check_function->index);
       const auto endianess_check_vertex = design_flow_manager.lock()->GetDesignFlowStep(endianess_check_signature);
       const auto endianess_check_step = endianess_check_vertex != NULL_VERTEX ? design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(endianess_check_vertex)->design_flow_step :
-                                                                                hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, endianess_check_function_id, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
+                                                                                hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, endianess_check_function->index, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
       relationship.insert(endianess_check_step);
 
-      const auto output_multiplexer_function_id = TM->function_index(STR_CST_taste_output_multiplexer + function_name);
-      THROW_ASSERT(output_multiplexer_function_id, "");
-      const auto output_multiplexer_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), output_multiplexer_function_id);
+      const auto output_multiplexer_function = TM->GetFunction(STR_CST_taste_output_multiplexer + function_name);
+      THROW_ASSERT(output_multiplexer_function, "");
+      const auto output_multiplexer_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), output_multiplexer_function->index);
       const auto output_multiplexer_vertex = design_flow_manager.lock()->GetDesignFlowStep(output_multiplexer_signature);
       const auto output_multiplexer_step = output_multiplexer_vertex != NULL_VERTEX ?
                                                design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(output_multiplexer_vertex)->design_flow_step :
-                                               hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, output_multiplexer_function_id, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
+                                               hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, output_multiplexer_function->index, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
       relationship.insert(output_multiplexer_step);
 
-      const auto memory_enabling_function_id = TM->function_index(STR_CST_taste_memory_enabling + function_name);
-      if(memory_enabling_function_id)
+      const auto memory_enabling_function = TM->GetFunction(STR_CST_taste_memory_enabling + function_name);
+      if(memory_enabling_function)
       {
-         const auto memory_enabling_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), memory_enabling_function_id);
+         const auto memory_enabling_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), memory_enabling_function->index);
          const auto memory_enabling_vertex = design_flow_manager.lock()->GetDesignFlowStep(memory_enabling_signature);
-         const auto memory_enabling_step = memory_enabling_vertex != NULL_VERTEX ? design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(memory_enabling_vertex)->design_flow_step :
-                                                                                   hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, memory_enabling_function_id, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
+         const auto memory_enabling_step = memory_enabling_vertex != NULL_VERTEX ?
+                                               design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(memory_enabling_vertex)->design_flow_step :
+                                               hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, memory_enabling_function->index, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
          relationship.insert(memory_enabling_step);
 
-         const auto data_size_function_id = TM->function_index(STR_CST_taste_data_size + function_name);
-         THROW_ASSERT(data_size_function_id, STR_CST_taste_data_size + function_name);
-         const auto data_size_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), data_size_function_id);
+         const auto data_size_function = TM->GetFunction(STR_CST_taste_data_size + function_name);
+         THROW_ASSERT(data_size_function, STR_CST_taste_data_size + function_name);
+         const auto data_size_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), data_size_function->index);
          const auto data_size_vertex = design_flow_manager.lock()->GetDesignFlowStep(data_size_signature);
          const auto data_size_step = data_size_vertex != NULL_VERTEX ? design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(data_size_vertex)->design_flow_step :
-                                                                       hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, data_size_function_id, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
+                                                                       hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, data_size_function->index, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
          relationship.insert(data_size_step);
 
-         const auto address_translation_function_id = TM->function_index(STR_CST_taste_address_translation + function_name);
-         THROW_ASSERT(address_translation_function_id, "");
-         const auto address_translation_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), address_translation_function_id);
+         const auto address_translation_function = TM->GetFunction(STR_CST_taste_address_translation + function_name);
+         THROW_ASSERT(address_translation_function, "");
+         const auto address_translation_signature = ComputeSignature(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), address_translation_function->index);
          const auto address_translation_vertex = design_flow_manager.lock()->GetDesignFlowStep(address_translation_signature);
          const auto address_translation_step = address_translation_vertex != NULL_VERTEX ?
                                                    design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(address_translation_vertex)->design_flow_step :
-                                                   hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, address_translation_function_id, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
+                                                   hls_flow_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::ADD_LIBRARY, address_translation_function->index, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
          relationship.insert(address_translation_step);
       }
    }

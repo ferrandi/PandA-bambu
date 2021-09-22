@@ -94,18 +94,18 @@
  * This function is used to detect when an integer variable (non-vector)
  * is actually handled as a vector from bambu
  */
-static bool is_large_integer(const unsigned int t_id, const tree_managerConstRef T_M)
+static inline bool is_large_integer(const tree_nodeConstRef& _tn)
 {
-   const tree_nodeRef node_type = T_M->get_tree_node_const(t_id);
-   auto* tn = GetPointer<type_node>(node_type);
-   THROW_ASSERT(tn, "type_id " + STR(t_id) + " is not a type");
-   if(node_type->get_kind() != integer_type_K)
+   const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
+   const auto type = GetPointer<const type_node>(tn);
+   THROW_ASSERT(type, "type_id " + STR(tn->index) + " is not a type");
+   if(tn->get_kind() != integer_type_K)
    {
       return false;
    }
-   auto* it = GetPointer<integer_type>(node_type);
-   THROW_ASSERT(it, "type " + STR(t_id) + " is not an integer type");
-   if((it->prec != tn->algn and it->prec > 64) or (tn->algn == 128))
+   const auto it = GetPointer<const integer_type>(tn);
+   THROW_ASSERT(it, "type " + STR(tn->index) + " is not an integer type");
+   if((it->prec != type->algn && it->prec > 64) || (type->algn == 128))
    {
       return true;
    }
@@ -226,35 +226,32 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       return;
    }
 
-   const auto* g_as_node = GetPointer<const gimple_assign>(curr_tn);
-   const auto* g_phi_node = GetPointer<const gimple_phi>(curr_tn);
+   const auto g_as_node = GetPointer<const gimple_assign>(curr_tn);
+   const auto g_phi_node = GetPointer<const gimple_phi>(curr_tn);
    bool is_virtual = false;
-   unsigned int ssa_node_index;
    tree_nodeRef ssa;
    if(g_as_node)
    {
-      ssa = GET_NODE(g_as_node->op0);
-      ssa_node_index = GET_INDEX_NODE(g_as_node->op0);
+      ssa = g_as_node->op0;
    }
    else if(g_phi_node)
    {
-      ssa = GET_NODE(g_phi_node->res);
-      ssa_node_index = GET_INDEX_NODE(g_phi_node->res);
+      ssa = g_phi_node->res;
       is_virtual = g_phi_node->virtual_flag;
    }
 
-   if(ssa and ssa->get_kind() == ssa_name_K and (not is_virtual))
+   if(ssa && GET_CONST_NODE(ssa)->get_kind() == ssa_name_K && !is_virtual)
    {
       /*
        * print statements that increase the counters used for coverage statistics
        */
       indented_output_stream->Append("__bambu_discrepancy_tot_assigned_ssa++;\n");
-      const auto* ssaname = GetPointer<const ssa_name>(ssa);
+      const auto* ssaname = GetPointerS<const ssa_name>(GET_CONST_NODE(ssa));
       bool is_temporary = ssaname->var ? GetPointer<const decl_node>(GET_NODE(ssaname->var))->artificial_flag : true;
-      bool is_discrepancy_address = Discrepancy->address_ssa.find(ssa) != Discrepancy->address_ssa.end();
-      bool is_lost = Discrepancy->ssa_to_skip.find(ssa) != Discrepancy->ssa_to_skip.end();
-      bool has_no_meaning_in_software = is_discrepancy_address and Discrepancy->ssa_to_skip_if_address.find(ssa) != Discrepancy->ssa_to_skip_if_address.end();
-      if(is_lost or has_no_meaning_in_software)
+      bool is_discrepancy_address = Discrepancy->address_ssa.count(ssa);
+      bool is_lost = Discrepancy->ssa_to_skip.count(ssa);
+      bool has_no_meaning_in_software = is_discrepancy_address && Discrepancy->ssa_to_skip_if_address.count(ssa);
+      if(is_lost || has_no_meaning_in_software)
       {
          indented_output_stream->Append("__bambu_discrepancy_tot_lost_ssa++;\n");
          if(is_discrepancy_address)
@@ -280,7 +277,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
          }
          else
          {
-            THROW_ASSERT(not has_no_meaning_in_software, "Tree Node " + STR(ssa_node_index) + " is has no meaning in software but is not an address");
+            THROW_ASSERT(!has_no_meaning_in_software, "Tree Node " + STR(ssa->index) + " is has no meaning in software but is not an address");
             indented_output_stream->Append("__bambu_discrepancy_tot_lost_int_ssa++;\n");
             if(is_temporary)
             {
@@ -329,8 +326,8 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       /*
        * collect information on the scheduling of the operation to be printed
        */
-      const StateTransitionGraphManagerConstRef STGMan = hls->STG;
-      const StateTransitionGraphInfoConstRef stg_info = STGMan->CGetStg()->CGetStateTransitionGraphInfo();
+      const auto STGMan = hls->STG;
+      const auto stg_info = STGMan->CGetStg()->CGetStateTransitionGraphInfo();
 
       CustomOrderedSet<unsigned int> init_state_ids;
       CustomOrderedSet<unsigned int> exec_state_ids;
@@ -349,15 +346,15 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
          end_state_ids.insert(stg_info->vertex_to_state_id.at(s));
       }
 
-      THROW_ASSERT(not init_state_ids.empty(), "operation not properly scheduled: "
-                                               "number of init states = " +
-                                                   STR(init_state_ids.size()));
-      THROW_ASSERT(not exec_state_ids.empty(), "operation not properly scheduled: "
-                                               "number of exec states = " +
-                                                   STR(exec_state_ids.size()));
-      THROW_ASSERT(not end_state_ids.empty(), "operation not properly scheduled: "
-                                              "number of ending states = " +
-                                                  STR(end_state_ids.size()));
+      THROW_ASSERT(!init_state_ids.empty(), "operation not properly scheduled: "
+                                            "number of init states = " +
+                                                STR(init_state_ids.size()));
+      THROW_ASSERT(!exec_state_ids.empty(), "operation not properly scheduled: "
+                                            "number of exec states = " +
+                                                STR(exec_state_ids.size()));
+      THROW_ASSERT(!end_state_ids.empty(), "operation not properly scheduled: "
+                                           "number of ending states = " +
+                                               STR(end_state_ids.size()));
       /*
        * print statements to print scheduling information on the operation
        */
@@ -378,24 +375,24 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       }
       indented_output_stream->Append(";\\n\");\n");
 
-      const unsigned int type_id = tree_helper::get_type_index(TM, ssa_node_index);
-      const unsigned int type_bitsize = tree_helper::size(TM, type_id);
-      const std::string var_name = BH->PrintVariable(ssa_node_index);
-      const unsigned int ssa_bitsize = tree_helper::Size(ssa);
+      const auto ssa_type = tree_helper::CGetType(ssa);
+      const auto type_bitsize = tree_helper::Size(ssa_type);
+      const auto var_name = BH->PrintVariable(ssa->index);
+      const auto ssa_bitsize = tree_helper::Size(ssa);
       if(ssa_bitsize > type_bitsize)
       {
-         THROW_ERROR(std::string("variable size mismatch: ") + "ssa node id = " + STR(ssa_node_index) + " has size = " + STR(ssa_bitsize) + " type node id = " + STR(type_id) + " has size = " + STR(type_bitsize));
+         THROW_ERROR(std::string("variable size mismatch: ") + "ssa node id = " + STR(ssa->index) + " has size = " + STR(ssa_bitsize) + " type node id = " + STR(ssa_type->index) + " has size = " + STR(type_bitsize));
       }
       /* tree_nodeRef for gimple lvalue */
       indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, "
                                      "\"ASSIGN ssa_id " +
-                                     STR(ssa_node_index) + "; ssa " + var_name + "; btsz " + STR(ssa_bitsize) + "; val #\");\n");
+                                     STR(ssa->index) + "; ssa " + var_name + "; btsz " + STR(ssa_bitsize) + "; val #\");\n");
 
-      const bool is_real = BH->is_real(type_id);
-      const bool is_vector = BH->is_a_vector(type_id);
-      const bool is_complex = BH->is_a_complex(type_id);
+      const bool is_real = tree_helper::IsRealType(ssa_type);
+      const bool is_vector = tree_helper::IsVectorType(ssa_type);
+      const bool is_complex = tree_helper::IsComplexType(ssa_type);
 
-      if(is_real or is_complex or is_vector or BH->is_a_struct(type_id) or BH->is_an_union(type_id) or is_large_integer(type_id, TM))
+      if(is_real || is_complex || is_vector || tree_helper::IsStructType(ssa_type) || tree_helper::IsUnionType(ssa_type) || is_large_integer(ssa_type))
       {
          indented_output_stream->Append("_Ptd2Bin_(__bambu_discrepancy_fp, (unsigned char*)&" + var_name + ", " + STR(type_bitsize) + ");\n");
       }
@@ -406,16 +403,16 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
 
       indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"; type ");
 
-      THROW_ASSERT(not(is_discrepancy_address and (is_real or is_complex)), "variable " + STR(var_name) + " with node id " + STR(ssa_node_index) + " has type id = " + STR(type_id) + " is complex = " + STR(is_complex) + " is real = " + STR(is_real));
+      THROW_ASSERT(!(is_discrepancy_address && (is_real || is_complex)), "variable " + STR(var_name) + " with node id " + STR(ssa->index) + " has type id = " + STR(ssa_type->index) + " is complex = " + STR(is_complex) + " is real = " + STR(is_real));
 
       unsigned int vec_base_bitsize = type_bitsize;
       if(is_vector)
       {
-         THROW_ASSERT(ssa_bitsize == type_bitsize, "ssa node id = " + STR(ssa_node_index) + " type node id = " + STR(type_id));
+         THROW_ASSERT(ssa_bitsize == type_bitsize, "ssa node id = " + STR(ssa->index) + " type node id = " + STR(ssa_type->index));
 
-         unsigned int elem_bitsize = tree_helper::size(TM, tree_helper::GetElements(TM, type_id));
+         const auto elem_bitsize = tree_helper::Size(tree_helper::CGetElements(ssa_type));
 
-         THROW_ASSERT(type_bitsize % elem_bitsize == 0, "ssa node id = " + STR(ssa_node_index) + " type node id = " + STR(type_id) + " type_bitsize = " + STR(type_bitsize) + " elem_bitsize = " + STR(elem_bitsize));
+         THROW_ASSERT(type_bitsize % elem_bitsize == 0, "ssa node id = " + STR(ssa->index) + " type node id = " + STR(ssa_type->index) + " type_bitsize = " + STR(type_bitsize) + " elem_bitsize = " + STR(elem_bitsize));
 
          vec_base_bitsize = elem_bitsize;
          indented_output_stream->Append("V ");
@@ -430,7 +427,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       {
          THROW_ASSERT(vec_base_bitsize % 2 == 0, "complex variables must have size multiple of 2"
                                                  "\nssa node id = " +
-                                                     STR(ssa_node_index) + "\ntype node id = " + STR(type_id) + "\nvec_base_bitsize = " + STR(vec_base_bitsize));
+                                                     STR(ssa->index) + "\ntype node id = " + STR(ssa_type->index) + "\nvec_base_bitsize = " + STR(vec_base_bitsize));
          indented_output_stream->Append(" C ");
       }
       else
@@ -559,7 +556,6 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
          }
       }
    }
-   return;
 }
 
 void DiscrepancyAnalysisCWriter::WriteGlobalDeclarations()
@@ -642,9 +638,9 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
    const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
    const auto top_fun_id = *(top_function_ids.begin());
-   const FunctionBehaviorConstRef fun_behavior = AppM->CGetFunctionBehavior(top_fun_id);
-   const BehavioralHelperConstRef behavioral_helper = fun_behavior->CGetBehavioralHelper();
-   const std::string discrepancy_data_filename = Param->getOption<std::string>(OPT_output_directory) + "/simulation/" + behavioral_helper->get_function_name() + "_discrepancy.data";
+   const auto fun_behavior = AppM->CGetFunctionBehavior(top_fun_id);
+   const auto behavioral_helper = fun_behavior->CGetBehavioralHelper();
+   const auto discrepancy_data_filename = Param->getOption<std::string>(OPT_output_directory) + "/simulation/" + behavioral_helper->get_function_name() + "_discrepancy.data";
    Discrepancy->c_trace_filename = discrepancy_data_filename;
 
    indented_output_stream->Append("__bambu_discrepancy_fp = fopen(\"" + discrepancy_data_filename + "\", \"w\");\n");
@@ -654,7 +650,7 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
    indented_output_stream->Append("}\n\n");
 
    indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CONTEXT LL_%llu\\n\", __bambu_discrepancy_context);\n");
-   if(Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw))
+   if(Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw))
    {
       /*
        * if we're using hw discrepancy don't print anything related to global
@@ -662,14 +658,13 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
        */
       return;
    }
-   const CustomSet<unsigned int>& glbl_vars = hls_c_backend_information->HLSMgr->get_global_variables();
-   for(const auto& var : glbl_vars)
+   for(const auto& var_node : hls_c_backend_information->HLSMgr->GetGlobalVariables())
    {
-      if(hls_c_backend_information->HLSMgr->Rmem->has_base_address(var) and (not tree_helper::is_system(TM, var)))
+      if(hls_c_backend_information->HLSMgr->Rmem->has_base_address(var_node->index) && !tree_helper::IsSystemType(var_node))
       {
-         const unsigned int bitsize = tree_helper::size(TM, var);
+         const auto bitsize = tree_helper::Size(var_node);
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1, "bitsize of a variable in memory must be multiple of 8 --> is " + STR(bitsize));
-         indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " + STR(var) + " VAR_ADDR LL_%lu\\n\", &" + STR(behavioral_helper->PrintVariable(var)) + ");//size " + STR(compute_n_bytes(bitsize)) + "\n");
+         indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " + STR(var_node->index) + " VAR_ADDR LL_%lu\\n\", &" + STR(behavioral_helper->PrintVariable(var_node->index)) + ");//size " + STR(compute_n_bytes(bitsize)) + "\n");
       }
    }
    return;
@@ -695,22 +690,21 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
        */
       return;
    }
-   const FunctionBehaviorConstRef FB = hls_c_backend_information->HLSMgr->CGetFunctionBehavior(BH->get_function_index());
-   const std::list<unsigned int>& params = BH->get_parameters();
-   for(const auto& par : params)
+   const auto FB = hls_c_backend_information->HLSMgr->CGetFunctionBehavior(BH->get_function_index());
+   for(const auto& par : BH->GetParameters())
    {
-      if(FB->is_variable_mem(par))
+      if(FB->is_variable_mem(GET_INDEX_CONST_NODE(par)))
       {
-         const unsigned int bitsize = tree_helper::size(TM, par);
+         const unsigned int bitsize = tree_helper::Size(par);
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1, "bitsize of a variable in memory must be multiple of 8 --> is " + STR(bitsize));
-         indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " + STR(par) + " VAR_ADDR LL_%lu\\n\", &" + STR(BH->PrintVariable(par)) + ");//size " + STR(compute_n_bytes(bitsize)) + "\n");
+         indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " + STR(GET_INDEX_CONST_NODE(par)) + " VAR_ADDR LL_%lu\\n\", &" + STR(BH->PrintVariable(GET_INDEX_CONST_NODE(par))) + ");//size " + STR(compute_n_bytes(bitsize)) + "\n");
       }
    }
    for(const auto& var : to_be_declared)
    {
       if(FB->is_variable_mem(var))
       {
-         const unsigned int bitsize = tree_helper::size(TM, var);
+         const unsigned int bitsize = tree_helper::Size(TM->CGetTreeReindex(var));
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1, "bitsize of a variable in memory must be multiple of 8 --> is " + STR(bitsize));
          indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " + STR(var) + " VAR_ADDR LL_%lu\\n\", &" + STR(BH->PrintVariable(var)) + ");//size " + STR(compute_n_bytes(bitsize)) + "\n");
       }

@@ -34,7 +34,7 @@
  * @file eSSA.cpp
  * @brief
  *
- * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -498,8 +498,8 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
    THROW_ASSERT(BI, "Branch instruction should be gimple_cond");
    THROW_ASSERT(BBs.count(BI->bb_index), "Branch BB should be a valid BB");
    const auto BranchBB = BBs.at(BI->bb_index);
-   THROW_ASSERT(BBs.count(BranchBB->true_edge), "True BB should be a valid BB");
-   THROW_ASSERT(BBs.count(BranchBB->false_edge), "False BB should be a valid BB");
+   THROW_ASSERT(BBs.count(BranchBB->true_edge), "True BB should be a valid BB (BB" + STR(BranchBB->true_edge) + " from BB" + STR(BranchBB->number) + ")");
+   THROW_ASSERT(BBs.count(BranchBB->false_edge), "False BB should be a valid BB (BB" + STR(BranchBB->true_edge) + " from BB" + STR(BranchBB->number) + ")");
    const auto TrueBB = BBs.at(BranchBB->true_edge);
    const auto FalseBB = BBs.at(BranchBB->false_edge);
    const std::vector<blocRef> SuccsToProcess = {TrueBB, FalseBB};
@@ -900,7 +900,7 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
          }
       }
 
-      auto& U = Usize.first;
+      const auto& U = Usize.first;
       const auto* I = GetPointer<const gimple_node>(GET_CONST_NODE(U));
       THROW_ASSERT(I, "Use statement should be a gimple_node");
       if(I->bb_index == defBBI)
@@ -908,37 +908,55 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
          // Uses within the same basic block not intresting (they are casts or the actual branch eveluating the condition)
          continue;
       }
-      ValueDFS VD;
 
-      unsigned int IBlock;
+      const auto dfs_gen = [&](unsigned int IBlock) {
+         ValueDFS VD;
+         if(gp)
+         {
+            VD.LocalNum = LN_Last;
+         }
+         else
+         {
+            VD.LocalNum = LN_Middle;
+         }
+         const auto& BBmap = DT->CGetBBGraphInfo()->bb_index_map;
+         auto DomNode_vertex = BBmap.find(IBlock);
+         THROW_ASSERT(DomNode_vertex != BBmap.end(), "BB" + STR(IBlock) + " not found in DT");
+         // It's possible our use is in an unreachable block. Skip it if so.
+         if(!DT->IsReachable(BBmap.at(bloc::ENTRY_BLOCK_ID), DomNode_vertex->second))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(IBlock) + " is unreachable from DT root");
+            return;
+         }
+         const auto& DomNode_DFSInfo = DFSInfos.at(IBlock);
+         VD.DFSIn = DomNode_DFSInfo.DFSIn;
+         VD.DFSOut = DomNode_DFSInfo.DFSOut;
+         VD.U = OperandRef(new Operand(Op, U));
+         DFSOrderedSet.push_back(VD);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pushed on renaming stack");
+      };
+
       if(gp)
       {
-         const auto EdgePredIt = std::find_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) { return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(Op); });
-         THROW_ASSERT(EdgePredIt != gp->CGetDefEdgesList().end(), "");
-         IBlock = EdgePredIt->second;
-         VD.LocalNum = LN_Last;
+         // #if HAVE_ASSERTS
+         //          bool found = false;
+         // #endif
+         for(const auto& def_edge : gp->CGetDefEdgesList())
+         {
+            if(GET_INDEX_CONST_NODE(def_edge.first) == GET_INDEX_CONST_NODE(Op))
+            {
+               // #if HAVE_ASSERTS
+               //                found = true;
+               // #endif
+               dfs_gen(def_edge.second);
+            }
+         }
+         // THROW_ASSERT(found, "");
       }
       else
       {
-         IBlock = I->bb_index;
-         VD.LocalNum = LN_Middle;
+         dfs_gen(I->bb_index);
       }
-
-      const auto& BBmap = DT->CGetBBGraphInfo()->bb_index_map;
-      auto DomNode_vertex = BBmap.find(IBlock);
-      THROW_ASSERT(DomNode_vertex != BBmap.end(), "BB" + STR(IBlock) + " not found in DT");
-      // It's possible our use is in an unreachable block. Skip it if so.
-      if(!DT->IsReachable(BBmap.at(bloc::ENTRY_BLOCK_ID), DomNode_vertex->second))
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(IBlock) + " is unreachable from DT root");
-         continue;
-      }
-      const auto& DomNode_DFSInfo = DFSInfos.at(IBlock);
-      VD.DFSIn = DomNode_DFSInfo.DFSIn;
-      VD.DFSOut = DomNode_DFSInfo.DFSOut;
-      VD.U = OperandRef(new Operand(Op, U));
-      DFSOrderedSet.push_back(VD);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pushed on renaming stack");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 }
@@ -1010,23 +1028,22 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
             }
             else // When intermediate branch BB isn't present, create a new one
             {
-               THROW_ASSERT(static_cast<bool>(BBmap.count(pwe->From)), "UOT??? ");
+               THROW_ASSERT(static_cast<bool>(BBmap.count(pwe->From)), "");
                const auto& FromBB = DT->CGetBBNodeInfo(BBmap.at(pwe->From))->block;
 
                // Create new intermediate BB
                const auto interBBI = (sl->list_of_bloc.rbegin())->first + 1;
-               interBB = blocRef(new bloc(interBBI));
-               sl->list_of_bloc[interBBI] = interBB;
+               interBB = sl->list_of_bloc[interBBI] = blocRef(new bloc(interBBI));
                interBB->loop_id = FromBB->loop_id;
                interBB->SetSSAUsesComputed();
                interBB->schedule = FromBB->schedule;
 
                // Fix BB connections
-               interBB->list_of_pred.push_back(FromBB->number);
-               FromBB->list_of_succ.erase(std::find(FromBB->list_of_succ.begin(), FromBB->list_of_succ.end(), ToBB->number));
+               FromBB->list_of_succ.erase(std::remove(FromBB->list_of_succ.begin(), FromBB->list_of_succ.end(), ToBB->number), FromBB->list_of_succ.end());
+               ToBB->list_of_pred.erase(std::remove(ToBB->list_of_pred.begin(), ToBB->list_of_pred.end(), FromBB->number), ToBB->list_of_pred.end());
                FromBB->list_of_succ.push_back(interBBI);
+               interBB->list_of_pred.push_back(FromBB->number);
                interBB->list_of_succ.push_back(ToBB->number);
-               ToBB->list_of_pred.erase(std::find(ToBB->list_of_pred.begin(), ToBB->list_of_pred.end(), FromBB->number));
                ToBB->list_of_pred.push_back(interBBI);
 
                // Add new BB to intermediate branch block lookup list
@@ -1298,6 +1315,12 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New definition not dominating use in DT, but in CFG only");
          }
 #endif
+         if(not AppM->ApplyNewTransformation())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            return modified;
+         }
          AppM->RegisterTransformation(GetName(), VD.U->getUser());
          VD.U->set(phi->res, TM);
          modified = true;
@@ -1325,6 +1348,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
@@ -1342,11 +1366,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          THROW_UNREACHABLE("");
    }
    return relationships;
-}
-
-bool eSSA::HasToBeExecuted() const
-{
-   return function_behavior->GetBitValueVersion() != bv_ver || FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 void eSSA::Initialize()
@@ -1367,13 +1386,13 @@ DesignFlowStep_Status eSSA::InternalExec()
    BBGraph GCC_bb_graph(GCC_bb_graphs_collection, CFG_SELECTOR);
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       inverse_vertex_map.try_emplace(block.first, GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second))));
    }
 
    /// add edges
-   for(auto curr_bb_pair : sl->list_of_bloc)
+   for(const auto& curr_bb_pair : sl->list_of_bloc)
    {
       unsigned int curr_bb = curr_bb_pair.first;
       for(const auto& lop : sl->list_of_bloc.at(curr_bb)->list_of_pred)
@@ -1403,7 +1422,7 @@ DesignFlowStep_Status eSSA::InternalExec()
    bb_dominators.calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
 
    DT.reset(new BBGraph(GCC_bb_graphs_collection, D_SELECTOR));
-   for(auto it : bb_dominators.get_dominator_map())
+   for(const auto& it : bb_dominators.get_dominator_map())
    {
       if(it.first != inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID))
       {
@@ -1428,7 +1447,7 @@ DesignFlowStep_Status eSSA::InternalExec()
    // as multi-way if.
    CustomSet<OperandRef> OpsToRename;
 
-   auto BBvisit = [&](blocRef BB) {
+   const auto BBvisit = [&](blocRef BB) {
       const auto& stmt_list = BB->CGetStmtList();
 
       // Skip empty BB
@@ -1482,7 +1501,7 @@ DesignFlowStep_Status eSSA::InternalExec()
       else
       {
          // Otherwise, recursively visit this child.
-         const auto Child = DT->CGetBBNodeInfo(ChildRange.front())->block;
+         const auto& Child = DT->CGetBBNodeInfo(ChildRange.front())->block;
          workStack.top().second.pop_front();
 
          workStack.push({ChildRange.front(), boost::make_iterator_range(boost::adjacent_vertices(ChildRange.front(), *DT))});
@@ -1513,7 +1532,6 @@ DesignFlowStep_Status eSSA::InternalExec()
    DT.reset();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
-   bv_ver = function_behavior->GetBitValueVersion();
    modified ? function_behavior->UpdateBBVersion() : 0;
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }

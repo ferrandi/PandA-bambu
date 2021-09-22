@@ -89,6 +89,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case DEPENDENCE_RELATIONSHIP:
       {
+         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
@@ -142,9 +143,10 @@ static kind ternary_operation_type1(kind operation_kind1, kind operation_kind2)
    }
 }
 
-void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM)
+bool extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM)
 {
-   for(auto bb_pair : sl->list_of_bloc)
+   bool modified = false;
+   for(const auto& bb_pair : sl->list_of_bloc)
    {
       blocRef B = bb_pair.second;
       unsigned int B_id = B->number;
@@ -171,9 +173,9 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                if(!(tree_helper::is_real(TM, ssa_node_id) || tree_helper::is_a_complex(TM, ssa_node_id) || tree_helper::is_a_vector(TM, ssa_node_id)))
                {
                   auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(ga->op0));
-                  unsigned int ssa_defined_size = tree_helper::Size(tree_helper::get_type_node(GET_NODE(ga->op0)));
+                  unsigned int ssa_defined_size = tree_helper::Size(tree_helper::CGetType(ga->op0));
                   auto* binop0 = GetPointer<binary_expr>(GET_NODE(ga->op1));
-                  if((ssa_defined->CGetNumberUses() == 1) && (ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op0)))) && (ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op1)))))
+                  if((ssa_defined->CGetNumberUses() == 1) && (ssa_defined_size == tree_helper::Size(tree_helper::CGetType(binop0->op0))) && (ssa_defined_size == tree_helper::Size(tree_helper::CGetType(binop0->op1))))
                   {
                      auto statement_node = ssa_defined->CGetUseStmts().begin()->first;
                      if(GET_NODE(statement_node)->get_kind() == gimple_assign_K)
@@ -181,7 +183,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                         auto* ga_dest = GetPointer<gimple_assign>(GET_NODE(statement_node));
                         enum kind code_dest0 = GET_NODE(ga_dest->op0)->get_kind();
                         enum kind code_dest1 = GET_NODE(ga_dest->op1)->get_kind();
-                        unsigned int ssa_dest0_size = tree_helper::Size(tree_helper::get_type_node(GET_NODE(ga_dest->op0)));
+                        unsigned int ssa_dest0_size = tree_helper::Size(tree_helper::CGetType(ga_dest->op0));
                         if(code_dest0 == ssa_name_K && (code_dest1 == plus_expr_K || code_dest1 == minus_expr_K) && ga_dest->bb_index == B_id && ssa_dest0_size == ssa_defined_size)
                         {
                            tree_manipulationRef IRman(new tree_manipulation(TM, parameters, AppM));
@@ -214,6 +216,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                            it_los = list_of_stmt.begin();
                            it_los_end = list_of_stmt.end();
                            AppM->RegisterTransformation(GetName(), statement_node);
+                           modified = true;
                            continue;
                         }
                      }
@@ -226,6 +229,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(B_id));
    }
+   return modified;
 }
 
 DesignFlowStep_Status extract_patterns::InternalExec()
@@ -239,7 +243,11 @@ DesignFlowStep_Status extract_patterns::InternalExec()
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    /// for each basic block B in CFG do > Consider all blocks successively
-   ternary_plus_expr_extraction(sl, TM);
+   auto modified = ternary_plus_expr_extraction(sl, TM);
+   if(modified)
+   {
+      function_behavior->UpdateBBVersion();
+   }
 
-   return DesignFlowStep_Status::SUCCESS;
+   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }

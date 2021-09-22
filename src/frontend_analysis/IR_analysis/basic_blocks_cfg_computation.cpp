@@ -105,19 +105,19 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPLETE_BB_GRAPH, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COMPLETE_BB_GRAPH, SAME_FUNCTION));
 #if HAVE_BAMBU_BUILT
          if(parameters->isOption(OPT_writer_language))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HDL_VAR_DECL_FIX, SAME_FUNCTION));
+            relationships.insert(std::make_pair(HDL_VAR_DECL_FIX, SAME_FUNCTION));
          }
          else
 #endif
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VAR_DECL_FIX, SAME_FUNCTION));
+            relationships.insert(std::make_pair(VAR_DECL_FIX, SAME_FUNCTION));
          }
 #if HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
 #endif
          break;
       }
@@ -128,18 +128,19 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_STRUCTURING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPLIT_PHINODES, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SHORT_CIRCUIT_STRUCTURING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SPLIT_PHINODES, SAME_FUNCTION));
 #endif
 #if HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UN_COMPARISON_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FANOUT_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FUNCTION_CALL_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
 #endif
          break;
       }
@@ -309,46 +310,6 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       if(boost::out_degree(*v, *fcfg) == 0 and *v != exit)
       {
          bbgc->AddEdge(*v, exit, CFG_SELECTOR);
-      }
-   }
-   const auto operations_cfg_computation_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::OPERATIONS_CFG_COMPUTATION, function_id);
-   const auto operations_cfg_computation_vertex = design_flow_manager.lock()->GetDesignFlowStep(operations_cfg_computation_signature);
-   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const auto operations_cfg_computation_step = design_flow_graph->CGetDesignFlowStepInfo(operations_cfg_computation_vertex)->design_flow_step;
-   THROW_ASSERT(operations_cfg_computation_step, operations_cfg_computation_signature);
-   if(GetPointer<const operations_cfg_computation>(operations_cfg_computation_step)->CGetBBVersion() == function_behavior->GetBBVersion())
-   {
-      const auto op_graph = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
-      const auto& tree_node_to_operation = op_graph->CGetOpGraphInfo()->tree_node_to_operation;
-      const auto bb_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
-      const auto bb_index_map = bb_graph->CGetBBGraphInfo()->bb_index_map;
-      bbgc->add_operation_to_bb(op_graph->CGetOpGraphInfo()->entry_vertex, BB_ENTRY);
-      bbgc->add_operation_to_bb(op_graph->CGetOpGraphInfo()->exit_vertex, BB_EXIT);
-      for(const auto& block : sl->list_of_bloc)
-      {
-         const auto bb_index = block.first;
-         THROW_ASSERT(bb_index_map.find(bb_index) != bb_index_map.end(), "BB" + STR(bb_index) + " is not in the graph");
-         const auto bb_vertex = bb_index_map.find(bb_index)->second;
-         const auto bb_node_info = bb_graph->GetBBNodeInfo(bb_vertex);
-         if(block.second->number == BB_ENTRY or block.second->number == BB_EXIT)
-         {
-            continue;
-         }
-         THROW_ASSERT(!(block.second->CGetStmtList().empty() && block.second->CGetPhiList().empty()), "unexpected condition: BB" + STR(bb_index));
-         for(const auto& phi : block.second->CGetPhiList())
-         {
-            const auto op_index = phi->index;
-            THROW_ASSERT(tree_node_to_operation.find(op_index) != tree_node_to_operation.end(), "Vertex of statement " + STR(op_index) + " not found");
-            const auto op_vertex = tree_node_to_operation.find(op_index)->second;
-            bb_node_info->statements_list.push_back(op_vertex);
-         }
-         for(const auto& stmt : block.second->CGetStmtList())
-         {
-            const auto op_index = stmt->index;
-            THROW_ASSERT(tree_node_to_operation.find(op_index) != tree_node_to_operation.end(), "Vertex of statement " + STR(op_index) + " not found");
-            const auto op_vertex = tree_node_to_operation.find(op_index)->second;
-            bb_node_info->statements_list.push_back(op_vertex);
-         }
       }
    }
    if(parameters->getOption<bool>(OPT_print_dot))

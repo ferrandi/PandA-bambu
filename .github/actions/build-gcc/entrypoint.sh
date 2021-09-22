@@ -14,7 +14,7 @@ cd gcc
 mkdir build
 cd build
 ../configure $@
-make -j bootstrap
+make -j$J bootstrap
 make DESTDIR="$DIST_DIR" install
 
 lsb_release -a >> "$DIST_DIR/VERSION"

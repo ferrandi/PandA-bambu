@@ -59,7 +59,7 @@ void type_casting::operator()(const mem_ref* obj, unsigned int& mask)
    }
    else
    {
-      types.insert(GET_INDEX_NODE(obj->type));
+      types.insert(obj->type);
       tree_node_visitor::operator()(obj, mask);
    }
 }
@@ -72,7 +72,7 @@ void type_casting::operator()(const indirect_ref* obj, unsigned int& mask)
    }
    else
    {
-      types.insert(GET_INDEX_NODE(obj->type));
+      types.insert(obj->type);
       tree_node_visitor::operator()(obj, mask);
    }
 }
@@ -129,8 +129,8 @@ void type_casting::operator()(const unary_expr* obj, unsigned int& mask)
 {
    if(obj->get_kind() == view_convert_expr_K)
    {
-      types.insert(obj->type->index);
-      types.insert(tree_helper::CGetType(GET_NODE(obj->op))->index);
+      types.insert(obj->type);
+      types.insert(tree_helper::CGetType(obj->op));
    }
    if(visited.find(obj->index) != visited.end())
    {

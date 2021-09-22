@@ -34,7 +34,7 @@
  * @file eSSA.hpp
  * @brief
  *
- * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -62,7 +62,6 @@ class eSSA : public FunctionFrontendFlowStep
 
  private:
    BBGraphRef DT;
-   unsigned int bv_ver;
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
@@ -93,8 +92,6 @@ class eSSA : public FunctionFrontendFlowStep
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
-
-   bool HasToBeExecuted() const override;
 };
 
 #endif // !ESSA_HPP

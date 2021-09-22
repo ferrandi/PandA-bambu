@@ -310,11 +310,19 @@ class tree_manager
 
    /**
     * Return the index of a function given its name
-    * @param tm is the tree_manager
     * @param function_name is the name of the function
     * @return the treenode_index of the function_decl
     */
+   /// FIXME: to be remove after substitution with GetFunction
    unsigned int function_index(const std::string& function_name) const;
+
+   /**
+    * Return the index of a function given its name
+    * @param tm is the tree_manager
+    * @param function_name is the name of the function
+    * @return the tree node of the function_decl
+    */
+   tree_nodeRef GetFunction(const std::string& function_name) const;
 
    /**
     * Return the index of a function given its mangled name

@@ -347,16 +347,17 @@
 /* This one accepts raw argument and not cooked,  returns
  * 1 if X is a signaling NaN.
  */
-#define _FP_ISSIGNAN(fs, wc, X)                               \
-   ({                                                         \
-      int __ret = 0;                                          \
-      if(X##_e == _FP_EXPMAX_##fs)                            \
-      {                                                       \
-         if(!_FP_FRAC_ZEROP_##wc(X) && _FP_FRAC_SNANP(fs, X)) \
-            __ret = 1;                                        \
-      }                                                       \
-      __ret;                                                  \
-   })
+#define _FP_ISSIGNAN(fs, wc, X)                                   \
+   (                                                              \
+       {                                                          \
+          int __ret = 0;                                          \
+          if(X##_e == _FP_EXPMAX_##fs)                            \
+          {                                                       \
+             if(!_FP_FRAC_ZEROP_##wc(X) && _FP_FRAC_SNANP(fs, X)) \
+                __ret = 1;                                        \
+          }                                                       \
+          __ret;                                                  \
+       })
 
 /* Addition on semi-raw values.  */
 #define _FP_ADD_INTERNAL(fs, wc, R, X, Y, OP)                                      \
@@ -1272,76 +1273,77 @@
  *     set plus the result is either -(2^(rsize-1)) or (2^(rsize-1))-1
  *     depending on the sign in such case.
  */
-#define _FP_TO_INT(fs, wc, r, X, rsize, rsigned)                                                                   \
-   do                                                                                                              \
-   {                                                                                                               \
-      if(X##_e < _FP_EXPBIAS_##fs)                                                                                 \
-      {                                                                                                            \
-         r = 0;                                                                                                    \
-         if(X##_e == 0)                                                                                            \
-         {                                                                                                         \
-            if(!_FP_FRAC_ZEROP_##wc(X))                                                                            \
-            {                                                                                                      \
-               FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                    \
-               FP_SET_EXCEPTION(FP_EX_DENORM);                                                                     \
-            }                                                                                                      \
-         }                                                                                                         \
-         else                                                                                                      \
-            FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                       \
-      }                                                                                                            \
-      else if(X##_e >= _FP_EXPBIAS_##fs + rsize - (rsigned > 0 || X##_s) || (!rsigned && X##_s))                   \
-      {                                                                                                            \
-         /* Overflow or converting to the most negative integer.  */                                               \
-         if(rsigned)                                                                                               \
-         {                                                                                                         \
-            r = 1;                                                                                                 \
-            r <<= rsize - 1;                                                                                       \
-            r -= 1 - X##_s;                                                                                        \
-         }                                                                                                         \
-         else                                                                                                      \
-         {                                                                                                         \
-            r = 0;                                                                                                 \
-            if(!X##_s)                                                                                             \
-               r = ~r;                                                                                             \
-         }                                                                                                         \
-                                                                                                                   \
-         if(rsigned && X##_s && X##_e == _FP_EXPBIAS_##fs + rsize - 1)                                             \
-         {                                                                                                         \
-            /* Possibly converting to most negative integer; check the                                             \
-          mantissa.  */                                                                                            \
-            int inexact = 0;                                                                                       \
-            (void)((_FP_FRACBITS_##fs > rsize) ? ({                                                                \
-               _FP_FRAC_SRST_##wc(X, inexact, _FP_FRACBITS_##fs - rsize, _FP_FRACBITS_##fs);                       \
-               0;                                                                                                  \
-            }) :                                                                                                   \
-                                                 0);                                                               \
-            if(!_FP_FRAC_ZEROP_##wc(X))                                                                            \
-               FP_SET_EXCEPTION(FP_EX_INVALID);                                                                    \
-            else if(inexact)                                                                                       \
-               FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                    \
-         }                                                                                                         \
-         else                                                                                                      \
-            FP_SET_EXCEPTION(FP_EX_INVALID);                                                                       \
-      }                                                                                                            \
-      else                                                                                                         \
-      {                                                                                                            \
-         _FP_FRAC_HIGH_RAW_##fs(X) |= _FP_IMPLBIT_##fs;                                                            \
-         if(X##_e >= _FP_EXPBIAS_##fs + _FP_FRACBITS_##fs - 1)                                                     \
-         {                                                                                                         \
-            _FP_FRAC_ASSEMBLE_##wc(r, X, rsize);                                                                   \
-            r <<= X##_e - _FP_EXPBIAS_##fs - _FP_FRACBITS_##fs + 1;                                                \
-         }                                                                                                         \
-         else                                                                                                      \
-         {                                                                                                         \
-            int inexact;                                                                                           \
-            _FP_FRAC_SRST_##wc(X, inexact, (_FP_FRACBITS_##fs + _FP_EXPBIAS_##fs - 1 - X##_e), _FP_FRACBITS_##fs); \
-            if(inexact)                                                                                            \
-               FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                    \
-            _FP_FRAC_ASSEMBLE_##wc(r, X, rsize);                                                                   \
-         }                                                                                                         \
-         if(rsigned && X##_s)                                                                                      \
-            r = -r;                                                                                                \
-      }                                                                                                            \
+#define _FP_TO_INT(fs, wc, r, X, rsize, rsigned)                                                                                      \
+   do                                                                                                                                 \
+   {                                                                                                                                  \
+      if(X##_e < _FP_EXPBIAS_##fs)                                                                                                    \
+      {                                                                                                                               \
+         r = 0;                                                                                                                       \
+         if(X##_e == 0)                                                                                                               \
+         {                                                                                                                            \
+            if(!_FP_FRAC_ZEROP_##wc(X))                                                                                               \
+            {                                                                                                                         \
+               FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                                       \
+               FP_SET_EXCEPTION(FP_EX_DENORM);                                                                                        \
+            }                                                                                                                         \
+         }                                                                                                                            \
+         else                                                                                                                         \
+            FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                                          \
+      }                                                                                                                               \
+      else if(X##_e >= _FP_EXPBIAS_##fs + rsize - (rsigned > 0 || X##_s) || (!rsigned && X##_s))                                      \
+      {                                                                                                                               \
+         /* Overflow or converting to the most negative integer.  */                                                                  \
+         if(rsigned)                                                                                                                  \
+         {                                                                                                                            \
+            r = 1;                                                                                                                    \
+            r <<= rsize - 1;                                                                                                          \
+            r -= 1 - X##_s;                                                                                                           \
+         }                                                                                                                            \
+         else                                                                                                                         \
+         {                                                                                                                            \
+            r = 0;                                                                                                                    \
+            if(!X##_s)                                                                                                                \
+               r = ~r;                                                                                                                \
+         }                                                                                                                            \
+                                                                                                                                      \
+         if(rsigned && X##_s && X##_e == _FP_EXPBIAS_##fs + rsize - 1)                                                                \
+         {                                                                                                                            \
+            /* Possibly converting to most negative integer; check the                                                                \
+          mantissa.  */                                                                                                               \
+            int inexact = 0;                                                                                                          \
+            (void)((_FP_FRACBITS_##fs > rsize) ? (                                                                                    \
+                                                     {                                                                                \
+                                                        _FP_FRAC_SRST_##wc(X, inexact, _FP_FRACBITS_##fs - rsize, _FP_FRACBITS_##fs); \
+                                                        0;                                                                            \
+                                                     }) :                                                                             \
+                                                 0);                                                                                  \
+            if(!_FP_FRAC_ZEROP_##wc(X))                                                                                               \
+               FP_SET_EXCEPTION(FP_EX_INVALID);                                                                                       \
+            else if(inexact)                                                                                                          \
+               FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                                       \
+         }                                                                                                                            \
+         else                                                                                                                         \
+            FP_SET_EXCEPTION(FP_EX_INVALID);                                                                                          \
+      }                                                                                                                               \
+      else                                                                                                                            \
+      {                                                                                                                               \
+         _FP_FRAC_HIGH_RAW_##fs(X) |= _FP_IMPLBIT_##fs;                                                                               \
+         if(X##_e >= _FP_EXPBIAS_##fs + _FP_FRACBITS_##fs - 1)                                                                        \
+         {                                                                                                                            \
+            _FP_FRAC_ASSEMBLE_##wc(r, X, rsize);                                                                                      \
+            r <<= X##_e - _FP_EXPBIAS_##fs - _FP_FRACBITS_##fs + 1;                                                                   \
+         }                                                                                                                            \
+         else                                                                                                                         \
+         {                                                                                                                            \
+            int inexact;                                                                                                              \
+            _FP_FRAC_SRST_##wc(X, inexact, (_FP_FRACBITS_##fs + _FP_EXPBIAS_##fs - 1 - X##_e), _FP_FRACBITS_##fs);                    \
+            if(inexact)                                                                                                               \
+               FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                                       \
+            _FP_FRAC_ASSEMBLE_##wc(r, X, rsize);                                                                                      \
+         }                                                                                                                            \
+         if(rsigned && X##_s)                                                                                                         \
+            r = -r;                                                                                                                   \
+      }                                                                                                                               \
    } while(0)
 
 /* Convert integer to fp.  Output is raw.  RTYPE is unsigned even if
@@ -1357,16 +1359,18 @@
             r = -(rtype)r;                                                                                                                                           \
                                                                                                                                                                      \
          ur_ = (rtype)r;                                                                                                                                             \
-         (void)((rsize <= _FP_W_TYPE_SIZE) ? ({                                                                                                                      \
-            int lz_;                                                                                                                                                 \
-            __FP_CLZ(lz_, (_FP_W_TYPE)ur_);                                                                                                                          \
-            X##_e = _FP_EXPBIAS_##fs + _FP_W_TYPE_SIZE - 1 - lz_;                                                                                                    \
-         }) :                                                                                                                                                        \
-                                             ((rsize <= 2 * _FP_W_TYPE_SIZE) ? ({                                                                                    \
-                                                int lz_;                                                                                                             \
-                                                __FP_CLZ_2(lz_, (_FP_W_TYPE)(ur_ >> _FP_W_TYPE_SIZE), (_FP_W_TYPE)ur_);                                              \
-                                                X##_e = (_FP_EXPBIAS_##fs + 2 * _FP_W_TYPE_SIZE - 1 - lz_);                                                          \
-                                             }) :                                                                                                                    \
+         (void)((rsize <= _FP_W_TYPE_SIZE) ? (                                                                                                                       \
+                                                 {                                                                                                                   \
+                                                    int lz_;                                                                                                         \
+                                                    __FP_CLZ(lz_, (_FP_W_TYPE)ur_);                                                                                  \
+                                                    X##_e = _FP_EXPBIAS_##fs + _FP_W_TYPE_SIZE - 1 - lz_;                                                            \
+                                                 }) :                                                                                                                \
+                                             ((rsize <= 2 * _FP_W_TYPE_SIZE) ? (                                                                                     \
+                                                                                   {                                                                                 \
+                                                                                      int lz_;                                                                       \
+                                                                                      __FP_CLZ_2(lz_, (_FP_W_TYPE)(ur_ >> _FP_W_TYPE_SIZE), (_FP_W_TYPE)ur_);        \
+                                                                                      X##_e = (_FP_EXPBIAS_##fs + 2 * _FP_W_TYPE_SIZE - 1 - lz_);                    \
+                                                                                   }) :                                                                              \
                                                                                (abort(), 0)));                                                                       \
                                                                                                                                                                      \
          if(rsize - 1 + _FP_EXPBIAS_##fs >= _FP_EXPMAX_##fs && X##_e >= _FP_EXPMAX_##fs)                                                                             \
@@ -1541,11 +1545,11 @@
    do                                                           \
    {                                                            \
       if(sizeof(_FP_W_TYPE) == sizeof(unsigned int))            \
-         r = __builtin_clz(x);                                  \
+         r = clz(x);                                            \
       else if(sizeof(_FP_W_TYPE) == sizeof(unsigned long))      \
-         r = __builtin_clzl(x);                                 \
+         r = clzl(x);                                           \
       else if(sizeof(_FP_W_TYPE) == sizeof(unsigned long long)) \
-         r = __builtin_clzll(x);                                \
+         r = clzll(x);                                          \
       else                                                      \
          abort();                                               \
    } while(0)

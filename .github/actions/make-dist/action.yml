@@ -1,0 +1,18 @@
+name: 'Panda make dist'
+description: 'Build Panda distribution'
+inputs:
+  config-args:
+    description: 'Configure command line arguments'
+    required: false
+    default: ''
+  jobs:
+    description: 'Parallel jobs'
+    required: false
+    default: 1
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    J: ${{inputs.jobs}}
+  args:
+    - ${{inputs.config-args}}

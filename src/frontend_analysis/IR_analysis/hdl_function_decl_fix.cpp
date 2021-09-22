@@ -59,6 +59,7 @@
 
 /// tree includes
 #include "tree_manager.hpp"
+#include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
@@ -112,11 +113,8 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
             var_decl_name_nid_test = TM->find(identifier_node_K, IR_schema);
          } while(var_decl_name_nid_test);
          found_names.insert(in->strg + STR(var_decl_unique_id - 1));
-         unsigned int var_decl_name_nid = TM->new_tree_node_id();
-         TM->create_tree_node(var_decl_name_nid, identifier_node_K, IR_schema);
-         IR_schema.clear();
-         tree_nodeRef tr_new_id = TM->GetTreeReindex(var_decl_name_nid);
-         fd->name = tr_new_id;
+         const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
+         fd->name = tree_man->create_identifier_node(IR_schema[TOK(TOK_STRG)]);
       }
       else
       {
@@ -133,7 +131,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

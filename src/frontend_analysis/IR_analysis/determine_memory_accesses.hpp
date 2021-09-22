@@ -57,6 +57,7 @@
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 CONSTREF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(tree_node);
 
 class determine_memory_accesses : public FunctionFrontendFlowStep
 {
@@ -74,7 +75,7 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
    /**
     * Analyze the given node ID to determine which variables have to be referred in memory
     */
-   void analyze_node(unsigned int node_id, bool left_p, bool dynamic_address, bool no_dynamic_address);
+   void analyze_node(const tree_nodeConstRef& tn, bool left_p, bool dynamic_address, bool no_dynamic_address);
 
    /**
     * Return the set of analyses in relationship with this design step

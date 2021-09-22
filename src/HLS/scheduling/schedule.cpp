@@ -318,8 +318,8 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    const auto current_starting_time = starting_times[operation_index];
    const auto current_ending_time = starting_times[operation_index];
 
-   CustomOrderedSet<ssa_name*> rhs_ssa_uses;
-   const auto tn = TM->get_tree_node_const(operation_index);
+   CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
+   const auto tn = TM->CGetTreeNode(operation_index);
    const auto gn = GetPointer<const gimple_node>(tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing ending time of new statement " + STR(gn->index) + ": " + gn->ToString());
    const auto hls = hls_manager.lock()->get_HLS(function_index);
@@ -331,7 +331,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
 
    /// The starting control step
    ControlStep starting_cs = ControlStep(0);
-   if(not update_cs)
+   if(!update_cs)
    {
       starting_time = clock_period * from_strongtype_cast<double>(op_starting_cycle.at(operation_index));
    }
@@ -346,7 +346,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    else if(gn->get_kind() == gimple_multi_way_if_K)
    {
       const auto gmwi = GetPointer<const gimple_multi_way_if>(tn);
-      for(auto cond : gmwi->list_of_cond)
+      for(const auto& cond : gmwi->list_of_cond)
       {
          if(cond.first)
          {
@@ -393,8 +393,13 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    }
    for(const auto ssa_use : rhs_ssa_uses)
    {
+      if(ssa_use->virtual_flag)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Virtual SSAs are not considered");
+         continue;
+      }
       const auto def = ssa_use->CGetDefStmt();
-      const auto def_gn = GetPointer<const gimple_node>(GET_NODE(def));
+      const auto def_gn = GetPointer<const gimple_node>(GET_CONST_NODE(def));
       if(def_gn->get_kind() == gimple_nop_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter");
@@ -409,11 +414,6 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
       if(def_gn->bb_index != curr_bb_index)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition " + STR(def->index) + " - " + def->ToString() + " is in BB" + STR(curr_bb_index));
-         continue;
-      }
-      if(ssa_use->virtual_flag and ending_times.find(def_gn->index) == ending_times.end())
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition " + STR(def->index) + " - " + def->ToString() + " not yet examined --> anti dependence?");
          continue;
       }
       if(!allocation_information->is_operation_bounded(def->index))
@@ -585,7 +585,7 @@ FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int stateme
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Latency: " + STR(latency));
 
    double new_ending_time = 0.0;
-   CustomOrderedSet<ssa_name*> rhs_ssa_uses;
+   CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
    tree_helper::compute_ssa_uses_rec_ptr(ga->op1, rhs_ssa_uses);
    for(const auto ssa_use : rhs_ssa_uses)
    {
@@ -1106,7 +1106,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       const auto stmt_tn = TM->get_tree_node_const(last);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Processing " + stmt_tn->ToString());
       const auto gn = GetPointer<const gimple_node>(stmt_tn);
-      CustomOrderedSet<ssa_name*> rhs_ssa_uses;
+      CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
       if(gn->get_kind() == gimple_assign_K)
       {
          tree_helper::compute_ssa_uses_rec_ptr(GetPointer<const gimple_assign>(stmt_tn)->op1, rhs_ssa_uses);
@@ -1118,7 +1118,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       else if(gn->get_kind() == gimple_multi_way_if_K)
       {
          const auto gmwi = GetPointer<const gimple_multi_way_if>(stmt_tn);
-         for(auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {
@@ -1157,6 +1157,11 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       }
       for(const auto ssa_use : rhs_ssa_uses)
       {
+         if(ssa_use->virtual_flag)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Virtual SSAs are not considered");
+            continue;
+         }
          const auto def = GET_NODE(ssa_use->CGetDefStmt());
          const auto def_gn = GetPointer<const gimple_node>(def);
          if(def_gn->get_kind() == gimple_nop_K)
@@ -1178,11 +1183,6 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
          if(state_info->BB_ids.find(def_gn->bb_index) == state_info->BB_ids.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition " + STR(def->index) + " - " + def->ToString() + " is in other state");
-            continue;
-         }
-         if(ssa_use->virtual_flag and ending_times.find(def_gn->index) == ending_times.end())
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition " + STR(def->index) + " - " + def->ToString() + " not yet examined --> anti dependence?");
             continue;
          }
          THROW_ASSERT(ending_times.find(def_gn->index) != ending_times.end(), "Not possible because ending time of " + def_gn->ToString() + " (which defines " + ssa_use->ToString() + ") is unknown");

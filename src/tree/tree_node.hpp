@@ -549,7 +549,9 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case ternary_plus_expr_K:    \
    case ternary_pm_expr_K:      \
    case ternary_mp_expr_K:      \
-   case ternary_mm_expr_K
+   case ternary_mm_expr_K:      \
+   case fshl_expr_K:            \
+   case fshr_expr_K
 
 /**
  * This macro collects all case labels for quaternary_expr objects.
@@ -775,31 +777,31 @@ struct attr
    }
 
    /// Return true if there is TOK_CONSTRUCTOR in the list of attributes
-   bool is_constructor();
+   bool is_constructor() const;
 
    /// Return true if there is TOK_DESTRUCTOR in the list of attributes
-   bool is_destructor();
+   bool is_destructor() const;
 
    /// Return true if there is TOK_MEMBER in the list of attributes
-   bool is_member();
+   bool is_member() const;
 
    /// returns true if there is a TOK_CALL in the list of attributes
-   bool is_call();
+   bool is_call() const;
 
    /// returns true if there is a TOK_NEW in the list of attributes
-   bool is_new();
+   bool is_new() const;
 
    /// returns true if there is a TOK_PUBLIC in the list of attributes
-   bool is_public();
+   bool is_public() const;
 
    /// returns true if there is a TOK_PRIVATE in the list of attributes
-   bool is_private();
+   bool is_private() const;
 
    /// returns true if there is a TOK_PROTECTED in the list of attributes
-   bool is_protected();
+   bool is_protected() const;
 
    /// returns true if there is a TOK_BITFIELD in the list of attributes
-   bool is_bitfield();
+   bool is_bitfield() const;
 
    /**
     * virtual function used to traverse the tree_node data structure.
@@ -3035,9 +3037,6 @@ struct gimple_assign : public gimple_node
 
    /// The predicate
    tree_nodeRef predicate;
-
-   /// in case the statement comes from a phi node split points to the original gimple_phi (PandA extension)
-   tree_nodeRef orig;
 
    bool init_assignment;
 
@@ -6132,5 +6131,17 @@ CREATE_TREE_NODE_CLASS(sat_plus_expr, binary_expr);
  * Simple arithmetic.
  */
 CREATE_TREE_NODE_CLASS(sat_minus_expr, binary_expr);
+
+/**
+ * This struct specifies the fshl_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(fshl_expr, ternary_expr);
+
+/**
+ * This struct specifies the fshr_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(fshr_expr, ternary_expr);
 
 #endif

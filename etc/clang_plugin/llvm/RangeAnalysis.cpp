@@ -297,7 +297,13 @@ namespace RangeAnalysis
 #endif
          auto& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*Fun).getLVI();
          const Value* VI = I;
-         llvm::ConstantRange range = LVI.getConstantRange(const_cast<llvm::Value*>(VI), const_cast<llvm::BasicBlock*>(I->getParent()));
+         llvm::ConstantRange range = LVI.getConstantRange(const_cast<llvm::Value*>(VI),
+#if __clang_major__ < 12
+                                                          const_cast<llvm::BasicBlock*>(I->getParent())
+#else
+                                                          const_cast<llvm::Instruction*>(I)
+#endif
+                                                          );
          assert(!range.isEmptySet());
          auto ty = I->getType();
          auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;

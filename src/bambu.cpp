@@ -247,10 +247,10 @@ int main(int argc, char* argv[])
          return EXIT_SUCCESS;
       }
 
-      if(parameters->getOption<bool>(OPT_find_max_cfg_transformations))
+      if(parameters->getOption<bool>(OPT_find_max_transformations))
       {
-         const DesignFlowStepRef find_max_cfg_transformations = GetPointer<const FrontendFlowStepFactory>(frontend_flow_step_factory)->CreateApplicationFrontendFlowStep(FrontendFlowStepType::FIND_MAX_CFG_TRANSFORMATIONS);
-         design_flow_manager->AddStep(find_max_cfg_transformations);
+         const DesignFlowStepRef find_max_transformations = GetPointer<const FrontendFlowStepFactory>(frontend_flow_step_factory)->CreateApplicationFrontendFlowStep(FrontendFlowStepType::FIND_MAX_TRANSFORMATIONS);
+         design_flow_manager->AddStep(find_max_transformations);
          design_flow_manager->Exec();
          return EXIT_FAILURE;
       }

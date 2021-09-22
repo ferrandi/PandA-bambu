@@ -1,0 +1,41 @@
+name: Merge PR
+on:
+  pull_request:
+    types: [closed]
+    braches:
+      - main
+
+env:
+  storage-url: ${{secrets.CI_STORAGE_URL}}
+  storage-user: '${{secrets.CI_STORAGE_USER}}'
+  storage-token: '${{secrets.CI_STORAGE_TOKEN}}'
+
+jobs:
+  remove-dist:
+    runs-on: [self-hosted]
+    steps:
+      - name: Remove PR storage directory
+        shell: bash
+        run: |
+          set -e
+          PRDIR_URL="${{env.storage-url}}/$(dirname ${{github.ref}})"
+          CURL_CMD='curl -L -X DELETE '
+          if [[ ! -z '${{env.storage-user}}' ]]; then
+            CURL_CMD+='-u ${{env.storage-user}}:${{env.storage-token}} '
+          fi
+          $CURL_CMD "$PRDIR_URL"
+  update-results:
+    if: github.event.pull_request.merged == true
+    runs-on: [self-hosted]
+    steps:
+      - name: Update main performance results
+        shell: bash
+        run: |
+          set -e
+          PR_URL="${{env.storage-url}}/results/${{github.ref}}"
+          MAIN_URL="${{env.storage-url}}/results/main"
+          CURL_CMD='curl -L --fail -X MOVE '
+          if [[ ! -z '${{env.storage-user}}' ]]; then
+            CURL_CMD+='-u ${{env.storage-user}}:${{env.storage-token}} '
+          fi
+          $CURL_CMD --header "Destination:$MAIN_URL" "$PR_URL"
