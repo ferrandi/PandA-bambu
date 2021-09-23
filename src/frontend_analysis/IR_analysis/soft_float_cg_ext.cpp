@@ -297,7 +297,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                {
                   current_v->internal = current_v->callers.empty();
                }
-               else if(*current_v->userRequired == *callers_ff)
+               else
                {
                   current_v->internal = *current_v->userRequired == *callers_ff;
                }
@@ -317,7 +317,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
 
                   if(static_cast<bool>(libm_func.count(called_fname)))
                   {
-                     // Do not propagate format to libm functions, specialization will be handled succesively
+                     // Do not propagate format to libm functions, specialization will be handled successively
                      continue;
                   }
                   FunctionVersionRef called_v;
@@ -568,7 +568,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             if(lowering_needed(parmSSA))
             {
                const auto parm_ridx = TreeM->CGetTreeReindex(parmSSA->index);
-               const auto parm_type = int_type_for(parmSSA->type, _version->internal);
+               const auto parm_type = int_type_for(parmSSA->type, false);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Lowering top function parameter type of " + parmSSA->ToString() + ": " + GET_NODE(parmSSA->type)->ToString() + " -> " + GET_NODE(parm_type)->ToString());
                tree_nodeRef vc_stmt;
                if(GET_NODE(parm_type)->get_kind() == pointer_type_K)
@@ -1185,9 +1185,9 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    auto spec_function = TreeM->GetFunction(FLOAT_CAST_FU_NAME + spec_suffix);
    if(!spec_function)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Generating specialized version of " FLOAT_CAST_FU_NAME " (" + STR(float_cast) + ") with fp format " + spec_suffix);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Generating specialized version of " FLOAT_CAST_FU_NAME " (" + STR(float_cast->index) + ") with fp format " + spec_suffix);
       spec_function = tree_man->CloneFunction(float_cast, spec_suffix);
-      THROW_ASSERT(spec_function, "Error cloning function " FLOAT_CAST_FU_NAME " (" + STR(float_cast) + ").");
+      THROW_ASSERT(spec_function, "Error cloning function " FLOAT_CAST_FU_NAME " (" + STR(float_cast->index) + ").");
    }
    const std::vector<tree_nodeRef> args = {
        ssa,
@@ -1304,7 +1304,7 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
    std::copy(versioning_args.at(spec_function->index).begin(), versioning_args.at(spec_function->index).end(), std::back_inserter(args));
    called_function = spec_function;
    TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(called_function, args, current_srcp));
-   CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, debug_level);
+   CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(called_function->index));
 
    // Update functions float format map
@@ -1694,7 +1694,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                         const auto bool_type_idx = GET_INDEX_CONST_NODE(tree_man->create_boolean_type());
                         std::vector<tree_nodeRef> args = {ue->op, TreeM->CreateUniqueIntegerCst(inFF->has_nan, bool_type_idx), TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, bool_type_idx)};
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(called_function, args, current_srcp));
-                        CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, debug_level);
+                        CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
                         FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(called_function->index));
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
