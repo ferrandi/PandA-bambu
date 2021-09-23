@@ -54,7 +54,7 @@
 #define NUM_CST_allocation_default_max_lut_size 6
 
 /// The default value used in computation of controller delay
-#define NUM_CST_allocation_default_states_number_normalization 200
+#define NUM_CST_allocation_default_states_number_normalization 400
 
 /// The default value used in computation of controller delay when basic block are considered
 #define NUM_CST_allocation_default_states_number_normalization_BB 200
