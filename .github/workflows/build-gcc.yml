@@ -2,9 +2,24 @@ name: Build GCC
 
 on:
   workflow_dispatch:
+    inputs:
+      gcc_ref:
+        description: 'GCC branch reference to compile (e.g.: releases/gcc-5)'
+        required: true
+      version:
+        description: 'Compiled GCC version number (e.g.: 5)'
+        required: true
+      configure:
+        description: 'GCC configuration options'
+        required: false
+        default: '--enable-languages=c,c++,fortran --prefix=/usr --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --with-system-zlib --disable-browser-plugin --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu'
+      patch:
+        description: 'Patch to be applied (if necessary)'
+        required: false
+        default: ''
 
 concurrency:
-  group: build-${{ github.ref }}
+  group: build-gcc-${{ github.event.inputs.version }}
   cancel-in-progress: true
 
 env:
@@ -12,25 +27,34 @@ env:
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
   storage-path: compilers
+  host_jobs: $J
 
 jobs:
   build:
     runs-on: [self-hosted]
-    strategy:
-      matrix:
-        version: ['5', '6', '7', '8']
-      fail-fast: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Build GCC-${{matrix.version}}
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
+      - name: Set patch
+        if: ${{ github.event.inputs.patch != '' }}
+        shell: bash
+        run: |
+          cp '.github/actions/build-gcc/${{github.event.inputs.patch}}' '${{github.workspace}}'
+      - name: Build GCC-${{github.event.inputs.version}}
         id: build
         uses: ./.github/actions/build-gcc
         with:
-          branch: releases/gcc-${{matrix.version}}
-          dist-name: gcc-${{matrix.version}}-bambu
-          config-args: -v --with-pkgversion="Ubuntu ${{matrix.version}}-bambu" --with-bugurl="file:///usr/share/doc/gcc-${{matrix.version}}/README.Bugs" --enable-languages=c,c++,fortran --prefix=/usr --program-suffix=-${{matrix.version}} --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --with-system-zlib --disable-browser-plugin --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu
-      - name: Upload GCC-${{matrix.version}} dist directory
+          jobs: ${{steps.host.outputs.jobs}}
+          branch: ${{github.event.inputs.gcc_ref}}
+          dist-name: gcc-${{github.event.inputs.version}}-bambu
+          config-args: -v --with-pkgversion="Ubuntu gcc-${{github.event.inputs.version}}-bambu" --with-bugurl="file:///usr/share/doc/gcc-${{github.event.inputs.version}}/README.Bugs" --program-suffix=-${{github.event.inputs.version}} ${{ github.event.inputs.configure }}
+      - name: Upload GCC-${{github.event.inputs.version}} dist directory
         uses: ./.github/actions/storage-upload
         with:
           path: ${{steps.build.outputs.dist-dir}}/.
