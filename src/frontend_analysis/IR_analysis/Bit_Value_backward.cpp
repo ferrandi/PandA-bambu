@@ -206,7 +206,7 @@ void Bit_Value::backward()
       {
          const auto s = GET_CONST_NODE(stmt);
          push_back(s);
-         THROW_ASSERT(GetPointer<const gimple_node>(s)->bb_index == bb->number, "");
+         THROW_ASSERT(GetPointer<const gimple_node>(s)->bb_index == bb->number, "BB" + STR(bb->number) + " contains statement from BB" + STR(GetPointer<const gimple_node>(s)->bb_index) + " - " + s->get_kind_text() + " - " + STR(s));
       }
       for(const auto& stmt : boost::adaptors::reverse(bb->CGetPhiList()))
       {
@@ -217,7 +217,7 @@ void Bit_Value::backward()
             if(IsHandledByBitvalue(gp->res))
             {
                push_back(s);
-               THROW_ASSERT(GetPointer<const gimple_node>(s)->bb_index == bb->number, "");
+               THROW_ASSERT(GetPointer<const gimple_node>(s)->bb_index == bb->number, "BB" + STR(bb->number) + " contains statement from BB" + STR(GetPointer<const gimple_node>(s)->bb_index) + " - " + s->get_kind_text() + " - " + STR(s));
             }
          }
       }
