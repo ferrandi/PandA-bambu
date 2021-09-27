@@ -2884,5 +2884,16 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       splitBB->AddPhi(ret_phi);
       TreeM->ReplaceTreeNode(ret_phi, phi_res, ret_val);
    }
+   if(splitBB->list_of_pred.empty())
+   {
+      THROW_ASSERT(splitBB->CGetStmtList().empty() && splitBB->CGetPhiList().empty(), "Unreachable BB after inlined call statement must be empty.");
+      for(const auto& succ_bbi : splitBB->list_of_succ)
+      {
+         const auto& succ_bb = sl->list_of_bloc[succ_bbi];
+         const auto new_end = std::remove(succ_bb->list_of_pred.begin(), succ_bb->list_of_pred.end(), splitBB->number);
+         succ_bb->list_of_pred.erase(new_end, succ_bb->list_of_pred.end());
+      }
+      sl->list_of_bloc.erase(splitBB->number);
+   }
    return splitBB->number;
 }
