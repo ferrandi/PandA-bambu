@@ -202,23 +202,13 @@ DesignFlowStep_Status extract_patterns::InternalExec()
                            const auto binop_dest = GetPointerS<const binary_expr>(GET_CONST_NODE(ga_dest->op1));
                            if(GET_INDEX_CONST_NODE(ga->op0) == GET_INDEX_CONST_NODE(binop_dest->op0))
                            {
-                              ga_dest->op1 = IRman->create_ternary_operation(binop_dest->type, binop0->op0, binop0->op1, binop_dest->op1, srcp_default, ternary_operation_type0(code1, code_dest1));
-                              GetPointer<ssa_name>(GET_NODE(binop_dest->op0))->RemoveUse(statement_node);
+                              const auto ternary_op = IRman->create_ternary_operation(binop_dest->type, binop0->op0, binop0->op1, binop_dest->op1, srcp_default, ternary_operation_type0(code1, code_dest1));
+                              TM->ReplaceTreeNode(statement_node, ga_dest->op1, ternary_op);
                            }
                            else
                            {
-                              ga_dest->op1 = IRman->create_ternary_operation(binop_dest->type, binop_dest->op0, binop0->op0, binop0->op1, srcp_default, ternary_operation_type1(code1, code_dest1));
-                              GetPointer<ssa_name>(GET_NODE(binop_dest->op1))->RemoveUse(statement_node);
-                           }
-                           auto sn0 = GetPointer<ssa_name>(GET_NODE(binop0->op0));
-                           if(sn0)
-                           {
-                              sn0->AddUseStmt(statement_node);
-                           }
-                           auto sn1 = GetPointer<ssa_name>(GET_NODE(binop0->op1));
-                           if(sn1)
-                           {
-                              sn1->AddUseStmt(statement_node);
+                              const auto ternary_op = IRman->create_ternary_operation(binop_dest->type, binop_dest->op0, binop0->op0, binop0->op1, srcp_default, ternary_operation_type1(code1, code_dest1));
+                              TM->ReplaceTreeNode(statement_node, ga_dest->op1, ternary_op);
                            }
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement removed " + GET_NODE(*it_los)->ToString());
                            B->RemoveStmt(*it_los, AppM);

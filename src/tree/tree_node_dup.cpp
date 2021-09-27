@@ -1524,38 +1524,38 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
          dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddDefStmt(def_stmt);
       }
    }
-   for(const auto& use : GetPointer<ssa_name>(source_tn)->CGetUseStmts())
-   {
-      const auto& use_stmt = use.first;
-      if(mode)
-      {
-         unsigned int node_id = GET_INDEX_NODE(use_stmt);
-         const auto rnode = remap.find(node_id);
-         if(rnode != remap.end())
-         {
-            node_id = rnode->second;
-         }
-         else
-         {
-            const auto saved_curr_tree_node_ptr = curr_tree_node_ptr;
-            const auto saved_source_tn = source_tn;
-            node_id = create_tree_node(GET_NODE(use_stmt), mode);
-            curr_tree_node_ptr = saved_curr_tree_node_ptr;
-            source_tn = saved_source_tn;
-         }
-         for(decltype(use.second) u = 0; u < use.second; ++u)
-         {
-            dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddUseStmt(TM->GetTreeReindex(node_id));
-         }
-      }
-      else
-      {
-         for(decltype(use.second) u = 0; u < use.second; ++u)
-         {
-            dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddUseStmt(use_stmt);
-         }
-      }
-   }
+   // for(const auto& use : GetPointer<ssa_name>(source_tn)->CGetUseStmts())
+   // {
+   //    const auto& use_stmt = use.first;
+   //    if(mode)
+   //    {
+   //       unsigned int node_id = GET_INDEX_NODE(use_stmt);
+   //       const auto rnode = remap.find(node_id);
+   //       if(rnode != remap.end())
+   //       {
+   //          node_id = rnode->second;
+   //       }
+   //       else
+   //       {
+   //          const auto saved_curr_tree_node_ptr = curr_tree_node_ptr;
+   //          const auto saved_source_tn = source_tn;
+   //          node_id = create_tree_node(GET_NODE(use_stmt), mode);
+   //          curr_tree_node_ptr = saved_curr_tree_node_ptr;
+   //          source_tn = saved_source_tn;
+   //       }
+   //       for(decltype(use.second) u = 0; u < use.second; ++u)
+   //       {
+   //          dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddUseStmt(TM->GetTreeReindex(node_id));
+   //       }
+   //    }
+   //    else
+   //    {
+   //       for(decltype(use.second) u = 0; u < use.second; ++u)
+   //       {
+   //          dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddUseStmt(use_stmt);
+   //       }
+   //    }
+   // }
    if(!mode)
    {
       SET_NODE_ID(min, ssa_name);
@@ -1804,6 +1804,10 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
    curr_bloc->true_edge = get_bbi(source_bloc->true_edge);
    curr_bloc->false_edge = get_bbi(source_bloc->false_edge);
 
+   if(use_counting)
+   {
+      curr_bloc->SetSSAUsesComputed();
+   }
    for(const auto& phi : source_bloc->CGetPhiList())
    {
       unsigned int node_id = GET_INDEX_NODE(phi);
@@ -1859,10 +1863,6 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
          node_id = remap.find(node_id)->second;
       }
       curr_bloc->PushBack(TM->GetTreeReindex(node_id), AppM);
-   }
-   if(use_counting)
-   {
-      curr_bloc->SetSSAUsesComputed();
    }
 }
 
