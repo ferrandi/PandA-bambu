@@ -71,13 +71,13 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VAR_ANALYSIS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(VAR_ANALYSIS, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP):
       case(PRECEDENCE_RELATIONSHIP):
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -91,9 +91,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 void VirtualAggregateDataFlowAnalysis::Initialize()
 {
-   if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
+   if(bb_version != 0 && bb_version != function_behavior->GetBBVersion())
    {
-      const OpGraphConstRef fsaodg = function_behavior->CGetOpGraph(FunctionBehavior::FSAODG);
+      const auto fsaodg = function_behavior->CGetOpGraph(FunctionBehavior::FSAODG);
       if(boost::num_vertices(*fsaodg) != 0)
       {
          EdgeIterator edge, edge_end;

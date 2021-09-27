@@ -91,14 +91,14 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_ANALYSIS_BAMBU, SAME_FUNCTION));
-         break;
-      }
-      case(INVALIDATION_RELATIONSHIP):
-      {
+         relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
+      {
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }

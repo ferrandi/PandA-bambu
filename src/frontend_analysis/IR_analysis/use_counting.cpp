@@ -56,7 +56,7 @@
 #include "Parameter.hpp"
 
 /// STL includes
-#include "custom_set.hpp"
+#include <list>
 #include <utility>
 
 /// tree include
@@ -87,10 +87,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(REBUILD_INITIALIZATION2, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP):
-      {
-         break;
-      }
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
@@ -98,6 +94,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(REBUILD_INITIALIZATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
+      {
          break;
       }
       default:
@@ -110,50 +110,48 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status use_counting::InternalExec()
 {
-   const tree_managerRef TM = AppM->get_tree_manager();
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   auto* fd = GetPointer<function_decl>(temp);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
-   std::map<unsigned int, blocRef>::const_iterator it, it_end = list_of_bloc.end();
-   for(it = list_of_bloc.begin(); it != it_end; ++it)
+   const auto TM = AppM->get_tree_manager();
+   const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+   for(const auto& bbi_bb : sl->list_of_bloc)
    {
-      for(auto statement_node : it->second->CGetStmtList())
+      const auto& bb = bbi_bb.second;
+      for(const auto& statement_node : bb->CGetStmtList())
       {
          /// [breadshe] This set contains the ssa_name nodes "used" by the statement
-         CustomOrderedSet<tree_nodeRef> ssa_uses;
+         std::list<tree_nodeRef> ssa_uses;
          analyze_node(statement_node, ssa_uses);
          /// [breadshe] Add current statement to the use_stmts corresponding to the ssa_name nodes contained in ssa_uses
          for(const auto& ssa_use : ssa_uses)
          {
-            auto* sn = GetPointer<ssa_name>(GET_NODE(ssa_use));
+            auto sn = GetPointerS<ssa_name>(GET_NODE(ssa_use));
             sn->AddUseStmt(statement_node);
          }
       }
-      for(auto phi_node : it->second->CGetPhiList())
+      for(const auto& phi_node : bb->CGetPhiList())
       {
-         CustomOrderedSet<tree_nodeRef> ssa_uses;
+         std::list<tree_nodeRef> ssa_uses;
          analyze_node(phi_node, ssa_uses);
          for(const auto& ssa_use : ssa_uses)
          {
-            auto* sn = GetPointer<ssa_name>(GET_NODE(ssa_use));
+            auto sn = GetPointerS<ssa_name>(GET_NODE(ssa_use));
             sn->AddUseStmt(phi_node);
          }
-         GetPointer<gimple_phi>(GET_NODE(phi_node))->SetSSAUsesComputed();
+         GetPointerS<gimple_phi>(GET_NODE(phi_node))->SetSSAUsesComputed();
       }
-      it->second->SetSSAUsesComputed();
+      bb->SetSSAUsesComputed();
    }
 
    // THROW_ASSERT(TM->check_ssa_uses(function_id), "Inconsistent ssa uses: post");
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>& ssa_uses)
+void use_counting::analyze_node(const tree_nodeRef& tn, std::list<tree_nodeRef>& ssa_uses)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + tn->ToString());
-   tree_nodeRef curr_tn = GET_NODE(tn);
-   auto* gn = GetPointer<gimple_node>(curr_tn);
+   const auto curr_tn = GET_CONST_NODE(tn);
+   const auto gn = GetPointer<const gimple_node>(curr_tn);
    if(gn)
    {
       if(gn->memuse)
@@ -162,7 +160,7 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       }
       if(gn->vuses.size())
       {
-         for(auto vuse : gn->vuses)
+         for(const auto& vuse : gn->vuses)
          {
             analyze_node(vuse, ssa_uses);
          }
@@ -173,7 +171,7 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
    {
       case gimple_return_K:
       {
-         auto* re = GetPointer<gimple_return>(curr_tn);
+         const auto re = GetPointerS<const gimple_return>(curr_tn);
          if(re->op)
          {
             analyze_node(re->op, ssa_uses);
@@ -182,8 +180,8 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       }
       case gimple_assign_K:
       {
-         auto* me = GetPointer<gimple_assign>(curr_tn);
-         if(GET_NODE(me->op0)->get_kind() != ssa_name_K)
+         const auto me = GetPointerS<const gimple_assign>(curr_tn);
+         if(GET_CONST_NODE(me->op0)->get_kind() != ssa_name_K)
          {
             analyze_node(me->op0, ssa_uses);
          }
@@ -201,38 +199,34 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       case aggr_init_expr_K:
       case call_expr_K:
       {
-         auto* ce = GetPointer<call_expr>(curr_tn);
+         const auto ce = GetPointerS<const call_expr>(curr_tn);
          analyze_node(ce->fn, ssa_uses);
-         std::vector<tree_nodeRef>& args = ce->args;
-         std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; ++arg)
+         for(const auto& arg : ce->args)
          {
-            analyze_node(*arg, ssa_uses);
+            analyze_node(arg, ssa_uses);
          }
          break;
       }
       case gimple_call_K:
       {
-         auto* ce = GetPointer<gimple_call>(curr_tn);
+         const auto ce = GetPointerS<const gimple_call>(curr_tn);
          analyze_node(ce->fn, ssa_uses);
-         std::vector<tree_nodeRef>& args = ce->args;
-         std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; ++arg)
+         for(const auto& arg : ce->args)
          {
-            analyze_node(*arg, ssa_uses);
+            analyze_node(arg, ssa_uses);
          }
          break;
       }
       case gimple_cond_K:
       {
-         auto* gc = GetPointer<gimple_cond>(curr_tn);
+         const auto gc = GetPointerS<const gimple_cond>(curr_tn);
          analyze_node(gc->op0, ssa_uses);
          break;
       }
       /* Unary expressions.  */
       case CASE_UNARY_EXPRESSION:
       {
-         auto* ue = GetPointer<unary_expr>(curr_tn);
+         const auto ue = GetPointerS<const unary_expr>(curr_tn);
          if(GET_NODE(ue->op)->get_kind() != function_decl_K)
          {
             analyze_node(ue->op, ssa_uses);
@@ -241,7 +235,7 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       }
       case CASE_BINARY_EXPRESSION:
       {
-         auto* be = GetPointer<binary_expr>(curr_tn);
+         const auto be = GetPointerS<const binary_expr>(curr_tn);
          analyze_node(be->op0, ssa_uses);
          analyze_node(be->op1, ssa_uses);
          break;
@@ -249,13 +243,13 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       /*ternary expressions*/
       case gimple_switch_K:
       {
-         auto* se = GetPointer<gimple_switch>(curr_tn);
+         const auto se = GetPointerS<const gimple_switch>(curr_tn);
          analyze_node(se->op0, ssa_uses);
          break;
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         auto* te = GetPointer<ternary_expr>(curr_tn);
+         const auto te = GetPointerS<const ternary_expr>(curr_tn);
          analyze_node(te->op0, ssa_uses);
          analyze_node(te->op1, ssa_uses);
          if(te->op2)
@@ -266,7 +260,7 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         auto* qe = GetPointer<quaternary_expr>(curr_tn);
+         const auto qe = GetPointerS<const quaternary_expr>(curr_tn);
          analyze_node(qe->op0, ssa_uses);
          analyze_node(qe->op1, ssa_uses);
          if(qe->op2)
@@ -281,7 +275,7 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       }
       case lut_expr_K:
       {
-         auto* le = GetPointer<lut_expr>(curr_tn);
+         const auto le = GetPointerS<const lut_expr>(curr_tn);
          analyze_node(le->op0, ssa_uses);
          analyze_node(le->op1, ssa_uses);
          if(le->op2)
@@ -316,26 +310,26 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       }
       case constructor_K:
       {
-         auto* c = GetPointer<constructor>(curr_tn);
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>& list_of_idx_valu = c->list_of_idx_valu;
-         auto vend = list_of_idx_valu.end();
-         for(auto i = list_of_idx_valu.begin(); i != vend; ++i)
+         const auto c = GetPointerS<const constructor>(curr_tn);
+         for(const auto& iv : c->list_of_idx_valu)
          {
-            analyze_node(i->second, ssa_uses);
+            analyze_node(iv.second, ssa_uses);
          }
          break;
       }
       case var_decl_K:
       {
          /// var decl performs an assignment when init is not null
-         // var_decl * vd = GetPointer<var_decl>(curr_tn);
+         // const auto vd = GetPointerS<const var_decl>(curr_tn);
          // if(vd->init)
-         //   analyze_node(vd->init, ssa_uses);
+         // {
+         //    analyze_node(vd->init, ssa_uses);
+         // }
          break;
       }
       case gimple_asm_K:
       {
-         auto* ae = GetPointer<gimple_asm>(curr_tn);
+         const auto ae = GetPointerS<const gimple_asm>(curr_tn);
          if(ae->out)
          {
             analyze_node(ae->out, ssa_uses);
@@ -352,13 +346,13 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       }
       case gimple_goto_K:
       {
-         auto* ge = GetPointer<gimple_goto>(curr_tn);
+         const auto ge = GetPointerS<const gimple_goto>(curr_tn);
          analyze_node(ge->op, ssa_uses);
          break;
       }
       case tree_list_K:
       {
-         auto* tl = GetPointer<tree_list>(curr_tn);
+         auto tl = GetPointerS<const tree_list>(curr_tn);
          while(tl)
          {
             if(tl->purp)
@@ -369,14 +363,14 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
             {
                analyze_node(tl->valu, ssa_uses);
             }
-            tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+            tl = tl->chan ? GetPointerS<const tree_list>(GET_CONST_NODE(tl->chan)) : nullptr;
          }
          break;
       }
       case gimple_multi_way_if_K:
       {
-         auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
-         for(auto cond : gmwi->list_of_cond)
+         const auto gmwi = GetPointerS<const gimple_multi_way_if>(curr_tn);
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {
@@ -406,7 +400,7 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       }
       case gimple_phi_K:
       {
-         auto* gp = GetPointer<gimple_phi>(curr_tn);
+         const auto gp = GetPointerS<const gimple_phi>(curr_tn);
          for(auto def_nodes : gp->CGetDefEdgesList())
          {
             analyze_node(def_nodes.first, ssa_uses);
@@ -415,7 +409,7 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       }
       case target_mem_ref_K:
       {
-         auto* tmr = GetPointer<target_mem_ref>(curr_tn);
+         const auto tmr = GetPointerS<const target_mem_ref>(curr_tn);
          if(tmr->base)
          {
             analyze_node(tmr->base, ssa_uses);
@@ -433,7 +427,7 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       }
       case target_mem_ref461_K:
       {
-         auto* tmr = GetPointer<target_mem_ref461>(curr_tn);
+         const auto tmr = GetPointerS<const target_mem_ref461>(curr_tn);
          if(tmr->base)
          {
             analyze_node(tmr->base, ssa_uses);
@@ -452,7 +446,7 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       case ssa_name_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added use " + tn->ToString());
-         ssa_uses.insert(tn);
+         ssa_uses.push_back(tn);
          break;
       }
       case binfo_K:

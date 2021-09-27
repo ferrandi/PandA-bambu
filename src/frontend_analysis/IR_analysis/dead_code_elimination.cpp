@@ -124,19 +124,19 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             if(restart_mem)
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
+               relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
             }
             if(restart_if_opt)
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
+               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
             }
             if(restart_mwi_opt)
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
+               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
             }
             if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
             {

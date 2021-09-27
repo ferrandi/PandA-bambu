@@ -485,7 +485,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          const auto operation = GetPointerS<const unary_expr>(GET_CONST_NODE(rhs));
 
          const auto op_nid = GET_INDEX_NODE(operation->op);
-         THROW_ASSERT(res_nid == op_nid, "unexpected condition");
+         THROW_ASSERT(res_nid == op_nid, "Invalid operand: " + STR(res_nid));
          if(!IsHandledByBitvalue(operation->op))
          {
             break;
@@ -681,7 +681,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          THROW_ASSERT(best.count(op1_nid), "");
          auto op1_bitstring = best.at(op1_nid);
 
-         THROW_ASSERT(res_nid == op0_nid || res_nid == op1_nid, "unexpected condition");
+         THROW_ASSERT(res_nid == op0_nid || res_nid == op1_nid, "Invalid operand: " + STR(res_nid));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---   operand0(" + STR(op0_nid) + "): " + bitstring_to_string(op0_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---   operand1(" + STR(op1_nid) + "): " + bitstring_to_string(op1_bitstring));
 
@@ -968,7 +968,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          THROW_ASSERT(best.count(op2_nid), "");
          auto op2_bitstring = best.at(op2_nid);
 
-         THROW_ASSERT(res_nid == op0_nid || res_nid == op1_nid || res_nid == op2_nid, "unexpected condition");
+         THROW_ASSERT(res_nid == op0_nid || res_nid == op1_nid || res_nid == op2_nid, "Invalid operand: " + STR(res_nid));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---   operand0(" + STR(op0_nid) + "): " + bitstring_to_string(op0_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---   operand1(" + STR(op1_nid) + "): " + bitstring_to_string(op1_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---   operand2(" + STR(op2_nid) + "): " + bitstring_to_string(op2_bitstring));

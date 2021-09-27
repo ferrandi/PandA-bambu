@@ -78,15 +78,14 @@ void FrontendFlowStep::CreateSteps(const DesignFlowManagerConstRef design_flow_m
       {
          case(ALL_FUNCTIONS):
          {
-            const vertex call_graph_computation_step = design_flow_manager->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
-            const DesignFlowStepRef cg_design_flow_step =
-                call_graph_computation_step ? design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step : frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+            const auto call_graph_computation_step = design_flow_manager->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
+            const auto cg_design_flow_step = call_graph_computation_step ? design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step : frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
             relationships.insert(cg_design_flow_step);
             const auto functions_with_body = application_manager->CGetCallGraphManager()->GetReachedBodyFunctions();
             for(const auto function_with_body_id : functions_with_body)
             {
-               const vertex sdf_step = design_flow_manager->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, function_with_body_id));
-               const DesignFlowStepRef design_flow_step = sdf_step ? design_flow_graph->CGetDesignFlowStepInfo(sdf_step)->design_flow_step : frontend_flow_step_factory->CreateFunctionFrontendFlowStep(frontend_relationship->first, function_with_body_id);
+               const auto sdf_step = design_flow_manager->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, function_with_body_id));
+               const auto design_flow_step = sdf_step ? design_flow_graph->CGetDesignFlowStepInfo(sdf_step)->design_flow_step : frontend_flow_step_factory->CreateFunctionFrontendFlowStep(frontend_relationship->first, function_with_body_id);
                relationships.insert(design_flow_step);
             }
             break;
@@ -100,18 +99,18 @@ void FrontendFlowStep::CreateSteps(const DesignFlowManagerConstRef design_flow_m
          }
          case(WHOLE_APPLICATION):
          {
-            vertex sdf_step = design_flow_manager->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(frontend_relationship->first));
+            const auto sdf_signature = ApplicationFrontendFlowStep::ComputeSignature(frontend_relationship->first);
+            const auto sdf_step = design_flow_manager->GetDesignFlowStep(sdf_signature);
             DesignFlowStepRef design_flow_step;
             if(sdf_step)
             {
                design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(sdf_step)->design_flow_step;
-               relationships.insert(design_flow_step);
             }
             else
             {
                design_flow_step = frontend_flow_step_factory->GenerateFrontendStep(frontend_relationship->first);
-               relationships.insert(design_flow_step);
             }
+            relationships.insert(design_flow_step);
             break;
          }
          default:

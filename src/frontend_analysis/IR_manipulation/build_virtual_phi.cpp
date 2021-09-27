@@ -71,15 +71,23 @@
 
 #include <set>
 
+BuildVirtualPhi::BuildVirtualPhi(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, BUILD_VIRTUAL_PHI, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager())
+{
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+}
+
+BuildVirtualPhi::~BuildVirtualPhi() = default;
+
 void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
    {
-      case(PRECEDENCE_RELATIONSHIP):
+      case DEPENDENCE_RELATIONSHIP:
       {
          break;
       }
-      case DEPENDENCE_RELATIONSHIP:
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -114,10 +122,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP):
-      {
-         break;
-      }
       case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
@@ -127,6 +131,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
+      case(INVALIDATION_RELATIONSHIP):
+      {
+         break;
+      }
       default:
       {
          THROW_UNREACHABLE("");
@@ -134,14 +142,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    }
    return relationships;
 }
-
-BuildVirtualPhi::BuildVirtualPhi(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, BUILD_VIRTUAL_PHI, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager())
-{
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-}
-
-BuildVirtualPhi::~BuildVirtualPhi() = default;
 
 DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 {

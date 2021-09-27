@@ -142,16 +142,16 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
+      case DEPENDENCE_RELATIONSHIP:
+      {
+         relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         break;
+      }
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          relationships.insert(std::make_pair(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
-         break;
-      }
-      case DEPENDENCE_RELATIONSHIP:
-      {
-         relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -575,7 +575,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                   for(const auto& copy : copy_ids)
                   {
                      gn->vuses.insert(TM->GetTreeReindex(remaps[copy.second][sn->index]));
-                     GetPointer<ssa_name>(TM->get_tree_node_const(remaps[copy.second][sn->index]))->AddUseStmt(use_stmt.first);
+                     GetPointer<ssa_name>(TM->GetTreeNode(remaps[copy.second][sn->index]))->AddUseStmt(use_stmt.first);
                   }
                }
                /// Use is in the considered loop

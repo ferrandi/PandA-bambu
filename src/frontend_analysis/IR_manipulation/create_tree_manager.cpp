@@ -119,18 +119,21 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
-      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_FROM_PRAGMA_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PRAGMA_SUBSTITUTION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(PRAGMA_SUBSTITUTION, WHOLE_APPLICATION));
 #endif
 #if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIZEOF_SUBSTITUTION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(SIZEOF_SUBSTITUTION, WHOLE_APPLICATION));
 #endif
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
+      {
          break;
       }
       default:
@@ -139,6 +142,11 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
    }
    return relationships;
+}
+
+bool create_tree_manager::HasToBeExecuted() const
+{
+   return true;
 }
 
 DesignFlowStep_Status create_tree_manager::Exec()
@@ -250,9 +258,4 @@ DesignFlowStep_Status create_tree_manager::Exec()
    }
 
    return DesignFlowStep_Status::SUCCESS;
-}
-
-bool create_tree_manager::HasToBeExecuted() const
-{
-   return true;
 }

@@ -104,12 +104,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          THROW_ASSERT(profiling_method != HostProfiling_Method::PM_NONE, "Host profiilng required but algorithm has not been selected");
          if(static_cast<int>(profiling_method) & static_cast<int>(HostProfiling_Method::PM_BBP))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_PROFILING, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(BASIC_BLOCKS_PROFILING, WHOLE_APPLICATION));
          }
 #if HAVE_ZEBU_BUILT
          if(static_cast<int>(profiling_method) & static_cast<int>(HostProfiling_Method::PM_PATH_PROBABILITY))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PROBABILITY_PATH, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(PROBABILITY_PATH, WHOLE_APPLICATION));
          }
 #endif
          break;
