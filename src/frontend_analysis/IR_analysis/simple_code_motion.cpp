@@ -648,13 +648,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
    const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
 
-   const auto BVP_computation_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BUILD_VIRTUAL_PHI, function_id);
-   const auto BVP_computation_vertex = design_flow_manager.lock()->GetDesignFlowStep(BVP_computation_signature);
-   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const auto BVP_computation_step = design_flow_graph->CGetDesignFlowStepInfo(BVP_computation_vertex)->design_flow_step;
-   const auto BVP_executed = GetPointerS<const FunctionFrontendFlowStep>(BVP_computation_step)->CGetBBVersion() != 0;
-
-   bool isFunctionPipelined = BVP_executed ? AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline() : false;
+   const auto isFunctionPipelined = AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline();
 
    /// store the GCC BB graph ala boost::graph
    const auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
