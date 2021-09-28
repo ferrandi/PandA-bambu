@@ -389,7 +389,12 @@ void application_manager::RegisterTransformation(const std::string&
 )
 {
 #ifndef NDEBUG
-   const auto tn_str = new_tn ? (new_tn->get_kind() == function_decl_K ? ("@" + STR(new_tn->index) + tree_helper::print_function_name(get_tree_manager(), GetPointerS<const function_decl>(new_tn))) : new_tn->ToString()) : "";
+   std::string tn_str = "";
+   if(new_tn)
+   {
+      const auto tn = new_tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(new_tn) : new_tn;
+      tn_str = tn->get_kind() == function_decl_K ? ("@" + STR(new_tn->index) + tree_helper::print_function_name(get_tree_manager(), GetPointerS<const function_decl>(tn))) : tn->ToString();
+   }
    THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_max_transformations), step + " - " + tn_str + " Transformations " + STR(cfg_transformations));
    cfg_transformations++;
    if(Param->getOption<size_t>(OPT_max_transformations) != std::numeric_limits<size_t>::max())
