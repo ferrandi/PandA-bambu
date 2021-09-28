@@ -257,7 +257,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                         const auto ga = GetPointerS<const gimple_assign>(call_node);
                         AppM->GetCallGraphManager()->RemoveCallPoint(function_id, called_fn->index, stmt->index);
                         TM->ReplaceTreeNode(stmt, ga->op1, ce);
-                        CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, version_fn->index, stmt->index, FunctionEdgeInfo::CallType::direct_call, debug_level);
+                        CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, version_fn->index, stmt->index, FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
                         AppM->RegisterTransformation(GetName(), stmt);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call after versioning  : " + STR(stmt));
                      }
@@ -295,7 +295,6 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       opt_call.erase(function_id);
    }
 
-#if 0
    const auto CGM = AppM->CGetCallGraphManager();
    const auto CG = CGM->CGetCallGraph();
    const auto function_v = CGM->GetVertex(function_id);
@@ -353,11 +352,20 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
             bool all_inlined = true;
             for(const auto& call_id : caller_info->direct_call_points)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing direct call point " + STR(TM->CGetTreeNode(call_id)));
+               const auto call_stmt = TM->CGetTreeNode(call_id);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing direct call point " + STR(call_stmt));
+               const auto call_gn = GetPointerS<const gimple_node>(call_stmt);
+               if(call_gn->vdef || call_gn->vuses.size() || call_gn->vovers.size())
+               {
+                  // TODO: alias analysis is not able to handle inlining yet
+                  all_inlined = false;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call statement carries alias dependencies, skipping...");
+                  continue;
+               }
                if(force_inline)
                {
                   opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Forced inlining required for this function");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(always_inline.count(function_id) ? "Always inline function" : "Low body cost function") + ", inlining required");
                   continue;
                }
                if(call_count == 1)
@@ -392,7 +400,6 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function has zero call points, skipping analysis...");
    }
-#endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    if(modified)
    {
@@ -460,10 +467,10 @@ size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd,
          const auto stmt = GET_CONST_NODE(stmt_rdx);
          if(stmt->get_kind() == gimple_assign_K)
          {
-            if(tree_helper::IsLoad(stmt, function_behavior->get_function_mem()) || tree_helper::IsStore(stmt, function_behavior->get_function_mem()))
-            {
-               has_memory = true;
-            }
+            // if(tree_helper::IsLoad(stmt, function_behavior->get_function_mem()) || tree_helper::IsStore(stmt, function_behavior->get_function_mem()))
+            // {
+            //    has_memory = true;
+            // }
             const auto ga = GetPointerS<const gimple_assign>(stmt);
             const auto op_kind = GET_CONST_NODE(ga->op1)->get_kind();
             const auto op_cost = op_costs.find(op_kind);
