@@ -184,7 +184,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(BIT_VALUE_OPT):
          return "BitValueOpt";
       case(BITVALUE_RANGE):
-         return "BitValueOpt2";
+         return "BitValueRange";
       case BIT_VALUE_IPA:
          return "BitValueIPA";
 #endif
