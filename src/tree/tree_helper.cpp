@@ -7937,7 +7937,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
    {
       case gimple_return_K:
       {
-         const auto re = GetPointer<gimple_return>(curr_tn);
+         const auto re = GetPointerS<gimple_return>(curr_tn);
          if(re->op)
          {
             ComputeSsaUses(re->op, ssa_uses);
@@ -7946,7 +7946,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_assign_K:
       {
-         const auto me = GetPointer<gimple_assign>(curr_tn);
+         const auto me = GetPointerS<gimple_assign>(curr_tn);
          if(GET_NODE(me->op0)->get_kind() != ssa_name_K)
          {
             ComputeSsaUses(me->op0, ssa_uses);
@@ -7965,7 +7965,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         const auto ce = GetPointer<call_expr>(curr_tn);
+         const auto ce = GetPointerS<call_expr>(curr_tn);
          ComputeSsaUses(ce->fn, ssa_uses);
          for(const auto& arg : ce->args)
          {
@@ -7975,7 +7975,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_call_K:
       {
-         const auto ce = GetPointer<gimple_call>(curr_tn);
+         const auto ce = GetPointerS<gimple_call>(curr_tn);
          ComputeSsaUses(ce->fn, ssa_uses);
          for(const auto& arg : ce->args)
          {
@@ -7985,14 +7985,14 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_cond_K:
       {
-         const auto gc = GetPointer<gimple_cond>(curr_tn);
+         const auto gc = GetPointerS<gimple_cond>(curr_tn);
          ComputeSsaUses(gc->op0, ssa_uses);
          break;
       }
       /* Unary expressions.  */
       case CASE_UNARY_EXPRESSION:
       {
-         const auto ue = GetPointer<unary_expr>(curr_tn);
+         const auto ue = GetPointerS<unary_expr>(curr_tn);
          if(GET_NODE(ue->op)->get_kind() != function_decl_K)
          {
             ComputeSsaUses(ue->op, ssa_uses);
@@ -8001,7 +8001,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case CASE_BINARY_EXPRESSION:
       {
-         const auto be = GetPointer<binary_expr>(curr_tn);
+         const auto be = GetPointerS<binary_expr>(curr_tn);
          ComputeSsaUses(be->op0, ssa_uses);
          ComputeSsaUses(be->op1, ssa_uses);
          break;
@@ -8009,13 +8009,13 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       /*ternary expressions*/
       case gimple_switch_K:
       {
-         const auto se = GetPointer<gimple_switch>(curr_tn);
+         const auto se = GetPointerS<gimple_switch>(curr_tn);
          ComputeSsaUses(se->op0, ssa_uses);
          break;
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         const auto te = GetPointer<ternary_expr>(curr_tn);
+         const auto te = GetPointerS<ternary_expr>(curr_tn);
          ComputeSsaUses(te->op0, ssa_uses);
          ComputeSsaUses(te->op1, ssa_uses);
          if(te->op2)
@@ -8026,7 +8026,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         const auto qe = GetPointer<quaternary_expr>(curr_tn);
+         const auto qe = GetPointerS<quaternary_expr>(curr_tn);
          ComputeSsaUses(qe->op0, ssa_uses);
          ComputeSsaUses(qe->op1, ssa_uses);
          if(qe->op2)
@@ -8041,7 +8041,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case lut_expr_K:
       {
-         const auto le = GetPointer<lut_expr>(curr_tn);
+         const auto le = GetPointerS<lut_expr>(curr_tn);
          ComputeSsaUses(le->op0, ssa_uses);
          ComputeSsaUses(le->op1, ssa_uses);
          if(le->op2)
@@ -8076,7 +8076,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case constructor_K:
       {
-         const auto c = GetPointer<constructor>(curr_tn);
+         const auto c = GetPointerS<constructor>(curr_tn);
          for(const auto& iv : c->list_of_idx_valu)
          {
             ComputeSsaUses(iv.second, ssa_uses);
@@ -8086,14 +8086,16 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       case var_decl_K:
       {
          /// var decl performs an assignment when init is not null
-         // var_decl * vd = GetPointer<var_decl>(curr_tn);
+         // const auto vd = GetPointerS<var_decl>(curr_tn);
          // if(vd->init)
+         // {
          //   ComputeSsaUses(vd->init, ssa_uses);
+         // }
          break;
       }
       case gimple_asm_K:
       {
-         const auto ae = GetPointer<gimple_asm>(curr_tn);
+         const auto ae = GetPointerS<gimple_asm>(curr_tn);
          if(ae->out)
          {
             ComputeSsaUses(ae->out, ssa_uses);
@@ -8110,18 +8112,18 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_goto_K:
       {
-         const auto ge = GetPointer<gimple_goto>(curr_tn);
+         const auto ge = GetPointerS<gimple_goto>(curr_tn);
          ComputeSsaUses(ge->op, ssa_uses);
          break;
       }
       case tree_list_K:
       {
-         auto tl = GetPointer<const tree_list>(curr_tn);
+         auto tl = GetPointerS<const tree_list>(curr_tn);
          std::list<const tree_list*> tl_list;
          do
          {
             tl_list.push_back(tl);
-            tl = tl->chan ? GetPointer<const tree_list>(GET_CONST_NODE(tl->chan)) : nullptr;
+            tl = tl->chan ? GetPointerS<const tree_list>(GET_CONST_NODE(tl->chan)) : nullptr;
          } while(tl);
          for(const auto tl_current0 : tl_list)
          {
@@ -8138,8 +8140,8 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_multi_way_if_K:
       {
-         const auto gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
-         for(auto& cond : gmwi->list_of_cond)
+         const auto gmwi = GetPointerS<gimple_multi_way_if>(curr_tn);
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {
@@ -8150,7 +8152,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_phi_K:
       {
-         const auto gp = GetPointer<gimple_phi>(curr_tn);
+         const auto gp = GetPointerS<gimple_phi>(curr_tn);
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             ComputeSsaUses(def_edge.first, ssa_uses);
@@ -8175,7 +8177,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case target_mem_ref_K:
       {
-         const auto tmr = GetPointer<target_mem_ref>(curr_tn);
+         const auto tmr = GetPointerS<target_mem_ref>(curr_tn);
          if(tmr->base)
          {
             ComputeSsaUses(tmr->base, ssa_uses);
@@ -8193,7 +8195,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case target_mem_ref461_K:
       {
-         const auto tmr = GetPointer<target_mem_ref461>(curr_tn);
+         const auto tmr = GetPointerS<target_mem_ref461>(curr_tn);
          if(tmr->base)
          {
             ComputeSsaUses(tmr->base, ssa_uses);
