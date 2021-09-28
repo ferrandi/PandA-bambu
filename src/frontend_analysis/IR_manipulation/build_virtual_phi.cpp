@@ -524,12 +524,13 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                tree_nodeRef phi_def_ssa_node;
                const auto phi_gimple_stmt = tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
                THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index == tree_helper::CGetType(TM->CGetTreeReindex(sn->index))->index, "");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa _" + STR(GetPointerS<const ssa_name>(GET_CONST_NODE(phi_def_ssa_node))->vers));
+               GetPointerS<ssa_name>(GET_NODE(phi_def_ssa_node))->AddUseStmt(phi_gimple_stmt); // This is wrong but it does not work without...
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa " + STR(phi_def_ssa_node));
                GetPointerS<gimple_phi>(GET_NODE(phi_gimple_stmt))->SetSSAUsesComputed();
                basic_block_graph->GetBBNodeInfo(current)->block->AddPhi(phi_gimple_stmt);
                reaching_defs[virtual_ssa_definition.first][current] = phi_def_ssa_node;
                added_phis[virtual_ssa_definition.first][current] = phi_gimple_stmt;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + GetPointerS<gimple_phi>(GET_NODE(phi_gimple_stmt))->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + STR(phi_gimple_stmt));
             }
             else
             {
