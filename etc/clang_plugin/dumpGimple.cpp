@@ -764,16 +764,16 @@ namespace llvm
          }
          else
          {
-//            const llvm::Function* currentFunction = arg->getParent();
-//            llvm::ModuleSlotTracker MST(currentFunction->getParent());
-//            MST.incorporateFunction(*currentFunction);
-//            auto id = MST.getLocalSlot(arg);
-//            if(id >= 0)
-//            {
-//               snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
-//               declname = buffer;
-//            }
-//            else
+            const llvm::Function* currentFunction = arg->getParent();
+            llvm::ModuleSlotTracker MST(currentFunction->getParent());
+            MST.incorporateFunction(*currentFunction);
+            auto id = MST.getLocalSlot(arg);
+            if(id >= 0)
+            {
+               snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
+               declname = buffer;
+            }
+            else
             {
                assert(llvm2index.find(t) != llvm2index.end());
                snprintf(buffer, LOCAL_BUFFER_LEN, "Pd%d", llvm2index.find(t)->second);
@@ -5102,7 +5102,7 @@ namespace llvm
       Queue.push_back(obj);
       return index;
    }
-#include <chrono>
+//#include <chrono>
    void DumpGimpleRaw::SerializeGimpleGlobalTreeNode(const void* obj)
    {
       if(TREE_CODE(obj) == GT(FUNCTION_DECL))
@@ -5114,21 +5114,21 @@ namespace llvm
          queue(obj);
       }
       unsigned long long int counter = 0;
-      std::chrono::steady_clock::time_point start;
+//      std::chrono::steady_clock::time_point start;
       while(!Queue.empty())
       {
-         if((counter%1024)==0)
-         {
-            start = std::chrono::steady_clock::now();
-         }
-         counter++;
+//         if((counter%1024)==0)
+//         {
+//            start = std::chrono::steady_clock::now();
+//         }
+//         counter++;
          dequeue_and_serialize();
-         if((counter%1024)==0)
-         {
-            auto finish = std::chrono::steady_clock::now();
-            double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double> >(finish - start).count();
-            llvm::errs() << "dequeue_and_serialize " << elapsed_seconds << "\n";
-         }
+//         if((counter%1024)==0)
+//         {
+//            auto finish = std::chrono::steady_clock::now();
+//            double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double> >(finish - start).count();
+//            llvm::errs() << "dequeue_and_serialize " << elapsed_seconds << "\n";
+//         }
       }
    }
 
