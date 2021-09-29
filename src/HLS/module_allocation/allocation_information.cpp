@@ -2429,7 +2429,7 @@ double AllocationInformation::EstimateControllerDelay() const
    {
       return 0.0;
    }
-   size_t n_states = boost::num_vertices(*hls_manager->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB));
+   size_t n_states = boost::num_vertices(*hls_manager->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB)) + get_n_complex_operations();
    double n_states_factor = static_cast<double>(n_states) / NUM_CST_allocation_default_states_number_normalization_BB;
    if(hls->STG && hls->STG->get_number_of_states())
    {
@@ -2448,7 +2448,7 @@ double AllocationInformation::EstimateControllerDelay() const
    technology_nodeRef op_node = fu->get_operation("mult_expr");
    auto* op = GetPointer<operation>(op_node);
    double delay = time_m_execution_time(op);
-   delay = delay * controller_delay_multiplier * 1.1 * (1 - exp(-n_states_factor));
+   delay = delay * controller_delay_multiplier * ((1 - exp(-n_states_factor)) + n_states_factor / NUM_CST_allocation_default_states_number_normalization_linear_factor);
    if(delay < 2 * get_setup_hold_time())
    {
       delay = 2 * get_setup_hold_time();

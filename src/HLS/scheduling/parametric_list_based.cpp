@@ -1515,6 +1515,7 @@ void parametric_list_based::compute_starting_ending_time_asap(const CustomUnorde
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing starting and ending time " + GET_NAME(flow_graph, v));
    current_starting_time = from_strongtype_cast<double>(cs) * clock_cycle;
    bool is_load_store = GET_TYPE(flow_graph, v) & (TYPE_LOAD | TYPE_STORE);
+   bool is_cond_op = GET_TYPE(flow_graph, v) & (TYPE_IF | TYPE_MULTIIF | TYPE_SWITCH);
    bool no_chaining_of_load_and_store = parameters->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(operations, v, cs, schedule) || is_load_store);
    cannot_be_chained = is_load_store && check_non_direct_operation_chaining(operations, v, fu_type, cs, schedule, res_binding);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "                  Initial value of cannot_be_chained=" + (cannot_be_chained ? std::string("T") : std::string("F")));
@@ -1535,6 +1536,10 @@ void parametric_list_based::compute_starting_ending_time_asap(const CustomUnorde
       unsigned int from_fu_type = res_binding->get_assign(from_vertex);
       const auto cs_prev = schedule->get_cstep(from_vertex).second;
       const double fsm_correction = [&]() -> double {
+         if(is_cond_op)
+         {
+            return HLS->allocation_information->estimate_controller_delay_fb();
+         }
          if(parameters->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
          {
             return HLS->allocation_information->EstimateControllerDelay();
