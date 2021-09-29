@@ -1056,7 +1056,7 @@ void Vectorize::AddGuards()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing guards");
    /// The guards for combination of basic_block condition
    CustomMap<std::tuple<unsigned int, vertex, unsigned int>, tree_nodeRef> condition_guards;
-   const auto boolean_type = tree_man->create_boolean_type();
+   const auto boolean_type = tree_man->GetBooleanType();
    const auto true_value = TM->CreateUniqueIntegerCst(1, boolean_type);
    const auto cdg_bb_graph = function_behavior->CGetBBGraph(FunctionBehavior::CDG_BB);
    const auto cfg_bb_graph = function_behavior->CGetBBGraph(FunctionBehavior::BB);
@@ -1569,7 +1569,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      plus_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(def_edge.first)->index);
                      THROW_ASSERT(iv_increment.find(gp->res->index) != iv_increment.end(), "Increment variable of " + gp->res->ToString() + " is unknown");
                      const long long int increment = iv_increment.find(gp->res->index)->second * static_cast<long long int>(i - 1);
-                     const auto new_ic = TM->CreateUniqueIntegerCst(increment, tree_man->create_default_unsigned_integer_type());
+                     const auto new_ic = TM->CreateUniqueIntegerCst(increment, tree_man->GetUnsignedIntegerType());
                      plus_tree_node_schema[TOK(TOK_OP1)] = STR(new_ic->index);
                      unsigned int plus_tree_node_index = TM->new_tree_node_id();
                      TM->create_tree_node(plus_tree_node_index, plus_expr_K, plus_tree_node_schema);
@@ -1623,7 +1623,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   auto* constr = GetPointer<constructor>(TM->get_tree_node_const(constructor_index));
                   for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
                   {
-                     const auto new_ic = TM->CreateUniqueIntegerCst(static_cast<long long int>(scalar - 1), tree_man->create_default_unsigned_integer_type());
+                     const auto new_ic = TM->CreateUniqueIntegerCst(static_cast<long long int>(scalar - 1), tree_man->GetUnsignedIntegerType());
                      constr->add_idx_valu(new_ic, TM->GetTreeReindex(version_to_ssa[scalar]));
                   }
 
@@ -1687,8 +1687,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             const auto element_type = tree_helper::CGetType(gp->res);
             /// vector of Boolean types are mapped on vector of unsigned integer
             const unsigned int bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-            const auto offset = TM->CreateUniqueIntegerCst(((static_cast<long long int>(scalar) - 1) * bit_size), tree_man->create_default_unsigned_integer_type());
-            const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->create_default_unsigned_integer_type());
+            const auto offset = TM->CreateUniqueIntegerCst(((static_cast<long long int>(scalar) - 1) * bit_size), tree_man->GetUnsignedIntegerType());
+            const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->GetUnsignedIntegerType());
             bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + STR(line_number) + ":" + STR(column_number);
             bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(gp->res)->index);
             bit_field_ref_tree_node_schema[TOK(TOK_OP0)] = STR(Transform(gp->res->index, parallel_degree, 0, new_stmt_list, new_phi_list));
@@ -1790,8 +1790,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             const auto element_type = tree_helper::CGetType(ga->op0);
             /// vector of Boolean types are mapped on vector of integer
             const unsigned int bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-            const auto offset = TM->CreateUniqueIntegerCst(((static_cast<long long int>(scalar) - 1) * bit_size), tree_man->create_default_unsigned_integer_type());
-            const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->create_default_unsigned_integer_type());
+            const auto offset = TM->CreateUniqueIntegerCst(((static_cast<long long int>(scalar) - 1) * bit_size), tree_man->GetUnsignedIntegerType());
+            const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->GetUnsignedIntegerType());
             bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + STR(line_number) + ":" + STR(column_number);
             bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(tn)->index);
             bit_field_ref_tree_node_schema[TOK(TOK_OP0)] = STR(Transform(ga->op0->index, parallel_degree, 0, new_stmt_list, new_phi_list));
@@ -1922,7 +1922,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   auto* constr = GetPointer<constructor>(TM->get_tree_node_const(constructor_index));
                   for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
                   {
-                     const auto new_ic = TM->CreateUniqueIntegerCst(static_cast<long long int>(scalar - 1), tree_man->create_default_unsigned_integer_type());
+                     const auto new_ic = TM->CreateUniqueIntegerCst(static_cast<long long int>(scalar - 1), tree_man->GetUnsignedIntegerType());
                      constr->add_idx_valu(new_ic, TM->GetTreeReindex(scalar_to_ssa[scalar]));
                   }
 
@@ -2264,8 +2264,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   const auto element_type = tree_helper::CGetType(ga->op0);
                   /// vector of Boolean types are mapped on vector of integer
                   const unsigned int bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-                  const auto offset = TM->CreateUniqueIntegerCst(static_cast<long long int>((scalar - 1) * bit_size), tree_man->create_default_unsigned_integer_type());
-                  const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->create_default_unsigned_integer_type());
+                  const auto offset = TM->CreateUniqueIntegerCst(static_cast<long long int>((scalar - 1) * bit_size), tree_man->GetUnsignedIntegerType());
+                  const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->GetUnsignedIntegerType());
                   bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + STR(line_number) + ":" + STR(column_number);
                   bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(tn)->index);
                   bit_field_ref_tree_node_schema[TOK(TOK_OP0)] = STR(Transform(ga->op0->index, parallel_degree, 0, new_stmt_list, new_phi_list));
@@ -2362,12 +2362,12 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   case integer_type_K:
                   case void_type_K:
                   {
-                     tree_node_schema[TOK(TOK_ELTS)] = type->get_kind() != boolean_type_K ? STR(type->index) : STR(tree_man->create_default_unsigned_integer_type()->index);
+                     tree_node_schema[TOK(TOK_ELTS)] = type->get_kind() != boolean_type_K ? STR(type->index) : STR(tree_man->GetUnsignedIntegerType()->index);
                      if(type->size)
                      {
-                        const unsigned int element_size = type->get_kind() != boolean_type_K ? tree_helper::Size(tn) : tree_helper::Size(GET_NODE(tree_man->create_default_unsigned_integer_type()));
+                        const unsigned int element_size = type->get_kind() != boolean_type_K ? tree_helper::Size(tn) : tree_helper::Size(GET_NODE(tree_man->GetUnsignedIntegerType()));
                         const unsigned int bit_size = element_size * static_cast<unsigned int>(parallel_degree);
-                        const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->create_default_unsigned_integer_type());
+                        const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->GetUnsignedIntegerType());
                         tree_node_schema[TOK(TOK_SIZE)] = STR(size->index);
                         tree_node_schema[TOK(TOK_ALGN)] = STR(bit_size);
                      }
@@ -2686,7 +2686,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   auto* constr = GetPointer<constructor>(TM->get_tree_node_const(constructor_index));
                   for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
                   {
-                     const auto new_ic = TM->CreateUniqueIntegerCst(static_cast<long long int>(scalar - 1), tree_man->create_default_unsigned_integer_type());
+                     const auto new_ic = TM->CreateUniqueIntegerCst(static_cast<long long int>(scalar - 1), tree_man->GetUnsignedIntegerType());
                      constr->add_idx_valu(new_ic, TM->GetTreeReindex(be->op1->index));
                   }
 
@@ -2820,8 +2820,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      const auto element_type = tree_helper::CGetType(gp->res);
                      /// vector of Boolean types are mapped on vector of integer
                      const auto bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32U;
-                     const auto offset = TM->CreateUniqueIntegerCst((static_cast<long long int>(scalar) - 1) * bit_size, tree_man->create_default_unsigned_integer_type());
-                     const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->create_default_unsigned_integer_type());
+                     const auto offset = TM->CreateUniqueIntegerCst((static_cast<long long int>(scalar) - 1) * bit_size, tree_man->GetUnsignedIntegerType());
+                     const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->GetUnsignedIntegerType());
                      const auto bit_field_ref_node = tree_man->create_ternary_operation(element_type, TM->GetTreeReindex(Transform(gp->res->index, parallel_degree, 0, new_stmt_list, new_phi_list)), size, offset, new_srcp, bit_field_ref_K);
 
                      const auto gimple_new_tree_node = tree_man->create_gimple_modify_stmt(TM->GetTreeReindex(Transform(gp->res->index, parallel_degree, scalar, new_stmt_list, new_phi_list)), bit_field_ref_node, function_id, new_srcp, 0);

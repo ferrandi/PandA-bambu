@@ -446,8 +446,8 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
    tree_nodeRef boolean_type;
    if(commonRWSignature)
    {
-      boolean_type = tree_man->create_boolean_type();
-      bit_size_type = tree_man->create_default_unsigned_integer_type();
+      boolean_type = tree_man->GetBooleanType();
+      bit_size_type = tree_man->GetUnsignedIntegerType();
       argsT.push_back(boolean_type);
       argsT.push_back(bit_size_type);
       argsT.push_back(readType);
@@ -530,14 +530,14 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    std::string fname;
    tree_helper::get_mangled_fname(fd, fname);
    tree_nodeRef boolean_type;
-   const auto bit_size_type = tree_man->create_default_unsigned_integer_type();
+   const auto bit_size_type = tree_man->GetUnsignedIntegerType();
    const auto size_value = TM->CreateUniqueIntegerCst(tree_helper::Size(writeType), bit_size_type);
 
    /// create the function_decl
    std::vector<tree_nodeRef> argsT;
    if(commonRWSignature)
    {
-      boolean_type = tree_man->create_boolean_type();
+      boolean_type = tree_man->GetBooleanType();
       argsT.push_back(boolean_type);
    }
    argsT.push_back(bit_size_type);
@@ -551,7 +551,7 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    }
    argsT.push_back(aType);
    const std::string srcp = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
-   auto function_decl_node = tree_man->create_function_decl(fdName, fd->scpe, argsT, tree_man->create_void_type(), srcp, false);
+   auto function_decl_node = tree_man->create_function_decl(fdName, fd->scpe, argsT, tree_man->GetVoidType(), srcp, false);
 
    std::vector<tree_nodeRef> args;
    if(commonRWSignature)

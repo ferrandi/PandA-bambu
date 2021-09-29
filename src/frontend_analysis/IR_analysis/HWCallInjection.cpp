@@ -179,14 +179,14 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
    {
       unsigned int varArgParamList = TM->new_tree_node_id();
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> varArgParamMap;
-      varArgParamMap[TOK(TOK_VALU)] = STR(GET_INDEX_NODE(IRman->create_default_integer_type()));
+      varArgParamMap[TOK(TOK_VALU)] = STR(GET_INDEX_NODE(IRman->GetSignedIntegerType()));
       TM->create_tree_node(varArgParamList, tree_list_K, varArgParamMap);
 
       const auto builtinIdString = IRman->create_identifier_node(BUILTIN_WAIT_CALL);
-      const auto funTypeSize = TM->CreateUniqueIntegerCst(8, IRman->create_default_integer_type());
+      const auto funTypeSize = TM->CreateUniqueIntegerCst(8, IRman->GetSignedIntegerType());
 
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> builtinFunTypeMap;
-      builtinFunTypeMap[TOK(TOK_RETN)] = STR(GET_INDEX_NODE(IRman->create_void_type()));
+      builtinFunTypeMap[TOK(TOK_RETN)] = STR(GET_INDEX_NODE(IRman->GetVoidType()));
       builtinFunTypeMap[TOK(TOK_VARARGS)] = STR(1);
       builtinFunTypeMap[TOK(TOK_PRMS)] = STR(varArgParamList);
       builtinFunTypeMap[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(funTypeSize));
@@ -210,7 +210,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
 
    unsigned int addrExprBuiltinCall = TM->new_tree_node_id();
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprBuiltinCallMap;
-   addrExprBuiltinCallMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_pointer_type(functionDecl->type, 8)));
+   addrExprBuiltinCallMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->GetPointerType(functionDecl->type, 8)));
    addrExprBuiltinCallMap[TOK(TOK_OP)] = STR(builtinWaitCallDeclIdx);
    addrExprBuiltinCallMap[TOK(TOK_SRCP)] = srcPtr->include_name + ":" + STR(srcPtr->line_number) + ":" + STR(srcPtr->column_number);
    TM->create_tree_node(addrExprBuiltinCall, addr_expr_K, addrExprBuiltinCallMap);
@@ -239,7 +239,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
       auto* GC = GetPointer<gimple_call>(expr);
       builtinGimpleCall->AddArg(GC->fn);
 
-      const auto has_return = TM->CreateUniqueIntegerCst(0, IRman->create_default_integer_type());
+      const auto has_return = TM->CreateUniqueIntegerCst(0, IRman->GetSignedIntegerType());
       builtinGimpleCall->AddArg(has_return);
 
       for(const auto& arg : GC->args)
@@ -292,7 +292,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
          auto* CE = GetPointer<call_expr>(GET_NODE(GA->op1));
          builtinGimpleCall->AddArg(CE->fn);
 
-         const auto has_return = TM->CreateUniqueIntegerCst(1, IRman->create_default_integer_type());
+         const auto has_return = TM->CreateUniqueIntegerCst(1, IRman->GetSignedIntegerType());
          builtinGimpleCall->AddArg(has_return);
 
          for(const auto& arg : CE->args)
@@ -330,7 +330,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
          unsigned int addrExprReturnValue = TM->new_tree_node_id();
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;
          auto typeRetVar = tree_helper::CGetType(retVar);
-         addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_pointer_type(typeRetVar, ALGN_POINTER)));
+         addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->GetPointerType(typeRetVar, ALGN_POINTER)));
          addrExprReturnValueMap[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(retVar));
          addrExprReturnValueMap[TOK(TOK_SRCP)] = GA->include_name + ":" + STR(GA->line_number) + ":" + STR(GA->column_number);
          TM->create_tree_node(addrExprReturnValue, addr_expr_K, addrExprReturnValueMap);

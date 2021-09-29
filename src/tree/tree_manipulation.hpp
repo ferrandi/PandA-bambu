@@ -297,48 +297,48 @@ class tree_manipulation
     * Function that creates a void type if it is not already present, otherwise it returns the one that is already in the tree manager.
     * @return the tree_reindex node of the void type.
     */
-   tree_nodeRef create_void_type() const;
+   tree_nodeRef GetVoidType() const;
 
    /**
     * Function that creates a boolean type if it is not already present, otherwise it returns the one that is already in the tree manager.
     * @return the tree_reindex node of the boolean type.
     */
-   tree_nodeRef create_boolean_type() const;
+   tree_nodeRef GetBooleanType() const;
 
    /**
     * Function that creates a integer type if it is not already present, otherwise it returns the one that is already in the tree manager.
     * @return the tree_reindex node of the integer type.
     */
-   tree_nodeRef create_default_integer_type() const;
+   tree_nodeRef GetSignedIntegerType() const;
 
    /**
     * Function that creates a unsigned integer type if it is not already present, otherwise it returns the one that is already in the tree manager.
     * @return the tree_reindex node of the unsigned integer type.
     */
-   tree_nodeRef create_default_unsigned_integer_type() const;
+   tree_nodeRef GetUnsignedIntegerType() const;
 
    /**
     * Function that creates a long long unsigned int type if it is not already present, otherwise return the existing type
     */
-   tree_nodeRef CreateDefaultUnsignedLongLongInt() const;
+   tree_nodeRef GetUnsignedLongLongType() const;
 
    /**
     * Function that creates a bit_size type if it is not already present, otherwise it returns the one that is already in the tree manager.
     * @return the tree_reindex node of the bit_size type.
     */
-   tree_nodeRef create_bit_size_type() const;
+   tree_nodeRef GetBitsizeType() const;
 
    /**
     * create a sizetype builtin type in case it has not already been created, otherwise it returns the one found in the tree manager.
     */
-   tree_nodeRef create_size_type() const;
+   tree_nodeRef GetSizeType() const;
 
    /**
     * Function that creates a pointer type if it is not already present, otherwise it returns the one that is already in the tree manager.
     * @param  ptd type pointed by the pointer type (tree_reindex).
     * @return the tree_reindex node of the pointer type.
     */
-   tree_nodeRef create_pointer_type(const tree_nodeConstRef& ptd, unsigned int algn) const;
+   tree_nodeRef GetPointerType(const tree_nodeConstRef& ptd, unsigned int algn) const;
 
    /**
     * @brief create an integer type starting from a given prec
@@ -346,7 +346,7 @@ class tree_manipulation
     * @param unsigned_p say if the integer_type required is unsigned or not
     * @return a new integer with a precision equal to prec
     */
-   tree_nodeRef create_integer_type_with_prec(unsigned int prec, bool unsigned_p) const;
+   tree_nodeRef GetCustomIntegerType(unsigned int prec, bool unsigned_p) const;
 
    /**
     * @brief Create a function type
@@ -355,7 +355,7 @@ class tree_manipulation
     * @param argsT is the vector of argument types
     * @return tree_nodeRef is the tree reindex associated with the function type created
     */
-   tree_nodeRef create_function_type(const tree_nodeRef& returnType, const std::vector<tree_nodeRef>& argsT) const;
+   tree_nodeRef GetFunctionType(const tree_nodeRef& returnType, const std::vector<tree_nodeRef>& argsT) const;
 
    /// MISCELLANEOUS_OBJ_TREE_NODES
 

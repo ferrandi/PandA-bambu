@@ -351,9 +351,9 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             if(!first_operand_of_first && !first_operand_of_second)
             {
                tree_nodeRef lut_constant_node;
-               auto DefaultUnsignedLongLongInt = tree_man->CreateDefaultUnsignedLongLongInt();
+               auto DefaultUnsignedLongLongInt = tree_man->GetUnsignedLongLongType();
                lut_constant_node = TM->CreateUniqueIntegerCst(1, DefaultUnsignedLongLongInt);
-               auto boolType = tree_man->create_boolean_type();
+               auto boolType = tree_man->GetBooleanType();
                tree_nodeRef op2, op3, op4, op5, op6, op7, op8;
                const std::string srcp_default = BUILTIN_SRCP;
                tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, first_ce->op0, op2, op3, op4, op5, op6, op7, op8, srcp_default);
@@ -370,7 +370,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             }
             else
             {
-               auto boolType = tree_man->create_boolean_type();
+               auto boolType = tree_man->GetBooleanType();
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Simplified to 0");
                and_first_cond = TM->CreateUniqueIntegerCst(0, boolType);
             }
@@ -379,7 +379,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          {
             /// we are going to create a LUT
             tree_nodeRef lut_constant_node;
-            auto DefaultUnsignedLongLongInt = tree_man->CreateDefaultUnsignedLongLongInt();
+            auto DefaultUnsignedLongLongInt = tree_man->GetUnsignedLongLongType();
             long long int lut_val;
             if(!first_operand_of_first && !first_operand_of_second)
             {
@@ -398,7 +398,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                lut_val = 8;
             }
             lut_constant_node = TM->CreateUniqueIntegerCst(lut_val, DefaultUnsignedLongLongInt);
-            auto boolType = tree_man->create_boolean_type();
+            auto boolType = tree_man->GetBooleanType();
             tree_nodeRef op3, op4, op5, op6, op7, op8;
             const std::string srcp_default = BUILTIN_SRCP;
             tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, second_ce->op0, first_ce->op0, op3, op4, op5, op6, op7, op8, srcp_default);

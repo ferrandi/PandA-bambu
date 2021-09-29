@@ -750,11 +750,11 @@ static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
 
 tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index, std::vector<tree_nodeRef>& prev_stmts_to_add)
 {
-   const auto indexType = tree_man->CreateDefaultUnsignedLongLongInt();
+   const auto indexType = tree_man->GetUnsignedLongLongType();
    tree_nodeRef bit_pos_constant = TM->CreateUniqueIntegerCst(index, indexType);
    const std::string srcp_default("built-in:0:0");
    tree_nodeRef eb_op = tree_man->create_extract_bit_expr(source, bit_pos_constant, srcp_default);
-   auto boolType = tree_man->create_boolean_type();
+   auto boolType = tree_man->GetBooleanType();
    tree_nodeRef eb_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType), eb_op, function_id, BB_index, srcp_default);
    prev_stmts_to_add.push_back(eb_ga);
    return GetPointer<const gimple_assign>(GET_CONST_NODE(eb_ga))->op0;
@@ -1141,7 +1141,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    std::vector<tree_nodeRef> pos;
    std::vector<unsigned> pos_offset;
 
-   auto DefaultUnsignedLongLongInt = this->tree_man->CreateDefaultUnsignedLongLongInt();
+   auto DefaultUnsignedLongLongInt = this->tree_man->GetUnsignedLongLongType();
 
    /**
     * Creates a const expression with 0 (gnd) as value, used for constant LUT inputs (index 0 in mockturtle)
@@ -1757,7 +1757,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             else
             {
-               auto boolType = tree_man->create_boolean_type();
+               auto boolType = tree_man->GetBooleanType();
                /// check if operands are of bool type
                auto check_lut_compatibility = [&](tree_nodeRef& lut_operand) {
                   if(lut_operand && !tree_helper::IsBooleanType(lut_operand))
@@ -1798,7 +1798,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
          else
          {
-            auto boolType = tree_man->create_boolean_type();
+            auto boolType = tree_man->GetBooleanType();
             /// check if operands are of bool type
             auto check_lut_compatibility = [&](tree_nodeRef& lut_operand) {
                if(lut_operand && !tree_helper::IsBooleanType(lut_operand))

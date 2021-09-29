@@ -348,8 +348,8 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       {
          type_node1 = tree_helper::CGetElements(type_node1);
       }
-      const auto offset_type = tree_man->create_size_type();
-      const auto pt = tree_man->create_pointer_type(type_node1, algn);
+      const auto offset_type = tree_man->GetSizeType();
+      const auto pt = tree_man->GetPointerType(type_node1, algn);
 
       /// add a cast
       const auto nop_init_var = tree_man->create_unary_operation(pt, init_var, srcp_default, nop_expr_K);
@@ -399,7 +399,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create statement " + GET_NODE(pp_ga_ind)->ToString());
 
       /// the comparison
-      const auto boolean_type = tree_man->create_boolean_type();
+      const auto boolean_type = tree_man->GetBooleanType();
       const auto comparison = tree_man->create_binary_operation(boolean_type, vd_ind, vd_limit, srcp_default, ne_expr_K);
       const auto comp_ga = tree_man->CreateGimpleAssign(boolean_type, TM->CreateUniqueIntegerCst(0, type_node1), TM->CreateUniqueIntegerCst(1, type_node1), comparison, function_id, BBN1_block->number, srcp_default);
       BBN1_block->PushBack(comp_ga, AppM);
@@ -583,7 +583,7 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
 
       // compute the size in bytes of the copied memory
       const auto dst_type = tree_helper::CGetType(mr_lhs->op0);
-      const auto src_type = GET_CONST_NODE(tree_man->create_pointer_type(tree_helper::CGetType(rhs_node), 8));
+      const auto src_type = GET_CONST_NODE(tree_man->GetPointerType(tree_helper::CGetType(rhs_node), 8));
       const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
       const auto src_ptr_t = GetPointer<const pointer_type>(src_type);
       THROW_ASSERT(dst_ptr_t, "");

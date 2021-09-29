@@ -167,7 +167,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(B->number));
    }
-   const auto integer_type = tree_man->create_default_integer_type();
+   const auto integer_type = tree_man->GetSignedIntegerType();
    for(const auto& init : inits)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Rebuilding init of " + STR(init.first));
@@ -1254,7 +1254,7 @@ bool rebuild_initialization2::look_for_ROMs()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined for write BB" + STR(B->number));
    }
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-   const auto integer_type = tree_man->create_default_integer_type();
+   const auto integer_type = tree_man->GetSignedIntegerType();
    for(const auto& init : inits)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Rebuilding init of " + STR(init.first));

@@ -209,7 +209,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
             }
 
             // create pointer type for the new pointer-to-struct parameter
-            const auto ptr_type = tree_man->create_pointer_type(p_type, ALGN_POINTER);
+            const auto ptr_type = tree_man->GetPointerType(p_type, ALGN_POINTER);
 
             // substitute parameter type in function_type if necessary
             if(has_param_types)

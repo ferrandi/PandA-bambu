@@ -119,7 +119,7 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto boolean_type = tree_man->create_boolean_type();
+   const auto boolean_type = tree_man->GetBooleanType();
    const auto true_value = TM->CreateUniqueIntegerCst(1, boolean_type);
 
    bool bb_modified = false;
@@ -137,7 +137,7 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Predicating " + STR(stmt));
-            THROW_ASSERT(!ga->predicate, "unexpected condition");
+            THROW_ASSERT(!ga->predicate || ga->predicate->index == true_value->index, "unexpected condition");
             ga->predicate = true_value;
          }
       }

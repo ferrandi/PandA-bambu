@@ -148,7 +148,7 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             {
                THROW_UNREACHABLE("");
             }
-            const auto booleanType = tree_man->create_boolean_type();
+            const auto booleanType = tree_man->GetBooleanType();
             const auto new_be = tree_man->create_binary_operation(booleanType, be->op0, be->op1, srcp_string, new_kind);
             const auto new_ga = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType), TreeM->CreateUniqueIntegerCst(1, booleanType), new_be, function_id, 0, srcp_string);
             block.second->PushBefore(new_ga, stmt, AppM);

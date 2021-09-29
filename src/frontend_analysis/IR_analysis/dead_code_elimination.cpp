@@ -207,7 +207,7 @@ void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0
       else if(tree_helper::IsComplexType(ssa_type) || tree_helper::IsVectorType(ssa_type))
       {
          const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-         auto utype = tree_man->create_default_unsigned_integer_type();
+         auto utype = tree_man->GetUnsignedIntegerType();
          auto zeroVal = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), utype);
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
          ne_schema[TOK(TOK_TYPE)] = STR(ssa_type->index);

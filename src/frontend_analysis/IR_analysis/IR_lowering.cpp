@@ -1018,7 +1018,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long 
 {
    unsigned long long int masklow;
    const auto logd = floor_log2(d);
-   const auto bt = tree_man->create_boolean_type();
+   const auto bt = tree_man->GetBooleanType();
 
    const auto const0 = TM->CreateUniqueIntegerCst(0, type);
    const auto cond_op0 = tree_man->create_binary_operation(bt, op0, const0, srcp_default, lt_expr_K);
@@ -1067,7 +1067,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long 
 tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef& type, const std::string& srcp_default)
 {
    const auto logd = floor_log2(d);
-   const auto bt = tree_man->create_boolean_type();
+   const auto bt = tree_man->GetBooleanType();
    const auto const0 = TM->CreateUniqueIntegerCst(0, type);
 
    const auto cond_op0 = tree_man->create_binary_operation(bt, op0, const0, srcp_default, lt_expr_K);
@@ -1293,7 +1293,7 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeR
       {
          if(!type_sum)
          {
-            type_sum = tree_man->create_size_type();
+            type_sum = tree_man->GetSizeType();
          }
 
          tree_nodeRef ne = tree_man->create_unary_operation(type_sum, tmr->offset, srcp_default, nop_expr_K);
@@ -1324,7 +1324,7 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeR
    {
       if(!type_sum)
       {
-         type_sum = tree_man->create_size_type();
+         type_sum = tree_man->GetSizeType();
       }
       unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(tmr->idx2));
       if(type_index != GET_INDEX_NODE(type_sum))
@@ -1378,7 +1378,7 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeR
    if(accum)
    {
       tree_nodeRef type = tmr->type;
-      tree_nodeRef pt = tree_man->create_pointer_type(type, 8);
+      tree_nodeRef pt = tree_man->GetPointerType(type, 8);
 
       tree_nodeRef ppe_expr = tree_man->create_binary_operation(pt, tmr->base, accum, srcp_default, pointer_plus_expr_K);
       tree_nodeRef ppe_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), ppe_expr, function_id, block->number, srcp_default);
@@ -1629,7 +1629,7 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
 {
    tree_nodeRef type = AR->type;
 
-   tree_nodeRef pt = tree_man->create_pointer_type(type, GetPointer<type_node>(GET_NODE(type))->algn);
+   tree_nodeRef pt = tree_man->GetPointerType(type, GetPointer<type_node>(GET_NODE(type))->algn);
    tree_nodeRef ae = tree_man->create_unary_operation(pt, AR->op0, srcp_default, addr_expr_K);
    tree_nodeRef ae_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), ae, function_id, block.first, srcp_default);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
@@ -1637,7 +1637,7 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
    block.second->PushBefore(ae_ga, *it_los, AppM);
 
-   tree_nodeRef offset_type = tree_man->create_size_type();
+   tree_nodeRef offset_type = tree_man->GetSizeType();
    unsigned int ar_op1_type_index = tree_helper::CGetType(AR->op1)->index;
    tree_nodeRef offset_node;
    if(ar_op1_type_index != GET_INDEX_NODE(offset_type))

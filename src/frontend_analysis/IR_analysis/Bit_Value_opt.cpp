@@ -580,7 +580,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               if(GET_CONST_NODE(ga->predicate)->get_kind() != integer_cst_K || GetPointer<const integer_cst>(GET_CONST_NODE(ga->predicate))->value != 0)
                               {
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---zero predicated statement: " + stmt->ToString());
-                                 const auto bt = IRman->create_boolean_type();
+                                 const auto bt = IRman->GetBooleanType();
                                  const auto zeroval = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), bt);
                                  TM->ReplaceTreeNode(stmt, ga->predicate, zeroval);
                                  modified = true;
@@ -657,7 +657,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            AppM->RegisterTransformation(GetName(), stmt);
                            const auto constNE0 = TM->CreateUniqueIntegerCst(0LL, ga_op_type);
                            const auto srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-                           const auto bt = IRman->create_boolean_type();
+                           const auto bt = IRman->GetBooleanType();
                            const auto cond_op0 = IRman->create_binary_operation(bt, data_bitsize_in0 == 1 ? me->op0 : me->op1, constNE0, srcp_default, ne_expr_K);
                            const auto op0_ga = IRman->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0LL, bt), TM->CreateUniqueIntegerCst(1LL, bt), cond_op0, function_id, B_id, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
@@ -2160,7 +2160,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                 THROW_ERROR("unexpected condition");
                                              }
                                           }
-                                          const auto LutConstType = IRman->CreateDefaultUnsignedLongLongInt();
+                                          const auto LutConstType = IRman->GetUnsignedLongLongType();
 
                                           const auto lut_constant_node = TM->CreateUniqueIntegerCst(res_value, LutConstType);
                                           const auto eb_op = IRman->create_lut_expr(ebe->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
@@ -2385,7 +2385,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  if(GET_CONST_NODE(ne_op_ssa->type)->get_kind() == integer_type_K)
                                  {
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
-                                    const auto indexType = IRman->CreateDefaultUnsignedLongLongInt();
+                                    const auto indexType = IRman->GetUnsignedLongLongType();
                                     const auto zero_node = TM->CreateUniqueIntegerCst(0, indexType);
                                     const auto srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                                     const auto eb_op = IRman->create_extract_bit_expr(ne->op, zero_node, srcp_default);
