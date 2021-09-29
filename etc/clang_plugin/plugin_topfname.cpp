@@ -101,7 +101,7 @@ namespace llvm
    struct CLANG_VERSION_SYMBOL(_plugin_topfname) : public ModulePass
    {
       static char ID;
-      static const std::unordered_set<std::string> builtinsNames;
+      static const std::set<std::string> builtinsNames;
       CLANG_VERSION_SYMBOL(_plugin_topfname)() : ModulePass(ID)
       {
       }
@@ -191,7 +191,7 @@ namespace llvm
 #else
             llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
 #endif
-            for(const auto& symb : symbolList)
+            for(auto symb : symbolList)
             {
                stream << symb << "\n";
             }
@@ -211,7 +211,7 @@ namespace llvm
    char CLANG_VERSION_SYMBOL(_plugin_topfname)::ID = 0;
 
 #define DEF_BUILTIN(X, N, C, T, LT, B, F, NA, AT, IM, COND) N,
-   const std::unordered_set<std::string> CLANG_VERSION_SYMBOL(_plugin_topfname)::builtinsNames = {
+   const std::set<std::string> CLANG_VERSION_SYMBOL(_plugin_topfname)::builtinsNames = {
 #include "gcc/builtins.def"
    };
 #undef DEF_BUILTIN

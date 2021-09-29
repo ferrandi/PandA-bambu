@@ -37,10 +37,9 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-#ifdef DEBUG_DUMPGIMPLE
+
 #ifdef NDEBUG
 #undef NDEBUG
-#endif
 #endif
 
 #include "plugin_includes.hpp"
@@ -109,6 +108,7 @@
 #include <iomanip>
 
 #include <float.h>
+
 #define PRINT_DBG_MSG 0
 
 static std::string create_file_name_string(const std::string& outdir_name, const std::string& original_filename)
@@ -227,7 +227,7 @@ namespace llvm
    };
 
 #define DEF_BUILTIN(X, N, C, T, LT, B, F, NA, AT, IM, COND) N,
-   const std::unordered_set<std::string> DumpGimpleRaw::builtinsNames = {
+   const std::set<std::string> DumpGimpleRaw::builtinsNames = {
 #include "gcc/builtins.def"
    };
 #undef DEF_BUILTIN
@@ -1300,7 +1300,7 @@ namespace llvm
       {
          auto& av = index2alloca_var[g];
          av.alloc_inst = inst;
-         std::unordered_set<const llvm::User*> visited;
+         std::set<const llvm::User*> visited;
          visited.insert(inst);
 #if __clang_major__ >= 10
          const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*inst->getFunction());
@@ -1336,7 +1336,7 @@ namespace llvm
       return LowerGetElementPtr(inst->getType(), inst, currentFunction);
    }
 
-   bool DumpGimpleRaw::temporary_addr_check(const llvm::User* inst, std::unordered_set<const llvm::User*>& visited, const llvm::TargetLibraryInfo& TLI)
+   bool DumpGimpleRaw::temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited, const llvm::TargetLibraryInfo& TLI)
    {
       for(auto U : inst->users())
       {
@@ -1643,10 +1643,10 @@ namespace llvm
          {
             assert(currentFunction != nullptr);
             assert(currentFunction->getParent());
-//            llvm::ModuleSlotTracker MST(currentFunction->getParent());
-//            MST.incorporateFunction(*currentFunction);
-//            ssa_vers = MST.getLocalSlot(operand);
-//            if(ssa_vers < 0)
+            llvm::ModuleSlotTracker MST(currentFunction->getParent());
+            MST.incorporateFunction(*currentFunction);
+            ssa_vers = MST.getLocalSlot(operand);
+            if(ssa_vers < 0)
             {
                if(memoryaccess2ssaindex.find(operand) == memoryaccess2ssaindex.end())
                {
@@ -2197,6 +2197,7 @@ namespace llvm
       auto res = &tree_vec_element;
       assignCode(res, GT(TREE_VEC));
       queue(res);
+      memoization_tree_list[g] = res;
       for(auto case_expr : si->cases())
       {
          const void* op1 = assignCodeAuto(case_expr.getCaseValue());
@@ -2208,7 +2209,6 @@ namespace llvm
       }
       assert(index2label_decl.find(si->getDefaultDest()) != index2label_decl.end());
       tree_vec_element.data.push_back(build3(GT(CASE_LABEL_EXPR), llvm::Type::getVoidTy(si->getFunction()->getContext()), nullptr, nullptr, &index2label_decl.find(si->getDefaultDest())->second));
-      memoization_tree_vec[g] = res;
       return res;
    }
 
@@ -3104,7 +3104,7 @@ namespace llvm
       return getBB_index(BB);
    }
 
-   bool DumpGimpleRaw::gimple_has_mem_ops(const void* g, const llvm::MemorySSA& MSSA)
+   bool DumpGimpleRaw::gimple_has_mem_ops(const void* g)
    {
       if(TREE_CODE(g) == GT(GIMPLE_NOP))
          return false;
@@ -3113,6 +3113,12 @@ namespace llvm
       if(TREE_CODE(g) == GT(GIMPLE_LABEL))
          return false;
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
+      llvm::Function* currentFunction = inst->getFunction();
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
       return MSSA.getMemoryAccess(inst);
    }
 
@@ -3166,10 +3172,16 @@ namespace llvm
    //       return !(SeqCstUse || MayClobberIsAcquire);
    //    }
 
-   void DumpGimpleRaw::serialize_vops(const void* g, llvm::MemorySSA& MSSA, const llvm::Function* currentFunction)
+   void DumpGimpleRaw::serialize_vops(const void* g)
    {
       assert(TREE_CODE(g) != GT(GIMPLE_PHI_VIRTUAL));
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
+      llvm::Function* currentFunction = inst->getFunction();
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
       const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(inst);
       if(ma->getValueID() == llvm::Value::MemoryUseVal || ma->getValueID() == llvm::Value::MemoryDefVal)
       {
@@ -3188,7 +3200,7 @@ namespace llvm
       if(ma->getValueID() == llvm::Value::MemoryUseVal)
       {
          /// Serialize gimple pairs because of use after def chain
-         std::unordered_set<llvm::MemoryAccess*> visited;
+         std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vuse");
@@ -3202,7 +3214,7 @@ namespace llvm
       {
          const void* vdef = getSSA(ma, g, currentFunction, false);
          serialize_child("vdef", vdef);
-         std::unordered_set<llvm::MemoryAccess*> visited;
+         std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
@@ -3214,7 +3226,7 @@ namespace llvm
       }
    }
 
-   void DumpGimpleRaw::serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA, std::unordered_set<llvm::MemoryAccess*>& visited, const llvm::Function* currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag)
+   void DumpGimpleRaw::serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA, std::set<llvm::MemoryAccess*>& visited, const llvm::Function* currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag)
    {
       llvm::MemoryAccess* defMA = nullptr;
       if(MA->getValueID() != llvm::Value::MemoryPhiVal)
@@ -4098,7 +4110,7 @@ namespace llvm
       queue_and_serialize_index("type", TREE_TYPE(t));
    }
 
-   static void computeLoopLabels(std::unordered_map<const llvm::Loop*, unsigned>& loopLabes, llvm::Loop* curLoop, unsigned int& label)
+   static void computeLoopLabels(std::map<const llvm::Loop*, unsigned>& loopLabes, llvm::Loop* curLoop, unsigned int& label)
    {
       loopLabes[curLoop] = label;
       label++;
@@ -4136,35 +4148,19 @@ namespace llvm
 
       auto code = TREE_CODE(g);
       const char* code_name = GET_TREE_CODE_NAME(code);
-      llvm::Function* currentFunction;
-      if(code == GT(GIMPLE_NOP))
-      {
-         currentFunction = const_cast<llvm::Function*>(reinterpret_cast<const llvm::Function*>(reinterpret_cast<const gimple_nop*>(g)->scpe));
-      }
-      else if(code == GT(GIMPLE_PHI_VIRTUAL))
-      {
-         currentFunction = const_cast<llvm::Function*>(reinterpret_cast<const llvm::Function*>(reinterpret_cast<const gimple_phi_virtual*>(g)->scpe));
-      }
-      else if(code == GT(GIMPLE_LABEL))
-      {
-         currentFunction = const_cast<llvm::Function*>(reinterpret_cast<const llvm::Function*>(reinterpret_cast<const gimple_label*>(g)->scpe));
-      }
-      else
-      {
-         currentFunction = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g))->getFunction();
-      }
-#if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
 #if PRINT_DBG_MSG
       if(code != GT(GIMPLE_NOP) && code != GT(GIMPLE_PHI_VIRTUAL) && code != GT(GIMPLE_LABEL))
       {
          llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
+         llvm::Function* currentFunction = inst->getFunction();
          llvm::errs() << "@" << code_name << " @" << index << "\n";
          inst->print(llvm::errs());
          llvm::errs() << "\n";
+#if __clang_major__ >= 11
+         auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
+         auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
          if(MSSA.getMemoryAccess(inst))
             llvm::errs() << "| " << *MSSA.getMemoryAccess(inst) << "\n";
       }
@@ -4180,8 +4176,8 @@ namespace llvm
       serialize_child("scpe", getGimpleScpe(g));
       serialize_int("bb_index", getGimple_bb_index(g));
 
-      if(gimple_has_mem_ops(g, MSSA))
-         serialize_vops(g, MSSA, currentFunction);
+      if(gimple_has_mem_ops(g))
+         serialize_vops(g);
 
       if(gimple_has_location(g))
       {
@@ -4221,7 +4217,7 @@ namespace llvm
             auto rhs = gimple_assign_rhs_getelementptr(g);
             serialize_child("op", lhs);
             serialize_child("op", rhs);
-            std::unordered_set<const llvm::User*> visited;
+            std::set<const llvm::User*> visited;
             auto currInst = reinterpret_cast<const llvm::User*>(g);
             visited.insert(currInst);
 #if __clang_major__ >= 10
@@ -4403,7 +4399,7 @@ namespace llvm
          case GT(GIMPLE_PHI):
          {
             serialize_child("res", gimple_phi_result(g));
-            std::unordered_set<int> bb_visited;
+            std::set<int> bb_visited;
             for(auto i = 0u; i < gimple_phi_num_args(g); i++)
             {
                auto bbIndex = gimple_phi_arg_edgeBBindex(g, i);
@@ -4419,7 +4415,7 @@ namespace llvm
          case GT(GIMPLE_PHI_VIRTUAL):
          {
             serialize_child("res", gimple_phi_virtual_result(g));
-            std::unordered_set<int> bb_visited;
+            std::set<int> bb_visited;
             for(auto i = 0u; i < gimple_phi_virtual_num_args(g); i++)
             {
                auto bbIndex = gimple_phi_virtual_arg_edgeBBindex(g, i);
@@ -4477,24 +4473,18 @@ namespace llvm
       llvm::Function* currentFunction = const_cast<llvm::Function*>(bblist.front().getParent());
       assert(modulePass);
 #if __clang_major__ >= 11
-      const auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction, &changed).getLoopInfo();
+      auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction, &changed).getLoopInfo();
 #else
-      const auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
+      auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
 #endif
-#if __clang_major__ >= 11
-      const auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      const auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
-
-      std::unordered_map<const llvm::Loop*, unsigned> loopLabes;
+      std::map<const llvm::Loop*, unsigned> loopLabes;
       if(!LI.empty())
       {
          unsigned int label = 1;
          for(auto it = LI.begin(); it != LI.end(); ++it)
             computeLoopLabels(loopLabes, *it, label);
       }
-      std::unordered_set<const llvm::BasicBlock*> BB_with_gimple_label;
+      std::set<const llvm::BasicBlock*> BB_with_gimple_label;
       for(const auto& BB : bblist)
       {
          if(isa<llvm::SwitchInst>(BB.getTerminator()))
@@ -4511,6 +4501,12 @@ namespace llvm
             }
          }
       }
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
+
       for(const auto& BB : bblist)
       {
          const char* field;
@@ -4537,7 +4533,7 @@ namespace llvm
          }
          else
          {
-            std::unordered_set<int> pred_visited;
+            std::set<int> pred_visited;
             for(const auto pred : llvm::predecessors(&BB))
             {
                auto bbIndex = getBB_index(pred);
@@ -4558,7 +4554,7 @@ namespace llvm
          }
          else
          {
-            std::unordered_set<int> succ_visited;
+            std::set<int> succ_visited;
             for(const auto succ : llvm::successors(&BB))
             {
                auto bbIndex = getBB_index(succ);
@@ -5102,7 +5098,7 @@ namespace llvm
       Queue.push_back(obj);
       return index;
    }
-//#include <chrono>
+
    void DumpGimpleRaw::SerializeGimpleGlobalTreeNode(const void* obj)
    {
       if(TREE_CODE(obj) == GT(FUNCTION_DECL))
@@ -5113,22 +5109,9 @@ namespace llvm
       {
          queue(obj);
       }
-      unsigned long long int counter = 0;
-//      std::chrono::steady_clock::time_point start;
       while(!Queue.empty())
       {
-//         if((counter%1024)==0)
-//         {
-//            start = std::chrono::steady_clock::now();
-//         }
-//         counter++;
          dequeue_and_serialize();
-//         if((counter%1024)==0)
-//         {
-//            auto finish = std::chrono::steady_clock::now();
-//            double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double> >(finish - start).count();
-//            llvm::errs() << "dequeue_and_serialize " << elapsed_seconds << "\n";
-//         }
       }
    }
 
@@ -6231,7 +6214,6 @@ namespace llvm
 
    void DumpGimpleRaw::compute_eSSA(llvm::Module& M, bool* changed)
    {
-#if __clang_major__ < 12
       eSSA eSSAHelper;
       for(auto& fun : M.getFunctionList())
       {
@@ -6241,7 +6223,6 @@ namespace llvm
             *changed = *changed || res;
          }
       }
-#endif
    }
 
    void DumpGimpleRaw::computeValueRange(const llvm::Module& M)
@@ -6621,7 +6602,7 @@ namespace llvm
       return changed;
    }
 
-   void DumpGimpleRaw::computeMAEntryDefs(const llvm::Function* F, std::unordered_map<const llvm::Function*, std::unordered_map<const void*, std::unordered_set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass)
+   void DumpGimpleRaw::computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass)
    {
 #if __clang_major__ >= 11
       auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F), &changed).getMSSA();
