@@ -39,7 +39,7 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       llvm_config=`echo $clang_file | sed s/clang/llvm-config/`
       I386_LLVM_CONFIG10_EXE=$clang_dir/$llvm_config
       LLVM10_CXXFLAGS=`$I386_LLVM_CONFIG10_EXE --cxxflags`
-      I386_LLVM10_CXXFLAGS="$LLVM10_CXXFLAGS -std=c++14 $3"
+      I386_LLVM10_CXXFLAGS="$LLVM10_CXXFLAGS -std=c++14 -O2 -DNDEBUG $3"
       if test "x$I386_LLVM10_CXXFLAGS" = "x"; then
          echo "checking CLANG/LLVM plugin support... no. Package llvm-10.0 missing?"
          break;
