@@ -54,13 +54,13 @@
 #define NUM_CST_allocation_default_max_lut_size 6
 
 /// The default value used in computation of controller delay
-#define NUM_CST_allocation_default_states_number_normalization 400
+#define NUM_CST_allocation_default_states_number_normalization 45
 
 /// The default value used in computation of controller delay when basic block are considered
 #define NUM_CST_allocation_default_states_number_normalization_BB 200
 
 /// The default value used in computation of controller delay when basic block are considered
-#define NUM_CST_allocation_default_states_number_normalization_linear_factor 20
+#define NUM_CST_allocation_default_states_number_normalization_linear_factor 200
 
 /// The default value for the connection ratio between the output delay of a carry and the setup delay
 #define NUM_CST_allocation_default_output_carry_connection_ratio 0.6

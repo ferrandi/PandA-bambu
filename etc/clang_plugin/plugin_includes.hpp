@@ -57,7 +57,7 @@
 #include <deque>
 #include <list>
 #include <map>
-#include <set>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -121,6 +121,7 @@ namespace llvm
 #endif
    class Metadata;
    class Argument;
+   class LoopInfo;
 } // namespace llvm
 
 namespace RangeAnalysis
@@ -128,6 +129,21 @@ namespace RangeAnalysis
    class InterProceduralRACropDFSHelper;
 }
 class Andersen_AA;
+
+/**
+ * Definition of hash function for std::tyuple<unsigned int, vertex, unsigned int>
+ */
+namespace std
+{
+   template <>
+   struct hash<std::pair<const void*, bool>> : public unary_function<std::pair<const void*, bool>, size_t>
+   {
+      size_t operator()(const std::pair<const void*, bool>& value) const
+      {
+         return hash<const void*>()(value.first) ^ hash<bool>()(value.second);
+      }
+   };
+} // namespace std
 
 namespace llvm
 {
@@ -172,7 +188,7 @@ namespace llvm
       static const unsigned int tree_codes2nargs[];
       static const gimple_rhs_class gimple_rhs_class_table[];
       static const char* ValueTyNames[];
-      static const std::set<std::string> builtinsNames;
+      static const std::unordered_set<std::string> builtinsNames;
 
       static std::string getName(const llvm::GlobalObject*);
 
@@ -187,7 +203,7 @@ namespace llvm
       };
       std::map<unsigned int, tree_list> index2tree_list;
       /// memoization map used to avoid the re-computation of tree associated with a given node
-      std::map<const void*, const void*> memoization_tree_list;
+      std::unordered_map<const void*, const void*> memoization_tree_list;
 
       struct tree_vec
       {
@@ -195,7 +211,7 @@ namespace llvm
       };
       std::map<unsigned int, tree_vec> index2tree_vec;
       /// memoization map used to avoid the re-computation of tree associated with a given node
-      std::map<const void*, const void*> memoization_tree_vec;
+      std::unordered_map<const void*, const void*> memoization_tree_vec;
 
       struct field_decl
       {
@@ -231,7 +247,7 @@ namespace llvm
       bool onlyGlobals;
       /// map function with name of its parameters
       const std::map<std::string, std::vector<std::string>>* fun2params;
-      std::map<const llvm::Argument*, std::string> argNameTable;
+      std::unordered_map<const llvm::Argument*, std::string> argNameTable;
       const llvm::DataLayout* DL;
       /// current module pass
       llvm::ModulePass* modulePass;
@@ -239,24 +255,24 @@ namespace llvm
       std::string TopFunctionName;
 
       /// relation between LLVM object and serialization index
-      std::map<const void*, unsigned int> llvm2index;
+      std::unordered_map<const void*, unsigned int> llvm2index;
       /// relation between LLVM object and TREE_CODE
-      std::map<const void*, tree_codes> llvm2tree_code;
+      std::unordered_map<const void*, tree_codes> llvm2tree_code;
       unsigned int last_used_index;
       std::deque<const void*> Queue;
-      std::set<const void*> setOfStatementsList;
-      std::set<const void*> setOfGimples;
+      std::unordered_set<const void*> setOfStatementsList;
+      std::unordered_set<const void*> setOfGimples;
 
       /// serialization data
       int column;
 
       /// internal identifier table
-      std::set<std::string> identifierTable;
+      std::unordered_set<std::string> identifierTable;
       /// unsigned integer constant table
-      std::map<uint64_t, const void*> uicTable;
+      std::unordered_map<uint64_t, const void*> uicTable;
       /// type_integer with specific max value
-      std::map<const void*, unsigned long long int> maxValueITtable;
-      std::map<const void*, llvm::LLVMContext*> ArraysContexts;
+      std::unordered_map<const void*, unsigned long long int> maxValueITtable;
+      std::unordered_map<const void*, llvm::LLVMContext*> ArraysContexts;
 
       std::string getTypeName(const void* ty) const;
 
@@ -343,7 +359,7 @@ namespace llvm
          bool escaped;
          bool ipa_escaped;
          bool null;
-         std::set<const void*> vars;
+         std::unordered_set<const void*> vars;
          pt_solution() : anything(false), nonlocal(false), escaped(false), ipa_escaped(false), null(false)
          {
          }
@@ -377,12 +393,12 @@ namespace llvm
       };
       void dump_pt_solution(const pt_solution* pt, const char* first_tag, const char* second_tag);
 
-      std::map<std::pair<const void*, bool>, ssa_name> index2ssa_name;
+      std::unordered_map<std::pair<const void*, bool>, ssa_name> index2ssa_name;
       int last_memory_ssa_vers;
-      std::map<const void*, int> memoryaccess2ssaindex;
+      std::unordered_map<const void*, int> memoryaccess2ssaindex;
 
       int last_BB_index;
-      std::map<const llvm::BasicBlock*, int> BB_index_map;
+      std::unordered_map<const llvm::BasicBlock*, int> BB_index_map;
 
       int getBB_index(const llvm::BasicBlock* BB);
 
@@ -414,7 +430,7 @@ namespace llvm
       const void* LowerGetElementPtrOffset(const llvm::GEPOperator* gep, const llvm::Function* currentFunction, const void*& base_node, bool& isZero);
       const void* LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function* currentFunction);
       const void* gimple_assign_rhs_getelementptr(const void* g);
-      bool temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited, const llvm::TargetLibraryInfo& TLI);
+      bool temporary_addr_check(const llvm::User* inst, std::unordered_set<const llvm::User*>& visited, const llvm::TargetLibraryInfo& TLI);
       const void* getOperand(const llvm::Value* operand, const llvm::Function* currentFunction);
       const void* gimple_assign_lhs(const void* g);
       const void* gimple_assign_rhs_alloca(const void* g);
@@ -424,19 +440,19 @@ namespace llvm
          const llvm::AllocaInst* alloc_inst;
          bool addr;
       };
-      std::map<const void*, alloca_var> index2alloca_var;
+      std::unordered_map<const void*, alloca_var> index2alloca_var;
       struct orig_var
       {
          const void* orig;
       };
-      std::map<const void*, orig_var> index2orig_var;
+      std::unordered_map<const void*, orig_var> index2orig_var;
       const void* DECL_ABSTRACT_ORIGIN(const void* t);
       struct integer_cst_signed
       {
          const void* type;
          const void* ic;
       };
-      std::map<const void*, integer_cst_signed> index2integer_cst_signed;
+      std::unordered_map<const void*, integer_cst_signed> index2integer_cst_signed;
       template <class InstructionOrConstantExpr>
       const void* getSignedOperand(const InstructionOrConstantExpr* inst, const void* op, unsigned index);
       template <class InstructionOrConstantExpr>
@@ -496,7 +512,7 @@ namespace llvm
          {
          }
       };
-      std::map<const void*, call_expr> index2call_expr;
+      std::unordered_map<const void*, call_expr> index2call_expr;
 
       struct tree_expr
       {
@@ -518,7 +534,7 @@ namespace llvm
          {
          }
       };
-      std::map<const void*, gimple_nop> index2gimple_nop;
+      std::unordered_map<const void*, gimple_nop> index2gimple_nop;
 
       struct gimple_phi_virtual
       {
@@ -531,7 +547,7 @@ namespace llvm
          {
          }
       };
-      std::map<const llvm::BasicBlock*, gimple_phi_virtual> index2gimple_phi_virtual;
+      std::unordered_map<const llvm::BasicBlock*, gimple_phi_virtual> index2gimple_phi_virtual;
 
       struct gimple_label
       {
@@ -543,7 +559,7 @@ namespace llvm
          {
          }
       };
-      std::map<const llvm::BasicBlock*, gimple_label> index2gimple_label;
+      std::unordered_map<const llvm::BasicBlock*, gimple_label> index2gimple_label;
 
       const void* createGimpleLabelStmt(const llvm::BasicBlock* BB);
 
@@ -660,10 +676,10 @@ namespace llvm
       const void* getStatement_list(const void* t);
       const void* getGimpleScpe(const void* g);
       int getGimple_bb_index(const void* g);
-      bool gimple_has_mem_ops(const void* g);
-      std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>> CurrentListofMAEntryDef;
-      void serialize_vops(const void* g);
-      void serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA, std::set<llvm::MemoryAccess*>& visited, const llvm::Function* currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag);
+      bool gimple_has_mem_ops(const void* g, const llvm::MemorySSA& MSSA);
+      std::unordered_map<const llvm::Function*, std::unordered_map<const void*, std::unordered_set<const llvm::Instruction*>>> CurrentListofMAEntryDef;
+      void serialize_vops(const void* g, llvm::MemorySSA& MSSA, const llvm::Function* currentFunction);
+      void serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA, std::unordered_set<llvm::MemoryAccess*>& visited, const llvm::Function* currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag);
 
       const void* SSA_NAME_VAR(const void* t) const;
       int SSA_NAME_VERSION(const void* t) const;
@@ -744,7 +760,7 @@ namespace llvm
       void computeValueRange(const llvm::Module& M);
       void ValueRangeOptimizer(llvm::Module& M);
       bool LoadStoreOptimizer(llvm::Module& M);
-      void computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass);
+      void computeMAEntryDefs(const llvm::Function* F, std::unordered_map<const llvm::Function*, std::unordered_map<const void*, std::unordered_set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass);
 
     public:
       DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals, std::map<std::string, std::vector<std::string>>* fun2params, bool early);
