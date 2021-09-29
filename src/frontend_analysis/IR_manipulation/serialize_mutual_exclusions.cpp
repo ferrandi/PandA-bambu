@@ -319,7 +319,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                const auto zero = [&]() -> tree_nodeRef {
                   if(GET_CONST_NODE(type)->get_kind() == integer_type_K)
                   {
-                     return tree_man->CreateIntegerCst(type, 0, TM->new_tree_node_id());
+                     return TM->CreateUniqueIntegerCst(0, type);
                   }
                   THROW_UNREACHABLE("");
                   return tree_nodeRef();

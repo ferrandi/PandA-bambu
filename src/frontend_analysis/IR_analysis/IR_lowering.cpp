@@ -780,7 +780,7 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
    unsigned long long int data_mask = data_bitsize >= 64 ? ~0ULL : (1ULL << data_bitsize) - 1;
 #endif
    tree_nodeRef tem_ga;
-   tree_nodeRef COST0 = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(type));
+   tree_nodeRef COST0 = TM->CreateUniqueIntegerCst(0, type);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Expanding " + op0->ToString());
 
    /* ACCUM starts out either as OP0 or as a zero, depending on
@@ -812,7 +812,7 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
       }
       else
       {
-         log_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(log), GET_INDEX_NODE(type));
+         log_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(log), type);
       }
 
       switch(alg.op[opno])
@@ -1020,12 +1020,12 @@ tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long 
    const auto logd = floor_log2(d);
    const auto bt = tree_man->create_boolean_type();
 
-   const auto const0 = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(type));
+   const auto const0 = TM->CreateUniqueIntegerCst(0, type);
    const auto cond_op0 = tree_man->create_binary_operation(bt, op0, const0, srcp_default, lt_expr_K);
-   const auto signmask_ga = tree_man->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0, bt->index), TM->CreateUniqueIntegerCst(1, bt->index), cond_op0, function_id, block->number, srcp_default);
+   const auto signmask_ga = tree_man->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0, bt), TM->CreateUniqueIntegerCst(1, bt), cond_op0, function_id, block->number, srcp_default);
    AppM->RegisterTransformation(GetName(), signmask_ga);
    block->PushBefore(signmask_ga, stmt, AppM);
-   const auto signmask_nop = tree_man->CreateNopExpr(GetPointer<gimple_assign>(GET_NODE(signmask_ga))->op0, type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(type)), function_id);
+   const auto signmask_nop = tree_man->CreateNopExpr(GetPointer<gimple_assign>(GET_NODE(signmask_ga))->op0, type, TM->CreateUniqueIntegerCst(0, type), TM->CreateUniqueIntegerCst(1, type), function_id);
    AppM->RegisterTransformation(GetName(), signmask_nop);
    block->PushBefore(signmask_nop, stmt, AppM);
    const auto signmask_var = GetPointer<gimple_assign>(GET_NODE(signmask_nop))->op0;
@@ -1035,7 +1035,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long 
       THROW_ERROR("unexpected condition");
    }
    masklow = (1ULL << logd) - 1;
-   const auto Constmasklow = TM->CreateUniqueIntegerCst(static_cast<long long int>(masklow), GET_INDEX_NODE(type));
+   const auto Constmasklow = TM->CreateUniqueIntegerCst(static_cast<long long int>(masklow), type);
 
    auto temp = tree_man->create_binary_operation(type, op0, signmask_var, srcp_default, bit_xor_expr_K);
    auto temp_ga = tree_man->CreateGimpleAssign(type, nullptr, nullptr, temp, function_id, block->number, srcp_default);
@@ -1068,10 +1068,10 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
 {
    const auto logd = floor_log2(d);
    const auto bt = tree_man->create_boolean_type();
-   const auto const0 = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(type));
+   const auto const0 = TM->CreateUniqueIntegerCst(0, type);
 
    const auto cond_op0 = tree_man->create_binary_operation(bt, op0, const0, srcp_default, lt_expr_K);
-   const auto cond_op0_ga = tree_man->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0, bt->index), TM->CreateUniqueIntegerCst(1, bt->index), cond_op0, function_id, block->number, srcp_default);
+   const auto cond_op0_ga = tree_man->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0, bt), TM->CreateUniqueIntegerCst(1, bt), cond_op0, function_id, block->number, srcp_default);
    block->PushBefore(cond_op0_ga, stmt, AppM);
    const auto cond_op0_ga_var = GetPointer<gimple_assign>(GET_NODE(cond_op0_ga))->op0;
    tree_nodeRef t_ga;
@@ -1079,7 +1079,7 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
 
    if(d == 2)
    {
-      const auto const1 = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(type));
+      const auto const1 = TM->CreateUniqueIntegerCst(1, type);
       const auto cond_op = tree_man->create_ternary_operation(type, cond_op0_ga_var, const1, const0, srcp_default, cond_expr_K);
       t_ga = tree_man->CreateGimpleAssign(type, nullptr, nullptr, cond_op, function_id, block->number, srcp_default);
       block->PushBefore(t_ga, stmt, AppM);
@@ -1090,7 +1090,7 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
    }
    else
    {
-      const auto d_m1 = TM->CreateUniqueIntegerCst(static_cast<long long int>(d - 1), GET_INDEX_NODE(type));
+      const auto d_m1 = TM->CreateUniqueIntegerCst(static_cast<long long int>(d - 1), type);
       const auto t_expr = tree_man->create_binary_operation(type, op0, d_m1, srcp_default, plus_expr_K);
       t_ga = tree_man->CreateGimpleAssign(type, nullptr, nullptr, t_expr, function_id, block->number, srcp_default);
       block->PushBefore(t_ga, stmt, AppM);
@@ -1102,7 +1102,7 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
    block->PushBefore(t2_ga, stmt, AppM);
 
    const auto t2_ga_var = GetPointer<gimple_assign>(GET_NODE(t2_ga))->op0;
-   const auto logdConst = TM->CreateUniqueIntegerCst(logd, GET_INDEX_NODE(type));
+   const auto logdConst = TM->CreateUniqueIntegerCst(logd, type);
    return tree_man->create_binary_operation(type, t2_ga_var, logdConst, srcp_default, rshift_expr_K);
 }
 
@@ -1163,7 +1163,7 @@ tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree
    /// very special case op1 == 0
    if(ext_op1 == 0)
    {
-      return TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(type_expr));
+      return TM->CreateUniqueIntegerCst(0, type_expr);
    }
    /// very special case op1 == 1
    else if(ext_op1 == 1)
@@ -1202,7 +1202,7 @@ tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree
          if(EXACT_POWER_OF_2_OR_ZERO_P(coeff))
          {
             int l_shift = floor_log2(coeff);
-            tree_nodeRef l_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(l_shift), GET_INDEX_NODE(type_expr));
+            tree_nodeRef l_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(l_shift), type_expr);
             return tree_man->create_binary_operation(type_expr, op0, l_shift_node, srcp_default, lshift_expr_K);
          }
          else
@@ -1415,8 +1415,8 @@ tree_nodeRef IR_lowering::expand_mult_highpart(tree_nodeRef op0, unsigned long l
     return w1u0v1hw2 + u1v1;
    */
    int half_data_bitsize = data_bitsize / 2;
-   tree_nodeRef mask_node = TM->CreateUniqueIntegerCst(static_cast<long long int>((1LL << half_data_bitsize) - 1), GET_INDEX_NODE(type_expr));
-   tree_nodeRef half_data_bitsize_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(half_data_bitsize), GET_INDEX_NODE(type_expr));
+   tree_nodeRef mask_node = TM->CreateUniqueIntegerCst(static_cast<long long int>((1LL << half_data_bitsize) - 1), type_expr);
+   tree_nodeRef half_data_bitsize_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(half_data_bitsize), type_expr);
 
    tree_nodeRef u0_expr = tree_man->create_binary_operation(type_expr, op0, mask_node, srcp_default, bit_and_expr_K);
    tree_nodeRef u0_ga = tree_man->CreateGimpleAssign(type_expr, tree_nodeRef(), tree_nodeRef(), u0_expr, function_id, block->number, srcp_default);
@@ -1451,7 +1451,7 @@ tree_nodeRef IR_lowering::expand_mult_highpart(tree_nodeRef op0, unsigned long l
       }
       else
       {
-         v0_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(v0), GET_INDEX_NODE(type_expr));
+         v0_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(v0), type_expr);
          tree_nodeRef u0v0_expr = tree_man->create_binary_operation(type_expr, u0_ga_var, v0_node, srcp_default, mult_expr_K);
          tree_nodeRef u0v0_ga = tree_man->CreateGimpleAssign(type_expr, tree_nodeRef(), tree_nodeRef(), u0v0_expr, function_id, block->number, srcp_default);
          block->PushBefore(u0v0_ga, *it_los, AppM);
@@ -1529,7 +1529,7 @@ tree_nodeRef IR_lowering::expand_mult_highpart(tree_nodeRef op0, unsigned long l
       }
       else
       {
-         v1_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(v1), GET_INDEX_NODE(type_expr));
+         v1_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(v1), type_expr);
          tree_nodeRef u0v1_expr = tree_man->create_binary_operation(type_expr, u0_ga_var, v1_node, srcp_default, mult_expr_K);
          tree_nodeRef u0v1_ga = tree_man->CreateGimpleAssign(type_expr, tree_nodeRef(), tree_nodeRef(), u0v1_expr, function_id, block->number, srcp_default);
          block->PushBefore(u0v1_ga, *it_los, AppM);
@@ -1620,7 +1620,7 @@ tree_nodeRef IR_lowering::expand_mult_highpart(tree_nodeRef op0, unsigned long l
    }
    else
    {
-      res_ga_var = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), GET_INDEX_NODE(type_expr));
+      res_ga_var = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), type_expr);
    }
    return res_ga_var;
 }
@@ -1661,7 +1661,7 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    {
       n_byte *= dims.at(ind);
    }
-   tree_nodeRef coef_node = TM->CreateUniqueIntegerCst(n_byte, GET_INDEX_NODE(offset_type));
+   tree_nodeRef coef_node = TM->CreateUniqueIntegerCst(n_byte, offset_type);
    tree_nodeRef m = tree_man->create_binary_operation(offset_type, offset_node, coef_node, srcp_default, mult_expr_K);
    tree_nodeRef m_ga = tree_man->CreateGimpleAssign(offset_type, tree_nodeRef(), tree_nodeRef(), m, function_id, block.first, srcp_default);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(m_ga)->ToString());
@@ -1675,7 +1675,7 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    tree_nodeRef pp_vd = GetPointer<gimple_assign>(GET_NODE(pp_ga))->op0;
    block.second->PushBefore(pp_ga, *it_los, AppM);
 
-   tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
+   tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, pt);
    return tree_man->create_binary_operation(type, pp_vd, offset, srcp_default, mem_ref_K);
 }
 

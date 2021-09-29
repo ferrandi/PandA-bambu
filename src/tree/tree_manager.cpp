@@ -45,6 +45,7 @@
 
 /// Autoheader include
 #include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
+#include "config_HAVE_HEXFLOAT.hpp"
 #include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_NPROFILE.hpp"
 
@@ -57,6 +58,9 @@
 #include <iostream> // for operator<<, basic_o...
 #include <list>     // for list
 #include <vector>   // for vector, allocator
+#if !HAVE_HEXFLOAT
+#include <cstdio>
+#endif
 
 /// Machine include
 #if HAVE_MAPPING_BUILT
@@ -953,6 +957,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
                   GetPointerS<ssa_name>(GET_NODE(used_ssa.first))->RemoveUse(stmt);
                }
             }
+            tn = new_node; // TODO: remove after debug completed
             const auto new_used_ssas = tree_helper::ComputeSsaUses(new_node);
             for(const auto& new_used_ssa : new_used_ssas)
             {
@@ -2600,25 +2605,53 @@ unsigned int tree_manager::get_unremoved_pointer_plus() const
    return unremoved_pointer_plus;
 }
 
-tree_nodeRef tree_manager::CreateUniqueIntegerCst(long long int value, unsigned int type_index)
+tree_nodeRef tree_manager::create_unique_const(const std::string& val, const tree_nodeConstRef& type)
 {
-   auto key = std::make_pair(value, type_index);
-   if(unique_integer_cst_map.find(key) != unique_integer_cst_map.end())
+   const auto key = std::make_pair(val, type->index);
+   const auto unique_cst = unique_cst_map.find(key);
+   if(unique_cst != unique_cst_map.end())
    {
-      return unique_integer_cst_map.find(key)->second;
+      return unique_cst->second;
+   }
+
+   const auto cst_nid = new_tree_node_id();
+   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
+   IR_schema[TOK(TOK_TYPE)] = STR(type->index);
+   if(tree_helper::IsRealType(type))
+   {
+      IR_schema[TOK(TOK_VALR)] = val;
+      IR_schema[TOK(TOK_VALX)] = val;
+      create_tree_node(cst_nid, real_cst_K, IR_schema);
    }
    else
    {
-      unsigned int integer_cst_nid = new_tree_node_id();
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-      IR_schema[TOK(TOK_TYPE)] = STR(type_index);
-      IR_schema[TOK(TOK_VALUE)] = STR(value);
-
-      create_tree_node(integer_cst_nid, integer_cst_K, IR_schema);
-      tree_nodeRef cost_node = GetTreeReindex(integer_cst_nid);
-      unique_integer_cst_map[key] = cost_node;
-      return cost_node;
+      IR_schema[TOK(TOK_VALUE)] = val;
+      create_tree_node(cst_nid, integer_cst_K, IR_schema);
    }
+   const auto cost_node = GetTreeReindex(cst_nid);
+   unique_cst_map[key] = cost_node;
+   return cost_node;
+}
+
+tree_nodeRef tree_manager::CreateUniqueIntegerCst(long long int value, const tree_nodeConstRef& type)
+{
+   return create_unique_const(STR(value), type);
+}
+
+tree_nodeRef tree_manager::CreateUniqueRealCst(long double value, const tree_nodeConstRef& type)
+{
+   std::stringstream ssX;
+#if HAVE_HEXFLOAT
+   ssX << std::hexfloat << value;
+#else
+   {
+      char buffer[256];
+      sprintf(buffer, "%La", value);
+      ssX << buffer;
+   }
+#endif
+
+   return create_unique_const(ssX.str(), type);
 }
 
 bool tree_manager::is_CPP() const

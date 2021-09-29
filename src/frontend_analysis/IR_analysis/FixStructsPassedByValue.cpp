@@ -259,7 +259,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                                                     // src is the new pointer-to-struct parm_decl
                                                     tree_man->create_ssa_name(*p_decl_it, ptr_type, tree_nodeRef(), tree_nodeRef()),
                                                     // sizeof(var_decl)
-                                                    tree_man->CreateIntegerCst(formal_type_node, static_cast<long long>(ptd_type_size), TM->new_tree_node_id())};
+                                                    TM->CreateUniqueIntegerCst(static_cast<long long>(ptd_type_size), formal_type_node)};
             const auto gimple_call_memcpy = tree_man->create_gimple_call(memcpy_function, args, function_id, srcp, bb_index);
             auto gn = GetPointer<gimple_node>(GET_NODE(gimple_call_memcpy));
             /*

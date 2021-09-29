@@ -1260,6 +1260,12 @@ const TreeNodeSet ssa_name::CGetDefStmts() const
 void ssa_name::AddUseStmt(const tree_nodeRef& use_stmt)
 {
    use_stmts[use_stmt]++;
+#if HAVE_ASSERTS
+   const auto ssa_uses = tree_helper::ComputeSsaUses(use_stmt);
+   const auto current_ssa = std::find_if(ssa_uses.begin(), ssa_uses.end(), [&](const std::pair<tree_nodeRef, size_t>& t) { return t.first->index == index; });
+#endif
+   THROW_ASSERT(current_ssa != ssa_uses.end() && current_ssa->second >= use_stmts.at(use_stmt),
+                "Uses mismatch for " + ToString() + " in statement @" + STR(use_stmt->index) + " " + STR(use_stmt) + " - " + STR(current_ssa != ssa_uses.end() ? (STR(current_ssa->second) + " < " + STR(use_stmts.at(use_stmt))) : "ssa not present"));
 }
 
 void ssa_name::AddDefStmt(const tree_nodeRef& def)

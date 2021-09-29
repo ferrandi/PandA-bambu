@@ -183,7 +183,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
       TM->create_tree_node(varArgParamList, tree_list_K, varArgParamMap);
 
       const auto builtinIdString = IRman->create_identifier_node(BUILTIN_WAIT_CALL);
-      const auto funTypeSize = TM->CreateUniqueIntegerCst(8, GET_INDEX_NODE(IRman->create_default_integer_type()));
+      const auto funTypeSize = TM->CreateUniqueIntegerCst(8, IRman->create_default_integer_type());
 
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> builtinFunTypeMap;
       builtinFunTypeMap[TOK(TOK_RETN)] = STR(GET_INDEX_NODE(IRman->create_void_type()));
@@ -239,7 +239,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
       auto* GC = GetPointer<gimple_call>(expr);
       builtinGimpleCall->AddArg(GC->fn);
 
-      const auto has_return = TM->CreateUniqueIntegerCst(0, GET_INDEX_CONST_NODE(IRman->create_default_integer_type()));
+      const auto has_return = TM->CreateUniqueIntegerCst(0, IRman->create_default_integer_type());
       builtinGimpleCall->AddArg(has_return);
 
       for(const auto& arg : GC->args)
@@ -292,7 +292,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
          auto* CE = GetPointer<call_expr>(GET_NODE(GA->op1));
          builtinGimpleCall->AddArg(CE->fn);
 
-         const auto has_return = TM->CreateUniqueIntegerCst(1, GET_INDEX_CONST_NODE(IRman->create_default_integer_type()));
+         const auto has_return = TM->CreateUniqueIntegerCst(1, IRman->create_default_integer_type());
          builtinGimpleCall->AddArg(has_return);
 
          for(const auto& arg : CE->args)

@@ -458,21 +458,18 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
    std::vector<tree_nodeRef> args;
    if(commonRWSignature)
    {
-      const auto sel_value_id = TM->new_tree_node_id();
-      const auto sel_value = tree_man->CreateIntegerCst(boolean_type, 0, sel_value_id);
+      const auto sel_value = TM->CreateUniqueIntegerCst(0, boolean_type);
       args.push_back(sel_value);
-      const auto size_value_id = TM->new_tree_node_id();
-      const auto size_value = tree_man->CreateIntegerCst(bit_size_type, tree_helper::Size(readType), size_value_id);
+      const auto size_value = TM->CreateUniqueIntegerCst(tree_helper::Size(readType), bit_size_type);
       args.push_back(size_value);
-      const auto data_value_id = TM->new_tree_node_id();
       tree_nodeRef data_value;
       if(GET_NODE(readType)->get_kind() == integer_type_K || GET_NODE(readType)->get_kind() == enumeral_type_K || GET_NODE(readType)->get_kind() == pointer_type_K || GET_NODE(readType)->get_kind() == reference_type_K)
       {
-         data_value = tree_man->CreateIntegerCst(readType, 0, data_value_id);
+         data_value = TM->CreateUniqueIntegerCst(0, readType);
       }
       else if(tree_helper::IsRealType(readType))
       {
-         data_value = tree_man->CreateRealCst(readType, 0.l, data_value_id);
+         data_value = TM->CreateUniqueRealCst(0.l, readType);
       }
       else
       {
@@ -533,9 +530,8 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    std::string fname;
    tree_helper::get_mangled_fname(fd, fname);
    tree_nodeRef boolean_type;
-   const auto size_value_id = TM->new_tree_node_id();
    const auto bit_size_type = tree_man->create_default_unsigned_integer_type();
-   const auto size_value = tree_man->CreateIntegerCst(bit_size_type, tree_helper::Size(writeType), size_value_id);
+   const auto size_value = TM->CreateUniqueIntegerCst(tree_helper::Size(writeType), bit_size_type);
 
    /// create the function_decl
    std::vector<tree_nodeRef> argsT;
@@ -560,8 +556,7 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    std::vector<tree_nodeRef> args;
    if(commonRWSignature)
    {
-      const auto sel_value_id = TM->new_tree_node_id();
-      const auto sel_value = tree_man->CreateIntegerCst(boolean_type, 1, sel_value_id);
+      const auto sel_value = TM->CreateUniqueIntegerCst(1, boolean_type);
       args.push_back(sel_value);
    }
    args.push_back(size_value);

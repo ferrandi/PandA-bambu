@@ -169,7 +169,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
          nge->temporary_address = true;
          tree_nodeRef ssa_addr = nge->op0;
          auto* sa = GetPointer<ssa_name>(GET_NODE(ssa_addr));
-         tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(sa->type));
+         tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, sa->type);
 
          const tree_nodeRef p_type = pd->type;
          auto mr = IRman->create_binary_operation(p_type, ssa_addr, offset, srcp_default, mem_ref_K);

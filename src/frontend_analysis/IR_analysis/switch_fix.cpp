@@ -423,7 +423,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                         cond = cond ? tree_man->CreateOrExpr(cond, eq, basic_block.second, function_id) : eq;
                         for(auto index = low_value + 1; index <= high_value; index++)
                         {
-                           cond = tree_man->CreateOrExpr(cond, tree_man->CreateEqExpr(gs->op0, tree_man->CreateIntegerCst(low_ic->type, index, TM->new_tree_node_id()), basic_block.second, function_id), basic_block.second, function_id);
+                           cond = tree_man->CreateOrExpr(cond, tree_man->CreateEqExpr(gs->op0, TM->CreateUniqueIntegerCst(index, low_ic->type), basic_block.second, function_id), basic_block.second, function_id);
                         }
                      }
                      else

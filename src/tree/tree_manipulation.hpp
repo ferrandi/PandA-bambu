@@ -129,6 +129,15 @@ class tree_manipulation
    /// store a unique id used during the creation of the label_decl associated with a gimple_goto.
    static unsigned int goto_label_unique_id;
 
+   /// CONST_OBJ_TREE_NODES
+   /** Function used to create a integer_cst node.
+    * @param  type is the type of the node.
+    * @param value is the value of the constant
+    * @param  integer_cst_nid is the index node of the object to be created
+    * @return the tree_reindex node of the integer_cst created.
+    */
+   tree_nodeRef CreateIntegerCst(const tree_nodeConstRef& type, const long long int value, const unsigned int integer_cst_nid) const;
+
  public:
    /**
     * This is the constructor of the tree_manipulation.
@@ -210,23 +219,6 @@ class tree_manipulation
                                 const tree_nodeRef& op7, const tree_nodeRef& op8, const std::string& srcp) const;
 
    tree_nodeRef create_extract_bit_expr(const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp) const;
-
-   /// CONST_OBJ_TREE_NODES
-   /** Function used to create a integer_cst node.
-    * @param  type is the type of the node.
-    * @param value is the value of the constant
-    * @param  integer_cst_nid is the index node of the object to be created
-    * @return the tree_reindex node of the integer_cst created.
-    */
-   tree_nodeRef CreateIntegerCst(const tree_nodeConstRef& type, const long long int value, const unsigned int integer_cst_nid) const;
-
-   /** Function used to create a real_cst node.
-    * @param  type is the type of the node.
-    * @param value is the value of the constant
-    * @param  real_cst_nid is the index node of the object to be created
-    * @return the tree_reindex node of the real_cst created.
-    */
-   tree_nodeRef CreateRealCst(const tree_nodeConstRef& type, const long double value, const unsigned int real_cst_nid) const;
 
    /// IDENTIFIER_TREE_NODE
    /**
