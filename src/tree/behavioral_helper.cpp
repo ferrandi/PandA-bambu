@@ -860,10 +860,11 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
       case complex_cst_K:
       {
          const auto cc = GetPointerS<const complex_cst>(node);
+         res += "(";
          res += PrintConstant(cc->real, vppf);
          res += "+";
          res += PrintConstant(cc->imag, vppf);
-         res += "*1i";
+         res += "*1i)";
          break;
       }
       case string_cst_K:
