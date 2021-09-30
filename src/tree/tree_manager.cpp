@@ -957,7 +957,6 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
                   GetPointerS<ssa_name>(GET_NODE(used_ssa.first))->RemoveUse(stmt);
                }
             }
-            tn = new_node; // TODO: remove after debug completed
             const auto new_used_ssas = tree_helper::ComputeSsaUses(new_node);
             for(const auto& new_used_ssa : new_used_ssas)
             {
