@@ -370,9 +370,16 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                }
                if(call_count == 1)
                {
-                  opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current call point is unique for this function, inlining required");
-                  continue;
+                  if(!omp_simd_enabled || loop_count == 0)
+                  {
+                     opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current call point is unique for this function, inlining required");
+                     continue;
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inlining of functions with internal loops disabled with OpenMP, skipping...");
+                  }
                }
                const auto all_const_args = HasConstantArgs(TM->CGetTreeReindex(call_id));
                if(all_const_args && loop_count == 0)
