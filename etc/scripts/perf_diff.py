@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import math
 import os
 from collections import defaultdict
 
@@ -43,7 +44,7 @@ def compare_results(base_dict, new_dict, datapoints, score_weights, compute_scor
                 new_val = float(new_bench[pp])
                 cmp_val = 0.0
                 if base_val == 0 and new_val == 0:
-                    comp_point.append(0.0)
+                    comp_point.append(1.0)
                 elif base_val == 0:
                     comp_point.append(new_val)
                     cmp_val = -new_val
@@ -64,13 +65,26 @@ def compare_results(base_dict, new_dict, datapoints, score_weights, compute_scor
                 improved = new_score > 0.0
             if degraded:
                 degraded_set.append(comp_point)
-            if improved:
+            elif improved:
                 improved_set.append(comp_point)
             comp_dict[bench_name] = comp_point
         else:
             print('Base benchmark "' + bench_name +
                   '" not present in new results')
     return [comp_dict, degraded_set, improved_set]
+
+
+def diff_string(diff, base_val=None, new_val=None):
+    diff = diff - 1.0
+    if base_val != None and new_val != None:
+        base_val = float(base_val)
+        new_val = float(new_val)
+        prec = 2
+        if base_val.is_integer() and new_val.is_integer():
+            prec = 0
+        return "{0: .2%} ({1:.{3}f}/{2:.{3}f})".format(diff, new_val, base_val, prec)
+    else:
+        return "{0: .2%}".format(diff)
 
 
 def print_results(comp_list, base_dict, new_dict, datapoints, score_computed):
@@ -83,10 +97,10 @@ def print_results(comp_list, base_dict, new_dict, datapoints, score_computed):
             new_bench = new_dict[it[0]]
             if score_computed:
                 print(row_format.format(
-                    it[0], *["{0:.4%} ({1}/{2})".format(x - 1.0, new_bench[datapoints[idx]], base_bench[datapoints[idx]]) for idx, x in enumerate(it[1:])], "{:.4f}".format(it_score)))
+                    it[0], *[diff_string(x, new_bench[datapoints[idx]], base_bench[datapoints[idx]]) for idx, x in enumerate(it[1:])], "{:.2 f}".format(it_score)))
             else:
                 print(row_format.format(
-                    it[0], *["{0:.4%} ({1}/{2})".format(x - 1.0, new_bench[datapoints[idx]], base_bench[datapoints[idx]]) for idx, x in enumerate(it[1:])]))
+                    it[0], *[diff_string(x, new_bench[datapoints[idx]], base_bench[datapoints[idx]]) for idx, x in enumerate(it[1:])]))
 
 
 def print_results_to_csv(comp_list, base_dict, new_dict, datapoints, score_weights, score_computed, csv_file, first_col='Benchmark'):
@@ -111,7 +125,7 @@ def print_results_to_csv(comp_list, base_dict, new_dict, datapoints, score_weigh
                         bench_line += ',' + str(it[idx]) + ',0.0'
                     else:
                         bench_line += ',' + new_perf[pp] + ',' + base_perf[pp] + \
-                            ',' + "{0:.4%}".format(it[idx] - 1.0)
+                            ',' + diff_string(it[idx])
                     idx += 1
                 result_csv.write(bench_line + '\n')
 
@@ -164,12 +178,12 @@ def main():
     if user_score:
         selected_datapoints.append(score_col)
 
-    perf_var = ['Variance', *[0.0 for x in selected_datapoints]]
+    perf_sd = ['Standard deviation', *[0.0 for x in selected_datapoints]]
     for idx in range(1, len(selected_datapoints) + 1):
         perf_mean[idx] /= len(perf_dict)
         for bench_name in perf_dict:
-            perf_var[idx] += (perf_dict[bench_name][idx] - perf_mean[idx]) ** 2
-        perf_var[idx] /= len(perf_dict)
+            perf_sd[idx] += (perf_dict[bench_name][idx] - perf_mean[idx]) ** 2
+        perf_sd[idx] = math.sqrt(perf_sd[idx] / len(perf_dict))
 
     if len(outfile) > 0:
         if os.path.exists(outfile):
@@ -194,16 +208,16 @@ def main():
     print(row_format.format('Benchmark', *selected_datapoints))
     if user_score:
         mean_score = perf_mean.pop()
-        print(row_format.format(perf_mean[0], *["{0:.4%}".format(x - 1.0)
-                                                for x in perf_mean[1:]], "{:.4f}".format(mean_score)))
-        var_score = perf_var.pop()
-        print(row_format.format(perf_var[0], *["{0:.4%}".format(x)
-                                               for x in perf_var[1:]], "{:.4f}".format(var_score)))
+        print(row_format.format(perf_mean[0], *[diff_string(x)
+                                                for x in perf_mean[1:]], "{:.2 f}".format(mean_score)))
+        var_score = perf_sd.pop()
+        print(row_format.format(perf_sd[0], *[diff_string(x + 1.0)
+                                              for x in perf_sd[1:]], "{:.2 f}".format(var_score)))
     else:
         print(row_format.format(
-            perf_mean[0], *["{0:.4%}".format(x - 1.0) for x in perf_mean[1:]]))
+            perf_mean[0], *[diff_string(x) for x in perf_mean[1:]]))
         print(row_format.format(
-            perf_var[0], *["{0:.4%}".format(x) for x in perf_var[1:]]))
+            perf_sd[0], *[diff_string(x + 1.0) for x in perf_sd[1:]]))
 
     if args.returnfail:
         exit(len(bad_perf))
