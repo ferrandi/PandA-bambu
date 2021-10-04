@@ -7924,12 +7924,9 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       {
          ComputeSsaUses(gn->memuse, ssa_uses);
       }
-      if(!gn->vuses.empty())
+      for(const auto& vuse : gn->vuses)
       {
-         for(const auto& vuse : gn->vuses)
-         {
-            ComputeSsaUses(vuse, ssa_uses);
-         }
+         ComputeSsaUses(vuse, ssa_uses);
       }
    }
 

@@ -1008,9 +1008,14 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
          gn->vuses.insert(new_node);
          GetPointerS<ssa_name>(GET_NODE(new_node))->AddUseStmt(stmt);
       }
-      if(gn->vdef == old_node)
+      if(gn->vovers.find(old_node) != gn->vovers.end())
       {
-         gn->vdef = new_node;
+         gn->vovers.erase(old_node);
+         gn->vovers.insert(new_node);
+      }
+      if(gn->vdef)
+      {
+         RecursiveReplaceTreeNode(gn->vdef, old_node, new_node, stmt, true);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level, "<--Checked virtuals");
    }
