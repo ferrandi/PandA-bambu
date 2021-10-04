@@ -939,7 +939,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
 }
 DesignFlowStep_Status IR_lowering::InternalExec()
 {
-   tree_nodeRef tn = TM->get_tree_node_const(function_id);
+   const auto tn = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
@@ -3156,9 +3156,21 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             else if(GET_NODE(*it_los)->get_kind() == gimple_return_K)
             {
                auto* gr = GetPointer<gimple_return>(GET_NODE(*it_los));
-               if(gr->op && (GetPointer<unary_expr>(GET_NODE(gr->op)) || GetPointer<binary_expr>(GET_NODE(gr->op))))
+               if(gr->op)
                {
-                  extract_expr(gr->op, false);
+                  if(GetPointer<unary_expr>(GET_NODE(gr->op)) || GetPointer<binary_expr>(GET_NODE(gr->op)))
+                  {
+                     extract_expr(gr->op, false);
+                  }
+               }
+               else
+               {
+                  const auto ret_type = tree_helper::GetFunctionReturnType(tn);
+                  if(ret_type)
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Control reaches end of non-void function, '" + tree_helper::print_function_name(TM, fd) + "' will return zero");
+                     gr->op = TM->CreateUniqueIntegerCst(0LL, ret_type);
+                  }
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*it_los)->ToString());

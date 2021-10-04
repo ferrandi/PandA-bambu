@@ -2808,6 +2808,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
             if(ret_val)
             {
                const auto gr = GetPointerS<const gimple_return>(GET_CONST_NODE(stmt));
+               THROW_ASSERT(gr->op, "");
                list_of_def_edge.push_back(std::make_pair(gr->op, bb->number));
             }
             bb->RemoveStmt(stmt, AppM);
