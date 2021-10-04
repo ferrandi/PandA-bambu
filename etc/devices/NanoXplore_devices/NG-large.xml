@@ -101,6 +101,9 @@
       <cmd name="        if NXMAPversion == 2:"/>
       <cmd name="            LUTs=trimmed[:trimmed.index(' ')]"/>
       <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
+      <cmd name="        if NXMAPversion == 3:"/>
+      <cmd name="            trimmed=trimmed.lstrip()"/>
+      <cmd name="            TotalRegisters=trimmed[:trimmed.index('/')]"/>
       <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
       <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
       <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
