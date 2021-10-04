@@ -9,6 +9,7 @@ shift
 shift
 
 workspace_dir=$PWD
+export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH
 
 function cleanup {
    cd $workspace_dir
@@ -21,6 +22,7 @@ git clone --depth 1 --branch $BRANCH git://gcc.gnu.org/git/gcc.git
 cd gcc
 if [[ -f "../$PATCH_FILE" ]]; then
    git apply ../$PATCH_FILE
+   echo "Patch '$PATCH_FILE' applied successfully"
 fi
 ./contrib/download_prerequisites
 mkdir build
