@@ -1,5 +1,7 @@
 --configuration-name=ads add_device_simple/module.c --top-fname=main --generate-tb=BENCHMARKS_ROOT/add_device_simple/test.xml --simulator=XSIM --experimental-setup=BAMBU -O2 --pretty-print=a.c --target-file=BENCHMARKS_ROOT/add_device_simple/xc7z045-2ffg900-VVD.xml
 
+--configuration-name=arf --benchmark-name=arf_simple arf/module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/arf/test.xml
+
 --configuration-name=ars --benchmark-name=un_zynq   arf_res_sharing/module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/arf_res_sharing/test.xml --simulator=ICARUS --experimental-setup=BAMBU --generate-interface=WB4 --clock-period=5 --cprf=0.9 --skip-pipe-parameter=1 
 --configuration-name=ars --benchmark-name=un_vx690t arf_res_sharing/module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/arf_res_sharing/test.xml --simulator=ICARUS --experimental-setup=BAMBU --generate-interface=WB4 --clock-period=5 --cprf=0.9 --skip-pipe-parameter=1 --device-name=xc7vx690t,-3,ffg1930,VVD
 --configuration-name=ars --benchmark-name=un_vc707  arf_res_sharing/module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/arf_res_sharing/test.xml --simulator=ICARUS --experimental-setup=BAMBU --generate-interface=WB4 --clock-period=5 --cprf=0.9 --skip-pipe-parameter=1 --device-name=xc7vx485t,-2,ffg1761,VVD
