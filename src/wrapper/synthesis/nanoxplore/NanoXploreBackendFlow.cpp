@@ -87,7 +87,7 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
    const auto bypass_name = std::getenv("NANOXPLORE_BYPASS");
    if((!bypass_name || std::string(bypass_name) == "") && !Param->isOption(OPT_nanoxplore_bypass))
    {
-      THROW_WARNING("NanoXplore bypass was not specified. User must set NANOXPLORE_BYPASS variable or use --nanoxplore-bypass option.");
+      THROW_WARNING("NanoXplore bypass was not specified. User may set NANOXPLORE_BYPASS variable or use --nanoxplore-bypass option.");
    }
 
    default_data["NG-medium"] = "NG-medium.data";
