@@ -7,7 +7,7 @@ import os
 from collections import defaultdict
 
 benchname_col = 'Benchmark'
-score_col = 'Score'
+score_col = 'USER SCORE'
 
 
 class SplitArgs(argparse.Action):
@@ -82,7 +82,9 @@ def diff_string(diff, base_val=None, new_val=None):
         prec = 2
         if base_val.is_integer() and new_val.is_integer():
             prec = 0
-        return "{0: .2%} ({1:.{3}f}/{2:.{3}f})".format(diff, new_val, base_val, prec)
+        if diff == 0.0:
+            return "{0: .2%} ({1:.{2}f})".format(diff, base_val, prec)
+        return "{0: .2%} ({2:.{3}f}/{1:.{3}f})".format(diff, base_val, new_val, prec)
     else:
         return "{0: .2%}".format(diff)
 
@@ -90,17 +92,27 @@ def diff_string(diff, base_val=None, new_val=None):
 def print_results(comp_list, base_dict, new_dict, datapoints, score_computed):
     if len(comp_list) > 0:
         row_format = "{:50}" + "{:<30}" * (len(datapoints))
+        means = [0.0 for x in datapoints]
+        vars = [0.0 for x in datapoints]
         print(row_format.format('Benchmark', *datapoints))
         for it in comp_list:
             it_score = it.pop()
             base_bench = base_dict[it[0]]
             new_bench = new_dict[it[0]]
+            for idx, x in enumerate(it[1:]):
+                means[idx] += x - 1.0
+                vars[idx] += (x - 1.0) ** 2
             if score_computed:
                 print(row_format.format(
-                    it[0], *[diff_string(x, new_bench[datapoints[idx]], base_bench[datapoints[idx]]) for idx, x in enumerate(it[1:])], "{:.2 f}".format(it_score)))
+                    it[0], *[diff_string(x, base_bench[datapoints[idx]], new_bench[datapoints[idx]]) for idx, x in enumerate(it[1:])], "{: .2f}".format(it_score)))
             else:
                 print(row_format.format(
-                    it[0], *[diff_string(x, new_bench[datapoints[idx]], base_bench[datapoints[idx]]) for idx, x in enumerate(it[1:])]))
+                    it[0], *[diff_string(x, base_bench[datapoints[idx]], new_bench[datapoints[idx]]) for idx, x in enumerate(it[1:])]))
+        print('--------------------------------------------------')
+        print(row_format.format(
+            'Mean', *[diff_string(x / len(comp_list) + 1.0) for x in means]))
+        print(row_format.format('Standard deviation', *
+              [diff_string(math.sqrt((x / len(comp_list)) - ((means[idx] / len(comp_list)) ** 2)) + 1.0) for idx, x in enumerate(vars)]))
 
 
 def print_results_to_csv(comp_list, base_dict, new_dict, datapoints, score_weights, score_computed, csv_file, first_col='Benchmark'):
@@ -151,12 +163,14 @@ def main():
     selected_datapoints = args.datapoints
     user_weights = args.score
     outfile = args.output
-    print('Selected datapoints: ' + ', '.join(selected_datapoints))
+    opt_format = "{:20}|" + "{:^11}|" * (len(selected_datapoints))
+    print(opt_format.format('Selected datapoints ', *selected_datapoints))
     score_weight = [1.0 for x in selected_datapoints]
     user_score = user_weights != None and len(user_weights) > 0
     if user_score:
         for idx, w in enumerate(user_weights):
             score_weight[idx] *= float(w)
+        print(opt_format.format('Datapoints weight ', *score_weight))
 
     base_bench_dict = read_results_from_csv(args.base)
     new_bench_dict = read_results_from_csv(args.other)
@@ -169,21 +183,21 @@ def main():
     if len(perf_dict) == 0:
         exit(-1)
 
+    if user_score:
+        selected_datapoints.append(score_col)
+
     perf_mean = ['Mean', *[0.0 for x in selected_datapoints], 0.0]
+    perf_sd = ['Standard deviation', *[0.0 for x in selected_datapoints]]
     for bench_name in perf_dict:
         perf_point = perf_dict[bench_name]
         for idx in range(1, len(selected_datapoints) + 1):
             perf_mean[idx] += perf_point[idx]
+            perf_sd[idx] += perf_point[idx] * perf_point[idx]
 
-    if user_score:
-        selected_datapoints.append(score_col)
-
-    perf_sd = ['Standard deviation', *[0.0 for x in selected_datapoints]]
     for idx in range(1, len(selected_datapoints) + 1):
         perf_mean[idx] /= len(perf_dict)
-        for bench_name in perf_dict:
-            perf_sd[idx] += (perf_dict[bench_name][idx] - perf_mean[idx]) ** 2
-        perf_sd[idx] = math.sqrt(perf_sd[idx] / len(perf_dict))
+        perf_sd[idx] = math.sqrt(
+            (perf_sd[idx] / len(perf_dict)) - (perf_mean[idx] * perf_mean[idx]))
 
     if len(outfile) > 0:
         if os.path.exists(outfile):
@@ -194,25 +208,25 @@ def main():
         print_results_to_csv(good_perf, base_bench_dict,
                              new_bench_dict, selected_datapoints, score_weight, user_score, outfile, 'Improved')
 
-    print('-----------------')
+    print('==================================================')
     print('Degraded benchmarks: ' + str(len(bad_perf)))
     print_results(bad_perf, base_bench_dict,
                   new_bench_dict, selected_datapoints, user_score)
-    print('-----------------')
+    print('==================================================')
     print('Improved benchmarks: ' + str(len(good_perf)))
     print_results(good_perf, base_bench_dict,
                   new_bench_dict, selected_datapoints, user_score)
-    print('-----------------')
+    print('==================================================')
 
     row_format = "{:50}" + "{:<30}" * (len(selected_datapoints))
     print(row_format.format('Benchmark', *selected_datapoints))
     if user_score:
         mean_score = perf_mean.pop()
         print(row_format.format(perf_mean[0], *[diff_string(x)
-                                                for x in perf_mean[1:]], "{:.2 f}".format(mean_score)))
+                                                for x in perf_mean[1:]], "{: .2f}".format(mean_score)))
         var_score = perf_sd.pop()
         print(row_format.format(perf_sd[0], *[diff_string(x + 1.0)
-                                              for x in perf_sd[1:]], "{:.2 f}".format(var_score)))
+                                              for x in perf_sd[1:]], "{: .2f}".format(var_score)))
     else:
         print(row_format.format(
             perf_mean[0], *[diff_string(x) for x in perf_mean[1:]]))
