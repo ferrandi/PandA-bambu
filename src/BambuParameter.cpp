@@ -822,6 +822,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
       << "    --softfloat-subnormal\n"
       << "        Enable the soft-based implementation of floating-point operations with subnormals support.\n\n"
+      << "    --softfloat-noexception\n"
+      << "        Enable the soft-base implementation of floating-point operations without infinity and NaN handling.\n\n"
       << "    --softfloat-norounding\n"
       << "        Enable the soft-based implementation of floating-point operations without rounding.\n\n"
       << "    --libm-std-rounding\n"
@@ -835,7 +837,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --fp-format\n"
       << "        Define arbitrary precision floating-point format by type or by function.\n"
       << "        <func_name>*<exp_bits>*<frac_bits>*<exp_bias>*<round>*<nan>*<one>*<sub>*<sign>* (use comma separated list for multiple definitions)\n"
-      << "           func_name - Set arbitrary floating-point format for a specific function\n"
+      << "           func_name - Set arbitrary floating-point format for a specific function (using @ symbol here will resolve to the top function)\n"
       << "                       (Arbitrary floating-point format will apply to specified function only, use --propaget-fp-format to extend it to called functions)\n"
       << "            exp_bits - Number of bits used by the exponent\n"
       << "           frac_bits - Number of bits used by the fractional value\n"

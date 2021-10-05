@@ -186,7 +186,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             THROW_ERROR("Malformed format request: " + opt);
          }
 
-         const auto f_node = TreeM->GetFunction(format[0]);
+         const auto f_node = format[0] == "@" ? TreeM->GetTreeNode(*AppM->CGetCallGraphManager()->GetRootFunctions().begin()) : TreeM->GetFunction(format[0]);
          if(!f_node)
          {
             THROW_ERROR("Function " + format[0] + " does not exists. (Maybe it has been inlined)");
