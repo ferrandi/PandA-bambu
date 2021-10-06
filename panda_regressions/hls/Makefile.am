@@ -1,4 +1,5 @@
-EXTRA_DIST= CHStone/adpcm/adpcm.c \
+EXTRA_DIST= \
+CHStone/adpcm/adpcm.c \
 CHStone/aes/aes.c \
 CHStone/aes/aes.h \
 CHStone/aes/aes_dec.c \
@@ -75,6 +76,10 @@ CHStone_hlsdiv_list \
 CHStone_list \
 CHStone_memarch_list \
 CHStone_proxy.sh \
+all_clang_CHStone-frontend.sh \
+all_clang_softfloat-tests.sh \
+all_gcc_CHStone-frontend.sh \
+all_gcc_softfloat-tests.sh \
 bambu_specific_test.sh \
 bambu_specific_test/20020108-1.c.gimplePSSA \
 bambu_specific_test/990829-1.c.gimplePSSA \
@@ -188,7 +193,6 @@ function_pointers/qsort_uclibc/qsort-specialized.c \
 function_pointers/qsort_uclibc/qsort.c \
 function_pointers_list_bsearch \
 function_pointers_list_qsort \
-gcc_regression_boards.sh \
 gcc_regression_simple/20000112-1.c \
 gcc_regression_simple/20000113-1.c \
 gcc_regression_simple/20000121-1.c \
@@ -1171,7 +1175,6 @@ gcc_regression_simple_Zynq.sh \
 gcc_regression_simple_Zynq_VVD.sh \
 gcc_regression_simple_reset.sh \
 gcc_regression_simple_verilator \
-gcc_regression_versions.sh \
 generic_CHStone-frontend.sh \
 generic_CHStone-memarch.sh \
 generic_discrepancy_eg_bambu.sh \
@@ -1960,5 +1963,4 @@ testfloat/source/writeHex.c \
 testfloat/source/writeHex.h \
 wb4_interface.sh
 
-TESTS = test_libm_expf.sh test_libm_logf.sh test_libm_powf.sh test_libm_sinecosine.sh test_libm_sqrt.sh  test_libm_sqrtf.sh test_softfloat.sh
-
+TESTS = test_libm_expf.sh test_libm_logf.sh test_libm_powf.sh test_libm_sinecosine.sh test_libm_sqrt.sh test_libm_sqrtf.sh test_softfloat.sh
