@@ -14,7 +14,7 @@ EXTRA_DIST += \
 %D%/softfloat_5SGXEA7N2F45C1_10.0_OSF_sdc_flopoco.tex \
 %D%/softfloat_EP2C70F896C6-R_10.0_OSF_sdc.tex \
 %D%/softfloat_EP2C70F896C6-R_10.0_OSF_sdc_flopoco.tex \
-%D%/softfloat_LFE335EA8FN484C_10.0_OSF_sdc.tex
+%D%/softfloat_LFE335EA8FN484C_10.0_OSF_sdc.tex \
 %D%/softfloat_LFE335EA8FN484C_10.0_OSF_sdc_flopoco.tex \
 %D%/softfloat_list \
 %D%/softfloat_list_lattice \
