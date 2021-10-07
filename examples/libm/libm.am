@@ -3,7 +3,6 @@ EXTRA_DIST += \
 %D%/generic_libm.sh \
 %D%/latex_format_bambu_results.xml \
 %D%/latex_format_bambu_results_simulate.xml \
-%D%/libm-tests_list_synth \
 %D%/libm_5CSEMA5F31C6_06.6_OSF_sdc.tex \
 %D%/libm_5CSEMA5F31C6_06.6_OSF_sdc_flopoco.tex \
 %D%/libm_5CSEMA5F31C6_10.0_OSF_sdc.tex \

@@ -711,7 +711,7 @@ jobs:
     env:
       outname: omp_simd_${{matrix.device}}
       script: generic_omp_simd.sh
-      args: -c=--evaluation=CYCLES -c=--simulator=VERILATOR -c=--clock-period=10
+      args: -c=--evaluation=CYCLES -c=--simulator=VERILATOR -c=--compiler=I386_GCC49 -c=--clock-period=10
     strategy:
       fail-fast: false
       matrix:
@@ -739,7 +739,7 @@ jobs:
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
-          ./examples/omp_simd/${{env.script}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" -c=--device-name=${{matrix.device}} ${{env.args}}
+          ./examples/omp_simd/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" -c=--device-name=${{matrix.device}} ${{env.args}}
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check

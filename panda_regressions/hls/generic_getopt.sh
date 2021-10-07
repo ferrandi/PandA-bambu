@@ -2,18 +2,18 @@
 
 showHelp() {
     use_string="Usage:"
-    legend="\n"
+    legend=$'\n'
     if [[ "$ggo_require_compiler" == "1" ]]; then
         use_string+=" -c=--compiler=<compiler>"
-        legend+="   --compiler     Select frontend compiler for bambu\n"
+        legend+=$'   --compiler     Select frontend compiler for bambu\n'
     fi
     if [[ "$ggo_require_device" == "1" ]]; then
         use_string+=" -c=--device-name=<device>"
-        legend+="   --device-name  Select target device\n"
+        legend+=$'   --device-name  Select target device\n'
     fi
     if [[ "$ggo_require_period" == "1" ]]; then
         use_string+=" -c=--clock-period=<period>"
-        legend+="   --clock-period Select target clock period\n"
+        legend+=$'   --clock-period Select target clock period\n'
     fi
     use_string+=" [test_panda.py args]"
     

@@ -171,6 +171,8 @@ EXTRA_DIST += \
 %D%/gsm_constraints.xml \
 %D%/hls_study_5SGXEA7N2F45C1_02.5_alignedaccess.tex \
 %D%/hls_study_5SGXEA7N2F45C1_custom.tex \
+%D%/hls_study_custom_list \
+%D%/hls_study_list \
 %D%/hls_study_xc7vx690t-3ffg1930-VVD_02.5_alignedaccess.tex \
 %D%/hls_study_xc7vx690t-3ffg1930-VVD_custom.tex \
 %D%/jpeg \
@@ -204,8 +206,6 @@ EXTRA_DIST += \
 %D%/latex_format_bambu_results_altera_synth.xml \
 %D%/latex_format_bambu_results_xilinx_sim.xml \
 %D%/latex_format_bambu_results_xilinx_synth.xml \
-%D%/list \
-%D%/list-VVD-def \
 %D%/mips \
 %D%/mips/not-optimized \
 %D%/mips/not-optimized/imem.h \

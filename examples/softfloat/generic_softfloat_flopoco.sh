@@ -10,7 +10,7 @@ BATCH_ARGS=("--no-iob" "--flopoco" "--registered-inputs=top" "--panda-parameter=
 configuration="${device}_$(printf "%04.1f" $period)_$(echo $compiler | tr '[:upper:]' '[:lower:]')"
 OUT_SUFFIX="${configuration}_softfloat_flopoco"
 
-$(dirname $0)/../etc/scripts/test_panda.py --tool=bambu  \
+$(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=${configuration} ${BATCH_ARGS[*]}"\
    -lsoftfloat_list \
    -o "out_${OUT_SUFFIX}" -b$(dirname $0) \

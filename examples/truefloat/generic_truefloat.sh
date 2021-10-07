@@ -7,7 +7,7 @@ ggo_require_compiler=1
 BATCH_ARGS=("--no-iob" "--soft-float" "--registered-inputs=top" "--panda-parameter=profile-top=1" "--device-name=TO_BE_OVERWRITTEN" "--simulate" "-s")
 OUT_SUFFIX="${compiler}_truefloat"
 
-$(dirname $0)/../etc/scripts/test_panda.py --tool=bambu  \
+$(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=${compiler}_wo-exc --softfloat-noexception   --max-ulp=0 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}_wo-rnd --softfloat-norounding    --max-ulp=4 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}_e11m52 --fp-format=@*11*52*-1023 --max-ulp=0 ${BATCH_ARGS[*]}"\
