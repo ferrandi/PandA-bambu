@@ -1417,7 +1417,7 @@ int BambuParameter::Exec()
          case OPT_XML_CONFIG:
          {
             setOption(OPT_synthesis_flow, HLSFlowStep_Type::XML_HLS_SYNTHESIS_FLOW);
-            setOption(OPT_xml_input_configuration, optarg);
+            setOption(OPT_xml_input_configuration, GetPath(optarg));
             break;
          }
          case OPT_DUMP_CONSTRAINTS:
@@ -2918,10 +2918,11 @@ int BambuParameter::Exec()
 
    while(optind < argc)
    {
-      const auto file_type = GetFileFormat(argv[optind], true);
+      const auto filename = GetPath(argv[optind]);
+      const auto file_type = GetFileFormat(filename, true);
       if(file_type == Parameters_FileFormat::FF_XML_CON)
       {
-         setOption(OPT_constraints_file, argv[optind]);
+         setOption(OPT_constraints_file, filename);
       }
       else if(file_type == Parameters_FileFormat::FF_XML_TEC)
       {
@@ -2932,7 +2933,7 @@ int BambuParameter::Exec()
       else if(file_type == Parameters_FileFormat::FF_AADL)
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
+         setOption(OPT_input_file, input_file + filename);
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_AADL));
       }
 #endif
@@ -2944,17 +2945,17 @@ int BambuParameter::Exec()
       )
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
+         setOption(OPT_input_file, input_file + filename);
          setOption(OPT_input_format, static_cast<int>(file_type));
       }
       else if(file_type == Parameters_FileFormat::FF_RAW or (isOption(OPT_input_format) and getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW))
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
+         setOption(OPT_input_file, input_file + filename);
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_RAW));
          if(!isOption(OPT_pretty_print))
          {
-            setOption(OPT_pretty_print, "_a.c");
+            setOption(OPT_pretty_print, GetPath("_a.c"));
          }
       }
       else
