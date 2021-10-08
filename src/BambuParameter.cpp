@@ -4259,11 +4259,15 @@ void BambuParameter::CheckParameters()
       size_t i_end = splitted.size();
       for(size_t i = 0; i < i_end; i++)
       {
-         std::string command = "cp " + GetPath(splitted[i]) + " " + GetCurrentPath();
-         int ret = PandaSystem(ParameterConstRef(this, null_deleter()), command);
-         if(IsError(ret))
+         const auto filename = GetPath(splitted[i]);
+         if(boost::filesystem::path(filename).parent_path() != GetCurrentPath())
          {
-            THROW_ERROR("cp returns an error");
+            std::string command = "cp " + filename + " " + GetCurrentPath();
+            int ret = PandaSystem(ParameterConstRef(this, null_deleter()), command);
+            if(IsError(ret))
+            {
+               THROW_ERROR("cp returns an error");
+            }
          }
       }
    }
