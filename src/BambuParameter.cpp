@@ -4466,7 +4466,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
-   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap:/opt/NanoXplore/NXmap3");
+   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap");
    setOption(OPT_verilator_parallel, false);
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
