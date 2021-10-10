@@ -166,7 +166,7 @@ jobs:
     runs-on: [self-hosted, long]
     env:
       basename: regression_simple
-      args: --simulator=VERILATOR
+      args: -c=--simulator=VERILATOR
     strategy:
       fail-fast: false
       matrix:
@@ -186,7 +186,7 @@ jobs:
           generic_gcc_regression_simple_eg_ext_pipelined.sh, 
           generic_gcc_regression_simple_eg.sh, 
           generic_gcc_regression_simple.sh ]
-        args: [ '', '-c=-s']
+        args: [ '', '-c=--speculative-sdc-scheduling']
         exclude:
           - compiler: I386_GCC49
             script: generic_gcc_regression_simple_bambu_pretty_print.sh
@@ -239,7 +239,7 @@ jobs:
     concurrency: modelsim
     env:
       basename: regression_simple-vhdl
-      args: --simulator=MODELSIM -c=-wH
+      args: -c=--simulator=MODELSIM -c=-wH
     strategy:
       max-parallel: 2
       fail-fast: false
@@ -377,7 +377,7 @@ jobs:
           I386_GCC8]
     env:
       script: generic_libm-tests.sh
-      args: --simulator=VERILATOR -c=-wH
+      args: -c=--simulator=VERILATOR -c=-wH
       basename: libm-vhdl
     steps:
       - name: Checkout repository
@@ -436,10 +436,10 @@ jobs:
           I386_GCC6, 
           I386_GCC7, 
           I386_GCC8]
-        args: [ '', '-c=-s']
+        args: [ '', '-c=--speculative-sdc-scheduling']
     env:
       script: generic_libm-tests.sh
-      args: --simulator=VERILATOR
+      args: -c=--simulator=VERILATOR
       basename: libm
     steps:
       - name: Checkout repository
@@ -463,7 +463,7 @@ jobs:
         shell: bash
         run: |
           OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
-          if [[ "${{matrix.args}}" = *-c=-s* ]]; then
+          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
             OUTNAME+="_sdc"
           fi
           OUTNAME+="_${{env.basename}}"

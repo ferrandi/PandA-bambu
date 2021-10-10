@@ -6,7 +6,7 @@ ggo_require_device=1
 ggo_require_period=1
 . $script_dir/../../panda_regressions/hls/generic_getopt.sh
 
-BATCH_ARGS=("--no-iob" "-fwhole-program" "-fno-delete-null-pointer-checks" "--experimental-setup=BAMBU-BALANCED-MP" "--simulate" "-s")
+BATCH_ARGS=("--no-iob" "-fwhole-program" "-fno-delete-null-pointer-checks" "--experimental-setup=BAMBU-BALANCED-MP" "--simulate")
 configuration="${device}_$(printf "%04.1f" $period)_$(echo $compiler | tr '[:upper:]' '[:lower:]')"
 OUT_SUFFIX="${configuration}_omp_simd"
 

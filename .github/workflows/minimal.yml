@@ -651,7 +651,7 @@ jobs:
             - compiler: "I386_GCC7" 
               args: "-c=-wH"
             - compiler: "I386_CLANG11" 
-              args: "-c=-s"
+              args: "-c=--speculative-sdc-scheduling"
     env:
       script: generic_CHStone-memarch.sh
       args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}
@@ -687,7 +687,7 @@ jobs:
         shell: bash
         run: |
           OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch_"
-          if [[ "${{matrix.args}}" = *-c=-s* ]]; then
+          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
             OUTNAME+="w-spec"
           else
             OUTNAME+="wo-spec"
@@ -711,7 +711,7 @@ jobs:
     env:
       outname: omp_simd_${{matrix.device}}
       script: generic_omp_simd.sh
-      args: -c=--evaluation=CYCLES -c=--simulator=VERILATOR -c=--compiler=I386_GCC49 -c=--clock-period=10
+      args: -c=--simulator=VERILATOR -c=--compiler=I386_GCC49 -c=--clock-period=10
     strategy:
       fail-fast: false
       matrix:

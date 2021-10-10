@@ -33,7 +33,7 @@ def compare_results(base_dict, new_dict, datapoints, score_weights, compute_scor
     improved_set = []
     for bench_name in base_dict:
         base_bench = base_dict[bench_name]
-        if new_dict[bench_name] != None:
+        if bench_name in new_dict:
             new_bench = new_dict[bench_name]
             comp_point = [bench_name]
             degraded = False
