@@ -21,6 +21,11 @@ if [[ -d "dist" ]]; then
    cp -r dist/. /
 fi
 
+if [[ -d "compiler" ]]; then
+   echo "Bambu compiler dir found. Installing system wide..."
+   cp -r compiler/. /
+fi
+
 GCC_BINS=("`find /usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?'`")
 CLANG_BINS=("`find /clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?'`")
 cd /usr/bin

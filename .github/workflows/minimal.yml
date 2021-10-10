@@ -707,11 +707,11 @@ jobs:
 
   omp-simd:
     needs: [build]
-    runs-on: [self-hosted, altera, intelFPGA, xilinx]
+    runs-on: [self-hosted, altera, intelFPGA, mentor, xilinx]
     env:
       outname: omp_simd_${{matrix.device}}
       script: generic_omp_simd.sh
-      args: -c=--simulator=VERILATOR -c=--compiler=I386_GCC49 -c=--clock-period=10
+      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10
     strategy:
       fail-fast: false
       matrix:
