@@ -62,7 +62,6 @@ REF_FORWARD_DECL(SDCSorter);
 
 class SDCScheduling : public Scheduling
 {
- protected:
    /// The operation graph used to perform scheduling
    OpGraphConstRef op_graph;
 
@@ -88,23 +87,23 @@ class SDCScheduling : public Scheduling
    double margin;
 
    /// Map operation-stage to variable index
-   CustomMap<std::pair<vertex, unsigned int>, unsigned int> operation_to_varindex;
+   CustomUnorderedMap<std::pair<vertex, unsigned int>, unsigned int> operation_to_varindex;
 
    /// The set of unbounded operations
-   CustomSet<vertex> unbounded_operations;
+   // CustomSet<vertex> unbounded_operations;
 
    /// For each shared resource, the operations mapped on it
-   CustomMap<unsigned int, CustomSet<vertex>> sharing_operations;
+   CustomUnorderedMap<unsigned int, CustomSet<vertex>> sharing_operations;
 
    /// Set of reachable operations (in scheduling graph)
-   CustomMap<vertex, CustomSet<vertex>> full_reachability_map;
+   // CustomMap<vertex, CustomSet<vertex>> full_reachability_map;
 
    /// The set of limited resources
-   CustomSet<unsigned int> limited_resources;
+   CustomUnorderedSet<unsigned int> limited_resources;
 
 #ifndef NDEBUG
    /// The set of temporary flow edges added to the op_graph
-   CustomSet<EdgeDescriptor> temp_edges;
+   CustomUnorderedSet<EdgeDescriptor> temp_edges;
 #endif
 
    /**
