@@ -119,9 +119,8 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto true_value_id = TM->new_tree_node_id();
-   const auto boolean_type = tree_man->create_boolean_type();
-   const auto true_value = tree_man->CreateIntegerCst(boolean_type, 1, true_value_id);
+   const auto boolean_type = tree_man->GetBooleanType();
+   const auto true_value = TM->CreateUniqueIntegerCst(1, boolean_type);
 
    bool bb_modified = false;
    const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
@@ -130,15 +129,15 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
    {
       for(const auto& stmt : block.second->CGetStmtList())
       {
-         auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
-         if(behavioral_helper->CanBeSpeculated(stmt->index) or not ga or (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))
+         const auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
+         if(behavioral_helper->CanBeSpeculated(stmt->index) || !ga || (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))
          {
             continue;
          }
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Predicating " + STR(stmt));
-            THROW_ASSERT(!ga->predicate, "unexpected condition");
+            THROW_ASSERT(!ga->predicate || ga->predicate->index == true_value->index, "unexpected condition");
             ga->predicate = true_value;
          }
       }

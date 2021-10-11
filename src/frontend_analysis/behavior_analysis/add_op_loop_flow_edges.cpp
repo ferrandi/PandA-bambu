@@ -80,15 +80,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SCALAR_SSA_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SCALAR_SSA_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP):
       case(PRECEDENCE_RELATIONSHIP):
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -102,7 +102,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 void AddOpLoopFlowEdges::Initialize()
 {
-   if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
+   if(bb_version != 0 && bb_version != function_behavior->GetBBVersion())
    {
       const OpGraphConstRef flg = function_behavior->CGetOpGraph(FunctionBehavior::FLG);
       if(boost::num_vertices(*flg) != 0)

@@ -151,10 +151,10 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
 
    if(!float32_type)
    {
-      float32_type = tree_man->create_integer_type_with_prec(32, true);
-      float32_ptr_type = tree_man->create_pointer_type(float32_type, 32);
-      float64_type = tree_man->create_integer_type_with_prec(64, true);
-      float64_ptr_type = tree_man->create_pointer_type(float64_type, 64);
+      float32_type = tree_man->GetCustomIntegerType(32, true);
+      float32_ptr_type = tree_man->GetPointerType(float32_type, 32);
+      float64_type = tree_man->GetCustomIntegerType(64, true);
+      float64_ptr_type = tree_man->GetPointerType(float64_type, 64);
       if(parameters->isOption(OPT_softfloat_subnormal) && parameters->getOption<bool>(OPT_softfloat_subnormal))
       {
          float32FF->has_subnorm = true;
@@ -186,7 +186,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             THROW_ERROR("Malformed format request: " + opt);
          }
 
-         const auto f_node = TreeM->GetFunction(format[0]);
+         const auto f_node = format[0] == "@" ? TreeM->GetTreeNode(*AppM->CGetCallGraphManager()->GetRootFunctions().begin()) : TreeM->GetFunction(format[0]);
          if(!f_node)
          {
             THROW_ERROR("Function " + format[0] + " does not exists. (Maybe it has been inlined)");
@@ -357,9 +357,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
           funcFF.insert({function_v, _version});
       THROW_ASSERT(insertion.second, "");
    }
-   int_type = !_version->ieee_format() ? tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(_version->userRequired->sign == bit_lattice::U) + _version->userRequired->exp_bits + _version->userRequired->frac_bits), true) :
-                                         nullptr;
-   int_ptr_type = int_type ? tree_man->create_pointer_type(int_type, GetPointer<integer_type>(GET_NODE(int_type))->algn) : nullptr;
+   int_type = !_version->ieee_format() ? tree_man->GetCustomIntegerType(static_cast<unsigned int>(static_cast<uint8_t>(_version->userRequired->sign == bit_lattice::U) + _version->userRequired->exp_bits + _version->userRequired->frac_bits), true) : nullptr;
+   int_ptr_type = int_type ? tree_man->GetPointerType(int_type, GetPointer<integer_type>(GET_NODE(int_type))->algn) : nullptr;
 }
 
 soft_float_cg_ext::~soft_float_cg_ext() = default;
@@ -907,7 +906,7 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
    if(changed_type)
    {
       // Replace function type reference when modifications have been applied
-      f_decl->type = is_ptr_type ? tree_man->create_pointer_type(f_type, ALGN_POINTER) : f_type;
+      f_decl->type = is_ptr_type ? tree_man->GetPointerType(f_type, ALGN_POINTER) : f_type;
    }
    return changed_parm || changed_type;
 }
@@ -1162,15 +1161,15 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
       out_val |= FSign;
    }
 
-   return TreeM->CreateUniqueIntegerCst(static_cast<int64_t>(out_val), GET_INDEX_NODE(tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true)));
+   return TreeM->CreateUniqueIntegerCst(static_cast<int64_t>(out_val), tree_man->GetCustomIntegerType(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true));
 }
 
 #define FLOAT_CAST_FU_NAME "__float_cast"
 
 tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeRef stmt, const tree_nodeRef& ssa, const FloatFormatRef inFF, const FloatFormatRef outFF) const
 {
-   static const auto bool_type_index = tree_man->create_boolean_type()->index;
-   static const auto int_type_index = tree_man->create_default_integer_type()->index;
+   static const auto default_bool_type = tree_man->GetBooleanType();
+   static const auto default_int_type = tree_man->GetSignedIntegerType();
 
 #if HAVE_ASSERTS
    const auto t_kind = GET_CONST_NODE(tree_helper::CGetType(ssa))->get_kind();
@@ -1191,22 +1190,22 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    }
    const std::vector<tree_nodeRef> args = {
        ssa,
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bits), int_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->frac_bits), int_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bias), int_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_rounding), bool_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_nan), bool_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_one), bool_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_subnorm), bool_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->sign == bit_lattice::U ? -1 : (inFF->sign == bit_lattice::ONE ? 1 : 0)), int_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exp_bits), int_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->frac_bits), int_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exp_bias), int_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_rounding), bool_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_nan), bool_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_one), bool_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_subnorm), bool_type_index),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->sign == bit_lattice::U ? -1 : (outFF->sign == bit_lattice::ONE ? 1 : 0)), int_type_index),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bits), default_int_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->frac_bits), default_int_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bias), default_int_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_rounding), default_bool_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_nan), default_bool_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_one), default_bool_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_subnorm), default_bool_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->sign == bit_lattice::U ? -1 : (inFF->sign == bit_lattice::ONE ? 1 : 0)), default_int_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exp_bits), default_int_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->frac_bits), default_int_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exp_bias), default_int_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_rounding), default_bool_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_nan), default_bool_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_one), default_bool_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_subnorm), default_bool_type),
+       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->sign == bit_lattice::U ? -1 : (outFF->sign == bit_lattice::ONE ? 1 : 0)), default_int_type),
    };
    const auto float_cast_call = tree_man->CreateCallExpr(spec_function, args, BUILTIN_SRCP);
    const auto ret_type = tree_helper::GetFunctionReturnType(spec_function);
@@ -1220,7 +1219,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
       bb->PushAfter(cast_stmt, stmt, AppM);
    }
    auto out_var = GetPointer<const gimple_assign>(GET_CONST_NODE(cast_stmt))->op0;
-   const auto out_type = tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true);
+   const auto out_type = tree_man->GetCustomIntegerType(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true);
    if(!tree_helper::IsSameType(ret_type, out_type))
    {
       const auto nop_stmt = tree_man->CreateNopExpr(out_var, out_type, tree_nodeConstRef(), tree_nodeConstRef(), function_id);
@@ -1244,8 +1243,8 @@ tree_nodeRef soft_float_cg_ext::floatNegate(const tree_nodeRef& op, const FloatF
 {
    if(ff->sign == bit_lattice::U)
    {
-      const auto int_ff_type = tree_man->create_integer_type_with_prec(1U + ff->exp_bits + ff->frac_bits, true);
-      return tree_man->create_binary_operation(int_ff_type, op, TreeM->CreateUniqueIntegerCst(1LL << (ff->exp_bits + ff->frac_bits), GET_INDEX_NODE(int_ff_type)), BUILTIN_SRCP, bit_xor_expr_K);
+      const auto int_ff_type = tree_man->GetCustomIntegerType(1U + ff->exp_bits + ff->frac_bits, true);
+      return tree_man->create_binary_operation(int_ff_type, op, TreeM->CreateUniqueIntegerCst(1LL << (ff->exp_bits + ff->frac_bits), int_ff_type), BUILTIN_SRCP, bit_xor_expr_K);
    }
    else
    {
@@ -1258,8 +1257,8 @@ tree_nodeRef soft_float_cg_ext::floatAbs(const tree_nodeRef& op, const FloatForm
 {
    if(ff->sign == bit_lattice::U)
    {
-      const auto int_ff_type = tree_man->create_integer_type_with_prec(1U + ff->exp_bits + ff->frac_bits, true);
-      return tree_man->create_binary_operation(int_ff_type, op, TreeM->CreateUniqueIntegerCst((1LL << (ff->exp_bits + ff->frac_bits)) - 1, GET_INDEX_NODE(int_ff_type)), BUILTIN_SRCP, bit_and_expr_K);
+      const auto int_ff_type = tree_man->GetCustomIntegerType(1U + ff->exp_bits + ff->frac_bits, true);
+      return tree_man->create_binary_operation(int_ff_type, op, TreeM->CreateUniqueIntegerCst((1LL << (ff->exp_bits + ff->frac_bits)) - 1, int_ff_type), BUILTIN_SRCP, bit_and_expr_K);
    }
    else if(ff->sign == bit_lattice::ONE)
    {
@@ -1288,17 +1287,17 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
       THROW_ASSERT(spec_function, "Error cloning function " + fu_name + " (" + STR(called_function->index) + ").");
 
       auto& version_args = versioning_args[spec_function->index];
-      static const auto bool_type_index = tree_man->create_boolean_type()->index;
-      static const auto int_type_index = tree_man->create_default_integer_type()->index;
+      static const auto default_bool_type = tree_man->GetBooleanType();
+      static const auto default_int_type = tree_man->GetSignedIntegerType();
 
-      version_args[0] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exp_bits), int_type_index);
-      version_args[1] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->frac_bits), int_type_index);
-      version_args[2] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exp_bias), int_type_index);
-      version_args[3] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_rounding), bool_type_index);
-      version_args[4] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_nan), bool_type_index);
-      version_args[5] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_one), bool_type_index);
-      version_args[6] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_subnorm), bool_type_index);
-      version_args[7] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->sign == bit_lattice::U ? -1 : (specFF->sign == bit_lattice::ONE ? 1 : 0)), int_type_index);
+      version_args[0] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exp_bits), default_int_type);
+      version_args[1] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->frac_bits), default_int_type);
+      version_args[2] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exp_bias), default_int_type);
+      version_args[3] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_rounding), default_bool_type);
+      version_args[4] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_nan), default_bool_type);
+      version_args[5] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_one), default_bool_type);
+      version_args[6] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_subnorm), default_bool_type);
+      version_args[7] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->sign == bit_lattice::U ? -1 : (specFF->sign == bit_lattice::ONE ? 1 : 0)), default_int_type);
    }
    THROW_ASSERT(static_cast<bool>(versioning_args.count(spec_function->index)), "Static arguments for specialization parameters of " + fu_name + spec_suffix + " (" + STR(spec_function->index) + ") where not specified.");
    std::copy(versioning_args.at(spec_function->index).begin(), versioning_args.at(spec_function->index).end(), std::back_inserter(args));
@@ -1364,7 +1363,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       {
          fn = ae->op;
          const auto called_fd = GetPointerS<const function_decl>(GET_CONST_NODE(fn));
-         ae->type = GET_CONST_NODE(called_fd->type)->get_kind() == pointer_type_K ? called_fd->type : tree_man->create_pointer_type(called_fd->type, ALGN_POINTER);
+         ae->type = GET_CONST_NODE(called_fd->type)->get_kind() == pointer_type_K ? called_fd->type : tree_man->GetPointerType(called_fd->type, ALGN_POINTER);
          modified = true;
       }
       if(tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn))) == BUILTIN_WAIT_CALL)
@@ -1691,8 +1690,8 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                         const auto inFF = bitsize_in == 32 ? float32FF : float64FF;
                         const auto called_function = TreeM->GetFunction(fu_name);
                         THROW_ASSERT(called_function, "The library miss this function " + fu_name);
-                        const auto bool_type_idx = GET_INDEX_CONST_NODE(tree_man->create_boolean_type());
-                        std::vector<tree_nodeRef> args = {ue->op, TreeM->CreateUniqueIntegerCst(inFF->has_nan, bool_type_idx), TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, bool_type_idx)};
+                        const auto bool_type = tree_man->GetBooleanType();
+                        std::vector<tree_nodeRef> args = {ue->op, TreeM->CreateUniqueIntegerCst(inFF->has_nan, bool_type), TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, bool_type)};
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(called_function, args, current_srcp));
                         CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
                         FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
@@ -2309,7 +2308,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             tree_nodeRef int_cst;
             if(type_interface == INTERFACE_TYPE_OUTPUT || _version->ieee_format())
             {
-               int_cst = TreeM->CreateUniqueIntegerCst(static_cast<long long>(cst_val), GET_INDEX_NODE(tree_man->create_integer_type_with_prec(bw, true)));
+               int_cst = TreeM->CreateUniqueIntegerCst(static_cast<long long>(cst_val), tree_man->GetCustomIntegerType(bw, true));
             }
             else
             {
@@ -2332,7 +2331,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       //          const auto ptd_type = tree_helper::CGetPointedType(ic->type);
       //          if(tree_helper::IsRealType(ptd_type))
       //          {
-      //             const auto int_ptr_cst = TreeM->CreateUniqueIntegerCst(ic->value, tree_helper::Size(ptd_type) == 32 ? GET_INDEX_CONST_NODE(float32_ptr_type) : GET_INDEX_CONST_NODE(float64_ptr_type));
+      //             const auto int_ptr_cst = TreeM->CreateUniqueIntegerCst(ic->value, tree_helper::Size(ptd_type) == 32 ? float32_ptr_type : float64_ptr_type);
       //             TreeM->ReplaceTreeNode(current_statement, current_tree_node, int_ptr_cst);
       //             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real pointer type constant " + curr_tn->ToString() + " converted to " + GET_NODE(int_ptr_cst)->ToString());
       //          }

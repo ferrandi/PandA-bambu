@@ -555,14 +555,13 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             /// If there is only a single vuse replace vdef with vuse in all the uses of vdef
             if(gn->vuses.size() == 1)
             {
-               auto vuse = *(gn->vuses.begin());
-               while(virtual_ssa->CGetUseStmts().size())
+               const auto vuse = *(gn->vuses.begin());
+               if(vuse->index != virtual_ssa->index)
                {
-                  auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
-                  TM->ReplaceTreeNode(use_stmt, gn->vdef, vuse);
-                  while(virtual_ssa->CGetUseStmts().find(use_stmt) != virtual_ssa->CGetUseStmts().end())
+                  const auto uses = virtual_ssa->CGetUseStmts();
+                  for(const auto& use : uses)
                   {
-                     virtual_ssa->RemoveUse(use_stmt);
+                     TM->ReplaceTreeNode(use.first, gn->vdef, vuse);
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));

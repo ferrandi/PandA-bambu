@@ -603,7 +603,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
       const auto mr = GetPointerS<const mem_ref>(var_node);
       const auto offset = tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(mr->op1)));
       const tree_manipulationRef tm(new tree_manipulation(AppM->get_tree_manager(), Param, AppM));
-      const auto pointer_type = tm->create_pointer_type(mr->type, 8);
+      const auto pointer_type = tm->GetPointerType(mr->type, 8);
       const auto type_string = tree_helper::PrintType(TM, pointer_type);
       if(offset == 0)
       {
@@ -860,10 +860,11 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
       case complex_cst_K:
       {
          const auto cc = GetPointerS<const complex_cst>(node);
+         res += "(";
          res += PrintConstant(cc->real, vppf);
          res += "+";
          res += PrintConstant(cc->imag, vppf);
-         res += "*1i";
+         res += "*1i)";
          break;
       }
       case string_cst_K:
@@ -2540,7 +2541,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          const auto mr = GetPointerS<const mem_ref>(node);
          const auto offset = tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_NODE(mr->op1)));
          const tree_manipulationRef tm(new tree_manipulation(AppM->get_tree_manager(), Param, AppM));
-         const auto pointer_type = tm->create_pointer_type(mr->type, 8);
+         const auto pointer_type = tm->GetPointerType(mr->type, 8);
          const std::string type_string = tree_helper::PrintType(TM, pointer_type);
          if(offset == 0)
          {

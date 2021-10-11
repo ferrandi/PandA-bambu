@@ -565,7 +565,7 @@ void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef
          break;
       }
    }
-   GetPointer<gimple_node>(GET_NODE(statement))->bb_index = 0;
+   GetPointerS<gimple_node>(GET_NODE(statement))->bb_index = 0;
    THROW_ASSERT(original_size != list_of_stmt.size(), "Statement " + statement->ToString() + " not removed from BB" + STR(number));
    if(updated_ssa_uses)
    {
@@ -574,7 +574,7 @@ void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef
       {
          for(size_t counter = 0; counter < use.second; counter++)
          {
-            GetPointer<ssa_name>(GET_NODE(use.first))->RemoveUse(statement);
+            GetPointerS<ssa_name>(GET_NODE(use.first))->RemoveUse(statement);
          }
       }
    }

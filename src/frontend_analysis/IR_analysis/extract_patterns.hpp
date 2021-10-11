@@ -64,13 +64,6 @@ class extract_patterns : public FunctionFrontendFlowStep
  private:
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   /**
-    * look for ternary plus expressions
-    * @param sl is the statement list
-    * @param TM is the tree manager
-    */
-   bool ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM);
-
  public:
    /**
     * Constructor.

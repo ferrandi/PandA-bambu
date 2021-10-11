@@ -651,7 +651,7 @@ jobs:
             - compiler: "I386_GCC7" 
               args: "-c=-wH"
             - compiler: "I386_CLANG11" 
-              args: "-c=-s"
+              args: "-c=--speculative-sdc-scheduling"
     env:
       script: generic_CHStone-memarch.sh
       args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}
@@ -687,7 +687,7 @@ jobs:
         shell: bash
         run: |
           OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch_"
-          if [[ "${{matrix.args}}" = *-c=-s* ]]; then
+          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
             OUTNAME+="w-spec"
           else
             OUTNAME+="wo-spec"
@@ -707,11 +707,11 @@ jobs:
 
   omp-simd:
     needs: [build]
-    runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
+    runs-on: [self-hosted, altera, intelFPGA, mentor, xilinx]
     env:
       outname: omp_simd_${{matrix.device}}
-      args: -c=--evaluation=CYCLES
-      jobs: 8
+      script: generic_omp_simd.sh
+      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10
     strategy:
       fail-fast: false
       matrix:
@@ -739,7 +739,7 @@ jobs:
           export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
           export APPDIR=${{steps.setup.outputs.appdir}}
           mkdir ${{env.report-dir}}
-          ./examples/omp_simd/${{matrix.device}}_10.0_O2.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./examples/omp_simd/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" -c=--device-name=${{matrix.device}} ${{env.args}}
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
@@ -774,6 +774,8 @@ jobs:
             args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS
             datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: lattice
+            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+          - test: nanoxplore
             datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: sim
             datapoints: CYCLES

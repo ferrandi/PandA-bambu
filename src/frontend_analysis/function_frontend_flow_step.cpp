@@ -127,8 +127,8 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
             if(symbolic_step)
             {
 #ifndef NDEBUG
-               if(not(design_flow_manager.lock()->GetStatus(symbolic_signature) == DesignFlowStep_Status::UNEXECUTED or design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::SUCCESS or
-                      design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::UNCHANGED))
+               if(!(design_flow_manager.lock()->GetStatus(symbolic_signature) == DesignFlowStep_Status::UNEXECUTED || design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::SUCCESS ||
+                    design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::UNCHANGED))
                {
                   design_flow_manager.lock()->CGetDesignFlowGraph()->WriteDot("Design_Flow_Error");
                   const auto design_flow_step_info = design_flow_graph->CGetDesignFlowStepInfo(symbolic_step);
@@ -152,9 +152,9 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          }
          case(CALLED_FUNCTIONS):
          {
-            const CallGraphManagerConstRef call_graph_manager = AppM->CGetCallGraphManager();
-            const CallGraphConstRef acyclic_call_graph = call_graph_manager->CGetAcyclicCallGraph();
-            const vertex function_vertex = call_graph_manager->GetVertex(function_id);
+            const auto call_graph_manager = AppM->CGetCallGraphManager();
+            const auto acyclic_call_graph = call_graph_manager->CGetAcyclicCallGraph();
+            const auto function_vertex = call_graph_manager->GetVertex(function_id);
             OutEdgeIterator oe, oe_end;
             for(boost::tie(oe, oe_end) = boost::out_edges(function_vertex, *acyclic_call_graph); oe != oe_end; oe++)
             {
@@ -180,9 +180,9 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          }
          case(CALLING_FUNCTIONS):
          {
-            const CallGraphManagerConstRef call_graph_manager = AppM->CGetCallGraphManager();
-            const CallGraphConstRef acyclic_call_graph = call_graph_manager->CGetAcyclicCallGraph();
-            const vertex function_vertex = call_graph_manager->GetVertex(function_id);
+            const auto call_graph_manager = AppM->CGetCallGraphManager();
+            const auto acyclic_call_graph = call_graph_manager->CGetAcyclicCallGraph();
+            const auto function_vertex = call_graph_manager->GetVertex(function_id);
             InEdgeIterator ie, ie_end;
             for(boost::tie(ie, ie_end) = boost::in_edges(function_vertex, *acyclic_call_graph); ie != ie_end; ie++)
             {
@@ -190,7 +190,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
                const unsigned int calling_function = call_graph_manager->get_function(source);
                if(calling_function != function_id)
                {
-                  vertex function_frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, calling_function));
+                  const auto function_frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, calling_function));
                   DesignFlowStepRef design_flow_step;
                   if(function_frontend_flow_step)
                   {
@@ -208,7 +208,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          }
          case(SAME_FUNCTION):
          {
-            vertex prec_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, function_id));
+            const auto prec_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, function_id));
             DesignFlowStepRef design_flow_step;
             if(prec_step)
             {

@@ -124,19 +124,19 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             if(restart_mem)
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
+               relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
             }
             if(restart_if_opt)
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
+               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
             }
             if(restart_mwi_opt)
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
+               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
             }
             if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
@@ -193,27 +193,24 @@ void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0
 {
    THROW_ASSERT(op0->get_kind() == tree_reindex_K, "expected a tree_reindex object");
    THROW_ASSERT(GET_NODE(op0)->get_kind() == ssa_name_K, "expected a ssa_name object");
-   auto op_ssa_index = GET_INDEX_NODE(op0);
    auto ssa = GetPointer<ssa_name>(GET_NODE(op0));
    THROW_ASSERT(ssa->CGetDefStmts().size() == 1, "unexpected condition");
 
    if(ssa->CGetNumberUses() != 0)
    {
-      unsigned int type_index = tree_helper::get_type_index(TM, op_ssa_index);
+      const auto ssa_type = tree_helper::CGetType(op0);
       tree_nodeRef val;
-      if(tree_helper::is_real(TM, op_ssa_index))
+      if(tree_helper::IsRealType(ssa_type))
       {
-         const auto data_value_id = TM->new_tree_node_id();
-         const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-         val = tree_man->CreateRealCst(TM->GetTreeReindex(type_index), 0.l, data_value_id);
+         val = TM->CreateUniqueRealCst(0.l, ssa_type);
       }
-      else if(tree_helper::is_a_complex(TM, op_ssa_index) || tree_helper::is_a_vector(TM, op_ssa_index))
+      else if(tree_helper::IsComplexType(ssa_type) || tree_helper::IsVectorType(ssa_type))
       {
-         const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-         auto utype = tree_man->create_default_unsigned_integer_type();
-         auto zeroVal = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), GET_INDEX_NODE(utype));
+         const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
+         auto utype = tree_man->GetUnsignedIntegerType();
+         auto zeroVal = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), utype);
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
-         ne_schema[TOK(TOK_TYPE)] = STR(type_index);
+         ne_schema[TOK(TOK_TYPE)] = STR(ssa_type->index);
          ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          ne_schema[TOK(TOK_OP)] = STR(zeroVal->index);
          const auto ne_id = TM->new_tree_node_id();
@@ -222,7 +219,7 @@ void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0
       }
       else
       {
-         val = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), type_index);
+         val = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), ssa_type);
       }
       const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
       for(const auto& use : StmtUses)

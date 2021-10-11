@@ -425,7 +425,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
    if(tree_helper::IsBooleanType(type_node))
    {
-      type_node = tree_man->create_boolean_type();
+      type_node = tree_man->GetBooleanType();
    }
 
    /// create the assignment between condition for bb1 and the new ssa var

@@ -83,24 +83,24 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
-         break;
-      }
-      case(INVALIDATION_RELATIONSHIP):
-      {
+         relationships.insert(std::make_pair(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_FROM_PRAGMA_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PRAGMA_ANALYSIS, WHOLE_APPLICATION));
+#if HAVE_TASTE
+         relationships.insert(std::make_pair(CREATE_ADDRESS_TRANSLATION, WHOLE_APPLICATION));
 #endif
 #if HAVE_BAMBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HDL_FUNCTION_DECL_FIX, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(HDL_FUNCTION_DECL_FIX, WHOLE_APPLICATION));
 #endif
-#if HAVE_TASTE
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_ADDRESS_TRANSLATION, WHOLE_APPLICATION));
+#if HAVE_FROM_PRAGMA_BUILT
+         relationships.insert(std::make_pair(PRAGMA_ANALYSIS, WHOLE_APPLICATION));
 #endif
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
+      {
          break;
       }
       default:

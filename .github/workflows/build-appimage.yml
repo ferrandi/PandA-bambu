@@ -1,0 +1,241 @@
+name: Build AppImage
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Bambu version identifier'
+        required: true
+        default: 'gcc7_clang11'
+      compilers: 
+        description: 'Comma separated list of compilers to include'
+        required: true
+        default: 'gcc7,clang11'
+      build-compiler: 
+        description: 'Compiler used to build bambu (if not already included in compilers)'
+        required: false
+        default: 'gcc8'
+      configure:
+        description: 'Bambu configuration options'
+        required: true
+        default: '--enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8'
+
+concurrency:
+  group: build-appimage-${{ github.event.inputs.version }}
+  cancel-in-progress: true
+
+env:
+  storage-url: ${{secrets.CI_STORAGE_URL}}
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
+  storage-path: distribution
+  dist-pkg: bambu-${{github.event.inputs.version}}
+  dist-dir: dist
+  bcompiler-dir: compiler
+  host_jobs: $J
+
+jobs:
+  build:
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
+      - name: Compilers download configuration
+        id: compilers
+        shell: bash
+        run: |
+          IFS=',' read -r -a compilers <<< "${{github.event.inputs.compilers}}"
+          for compiler in "${compilers[@]}"
+          do
+            echo "::set-output name=$compiler::1"
+          done
+          mkdir ${{env.dist-dir}}
+      - name: Build compiler configuration
+        id: bcompiler
+        shell: bash
+        run: |
+          if [[ ! -z "${{github.event.inputs.build-compiler}}" ]]
+          then
+            mkdir ${{env.bcompiler-dir}}
+            echo "::set-output name=${{github.event.inputs.build-compiler}}::1"
+          fi
+      - name: Download clang compilers
+        shell: bash
+        run: |
+          set -e
+          export XZ_OPT='-T0'
+
+          inflate() {
+            case $1 in
+              clang12 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang11 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang10 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang9 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/clang+llvm-9.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang8 )
+                wget https://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang7 )
+                wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang6 )
+                wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang5 )
+                wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang4 )
+                wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              * )
+                ;;
+            esac
+          } 
+          IFS=',' read -r -a compilers <<< "${{github.event.inputs.compilers}}"
+          for compiler in "${compilers[@]}"
+          do
+            inflate $compiler ${{env.dist-dir}}
+          done
+          wait
+          if [[ ! -z "${{github.event.inputs.build-compiler}}" ]]
+          then
+            inflate ${{github.event.inputs.build-compiler}} ${{env.bcompiler-dir}}
+          fi
+          wait
+      - name: Download gcc 4.9
+        if: ${{steps.compilers.outputs.gcc49}}
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-4.9-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 4.9
+        if: ${{steps.bcompiler.outputs.gcc49}}
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-4.9-bambu-Ubuntu_16.04
+          path: ./${{env.bcompiler-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 5
+        if: ${{steps.compilers.outputs.gcc5}}
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-5-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 5
+        if: ${{steps.bcompiler.outputs.gcc5}}
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-5-bambu-Ubuntu_16.04
+          path: ./${{env.bcompiler-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 6
+        if: ${{steps.compilers.outputs.gcc6}}
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-6-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 6
+        if: ${{steps.bcompiler.outputs.gcc6}}
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-6-bambu-Ubuntu_16.04
+          path: ./${{env.bcompiler-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 7
+        if: ${{steps.compilers.outputs.gcc7}}
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-7-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 7
+        if: ${{steps.bcompiler.outputs.gcc7}}
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-7-bambu-Ubuntu_16.04
+          path: ./${{env.bcompiler-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 8
+        if: ${{steps.compilers.outputs.gcc8}}
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-8-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download gcc 8
+        if: ${{steps.bcompiler.outputs.gcc8}}
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-8-bambu-Ubuntu_16.04
+          path: ./${{env.bcompiler-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Download python appimage
+        uses: ./.github/actions/storage-download
+        with:
+          name: python3.9.7-cp39-cp39-manylinux1_x86_64.AppImage
+          storage-url: '${{env.storage-url}}'
+          storage-path: appimage
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Build Bambu application
+        id: build
+        uses: ./.github/actions/generate-bin
+        with:
+          config-args: ${{github.event.inputs.configure}} --enable-Werror
+          jobs: ${{steps.host.outputs.jobs}}
+      - name: Upload Panda install directory
+        uses: ./.github/actions/storage-upload
+        with:
+          name: ${{env.dist-pkg}}
+          path: ${{steps.build.outputs.dist-dir}}/.
+          storage-url: '${{env.storage-url}}'
+          storage-path: '${{env.storage-path}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+          storage-compression: false

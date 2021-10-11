@@ -351,6 +351,7 @@ inline int PandaSystem(const ParameterConstRef Param, const std::string& system_
    std::ofstream script_file(script_file_name.c_str());
    script_file << "#!/bin/bash" << std::endl;
    script_file << "ulimit -s 131072" << std::endl;
+   script_file << "cd " << GetCurrentPath() << std::endl;
    THROW_ASSERT(not background or timeout == 0, "Background and timeout cannot be specified at the same time");
    if(background)
    {

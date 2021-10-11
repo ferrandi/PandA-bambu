@@ -67,8 +67,9 @@
 #endif
 #include "string_manipulation.hpp" // for STR GET_CLASS
 #include "tree_common.hpp"         // for target_mem_ref461_K, targe...
-#include "tree_manager.hpp"        // for ParameterConstRef, tree_no...
-#include "tree_node.hpp"           // for tree_nodeRef, tree_node
+#include "tree_helper.hpp"
+#include "tree_manager.hpp" // for ParameterConstRef, tree_no...
+#include "tree_node.hpp"    // for tree_nodeRef, tree_node
 #include "tree_reindex.hpp"
 
 application_manager::application_manager(const FunctionExpanderConstRef function_expander, const bool _single_root_function, const bool _allow_recursive_functions, const ParameterConstRef _Param)
@@ -388,11 +389,17 @@ void application_manager::RegisterTransformation(const std::string&
 )
 {
 #ifndef NDEBUG
-   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_max_transformations), step + " - " + (new_tn ? new_tn->ToString() : "") + " Transformations " + STR(cfg_transformations));
+   std::string tn_str = "";
+   if(new_tn)
+   {
+      const auto tn = new_tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(new_tn) : new_tn;
+      tn_str = tn->get_kind() == function_decl_K ? ("@" + STR(new_tn->index) + tree_helper::print_function_name(get_tree_manager(), GetPointerS<const function_decl>(tn))) : tn->ToString();
+   }
+   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_max_transformations), step + " - " + tn_str + " Transformations " + STR(cfg_transformations));
    cfg_transformations++;
    if(Param->getOption<size_t>(OPT_max_transformations) != std::numeric_limits<size_t>::max())
    {
-      INDENT_OUT_MEX(0, 0, "---Transformation " + STR(cfg_transformations) + " - " + step + " - " + (new_tn ? new_tn->ToString() : ""));
+      INDENT_OUT_MEX(0, 0, "---Transformation " + STR(cfg_transformations) + " - " + step + " - " + tn_str);
    }
 #endif
 }

@@ -351,13 +351,13 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             if(!first_operand_of_first && !first_operand_of_second)
             {
                tree_nodeRef lut_constant_node;
-               auto DefaultUnsignedLongLongInt = tree_man->CreateDefaultUnsignedLongLongInt();
-               lut_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(DefaultUnsignedLongLongInt));
-               auto boolType = tree_man->create_boolean_type();
+               auto DefaultUnsignedLongLongInt = tree_man->GetUnsignedLongLongType();
+               lut_constant_node = TM->CreateUniqueIntegerCst(1, DefaultUnsignedLongLongInt);
+               auto boolType = tree_man->GetBooleanType();
                tree_nodeRef op2, op3, op4, op5, op6, op7, op8;
                const std::string srcp_default = BUILTIN_SRCP;
                tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, first_ce->op0, op2, op3, op4, op5, op6, op7, op8, srcp_default);
-               auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), new_op1, function_id, block.first, srcp_default);
+               auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id, block.first, srcp_default);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT NOT " + STR(lut_ga));
                block.second->PushBefore(lut_ga, *stmt, AppM);
                new_tree_nodes.push_back(lut_ga);
@@ -370,16 +370,16 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             }
             else
             {
-               auto boolType = tree_man->create_boolean_type();
+               auto boolType = tree_man->GetBooleanType();
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Simplified to 0");
-               and_first_cond = TM->CreateUniqueIntegerCst(0, boolType->index);
+               and_first_cond = TM->CreateUniqueIntegerCst(0, boolType);
             }
          }
          else
          {
             /// we are going to create a LUT
             tree_nodeRef lut_constant_node;
-            auto DefaultUnsignedLongLongInt = tree_man->CreateDefaultUnsignedLongLongInt();
+            auto DefaultUnsignedLongLongInt = tree_man->GetUnsignedLongLongType();
             long long int lut_val;
             if(!first_operand_of_first && !first_operand_of_second)
             {
@@ -397,12 +397,12 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             {
                lut_val = 8;
             }
-            lut_constant_node = TM->CreateUniqueIntegerCst(lut_val, GET_INDEX_NODE(DefaultUnsignedLongLongInt));
-            auto boolType = tree_man->create_boolean_type();
+            lut_constant_node = TM->CreateUniqueIntegerCst(lut_val, DefaultUnsignedLongLongInt);
+            auto boolType = tree_man->GetBooleanType();
             tree_nodeRef op3, op4, op5, op6, op7, op8;
             const std::string srcp_default = BUILTIN_SRCP;
             tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, second_ce->op0, first_ce->op0, op3, op4, op5, op6, op7, op8, srcp_default);
-            auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), new_op1, function_id, block.first, srcp_default);
+            auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id, block.first, srcp_default);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT STD " + STR(lut_ga));
             block.second->PushBefore(lut_ga, *stmt, AppM);
             new_tree_nodes.push_back(lut_ga);

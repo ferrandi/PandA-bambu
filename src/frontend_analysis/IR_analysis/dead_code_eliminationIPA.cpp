@@ -291,8 +291,8 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
    std::vector<tree_nodeRef> loa = fd->list_of_args, argsT;
    arg_eraser(loa, nullptr);
    std::transform(loa.cbegin(), loa.cend(), std::back_inserter(argsT), [&](const tree_nodeRef& arg) { return TM->GetTreeReindex(tree_helper::get_type_index(TM, GET_INDEX_CONST_NODE(arg))); });
-   const auto ftype = tree_man->create_function_type(GetPointerS<const function_type>(GET_CONST_NODE(fd->type))->retn, argsT);
-   const auto ftype_ptr = tree_man->create_pointer_type(ftype, ALGN_POINTER);
+   const auto ftype = tree_man->GetFunctionType(GetPointerS<const function_type>(GET_CONST_NODE(fd->type))->retn, argsT);
+   const auto ftype_ptr = tree_man->GetPointerType(ftype, ALGN_POINTER);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused arguments from call points");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ie++)

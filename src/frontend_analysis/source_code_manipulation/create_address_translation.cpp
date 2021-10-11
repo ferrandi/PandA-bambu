@@ -87,7 +87,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -98,7 +98,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS)
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          }
          break;
       }

@@ -21,6 +21,11 @@ if [[ -d "dist" ]]; then
    cp -r dist/. /
 fi
 
+if [[ -d "compiler" ]]; then
+   echo "Bambu compiler dir found. Installing system wide..."
+   cp -r compiler/. /
+fi
+
 GCC_BINS=("`find /usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?'`")
 CLANG_BINS=("`find /clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?'`")
 cd /usr/bin
@@ -112,29 +117,25 @@ cp style/img/panda.png.in dist/bambu.png
 cat > dist/bambu.desktop << EOF
 [Desktop Entry]
 Name=bambu
-Exec=bambu_wrapper.sh
+Exec=tool_select.sh
 Icon=bambu
 Type=Application
 Terminal=true
 Categories=Development;
 EOF
-cat > dist/usr/bin/bambu_wrapper.sh << EOF
+cat > dist/usr/bin/tool_select.sh << EOF
 #!/bin/bash
 export LC_ALL="C"
 export PYTHONHOME=
 export PYTHONPATH=
-if [ "\$#" -eq 0 ]; then
-   \$APPDIR/usr/bin/bambu
-else
-   \$APPDIR/usr/bin/bambu "\$@"
-   return_value=\$?
-   if test \$return_value != 0; then
-      exit \$return_value
-   fi
-   exit 0
+BINARY_NAME=$(basename "$ARGV0")
+BINARY_PATH="$APPDIR/usr/bin/$(basename $ARGV0)"
+if [ ! -e "$BINARY_PATH" ]; then
+   BINARY_PATH="$APPDIR/usr/bin/bambu"
 fi
+exec "$BINARY_PATH" "$@"
 EOF
-chmod a+x dist/usr/bin/bambu_wrapper.sh
+chmod a+x dist/usr/bin/tool_select.sh
 
 echo "Generating appimage..."
 curl -L https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64 -o dist/AppRun -s

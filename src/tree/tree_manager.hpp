@@ -132,7 +132,7 @@ class tree_manager
    /// this table stores all identifier_nodes with their nodeID.
    CustomUnorderedMapUnstable<std::string, unsigned int> identifiers_unique_table;
 
-   CustomUnorderedMap<std::pair<long long int, unsigned int>, tree_nodeRef> unique_integer_cst_map;
+   CustomUnorderedMap<std::pair<std::string, unsigned int>, tree_nodeRef> unique_cst_map;
 
    /// Set of parameters
    const ParameterConstRef Param;
@@ -175,6 +175,8 @@ class tree_manager
     * @param stmt is the statement that is inserted in the usage vector of ssa variables.
     */
    void insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef& stmt);
+
+   tree_nodeRef create_unique_const(const std::string& val, const tree_nodeConstRef& type);
 
  public:
    /**
@@ -464,9 +466,17 @@ class tree_manager
     * memoization of integer constants
     * @param value is the integer value
     * @param type_index is the type of the integer constant
-    * @return a tree reindex node for the integer value with as type type_index
+    * @return a tree reindex node for the integer value with as type type
     */
-   tree_nodeRef CreateUniqueIntegerCst(long long int value, unsigned int type_index);
+   tree_nodeRef CreateUniqueIntegerCst(long long int value, const tree_nodeConstRef& type);
+
+   /**
+    * memoization of integer constants
+    * @param value is the real value
+    * @param type_index is the type of the real constant
+    * @return a tree reindex node for the real value with as type type
+    */
+   tree_nodeRef CreateUniqueRealCst(long double value, const tree_nodeConstRef& type);
 
    /**
     * @brief is_CPP return true in case we have at least one CPP source code

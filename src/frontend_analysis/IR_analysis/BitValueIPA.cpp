@@ -375,7 +375,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
             current.clear();
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After mix id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
 
-            AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
+            AppM->RegisterTransformation(GetName(), fu_node);
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Propagated bitvalue of the return value of function " + fu_name);
          }

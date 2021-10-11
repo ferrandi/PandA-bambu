@@ -1,0 +1,11 @@
+EXTRA_DIST += \
+%D%/src \
+%D%/src/f64div.c \
+%D%/src/f64exp.c \
+%D%/src/f64mul.c \
+%D%/src/f64pow.c \
+%D%/src/f64sqrt.c \
+%D%/src/f64sub.c \
+%D%/src/f64sum.c \
+%D%/generic_truefloat.sh \
+%D%/truefloat_list

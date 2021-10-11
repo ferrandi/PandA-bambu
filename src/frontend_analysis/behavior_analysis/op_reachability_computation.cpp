@@ -67,8 +67,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          /// This dependence is necessary to guarantee that FunctionBehavior::CheckReachability can be used
          /// FunctionBehavior::CheckReachability indeed uses map_levels
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_ORDER_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_ORDER_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

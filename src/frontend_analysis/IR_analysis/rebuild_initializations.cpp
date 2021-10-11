@@ -167,7 +167,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(B->number));
    }
-   const auto integer_type = tree_man->create_default_integer_type();
+   const auto integer_type = tree_man->GetSignedIntegerType();
    for(const auto& init : inits)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Rebuilding init of " + STR(init.first));
@@ -184,15 +184,15 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
       for(index = 0; index <= last_index; index++)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(index));
-         if(init.second.find(index) != init.second.end())
+         if(init.second.count(index))
          {
-            constr->add_idx_valu(tree_man->CreateIntegerCst(integer_type, index, TM->new_tree_node_id()), init.second.find(index)->second);
+            constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), init.second.find(index)->second);
          }
          else
          {
             THROW_ASSERT(GET_CONST_NODE(element_type)->get_kind() == integer_type_K, "Type not supported " + STR(element_type));
-            const auto default_value = tree_man->CreateIntegerCst(element_type, 0, TM->new_tree_node_id());
-            constr->add_idx_valu(tree_man->CreateIntegerCst(integer_type, index, TM->new_tree_node_id()), default_value);
+            const auto default_value = TM->CreateUniqueIntegerCst(0, element_type);
+            constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), default_value);
          }
       }
       GetPointerS<var_decl>(GET_NODE(init.first))->init = TM->GetTreeReindex(constructor_index);
@@ -1254,7 +1254,7 @@ bool rebuild_initialization2::look_for_ROMs()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined for write BB" + STR(B->number));
    }
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-   const auto integer_type = tree_man->create_default_integer_type();
+   const auto integer_type = tree_man->GetSignedIntegerType();
    for(const auto& init : inits)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Rebuilding init of " + STR(init.first));
@@ -1271,15 +1271,15 @@ bool rebuild_initialization2::look_for_ROMs()
       for(index = 0; index <= last_index; index++)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(index));
-         if(init.second.find(index) != init.second.end())
+         if(init.second.count(index))
          {
-            constr->add_idx_valu(tree_man->CreateIntegerCst(integer_type, index, TM->new_tree_node_id()), init.second.find(index)->second);
+            constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), init.second.find(index)->second);
          }
          else
          {
             THROW_ASSERT(GET_CONST_NODE(element_type)->get_kind() == integer_type_K, "Type not supported " + STR(element_type));
-            const auto default_value = tree_man->CreateIntegerCst(element_type, 0, TM->new_tree_node_id());
-            constr->add_idx_valu(tree_man->CreateIntegerCst(integer_type, index, TM->new_tree_node_id()), default_value);
+            const auto default_value = TM->CreateUniqueIntegerCst(0, element_type);
+            constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), default_value);
          }
       }
       GetPointerS<var_decl>(GET_NODE(init.first))->init = TM->GetTreeReindex(constructor_index);

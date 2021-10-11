@@ -115,29 +115,6 @@ simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, cons
 
 simple_code_motion::~simple_code_motion() = default;
 
-void simple_code_motion::Initialize()
-{
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-   if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
-   {
-      if(parameters->isOption(OPT_scheduling_algorithm) and parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
-      {
-         const auto TM = AppM->get_tree_manager();
-         schedule = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
-#if 0
-         tree_nodeRef temp = TM->get_tree_node_const(function_id);
-         function_decl * fd = GetPointer<function_decl>(temp);
-         statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-         for(const auto block : sl->list_of_bloc)
-         {
-            block.second->schedule = schedule;
-         }
-#endif
-      }
-   }
-#endif
-}
-
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -185,6 +162,29 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
    return relationships;
 }
 
+void simple_code_motion::Initialize()
+{
+#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+   if(GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
+   {
+      if(parameters->isOption(OPT_scheduling_algorithm) && parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
+      {
+         const auto TM = AppM->get_tree_manager();
+         schedule = GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
+#if 0
+         tree_nodeRef temp = TM->get_tree_node_const(function_id);
+         function_decl * fd = GetPointer<function_decl>(temp);
+         statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+         for(const auto block : sl->list_of_bloc)
+         {
+            block.second->schedule = schedule;
+         }
+#endif
+      }
+   }
+#endif
+}
+
 FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned int
 #if(HAVE_BAMBU_BUILT) || !defined(NDEBUG)
                                                                       bb_index
@@ -222,7 +222,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because right part is constant");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
-   if(GET_NODE(ga->op0)->get_kind() == ssa_name_K and GET_NODE(ga->op1)->get_kind() == ssa_name_K)
+   if(GET_NODE(ga->op0)->get_kind() == ssa_name_K && GET_NODE(ga->op1)->get_kind() == ssa_name_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
@@ -231,7 +231,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
    tree_helper::compute_ssa_uses_rec_ptr(ga->op1, rhs_ssa_uses);
    tree_nodeRef right = GET_NODE(ga->op1);
 
-   if(rhs_ssa_uses.empty() and right->get_kind() != call_expr_K and right->get_kind() != aggr_init_expr_K and right->get_kind() != var_decl_K and right->get_kind() != mem_ref_K)
+   if(rhs_ssa_uses.empty() && right->get_kind() != call_expr_K && right->get_kind() != aggr_init_expr_K && right->get_kind() != var_decl_K && right->get_kind() != mem_ref_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because there is not any use of ssa in right part");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
@@ -436,7 +436,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             const bool is_gimple_cond_input = [&]()
             {
                const auto sn = GetPointer<const ssa_name>(left);
-               if(not sn)
+               if(!sn)
                   return false;
                const auto use_stmts = sn->CGetUseStmts();
                if(use_stmts.size() != 1)
@@ -641,65 +641,55 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
 
 DesignFlowStep_Status simple_code_motion::InternalExec()
 {
-   const tree_managerRef TM = AppM->get_tree_manager();
+   const auto TM = AppM->get_tree_manager();
    bool modified = false;
    restart_ifmwi_opt = false;
 
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   auto* fd = GetPointer<function_decl>(temp);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
 
-   std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
-   std::map<unsigned int, blocRef>::iterator it3, it3_end = list_of_bloc.end();
-
-   const auto BVP_computation_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BUILD_VIRTUAL_PHI, function_id);
-   const auto BVP_computation_vertex = design_flow_manager.lock()->GetDesignFlowStep(BVP_computation_signature);
-   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const auto BVP_computation_step = design_flow_graph->CGetDesignFlowStepInfo(BVP_computation_vertex)->design_flow_step;
-   auto BVP_executed = GetPointer<const FunctionFrontendFlowStep>(BVP_computation_step)->CGetBBVersion() != 0;
-
-   bool isFunctionPipelined = BVP_executed ? AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline() : false;
+   const auto isFunctionPipelined = AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline();
 
    /// store the GCC BB graph ala boost::graph
-   auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
+   const auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(bb_graph_info, parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
    CustomUnorderedMap<vertex, unsigned int> direct_vertex_map;
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
+   const auto& list_of_bloc = sl->list_of_bloc;
    for(const auto& block : list_of_bloc)
    {
       inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
       direct_vertex_map[inverse_vertex_map[block.first]] = block.first;
    }
    /// add edges
-   for(it3 = list_of_bloc.begin(); it3 != it3_end; ++it3)
+   for(const auto& bbi_bb : list_of_bloc)
    {
-      unsigned int curr_bb = it3->first;
-      auto lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
-      for(auto lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it != lop_it_end; ++lop_it)
+      const auto& bbi = bbi_bb.first;
+      const auto& bb = bbi_bb.second;
+      for(const auto& pred : bb->list_of_pred)
       {
-         THROW_ASSERT(inverse_vertex_map.find(*lop_it) != inverse_vertex_map.end(), "BB" + STR(*lop_it) + " (predecessor of " + STR(curr_bb) + ") does not exist");
-         THROW_ASSERT(inverse_vertex_map.find(curr_bb) != inverse_vertex_map.end(), STR(curr_bb));
-         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[*lop_it], inverse_vertex_map[curr_bb], CFG_SELECTOR);
+         THROW_ASSERT(inverse_vertex_map.count(pred), "BB" + STR(pred) + " (predecessor of " + STR(bbi) + ") does not exist");
+         THROW_ASSERT(inverse_vertex_map.count(bbi), STR(bbi));
+         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(pred), inverse_vertex_map.at(bbi), CFG_SELECTOR);
       }
-      auto los_it_end = list_of_bloc[curr_bb]->list_of_succ.end();
-      for(auto los_it = list_of_bloc[curr_bb]->list_of_succ.begin(); los_it != los_it_end; ++los_it)
+      for(const auto& succ : bb->list_of_succ)
       {
-         if(*los_it == bloc::EXIT_BLOCK_ID)
+         if(succ == bloc::EXIT_BLOCK_ID)
          {
-            GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bb], inverse_vertex_map[*los_it], CFG_SELECTOR);
+            GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(bbi), inverse_vertex_map.at(succ), CFG_SELECTOR);
          }
       }
-      if(list_of_bloc[curr_bb]->list_of_succ.empty())
+      if(bb->list_of_succ.empty())
       {
-         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bb], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
+         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(bbi), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
       }
    }
-   bb_graph_info->entry_vertex = inverse_vertex_map[bloc::ENTRY_BLOCK_ID];
-   bb_graph_info->exit_vertex = inverse_vertex_map[bloc::EXIT_BLOCK_ID];
+   bb_graph_info->entry_vertex = inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID);
+   bb_graph_info->exit_vertex = inverse_vertex_map.at(bloc::EXIT_BLOCK_ID);
    /// add a connection between entry and exit thus avoiding problems with non terminating code
-   GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
+   GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
    /// sort basic block vertices from the entry till the exit
    std::list<vertex> bb_sorted_vertices;
    cyclic_topological_sort(*GCC_bb_graph, std::front_inserter(bb_sorted_vertices));
@@ -711,8 +701,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       counter++;
    }
 
-   refcount<dominance<BBGraph>> bb_dominators;
-   bb_dominators = refcount<dominance<BBGraph>>(new dominance<BBGraph>(*GCC_bb_graph, inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], parameters));
+   std::unique_ptr<dominance<BBGraph>> bb_dominators(new dominance<BBGraph>(*GCC_bb_graph, inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), parameters));
    bb_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
    const auto& bb_dominator_map = bb_dominators->get_dominator_map();
 
@@ -727,7 +716,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          for(const auto& statement : block.second->CGetStmtList())
          {
             const auto* gp = GetPointer<const gimple_pragma>(GET_NODE(statement));
-            if(gp and GetPointer<const omp_pragma>(GET_NODE(gp->scope)) and GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive)))
+            if(gp && GetPointer<const omp_pragma>(GET_NODE(gp->scope)) && GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive)))
             {
                THROW_ASSERT(boost::out_degree(inverse_vertex_map[block.first], *GCC_bb_graph) == 1, "OpenMP simd pragma block has more than one successor");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found openmp pragma");
@@ -751,7 +740,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       for(const auto simd_loop_header : simd_loop_headers)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing loop basic blocks of Loop " + STR(direct_vertex_map[simd_loop_header]));
-         const unsigned int loop_id = list_of_bloc[direct_vertex_map[simd_loop_header]]->loop_id;
+         const unsigned int loop_id = list_of_bloc.at(direct_vertex_map[simd_loop_header)]->loop_id;
          CustomSet<vertex> already_processed;
          std::list<vertex> to_be_processed;
          InEdgeIterator ie, ie_end;
@@ -759,7 +748,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          {
             const vertex source = boost::source(*ie, *GCC_bb_graph);
             ///If the loop id is less than the current the source is inside a previous loop, if it is equal it is in the same loop if it is larger is in the nested loop
-            if(list_of_bloc[direct_vertex_map[source]]->loop_id >= loop_id)
+            if(list_of_bloc.at(direct_vertex_map[source)]->loop_id >= loop_id)
             {
                to_be_processed.push_front(source);
             }
@@ -778,7 +767,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                {
                   continue;
                }
-               const unsigned int source_loop_id = list_of_bloc[direct_vertex_map[source]]->loop_id;
+               const unsigned int source_loop_id = list_of_bloc.at(direct_vertex_map[source)]->loop_id;
                ///If source loop id is larger than current loop id, the examined edge is a feedback edge of a loop nested in the current one
                if(source_loop_id > loop_id)
                   to_be_processed.push_front(source);
@@ -798,7 +787,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
    for(const auto bb_vertex : bb_sorted_vertices)
    {
-      unsigned int curr_bb = direct_vertex_map[bb_vertex];
+      const auto curr_bb = direct_vertex_map.at(bb_vertex);
       bool parallel_bb = to_be_parallelized.find(bb_vertex) != to_be_parallelized.end();
       if(curr_bb == bloc::ENTRY_BLOCK_ID)
       {
@@ -811,11 +800,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 #if 0
       /// skip BB having a pred block with a gimple_multi_way_if statement as last statement
       bool have_multi_way_if_pred = false;
-      for(const auto pred : list_of_bloc[curr_bb]->list_of_pred)
+      for(const auto pred : list_of_bloc.at(curr_bb)->list_of_pred)
       {
-         if(!list_of_bloc[pred]->list_of_stmt.empty())
+         if(!list_of_bloc.at(pred)->list_of_stmt.empty())
          {
-            tree_nodeRef last = GET_NODE(list_of_bloc[pred]->list_of_stmt.back());
+            tree_nodeRef last = GET_NODE(list_of_bloc.at(pred)->list_of_stmt.back());
             if(GetPointer<gimple_multi_way_if>(last))
                have_multi_way_if_pred = true;
          }
@@ -833,7 +822,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_simple_code_motion_" + STR(counter) + ".dot");
             counter++;
          }
-         const auto& list_of_stmt = list_of_bloc[curr_bb]->CGetStmtList();
+         const auto& list_of_stmt = list_of_bloc.at(curr_bb)->CGetStmtList();
          std::list<tree_nodeRef> to_be_removed;
          CustomOrderedSet<unsigned int> zero_delay_stmts;
          std::list<tree_nodeRef> to_be_added_back;
@@ -847,14 +836,14 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             auto* gn = GetPointer<gimple_node>(tn);
 
             THROW_ASSERT(gn, "unexpected condition");
-            if(not isFunctionPipelined and not parallel_bb and gn->vdef) /// load can be loop pipelined/predicated
+            if(!isFunctionPipelined && !parallel_bb && gn->vdef) /// load can be loop pipelined/predicated
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of memory store");
                continue;
             }
 
             /// only gimple_assign are considered for code motion
-            if(!GetPointer<gimple_assign>(tn) && not GetPointer<gimple_nop>(tn))
+            if(!GetPointer<gimple_assign>(tn) && !GetPointer<gimple_nop>(tn))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because " + tn->get_kind_text());
                continue;
@@ -890,9 +879,9 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                {
                   auto* def_gn = GetPointer<gimple_node>(GET_NODE(def_stmt));
                   THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or def_gn->index, sn->ToString() + " is defined in entry");
-                  THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or (def_gn->get_kind() == gimple_assign_K and GetPointer<const gimple_assign>(GET_NODE(def_stmt))->clobber) or def_gn->bb_index or sn->virtual_flag,
+                  THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or (def_gn->get_kind() == gimple_assign_K && GetPointer<const gimple_assign>(GET_NODE(def_stmt))->clobber) or def_gn->bb_index or sn->virtual_flag,
                                "Definition " + def_gn->ToString() + " of " + sn->ToString() + " is in BB" + STR(def_gn->bb_index));
-                  if(statement == list_of_stmt.begin() && list_of_bloc[curr_bb]->list_of_pred.size() == 1 && def_gn->bb_index == curr_bb && def_gn->get_kind() != gimple_phi_K)
+                  if(statement == list_of_stmt.begin() && list_of_bloc.at(curr_bb)->list_of_pred.size() == 1 && def_gn->bb_index == curr_bb && def_gn->get_kind() != gimple_phi_K)
                   {
                      /// allow to move first statements later overwritten in the same BB
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  no constraint because is the first one");
@@ -908,11 +897,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             if(BB_def.find(curr_bb) != BB_def.end())
             {
                /// check if list of pred has a loop_id greater than the loop_id of curr_bb
-               bool can_be_pipelined = list_of_bloc[curr_bb]->loop_id != 0;
-               const auto Lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
-               for(auto Lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); Lop_it != Lop_it_end && can_be_pipelined; ++Lop_it)
+               bool can_be_pipelined = list_of_bloc.at(curr_bb)->loop_id != 0;
+               const auto Lop_it_end = list_of_bloc.at(curr_bb)->list_of_pred.end();
+               for(auto Lop_it = list_of_bloc.at(curr_bb)->list_of_pred.begin(); Lop_it != Lop_it_end && can_be_pipelined; ++Lop_it)
                {
-                  can_be_pipelined = list_of_bloc[curr_bb]->loop_id >= list_of_bloc[*Lop_it]->loop_id;
+                  can_be_pipelined = list_of_bloc.at(curr_bb)->loop_id >= list_of_bloc.at(*Lop_it)->loop_id;
                }
                /// check if current statement can be loop pipelined
                bool zero_delay = true;
@@ -922,7 +911,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 #if HAVE_EXPERIMENTAL
                   std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>> dom_diff;
                   vertex curr_dom_bb = bb_dominator_map.find(bb_vertex)->second;
-                  loop_pipelined(*statement, TM, curr_bb, list_of_bloc[curr_bb]->loop_id, to_be_removed, to_be_added_back, to_be_added_front, list_of_bloc, dom_diff, direct_vertex_map[curr_dom_bb]);
+                  loop_pipelined(*statement, TM, curr_bb, list_of_bloc.at(curr_bb)->loop_id, to_be_removed, to_be_added_back, to_be_added_front, list_of_bloc, dom_diff, direct_vertex_map[curr_dom_bb]);
                   const std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>>::const_iterator dd_it_end = dom_diff.end();
                   for(std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>>::const_iterator dd_it = dom_diff.begin(); dd_it != dd_it_end; ++dd_it)
                   {
@@ -947,9 +936,9 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because uses ssa defined in the same block");
                continue;
             }
-            if((gn->vuses.size() || (GetPointer<gimple_assign>(tn) and GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
-               // and (not schedule)
-               and not isFunctionPipelined and not parallel_bb)
+            if((gn->vuses.size() || (GetPointer<gimple_assign>(tn) && GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
+               // && (!schedule)
+               && !isFunctionPipelined && !parallel_bb)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of vuses");
                continue; /// load cannot be code moved
@@ -960,11 +949,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             unsigned int prev_dest_bb_index = curr_bb;
             if(gn->vdef || gn->vuses.size() || (tn->get_kind() == gimple_assign_K && GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
             {
-               if(list_of_bloc[curr_bb]->list_of_pred.size() == 1 && *list_of_bloc[curr_bb]->list_of_pred.begin() != bloc::ENTRY_BLOCK_ID &&
+               if(list_of_bloc.at(curr_bb)->list_of_pred.size() == 1 && list_of_bloc.at(curr_bb)->list_of_pred.front() != bloc::ENTRY_BLOCK_ID &&
                   ((tn->get_kind() == gimple_assign_K && (GET_NODE(GetPointer<gimple_assign>(tn)->op0)->get_kind() == mem_ref_K || GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K)) || tn->get_kind() == gimple_nop_K) &&
-                  list_of_bloc[*list_of_bloc[curr_bb]->list_of_pred.begin()]->loop_id == list_of_bloc[curr_bb]->loop_id)
+                  list_of_bloc.at(list_of_bloc.at(curr_bb)->list_of_pred.front())->loop_id == list_of_bloc.at(curr_bb)->loop_id)
                {
-                  dest_bb_index = *list_of_bloc[curr_bb]->list_of_pred.begin();
+                  dest_bb_index = list_of_bloc.at(curr_bb)->list_of_pred.front();
                }
                else
                {
@@ -983,8 +972,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                   unsigned int dom_bb_index = direct_vertex_map[dom_bb];
                   while(dom_bb_index != bloc::ENTRY_BLOCK_ID)
                   {
-                     unsigned loop_idU = list_of_bloc[dom_bb_index]->loop_id;
-                     unsigned loop_idC = list_of_bloc[curr_bb]->loop_id;
+                     unsigned loop_idU = list_of_bloc.at(dom_bb_index)->loop_id;
+                     unsigned loop_idC = list_of_bloc.at(curr_bb)->loop_id;
                      if(loop_idC >= loop_idU)
                      {
                         prev_dest_bb_index = dest_bb_index;
@@ -992,7 +981,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                         bool internLoopDep = false;
                         for(auto BBdef : BB_def)
                         {
-                           if(list_of_bloc[BBdef]->loop_id > loop_idU && list_of_bloc[BBdef]->loop_id <= loop_idC)
+                           if(list_of_bloc.at(BBdef)->loop_id > loop_idU && list_of_bloc.at(BBdef)->loop_id <= loop_idC)
                            {
                               internLoopDep = true;
                            }
@@ -1029,16 +1018,16 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             }
             /// check if the controlling condition of curr_bb is constant
             bool is_controlling_condition_constant = true;
-            const auto Lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
-            for(auto Lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); Lop_it != Lop_it_end && is_controlling_condition_constant; ++Lop_it)
+            const auto Lop_it_end = list_of_bloc.at(curr_bb)->list_of_pred.end();
+            for(auto Lop_it = list_of_bloc.at(curr_bb)->list_of_pred.begin(); Lop_it != Lop_it_end && is_controlling_condition_constant; ++Lop_it)
             {
-               if(sl->list_of_bloc[*Lop_it]->CGetStmtList().empty())
+               if(sl->list_of_bloc.at(*Lop_it)->CGetStmtList().empty())
                {
                   is_controlling_condition_constant = false;
                }
                else
                {
-                  auto last_statement = sl->list_of_bloc[*Lop_it]->CGetStmtList().back();
+                  auto last_statement = sl->list_of_bloc.at(*Lop_it)->CGetStmtList().back();
                   if(GET_NODE(last_statement)->get_kind() == gimple_cond_K)
                   {
                      auto* gc = GetPointer<gimple_cond>(GET_NODE(last_statement));
@@ -1059,16 +1048,16 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             }
             bool zero_delay = true;
             auto check_movable = CheckMovable(dest_bb_index, tn, zero_delay, TM);
-            if((check_movable == FunctionFrontendFlowStep_Movable::TIMING) and is_controlling_condition_constant)
+            if((check_movable == FunctionFrontendFlowStep_Movable::TIMING) && is_controlling_condition_constant)
             {
                check_movable = FunctionFrontendFlowStep_Movable::MOVABLE;
             }
-            if(not isFunctionPipelined and not parallel_bb and check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
+            if(!isFunctionPipelined && !parallel_bb && check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because cannot be moved");
                continue;
             }
-            if(not AppM->ApplyNewTransformation())
+            if(!AppM->ApplyNewTransformation())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of CFG transformations");
                continue;
@@ -1085,7 +1074,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                {
                   auto* def_gn = GetPointer<gimple_node>(GET_NODE(def_stmt));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checked definition " + def_gn->ToString());
-                  if(def_gn->bb_index == dest_bb_index and def_gn->get_kind() != gimple_phi_K and zero_delay_stmts.find(def_stmt->index) == zero_delay_stmts.end())
+                  if(def_gn->bb_index == dest_bb_index && def_gn->get_kind() != gimple_phi_K && zero_delay_stmts.find(def_stmt->index) == zero_delay_stmts.end())
                   {
                      only_phis = false;
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not a phi");
@@ -1097,7 +1086,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             {
                zero_delay_stmts.insert(GET_INDEX_NODE(*statement));
             }
-            if(check_movable == FunctionFrontendFlowStep_Movable::TIMING or (not only_phis and not zero_delay and not parallel_bb))
+            if(check_movable == FunctionFrontendFlowStep_Movable::TIMING or (!only_phis && !zero_delay && !parallel_bb))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Going down of one level because of non-zero delay");
                dest_bb_index = prev_dest_bb_index;
@@ -1115,13 +1104,13 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             /// add predication in case is required
             if(tn->get_kind() == gimple_assign_K && (GET_NODE(GetPointer<gimple_assign>(tn)->op0)->get_kind() == mem_ref_K || GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
             {
-               if(list_of_bloc[dest_bb_index]->CGetStmtList().empty())
+               if(list_of_bloc.at(dest_bb_index)->CGetStmtList().empty())
                {
                   /// it may happen: two consecutive BBs without conditional jump
                }
                else
                {
-                  const auto& lastStmt = *(list_of_bloc[dest_bb_index]->CGetStmtList().rbegin());
+                  const auto& lastStmt = *(list_of_bloc.at(dest_bb_index)->CGetStmtList().rbegin());
                   auto lastStmtNode = GET_NODE(lastStmt);
                   auto ga = GetPointer<gimple_assign>(tn);
                   if(lastStmtNode->get_kind() == gimple_cond_K)
@@ -1132,29 +1121,29 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                         auto cond = tree_helper::get_integer_cst_value(ic);
                         if(cond != 0)
                         {
-                           if(list_of_bloc[dest_bb_index]->true_edge == curr_bb)
+                           if(list_of_bloc.at(dest_bb_index)->true_edge == curr_bb)
                            {
                               TM->ReplaceTreeNode(*statement, ga->predicate, GetPointer<gimple_cond>(lastStmtNode)->op0);
                            }
                            else
                            {
                               /// create a negated condition
-                              auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, list_of_bloc[dest_bb_index], function_id);
+                              auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, list_of_bloc.at(dest_bb_index), function_id);
                               TM->ReplaceTreeNode(*statement, ga->predicate, not_cond);
                            }
                         }
                      }
                      else
                      {
-                        if(list_of_bloc[dest_bb_index]->true_edge == curr_bb)
+                        if(list_of_bloc.at(dest_bb_index)->true_edge == curr_bb)
                         {
-                           auto and_cond = tree_man->CreateAndExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, ga->predicate, list_of_bloc[dest_bb_index], function_id);
+                           auto and_cond = tree_man->CreateAndExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, ga->predicate, list_of_bloc.at(dest_bb_index), function_id);
                            TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
                         }
                         else
                         {
-                           auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, list_of_bloc[dest_bb_index], function_id);
-                           auto and_cond = tree_man->CreateAndExpr(not_cond, ga->predicate, list_of_bloc[dest_bb_index], function_id);
+                           auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, list_of_bloc.at(dest_bb_index), function_id);
+                           auto and_cond = tree_man->CreateAndExpr(not_cond, ga->predicate, list_of_bloc.at(dest_bb_index), function_id);
                            TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
                         }
                      }
@@ -1184,11 +1173,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                                     }
                                     else
                                     {
-                                       Cur = tree_man->CreateOrExpr(Cur, gmwicond0.first, list_of_bloc[dest_bb_index], function_id);
+                                       Cur = tree_man->CreateOrExpr(Cur, gmwicond0.first, list_of_bloc.at(dest_bb_index), function_id);
                                     }
                                  }
                               }
-                              Cur = tree_man->CreateNotExpr(Cur, list_of_bloc[dest_bb_index], function_id);
+                              Cur = tree_man->CreateNotExpr(Cur, list_of_bloc.at(dest_bb_index), function_id);
                               if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
                               {
                                  auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
@@ -1200,7 +1189,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               }
                               else
                               {
-                                 auto and_cond = tree_man->CreateAndExpr(Cur, ga->predicate, list_of_bloc[dest_bb_index], function_id);
+                                 auto and_cond = tree_man->CreateAndExpr(Cur, ga->predicate, list_of_bloc.at(dest_bb_index), function_id);
                                  TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
                               }
                            }
@@ -1217,7 +1206,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               }
                               else
                               {
-                                 auto and_cond = tree_man->CreateAndExpr(gmwicond.first, ga->predicate, list_of_bloc[dest_bb_index], function_id);
+                                 auto and_cond = tree_man->CreateAndExpr(gmwicond.first, ga->predicate, list_of_bloc.at(dest_bb_index), function_id);
                                  TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
                               }
                            }
@@ -1229,7 +1218,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                         THROW_ERROR("node not supported: " + lastStmtNode->get_kind_text() + " " + lastStmtNode->ToString());
                      }
                   }
-                  else if(list_of_bloc[dest_bb_index]->list_of_succ.size() == 1 && list_of_bloc[dest_bb_index]->loop_id == list_of_bloc[curr_bb]->loop_id)
+                  else if(list_of_bloc.at(dest_bb_index)->list_of_succ.size() == 1 && list_of_bloc.at(dest_bb_index)->loop_id == list_of_bloc.at(curr_bb)->loop_id)
                   {
                      /// it may happen: two consecutive BBs without conditional jump
                   }
@@ -1244,12 +1233,12 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             auto tmp_it = statement;
             ++tmp_it;
             /// Moving statement
-            list_of_bloc[curr_bb]->RemoveStmt(temp_statement, AppM);
+            list_of_bloc.at(curr_bb)->RemoveStmt(temp_statement, AppM);
             if(list_of_bloc.at(curr_bb)->CGetStmtList().empty() && list_of_bloc.at(curr_bb)->CGetPhiList().empty())
             {
                restart_ifmwi_opt = true;
             }
-            list_of_bloc[dest_bb_index]->PushBack(temp_statement, AppM);
+            list_of_bloc.at(dest_bb_index)->PushBack(temp_statement, AppM);
             /// Going one step back since pointer is already increment in for loop
             --tmp_it;
             statement = tmp_it;
@@ -1259,7 +1248,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          for(const auto& removing : to_be_removed)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + removing->ToString() + " from BB" + STR(curr_bb));
-            list_of_bloc[curr_bb]->RemoveStmt(removing, AppM);
+            list_of_bloc.at(curr_bb)->RemoveStmt(removing, AppM);
          }
          if(!to_be_removed.empty() && list_of_bloc.at(curr_bb)->CGetStmtList().empty() && list_of_bloc.at(curr_bb)->CGetPhiList().empty())
          {
@@ -1268,12 +1257,12 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          for(const auto& adding_back : to_be_added_back)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding back " + adding_back->ToString() + " from BB" + STR(curr_bb));
-            list_of_bloc[curr_bb]->PushBack(adding_back, AppM);
+            list_of_bloc.at(curr_bb)->PushBack(adding_back, AppM);
          }
          for(const auto& adding_front : to_be_added_front)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding front " + adding_front->ToString() + " from BB" + STR(curr_bb));
-            list_of_bloc[curr_bb]->PushFront(adding_front, AppM);
+            list_of_bloc.at(curr_bb)->PushFront(adding_front, AppM);
          }
          restart_bb_code_motion = (!to_be_added_back.empty()) or (!to_be_added_front.empty());
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))

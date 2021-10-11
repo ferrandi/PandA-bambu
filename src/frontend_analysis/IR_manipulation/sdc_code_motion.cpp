@@ -91,7 +91,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -100,21 +100,21 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             if(restart_ifmwi_opt)
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UPDATE_SCHEDULE, SAME_FUNCTION));
+               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+               relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
+               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
+               relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
             }
          }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UPDATE_SCHEDULE, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
+         relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
          break;
       }
       default:

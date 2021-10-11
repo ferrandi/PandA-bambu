@@ -1,43 +1,8 @@
 EXTRA_DIST += \
-%D%/latex_format_bambu_results_simulate.xml \
-%D%/latex_format_bambu_results.xml \
 %D%/empty.c \
-%D%/libm_list \
-%D%/libm-tests_list_synth\
-%D%/README.txt\
-%D%/5CSEMA5F31C6_06.6_OSF_sdc_flopoco.sh\
-%D%/5CSEMA5F31C6_06.6_OSF_sdc.sh\
-%D%/5CSEMA5F31C6_07.5_OSF_sdc_no_proxy.sh\
-%D%/5CSEMA5F31C6_10.0_OSF_sdc_flopoco.sh\
-%D%/5CSEMA5F31C6_10.0_OSF_sdc.sh\
-%D%/5SGXEA7N2F45C1_03.3_OSF_sdc_flopoco.sh\
-%D%/5SGXEA7N2F45C1_03.3_OSF_sdc.sh\
-%D%/5SGXEA7N2F45C1_05.0_OSF_sdc.sh\
-%D%/5SGXEA7N2F45C1_10.0_OSF_sdc_flopoco.sh\
-%D%/5SGXEA7N2F45C1_10.0_OSF_sdc.sh\
-%D%/all.sh\
-%D%/altera.sh\
-%D%/EP2C70F896C6-R_10.0_OSF_sdc_flopoco.sh\
-%D%/EP2C70F896C6-R_10.0_OSF_sdc.sh\
-%D%/EP2C70F896C6-R_10.0_OSF.sh\
-%D%/lattice.sh\
-%D%/LFE335EA8FN484C_10.0_OSF_sdc.sh\
-%D%/LFE335EA8FN484C_10.0_OSF_sdc_flopoco.sh\
-%D%/xc7vx330t-1ffg1157_10.0_OSF_sdc_flopoco.sh\
-%D%/xc7vx330t-1ffg1157_10.0_OSF_sdc.sh\
-%D%/xc7vx690t-3ffg1930-VVD_02.5_OSF_sdc_flopoco.sh\
-%D%/xc7vx690t-3ffg1930-VVD_02.5_OSF_sdc.sh\
-%D%/xc7vx690t-3ffg1930-VVD_05.0_OSF_sdc.sh\
-%D%/xc7vx690t-3ffg1930-VVD_10.0_OSF_sdc_flopoco.sh\
-%D%/xc7vx690t-3ffg1930-VVD_10.0_OSF_sdc.sh\
-%D%/xc7z020-1clg484-VVD_05.0_OSF_sdc_flopoco.sh\
-%D%/xc7z020-1clg484-VVD_05.0_OSF_sdc.sh\
-%D%/xc7z020-1clg484-VVD_06.6_OSF_sdc_no_proxy.sh\
-%D%/xc7z020-1clg484-VVD_10.0_OSF_sdc_flopoco.sh\
-%D%/xc7z020-1clg484-VVD_10.0_OSF_sdc.sh\
-%D%/xc7z020-1clg484-VVD_10.0_OSF.sh\
-%D%/xilinx_ISE.sh \
-%D%/xilinx_VVD.sh \
+%D%/generic_libm.sh \
+%D%/latex_format_bambu_results.xml \
+%D%/latex_format_bambu_results_simulate.xml \
 %D%/libm_5CSEMA5F31C6_06.6_OSF_sdc.tex \
 %D%/libm_5CSEMA5F31C6_06.6_OSF_sdc_flopoco.tex \
 %D%/libm_5CSEMA5F31C6_10.0_OSF_sdc.tex \
@@ -48,6 +13,9 @@ EXTRA_DIST += \
 %D%/libm_5SGXEA7N2F45C1_10.0_OSF_sdc_flopoco.tex \
 %D%/libm_EP2C70F896C6-R_10.0_OSF_sdc.tex \
 %D%/libm_EP2C70F896C6-R_10.0_OSF_sdc_flopoco.tex \
+%D%/libm_LFE335EA8FN484C_10.0_OSF_sdc.tex \
+%D%/libm_LFE335EA8FN484C_10.0_OSF_sdc_flopoco.tex \
+%D%/libm_list \
 %D%/libm_xc7vx330t-1ffg1157_10.0_OSF_sdc.tex \
 %D%/libm_xc7vx330t-1ffg1157_10.0_OSF_sdc_flopoco.tex \
 %D%/libm_xc7vx690t-3ffg1930-VVD_02.5_OSF_sdc.tex \
@@ -57,8 +25,5 @@ EXTRA_DIST += \
 %D%/libm_xc7z020-1clg484-VVD_05.0_OSF_sdc.tex \
 %D%/libm_xc7z020-1clg484-VVD_05.0_OSF_sdc_flopoco.tex \
 %D%/libm_xc7z020-1clg484-VVD_10.0_OSF_sdc.tex \
-%D%/libm_xc7z020-1clg484-VVD_10.0_OSF_sdc_flopoco.tex\
-%D%/libm_LFE335EA8FN484C_10.0_OSF_sdc.tex\
-%D%/libm_LFE335EA8FN484C_10.0_OSF_sdc_flopoco.tex
-
-
+%D%/libm_xc7z020-1clg484-VVD_10.0_OSF_sdc_flopoco.tex \
+%D%/README.txt

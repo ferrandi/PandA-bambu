@@ -822,6 +822,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
       << "    --softfloat-subnormal\n"
       << "        Enable the soft-based implementation of floating-point operations with subnormals support.\n\n"
+      << "    --softfloat-noexception\n"
+      << "        Enable the soft-base implementation of floating-point operations without infinity and NaN handling.\n\n"
       << "    --softfloat-norounding\n"
       << "        Enable the soft-based implementation of floating-point operations without rounding.\n\n"
       << "    --libm-std-rounding\n"
@@ -835,7 +837,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --fp-format\n"
       << "        Define arbitrary precision floating-point format by type or by function.\n"
       << "        <func_name>*<exp_bits>*<frac_bits>*<exp_bias>*<round>*<nan>*<one>*<sub>*<sign>* (use comma separated list for multiple definitions)\n"
-      << "           func_name - Set arbitrary floating-point format for a specific function\n"
+      << "           func_name - Set arbitrary floating-point format for a specific function (using @ symbol here will resolve to the top function)\n"
       << "                       (Arbitrary floating-point format will apply to specified function only, use --propaget-fp-format to extend it to called functions)\n"
       << "            exp_bits - Number of bits used by the exponent\n"
       << "           frac_bits - Number of bits used by the fractional value\n"
@@ -1415,7 +1417,7 @@ int BambuParameter::Exec()
          case OPT_XML_CONFIG:
          {
             setOption(OPT_synthesis_flow, HLSFlowStep_Type::XML_HLS_SYNTHESIS_FLOW);
-            setOption(OPT_xml_input_configuration, optarg);
+            setOption(OPT_xml_input_configuration, GetPath(optarg));
             break;
          }
          case OPT_DUMP_CONSTRAINTS:
@@ -2916,10 +2918,11 @@ int BambuParameter::Exec()
 
    while(optind < argc)
    {
-      const auto file_type = GetFileFormat(argv[optind], true);
+      const auto filename = GetPath(argv[optind]);
+      const auto file_type = GetFileFormat(filename, true);
       if(file_type == Parameters_FileFormat::FF_XML_CON)
       {
-         setOption(OPT_constraints_file, argv[optind]);
+         setOption(OPT_constraints_file, filename);
       }
       else if(file_type == Parameters_FileFormat::FF_XML_TEC)
       {
@@ -2930,7 +2933,7 @@ int BambuParameter::Exec()
       else if(file_type == Parameters_FileFormat::FF_AADL)
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
+         setOption(OPT_input_file, input_file + filename);
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_AADL));
       }
 #endif
@@ -2942,17 +2945,17 @@ int BambuParameter::Exec()
       )
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
+         setOption(OPT_input_file, input_file + filename);
          setOption(OPT_input_format, static_cast<int>(file_type));
       }
       else if(file_type == Parameters_FileFormat::FF_RAW or (isOption(OPT_input_format) and getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW))
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
+         setOption(OPT_input_file, input_file + filename);
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_RAW));
          if(!isOption(OPT_pretty_print))
          {
-            setOption(OPT_pretty_print, "_a.c");
+            setOption(OPT_pretty_print, GetPath("_a.c"));
          }
       }
       else
@@ -4256,11 +4259,15 @@ void BambuParameter::CheckParameters()
       size_t i_end = splitted.size();
       for(size_t i = 0; i < i_end; i++)
       {
-         std::string command = "cp " + GetPath(splitted[i]) + " " + GetCurrentPath();
-         int ret = PandaSystem(ParameterConstRef(this, null_deleter()), command);
-         if(IsError(ret))
+         const auto filename = GetPath(splitted[i]);
+         if(boost::filesystem::path(filename).parent_path() != GetCurrentPath())
          {
-            THROW_ERROR("cp returns an error");
+            std::string command = "cp " + filename + " " + GetCurrentPath();
+            int ret = PandaSystem(ParameterConstRef(this, null_deleter()), command);
+            if(IsError(ret))
+            {
+               THROW_ERROR("cp returns an error");
+            }
          }
       }
    }

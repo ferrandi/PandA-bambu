@@ -77,7 +77,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_CLOBBER_GA, SAME_FUNCTION));
+         relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          break;
       }
       default:

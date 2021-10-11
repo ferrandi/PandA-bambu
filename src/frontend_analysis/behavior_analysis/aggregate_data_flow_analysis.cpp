@@ -77,11 +77,6 @@ AggregateDataFlowAnalysis::AggregateDataFlowAnalysis(const application_managerRe
 
 AggregateDataFlowAnalysis::~AggregateDataFlowAnalysis() = default;
 
-DesignFlowStep_Status AggregateDataFlowAnalysis::InternalExec()
-{
-   return DesignFlowStep_Status::EMPTY;
-}
-
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AggregateDataFlowAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -92,23 +87,23 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
          if(parameters->getOption<bool>(OPT_memory_profiling))
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
+            relationships.insert(std::make_pair(DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
          }
          else
 #endif
          {
 #if HAVE_BAMBU_BUILT
-            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+            const auto technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
             if(design_flow_manager.lock()->GetStatus(technology_flow_signature) == DesignFlowStep_Status::EMPTY)
             {
-               if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory())
+               if(GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory())
                {
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MEMORY_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
+                  relationships.insert(std::make_pair(MEMORY_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
                }
                else
 #endif
                {
-                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
+                  relationships.insert(std::make_pair(VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
                }
 #if HAVE_BAMBU_BUILT
             }
@@ -116,8 +111,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
          break;
       }
-      case(INVALIDATION_RELATIONSHIP):
       case(PRECEDENCE_RELATIONSHIP):
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -133,21 +128,20 @@ void AggregateDataFlowAnalysis::ComputeRelationships(DesignFlowStepSet& relation
 {
    switch(relationship_type)
    {
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         break;
-      }
       case DEPENDENCE_RELATIONSHIP:
       {
 #if HAVE_TECHNOLOGY_BUILT
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-         const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-         const DesignFlowStepRef technology_design_flow_step =
-             technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+         const auto technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+         const auto technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
 #endif
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -158,4 +152,9 @@ void AggregateDataFlowAnalysis::ComputeRelationships(DesignFlowStepSet& relation
          THROW_UNREACHABLE("");
    }
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
+}
+
+DesignFlowStep_Status AggregateDataFlowAnalysis::InternalExec()
+{
+   return DesignFlowStep_Status::EMPTY;
 }

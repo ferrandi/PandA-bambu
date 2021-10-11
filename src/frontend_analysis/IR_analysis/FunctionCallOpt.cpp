@@ -64,7 +64,7 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #define PARAMETER_INLINE_MAX_COST "inline-max-cost"
-#define DEAFULT_MAX_INLINE_CONST 50
+#define DEAFULT_MAX_INLINE_CONST 65
 
 CustomSet<unsigned int> FunctionCallOpt::always_inline;
 CustomSet<unsigned int> FunctionCallOpt::never_inline;
@@ -257,7 +257,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                         const auto ga = GetPointerS<const gimple_assign>(call_node);
                         AppM->GetCallGraphManager()->RemoveCallPoint(function_id, called_fn->index, stmt->index);
                         TM->ReplaceTreeNode(stmt, ga->op1, ce);
-                        CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, version_fn->index, stmt->index, FunctionEdgeInfo::CallType::direct_call, debug_level);
+                        CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, version_fn->index, stmt->index, FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
                         AppM->RegisterTransformation(GetName(), stmt);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call after versioning  : " + STR(stmt));
                      }
@@ -295,7 +295,6 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       opt_call.erase(function_id);
    }
 
-#if 0
    const auto CGM = AppM->CGetCallGraphManager();
    const auto CG = CGM->CGetCallGraph();
    const auto function_v = CGM->GetVertex(function_id);
@@ -319,7 +318,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       const auto body_cost = compute_cost(sl, has_simd, has_memory);
       const auto omp_simd_enabled = parameters->getOption<int>(OPT_gcc_openmp_simd);
       has_simd &= omp_simd_enabled;
-      const bool force_inline = always_inline.count(function_id) || (body_cost < max_inline_cost && call_count < 3);
+      const bool force_inline = always_inline.count(function_id) || ((body_cost * call_count) < max_inline_cost) || call_count == 1;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function information:");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal loops : " + STR(loop_count));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call points    : " + STR(call_count));
@@ -336,13 +335,14 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
             caller_bb.insert(std::make_pair(caller_id, AppM->CGetFunctionBehavior(caller_id)->GetBBVersion()));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing call points from " + tree_helper::print_function_name(TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+            const auto caller_node = TM->CGetTreeNode(caller_id);
+            THROW_ASSERT(caller_node->get_kind() == function_decl_K, "");
+            const auto caller_fd = GetPointerS<const function_decl>(caller_node);
+            THROW_ASSERT(caller_fd->body, "");
+            const auto caller_sl = GetPointerS<const statement_list>(GET_CONST_NODE(caller_fd->body));
             if(omp_simd_enabled)
             {
-               const auto caller_node = TM->CGetTreeNode(caller_id);
-               THROW_ASSERT(caller_node->get_kind() == function_decl_K, "");
-               const auto caller_fd = GetPointerS<const function_decl>(caller_node);
-               THROW_ASSERT(caller_fd->body, "");
-               const auto caller_has_simd = tree_helper::has_omp_simd(GetPointerS<const statement_list>(GET_CONST_NODE(caller_fd->body)));
+               const auto caller_has_simd = tree_helper::has_omp_simd(caller_sl);
                if(caller_has_simd)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Caller has OpenMP SIMD constructs, analysis postponed");
@@ -353,18 +353,48 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
             bool all_inlined = true;
             for(const auto& call_id : caller_info->direct_call_points)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing direct call point " + STR(TM->CGetTreeNode(call_id)));
-               if(force_inline)
+               const auto call_stmt = TM->CGetTreeNode(call_id);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing direct call point " + STR(call_stmt));
+               const auto call_gn = GetPointerS<const gimple_node>(call_stmt);
+               if(call_gn->vdef || call_gn->vuses.size() || call_gn->vovers.size())
                {
-                  opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Forced inlining required for this function");
+                  // TODO: alias analysis is not able to handle inlining yet
+                  all_inlined = false;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call statement carries alias dependencies, skipping...");
                   continue;
                }
-               if(call_count == 1)
+               if(force_inline)
                {
-                  opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current call point is unique for this function, inlining required");
-                  continue;
+                  if(!omp_simd_enabled || loop_count == 0)
+                  {
+                     const auto is_unique_bb_call = [&]() -> bool {
+                        THROW_ASSERT(caller_sl->list_of_bloc.count(call_gn->bb_index), "BB" + STR(call_gn->bb_index) + " not found in function " + tree_helper::print_function_name(TM, caller_fd) + " (" + STR(call_id) + ")");
+                        const auto bb = caller_sl->list_of_bloc.at(call_gn->bb_index);
+                        for(const auto& tn : bb->CGetStmtList())
+                        {
+                           if(tn->index != call_gn->index &&
+                              (GET_CONST_NODE(tn)->get_kind() == gimple_call_K || (GET_CONST_NODE(tn)->get_kind() == gimple_assign_K && GET_CONST_NODE(GetPointerS<const gimple_assign>(GET_CONST_NODE(tn))->op1)->get_kind() == call_expr_K)))
+                           {
+                              return false;
+                           }
+                        }
+                        return true;
+                     }();
+                     if(is_unique_bb_call || loop_count == 0)
+                     {
+                        opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(always_inline.count(function_id) ? "Always inline function" : "Low body cost function") + ", inlining required");
+                        continue;
+                     }
+                     else
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(call_gn->bb_index) + " from function " + tree_helper::print_function_name(TM, caller_fd) + " has multiple call points, skipping...");
+                     }
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inlining of functions with internal loops disabled with OpenMP, skipping...");
+                  }
                }
                const auto all_const_args = HasConstantArgs(TM->CGetTreeReindex(call_id));
                if(all_const_args && loop_count == 0)
@@ -392,7 +422,6 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function has zero call points, skipping analysis...");
    }
-#endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    if(modified)
    {
@@ -460,10 +489,10 @@ size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd,
          const auto stmt = GET_CONST_NODE(stmt_rdx);
          if(stmt->get_kind() == gimple_assign_K)
          {
-            if(tree_helper::IsLoad(stmt, function_behavior->get_function_mem()) || tree_helper::IsStore(stmt, function_behavior->get_function_mem()))
-            {
-               has_memory = true;
-            }
+            // if(tree_helper::IsLoad(stmt, function_behavior->get_function_mem()) || tree_helper::IsStore(stmt, function_behavior->get_function_mem()))
+            // {
+            //    has_memory = true;
+            // }
             const auto ga = GetPointerS<const gimple_assign>(stmt);
             const auto op_kind = GET_CONST_NODE(ga->op1)->get_kind();
             const auto op_cost = op_costs.find(op_kind);
