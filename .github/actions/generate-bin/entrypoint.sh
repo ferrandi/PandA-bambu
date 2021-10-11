@@ -128,12 +128,12 @@ cat > dist/usr/bin/tool_select.sh << EOF
 export LC_ALL="C"
 export PYTHONHOME=
 export PYTHONPATH=
-BINARY_NAME=$(basename "$ARGV0")
-BINARY_PATH="$APPDIR/usr/bin/$(basename $ARGV0)"
-if [ ! -e "$BINARY_PATH" ]; then
-   BINARY_PATH="$APPDIR/usr/bin/bambu"
+BINARY_NAME=\$(basename "\$ARGV0")
+BINARY_PATH="\$APPDIR/usr/bin/\$BINARY_NAME"
+if [ ! -e "\$BINARY_PATH" ]; then
+   BINARY_PATH="\$APPDIR/usr/bin/bambu"
 fi
-exec "$BINARY_PATH" "$@"
+\$BINARY_PATH "\$@"
 EOF
 chmod a+x dist/usr/bin/tool_select.sh
 
