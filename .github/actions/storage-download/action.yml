@@ -51,5 +51,4 @@ runs:
         else
           $CURL_CMD $PKG_URL | tar -C "${{inputs.path}}" -xf -
         fi
-        chmod -R g+w "${{inputs.path}}"
         echo "Content restored in '${{inputs.path}}'"
