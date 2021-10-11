@@ -150,7 +150,7 @@ jobs:
         uses: ./.github/actions/storage-upload
         with:
           name: ${{env.dist-pkg}}
-          path: ${{steps.build.outputs.dist-dir}}/.
+          path: ${{steps.build.outputs.appimage}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -191,11 +191,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -203,8 +202,10 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Generate out name
         id: get
         shell: bash
@@ -215,8 +216,7 @@ jobs:
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
@@ -257,16 +257,15 @@ jobs:
           generic_gcc_regression_simple_eg.sh, 
           generic_gcc_regression_simple.sh ]
         exclude:
-          - compiler: I386_GCC8
+          - compiler: I386_GCC7
             script: generic_gcc_regression_simple_bambu.sh
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -274,8 +273,10 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Generate out name
         id: get
         shell: bash
@@ -286,8 +287,7 @@ jobs:
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
@@ -321,11 +321,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -333,14 +332,15 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch test suite
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
@@ -378,11 +378,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -390,8 +389,10 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Generate out name
         id: get
         shell: bash
@@ -402,8 +403,7 @@ jobs:
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
@@ -440,11 +440,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -452,8 +451,10 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Generate out name
         id: get
         shell: bash
@@ -468,8 +469,7 @@ jobs:
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
@@ -529,11 +529,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -541,8 +540,10 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Generate out name
         id: get
         shell: bash
@@ -553,8 +554,7 @@ jobs:
         id: batch
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
@@ -631,11 +631,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -643,8 +642,10 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Generate out name
         id: get
         shell: bash
@@ -655,8 +656,7 @@ jobs:
         id: batch
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
@@ -711,11 +711,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -723,8 +722,10 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Generate out name
         id: get
         shell: bash
@@ -735,8 +736,7 @@ jobs:
         id: batch
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"

@@ -233,7 +233,7 @@ jobs:
         uses: ./.github/actions/storage-upload
         with:
           name: ${{env.dist-pkg}}
-          path: ${{steps.build.outputs.dist-dir}}/.
+          path: ${{steps.build.outputs.appimage}}
           storage-url: '${{env.storage-url}}'
           storage-path: '${{env.storage-path}}'
           username: '${{env.storage-user}}'
