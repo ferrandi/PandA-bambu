@@ -18,7 +18,7 @@ on:
       configure:
         description: 'Bambu configuration options'
         required: true
-        default: '--enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8'
+        default: '--enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false'
 
 concurrency:
   group: build-appimage-${{ github.event.inputs.version }}

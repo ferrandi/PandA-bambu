@@ -8,10 +8,6 @@ on:
 
   workflow_dispatch:
 
-concurrency:
-  group: long-gcc-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
   build-args: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release
   dist-pkg: bambu-gcc-dist
@@ -489,7 +485,7 @@ jobs:
     if: github.event.pull_request.merged == true
     needs: [build, softfloat-all]
     runs-on: [self-hosted, long, altera, intelFPGA]
-    timeout-minutes: 600m
+    timeout-minutes: 600
     env:
       args: --spider-style="../lib/latex_format_bambu_results_altera.xml" -c=--evaluation -t120m
     strategy:
@@ -587,7 +583,7 @@ jobs:
     if: github.event.pull_request.merged == true
     needs: [build, softfloat-all]
     runs-on: [self-hosted, long, xilinx]
-    timeout-minutes: 600m
+    timeout-minutes: 600
     env:
       args: --spider-style="../lib/latex_format_bambu_results_xilinx.xml" -c=--evaluation -t120m
     strategy:

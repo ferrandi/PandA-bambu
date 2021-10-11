@@ -8,10 +8,6 @@ on:
 
   workflow_dispatch:
 
-concurrency:
-  group: long-clang-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
   build-args: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release
   dist-pkg: bambu-clang-dist
@@ -24,7 +20,8 @@ env:
 
 jobs:
   build:
-    runs-on: [self-hosted, classA]
+    if: github.event.pull_request.merged == true
+    runs-on: [self-hosted, long, classA]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
