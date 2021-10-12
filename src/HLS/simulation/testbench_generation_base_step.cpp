@@ -274,7 +274,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
 
    // Creating output file
    std::string fileName = output_directory + hdl_testbench_basename + "_main.cpp";
-   std::ofstream fileOut(fileName.c_str(), std::ios::out);
+   std::ofstream fileOut(fileName, std::ios::out);
 
    std::string top_fname = mod->get_typeRef()->id_type;
    PP(os, "#include <iostream>\n");

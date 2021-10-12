@@ -2912,7 +2912,7 @@ void allocation::IntegrateTechnologyLibraries()
 void allocation::PrintInitialIR() const
 {
    const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "before_" + GetName() + ".tm";
-   std::ofstream raw_file(file_name.c_str());
+   std::ofstream raw_file(file_name);
    TM->print(raw_file);
    raw_file.close();
 }

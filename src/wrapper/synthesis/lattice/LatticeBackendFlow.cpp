@@ -202,7 +202,7 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
 void LatticeBackendFlow::CheckSynthesisResults()
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Analyzing Lattice synthesis results");
-   std::string report_filename = actual_parameters->parameter_values[PARAM_lattice_report];
+   std::string report_filename = GetPath(actual_parameters->parameter_values[PARAM_lattice_report]);
    xparse_utilization(report_filename);
 
    THROW_ASSERT(design_values.find(LATTICE_SLICE) != design_values.end(), "Missing logic elements");
@@ -231,7 +231,7 @@ void LatticeBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
    THROW_ASSERT(Param->isOption(OPT_lattice_settings), "");
    auto setupscr = Param->getOption<std::string>(OPT_lattice_settings);
-   if(setupscr.size() and setupscr != "0")
+   if(setupscr.size() && setupscr != "0")
    {
       script << "#configuration" << std::endl;
       if(boost::algorithm::starts_with(setupscr, "export"))

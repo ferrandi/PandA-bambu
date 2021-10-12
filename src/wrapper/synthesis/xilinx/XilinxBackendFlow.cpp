@@ -960,7 +960,7 @@ void XilinxBackendFlow::InitDesignParameters()
 void XilinxBackendFlow::create_cf(const DesignParametersRef dp, bool xst)
 {
    std::string ucf_filename = UCF_SUBDIR + dp->component_name + (xst ? ".xcf" : ".ucf");
-   std::ofstream UCF_file(ucf_filename.c_str());
+   std::ofstream UCF_file(ucf_filename);
    THROW_ASSERT(dp->parameter_values.find(PARAM_clk_name) != dp->parameter_values.end(), "");
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {

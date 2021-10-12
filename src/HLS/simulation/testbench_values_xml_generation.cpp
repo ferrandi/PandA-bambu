@@ -145,7 +145,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       boost::filesystem::create_directories(output_directory);
    }
    std::string output_file_name = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
-   std::ofstream output_stream(output_file_name.c_str(), std::ios::out);
+   std::ofstream output_stream(output_file_name, std::ios::out);
    CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
 
    /// print base address

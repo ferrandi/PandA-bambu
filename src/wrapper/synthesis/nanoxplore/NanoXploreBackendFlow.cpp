@@ -221,7 +221,7 @@ void NanoXploreBackendFlow::xparse_utilization(const std::string& fn)
 void NanoXploreBackendFlow::CheckSynthesisResults()
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Analyzing NanoXplore synthesis results");
-   std::string report_filename = actual_parameters->parameter_values[PARAM_nxpython_report];
+   const auto report_filename = GetPath(actual_parameters->parameter_values[PARAM_nxpython_report]);
    xparse_utilization(report_filename);
 
    THROW_ASSERT(design_values.find(NANOXPLORE_FE) != design_values.end(), "Missing logic elements");
@@ -251,10 +251,10 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
    {
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
    }
-   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
-      ((actual_parameters->parameter_values.find(PARAM_nxpython_timing_report) != actual_parameters->parameter_values.end() and ExistFile(actual_parameters->parameter_values.find(PARAM_nxpython_timing_report)->second))))
+   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC || (Param->IsParameter("DumpingTimingReport") && Param->GetParameter<int>("DumpingTimingReport"))) &&
+      ((actual_parameters->parameter_values.find(PARAM_nxpython_timing_report) != actual_parameters->parameter_values.end() && ExistFile(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report))))))
    {
-      CopyStdout(actual_parameters->parameter_values.find(PARAM_nxpython_timing_report)->second);
+      CopyStdout(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report)));
    }
 }
 
@@ -266,7 +266,7 @@ void NanoXploreBackendFlow::WriteFlowConfiguration(std::ostream& script)
    {
       setupscr = Param->getOption<std::string>(OPT_nanoxplore_settings);
    }
-   if(setupscr.size() and setupscr != "0")
+   if(setupscr.size() && setupscr != "0")
    {
       script << "#configuration" << std::endl;
       if(boost::algorithm::starts_with(setupscr, "export"))

@@ -538,6 +538,7 @@ lib_flopocowrapper_la_SOURCES = wrapper/flopoco/FPAssign.cpp wrapper/flopoco/FPg
 
 lib_flopocowrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src/circuit \
+    -I$(top_srcdir)/src/constants \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/technology/physical_library \
     -I$(top_srcdir)/src/technology/target_device \

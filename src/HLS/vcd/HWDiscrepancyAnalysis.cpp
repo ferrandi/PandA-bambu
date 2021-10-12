@@ -705,7 +705,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---COMPRESSED_EPP " + STR(id.first) + ":" + STR(id.second));
 #endif
       const std::string init_filename = "epp_control_flow_trace_scope__" + STR(scope_id) + ".mem";
-      std::ofstream init_file(GetPath((init_filename).c_str()));
+      std::ofstream init_file(GetPath(init_filename));
 
       for(const auto& id : i.second)
       {
