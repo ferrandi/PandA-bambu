@@ -71,6 +71,14 @@ do
 done
 cd $workspace_dir
 
+max_gcc_ver="$(ls -x -v -1a dist/usr/include/c++ 2> /dev/null | tail -1)"
+if [[ -z "${max_gcc_ver}" ]]
+then
+  echo "At least one gcc version must be bundled in the AppImage"
+  exit -1
+fi
+echo "Latest bundled GCC version: ${max_gcc_ver}"
+
 echo "Initializing build environment..."
 make -f Makefile.init
 echo "::endgroup::"

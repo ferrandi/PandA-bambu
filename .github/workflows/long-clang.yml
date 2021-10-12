@@ -59,6 +59,15 @@ jobs:
           wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
           wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
           wait
+      - name: Download gcc 7
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-7-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: '${{env.storage-url}}'
+          storage-path: compilers
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
       - name: Download python appimage
         uses: ./.github/actions/storage-download
         with:

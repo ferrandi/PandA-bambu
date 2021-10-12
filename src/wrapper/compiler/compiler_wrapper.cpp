@@ -375,7 +375,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    const std::string gcc_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
 
    const Compiler compiler = GetCompiler();
-   std::string command = compiler.gcc.string();
+   std::string command = compiler.gcc;
    if(cm == CompilerWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
@@ -413,6 +413,11 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
 #else
       THROW_ERROR("unexpected condition");
 #endif
+      if(getenv("APPDIR"))
+      {
+         const auto inc_dir = std::string(getenv("APPDIR")) + "/usr/include/c++";
+         command = "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " + command;
+      }
    }
    command += " -D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 #ifdef _WIN32
@@ -888,7 +893,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          }
       }
       auto temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
-      std::string command = compiler.llvm_link.string() + " " + object_files + " -o " + temporary_file_o_bc;
+      std::string command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
       const std::string llvm_link_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
       int ret = PandaSystem(Param, command, llvm_link_output_file_name);
       if(IsError(ret))
@@ -929,7 +934,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       {
          if(compiler.is_clang)
          {
-            command = compiler.llvm_opt.string();
+            command = compiler.llvm_opt;
 #ifndef _WIN32
             auto renamed_plugin = compiler.topfname_plugin_obj;
             boost::replace_all(renamed_plugin, ".so", "_opt.so");
@@ -1041,7 +1046,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                }
             }
 
-            command = compiler.llvm_opt.string();
+            command = compiler.llvm_opt;
             command += " " + temporary_file_o_bc;
             command += " --internalize-public-api-file=" + Param->getOption<std::string>(OPT_output_temporary_directory) + "external-symbols.txt -internalize ";
             temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
@@ -1072,7 +1077,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       {
          const auto recipe = clang_recipes(optimization_level, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj,
                                            compiler.GepiCanon_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
-         command = compiler.llvm_opt.string() + recipe + temporary_file_o_bc;
+         command = compiler.llvm_opt + recipe + temporary_file_o_bc;
          temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
          command += " -o " + temporary_file_o_bc;
          const std::string o2_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
@@ -1113,7 +1118,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       }
       if(compiler.is_clang)
       {
-         command = compiler.llvm_opt.string();
+         command = compiler.llvm_opt;
 #ifndef _WIN32
          auto renamed_plugin = compiler.ssa_plugin_obj;
          boost::replace_all(renamed_plugin, ".so", "_opt.so");
@@ -2876,13 +2881,19 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    {
       THROW_ERROR("Not found any compatible compiler");
    }
+   if(compiler.is_clang && getenv("APPDIR"))
+   {
+      const auto inc_dir = std::string(getenv("APPDIR")) + "/usr/include/c++";
+      compiler.gcc = "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " + compiler.gcc;
+      compiler.cpp = "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " + compiler.cpp;
+   }
    return compiler;
 }
 
 void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
 {
    /// This string contains the path and name of the compiler to be invoked
-   const std::string cpp = GetCompiler().cpp.string();
+   const std::string cpp = GetCompiler().cpp;
 
    std::string command = cpp + " -v  < /dev/null 2>&1 | grep -v -E \"(#|Configured with|Using built-in|Target|Thread model|gcc version|End of search list|ignoring nonexistent directory|cc1 -E -quiet|cc1.exe -E "
                                "-quiet|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|OFFLOAD_TARGET_NAMES|OFFLOAD_TARGET_DEFAULT|ignoring duplicate directory|ignoring nonexistent directory|InstalledDir|clang version|Found candidate|Selected GCC "
@@ -2929,7 +2940,7 @@ void CompilerWrapper::GetCompilerConfig() const
 
 void CompilerWrapper::QueryCompilerConfig(const std::string& compiler_option) const
 {
-   const std::string gcc = GetCompiler().gcc.string();
+   const std::string gcc = GetCompiler().gcc;
    const std::string command = gcc + " " + compiler_option;
    const std::string output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
    int ret = PandaSystem(Param, command, output_file_name);
@@ -3002,10 +3013,10 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
       file_names_string += file_name + " ";
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating executable " + executable_name + " from " + file_names_string);
-   std::string command;
+   std::string command = "";
 
    Compiler compiler = GetCompiler();
-   command = compiler.gcc.string() + " ";
+   command += compiler.gcc + " ";
 
    command += file_names_string + " ";
 
