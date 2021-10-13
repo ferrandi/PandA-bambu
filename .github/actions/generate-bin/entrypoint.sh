@@ -103,7 +103,7 @@ rm -f `find dist -type f -name clang-reorder-fields`
 rm -f `find dist -type f -name clang-func-mapping`
 rm -f `find dist -type f -name sancov`
 rm -f dist/clang+llvm*/lib/*.a
-rm -f dist/usr/share/man
+rm -rf dist/usr/share/man
 
 echo "Inflating libraries..."
 mkdir dist/lib

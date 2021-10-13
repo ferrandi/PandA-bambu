@@ -28,7 +28,7 @@ env:
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
-  storage-path: distribution
+  storage-path: release
   dist-pkg: bambu-${{github.event.inputs.version}}
   dist-dir: dist
   bcompiler-dir: compiler
@@ -215,14 +215,6 @@ jobs:
           storage-path: compilers
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
-      - name: Download python appimage
-        uses: ./.github/actions/storage-download
-        with:
-          name: python3.9.7-cp39-cp39-manylinux1_x86_64.AppImage
-          storage-url: '${{env.storage-url}}'
-          storage-path: appimage
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
       - name: Build Bambu application
         id: build
         uses: ./.github/actions/generate-bin
@@ -239,3 +231,7 @@ jobs:
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
           storage-compression: false
+      - name: Expose downlaod link
+        shell: bash
+        run: |
+          echo "::notice New release available at https://release.bambuhls.eu/${{steps.build.outputs.appimage}}"
