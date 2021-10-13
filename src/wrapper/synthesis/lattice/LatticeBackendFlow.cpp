@@ -229,8 +229,7 @@ void LatticeBackendFlow::CheckSynthesisResults()
 
 void LatticeBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
-   THROW_ASSERT(Param->isOption(OPT_lattice_settings), "");
-   auto setupscr = Param->getOption<std::string>(OPT_lattice_settings);
+   auto setupscr = Param->isOption(OPT_lattice_settings) ? Param->getOption<std::string>(OPT_lattice_settings) : "";
    if(setupscr.size() && setupscr != "0")
    {
       script << "#configuration" << std::endl;
