@@ -868,6 +868,7 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
+          ln -s $PWD/*.AppImage bin/tree-panda-gcc
           echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch script
         shell: bash
