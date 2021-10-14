@@ -50,7 +50,7 @@ do
    do
       if [[ -f "$CLANG_DIR/$app" ]]; then
          ln -sf "$CLANG_DIR/$app" "/usr/bin/$app-$CLANG_VER"
-         ln -sf "$CLANG_DIR/$app" "$workspace_dir/dist/usr/bin/$app-$CLANG_VER"
+         ln -sf "../..$CLANG_DIR/$app" "$workspace_dir/dist/usr/bin/$app-$CLANG_VER"
       fi
    done
    echo "Generating ccache alias for clang-$CLANG_VER"

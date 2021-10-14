@@ -162,7 +162,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" --compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -172,9 +172,8 @@ jobs:
 
   gcc_regression_simple-vhdl:
     if: github.event.pull_request.merged == true
-    needs: [build]
+    needs: [build, simulate-all]
     runs-on: [self-hosted, long, mentor]
-    concurrency: modelsim
     env:
       basename: regression_simple-vhdl
       args: -c=--simulator=MODELSIM -c=-wH
@@ -230,7 +229,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" --compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -242,7 +241,6 @@ jobs:
     if: github.event.pull_request.merged == true
     needs: [build]
     runs-on: [self-hosted, long, mentor]
-    concurrency: modelsim
     env:
       args: -c=--simulator=MODELSIM
     strategy:
@@ -292,9 +290,8 @@ jobs:
 
   libm-all-vhdl:
     if: github.event.pull_request.merged == true
-    needs: [build, simulate-all]
+    needs: [build, simulate-all, gcc_regression_simple-vhdl]
     runs-on: [self-hosted, long, mentor]
-    concurrency: modelsim
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -345,7 +342,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" --compiler=${{matrix.compiler}} ${{matrix.args}} ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{matrix.args}} ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -424,7 +421,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" --compiler=${{matrix.compiler}} ${{matrix.args}} ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{matrix.args}} ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
