@@ -235,6 +235,7 @@ lib_interconnectionbinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/algorithms/clique_covering \
    -I$(top_srcdir)/src/behavior  \
    -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/HLS \

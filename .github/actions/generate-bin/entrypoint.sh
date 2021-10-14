@@ -71,6 +71,14 @@ do
 done
 cd $workspace_dir
 
+max_gcc_ver="$(ls -x -v -1a dist/usr/include/c++ 2> /dev/null | tail -1)"
+if [[ -z "${max_gcc_ver}" ]]
+then
+  echo "At least one gcc version must be bundled in the AppImage"
+  exit -1
+fi
+echo "Latest bundled GCC version: ${max_gcc_ver}"
+
 echo "Initializing build environment..."
 make -f Makefile.init
 echo "::endgroup::"
@@ -87,12 +95,6 @@ make --directory=build -j$J install-strip DESTDIR="$workspace_dir/dist"
 echo "::endgroup"
 
 echo "::group::Package Appimage"
-echo "Inflating python interpreter..."
-chmod +x python*.AppImage
-./python*.AppImage --appimage-extract 2>&1> /dev/null
-rm squashfs-root/python.png squashfs-root/python*.desktop squashfs-root/usr/share/metainfo/python*.appdata.xml squashfs-root/AppRun
-rsync -a squashfs-root/ dist
-rm -rf squashfs-root python*.AppImage
 
 rm -f `find dist -type f -name clang-tidy`
 rm -f `find dist -type f -name clang-query`
@@ -101,6 +103,7 @@ rm -f `find dist -type f -name clang-reorder-fields`
 rm -f `find dist -type f -name clang-func-mapping`
 rm -f `find dist -type f -name sancov`
 rm -f dist/clang+llvm*/lib/*.a
+rm -rf dist/usr/share/man
 
 echo "Inflating libraries..."
 mkdir dist/lib
@@ -126,14 +129,12 @@ EOF
 cat > dist/usr/bin/tool_select.sh << EOF
 #!/bin/bash
 export LC_ALL="C"
-export PYTHONHOME=
-export PYTHONPATH=
-BINARY_NAME=$(basename "$ARGV0")
-BINARY_PATH="$APPDIR/usr/bin/$(basename $ARGV0)"
-if [ ! -e "$BINARY_PATH" ]; then
-   BINARY_PATH="$APPDIR/usr/bin/bambu"
+BINARY_NAME=\$(basename "\$ARGV0")
+BINARY_PATH="\$APPDIR/usr/bin/\$BINARY_NAME"
+if [ ! -e "\$BINARY_PATH" ]; then
+   BINARY_PATH="\$APPDIR/usr/bin/bambu"
 fi
-exec "$BINARY_PATH" "$@"
+\$BINARY_PATH "\$@"
 EOF
 chmod a+x dist/usr/bin/tool_select.sh
 

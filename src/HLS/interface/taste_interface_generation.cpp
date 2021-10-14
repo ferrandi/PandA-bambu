@@ -92,7 +92,8 @@
 #include "behavioral_helper.hpp"
 #include "tree_manager.hpp"
 
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 TasteInterfaceGeneration::TasteInterfaceGeneration(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
@@ -399,10 +400,10 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
 
       memory->SetParameter("n_elements", STR(n_elements));
 
-      std::string init_filename_a = function_name + "_a.data";
-      std::string init_filename_b = function_name + "_b.data";
-      std::ofstream init_file_a(init_filename_a.c_str());
-      std::ofstream init_file_b(init_filename_b.c_str());
+      std::string init_filename_a = GetPath(function_name + "_a.data");
+      std::string init_filename_b = GetPath(function_name + "_b.data");
+      std::ofstream init_file_a(init_filename_a);
+      std::ofstream init_file_b(init_filename_b);
 
       memory->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename_a + "\"\"");
       memory->SetParameter("MEMORY_INIT_file_b", "\"\"" + init_filename_b + "\"\"");

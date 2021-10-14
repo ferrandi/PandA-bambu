@@ -67,6 +67,7 @@
 #include "behavioral_helper.hpp"
 
 /// utility include
+#include "fileIO.hpp"
 #include "xml_helper.hpp"
 
 /// HLS include
@@ -330,8 +331,8 @@ DesignFlowStep_Status Evaluation::Exec()
          /// get the timing information after the synthesis
          double minimum_period = evaluation;
          auto clock_period = parameters->getOption<double>(OPT_clock_period);
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Clock period             : " + boost::lexical_cast<std::string>(clock_period));
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Design minimum period    : " + boost::lexical_cast<std::string>(minimum_period));
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Clock period             : " + STR(clock_period));
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Design minimum period    : " + STR(minimum_period));
       }
       else if(objective == "DSPS")
       {
@@ -370,7 +371,7 @@ DesignFlowStep_Status Evaluation::Exec()
    std::string candidate_out_file_name;
    do
    {
-      candidate_out_file_name = out_file_name + "_" + boost::lexical_cast<std::string>(progressive++) + ".xml";
+      candidate_out_file_name = GetPath(out_file_name + "_" + STR(progressive++) + ".xml");
    } while(boost::filesystem::exists(candidate_out_file_name));
 
    out_file_name = candidate_out_file_name;
@@ -401,7 +402,7 @@ DesignFlowStep_Status Evaluation::Exec()
             bench_name += ":taste_architecture";
          }
 
-         bench_name += "_" + boost::lexical_cast<std::string>(progressive - 1);
+         bench_name += "_" + STR(progressive - 1);
       }
       else
 #endif
@@ -429,7 +430,7 @@ DesignFlowStep_Status Evaluation::Exec()
                bench_name += ":" + FB->CGetBehavioralHelper()->get_function_name();
             }
 
-            bench_name += "_" + boost::lexical_cast<std::string>(progressive - 1);
+            bench_name += "_" + STR(progressive - 1);
          }
       }
    }

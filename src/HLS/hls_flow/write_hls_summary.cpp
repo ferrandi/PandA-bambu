@@ -52,6 +52,7 @@
 #include "hls_manager.hpp"
 
 #include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
 #include "memory.hpp"
 
 #include <boost/filesystem/operations.hpp>
@@ -94,7 +95,7 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
       top_HLS->PrintResources();
       if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       {
-         std::string out_file_name = "memory_allocation";
+         std::string out_file_name = GetPath("memory_allocation");
          unsigned int progressive = 0;
          std::string candidate_out_file_name;
          do
@@ -105,7 +106,7 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
          HLSMgr->Rmem->xwrite(out_file_name);
       }
 #if 0
-      std::string out_file_name = "hls_summary";
+      std::string out_file_name = GetPath("hls_summary");
       unsigned int progressive = 0;
       std::string candidate_out_file_name;
       do

@@ -73,6 +73,8 @@
 #include "custom_set.hpp"
 #include <vector>
 
+#include "fileIO.hpp"
+
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
@@ -1009,7 +1011,7 @@ int flopoco_wrapper::InternalWriteVHDL(const std::string& FU_name, const unsigne
 
 int flopoco_wrapper::writeVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, std::string pipe_parameter, std::string& filename)
 {
-   filename = ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter) + FILE_EXT;
+   filename = GetPath(ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter) + FILE_EXT);
    return this->InternalWriteVHDL(FU_name, FU_prec_in, FU_prec_out, filename, pipe_parameter);
 }
 
@@ -1020,7 +1022,7 @@ std::string flopoco_wrapper::writeVHDLcommon()
    {
       return "";
    }
-   std::string filename = std::string("FloPoCo_common") + FILE_EXT;
+   std::string filename = GetPath("FloPoCo_common" FILE_EXT);
    std::ofstream file(filename.c_str());
    if(!file.is_open())
    {

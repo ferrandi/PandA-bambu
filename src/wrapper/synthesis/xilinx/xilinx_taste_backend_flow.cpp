@@ -153,7 +153,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    if(actual_parameters->parameter_values.find(PARAM_xst_prj_file) != actual_parameters->parameter_values.end())
    {
       const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-      std::ofstream temp_file((output_temporary_directory + "/temp_xst_prj_file0").c_str());
+      std::ofstream temp_file(output_temporary_directory + "/temp_xst_prj_file0");
       temp_file << "vhdl grlib GRLIB/grlib/stdlib/version.vhd" << std::endl;
       temp_file << "vhdl grlib GRLIB/grlib/stdlib/stdlib.vhd" << std::endl;
       temp_file << "vhdl grlib GRLIB/grlib/amba/amba.vhd" << std::endl;
@@ -180,7 +180,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
       temp_file << "vhdl gaisler GRLIB/gaisler/pci/pcipads.vhd" << std::endl;
       temp_file << "vhdl gaisler GRLIB/gaisler/misc/rstgen.vhd" << std::endl;
       temp_file.close();
-      const auto xst_prj_file = actual_parameters->parameter_values.find(PARAM_xst_prj_file)->second;
+      const auto xst_prj_file = GetPath(actual_parameters->parameter_values.at(PARAM_xst_prj_file));
       const auto cat_ret = PandaSystem(Param, "cat " + output_temporary_directory + "/temp_xst_prj_file0 " + xst_prj_file, output_temporary_directory + "/temp_xst_prj_file1");
       if(IsError(cat_ret))
       {
@@ -200,7 +200,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
 void XilinxTasteBackendFlow::create_cf(const DesignParametersRef dp, bool xst)
 {
    std::string ucf_filename = UCF_SUBDIR + dp->component_name + (xst ? ".xcf" : ".ucf");
-   std::ofstream UCF_file(ucf_filename.c_str());
+   std::ofstream UCF_file(ucf_filename);
    UCF_file << "CONFIG STEPPING=\"0\";" << std::endl;
    UCF_file << "" << std::endl;
    UCF_file << "NET resetn TIG ;" << std::endl;

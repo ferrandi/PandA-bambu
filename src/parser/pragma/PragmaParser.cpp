@@ -90,14 +90,14 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 
    boost::filesystem::path old_path(OldFile);
    std::string FileName = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_pragma_prefix + boost::lexical_cast<std::string>(file_counter) + "_" + GetLeafFileName(old_path);
-   std::ofstream fileOutput(FileName.c_str(), std::ios::out);
+   std::ofstream fileOutput(FileName, std::ios::out);
 
    file_counter++;
    level = 0;
    // unsigned line_number = 0;
 
    // Get a stream from the input file
-   std::ifstream instream(OldFile.c_str());
+   std::ifstream instream(OldFile);
    // Test if the file has been correctly opened
    THROW_ASSERT(instream.is_open(), "INPUT FILE ERROR: Could not open input file: " + OldFile);
    while(!instream.eof())

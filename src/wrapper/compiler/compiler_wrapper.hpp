@@ -210,10 +210,10 @@ class CompilerWrapper
    {
     public:
       /// The cpp executable
-      boost::filesystem::path cpp;
+      std::string cpp;
 
       /// The compiler frontend executable
-      boost::filesystem::path gcc;
+      std::string gcc;
 
       /// The extra_options
       std::string extra_options;
@@ -247,10 +247,10 @@ class CompilerWrapper
       std::string ASTAnalyzer_plugin_name;
 
       /// The clang llvm-link executable
-      boost::filesystem::path llvm_link;
+      std::string llvm_link;
 
       /// The clang llvm-opt executable
-      boost::filesystem::path llvm_opt;
+      std::string llvm_opt;
 
 #if HAVE_FROM_RTL_BUILT
       /// The plugin to dump gimple and rtl

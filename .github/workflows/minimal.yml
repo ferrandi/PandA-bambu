@@ -13,6 +13,7 @@ env:
   build-args: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release
   dist-pkg: bambu-dist
   dist-dir: dist
+  bcompiler-dir: compiler
   report-dir: test-reports
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: '${{secrets.CI_STORAGE_USER}}'
@@ -96,30 +97,22 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: gcc-8-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
+          path: ./${{env.bcompiler-dir}}
           storage-url: '${{env.storage-url}}'
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
-      - name: Download python appimage
-        uses: ./.github/actions/storage-download
-        with:
-          name: python3.9.7-cp39-cp39-manylinux1_x86_64.AppImage
-          storage-url: '${{env.storage-url}}'
-          storage-path: appimage
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
       - name: Build Bambu application
         id: build
         uses: ./.github/actions/generate-bin
         with:
-          config-args: ${{env.build-args}} --enable-Werror CC=gcc-8 CXX=g++-8
+          config-args: ${{env.build-args}} --enable-Werror CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false
           jobs: ${{steps.host.outputs.jobs}}
       - name: Upload Panda install directory
         uses: ./.github/actions/storage-upload
         with:
           name: ${{env.dist-pkg}}
-          path: ${{steps.build.outputs.dist-dir}}/.
+          path: ${{steps.build.outputs.appimage}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -156,11 +149,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -168,13 +160,14 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch Bambu specific tests ${{matrix.id}}
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv"
       - name: Compare results
@@ -232,11 +225,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -244,14 +236,15 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch GCC regression test suite
-        id: grs
+        id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
@@ -274,7 +267,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{env.outname}}
-          path: ${{steps.grs.outputs.test-reports-dir}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
 
   gcc_regression_simple-pretty_print:
     needs: [build, specific-test]
@@ -287,11 +280,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -299,14 +291,15 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch GCC regression test suite with pretty-print
-        id: grspp
+        id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
@@ -329,24 +322,23 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{env.outname}}
-          path: ${{steps.grspp.outputs.test-reports-dir}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
 
   gcc_regression_simple-vhdl:
     needs: [build, specific-test]
     runs-on: [self-hosted, mentor]
     env:
-      setup: gcc-8
+      setup: gcc-7
       script: generic_gcc_regression_simple_bambu_vhdl.sh
-      args: -c=--compiler=I386_GCC8 -c=--simulator=MODELSIM
-      outname: gcc-8_regression_simple-vhdl
+      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM
+      outname: gcc-7_regression_simple-vhdl
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -354,14 +346,15 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch GCC regression test suite with VHDL target
-        id: grsvhdl
+        id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
@@ -384,7 +377,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{env.outname}}
-          path: ${{steps.grsvhdl.outputs.test-reports-dir}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
 
   discrepancy-test:
     needs: [build, specific-test]
@@ -397,11 +390,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -418,14 +410,15 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch Bambu discrepancy tests
-        id: grsd
+        id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
@@ -434,7 +427,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{env.outname}}
-          path: ${{steps.grsd.outputs.test-reports-dir}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
 
   softfloat-preliminary:
     runs-on: [self-hosted]
@@ -463,11 +456,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -475,14 +467,15 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch SoftFloat test suite
-        id: sf
+        id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
@@ -505,7 +498,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{env.outname}}
-          path: ${{steps.sf.outputs.test-reports-dir}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
 
   libm-preliminary:
     runs-on: [self-hosted]
@@ -555,11 +548,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -567,23 +559,38 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch LibM test suite
-        id: libm
+        id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}} ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: '${{env.storage-url}}'
+          username: '${{env.storage-user}}'
+          password: '${{env.storage-token}}'
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: ${{env.outname}}
-          path: ${{steps.libm.outputs.test-reports-dir}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
 
   CHStone-multi:
     needs: [build]
@@ -595,11 +602,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -607,14 +613,15 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch CHStone test suite
-        id: chstone
+        id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
@@ -637,7 +644,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{env.outname}}
-          path: ${{steps.chstone.outputs.test-reports-dir}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
 
   CHStone-memarch:
     needs: [build, CHStone-multi]
@@ -658,11 +665,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -670,14 +676,15 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch CHStone test suite
-        id: chstone
+        id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
@@ -703,7 +710,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{steps.get.outputs.outname}}
-          path: ${{steps.chstone.outputs.test-reports-dir}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
 
   omp-simd:
     needs: [build]
@@ -719,11 +726,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -731,13 +737,14 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch omp simd evaluation on ${{matrix.device}}
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           ./examples/omp_simd/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" -c=--device-name=${{matrix.device}} ${{env.args}}
       - name: Compare results
@@ -775,8 +782,6 @@ jobs:
             datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: lattice
             datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
-          - test: nanoxplore
-            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: sim
             datapoints: CYCLES
           - test: xilinx_ise
@@ -788,11 +793,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -800,14 +804,15 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch Panda bench ${{matrix.test}}
-        id: panda_bench
+        id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ./examples/panda_bench_${{matrix.test}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
@@ -831,7 +836,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{env.outname}}
-          path: ${{steps.panda_bench.outputs.test-reports-dir}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
 
   Make-checks:
     needs: [build]
@@ -839,11 +844,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Download pre-installed Bambu binaries
+      - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          path: ${{env.dist-dir}}
           storage-url: '${{env.storage-url}}'
           username: '${{env.storage-user}}'
           password: '${{env.storage-token}}'
@@ -851,12 +855,14 @@ jobs:
         id: setup
         shell: bash
         run: |
-          echo "::set-output name=appdir::$PWD/${{env.dist-dir}}"
-          echo "::set-output name=appdir-bin::$PWD/${{env.dist-dir}}/usr/bin"
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          ln -s $PWD/*.AppImage bin/tree-panda-gcc
+          echo "::set-output name=local-bin::$PWD/bin"
       - name: Launch script
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.appdir-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           ./examples/cpp_examples/fir_filter/bambu.sh
           ./examples/crypto_designs/multi.sh

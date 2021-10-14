@@ -20,9 +20,7 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-relative_tree_panda_gcc=$(which tree-panda-gcc)
-tree_panda_gcc=$(readlink -e $relative_tree_panda_gcc)
-make CC=$tree_panda_gcc V=1
+make V=1
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

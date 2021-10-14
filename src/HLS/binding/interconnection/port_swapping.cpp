@@ -65,7 +65,8 @@
 #include <random>
 
 #include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_helper.hpp"
 
@@ -618,7 +619,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "PORT_SWAPPING STARTING");
       if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
       {
-         std::ofstream file("starting-graph_" + HLS->allocation_information->get_string_name(fu.first.first) + "_" + STR(fu.first.second) + ".dot");
+         std::ofstream file(GetPath("starting-graph_" + HLS->allocation_information->get_string_name(fu.first.first) + "_" + STR(fu.first.second) + ".dot"));
          boost::write_graphviz(file, g);
          file.close();
       }

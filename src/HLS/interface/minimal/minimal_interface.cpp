@@ -404,8 +404,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             unsigned long long int n_bytes = HLSMgr->Rmem->get_memory_address() - base_address;
             unsigned long long int vec_size = n_bytes / (bus_data_bitsize / 8);
             std::string init_filename = "shared_memory.mem";
-            std::ofstream init_file_a(GetPath((init_filename).c_str()));
-            std::ofstream init_file_b(GetPath((+"0_" + init_filename).c_str()));
+            std::ofstream init_file_a(GetPath(init_filename));
+            std::ofstream init_file_b(GetPath("0_" + init_filename));
 
             auto* shared_memory_module = GetPointer<module>(shared_memory);
             shared_memory_module->SetParameter("address_space_begin", STR(base_address));

@@ -801,15 +801,13 @@ void XilinxBackendFlow::WriteFlowConfiguration(std::ostream& script)
    device_string = device->get_parameter<std::string>("family");
    if(device_string.find("-VVD") != std::string::npos)
    {
-      THROW_ASSERT(Param->isOption(OPT_xilinx_vivado_settings), "");
-      setupscr = Param->getOption<std::string>(OPT_xilinx_vivado_settings);
+      setupscr = Param->isOption(OPT_xilinx_vivado_settings) ? Param->getOption<std::string>(OPT_xilinx_vivado_settings) : "";
    }
    else
    {
-      THROW_ASSERT(Param->isOption(OPT_xilinx_settings), "");
-      setupscr = Param->getOption<std::string>(OPT_xilinx_settings);
+      setupscr = Param->isOption(OPT_xilinx_settings) ? Param->getOption<std::string>(OPT_xilinx_settings) : "";
    }
-   if(setupscr.size() and setupscr != "0")
+   if(setupscr.size() && setupscr != "0")
    {
       script << "#configuration" << std::endl;
       if(boost::algorithm::starts_with(setupscr, "export"))
@@ -960,7 +958,7 @@ void XilinxBackendFlow::InitDesignParameters()
 void XilinxBackendFlow::create_cf(const DesignParametersRef dp, bool xst)
 {
    std::string ucf_filename = UCF_SUBDIR + dp->component_name + (xst ? ".xcf" : ".ucf");
-   std::ofstream UCF_file(ucf_filename.c_str());
+   std::ofstream UCF_file(ucf_filename);
    THROW_ASSERT(dp->parameter_values.find(PARAM_clk_name) != dp->parameter_values.end(), "");
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {

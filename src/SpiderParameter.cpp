@@ -358,7 +358,7 @@ void SpiderParameter::SetDefaults()
    setOption(OPT_minimum_significance, 0);
 #endif
    setOption(OPT_normalization_sequences, "S");
-   setOption(OPT_output_directory, ".");
+   setOption(OPT_output_directory, GetPath("."));
    /// Output level
 #if RELEASE
    setOption(OPT_output_level, OUTPUT_LEVEL_NONE);
@@ -378,8 +378,9 @@ void SpiderParameter::CheckParameters()
    {
       Parameters_FileFormat input_format = Parameters_FileFormat::FF_UNKNOWN, temp = Parameters_FileFormat::FF_UNKNOWN;
       const auto input_files = getOption<const CustomSet<std::string>>(OPT_input_file);
-      for(const auto& input_file : input_files)
+      for(auto input_file : input_files)
       {
+         input_file = GetPath(input_file);
          temp = GetFileFormat(input_file, true);
          switch(temp)
          {
@@ -490,10 +491,10 @@ void SpiderParameter::CheckParameters()
       setOption(OPT_output_format, static_cast<int>(output_format));
    }
 #if HAVE_FROM_LIBERTY
-   if(getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_CELLS or getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LIB)
+   if(getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_CELLS || getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LIB)
    {
       const auto input_files = getOption<const CustomSet<std::string>>(OPT_input_file);
-      if(not(input_files.size() == 1 or (input_files.size() == 2 and isOption(OPT_aggregated_features))))
+      if(!(input_files.size() == 1 || (input_files.size() == 2 && isOption(OPT_aggregated_features))))
          THROW_ERROR("Only a liberty file required");
    }
 #endif
@@ -506,7 +507,7 @@ void SpiderParameter::CheckParameters()
       }
       else if(GetFileFormat(input_file, true) == Parameters_FileFormat::FF_XML_TARGET)
       {
-         if(isOption(OPT_target_device_file) and getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_TEC)
+         if(isOption(OPT_target_device_file) && getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_TEC)
          {
             THROW_ERROR("Multiple target device file: " + input_file + " " + getOption<std::string>(OPT_target_device_file));
          }
@@ -515,7 +516,7 @@ void SpiderParameter::CheckParameters()
    }
    if(getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_TEC)
    {
-      if(not isOption(OPT_target_device_file))
+      if(!isOption(OPT_target_device_file))
       {
          THROW_ERROR("Target device file not specified");
       }
