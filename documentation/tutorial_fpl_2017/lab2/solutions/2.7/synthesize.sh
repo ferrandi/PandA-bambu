@@ -7,4 +7,4 @@ $dir_script/test_panda.py --tool=bambu \
    --args="--configuration-name=mult --top-fname=formula_mult " \
    --args="--configuration-name=double_pow --top-fname=double_formula_pow" \
    --args="--configuration-name=double_mult --top-fname=double_formula_mult " \
-   -c=--simulate -c=-lm -c=--generate-tb=$dir_script/testbench.xml -c=--speculative-sdc-scheduling -b$dir_script -l$dir_script/list $@
+   -c=--simulate -c=-lm -c=--generate-tb=$dir_script/testbench.xml -c=--speculative-sdc-scheduling -b$dir_script -l$dir_script/list "$@"

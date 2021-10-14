@@ -14,4 +14,4 @@ $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=${configuration} ${BATCH_ARGS[*]}"\
    -lsoftfloat_list \
    -o "out_${OUT_SUFFIX}" -b$(dirname $0) \
-   --name="${OUT_SUFFIX}" $@
+   --name="${OUT_SUFFIX}" "$@"

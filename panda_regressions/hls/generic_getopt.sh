@@ -24,7 +24,7 @@ showHelp() {
 compiler=""
 device=""
 period=""
-ARGS=$@
+ARGS="$@"
 
 for arg in $ARGS
 do

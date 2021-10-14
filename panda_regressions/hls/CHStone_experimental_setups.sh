@@ -8,7 +8,7 @@ $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu \
              --args="--simulate -O3 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --device-name=xc7z020,-1,clg484,VVD --experimental-setup=BAMBU-PERFORMANCE-MP --configuration-name=BAMBU-PERFORMANCE-MP"\
              --args="--simulate -O3 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --device-name=xc7z020,-1,clg484,VVD --experimental-setup=BAMBU-PERFORMANCE --configuration-name=BAMBU-PERFORMANCE"\
              --args="--simulate -O3 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --device-name=xc7z020,-1,clg484,VVD --experimental-setup=BAMBU092 --configuration-name=BAMBU092"\
-             -lCHStone_experimental_setups_list -o output_CHStoneExperimentalSetups -b$(dirname $0) --table=CHStoneExperimentalSetups.tex --name="CHStoneExperimentalSetups" $@
+             -lCHStone_experimental_setups_list -o output_CHStoneExperimentalSetups -b$(dirname $0) --table=CHStoneExperimentalSetups.tex --name="CHStoneExperimentalSetups" "$@"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
