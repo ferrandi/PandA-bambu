@@ -474,7 +474,7 @@ jobs:
 
   example-altera:
     if: github.event.pull_request.merged == true
-    needs: [build, softfloat-all]
+    needs: [build, simulate-all]
     runs-on: [self-hosted, long, altera, intelFPGA]
     timeout-minutes: 600
     env:
@@ -572,7 +572,7 @@ jobs:
 
   example-xilinx:
     if: github.event.pull_request.merged == true
-    needs: [build, softfloat-all]
+    needs: [build, simulate-all]
     runs-on: [self-hosted, long, xilinx]
     timeout-minutes: 600
     env:
@@ -674,7 +674,7 @@ jobs:
 
   example-lattice:
     if: github.event.pull_request.merged == true
-    needs: [build, softfloat-all]
+    needs: [build, simulate-all]
     runs-on: [self-hosted, long, lattice]
     env:
       args: --spider-style="../lib/latex_format_bambu_results_lattice.xml" -c=--evaluation -t120m
