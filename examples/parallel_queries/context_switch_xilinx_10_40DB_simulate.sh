@@ -3,7 +3,7 @@
 script_dir="$(dirname $(readlink -e $0))"
 . $script_dir/../../panda_regressions/hls/generic_getopt.sh
 
-BATCH_ARGS=("--simulator=MODELSIM" "--compiler=I386_GCC49" "--std=c99" "--experimental-setup=BAMBU" "-O3" "-fno-delete-null-pointer-checks" "-fopenmp" "--pragma-parse" "--mem-delay-read=20" "--mem-delay-write=20" "--channels-type=MEM_ACC_11" "--memory-allocation-policy=NO_BRAM" "--no-iob" "--device-name=xc7vx690t-3ffg1930-VVD" "--clock-period=10" "-DMAX_VERTEX_NUMBER=26455" "-DMAX_EDGE_NUMBER=100573" "--simulate")
+BATCH_ARGS=("--simulator=MODELSIM" "--compiler=I386_GCC49" "--std=c99" "--experimental-setup=BAMBU" "-O3" "-fno-delete-null-pointer-checks" "-fopenmp" "--pragma-parse" "--mem-delay-read=20" "--mem-delay-write=20" "--channels-type=MEM_ACC_11" "--memory-allocation-policy=NO_BRAM" "--no-iob" "--device-name=xc7vx690t-3ffg1930-VVD" "--clock-period=10" "-DMAX_VERTEX_NUMBER=26455" "-DMAX_EDGE_NUMBER=100573" "--max-sim-cycles=2000000000" "--simulate")
 OUT_SUFFIX="parallel_queries_40DB"
 
 $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu  \

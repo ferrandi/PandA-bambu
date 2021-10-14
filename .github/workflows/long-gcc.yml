@@ -619,6 +619,11 @@ jobs:
             script: ./examples/omp_simd/generic_omp_simd.sh
             compiler: I386_GCC49
             batch: 'xc7vx690t-3ffg1930-VVD_10.0'
+          - basename: parallel_queries
+            script: ./examples/parallel_queries/context_switch_xilinx_10_1DB_simulate.sh
+            compiler: I386_GCC49
+            args: -c=--evaluation=CYCLES
+            batch: 'xc7vx690t-3ffg1930-VVD_10.0'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
