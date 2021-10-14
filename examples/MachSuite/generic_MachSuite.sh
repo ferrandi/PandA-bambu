@@ -11,4 +11,4 @@ $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=${compiler} common/harness.c ${BATCH_ARGS[*]}"\
    -lmachsuite_list \
    -o "out${OUT_SUFFIX}" -b$(dirname $0) \
-   --name="${OUT_SUFFIX}" $@
+   --name="${OUT_SUFFIX}" "$@"

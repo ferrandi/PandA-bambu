@@ -771,15 +771,11 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    }
    const Compiler compiler = GetCompiler();
 
-   bool disable_pragma_parsing = false;
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
+    HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
    if(Param->IsParameter("disable-pragma-parsing") && Param->GetParameter<int>("disable-pragma-parsing") == 1)
    {
-      disable_pragma_parsing = true;
-   }
-   if(disable_pragma_parsing || !(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER ||
-                                  HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER))
-   {
-      THROW_WARNING("pragma analysis requires CLANG");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Pragma analysis disabled");
    }
    else
    {
@@ -823,6 +819,9 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, source_files.size() > 1, CompilerWrapper_CompilerMode::CM_ANALYZER);
       }
    }
+#else
+   THROW_WARNING("pragma analysis requires CLANG");
+#endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
    bool enable_LTO = (compiler.is_clang && source_files.size() > 1);
    for(auto& source_file : source_files)

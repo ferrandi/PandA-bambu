@@ -13,7 +13,7 @@ for file in $(find  $device_dir -name *-seed.xml*); do
       mkdir $device
    fi
    cd $device
-   $root_dir/characterize_device.sh --devices=$device $@
+   $root_dir/characterize_device.sh --devices=$device "$@"
    return_value=$?
    if test $return_value != 0; then
       exit $return_value

@@ -6,5 +6,5 @@ $(dirname $0)/../../etc/scripts/test_panda.py gcc_regression_simple --tool=bambu
    --args="--configuration-name=N1-bhl -lm --device-name=LFE335EA8FN484C --simulate --channels-type=MEM_ACC_N1 --bram-high-latency --experimental-setup=BAMBU --compiler=I386_GCC49 -O0" \
    --args="--configuration-name=NN -lm --device-name=LFE335EA8FN484C --channels-type=MEM_ACC_NN --experimental-setup=BAMBU --compiler=I386_GCC49 -O0" \
    --args="--configuration-name=NN-bhl -lm --device-name=LFE335EA8FN484C --simulate --channels-type=MEM_ACC_NN --bram-high-latency --experimental-setup=BAMBU --compiler=I386_GCC49 -O0" \
-  -o output_ECP3 -b$(dirname $0) --table=output_ECP3.tex  --name="GccRegressionSimpleECP3" $@
+  -o output_ECP3 -b$(dirname $0) --table=output_ECP3.tex  --name="GccRegressionSimpleECP3" "$@"
 exit $?

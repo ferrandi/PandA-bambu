@@ -21,4 +21,4 @@ $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=${compiler}_e8m7   --fp-format=@*8*7*-127   --max-ulp=35184372088832 ${BATCH_ARGS[*]}"\
    -ltruefloat_list \
    -o "out${OUT_SUFFIX}" -b$(dirname $0) \
-   --name="${OUT_SUFFIX}" $@
+   --name="${OUT_SUFFIX}" "$@"

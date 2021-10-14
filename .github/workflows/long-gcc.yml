@@ -474,11 +474,11 @@ jobs:
 
   example-altera:
     if: github.event.pull_request.merged == true
-    needs: [build, softfloat-all]
+    needs: [build, simulate-all]
     runs-on: [self-hosted, long, altera, intelFPGA]
     timeout-minutes: 600
     env:
-      args: --spider-style="../lib/latex_format_bambu_results_altera.xml" -c=--evaluation -t120m
+      args: --spider-style="latex_format_bambu_results_altera.xml" -c=--evaluation -t120m
     strategy:
       fail-fast: false
       matrix:
@@ -572,11 +572,11 @@ jobs:
 
   example-xilinx:
     if: github.event.pull_request.merged == true
-    needs: [build, softfloat-all]
+    needs: [build, simulate-all]
     runs-on: [self-hosted, long, xilinx]
     timeout-minutes: 600
     env:
-      args: --spider-style="../lib/latex_format_bambu_results_xilinx.xml" -c=--evaluation -t120m
+      args: --spider-style="latex_format_bambu_results_xilinx.xml" -c=--evaluation -t120m
     strategy:
       fail-fast: false
       matrix:
@@ -618,6 +618,11 @@ jobs:
           - basename: omp_simd
             script: ./examples/omp_simd/generic_omp_simd.sh
             compiler: I386_GCC49
+            batch: 'xc7vx690t-3ffg1930-VVD_10.0'
+          - basename: parallel_queries
+            script: ./examples/parallel_queries/context_switch_xilinx_10_1DB_simulate.sh
+            compiler: I386_GCC49
+            args: -c=--evaluation=CYCLES
             batch: 'xc7vx690t-3ffg1930-VVD_10.0'
     steps:
       - name: Checkout repository
@@ -674,10 +679,10 @@ jobs:
 
   example-lattice:
     if: github.event.pull_request.merged == true
-    needs: [build, softfloat-all]
+    needs: [build, simulate-all]
     runs-on: [self-hosted, long, lattice]
     env:
-      args: --spider-style="../lib/latex_format_bambu_results_lattice.xml" -c=--evaluation -t120m
+      args: --spider-style="latex_format_bambu_results_lattice.xml" -c=--evaluation -t120m
     strategy:
       fail-fast: false
       matrix:
