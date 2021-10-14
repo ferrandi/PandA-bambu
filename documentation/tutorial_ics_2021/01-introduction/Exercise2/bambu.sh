@@ -9,5 +9,5 @@ echo "#simulation of search function"
 bambu $root_dir/tree.c --top-fname=main --top-rtldesign-name=search \
    -DNDEBUG -DBAMBU_PROFILING \
    -O3 --experimental-setup=BAMBU \
-   --generate-tb=$root_dir/test_search.xml --simulator=ICARUS --simulate \ 
-   --print-dot -v2 "$@" |& tee search.log
+   --generate-tb=$root_dir/test_search.xml --simulator=ICARUS --simulate \
+   --print-dot -v2 "$@" |& tee log.txt
