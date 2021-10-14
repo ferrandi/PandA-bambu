@@ -360,7 +360,12 @@ def CollectResults(directory):
             temp_list.write("</experimental_setup>\n")
             temp_list.close()
             local_args = input_files + " " + experimental_setup_file_name
-            local_args = local_args + " " + args.spider_style + " " + table
+            if os.path.exists(args.spider_style):
+                local_args = local_args + " " + args.spider_style + " " + table
+            else:
+                local_args = local_args + " " + \
+                    os.path.join(os.path.dirname(os.path.realpath(__file__)), "latex_table_format/",
+                                 args.spider_style) + " " + table
 #            logging.info("   Creating tex " + spider + " " + local_args)
             logging.info("   Creating tex " + spider)
             local_command = [spider]
@@ -575,8 +580,8 @@ parser.add_argument(
     "--bambu", help="The bambu executable (default=bambu)", default="bambu")
 parser.add_argument("--spider", help="The spider executable (default=spider)",
                     default="spider")
-parser.add_argument("--spider-style", help="The spider table style relative to the spider executable (default=latex_format_bambu_results.xml)",
-                    default=os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/../latex_table_format/latex_format_bambu_results.xml")))
+parser.add_argument("--spider-style", help="The spider table style (default=latex_format_bambu_results.xml)",
+                    default="latex_format_bambu_results.xml")
 parser.add_argument(
     "--zebu", help="The zebu executable (default=zebu)", default="zebu")
 parser.add_argument(

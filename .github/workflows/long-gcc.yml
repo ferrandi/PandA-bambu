@@ -478,7 +478,7 @@ jobs:
     runs-on: [self-hosted, long, altera, intelFPGA]
     timeout-minutes: 600
     env:
-      args: --spider-style="../lib/latex_format_bambu_results_altera.xml" -c=--evaluation -t120m
+      args: --spider-style="latex_format_bambu_results_altera.xml" -c=--evaluation -t120m
     strategy:
       fail-fast: false
       matrix:
@@ -576,7 +576,7 @@ jobs:
     runs-on: [self-hosted, long, xilinx]
     timeout-minutes: 600
     env:
-      args: --spider-style="../lib/latex_format_bambu_results_xilinx.xml" -c=--evaluation -t120m
+      args: --spider-style="latex_format_bambu_results_xilinx.xml" -c=--evaluation -t120m
     strategy:
       fail-fast: false
       matrix:
@@ -677,7 +677,7 @@ jobs:
     needs: [build, simulate-all]
     runs-on: [self-hosted, long, lattice]
     env:
-      args: --spider-style="../lib/latex_format_bambu_results_lattice.xml" -c=--evaluation -t120m
+      args: --spider-style="latex_format_bambu_results_lattice.xml" -c=--evaluation -t120m
     strategy:
       fail-fast: false
       matrix:

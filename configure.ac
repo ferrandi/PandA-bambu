@@ -2435,7 +2435,7 @@ AC_CONFIG_FILES(
 
 if test "x$panda_USE_LIB_TO_DATAFILE" = xyes; then
   AC_CONFIG_FILES(
-                  etc/latex_table_format/Makefile
+                  etc/scripts/latex_table_format/Makefile
                  )
 fi
 AM_CONDITIONAL(BUILD_LATEX_TABLE_FORMAT, test "x$panda_USE_LIB_TO_DATAFILE" = xyes)
