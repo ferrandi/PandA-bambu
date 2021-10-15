@@ -905,7 +905,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    std::string fname;
    tree_helper::get_mangled_fname(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id)), fname);
    const auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
-   const auto& DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
+   const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
 
    std::vector<unsigned int> mem_interface;
    const auto& parameters = behavioral_helper->get_parameters();
@@ -930,6 +930,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
       for(const auto& l : mem)
       {
          std::string param = behavioral_helper->PrintVariable(l);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable '" + param + "'");
          const auto is_interface = std::find(parameters.begin(), parameters.end(), l) != parameters.end();
          std::string argTypename = "";
          if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end() && is_interface)
@@ -941,7 +942,6 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                argTypename = "";
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable " + param);
          if(param[0] == '"')
          {
             param = "@" + STR(l);
@@ -1246,7 +1246,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             indented_output_stream->Append("// next_object_offset > reserved_mem_bytes\n");
             WriteZeroedBytes(next_object_offset - reserved_mem_bytes);
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Considered memory variable " + param);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Considered memory variable '" + param + "'");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered test vector " + STR(v_idx));
       ++v_idx;

@@ -264,11 +264,9 @@ bool BambuFrontendFlow::HasToBeExecuted() const
 
 DesignFlowStep_Status BambuFrontendFlow::Exec()
 {
-#ifndef NDEBUG
-   if(parameters->getOption<bool>(OPT_print_dot) or debug_level >= DEBUG_LEVEL_PEDANTIC)
+   if(parameters->getOption<bool>(OPT_print_dot) || debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph_final.dot");
    }
-#endif
    return DesignFlowStep_Status::EMPTY;
 }

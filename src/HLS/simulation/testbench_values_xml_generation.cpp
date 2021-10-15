@@ -178,7 +178,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    const auto fnode = TM->CGetTreeNode(function_id);
    tree_helper::get_mangled_fname(GetPointer<const function_decl>(fnode), fname);
    const auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
-   const auto& DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
+   const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
 
    HLSMgr->RSim->simulationArgSignature.clear();
    const auto& function_parameters = behavioral_helper->GetParameters();
@@ -207,6 +207,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       for(const auto& l : mem)
       {
          std::string param = behavioral_helper->PrintVariable(l);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering parameter '" + param + "'");
          const auto is_interface = std::find_if(function_parameters.begin(), function_parameters.end(), [&](const tree_nodeRef& tn) { return GET_INDEX_CONST_NODE(tn) == l; }) != function_parameters.end();
          std::string argTypename = "";
          if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end() && is_interface)
@@ -218,7 +219,6 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
                argTypename = "";
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
          if(param[0] == '"')
          {
             param = "@" + STR(l);
@@ -294,7 +294,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
                output_stream << "m00000000" << std::endl;
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cosidered parameter " + param);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cosidered parameter '" + param + "'");
       }
       ++v_idx;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered vector");
