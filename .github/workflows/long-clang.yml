@@ -89,8 +89,7 @@ jobs:
     needs: [build]
     runs-on: [self-hosted, long]
     env:
-      basename: regression_simple
-      args: -c=--simulator=VERILATOR
+      args: -c=--simulator=VERILATOR -t150m
     strategy:
       fail-fast: false
       matrix:
@@ -152,7 +151,10 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_${{env.basename}}"
+          OUTNAME="$(echo '${{matrix.compiler}}_${{matrix.script}}' | sed -r 's/(I386_|\.sh|generic_gcc_)//g' | tr '[:upper:]' '[:lower:]')"
+          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
+            OUTNAME+="_sdc"
+          fi
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test suite
         id: suite
@@ -175,7 +177,6 @@ jobs:
     needs: [build, simulate-all]
     runs-on: [self-hosted, long, mentor]
     env:
-      basename: regression_simple-vhdl
       args: -c=--simulator=MODELSIM -c=-wH
     strategy:
       max-parallel: 2
@@ -219,7 +220,7 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_${{env.basename}}"
+          OUTNAME="$(echo '${{matrix.compiler}}_${{matrix.script}}' | sed -r 's/(I386_|\.sh|generic_gcc_)//g' | tr '[:upper:]' '[:lower:]')_vhdl"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test suite
         id: suite
@@ -280,7 +281,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -342,7 +343,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{matrix.args}} ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -383,7 +384,7 @@ jobs:
             args: '-c=--speculative-sdc-scheduling'
     env:
       script: generic_libm-tests.sh
-      args: -c=--simulator=VERILATOR
+      args: -c=--simulator=VERILATOR -t150m
       basename: libm
     steps:
       - name: Checkout repository
@@ -421,7 +422,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{matrix.args}} ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2

@@ -153,7 +153,7 @@ jobs:
     runs-on: [self-hosted, long]
     env:
       basename: regression_simple
-      args: -c=--simulator=VERILATOR
+      args: -c=--simulator=VERILATOR -t150m
     strategy:
       fail-fast: false
       matrix:
@@ -201,7 +201,10 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_${{env.basename}}"
+          OUTNAME="$(echo '${{matrix.compiler}}_${{matrix.script}}' | sed -r 's/(I386_|\.sh|generic_gcc_)//g' | tr '[:upper:]' '[:lower:]')"
+          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
+            OUTNAME+="_sdc"
+          fi
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test suite
         id: suite
@@ -271,7 +274,7 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_${{env.basename}}"
+           OUTNAME="$(echo '${{matrix.compiler}}_${{matrix.script}}' | sed -r 's/(I386_|\.sh|generic_gcc_)//g' | tr '[:upper:]' '[:lower:]')_vhdl"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test suite
         id: suite
@@ -333,7 +336,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -395,7 +398,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{matrix.args}} ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -423,7 +426,7 @@ jobs:
         args: [ '', '-c=--speculative-sdc-scheduling']
     env:
       script: generic_libm-tests.sh
-      args: -c=--simulator=VERILATOR
+      args: -c=--simulator=VERILATOR -t150m
       basename: libm
     steps:
       - name: Checkout repository
@@ -461,7 +464,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{matrix.args}} ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -475,6 +478,7 @@ jobs:
     runs-on: [self-hosted, long, altera, intelFPGA]
     timeout-minutes: 600
     env:
+      basename: altera
       args: --spider-style="latex_format_bambu_results_altera.xml" -c=--evaluation -t120m
     strategy:
       fail-fast: false
@@ -536,7 +540,7 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//' | tr '[:upper:]' '[:lower:]')_${{env.basename}}"
+          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//' | tr '[:upper:]' '[:lower:]')_${{matrix.basename}}_${{env.basename}}"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test batch
         id: batch
@@ -557,7 +561,7 @@ jobs:
             IFS=' ' read -r -a args <<< "$args"
             config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
             config_out="$out_dir/$config_name"
-            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${args[@]/#/-c=} ${{matrix.args}} ${{env.args}}
+            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
             echo "::endgroup::"
           done
       - name: Upload test reports
@@ -573,6 +577,7 @@ jobs:
     runs-on: [self-hosted, long, xilinx]
     timeout-minutes: 600
     env:
+      basename: xilinx
       args: --spider-style="latex_format_bambu_results_xilinx.xml" -c=--evaluation -t120m
     strategy:
       fail-fast: false
@@ -643,7 +648,7 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//' | tr '[:upper:]' '[:lower:]')_${{env.basename}}"
+          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//' | tr '[:upper:]' '[:lower:]')_${{matrix.basename}}_${{env.basename}}"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test batch
         id: batch
@@ -664,7 +669,7 @@ jobs:
             IFS=' ' read -r -a args <<< "$args"
             config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
             config_out="$out_dir/$config_name"
-            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${args[@]/#/-c=} ${{matrix.args}} ${{env.args}}
+            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
             echo "::endgroup::"
           done
       - name: Upload test reports
@@ -679,6 +684,7 @@ jobs:
     needs: [build, simulate-all]
     runs-on: [self-hosted, long, lattice]
     env:
+      basename: lattice
       args: --spider-style="latex_format_bambu_results_lattice.xml" -c=--evaluation -t120m
     strategy:
       fail-fast: false
@@ -723,7 +729,7 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//' | tr '[:upper:]' '[:lower:]')_${{env.basename}}"
+          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//' | tr '[:upper:]' '[:lower:]')_${{matrix.basename}}_${{env.basename}}"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test batch
         id: batch
@@ -744,7 +750,7 @@ jobs:
             IFS=' ' read -r -a args <<< "$args"
             config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
             config_out="$out_dir/$config_name"
-            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${args[@]/#/-c=} ${{matrix.args}} ${{env.args}}
+            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
             echo "::endgroup::"
           done
       - name: Upload test reports
