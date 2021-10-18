@@ -571,7 +571,7 @@ parser.add_argument(
 parser.add_argument('-l', "--benchmarks_list",
                     help="The file containing the list of tests to be performed", nargs='*', action="append")
 parser.add_argument('-s', "--skip_list",
-                    help="The comma separated list of benchmark names to skip from the list", type=str)
+                    help="The comma separated list of benchmark names to skip from the list", type=str, default="")
 parser.add_argument('-b', "--benchmarks_root",
                     help="The directory containing benchmarks")
 parser.add_argument(

@@ -7,11 +7,11 @@ on:
         description: 'Bambu version identifier'
         required: true
         default: 'gcc7_clang11'
-      compilers: 
+      compilers:
         description: 'Comma separated list of compilers to include'
         required: true
         default: 'gcc7,clang11'
-      build-compiler: 
+      build-compiler:
         description: 'Compiler used to build bambu (if not already included in compilers)'
         required: false
         default: 'gcc8'

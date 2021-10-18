@@ -2,7 +2,7 @@ name: Merge PR
 on:
   pull_request:
     types: [closed]
-    braches:
+    branches:
       - main
 
 env:

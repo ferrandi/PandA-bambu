@@ -8,7 +8,7 @@ inputs:
   jobs:
     description: 'Parallel jobs'
     required: false
-    default: 1
+    default: '1'
 runs:
   using: 'docker'
   image: 'Dockerfile'

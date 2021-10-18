@@ -3,7 +3,7 @@ name: Long gcc
 on:
   pull_request:
     types: [closed]
-    braches:
+    branches:
       - main
 
   workflow_dispatch:
@@ -157,22 +157,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [ 
-          I386_GCC45, 
-          I386_GCC46, 
-          I386_GCC47, 
-          I386_GCC48, 
-          I386_GCC49, 
-          I386_GCC5, 
-          I386_GCC6, 
-          I386_GCC7, 
-          I386_GCC8]
-        script: [ 
-          generic_gcc_regression_simple_bambu_pretty_print.sh, 
-          generic_gcc_regression_simple_bambu.sh, 
-          generic_gcc_regression_simple_eg_ext_pipelined.sh, 
-          generic_gcc_regression_simple_eg.sh ]
-        args: [ '', '-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1']
+        compiler:
+          [
+            I386_GCC45,
+            I386_GCC46,
+            I386_GCC47,
+            I386_GCC48,
+            I386_GCC49,
+            I386_GCC5,
+            I386_GCC6,
+            I386_GCC7,
+            I386_GCC8,
+          ]
+        script:
+          [
+            generic_gcc_regression_simple_bambu_pretty_print.sh,
+            generic_gcc_regression_simple_bambu.sh,
+            generic_gcc_regression_simple_eg_ext_pipelined.sh,
+            generic_gcc_regression_simple_eg.sh,
+          ]
+        args:
+          [
+            '',
+            '-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1',
+          ]
         exclude:
           - compiler: I386_GCC49
             script: generic_gcc_regression_simple_bambu_pretty_print.sh
@@ -232,21 +240,25 @@ jobs:
       max-parallel: 2
       fail-fast: false
       matrix:
-        compiler: [ 
-          I386_GCC45, 
-          I386_GCC46, 
-          I386_GCC47, 
-          I386_GCC48, 
-          I386_GCC49, 
-          I386_GCC5, 
-          I386_GCC6, 
-          I386_GCC7, 
-          I386_GCC8]
-        script: [ 
-          generic_gcc_regression_simple_bambu_pretty_print.sh, 
-          generic_gcc_regression_simple_bambu.sh, 
-          generic_gcc_regression_simple_eg_ext_pipelined.sh, 
-          generic_gcc_regression_simple_eg.sh ]
+        compiler:
+          [
+            I386_GCC45,
+            I386_GCC46,
+            I386_GCC47,
+            I386_GCC48,
+            I386_GCC49,
+            I386_GCC5,
+            I386_GCC6,
+            I386_GCC7,
+            I386_GCC8,
+          ]
+        script:
+          [
+            generic_gcc_regression_simple_bambu_pretty_print.sh,
+            generic_gcc_regression_simple_bambu.sh,
+            generic_gcc_regression_simple_eg_ext_pipelined.sh,
+            generic_gcc_regression_simple_eg.sh,
+          ]
         exclude:
           - compiler: I386_GCC7
             script: generic_gcc_regression_simple_bambu.sh
@@ -272,7 +284,7 @@ jobs:
         id: get
         shell: bash
         run: |
-           OUTNAME="$(echo '${{matrix.compiler}}_${{matrix.script}}' | sed -r 's/(I386_|\.sh|generic_gcc_)//g' | tr '[:upper:]' '[:lower:]')_vhdl"
+          OUTNAME="$(echo '${{matrix.compiler}}_${{matrix.script}}' | sed -r 's/(I386_|\.sh|generic_gcc_)//g' | tr '[:upper:]' '[:lower:]')_vhdl"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test suite
         id: suite
@@ -350,16 +362,18 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        compiler: [ 
-          I386_GCC45, 
-          I386_GCC46, 
-          I386_GCC47, 
-          I386_GCC48, 
-          I386_GCC49, 
-          I386_GCC5, 
-          I386_GCC6, 
-          I386_GCC7, 
-          I386_GCC8]
+        compiler:
+          [
+            I386_GCC45,
+            I386_GCC46,
+            I386_GCC47,
+            I386_GCC48,
+            I386_GCC49,
+            I386_GCC5,
+            I386_GCC6,
+            I386_GCC7,
+            I386_GCC8,
+          ]
     env:
       script: generic_libm-tests.sh
       args: -c=--simulator=VERILATOR -c=-wH
@@ -411,17 +425,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [ 
-          I386_GCC45, 
-          I386_GCC46, 
-          I386_GCC47, 
-          I386_GCC48, 
-          I386_GCC49, 
-          I386_GCC5, 
-          I386_GCC6, 
-          I386_GCC7, 
-          I386_GCC8]
-        args: [ '', '-c=--speculative-sdc-scheduling']
+        compiler:
+          [
+            I386_GCC45,
+            I386_GCC46,
+            I386_GCC47,
+            I386_GCC48,
+            I386_GCC49,
+            I386_GCC5,
+            I386_GCC6,
+            I386_GCC7,
+            I386_GCC8,
+          ]
+        args: ['', '-c=--speculative-sdc-scheduling']
     env:
       script: generic_libm-tests.sh
       args: -c=--simulator=VERILATOR -t150m
