@@ -407,7 +407,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Generate testbench for the input values defined in the specified XML\n"
       << "        file.\n\n"
       << "    --top-fname=<fun_name>\n"
-      << "        Define the top function to be synthesized.\n\n"
+      << "        Define the top function to be synthesized. (default=main)\n\n"
       << "    --top-rtldesign-name=<top_name>\n"
       << "        Define the top module name for the RTL backend.\n\n"
       << "    --inline-fname=<fun_name>[,<fun_name>]*\n"
@@ -3208,6 +3208,12 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
+
+   if(!isOption(OPT_top_functions_names))
+   {
+      setOption(OPT_top_functions_names, "main");
+      THROW_WARNING("Top function name was not specified: main will ");
+   }
 
    const auto sorted_dirs = [](const std::string& parent_dir) {
       std::vector<boost::filesystem::path> sorted_paths;
