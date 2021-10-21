@@ -303,7 +303,7 @@ namespace RangeAnalysis
 #else
                                                           const_cast<llvm::Instruction*>(I)
 #endif
-                                                          );
+         );
          assert(!range.isEmptySet());
          auto ty = I->getType();
          auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
@@ -1409,17 +1409,13 @@ namespace RangeAnalysis
 
       const APInt& a = this->getLower();
       const APInt& b = this->getUpper();
-      APInt c = other.getLower();
+      const APInt& c = other.getLower();
       const APInt& d = other.getUpper();
 
       // Deal with mod 0 exception
-      if(c.eq(Zero) && d.eq(Zero))
+      if(c.sle(Zero) && d.sge(Zero))
       {
          return Range(Regular, getBitWidth(), Min, Max);
-      }
-      if(c.eq(Zero))
-      {
-         c = APInt(MAX_BIT_INT, 1);
       }
 
       //      llvm::errs() << "this-rem:";
@@ -1429,42 +1425,21 @@ namespace RangeAnalysis
       //      other.print(llvm::errs());
       //      llvm::errs() << "\n";
 
-      APInt candidates[4];
-      candidates[0] = Min;
-      candidates[1] = Min;
-      candidates[2] = Max;
-      candidates[3] = Max;
-      if(a.ne(Min) && c.ne(Min))
+      const APInt dmin = c.abs().slt(d.abs()) ? d.abs() : c.abs();
+      const APInt dmax = c.abs().slt(d.abs()) ? c.abs() : d.abs();
+      const APInt abs_min = a.abs().slt(b.abs()) ? b.abs() : a.abs();
+      const APInt abs_max = a.abs().slt(b.abs()) ? a.abs() : b.abs();
+
+      auto res = Range(Regular, getBitWidth(), a.slt(0) ? -(dmax - APInt(getBitWidth(), 1)) : APInt(getBitWidth(), 0), b.sgt(0) ? (dmax - APInt(getBitWidth(), 1)) : APInt(getBitWidth(), 0));
+      if((abs_min.slt(dmin) && dmin.slt(abs_max)) || (abs_min.slt(dmax) && dmax.slt(abs_max)))
       {
-         candidates[0] = a.srem(c); // lower lower
+         res = Range(Regular, getBitWidth(), a.sge(0) ? APInt(getBitWidth(), 0) : (a.abs().slt(dmax) ? a : -(dmax - APInt(getBitWidth(), 1))), b.sle(0) ? APInt(getBitWidth(), 0) : (b.abs().slt(dmax) ? b : (dmax - APInt(getBitWidth(), 1))));
       }
-      if(a.ne(Min) && d.ne(Max))
+      else if(abs_max.slt(dmin))
       {
-         candidates[1] = a.srem(d); // lower upper
+         res = *this;
       }
-      if(b.ne(Max) && c.ne(Min))
-      {
-         candidates[2] = b.srem(c); // upper lower
-      }
-      if(b.ne(Max) && d.ne(Max))
-      {
-         candidates[3] = b.srem(d); // upper upper
-      }
-      // Lower bound is the min value from the vector, while upper bound is the max value
-      APInt* min = &candidates[0];
-      APInt* max = &candidates[0];
-      for(unsigned i = 1; i < 4; ++i)
-      {
-         if(candidates[i].sgt(*max))
-         {
-            max = &candidates[i];
-         }
-         else if(candidates[i].slt(*min))
-         {
-            min = &candidates[i];
-         }
-      }
-      auto res = Range(Regular, getBitWidth(), *min, *max);
+
       //      llvm::errs() << "res-rem:";
       //      res.print(llvm::errs());
       //      llvm::errs() << "\n";
@@ -6784,7 +6759,7 @@ namespace RangeAnalysis
          CallSite CS(cast<Instruction>(Us));
 #endif
 #if __clang_major__ >= 9
-         if (!CS)
+         if(!CS)
          {
             continue;
          }
@@ -6888,7 +6863,7 @@ namespace RangeAnalysis
          CallSite CS(cast<Instruction>(Us));
 #endif
 #if __clang_major__ >= 9
-         if (!CS)
+         if(!CS)
          {
             continue;
          }

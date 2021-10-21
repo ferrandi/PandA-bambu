@@ -1213,57 +1213,31 @@ RangeRef Range::srem(const RangeConstRef& other) const
    {
       return RangeRef(new Range(Regular, bw));
    }
-   if(other->isConstant())
-   {
-      if(other->getSignedMin() == 0)
-      {
-         return RangeRef(new Range(Empty, bw));
-      }
-      else if(other->getSignedMin() == 1 || other->getSignedMin() == -1)
-      {
-         return RangeRef(new Range(Regular, bw, 0, 0));
-      }
-   }
 
    const auto& a = this->getLower();
    const auto& b = this->getUpper();
-   auto c = other->getLower();
+   const auto& c = other->getLower();
    const auto& d = other->getUpper();
 
    // Deal with mod 0 exception
-   if((c == 0) && (d == 0))
+   if(c <= 0 && d >= 0)
    {
       return RangeRef(new Range(Regular, bw));
    }
-   if(c == 0)
-   {
-      c = 1;
-   }
 
-   APInt candidates[4];
-   candidates[0] = Min;
-   candidates[1] = Min;
-   candidates[2] = Max;
-   candidates[3] = Max;
-   if((a != Min) && (c != Min))
+   const auto dmin = std::min(c.abs(), d.abs());
+   const auto dmax = std::max(c.abs(), d.abs());
+   const auto abs_min = std::min(a.abs(), b.abs());
+   const auto abs_max = std::max(a.abs(), b.abs());
+   if((abs_min < dmin && dmin < abs_max) || (abs_min < dmax && dmax < abs_max))
    {
-      candidates[0] = a % c; // lower lower
+      return RangeRef(new Range(Regular, bw, a >= 0 ? 0 : (a.abs() < dmax ? a : -(dmax - 1)), b <= 0 ? 0 : (b.abs() < dmax ? b : (dmax - 1))));
    }
-   if((a != Min) && (d != Max))
+   else if(abs_max < dmin)
    {
-      candidates[1] = a % d; // lower upper
+      return RangeRef(this->clone());
    }
-   if((b != Max) && (c != Min))
-   {
-      candidates[2] = b % c; // upper lower
-   }
-   if((b != Max) && (d != Max))
-   {
-      candidates[3] = b % d; // upper upper
-   }
-   // Lower bound is the min value from the vector, while upper bound is the max value
-   auto res = std::minmax_element(candidates, candidates + 4);
-   return RangeRef(new Range(Regular, bw, *res.first, *res.second));
+   return RangeRef(new Range(Regular, bw, a < 0 ? -(dmax - 1) : 0, b > 0 ? (dmax - 1) : 0));
 }
 
 RangeRef Range::shl(const RangeConstRef& other) const
