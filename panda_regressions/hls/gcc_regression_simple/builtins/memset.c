@@ -34,3 +34,9 @@ main_test (void)
   memset (buffer, argc, 16);
   memset (buffer, argc, 17);
 }
+
+int main()
+{
+   main_test();
+   return 0;
+}

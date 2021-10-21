@@ -39,3 +39,9 @@ main_test (void)
   if (__builtin_memcpy (p, "ABCDE", 6) != p || memcmp (p, "ABCDE", 6))
     abort ();
 }
+
+int main()
+{
+   main_test();
+   return 0;
+}
