@@ -66,9 +66,9 @@ namespace llvm
 namespace llvm
 {
    static cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
-   static cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(false), cl::desc("Specify if the global variables has to be internalize"));
-   static cl::opt<std::string> ExternSymbolsList("panda-ESL", cl::desc("Specify the list of symbols to be not internalize"), cl::value_desc("comma separated list of external symbols"));
-   static cl::opt<std::string> outdir_name("internalize-outputdir", cl::desc("Specify the directory where the external symbol file will be written"), cl::value_desc("directory path"));
+   static cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(false), cl::desc("Specify if the global variables has to be internalized"));
+   static cl::opt<std::string> ExternSymbolsList("panda-ESL", cl::desc("Specify the list of symbols not to be internalized"), cl::value_desc("comma separated list of external symbols"));
+   static cl::opt<std::string> outdir_name("internalize-outputdir", cl::desc("Specify the directory where the external symbols file will be written"), cl::value_desc("directory path"));
 
    // Helper to load an API list to preserve and expose it as a functor for internalization.
    class PreserveSymbolList

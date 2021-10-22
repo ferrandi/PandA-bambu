@@ -1454,7 +1454,7 @@ namespace llvm
 #if __clang_major__ > 11
                     || CallID == llvm::Intrinsic::abs
 #endif
-                    );
+            );
          }
 #endif
          default:
