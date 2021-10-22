@@ -79,6 +79,7 @@ main_test (void)
     abort ();
   if (__builtin_llabs (__LONG_LONG_MAX__) != __LONG_LONG_MAX__)
     link_error ();
+#if 0
   if (__builtin_imaxabs (imax0) != 0)
     abort ();
   if (__builtin_imaxabs (0) != 0)
@@ -99,6 +100,7 @@ main_test (void)
     abort ();
   if (__builtin_imaxabs (INTMAX_MAX) != INTMAX_MAX)
     link_error ();
+#endif
 }
 
 int main()
