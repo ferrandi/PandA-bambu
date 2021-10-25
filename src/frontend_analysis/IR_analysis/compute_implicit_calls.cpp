@@ -177,7 +177,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             if(op1->get_kind() == bit_field_ref_K)
             {
                const auto bfr = GetPointer<bit_field_ref>(op1);
-               if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(bfr->op0)))
+               if(tree_helper::IsVectorType(bfr->op0))
                {
                   is_a_vector_bitfield = true;
                }
@@ -218,49 +218,61 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                 (store_candidate && load_candidate)))
             {
                changed = true;
-               if(op1->get_kind() == constructor_K && GetPointer<constructor>(op1) && GetPointer<constructor>(op1)->list_of_idx_valu.size() == 0)
+               const auto mr = GetPointer<mem_ref>(op0);
+               THROW_ASSERT(mr, "unexpected condition");
+               /// compute the size of memory to be set with memset
+               const auto dst_type = tree_helper::CGetType(mr->op0);
+               const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
+               THROW_ASSERT(dst_ptr_t, "unexpected condition");
+               const auto dst_size = tree_helper::Size(dst_ptr_t->ptd);
+               if(dst_size)
                {
-                  const auto mr = GetPointer<mem_ref>(op0);
-                  THROW_ASSERT(mr, "unexpected condition");
-                  const auto var = tree_helper::get_base_index(TM, GET_INDEX_NODE(mr->op0));
-                  bool do_lowering = var != 0;
-                  if(do_lowering)
+                  if(op1->get_kind() == constructor_K && GetPointer<constructor>(op1) && GetPointer<constructor>(op1)->list_of_idx_valu.size() == 0)
                   {
-                     const auto type_index = tree_helper::get_type_index(TM, var);
-                     const auto type_node = TM->get_tree_node_const(type_index);
-                     do_lowering = type_node->get_kind() == array_type_K;
+                     const auto var = tree_helper::GetBaseVariable(mr->op0);
+                     bool do_lowering = var != nullptr;
                      if(do_lowering)
                      {
-                        const auto element_type = tree_helper::CGetElements(type_node);
-                        const auto element_type_kind = GET_CONST_NODE(element_type)->get_kind();
-                        if(!(element_type_kind == boolean_type_K || element_type_kind == CharType_K || element_type_kind == enumeral_type_K || element_type_kind == integer_type_K || element_type_kind == pointer_type_K or
-                             element_type_kind == record_type_K))
+                        const auto type_node = tree_helper::CGetType(var);
+                        do_lowering = type_node->get_kind() == array_type_K;
+                        if(do_lowering)
                         {
-                           do_lowering = false;
-                           THROW_ASSERT(element_type_kind == array_type_K || element_type_kind == nullptr_type_K || element_type_kind == type_pack_expansion_K || element_type_kind == real_type_K || element_type_kind == complex_type_K or
-                                            element_type_kind == function_type_K || element_type_kind == lang_type_K || element_type_kind == method_type_K || element_type_kind == offset_type_K || element_type_kind == qual_union_type_K or
-                                            element_type_kind == record_type_K || element_type_kind == reference_type_K || element_type_kind == set_type_K || element_type_kind == template_type_parm_K || element_type_kind == typename_type_K or
-                                            element_type_kind == union_type_K || element_type_kind == vector_type_K || element_type_kind == void_type_K,
-                                        tree_node::GetString(element_type_kind));
+                           const auto element_type = tree_helper::CGetElements(type_node);
+                           const auto element_type_kind = GET_CONST_NODE(element_type)->get_kind();
+                           if(!(element_type_kind == boolean_type_K || element_type_kind == CharType_K || element_type_kind == enumeral_type_K || element_type_kind == integer_type_K || element_type_kind == pointer_type_K or
+                                element_type_kind == record_type_K))
+                           {
+                              do_lowering = false;
+                              THROW_ASSERT(element_type_kind == array_type_K || element_type_kind == nullptr_type_K || element_type_kind == type_pack_expansion_K || element_type_kind == real_type_K || element_type_kind == complex_type_K or
+                                               element_type_kind == function_type_K || element_type_kind == lang_type_K || element_type_kind == method_type_K || element_type_kind == offset_type_K || element_type_kind == qual_union_type_K or
+                                               element_type_kind == record_type_K || element_type_kind == reference_type_K || element_type_kind == set_type_K || element_type_kind == template_type_parm_K || element_type_kind == typename_type_K or
+                                               element_type_kind == union_type_K || element_type_kind == vector_type_K || element_type_kind == void_type_K,
+                                           tree_node::GetString(element_type_kind));
+                           }
                         }
                      }
-                  }
-                  if(do_lowering)
-                  {
-                     to_be_lowered_memset.push_front(std::make_pair(stmt, bb.second->number));
+                     if(do_lowering)
+                     {
+                        to_be_lowered_memset.push_front(std::make_pair(stmt, bb.second->number));
+                     }
+                     else
+                     {
+                        THROW_ASSERT(GetPointerS<const function_decl>(GET_CONST_NODE(TM->GetFunction(MEMSET)))->body, "inconsistent behavioral helper");
+                        replace_with_memset(stmt, sl, tree_man);
+                        update_bb_ver = true;
+                     }
                   }
                   else
                   {
-                     THROW_ASSERT(GetPointerS<const function_decl>(GET_CONST_NODE(TM->GetFunction(MEMSET)))->body, "inconsistent behavioral helper");
-                     replace_with_memset(stmt, sl, tree_man);
+                     THROW_ASSERT(GetPointerS<const function_decl>(GET_CONST_NODE(TM->GetFunction(MEMCPY)))->body, "inconsistent behavioral helper");
+                     replace_with_memcpy(stmt, sl, tree_man);
                      update_bb_ver = true;
                   }
                }
                else
                {
-                  THROW_ASSERT(GetPointerS<const function_decl>(GET_CONST_NODE(TM->GetFunction(MEMCPY)))->body, "inconsistent behavioral helper");
-                  replace_with_memcpy(stmt, sl, tree_man);
-                  update_bb_ver = true;
+                  bb.second->RemoveStmt(stmt, AppM);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Empty struct assignement removed");
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed node " + tn->ToString());
