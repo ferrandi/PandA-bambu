@@ -1716,6 +1716,7 @@ void CompilerWrapper::SetBambuDefault()
    {
       optimization_flags["tree-builtin-call-dce"] = false;
       optimization_flags["ivopts"] = false;
+      optimization_flags["ipa-icf"] = false;
    }
    if(opt_level == CompilerWrapper_OptimizationSet::O4)
    {
