@@ -500,7 +500,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform functional pipelining starting from the top function.\n\n"
       << "    --pipelining,-p=<func_name>[=<init_interval>][,<func_name>[=<init_interval>]]*\n"
       << "        Perform pipelining of comma separated list of specified functions with optional initiation interval (default II=1).\n"
-      << "        To inline softfloat operators it is possible to specify the __float_<op_name> prefix \n"
+      << "        To pipeline softfloat operators it is possible to specify the __float_<op_name> prefix \n"
       << "        or simply __float to pipeline all softfloat library.\n\n"
       << "    --fixed-scheduling=<file>\n"
       << "        Provide scheduling as an XML file.\n\n"
