@@ -154,7 +154,7 @@ std::deque<bit_lattice> Bit_Value::backward_chain(const tree_nodeConstRef& ssa_n
             THROW_ASSERT(found, STR(ssa) + " is not an actual parameter of function " + STR(called_id));
          }
       }
-      else if(user_kind == gimple_cond_K || user_kind == gimple_multi_way_if_K || user_kind == gimple_asm_K)
+      else if(user_kind == gimple_cond_K || user_kind == gimple_multi_way_if_K || user_kind == gimple_switch_K || user_kind == gimple_asm_K)
       {
          user_res = create_u_bitstring(BitLatticeManipulator::Size(ssa_node));
       }
