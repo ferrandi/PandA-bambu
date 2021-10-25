@@ -2598,7 +2598,11 @@ static bool same_size_fields(const tree_nodeConstRef& t)
    std::list<tree_nodeConstRef> listOfTypes;
    CustomUnorderedSet<unsigned int> already_visited;
    getBuiltinFieldTypes(t, listOfTypes, already_visited);
-   THROW_ASSERT(!listOfTypes.empty(), "at least one type is expected");
+   if(listOfTypes.empty())
+   {
+      return false;
+   }
+
    auto sizeFlds = 0u;
    for(const auto& fldType : listOfTypes)
    {
