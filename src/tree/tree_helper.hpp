@@ -1124,7 +1124,17 @@ class tree_helper
     * @param type is the type
     * @return the unqualified version of the type if it exists, 0 otherwise
     */
-   static unsigned int GetUnqualified(const tree_managerConstRef& TM, unsigned int type);
+   static
+       /// FIXME: to be remove after substitution with GetUnqualifiedType
+       unsigned int
+       GetUnqualified(const tree_managerConstRef& TM, unsigned int type);
+
+   /**
+    * Return the unqualified version of a type
+    * @param type is the type
+    * @return the unqualified version of the type if it exists, nullptr else
+    */
+   static tree_nodeConstRef GetUnqualifiedType(const tree_nodeConstRef& type);
 
    /**
     * Return the real type
@@ -1138,7 +1148,7 @@ class tree_helper
        GetRealType(const tree_managerConstRef& TM, unsigned int index);
 
    /**
-    * Return the real type
+    * Return the real type (same as GetUnqualifiedType, but return type instead of nullptr)
     * @param type is the type
     * @return the real type
     */
