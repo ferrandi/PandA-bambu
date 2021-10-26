@@ -1,6 +1,12 @@
 /* Test for builtin abs, labs, llabs, imaxabs.  Test for __builtin versions. */
 /* Origin: Joseph Myers <jsm28@cam.ac.uk> */
 
+#if (__GNUC__ == 4 && __GNUC_MINOR__ == 5) || defined(__llvm__)
+int main()
+{
+   return 0;
+}
+#else
 #include <limits.h>
 typedef __INTMAX_TYPE__ intmax_t;
 #define INTMAX_MAX __INTMAX_MAX__
@@ -105,10 +111,7 @@ main_test (void)
 
 int main()
 {
-#if (__GNUC__ == 4 && __GNUC_MINOR__ == 5) || defined(__llvm__)
-   return 0;
-#else
    main_test();
    return 0;
-#endif
 }
+#endif
