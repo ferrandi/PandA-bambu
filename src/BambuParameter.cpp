@@ -838,7 +838,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define arbitrary precision floating-point format by type or by function.\n"
       << "        <func_name>*<exp_bits>*<frac_bits>*<exp_bias>*<round>*<nan>*<one>*<sub>*<sign>* (use comma separated list for multiple definitions)\n"
       << "           func_name - Set arbitrary floating-point format for a specific function (using @ symbol here will resolve to the top function)\n"
-      << "                       (Arbitrary floating-point format will apply to specified function only, use --propaget-fp-format to extend it to called functions)\n"
+      << "                       (Arbitrary floating-point format will apply to specified function only, use --propagate-fp-format to extend it to called functions)\n"
       << "            exp_bits - Number of bits used by the exponent\n"
       << "           frac_bits - Number of bits used by the fractional value\n"
       << "            exp_bias - Bias applied to the unsigned value represented by the exponent bits\n"
