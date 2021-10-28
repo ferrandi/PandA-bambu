@@ -495,7 +495,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed redundant cond_expr");
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing chains of BB");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing chains of BBs");
    restart = true;
 
    while(restart)
@@ -1625,7 +1625,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
       const auto pred_last_stmt = GET_CONST_NODE(pred_block->CGetStmtList().back());
       if(pred_last_stmt->get_kind() == gimple_cond_K)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty then || empty else");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty then or empty else");
          return PhiOpt_PatternType::IF_REMOVE;
       }
       if(pred_last_stmt->get_kind() == gimple_multi_way_if_K)
@@ -1749,7 +1749,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             }
 
             /// Create the cond expr
-            const auto cond_expr_node = tree_man->create_ternary_operation(type_node, condition, first_value, second_value, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
+            const auto cond_expr_node = tree_man->create_ternary_operation(type_node, condition, first_value, second_value, BUILTIN_SRCP, (tree_helper::IsVectorType(type_node) ? vec_cond_expr_K : cond_expr_K));
 
             /// Create the assign
             /// Workaround: we need to consider the overhead due to multiplexers associated with the phi; for this reason definition is one of the operands; this is not fully consistent, but it is a temporary assignment

@@ -34,6 +34,7 @@
  * @author Giulio Stramondo
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
+ * @author Michele Fiortio <michele.fiorito@polimi.it>
  */
 
 // include class header

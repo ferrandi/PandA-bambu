@@ -110,6 +110,9 @@
 #endif
 
 #define DEBUG_TYPE "range-analysis"
+// #define DEBUG_RA
+// #define DEBUG_OP
+// #define LOG_TRANSACTIONS
 
 //************************** Log Transactions ********************************//
 #ifdef LOG_TRANSACTIONS
@@ -1173,12 +1176,14 @@ namespace RangeAnalysis
       {
          return other;
       }
-      //      llvm::errs() << "this:";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "other:";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "this:";
+      this->print(llvm::errs());
+      llvm::errs() << "\n";
+      llvm::errs() << "other:";
+      other.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       APInt a = getUnsignedMin().zext(MAX_BIT_INT);
       APInt b = getUnsignedMax().zext(MAX_BIT_INT);
       APInt c = other.getUnsignedMin().zext(MAX_BIT_INT);
@@ -1349,13 +1354,14 @@ namespace RangeAnalysis
       {
          c = APInt(MAX_BIT_INT, 1);
       }
-      //      llvm::errs() << "this-urem:";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "other-urem:";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
-
+#ifdef DEBUG_OP
+      llvm::errs() << "this-urem:";
+      this->print(llvm::errs());
+      llvm::errs() << "\n";
+      llvm::errs() << "other-urem:";
+      other.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       APInt candidates[8];
 
       candidates[0] = a.slt(c) ? a : Zero;
@@ -1382,9 +1388,11 @@ namespace RangeAnalysis
          }
       }
       auto res = Range(Regular, getBitWidth(), *min, *max);
-      //      llvm::errs() << "res-urem:";
-      //      res.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "res-urem:";
+      res.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       return res;
    }
 
@@ -1418,12 +1426,14 @@ namespace RangeAnalysis
          return Range(Regular, getBitWidth(), Min, Max);
       }
 
-      //      llvm::errs() << "this-rem:";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "other-rem:";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "this-rem:";
+      this->print(llvm::errs());
+      llvm::errs() << "\n";
+      llvm::errs() << "other-rem:";
+      other.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
 
       const APInt dmin = c.abs().slt(d.abs()) ? d.abs() : c.abs();
       const APInt dmax = c.abs().slt(d.abs()) ? c.abs() : d.abs();
@@ -1440,9 +1450,11 @@ namespace RangeAnalysis
          res = *this;
       }
 
-      //      llvm::errs() << "res-rem:";
-      //      res.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "res-rem:";
+      res.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
 
       return res;
    }
@@ -1464,12 +1476,14 @@ namespace RangeAnalysis
          return Range(Regular, bw);
       }
 
-      //      llvm::errs() << "this-shl:";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "other-shl:";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "this-shl:";
+      this->print(llvm::errs());
+      llvm::errs() << "\n";
+      llvm::errs() << "other-shl:";
+      other.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
 
       const APInt& a = this->getLower();
       const APInt& b = this->getUpper();
@@ -1654,12 +1668,14 @@ namespace RangeAnalysis
     */
    Range Range::And(const Range& other) const
    {
-      //      llvm::errs() << "And-a: ";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "And-b: ";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "And-a: ";
+      this->print(llvm::errs());
+      llvm::errs() << "\n";
+      llvm::errs() << "And-b: ";
+      other.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       if(isEmpty() || isUnknown())
       {
          return *this;
@@ -1694,9 +1710,11 @@ namespace RangeAnalysis
       APInt invUpper = invres.getLower();
       invUpper.flipAllBits();
       auto res = Range(Regular, bw, invLower, invUpper);
-      //      llvm::errs() << "And-res: ";
-      //      res.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "And-res: ";
+      res.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       return res;
    }
 
@@ -1818,12 +1836,14 @@ namespace RangeAnalysis
     */
    Range Range::Or(const Range& other) const
    {
-      //      llvm::errs() << "Or-a: ";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "Or-b: ";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "Or-a: ";
+      this->print(llvm::errs());
+      llvm::errs() << "\n";
+      llvm::errs() << "Or-b: ";
+      other.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       if(isEmpty() || isUnknown())
       {
          return *this;
@@ -1856,7 +1876,9 @@ namespace RangeAnalysis
 
       APInt l = Min, u = Max;
 
-      // llvm::errs() << "switchval " << (unsigned)switchval << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "switchval " << (unsigned)switchval << "\n";
+#endif
 
       switch(switchval)
       {
@@ -1902,20 +1924,24 @@ namespace RangeAnalysis
          return Range(Regular, getBitWidth());
       }
       auto res = Range(Regular, getBitWidth(), l, u);
-      //      llvm::errs() << "Or-res: ";
-      //      res.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "Or-res: ";
+      res.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       return res;
    }
 
    Range Range::Xor(const Range& other) const
    {
-      //      llvm::errs() << "Xor-a: ";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "Xor-b: ";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "Xor-a: ";
+      this->print(llvm::errs());
+      llvm::errs() << "\n";
+      llvm::errs() << "Xor-b: ";
+      other.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       if(isEmpty() || isUnknown())
       {
          return *this;
@@ -1937,17 +1963,21 @@ namespace RangeAnalysis
          APInt l = minXOR(a, b, c, d);
          APInt u = maxXOR(a, b, c, d);
          auto res = Range(Regular, getBitWidth(), l, u);
-         //         llvm::errs() << "Xor-res: ";
-         //         res.print(llvm::errs());
-         //         llvm::errs() << "\n";
-         //         return res;
+#ifdef DEBUG_OP
+         llvm::errs() << "Xor-res: ";
+         res.print(llvm::errs());
+         llvm::errs() << "\n";
+         return res;
+#endif
       }
       else if(c.eq(-One) && d.eq(-One) && a.isNonNegative() && b.isNonNegative())
       {
          auto res = other.sub(*this);
-         //         llvm::errs() << "Xor-res-1: ";
-         //         res.print(llvm::errs());
-         //         llvm::errs() << "\n";
+#ifdef DEBUG_OP
+         llvm::errs() << "Xor-res-1: ";
+         res.print(llvm::errs());
+         llvm::errs() << "\n";
+#endif
          return res;
       }
       return Range(Regular, getBitWidth());
@@ -2344,12 +2374,14 @@ namespace RangeAnalysis
       {
          return other;
       }
-      //      llvm::errs() << "intersectWith-a: ";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "intersectWith-b: ";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "intersectWith-a: ";
+      this->print(llvm::errs());
+      llvm::errs() << "\n";
+      llvm::errs() << "intersectWith-b: ";
+      other.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
 
       if(!this->isAnti() && !other.isAnti())
       {
@@ -3007,8 +3039,10 @@ namespace RangeAnalysis
    {
       unsigned bw = getSink()->getBitWidth();
       Range result(Unknown, bw, Min, Max);
-      //      getSink()->getValue().first->print(llvm::errs());
-      //      llvm::errs()<< "\n";
+#ifdef DEBUG_OP
+      getSink()->getValue().first->print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       if(getNumSources() == 0)
       {
          assert(bw == getIntersect()->getRange().getBitWidth());
@@ -3022,9 +3056,11 @@ namespace RangeAnalysis
          result = result.unionWith(varNode->getRange());
       }
 
-      //      llvm::errs()<< "=";
-      //      result.print(llvm::errs());
-      //      llvm::errs()<< "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "=";
+      result.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       bool test = this->getIntersect()->getRange().isMaxRange();
       if(!test)
       {
@@ -3166,9 +3202,11 @@ namespace RangeAnalysis
 
       if(oprnd.isRegular() || oprnd.isAnti())
       {
-         //         getSink()->getValue().first->print(llvm::errs());
-         //         llvm::errs()<< "\n";
-         //         oprnd.print(llvm::errs());
+#ifdef DEBUG_OP
+         getSink()->getValue().first->print(llvm::errs());
+         llvm::errs() << "\n";
+         oprnd.print(llvm::errs());
+#endif
          switch(this->getOpcode())
          {
             case Instruction::Trunc:
@@ -3191,9 +3229,11 @@ namespace RangeAnalysis
                result = oprnd;
                break;
          }
-         //         llvm::errs()<< "=";
-         //         result.print(llvm::errs());
-         //         llvm::errs()<< "\n";
+#ifdef DEBUG_OP
+         llvm::errs() << "=";
+         result.print(llvm::errs());
+         llvm::errs() << "\n";
+#endif
       }
       else if(oprnd.isEmpty())
       {
@@ -3209,9 +3249,11 @@ namespace RangeAnalysis
          {
             result = intersect;
          }
-         //         llvm::errs() << "intersection: ";
-         //         result.print(llvm::errs());
-         //         llvm::errs() << "\n";
+#ifdef DEBUG_OP
+         llvm::errs() << "intersection: ";
+         result.print(llvm::errs());
+         llvm::errs() << "\n";
+#endif
       }
       return result;
    }
@@ -3299,14 +3341,18 @@ namespace RangeAnalysis
    Range SigmaOp::eval()
    {
       Range result = this->getSource()->getRange();
-      //      llvm::errs() << "SigmaOp: ";
-      //      getSink()->print(llvm::errs());
-      //      llvm::errs()<<" src=";
-      //      result.print(llvm::errs());
+#ifdef DEBUG_OP
+      llvm::errs() << "SigmaOp: ";
+      getSink()->print(llvm::errs());
+      llvm::errs() << " src=";
+      result.print(llvm::errs());
+#endif
       Range aux = this->getIntersect()->getRange();
-      //      llvm::errs() << " aux = ";
-      //      aux.print(llvm::errs());
-      //      llvm::errs()<<"\n";
+#ifdef DEBUG_OP
+      llvm::errs() << " aux = ";
+      aux.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       if(!aux.isUnknown())
       {
          Range intersect = result.intersectWith(aux);
@@ -3315,9 +3361,11 @@ namespace RangeAnalysis
             result = intersect;
          }
       }
-      //      llvm::errs() << " = ";
-      //      result.print(llvm::errs());
-      //      llvm::errs()<<"\n";
+#ifdef DEBUG_OP
+      llvm::errs() << " = ";
+      result.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       return result;
    }
 
@@ -3410,11 +3458,13 @@ namespace RangeAnalysis
       // only evaluate if all operands are Regular
       if((op1.isRegular() || op1.isAnti()) && (op2.isRegular() || op2.isAnti()))
       {
-         //         getSink()->getValue().first->print(llvm::errs());
-         //         llvm::errs()<< "\n";
-         //         op1.print(llvm::errs());
-         //         llvm::errs()<< ",";
-         //         op2.print(llvm::errs());
+#ifdef DEBUG_OP
+         getSink()->getValue().first->print(llvm::errs());
+         llvm::errs() << "\n";
+         op1.print(llvm::errs());
+         llvm::errs() << ",";
+         op2.print(llvm::errs());
+#endif
          assert(op1.getBitWidth() == bw || this->getOpcode() == llvm::Instruction::ICmp);
          assert(op2.getBitWidth() == bw || this->getOpcode() == llvm::Instruction::ICmp);
          switch(this->getOpcode())
@@ -3510,16 +3560,20 @@ namespace RangeAnalysis
             default:
                break;
          }
-         //         llvm::errs()<< "=";
-         //         result.print(llvm::errs());
-         //         llvm::errs()<< "\n";
+#ifdef DEBUG_OP
+         llvm::errs() << "=";
+         result.print(llvm::errs());
+         llvm::errs() << "\n";
+#endif
          bool test = this->getIntersect()->getRange().isMaxRange();
          if(!test)
          {
             Range aux = this->getIntersect()->getRange();
-            //            llvm::errs()<< "  aux=";
-            //            aux.print(llvm::errs());
-            //            llvm::errs()<< "\n";
+#ifdef DEBUG_OP
+            llvm::errs() << "  aux=";
+            aux.print(llvm::errs());
+            llvm::errs() << "\n";
+#endif
             Range intersect = result.intersectWith(aux);
             if(!intersect.isEmpty())
             {
@@ -3619,13 +3673,15 @@ namespace RangeAnalysis
       // only evaluate if all operands are Regular
       if((op1.isRegular() || op1.isAnti()) && (op2.isRegular() || op2.isAnti()) && (op3.isRegular() || op3.isAnti()))
       {
-         //         getSink()->getValue().first->print(llvm::errs());
-         //         llvm::errs()<< "\n";
-         //         op1.print(llvm::errs());
-         //         llvm::errs()<< "?";
-         //         op2.print(llvm::errs());
-         //         llvm::errs()<< ":";
-         //         op3.print(llvm::errs());
+#ifdef DEBUG_OP
+         getSink()->getValue().first->print(llvm::errs());
+         llvm::errs() << "\n";
+         op1.print(llvm::errs());
+         llvm::errs() << "?";
+         op2.print(llvm::errs());
+         llvm::errs() << ":";
+         op3.print(llvm::errs());
+#endif
          switch(this->getOpcode())
          {
             case Instruction::Select:
@@ -3686,9 +3742,11 @@ namespace RangeAnalysis
             default:
                break;
          }
-         //         llvm::errs()<< "=";
-         //         result.print(llvm::errs());
-         //         llvm::errs()<< "\n";
+#ifdef DEBUG_OP
+         llvm::errs() << "=";
+         result.print(llvm::errs());
+         llvm::errs() << "\n";
+#endif
          bool test = this->getIntersect()->getRange().isMaxRange();
          if(!test)
          {
@@ -3805,34 +3863,44 @@ namespace RangeAnalysis
    {
       assert(sources.size() > 0);
       Range result = this->getSource(0)->getRange();
-      //      getSink()->print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      getSink()->print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       // Iterate over the sources of the phiop
       for(const VarNode* varNode : sources)
       {
-         //         llvm::errs() << " ->";
-         //         varNode->getRange().print(llvm::errs());
-         //         llvm::errs() << "\n";
+#ifdef DEBUG_OP
+         llvm::errs() << " ->";
+         varNode->getRange().print(llvm::errs());
+         llvm::errs() << "\n";
+#endif
          result = result.unionWith(varNode->getRange());
       }
-      //      llvm::errs() << "=";
-      //      result.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << "=";
+      result.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       bool test = this->getIntersect()->getRange().isMaxRange();
       if(!test)
       {
          Range aux = this->getIntersect()->getRange();
-         //         llvm::errs() << " aux= ";
-         //         aux.print(llvm::errs());
+#ifdef DEBUG_OP
+         llvm::errs() << " aux= ";
+         aux.print(llvm::errs());
+#endif
          Range intersect = result.intersectWith(aux);
          if(!intersect.isEmpty())
          {
             result = intersect;
          }
       }
-      //      llvm::errs() << " res= ";
-      //      result.print(llvm::errs());
-      //      llvm::errs() << "\n";
+#ifdef DEBUG_OP
+      llvm::errs() << " res= ";
+      result.print(llvm::errs());
+      llvm::errs() << "\n";
+#endif
       return result;
    }
 
@@ -5399,29 +5467,28 @@ namespace RangeAnalysis
             const APInt& nUpper = newAnti.getUpper();
             APInt nlconstant = getFirstGreaterFromVector(*constantvector, nLower);
             APInt nuconstant = getFirstLessFromVector(*constantvector, nUpper);
-            assert(oLower.ne(Min));
-            const APInt& smin = APIntOps::smax(oLower, nlconstant);
-            if(oLower.ne(smin))
+
+            if(oLower.sle(nlconstant) && oUpper.sgt(nuconstant))
             {
-               op->getSink()->setRange(Range(Anti, bw, smin, oUpper));
-            }
-            assert(oUpper.ne(Max));
-            const APInt& smax = APIntOps::smin(oUpper, nuconstant);
-            if(oUpper.ne(smax))
-            {
-               auto sinkRange = op->getSink()->getRange();
-               if(sinkRange.isAnti())
+               if(nlconstant.sle(nuconstant))
                {
-                  auto sinkAnti = Range::getAnti(sinkRange);
-                  op->getSink()->setRange(Range(Anti, bw, sinkAnti.getLower(), smax));
+                  op->getSink()->setRange(Range(Anti, bw, nlconstant, nuconstant));
                }
-               else
+               op->getSink()->setRange(Range(Regular, bw));
+            }
+            else
+            {
+               if(oLower.slt(nlconstant))
                {
-                  op->getSink()->setRange(Range(Anti, bw, sinkRange.getLower(), smax));
+                  op->getSink()->setRange(Range(Anti, bw, nlconstant, oUpper));
+               }
+               else if(oUpper.sgt(nuconstant))
+               {
+                  op->getSink()->setRange(Range(Anti, bw, oLower, nuconstant));
                }
             }
          }
-         else
+         else if(newInterval.isUnknown() || !newInterval.isMaxRange())
          {
             op->getSink()->setRange(newInterval);
          }
@@ -5436,13 +5503,9 @@ namespace RangeAnalysis
          {
             op->getSink()->setRange(Range(Regular, bw, nLower, oUpper));
          }
-         else
+         else if(nLower.slt(oLower))
          {
-            const APInt& smin = APIntOps::smin(oLower, nLower);
-            if(oLower.ne(smin))
-            {
-               op->getSink()->setRange(Range(Regular, bw, smin, oUpper));
-            }
+            op->getSink()->setRange(Range(Regular, bw, nLower, oUpper));
          }
          if(!op->getSink()->getRange().isAnti())
          {
@@ -5450,13 +5513,9 @@ namespace RangeAnalysis
             {
                op->getSink()->setRange(Range(Regular, bw, op->getSink()->getRange().getLower(), nUpper));
             }
-            else
+            else if(oUpper.slt(nUpper))
             {
-               const APInt& smax = APIntOps::smax(oUpper, nUpper);
-               if(oUpper.ne(smax))
-               {
-                  op->getSink()->setRange(Range(Regular, bw, op->getSink()->getRange().getLower(), smax));
-               }
+               op->getSink()->setRange(Range(Regular, bw, op->getSink()->getRange().getLower(), nUpper));
             }
          }
       }

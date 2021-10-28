@@ -2365,7 +2365,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      tree_node_schema[TOK(TOK_ELTS)] = type->get_kind() != boolean_type_K ? STR(type->index) : STR(tree_man->GetUnsignedIntegerType()->index);
                      if(type->size)
                      {
-                        const unsigned int element_size = type->get_kind() != boolean_type_K ? tree_helper::Size(tn) : tree_helper::Size(GET_NODE(tree_man->GetUnsignedIntegerType()));
+                        const unsigned int element_size = type->get_kind() != boolean_type_K ? tree_helper::Size(tn) : tree_helper::Size(tree_man->GetUnsignedIntegerType());
                         const unsigned int bit_size = element_size * static_cast<unsigned int>(parallel_degree);
                         const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->GetUnsignedIntegerType());
                         tree_node_schema[TOK(TOK_SIZE)] = STR(size->index);

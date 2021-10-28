@@ -138,7 +138,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
                relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
             }
-            if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+            if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
                relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
             }

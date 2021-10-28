@@ -520,7 +520,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->View-convert for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " + def_node->ToString());
          const auto ssa_ridx = TreeM->GetTreeReindex(ssa->index);
          // Hardware calls are for sure dealing with standard IEEE formats only
-         const auto int_ret_type = tree_helper::Size(GET_NODE(ssa->type)) == 32 ? float32_type : float64_type;
+         const auto int_ret_type = tree_helper::Size(ssa->type) == 32 ? float32_type : float64_type;
          const auto ret_vc = tree_man->create_unary_operation(int_ret_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
          const auto vc_stmt = tree_man->CreateGimpleAssign(int_ret_type, tree_nodeRef(), tree_nodeRef(), ret_vc, function_id, call_bb->number, BUILTIN_SRCP);
          const auto vc_ssa = GetPointerS<const gimple_assign>(GET_CONST_NODE(vc_stmt))->op0;
@@ -580,7 +580,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   vc_stmt = tree_man->CreateGimpleAssign(parm_type, tree_nodeRef(), tree_nodeRef(), vc, function_id, first_bb->number, BUILTIN_SRCP);
                   if(!_version->ieee_format())
                   {
-                     const auto ssa_ff = tree_helper::Size(GET_CONST_NODE(parmSSA->type)) == 32 ? float32FF : float64FF;
+                     const auto ssa_ff = tree_helper::Size(parmSSA->type) == 32 ? float32FF : float64FF;
                      inputInterface.insert({GetPointerS<ssa_name>(GET_CONST_NODE(GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0)), {ssa_ff, std::vector<unsigned int>()}});
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Input interface required for current parameter");
                   }
@@ -616,7 +616,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             vc_stmt = tree_man->CreateGimpleAssign(ret_ssa->type, tree_nodeRef(), tree_nodeRef(), vc, function_id, bb->number, BUILTIN_SRCP);
             if(!_version->ieee_format())
             {
-               const auto ssa_ff = tree_helper::Size(GET_CONST_NODE(ret_ssa->type)) == 32 ? float32FF : float64FF;
+               const auto ssa_ff = tree_helper::Size(ret_ssa->type) == 32 ? float32FF : float64FF;
                outputInterface.insert({ret_ssa, {ssa_ff, std::vector<tree_nodeRef>({vc_stmt})}});
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Output interface required for current variable use");
             }
@@ -1433,7 +1433,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing libm call with templatized version");
                // libm function calls may be replaced with their templatized version if available, avoiding conversion
                AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fn), GET_INDEX_CONST_NODE(current_statement));
-               is_f32 |= !ce->args.empty() && tree_helper::Size(GET_CONST_NODE(ce->args.front())) == 32;
+               is_f32 |= !ce->args.empty() && tree_helper::Size(ce->args.front()) == 32;
                const auto specFF = _version->ieee_format() ? (is_f32 ? float32FF : float64FF) : _version->userRequired;
                replaceWithCall(specFF, "__" + tf_fname, ce->args, current_statement, ga->op1, current_srcp);
                RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_NONE);
@@ -1536,7 +1536,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
 
          if(!_version->ieee_format() && tree_helper::IsRealType(SSA->type))
          {
-            const auto ssa_ff = tree_helper::Size(GET_CONST_NODE(SSA->type)) == 32 ? float32FF : float64FF;
+            const auto ssa_ff = tree_helper::Size(SSA->type) == 32 ? float32FF : float64FF;
             if((!_version->internal && std::find(paramBinding.begin(), paramBinding.end(), curr_tn) != paramBinding.end()) || type_interface & INTERFACE_TYPE_INPUT)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Input interface required for current parameter");
@@ -2105,7 +2105,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             if(curr_tn->get_kind() == mem_ref_K)
             {
                const auto mr = GetPointerS<mem_ref>(curr_tn);
-               mr->type = tree_helper::Size(GET_CONST_NODE(mr->type)) == 32 ? float32_type : float64_type;
+               mr->type = tree_helper::Size(mr->type) == 32 ? float32_type : float64_type;
             }
             else
             {

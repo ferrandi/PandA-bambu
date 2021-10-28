@@ -6637,9 +6637,20 @@ namespace llvm
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
       bool res = false;
+#if PRINT_DBG_MSG
+      llvm::errs() << "Computing e-SSA\n";
+#endif
       compute_eSSA(M, &res);
+#if PRINT_DBG_MSG
+      llvm::errs() << "Computed e-SSA\n";
+#endif
       if(!earlyAnalysis)
+      {
+#if PRINT_DBG_MSG
+         llvm::errs() << "Building metadata\n";
+#endif
          buildMetaDataMap(M);
+      }
       res = !earlyAnalysis && lowerMemIntrinsics(M);
 
       auto res_RC = (!earlyAnalysis && RebuildConstants(M));
@@ -6660,6 +6671,9 @@ namespace llvm
          if(starting_function != "")
          {
 #define ANDERSEN 1
+#if PRINT_DBG_MSG
+            llvm::errs() << "Performing alias analysis\n";
+#endif
 #if ANDERSEN
             PtoSets_AA = new Andersen_AA(starting_function);
 #else
@@ -6671,7 +6685,14 @@ namespace llvm
          }
       }
 #endif
+
+#if PRINT_DBG_MSG
+      llvm::errs() << "Performing value-range analysis\n";
+#endif
       computeValueRange(M);
+#if PRINT_DBG_MSG
+      llvm::errs() << "Performed value-range analysis\n";
+#endif
 
 #ifdef DEBUG_RA
       assert(!llvm::verifyModule(M, &llvm::errs()));

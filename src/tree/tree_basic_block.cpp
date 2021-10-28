@@ -593,7 +593,7 @@ void bloc::RemovePhi(const tree_nodeRef phi)
          break;
       }
    }
-   GetPointer<gimple_node>(GET_NODE(phi))->bb_index = 0;
+   GetPointerS<gimple_node>(GET_NODE(phi))->bb_index = 0;
    removed_phi++;
    THROW_ASSERT(original_size != list_of_phi.size(), "Phi" + phi->ToString() + " not removed");
    if(updated_ssa_uses)
@@ -603,7 +603,7 @@ void bloc::RemovePhi(const tree_nodeRef phi)
       {
          for(size_t counter = 0; counter < use.second; counter++)
          {
-            GetPointer<ssa_name>(GET_NODE(use.first))->RemoveUse(phi);
+            GetPointerS<ssa_name>(GET_NODE(use.first))->RemoveUse(phi);
          }
       }
    }

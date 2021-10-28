@@ -388,7 +388,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "Parm2SSA";
 #if HAVE_BAMBU_BUILT
       case PARM_DECL_TAKEN_ADDRESS:
-         return "ParmDeclTakenAddress";
+         return "ParmDeclTakenAddressFix";
       case PHI_OPT:
          return "PhiOpt";
 #endif
