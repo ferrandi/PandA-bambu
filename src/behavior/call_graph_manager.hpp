@@ -71,6 +71,8 @@ REF_FORWARD_DECL(tree_node);
 class CallGraphManager
 {
  private:
+   friend class call_graph_computation;
+
    const CallGraphsCollectionRef call_graphs_collection;
 
    /// The view of call graph with all the edges

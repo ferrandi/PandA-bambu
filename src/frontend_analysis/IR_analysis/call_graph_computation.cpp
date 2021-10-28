@@ -65,7 +65,6 @@
 
 /// Utility include
 #include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 call_graph_computation::call_graph_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager)
@@ -114,64 +113,34 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 DesignFlowStep_Status call_graph_computation::Exec()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Creating call graph data structure");
-   const tree_managerRef TM = AppM->get_tree_manager();
+   const auto TM = AppM->get_tree_manager();
    already_visited.clear();
 
    /// Root functions
    CustomOrderedSet<unsigned int> functions;
-   const auto main = TM->GetFunction("main");
-   /// If top function option has been passed
-   if(parameters->isOption(OPT_top_functions_names))
+   THROW_ASSERT(parameters->isOption(OPT_top_functions_names), "Top function must be defined by the user");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Top functions passed by user");
+   const auto top_functions_names = parameters->getOption<const std::list<std::string>>(OPT_top_functions_names);
+   for(const auto& top_function_name : top_functions_names)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Top functions passed by user");
-      const auto top_functions_names = parameters->getOption<const std::list<std::string>>(OPT_top_functions_names);
-      for(const auto& top_function_name : top_functions_names)
+      const auto top_function = TM->GetFunction(top_function_name);
+      if(!top_function)
       {
-         const auto top_function = TM->GetFunction(top_function_name);
-         if(!top_function)
-         {
-            THROW_ERROR("Function " + top_function_name + " not found");
-         }
-         else
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root function " + STR(top_function->index));
-            functions.insert(top_function->index);
-         }
-      }
-   }
-   /// If not -c option has been passed we assume that whole program has been passed, so the main must be present
-   else if(!parameters->getOption<bool>(OPT_gcc_c))
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Expected main");
-      /// Main not found
-      if(!main)
-      {
-         THROW_ERROR("No main function found, but -c option not passed");
+         THROW_ERROR("Function " + top_function_name + " not found");
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---main found");
-         functions.insert(main->index);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root function " + STR(top_function->index));
+         functions.insert(top_function->index);
       }
-   }
-   /// If there is the main, we return it
-   else if(main)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---main was not expected but is present: " + STR(main->index));
-      functions.insert(main->index);
-   }
-   /// Return all the functions not called by any other function
-   else
-   {
-      functions.insert(TM->GetAllFunctions().begin(), TM->GetAllFunctions().end());
    }
 
    // iterate on functions and add them to the call graph
    for(const auto f_id : functions)
    {
-      const std::string fu_name = tree_helper::name_function(TM, f_id);
+      const auto fu_name = tree_helper::name_function(TM, f_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Adding function " + STR(f_id) + " " + fu_name + " to call graph");
-      if(fu_name == "__start_pragma__" or fu_name == "__close_pragma__" or boost::algorithm::starts_with(fu_name, "__pragma__"))
+      if(fu_name == "__start_pragma__" || fu_name == "__close_pragma__" || fu_name.find("__pragma__") == 0)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipped...");
          continue;
@@ -187,7 +156,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
       // add the function to the call graph if necessary
       if(!AppM->GetCallGraphManager()->IsVertex(f_id))
       {
-         bool has_body = TM->get_implementation_node(f_id) != 0;
+         const auto has_body = TM->get_implementation_node(f_id) != 0;
          const auto helper = BehavioralHelperRef(new BehavioralHelper(AppM, f_id, has_body, parameters));
          const auto FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
          AppM->GetCallGraphManager()->AddFunction(f_id, FB);
