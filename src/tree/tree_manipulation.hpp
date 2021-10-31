@@ -435,7 +435,7 @@ class tree_manipulation
     * @param  bb_index is the basic block index associated with the gimple statement
     * @return the tree_reindex node of the gimple_return created.
     */
-   tree_nodeRef create_gimple_return(const tree_nodeRef& type, const tree_nodeRef& expr, unsigned int function_decl_nid, const std::string& srcp, unsigned int bb_index) const;
+   tree_nodeRef create_gimple_return(const tree_nodeConstRef& type, const tree_nodeConstRef& expr, unsigned int function_decl_nid, const std::string& srcp, unsigned int bb_index) const;
 
    /**
     * create a label expression in a header of a loop.
