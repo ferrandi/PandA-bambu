@@ -135,10 +135,6 @@ bool SDCCodeMotion::HasToBeExecuted() const
           GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch && FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
-void SDCCodeMotion::Initialize()
-{
-}
-
 DesignFlowStep_Status SDCCodeMotion::InternalExec()
 {
    const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
@@ -181,9 +177,4 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
    }
    function_behavior->UpdateBBVersion();
    return DesignFlowStep_Status::SUCCESS;
-}
-
-void SDCCodeMotion::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
-{
-   FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }

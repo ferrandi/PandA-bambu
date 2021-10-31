@@ -1484,8 +1484,3 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed node " + tn->ToString());
 }
-
-bool determine_memory_accesses::HasToBeExecuted() const
-{
-   return FunctionFrontendFlowStep::HasToBeExecuted();
-}
