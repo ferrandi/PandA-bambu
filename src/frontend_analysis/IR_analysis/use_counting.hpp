@@ -45,16 +45,6 @@
 
 /// Superclass include
 #include "function_frontend_flow_step.hpp"
-#include "refcount.hpp"
-
-/**
- * @name forward declarations
- */
-//@{
-REF_FORWARD_DECL(tree_node);
-//@}
-
-#include <list>
 
 /**
  * Update ssa_name with information about how many times it is used
@@ -62,13 +52,6 @@ REF_FORWARD_DECL(tree_node);
 class use_counting : public FunctionFrontendFlowStep
 {
  private:
-   /**
-    * Update counters with information concerning tree_node tn
-    *@param tn is the tree_node to be analyzed
-    *@param ssa_uses is the list containing the ssa_nodes "used" by the tree_node tn
-    */
-   void analyze_node(const tree_nodeRef& tn, std::list<tree_nodeRef>& ssa_uses);
-
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
