@@ -138,7 +138,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
                relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
             }
-            if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+            if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
                relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
             }
@@ -239,7 +239,7 @@ void dead_code_elimination::kill_vdef(const tree_managerRef TM, tree_nodeRef vde
    gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
-   GetPointer<ssa_name>(GET_NODE(vdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
+   GetPointerS<ssa_name>(GET_NODE(vdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
 }
 
 unsigned dead_code_elimination::move2emptyBB(const tree_managerRef TM, statement_list* sl, unsigned pred, blocRef bb_pred, unsigned cand_bb_dest, unsigned bb_dest) const
@@ -313,32 +313,24 @@ void dead_code_elimination::add_gimple_nop(gimple_node* gc, const tree_managerRe
    if(old_gc->memdef)
    {
       new_gc->memdef = old_gc->memdef;
-      GetPointer<ssa_name>(GET_NODE(new_gc->memdef))->SetDefStmt(gimple_nop_node_ref);
-      old_gc->memdef = tree_nodeRef();
+      old_gc->memdef = nullptr;
    }
    if(old_gc->memuse)
    {
       new_gc->memuse = old_gc->memuse;
-      GetPointer<ssa_name>(GET_NODE(new_gc->memuse))->AddUseStmt(gimple_nop_node_ref);
    }
    if(old_gc->vdef)
    {
       new_gc->vdef = old_gc->vdef;
-      GetPointer<ssa_name>(GET_NODE(new_gc->vdef))->SetDefStmt(gimple_nop_node_ref);
-      old_gc->vdef = tree_nodeRef();
+      old_gc->vdef = nullptr;
    }
    if(old_gc->vuses.size())
    {
       new_gc->vuses = old_gc->vuses;
-      for(const auto& v : new_gc->vuses)
-      {
-         GetPointer<ssa_name>(GET_NODE(v))->AddUseStmt(gimple_nop_node_ref);
-      }
    }
    if(old_gc->vovers.size())
    {
       new_gc->vovers = old_gc->vovers;
-      old_gc->vovers.clear();
    }
    bb->PushBefore(gimple_nop_node_ref, cur_stmt, AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added statement " + GET_NODE(gimple_nop_node_ref)->ToString());
@@ -351,11 +343,9 @@ void dead_code_elimination::add_gimple_nop(gimple_node* gc, const tree_managerRe
 /// dead stores removed
 DesignFlowStep_Status dead_code_elimination::InternalExec()
 {
-   const tree_managerRef TM = AppM->get_tree_manager();
-
-   const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
-   auto* fd = GetPointer<function_decl>(curr_tn);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const auto TM = AppM->get_tree_manager();
+   auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
+   auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
    /// Retrieve the list of block
    std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator block_it, block_it_end;
@@ -363,11 +353,11 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    const bool is_single_write_memory = GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory();
 
    bool modified = false;
+   bool restart_analysis = false;
    restart_mem = false;
    restart_if_opt = false;
    restart_mwi_opt = false;
 
-   bool restart_analysis;
    do
    {
       restart_analysis = false;
@@ -379,9 +369,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          const auto& stmt_list = block_it->second->CGetStmtList();
          for(const auto& stmt : stmt_list)
          {
-            auto gn = GetPointer<gimple_node>(GET_NODE(stmt));
+            const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
             THROW_ASSERT(gn->vovers.empty() || gn->vdef, "unexpected condition");
-            for(auto vo : gn->vovers)
+            for(const auto& vo : gn->vovers)
             {
                vdefvover_map[GET_INDEX_NODE(vo)].insert(GET_INDEX_NODE(gn->vdef));
                // vdefvover_map.insert(GET_INDEX_NODE(vo));
@@ -390,7 +380,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       }
       for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + boost::lexical_cast<std::string>(block_it->second->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block_it->second->number));
          const auto& stmt_list = block_it->second->CGetStmtList();
          std::list<tree_nodeRef> stmts_to_be_removed;
          for(auto stmt = stmt_list.rbegin(); stmt != stmt_list.rend(); stmt++)
@@ -403,21 +393,21 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             /// find out if it is a gimple_assign
             if(GET_NODE(*stmt)->get_kind() == gimple_assign_K)
             {
-               auto ga = GetPointer<gimple_assign>(GET_NODE(*stmt));
+               const auto ga = GetPointerS<gimple_assign>(GET_NODE(*stmt));
                /// in case of virtual uses it is better not perform the elimination
-               if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K && GetPointer<integer_cst>(GET_NODE(ga->predicate))->value == 0)
+               if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K && GetPointerS<integer_cst>(GET_NODE(ga->predicate))->value == 0)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead predicate found");
                   if(ga->vdef && !is_single_write_memory)
                   {
                      kill_vdef(TM, ga->vdef);
-                     ga->vdef = tree_nodeRef();
+                     ga->vdef = nullptr;
                      restart_mem = true;
                   }
                   else if(ga->memdef && is_single_write_memory)
                   {
                      kill_vdef(TM, ga->memdef);
-                     ga->memdef = tree_nodeRef();
+                     ga->memdef = nullptr;
                      restart_mem = true;
                   }
                   else if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
@@ -439,11 +429,11 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                else
                {
                   /// op0 is the left side of the assignment, op1 is the right side
-                  const tree_nodeRef op0 = GET_NODE(ga->op0);
-                  const auto op1_type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1));
+                  const auto op0 = GET_NODE(ga->op0);
+                  const auto op1_type = tree_helper::CGetType(ga->op1);
                   if(op0->get_kind() == ssa_name_K)
                   {
-                     auto* ssa = GetPointer<ssa_name>(op0);
+                     const auto ssa = GetPointerS<ssa_name>(op0);
                      /// very strict condition for the elimination
                      if(ssa->CGetNumberUses() == 0 and ssa->CGetDefStmts().size() == 1)
                      {
@@ -451,14 +441,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         bool is_a_reading_memory_call = false;
                         if(GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
                         {
-                           auto* ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+                           const auto ce = GetPointerS<call_expr>(GET_NODE(ga->op1));
                            if(GET_NODE(ce->fn)->get_kind() == addr_expr_K)
                            {
                               const auto addr_node = GET_NODE(ce->fn);
-                              const auto* ae = GetPointer<const addr_expr>(addr_node);
-                              const auto fu_decl_node = GET_NODE(ae->op);
+                              const auto ae = GetPointerS<const addr_expr>(addr_node);
+                              const auto fu_decl_node = GET_CONST_NODE(ae->op);
                               THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
-                              auto fdCalled = GetPointer<function_decl>(fu_decl_node);
+                              const auto fdCalled = GetPointerS<const function_decl>(fu_decl_node);
                               if(fdCalled->writing_memory || !fdCalled->body)
                               {
                                  is_a_writing_memory_call = true;
@@ -494,17 +484,17 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS ssa used: " + STR(ssa->CGetNumberUses()) + "-" + STR(ssa->CGetDefStmts().size()));
                      }
                   }
-                  else if(op0->get_kind() == mem_ref_K && !ga->artificial && !tree_helper::is_a_vector(TM, op1_type_index))
+                  else if(op0->get_kind() == mem_ref_K && !ga->artificial && !tree_helper::IsVectorType(op1_type))
                   {
-                     auto* mr = GetPointer<mem_ref>(op0);
+                     const auto mr = GetPointerS<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
-                     auto type_w = tree_helper::CGetType(ga->op1);
+                     const auto type_w = tree_helper::CGetType(ga->op1);
                      auto written_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(type_w));
                      if(written_bw == 1)
                      {
                         written_bw = 8;
                      }
-                     if(GetPointer<integer_cst>(GET_NODE(mr->op1))->value == 0)
+                     if(GetPointerS<integer_cst>(GET_NODE(mr->op1))->value == 0)
                      {
                         if(GET_NODE(mr->op0)->get_kind() == integer_cst_K)
                         {
@@ -513,32 +503,32 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         else
                         {
                            THROW_ASSERT(GET_NODE(mr->op0)->get_kind() == ssa_name_K, "unexpected condition" + ga->ToString());
-                           auto derefVar = GetPointer<ssa_name>(GET_NODE(mr->op0));
+                           auto derefVar = GetPointerS<ssa_name>(GET_NODE(mr->op0));
                            auto& defStmts = derefVar->CGetDefStmts();
                            if(defStmts.size() == 1)
                            {
                               auto defStmt = *defStmts.begin();
                               if(GET_NODE(defStmt)->get_kind() == gimple_assign_K)
                               {
-                                 auto derefGA = GetPointer<gimple_assign>(GET_NODE(defStmt));
+                                 const auto derefGA = GetPointerS<gimple_assign>(GET_NODE(defStmt));
                                  if(GET_NODE(derefGA->op1)->get_kind() == addr_expr_K)
                                  {
                                     auto addressedVar = GetPointer<addr_expr>(GET_NODE(derefGA->op1))->op;
                                     if(GET_NODE(addressedVar)->get_kind() == var_decl_K)
                                     {
-                                       auto varDecl = GetPointer<var_decl>(GET_NODE(addressedVar));
+                                       const auto varDecl = GetPointerS<var_decl>(GET_NODE(addressedVar));
                                        if(varDecl->scpe && function_id == GET_INDEX_NODE(varDecl->scpe) && !varDecl->static_flag)
                                        {
                                           ssa_name* ssaDef = nullptr;
                                           unsigned ssaDefIndex = 0;
                                           if(is_single_write_memory && ga->memdef)
                                           {
-                                             ssaDef = GetPointer<ssa_name>(GET_NODE(ga->memdef));
+                                             ssaDef = GetPointerS<ssa_name>(GET_NODE(ga->memdef));
                                              ssaDefIndex = GET_INDEX_NODE(ga->memdef);
                                           }
                                           else if(!is_single_write_memory && ga->vdef)
                                           {
-                                             ssaDef = GetPointer<ssa_name>(GET_NODE(ga->vdef));
+                                             ssaDef = GetPointerS<ssa_name>(GET_NODE(ga->vdef));
                                              ssaDefIndex = GET_INDEX_NODE(ga->vdef);
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "VDEF: " + STR(GET_INDEX_NODE(ga->vdef)));
                                           }
@@ -550,7 +540,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                           /// very strict condition for the elimination
                                           if(ssaDef->CGetDefStmts().size() == 1)
                                           {
-                                             if(ssaDef->CGetNumberUses() == 0 and vdefvover_map.find(ssaDefIndex) == vdefvover_map.end())
+                                             if(ssaDef->CGetNumberUses() == 0 && vdefvover_map.find(ssaDefIndex) == vdefvover_map.end())
                                              {
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead Store found");
                                                 if(ga->vdef)
@@ -567,17 +557,17 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                 const TreeNodeMap<size_t> StmtUses = ssaDef->CGetUseStmts();
                                                 for(const auto& use : StmtUses)
                                                 {
-                                                   const auto gn_used = GetPointer<gimple_node>(GET_NODE(use.first));
-                                                   if(!gn_used->vdef and gn_used->bb_index == ga->bb_index and gn_used->get_kind() == gimple_assign_K)
+                                                   const auto gn_used = GetPointerS<gimple_node>(GET_NODE(use.first));
+                                                   if(!gn_used->vdef && gn_used->bb_index == ga->bb_index && gn_used->get_kind() == gimple_assign_K)
                                                    {
-                                                      const auto ga_used = GetPointer<gimple_assign>(GET_NODE(use.first));
-                                                      if(GET_NODE(ga_used->op0)->get_kind() == ssa_name_K and GET_NODE(ga_used->op1)->get_kind() == mem_ref_K &&
-                                                         !(ga_used->predicate && GET_NODE(ga_used->predicate)->get_kind() == integer_cst_K && GetPointer<integer_cst>(GET_NODE(ga_used->predicate))->value == 0))
+                                                      const auto ga_used = GetPointerS<gimple_assign>(GET_NODE(use.first));
+                                                      if(GET_NODE(ga_used->op0)->get_kind() == ssa_name_K && GET_NODE(ga_used->op1)->get_kind() == mem_ref_K &&
+                                                         !(ga_used->predicate && GET_NODE(ga_used->predicate)->get_kind() == integer_cst_K && GetPointerS<integer_cst>(GET_NODE(ga_used->predicate))->value == 0))
                                                       {
-                                                         const auto mr_used = GetPointer<mem_ref>(GET_NODE(ga_used->op1));
+                                                         const auto mr_used = GetPointerS<mem_ref>(GET_NODE(ga_used->op1));
                                                          if(GetPointer<integer_cst>(GET_NODE(mr->op1))->value == GetPointer<integer_cst>(GET_NODE(mr_used->op1))->value)
                                                          {
-                                                            auto type_r = tree_helper::CGetType(ga_used->op0);
+                                                            const auto type_r = tree_helper::CGetType(ga_used->op0);
                                                             auto read_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(type_r));
                                                             if(read_bw == 1)
                                                             {
@@ -595,12 +585,12 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                                   --curr_stmt;
                                                                   while(true)
                                                                   {
-                                                                     const auto gn_curr = GetPointer<gimple_node>(GET_NODE(*curr_stmt));
                                                                      if(GET_INDEX_NODE(*curr_stmt) == GET_INDEX_NODE(use.first))
                                                                      {
                                                                         found_load = true;
                                                                         break;
                                                                      }
+                                                                     const auto gn_curr = GetPointerS<gimple_node>(GET_NODE(*curr_stmt));
                                                                      if(!found_load && gn_curr->vdef &&
                                                                         (ga_used->vuses.find(gn_curr->vdef) != ga_used->vuses.end() ||
                                                                          (vdefvover_map.find(ssaDefIndex) != vdefvover_map.end() &&
@@ -705,12 +695,12 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             }
             else if(GET_NODE(*stmt)->get_kind() == gimple_multi_way_if_K)
             {
-               auto gm = GetPointer<gimple_multi_way_if>(GET_NODE(*stmt));
+               const auto gm = GetPointerS<gimple_multi_way_if>(GET_NODE(*stmt));
 
                bool one_is_const = false;
                bool all_false = true;
                unsigned int bb_dest = 0;
-               for(auto cond : gm->list_of_cond)
+               for(const auto& cond : gm->list_of_cond)
                {
                   if(!cond.first)
                   {
@@ -722,7 +712,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                   else if(GET_NODE(cond.first)->get_kind() == integer_cst_K)
                   {
-                     if(GetPointer<integer_cst>(GET_NODE(cond.first))->value)
+                     if(GetPointerS<integer_cst>(GET_NODE(cond.first))->value)
                      {
                         all_false = false;
                         THROW_ASSERT(!one_is_const, "only one can be true");
@@ -790,7 +780,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         {
                            if(GET_NODE(cond.first)->get_kind() == integer_cst_K)
                            {
-                              THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(cond.first))->value == 0, "unexpected condition");
+                              THROW_ASSERT(GetPointerS<integer_cst>(GET_NODE(cond.first))->value == 0, "unexpected condition");
                               do_reachability = true;
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---gimple_multi_way_if duplicated condition from " + STR(bbIndex) + " to " + STR(cond.second));
                               cond.second = move2emptyBB(TM, sl, bbIndex, bb, cond.second, bb0_dest);
@@ -802,13 +792,13 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             }
             else if(GET_NODE(*stmt)->get_kind() == gimple_call_K)
             {
-               auto* gc = GetPointer<gimple_call>(GET_NODE(*stmt));
-               tree_nodeRef temp_node = GET_NODE(gc->fn);
+               const auto gc = GetPointerS<gimple_call>(GET_NODE(*stmt));
+               auto temp_node = GET_NODE(gc->fn);
                function_decl* fdCalled = nullptr;
 
                if(temp_node->get_kind() == addr_expr_K)
                {
-                  auto* ue = GetPointer<unary_expr>(temp_node);
+                  const auto ue = GetPointerS<unary_expr>(temp_node);
                   temp_node = ue->op;
                   fdCalled = GetPointer<function_decl>(GET_NODE(temp_node));
                }
@@ -831,7 +821,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         restart_mem = true;
                      }
                      add_gimple_nop(gc, TM, *stmt, (block_it)->second);
-
                      stmts_to_be_removed.push_back(*stmt);
                      AppM->RegisterTransformation(GetName(), *stmt);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead code found");
@@ -870,7 +859,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
           * check also phi operations. if a phi assigns an ssa which is not used
           * anymore, the phi can be removed
           */
-         const auto& phi_list = block_it->second->CGetPhiList();
+         const auto phi_list = block_it->second->CGetPhiList();
          std::list<tree_nodeRef> phis_to_be_removed;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing phis");
          for(auto phi = phi_list.rbegin(); phi != phi_list.rend(); phi++)
@@ -882,12 +871,12 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*phi)->ToString());
             THROW_ASSERT(GET_NODE(*phi)->get_kind() == gimple_phi_K, GET_NODE(*phi)->ToString() + " is of kind " + tree_node::GetString(GET_NODE(*phi)->get_kind()));
-            auto gphi = GetPointer<gimple_phi>(GET_NODE(*phi));
-            const tree_nodeRef res = GET_NODE(gphi->res);
+            const auto gphi = GetPointerS<gimple_phi>(GET_NODE(*phi));
+            const auto res = GET_NODE(gphi->res);
             THROW_ASSERT(res->get_kind() == ssa_name_K, res->ToString() + " is of kind " + tree_node::GetString(res->get_kind()));
-            const ssa_name* ssa = GetPointer<ssa_name>(res);
+            const auto ssa = GetPointerS<ssa_name>(res);
             // very strict condition for the elimination
-            if(ssa->CGetNumberUses() == 0 and ssa->CGetDefStmts().size() == 1)
+            if(ssa->CGetNumberUses() == 0 && ssa->CGetDefStmts().size() == 1)
             {
                phis_to_be_removed.push_back(*phi);
                AppM->RegisterTransformation(GetName(), *phi);
@@ -1069,7 +1058,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    /// fix vdef/memdef
    for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + boost::lexical_cast<std::string>(block_it->second->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block_it->second->number));
       const auto& stmt_list = block_it->second->CGetStmtList();
       for(auto stmt = stmt_list.rbegin(); stmt != stmt_list.rend(); stmt++)
       {
@@ -1087,29 +1076,31 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   const auto fu_decl_node = GET_NODE(ae->op);
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
                   auto fdCalled = GetPointer<function_decl>(fu_decl_node);
-                  if(fdCalled->writing_memory || !fdCalled->body)
-                  {
-                     ;
-                  }
-                  else
+                  if(!fdCalled->writing_memory && fdCalled->body)
                   {
                      if(gn->vdef && !is_single_write_memory)
                      {
                         if(fdCalled->reading_memory)
                         {
                            /// all vovers become vuse
-                           for(auto vo : gn->vovers)
+                           for(const auto& vo : gn->vovers)
                            {
                               if(!gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
                               {
-                                 gn->vuses.insert(vo);
-                                 GetPointer<ssa_name>(GET_NODE(vo))->AddUseStmt(*stmt);
+                                 gn->AddVuse(vo);
+                                 THROW_ASSERT(GET_NODE(vo)->get_kind() == ssa_name_K, "");
+                                 GetPointerS<ssa_name>(GET_NODE(vo))->AddUseStmt(*stmt);
                               }
                            }
                         }
                         /// fix vdef
                         kill_vdef(TM, gn->vdef);
-                        gn->vdef = tree_nodeRef();
+                        gn->vdef = nullptr;
+                        for(const auto& vo : gn->vovers)
+                        {
+                           THROW_ASSERT(GET_NODE(vo)->get_kind() == ssa_name_K, "");
+                           GetPointerS<ssa_name>(GET_NODE(vo))->RemoveUse(*stmt);
+                        }
                         gn->vovers.clear();
                         restart_mem = true;
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed VDEF/VOVER ");
@@ -1120,7 +1111,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         {
                            /// fix memdef
                            kill_vdef(TM, gn->memdef);
-                           gn->memdef = tree_nodeRef();
+                           gn->memdef = nullptr;
                            restart_mem = true;
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
                         }
@@ -1147,29 +1138,31 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             }
             if(fdCalled)
             {
-               if(fdCalled->writing_memory || !fdCalled->body)
-               {
-                  ;
-               }
-               else
+               if(!fdCalled->writing_memory && fdCalled->body)
                {
                   if(gn->vdef && !is_single_write_memory)
                   {
                      if(fdCalled->reading_memory)
                      {
                         /// all vovers become vuse
-                        for(auto vo : gn->vovers)
+                        for(const auto& vo : gn->vovers)
                         {
                            if(!gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
                            {
-                              gn->vuses.insert(vo);
-                              GetPointer<ssa_name>(GET_NODE(vo))->AddUseStmt(*stmt);
+                              gn->AddVuse(vo);
+                              THROW_ASSERT(GET_NODE(vo)->get_kind() == ssa_name_K, "");
+                              GetPointerS<ssa_name>(GET_NODE(vo))->AddUseStmt(*stmt);
                            }
                         }
                      }
                      /// fix vdef
                      kill_vdef(TM, gn->vdef);
-                     gn->vdef = tree_nodeRef();
+                     gn->vdef = nullptr;
+                     for(const auto& vo : gn->vovers)
+                     {
+                        THROW_ASSERT(GET_NODE(vo)->get_kind() == ssa_name_K, "");
+                        GetPointerS<ssa_name>(GET_NODE(vo))->RemoveUse(*stmt);
+                     }
                      gn->vovers.clear();
                      restart_mem = true;
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed VDEF/VOVER ");
@@ -1180,7 +1173,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      {
                         /// fix memdef
                         kill_vdef(TM, gn->memdef);
-                        gn->memdef = tree_nodeRef();
+                        gn->memdef = nullptr;
                         restart_mem = true;
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
                      }
@@ -1190,7 +1183,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + boost::lexical_cast<std::string>(block_it->second->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + STR(block_it->second->number));
    }
 
    /// update function memory write flag
@@ -1199,12 +1192,12 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    fd->reading_memory = false;
    for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + boost::lexical_cast<std::string>(block_it->second->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block_it->second->number));
       const auto& stmt_list = block_it->second->CGetStmtList();
       for(auto stmt = stmt_list.rbegin(); stmt != stmt_list.rend(); stmt++)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
-         auto* gn = GetPointer<gimple_node>(GET_NODE(*stmt));
+         const auto gn = GetPointerS<gimple_node>(GET_NODE(*stmt));
 
          if(!gn->vuses.empty() && !is_single_write_memory && GET_NODE(*stmt)->get_kind() != gimple_return_K)
          {
@@ -1230,14 +1223,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          {
             if(GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
             {
-               auto* ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+               const auto ce = GetPointerS<call_expr>(GET_NODE(ga->op1));
                if(GET_NODE(ce->fn)->get_kind() == addr_expr_K)
                {
                   const auto addr_node = GET_NODE(ce->fn);
-                  const auto* ae = GetPointer<const addr_expr>(addr_node);
+                  const auto ae = GetPointerS<const addr_expr>(addr_node);
                   const auto fu_decl_node = GET_NODE(ae->op);
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
-                  auto fdCalled = GetPointer<function_decl>(fu_decl_node);
+                  auto fdCalled = GetPointerS<function_decl>(fu_decl_node);
                   if(fdCalled->writing_memory || !fdCalled->body || fdCalled->undefined_flag)
                   {
                      fd->writing_memory = true;
@@ -1259,19 +1252,19 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          }
          else if(auto gc = GetPointer<gimple_call>(GET_NODE(*stmt)))
          {
-            tree_nodeRef temp_node = GET_NODE(gc->fn);
+            auto temp_node = GET_NODE(gc->fn);
             function_decl* fdCalled = nullptr;
 
             if(temp_node->get_kind() == addr_expr_K)
             {
-               auto* ue = GetPointer<unary_expr>(temp_node);
+               const auto ue = GetPointerS<unary_expr>(temp_node);
                temp_node = ue->op;
                fdCalled = GetPointer<function_decl>(GET_NODE(temp_node));
             }
             else if(temp_node->get_kind() == obj_type_ref_K)
             {
                temp_node = tree_helper::find_obj_type_ref_function(gc->fn);
-               fdCalled = GetPointer<function_decl>(GET_NODE(temp_node));
+               fdCalled = GetPointerS<function_decl>(GET_NODE(temp_node));
             }
             if(fdCalled)
             {
@@ -1301,7 +1294,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + boost::lexical_cast<std::string>(block_it->second->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + STR(block_it->second->number));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---write flag " + (fd->writing_memory ? std::string("T") : std::string("F")));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---read flag " + (fd->reading_memory ? std::string("T") : std::string("F")));
