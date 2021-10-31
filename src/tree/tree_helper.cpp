@@ -7928,6 +7928,10 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       {
          ComputeSsaUses(vuse, ssa_uses);
       }
+      for(const auto& vover : gn->vovers)
+      {
+         ComputeSsaUses(vover, ssa_uses);
+      }
    }
 
    switch(curr_tn->get_kind())

@@ -989,7 +989,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
                      "<--Replaced " + old_node->ToString() + " (" + GET_NODE(old_node)->get_kind_text() + ") with " + new_node->ToString() + "(" + GET_NODE(new_node)->get_kind_text() + ") New statement: " + tn->ToString());
       return;
    }
-   auto gn = GetPointer<gimple_node>(curr_tn);
+   const auto gn = GetPointer<gimple_node>(curr_tn);
    if(gn)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level, "-->Checking virtuals");
@@ -1011,7 +1011,9 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       if(gn->vovers.find(old_node) != gn->vovers.end())
       {
          gn->vovers.erase(old_node);
+         GetPointerS<ssa_name>(GET_NODE(old_node))->RemoveUse(stmt);
          gn->vovers.insert(new_node);
+         GetPointerS<ssa_name>(GET_NODE(new_node))->AddUseStmt(stmt);
       }
       if(gn->vdef)
       {
