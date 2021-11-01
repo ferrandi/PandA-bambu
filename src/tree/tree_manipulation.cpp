@@ -1712,12 +1712,12 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef& ssa_res, const std
    }
    if(sn_ref)
    {
-      ssa_res = create_ssa_name(sn_ref->var, sn_ref->type, sn_ref->min, sn_ref->max, false, sn_ref->virtual_flag);
+      ssa_res = create_ssa_name(sn_ref->var, sn_ref->type, sn_ref->min, sn_ref->max, false, virtual_flag);
    }
    else
    {
       const auto ssa_res_type_node = tree_helper::CGetType(list_of_def_edge.begin()->first);
-      ssa_res = create_ssa_name(tree_nodeRef(), ssa_res_type_node, tree_nodeRef(), tree_nodeRef(), false, false);
+      ssa_res = create_ssa_name(tree_nodeRef(), ssa_res_type_node, tree_nodeRef(), tree_nodeRef(), false, virtual_flag);
    }
 
    unsigned int phi_node_nid = this->TreeM->new_tree_node_id();
