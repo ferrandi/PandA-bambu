@@ -1468,7 +1468,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          new_gc->memdef = gc->memdef;
          for(const auto& vuse : gc->vuses)
          {
-            new_gc->vuses.insert(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 1, new_stmt_list, new_phi_list)));
+            new_gc->AddVuse(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 1, new_stmt_list, new_phi_list)));
          }
          if(gc->vdef)
          {
@@ -1767,7 +1767,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          new_ga->memdef = ga->memdef;
          for(const auto& vuse : ga->vuses)
          {
-            new_ga->vuses.insert(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
+            new_ga->AddVuse(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
          }
          if(ga->vdef)
          {
@@ -1882,7 +1882,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   new_ga->memdef = ga->memdef;
                   for(const auto& vuse : ga->vuses)
                   {
-                     new_ga->vuses.insert(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, scalar, new_stmt_list, new_phi_list)));
+                     new_ga->AddVuse(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, scalar, new_stmt_list, new_phi_list)));
                   }
                   if(ga->vdef)
                   {
@@ -1893,8 +1893,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                         const auto stmt = use_stmt.first;
                         if(transformations.find(stmt->index) == transformations.end())
                         {
-                           GetPointer<gimple_node>(GET_NODE(stmt))->vuses.erase(ga->vdef);
-                           GetPointer<gimple_node>(GET_NODE(stmt))->vuses.insert(new_ga->vdef);
+                           const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
+                           std::replace_if(
+                               gn->vuses.begin(), gn->vuses.end(), [&](const tree_nodeRef& vuse) { return ga->vdef->index == vuse->index; }, new_ga->vdef);
                         }
                      }
                   }
@@ -2243,7 +2244,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                new_ga->memdef = ga->memdef;
                for(const auto& vuse : ga->vuses)
                {
-                  new_ga->vuses.insert(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
+                  new_ga->AddVuse(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
                }
                if(new_ga->vdef)
                {

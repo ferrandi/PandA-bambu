@@ -1485,13 +1485,8 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, const tree_man
    auto newGN = GetPointer<gimple_node>(GET_NODE(gimple_nop_Node));
    newGN->memdef = origGN->memdef;
    newGN->memuse = origGN->memuse;
-   for(auto vUse : origGN->vuses)
-   {
-      auto sn = GetPointer<ssa_name>(GET_NODE(vUse));
-      newGN->AddVuse(vUse);
-      sn->AddUseStmt(gimple_nop_Node);
-   }
-   for(auto vOver : origGN->vovers)
+   newGN->vuses = origGN->vuses;
+   for(const auto& vOver : origGN->vovers)
    {
       if(writeVdef.find(GET_INDEX_NODE(vOver)) == writeVdef.end())
       {
@@ -1500,13 +1495,11 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, const tree_man
    }
    if(origGN->vdef)
    {
-      auto snDef = GetPointer<ssa_name>(GET_NODE(origGN->vdef));
       newGN->vdef = origGN->vdef;
-      snDef->SetDefStmt(gimple_nop_Node);
       writeVdef.insert(GET_INDEX_NODE(origGN->vdef));
    }
-   sl->list_of_bloc[origGN->bb_index]->PushBefore(gimple_nop_Node, origStmt, AppM);
-   sl->list_of_bloc[origGN->bb_index]->RemoveStmt(origStmt, AppM);
+   sl->list_of_bloc.at(origGN->bb_index)->PushBefore(gimple_nop_Node, origStmt, AppM);
+   sl->list_of_bloc.at(origGN->bb_index)->RemoveStmt(origStmt, AppM);
 }
 
 static boost::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");

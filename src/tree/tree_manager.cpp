@@ -930,7 +930,7 @@ void tree_manager::ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef&
 void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node, const tree_nodeRef& stmt, const bool definition) // NOLINT
 {
 #ifndef NDEBUG
-   int function_debug_level = Param->GetFunctionDebugLevel(GET_CLASS(*this), __func__);
+   const auto function_debug_level = Param->GetFunctionDebugLevel(GET_CLASS(*this), "ReplaceTreeNode");
 #endif
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    tree_nodeRef curr_tn = GET_NODE(tn);
@@ -972,6 +972,10 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             {
                GetPointerS<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
             }
+            if(gn->memdef && gn->memdef->index == old_node->index)
+            {
+               GetPointerS<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
+            }
             if(ga && ga->op0->index == old_node->index && GET_NODE(old_node)->get_kind() == ssa_name_K)
             {
                GetPointerS<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
@@ -1001,19 +1005,13 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       {
          RecursiveReplaceTreeNode(gn->memuse, old_node, new_node, stmt, false);
       }
-      if(gn->vuses.find(old_node) != gn->vuses.end())
+      for(auto& vuse : gn->vuses)
       {
-         gn->vuses.erase(old_node);
-         GetPointerS<ssa_name>(GET_NODE(old_node))->RemoveUse(stmt);
-         gn->vuses.insert(new_node);
-         GetPointerS<ssa_name>(GET_NODE(new_node))->AddUseStmt(stmt);
+         RecursiveReplaceTreeNode(vuse, old_node, new_node, stmt, false);
       }
-      if(gn->vovers.find(old_node) != gn->vovers.end())
+      for(auto& vover : gn->vovers)
       {
-         gn->vovers.erase(old_node);
-         GetPointerS<ssa_name>(GET_NODE(old_node))->RemoveUse(stmt);
-         gn->vovers.insert(new_node);
-         GetPointerS<ssa_name>(GET_NODE(new_node))->AddUseStmt(stmt);
+         RecursiveReplaceTreeNode(vover, old_node, new_node, stmt, false);
       }
       if(gn->vdef)
       {

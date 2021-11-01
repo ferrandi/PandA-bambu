@@ -867,9 +867,9 @@ void tree_node_dup::operator()(const gimple_node* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
    SET_NODE_ID(memuse, gimple_node);
    SET_NODE_ID(memdef, gimple_node);
-   SET_SET_NODE_ID(vuses, gimple_node);
+   SEQ_SET_NODE_ID(vuses, gimple_node);
    SET_NODE_ID(vdef, gimple_node);
-   SET_SET_NODE_ID(vovers, gimple_node);
+   SEQ_SET_NODE_ID(vovers, gimple_node);
    SEQ_SET_NODE_ID(pragmas, gimple_node);
    SET_NODE_ID(scpe, gimple_node);
    SET_VALUE(bb_index, gimple_node);

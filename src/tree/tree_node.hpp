@@ -1107,15 +1107,6 @@ struct gimple_node : public srcp, public WeightedNode
    /// whole memory operand def
    tree_nodeRef memdef;
 
-   /// vuses of this statement
-   TreeNodeSet vuses;
-
-   /**
-    * Add a vuse
-    * @param vuse is the vuse
-    */
-   void AddVuse(const tree_nodeRef& vuse);
-
    /// vdef of this statement
    tree_nodeRef vdef;
 
@@ -1123,10 +1114,19 @@ struct gimple_node : public srcp, public WeightedNode
     * Add a vdef
     * @param vdef is the vdef
     */
-   void AddVdef(const tree_nodeRef& vdef);
+   void SetVdef(const tree_nodeRef& vdef);
+
+   /// vuses of this statement
+   std::list<tree_nodeRef> vuses;
+
+   /**
+    * Add a vuse
+    * @param vuse is the vuse
+    */
+   void AddVuse(const tree_nodeRef& vuse);
 
    /// vovers of this statement
-   TreeNodeSet vovers;
+   std::list<tree_nodeRef> vovers;
 
    /**
     * Add a vover

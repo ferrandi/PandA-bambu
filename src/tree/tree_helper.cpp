@@ -639,7 +639,7 @@ std::string tree_helper::GetFunctionName(const tree_managerConstRef& TM, const t
    }
    if(decl->get_kind() == function_decl_K)
    {
-      const auto fd = GetPointer<const function_decl>(decl);
+      const auto fd = GetPointerS<const function_decl>(decl);
       return print_function_name(TM, fd);
    }
    else

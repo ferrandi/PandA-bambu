@@ -466,18 +466,24 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
                if(sp)
                {
                   info->block->RemoveStmt(stmt, AppM);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing vdef");
                   if(pn->vdef)
                   {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing vdef " + STR(pn->vdef));
                      const auto ssa_vdef = GetPointerS<ssa_name>(GET_NODE(pn->vdef));
-                     while(ssa_vdef->CGetUseStmts().size())
+                     const auto vdef_uses = ssa_vdef->CGetUseStmts();
+                     for(const auto& stmt_uses : vdef_uses)
                      {
-                        auto use_stmt = (ssa_vdef->CGetUseStmts().begin())->first;
-                        ssa_vdef->RemoveUse(use_stmt);
-                        GetPointer<gimple_node>(GET_NODE(use_stmt))->vuses.erase(pn->vdef);
+                        for(auto uses = stmt_uses.second; uses; --uses)
+                        {
+                           ssa_vdef->RemoveUse(stmt_uses.first);
+                        }
+                        THROW_ASSERT(GET_NODE(stmt_uses.first)->get_kind() != gimple_phi_K || !GetPointerS<gimple_phi>(GET_NODE(stmt_uses.first))->virtual_flag, "");
+                        const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt_uses.first));
+                        gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return pn->vdef->index == vuse->index; });
                      }
+                     THROW_ASSERT(ssa_vdef->CGetUseStmts().empty(), "");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed vdef");
                   }
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed vdef");
                   const auto FB = application_manager->GetFunctionBehavior(function_index);
                   FB->GetLoops()->GetLoop(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number)->loop_type |= DOALL_LOOP;
                   // FB->UpdateBBVersion();

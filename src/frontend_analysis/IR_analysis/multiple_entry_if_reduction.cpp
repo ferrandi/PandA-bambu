@@ -179,14 +179,14 @@ bool MultipleEntryIfReduction::HasToBeExecuted() const
    {
       return false;
    }
-   const vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id));
+   const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id));
    if(!frontend_step)
    {
       return false;
    }
-   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
-   return GetPointer<const simple_code_motion>(design_flow_step)->IsScheduleBased();
+   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+   const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+   return GetPointerS<const simple_code_motion>(design_flow_step)->IsScheduleBased();
 }
 
 void MultipleEntryIfReduction::Initialize()
@@ -195,7 +195,7 @@ void MultipleEntryIfReduction::Initialize()
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
-   sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   sl = GetPointerS<statement_list>(GET_NODE(fd->body));
    if(GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->allocation_information)
    {
       allocation_information = GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->allocation_information;
@@ -206,7 +206,6 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
 {
    THROW_ASSERT(parameters->IsParameter("meif_threshold"), "");
    const auto threshold = parameters->GetParameter<double>("meif_threshold");
-
    const auto max_iteration_number = parameters->IsParameter("meif_max_iterations_number") ? parameters->GetParameter<size_t>("meif_max_iterations_number") : std::numeric_limits<size_t>::max();
 
    static size_t executed_iteration = 0;
@@ -567,8 +566,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                if(bb_index_map.find(use_bb_index) == bb_index_map.end())
                {
                   THROW_ASSERT(sn->virtual_flag, "");
-                  auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
-                  gn->vuses.erase(defined_sn);
+                  const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
+                  THROW_ASSERT(std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return defined_sn->index == vover->index; }) == gn->vovers.end(), "vovers not handled");
+                  gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return defined_sn->index == vuse->index; });
                   uses_to_be_removed.insert(use_stmt.first);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removing use from just created statement");
                   continue;
@@ -584,13 +584,14 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                /// Management of vuses for overwrite
                if(sn->virtual_flag && GET_NODE(use_stmt.first)->get_kind() != gimple_phi_K && !function_behavior->CheckBBReachability(*basic_block, use_bb))
                {
-                  auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
-                  gn->vuses.erase(defined_sn);
+                  const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
+                  THROW_ASSERT(std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return defined_sn->index == vover->index; }) == gn->vovers.end(), "vovers not handled");
+                  gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return defined_sn->index == vuse->index; });
                   uses_to_be_removed.insert(use_stmt.first);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(defined_sn) + " from vuses of " + gn->ToString());
                   for(const auto& copy : copy_ids)
                   {
-                     gn->vuses.insert(TM->GetTreeReindex(remaps[copy.second][sn->index]));
+                     gn->AddVuse(TM->GetTreeReindex(remaps[copy.second][sn->index]));
                      GetPointerS<ssa_name>(TM->GetTreeNode(remaps[copy.second][sn->index]))->AddUseStmt(use_stmt.first);
                   }
                }

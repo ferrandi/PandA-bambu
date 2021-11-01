@@ -863,8 +863,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             for(auto stmt0 = list_of_stmt.begin(); stmt0 != list_of_stmt.end() && *stmt0 != *statement && gn->vdef; stmt0++)
             {
                tree_nodeRef tn0 = GET_NODE(*stmt0);
-               auto* gn0 = GetPointer<gimple_node>(tn0);
-               if(gn0->vuses.find(gn->vdef) != gn0->vuses.end())
+               const auto gn0 = GetPointerS<gimple_node>(tn0);
+               if(std::find_if(gn0->vuses.begin(), gn0->vuses.end(), [&](const tree_nodeRef& vuse) { return gn->vdef->index == vuse->index; }) != gn0->vuses.end())
                {
                   BB_def.insert(curr_bb);
                }

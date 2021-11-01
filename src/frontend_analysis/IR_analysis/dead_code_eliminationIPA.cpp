@@ -269,13 +269,14 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
             THROW_ASSERT(ssa->CGetUseStmts().count(call_stmt), "ssa " + ssa->ToString() + " in " + call_stmt->ToString());
             ssa->RemoveUse(call_stmt);
 
-            auto gn = GetPointer<gimple_node>(GET_NODE(call_stmt));
-            if(tree_helper::is_virtual(TM, ssa->index))
+            if(ssa->virtual_flag)
             {
-               gn->vuses.erase(*arg_it);
+               const auto gn = GetPointerS<gimple_node>(GET_NODE(call_stmt));
+               gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return (*arg_it)->index == vuse->index; });
+               gn->vovers.remove_if([&](const tree_nodeRef& vover) { return (*arg_it)->index == vover->index; });
                if(GET_INDEX_NODE(gn->memuse) == ssa->index)
                {
-                  gn->memuse = tree_nodeRef();
+                  gn->memuse = nullptr;
                }
             }
          }

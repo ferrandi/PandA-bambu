@@ -43,19 +43,17 @@
 /// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-#include "refcount.hpp"
-
 /**
  * Extract openmp atomic in a separate function
  */
 class ExtractOmpAtomic : public FunctionFrontendFlowStep
 {
- protected:
+ private:
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -76,10 +74,5 @@ class ExtractOmpAtomic : public FunctionFrontendFlowStep
     * Restructures the unstructured code
     */
    DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   virtual void Initialize() override;
 };
 #endif

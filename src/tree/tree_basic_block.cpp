@@ -404,11 +404,11 @@ void bloc::Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, con
             }
             if(old_ga->vuses.size())
             {
-               new_ga->vuses.insert(old_ga->vuses.begin(), old_ga->vuses.end());
+               new_ga->vuses.insert(new_ga->vuses.end(), old_ga->vuses.begin(), old_ga->vuses.end());
             }
             if(old_ga->vovers.size())
             {
-               new_ga->vovers.insert(old_ga->vovers.begin(), old_ga->vovers.end());
+               new_ga->vovers.insert(new_ga->vovers.end(), old_ga->vovers.begin(), old_ga->vovers.end());
             }
          }
          if(next_stmt != list_of_stmt.end())

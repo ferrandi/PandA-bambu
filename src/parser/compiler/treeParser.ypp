@@ -2560,7 +2560,7 @@ bool pred;
    virtual_op : TOK_BISON_VUSE       {;}
                 node_id              {ADDV(gimple_node, AddVuse)}
               | TOK_BISON_VDEF       {;}
-                node_id              {ADDV(gimple_node, AddVdef)}
+                node_id              {ADDV(gimple_node, SetVdef)}
               | TOK_BISON_VOVER      {;}
                 node_id              {ADDV(gimple_node, AddVover)}
               ;
