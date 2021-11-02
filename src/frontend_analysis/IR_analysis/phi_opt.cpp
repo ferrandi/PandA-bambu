@@ -1961,23 +1961,39 @@ void PhiOpt::ReplaceVirtualUses(const tree_nodeRef& old_vssa, const std::list<tr
       const auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " use stmt " + GET_NODE(use_stmt)->ToString());
       const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt));
-      THROW_ASSERT(std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return virtual_ssa->index == vover->index; }) == gn->vovers.end(), "vovers not handled");
-      THROW_ASSERT((gn->memuse && gn->memuse->index == virtual_ssa->index) || std::count_if(gn->vuses.begin(), gn->vuses.end(), [&](const tree_nodeRef& vuse) { return virtual_ssa->index == vuse->index; }),
-                   STR(old_vssa) + " is not in the vuses of " + STR(use_stmt));
+      const auto has_vuses = (gn->memuse && gn->memuse->index == virtual_ssa->index) || std::find_if(gn->vuses.begin(), gn->vuses.end(), [&](const tree_nodeRef& vuse) { return virtual_ssa->index == vuse->index; }) != gn->vuses.end();
+      const auto has_vovers = std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return virtual_ssa->index == vover->index; }) != gn->vovers.end();
+      THROW_ASSERT(has_vuses || has_vovers, STR(old_vssa) + " is not in the vuses/vovers of " + STR(use_stmt));
       if(gn->memuse && gn->memuse->index == virtual_ssa->index)
       {
          gn->memuse = nullptr;
       }
-      gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return virtual_ssa->index == vuse->index; });
+      if(has_vuses)
+      {
+         gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return virtual_ssa->index == vuse->index; });
+      }
+      if(has_vovers)
+      {
+         gn->vovers.remove_if([&](const tree_nodeRef& vover) { return virtual_ssa->index == vover->index; });
+      }
       for(auto uses = virtual_ssa->CGetUseStmts().begin()->second; uses; --uses)
       {
          virtual_ssa->RemoveUse(use_stmt);
       }
       for(const auto& vssa : new_vssa)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add vuse " + GET_CONST_NODE(vssa)->ToString());
-         gn->AddVuse(vssa);
-         GetPointerS<ssa_name>(GET_NODE(vssa))->AddUseStmt(use_stmt);
+         if(has_vuses)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add vuse " + GET_CONST_NODE(vssa)->ToString());
+            gn->AddVuse(vssa);
+            GetPointerS<ssa_name>(GET_NODE(vssa))->AddUseStmt(use_stmt);
+         }
+         if(has_vovers)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add vover " + GET_CONST_NODE(vssa)->ToString());
+            gn->AddVover(vssa);
+            GetPointerS<ssa_name>(GET_NODE(vssa))->AddUseStmt(use_stmt);
+         }
       }
    }
 }
