@@ -49,6 +49,8 @@
 /// Utility include
 #include "refcount.hpp"
 
+#include <list>
+
 /**
  * @name forward declarations
  */
@@ -182,6 +184,8 @@ class PhiOpt : public FunctionFrontendFlowStep
     * @param statement is the statement containing
     */
    void RemoveCondExpr(const tree_nodeRef statement);
+
+   void ReplaceVirtualUses(const tree_nodeRef& old_vssa, const std::list<tree_nodeRef>& new_ssa) const;
 
    /**
     * Return the set of analyses in relationship with this design step
