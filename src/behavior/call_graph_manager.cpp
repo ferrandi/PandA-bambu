@@ -489,21 +489,14 @@ void CallGraphManager::ComputeRootAndReachedFunctions()
    }
    reached_body_functions.clear();
    reached_library_functions.clear();
-   std::cout << "1" << std::endl;
    CalledFunctionsVisitor vis(allow_recursive_functions, this, reached_body_functions, reached_library_functions);
-   std::cout << "2" << std::endl;
    std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
-   std::cout << "3" << std::endl;
    for(const auto root_fun_id : root_functions)
    {
-      std::cout << "4" << std::endl;
       if(IsVertex(root_fun_id))
       {
-         std::cout << "5" << std::endl;
          const auto top_vertex = GetVertex(root_fun_id);
-         std::cout << "6" << std::endl;
          boost::depth_first_visit(*call_graph, top_vertex, vis, boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index_t(), *call_graph), boost::white_color));
-         std::cout << "7" << std::endl;
       }
    }
 }
