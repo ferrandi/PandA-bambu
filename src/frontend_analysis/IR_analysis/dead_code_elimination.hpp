@@ -88,11 +88,29 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+   void kill_uses(const tree_managerRef& TM, const tree_nodeRef& op0) const;
+
+   /**
+    * Replace virtual ssa definition with gimple nop
+    * @param TM tree manager instance
+    * @param vdef virtual ssa
+    * @return tree_nodeRef generated gimple nop statement
+    */
+   tree_nodeRef kill_vdef(const tree_managerRef& TM, const tree_nodeRef& vdef);
+
+   /**
+    *
+    * @param gc
+    * @param TM
+    * @param cur_stmt
+    * @param bb
+    * @return tree_nodeRef
+    */
+   tree_nodeRef add_gimple_nop(const tree_managerRef& TM, const tree_nodeRef& cur_stmt, const blocRef& bb);
+
    void fix_sdc_motion(tree_nodeRef removedStmt) const;
-   void kill_uses(const tree_managerRef TM, tree_nodeRef op0) const;
-   void kill_vdef(const tree_managerRef TM, tree_nodeRef vdef);
-   unsigned move2emptyBB(const tree_managerRef TM, statement_list* sl, unsigned pred, blocRef bb_pred, unsigned cand_bb_dest, unsigned bb_dest) const;
-   void add_gimple_nop(gimple_node* gc, const tree_managerRef TM, tree_nodeRef cur_stmt, blocRef bb);
+
+   blocRef move2emptyBB(const tree_managerRef& TM, const unsigned int new_bbi, const statement_list* sl, const blocRef& bb_pred, const unsigned int cand_bb_dest, const unsigned int bb_dest) const;
 
  public:
    /**
