@@ -343,12 +343,10 @@ endif
 
 noinst_HEADERS += \
    frontend_analysis/IR_manipulation/build_virtual_phi.hpp \
-   frontend_analysis/IR_manipulation/clean_virtual_phi.hpp \
    frontend_analysis/IR_manipulation/create_tree_manager.hpp
 
 lib_IR_manipulation_la_SOURCES = \
    frontend_analysis/IR_manipulation/build_virtual_phi.cpp \
-   frontend_analysis/IR_manipulation/clean_virtual_phi.cpp \
    frontend_analysis/IR_manipulation/create_tree_manager.cpp
 
 if BUILD_BAMBU

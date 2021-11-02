@@ -110,7 +110,6 @@
 #include "check_pipelinable_loops.hpp"
 #endif
 #include "check_system_type.hpp"
-#include "clean_virtual_phi.hpp"
 #include "complete_bb_graph.hpp"
 #include "complete_call_graph.hpp"
 #if HAVE_BAMBU_BUILT
@@ -386,7 +385,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case CHECK_PIPELINABLE_LOOPS:
 #endif
       case CHECK_SYSTEM_TYPE:
-      case CLEAN_VIRTUAL_PHI:
       case COMPLETE_BB_GRAPH:
 #if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:
@@ -786,7 +784,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       case CHECK_PIPELINABLE_LOOPS:
 #endif
       case CHECK_SYSTEM_TYPE:
-      case CLEAN_VIRTUAL_PHI:
       case COMPLETE_BB_GRAPH:
 #if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:
@@ -1095,10 +1092,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case CHECK_SYSTEM_TYPE:
       {
          return DesignFlowStepRef(new CheckSystemType(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-      case CLEAN_VIRTUAL_PHI:
-      {
-         return DesignFlowStepRef(new CleanVirtualPhi(AppM, function_id, design_flow_manager.lock(), parameters));
       }
       case COMPLETE_BB_GRAPH:
       {

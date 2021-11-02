@@ -145,7 +145,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    CHECK_CRITICAL_SESSION,
 #endif
    CHECK_SYSTEM_TYPE, //! Set the system flag to variables and types
-   CLEAN_VIRTUAL_PHI,
    COMPLETE_BB_GRAPH,
    COMPLETE_CALL_GRAPH,
 #if HAVE_BAMBU_BUILT
