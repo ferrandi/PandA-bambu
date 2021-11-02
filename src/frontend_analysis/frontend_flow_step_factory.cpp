@@ -149,6 +149,7 @@
 #endif
 #if HAVE_BAMBU_BUILT
 #include "FixStructsPassedByValue.hpp"
+#include "FixVdef.hpp"
 #include "FunctionCallOpt.hpp"
 #include "FunctionCallTypeCleanup.hpp"
 #include "extract_gimple_cond_op.hpp"
@@ -422,6 +423,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case FUNCTION_CALL_TYPE_CLEANUP:
       case FUNCTION_CALL_OPT:
       case FIX_STRUCTS_PASSED_BY_VALUE:
+      case FIX_VDEF:
 #endif
 #if HAVE_ZEBU_BUILT
       case GLOBAL_VARIABLES_ANALYSIS:
@@ -821,6 +823,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       case FUNCTION_CALL_TYPE_CLEANUP:
       case FUNCTION_CALL_OPT:
       case FIX_STRUCTS_PASSED_BY_VALUE:
+      case FIX_VDEF:
 #endif
 #if HAVE_ZEBU_BUILT
       case GLOBAL_VARIABLES_ANALYSIS:
@@ -1181,6 +1184,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case FIX_STRUCTS_PASSED_BY_VALUE:
       {
          return DesignFlowStepRef(new FixStructsPassedByValue(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
+      case FIX_VDEF:
+      {
+         return DesignFlowStepRef(new FixVdef(parameters, AppM, function_id, design_flow_manager.lock()));
       }
       case FUNCTION_CALL_TYPE_CLEANUP:
       {

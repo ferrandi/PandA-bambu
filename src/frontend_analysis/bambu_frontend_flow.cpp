@@ -102,6 +102,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(EXTRACT_PATTERNS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FANOUT_OPT, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FIX_VDEF, WHOLE_APPLICATION));
          if(!parameters->IsParameter("function-opt") || parameters->GetParameter<bool>("function-opt"))
          {
             relationships.insert(std::make_pair(FUNCTION_CALL_OPT, WHOLE_APPLICATION));

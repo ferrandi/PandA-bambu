@@ -287,6 +287,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case FIX_STRUCTS_PASSED_BY_VALUE:
          return "FixStructsPassedByValue";
+      case FIX_VDEF:
+         return "FixVdef";
       case FUNCTION_CALL_TYPE_CLEANUP:
          return "FunctionCallTypeCleanup";
       case FUNCTION_CALL_OPT:

@@ -149,7 +149,7 @@ class IR_lowering : public FunctionFrontendFlowStep
    ~IR_lowering() override;
 
    /**
-    * Computes the operations CFG graph data structure.
+    * traverse the data structure to simplify and make more homogeneous as possible.
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;

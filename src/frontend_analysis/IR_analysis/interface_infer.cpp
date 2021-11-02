@@ -457,18 +457,12 @@ void interface_infer::create_Read_function(tree_nodeRef origStmt, const std::str
    {
       TM->ReplaceTreeNode(used.first, ga->op0, temp_ssa_var);
    }
-
-   sl->list_of_bloc[destBB]->PushBefore(new_assignment, origStmt, AppM);
    THROW_ASSERT(!ga->memdef, "unexpected case");
    THROW_ASSERT(!ga->vdef, "unexpected case");
    THROW_ASSERT(ga->vovers.empty(), "unexpected case");
    newGN->memuse = ga->memuse;
-   for(const auto& vUse : ga->vuses)
-   {
-      auto sn = GetPointer<ssa_name>(GET_NODE(vUse));
-      newGN->AddVuse(vUse);
-      sn->AddUseStmt(new_assignment);
-   }
+   newGN->vuses = ga->vuses;
+   sl->list_of_bloc[destBB]->PushBefore(new_assignment, origStmt, AppM);
    sl->list_of_bloc[destBB]->RemoveStmt(origStmt, AppM);
    GetPointer<HLS_manager>(AppM)->design_interface_loads[fname][destBB][argName_string].push_back(GET_INDEX_NODE(new_assignment));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---LOAD STMT: " + new_assignment->ToString() + " in function " + fname);
@@ -558,7 +552,9 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    }
    for(const auto& vOver : ga->vovers)
    {
+      auto sn = GetPointer<ssa_name>(GET_NODE(vOver));
       newGN->AddVover(vOver);
+      sn->AddUseStmt(new_writecall);
    }
    sl->list_of_bloc[destBB]->RemoveStmt(origStmt, AppM);
    GetPointer<HLS_manager>(AppM)->design_interface_stores[fname][destBB][argName_string].push_back(GET_INDEX_NODE(new_writecall));

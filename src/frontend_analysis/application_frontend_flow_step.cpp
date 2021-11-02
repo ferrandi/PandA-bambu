@@ -147,6 +147,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case EXTRACT_PATTERNS:
       case FIX_STRUCTS_PASSED_BY_VALUE:
+      case FIX_VDEF:
       case FUNCTION_CALL_TYPE_CLEANUP:
       case FUNCTION_CALL_OPT:
 #endif

@@ -188,6 +188,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    FUNCTION_CALL_TYPE_CLEANUP,
    FUNCTION_CALL_OPT,
    FANOUT_OPT,
+   FIX_VDEF,
 #endif
 #if HAVE_ZEBU_BUILT
    GLOBAL_VARIABLES_ANALYSIS,

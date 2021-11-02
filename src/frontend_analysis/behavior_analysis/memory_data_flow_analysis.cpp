@@ -90,7 +90,7 @@ void MemoryDataFlowAnalysis::Initialize()
 {
    if(bb_version != 0 && bb_version != function_behavior->GetBBVersion())
    {
-      const OpGraphConstRef fsaodg = function_behavior->CGetOpGraph(FunctionBehavior::FSAODG);
+      const auto fsaodg = function_behavior->CGetOpGraph(FunctionBehavior::FSAODG);
       if(boost::num_vertices(*fsaodg) != 0)
       {
          EdgeIterator edge, edge_end;
