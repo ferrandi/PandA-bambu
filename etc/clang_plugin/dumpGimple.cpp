@@ -3203,7 +3203,9 @@ namespace llvm
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
+         {
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vuse");
+         }
          else
          {
             const auto Loc = llvm::MemoryLocation::get(inst);
@@ -3217,7 +3219,9 @@ namespace llvm
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
+         {
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
+         }
          else
          {
             const auto Loc = llvm::MemoryLocation::get(inst);
