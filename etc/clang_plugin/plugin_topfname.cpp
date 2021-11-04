@@ -69,6 +69,7 @@ namespace llvm
    static cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(false), cl::desc("Specify if the global variables has to be internalized"));
    static cl::opt<std::string> ExternSymbolsList("panda-ESL", cl::desc("Specify the list of symbols not to be internalized"), cl::value_desc("comma separated list of external symbols"));
    static cl::opt<std::string> outdir_name("internalize-outputdir", cl::desc("Specify the directory where the external symbols file will be written"), cl::value_desc("directory path"));
+   static cl::opt<bool> add_noalias("add-noalias", cl::init(false), cl::desc("Force noalias to pointer parameters"), cl::value_desc("specify if pointer parameters are noalias"));
 
    // Helper to load an API list to preserve and expose it as a functor for internalization.
    class PreserveSymbolList
@@ -163,6 +164,17 @@ namespace llvm
                {
                   symbolList.push_back(funName);
                   hasTopFun = true;
+                  /// in case add noalias
+                  if(add_noalias)
+                  {
+                     for(auto& par : fun.args())
+                     {
+                        if(!par.hasNoAliasAttr() && par.getType()->isPointerTy())
+                        {
+                           par.addAttr(llvm::Attribute::NoAlias);
+                        }
+                     }
+                  }
                }
             }
          }

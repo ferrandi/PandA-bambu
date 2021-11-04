@@ -530,6 +530,10 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          if(compiler.is_clang)
          {
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -panda-TFN=" + fname;
+            if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+            {
+               command += " -mllvm -add-noalias";
+            }
             std::string extern_symbols;
             std::vector<std::string> xml_files;
             if(Param->isOption(OPT_xml_memory_allocation))
