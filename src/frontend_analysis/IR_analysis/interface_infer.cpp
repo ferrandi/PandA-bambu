@@ -547,14 +547,18 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    for(const auto& vUse : StmtVusesUses)
    {
       auto sn = GetPointer<ssa_name>(GET_NODE(vUse));
-      newGN->AddVuse(vUse);
-      sn->AddUseStmt(new_writecall);
+      if(newGN->AddVuse(vUse))
+      {
+         sn->AddUseStmt(new_writecall);
+      }
    }
    for(const auto& vOver : ga->vovers)
    {
       auto sn = GetPointer<ssa_name>(GET_NODE(vOver));
-      newGN->AddVover(vOver);
-      sn->AddUseStmt(new_writecall);
+      if(newGN->AddVover(vOver))
+      {
+         sn->AddUseStmt(new_writecall);
+      }
    }
    sl->list_of_bloc[destBB]->RemoveStmt(origStmt, AppM);
    GetPointer<HLS_manager>(AppM)->design_interface_stores[fname][destBB][argName_string].push_back(GET_INDEX_NODE(new_writecall));
