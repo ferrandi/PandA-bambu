@@ -930,8 +930,7 @@ void tree_manager::ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef&
 void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node, const tree_nodeRef& stmt, const bool definition) // NOLINT
 {
 #ifndef NDEBUG
-   const auto function_debug_level = tree_helper::debug_level;
-   // Param->GetFunctionDebugLevel(GET_CLASS(*this), "ReplaceTreeNode");
+   const auto function_debug_level = Param->GetFunctionDebugLevel(GET_CLASS(*this), "ReplaceTreeNode");
 #endif
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    tree_nodeRef curr_tn = GET_NODE(tn);
