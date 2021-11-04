@@ -251,7 +251,7 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "LeftEdgeRegisterBinding";
 #endif
       case HLSFlowStep_Type::LIST_BASED_SCHEDULING:
-         return "ListBasedScheduling";
+         return "ParametricListBased";
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH:
          return "MemoryConflictGraph";
