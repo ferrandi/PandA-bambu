@@ -257,19 +257,10 @@ tree_nodeRef dead_code_elimination::add_gimple_nop(const tree_managerRef& TM, co
    }
    const auto nop_stmt = TM->GetTreeReindex(nop_stmt_id);
    const auto new_gn = GetPointerS<gimple_node>(GET_NODE(nop_stmt));
-   if(gn->memdef)
-   {
-      new_gn->memdef = gn->memdef;
-      gn->memdef = nullptr;
-   }
    if(gn->vdef)
    {
       new_gn->vdef = gn->vdef;
       gn->vdef = nullptr;
-   }
-   if(gn->memuse)
-   {
-      new_gn->memuse = gn->memuse;
    }
    if(gn->vuses.size())
    {
@@ -350,7 +341,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
    /// Retrieve the list of block
    const auto& blocks = sl->list_of_bloc;
-   const auto is_single_write_memory = GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->IsSingleWriteMemory();
 
    bool modified = false;
    bool restart_analysis = false;
@@ -402,21 +392,15 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K && GetPointerS<integer_cst>(GET_NODE(ga->predicate))->value == 0)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead predicate found");
-                  if(ga->vdef && !is_single_write_memory)
+                  if(ga->vdef)
                   {
                      new_vssa_nop.push_back(kill_vdef(TM, ga->vdef));
                      ga->vdef = nullptr;
                      restart_mem = true;
                   }
-                  else if(ga->memdef && is_single_write_memory)
-                  {
-                     new_vssa_nop.push_back(kill_vdef(TM, ga->memdef));
-                     ga->memdef = nullptr;
-                     restart_mem = true;
-                  }
                   else if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
                   {
-                     if(ga->vdef || ga->vuses.size() || ga->vovers.size() || ga->memdef || ga->memuse)
+                     if(ga->vdef || ga->vuses.size() || ga->vovers.size())
                      {
                         restart_mem = true;
                      }
@@ -474,7 +458,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                               add_gimple_nop(TM, *stmt, bb);
                               restart_mem = true;
                            }
-                           if(is_a_reading_memory_call || ga->vdef || ga->vuses.size() || ga->vovers.size() || ga->memdef || ga->memuse || GET_NODE(ga->op1)->get_kind() == addr_expr_K || GET_NODE(ga->op1)->get_kind() == mem_ref_K)
+                           if(is_a_reading_memory_call || ga->vdef || ga->vuses.size() || ga->vovers.size() || GET_NODE(ga->op1)->get_kind() == addr_expr_K || GET_NODE(ga->op1)->get_kind() == mem_ref_K)
                            {
                               restart_mem = true;
                            }
@@ -524,11 +508,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                        if(varDecl->scpe && function_id == GET_INDEX_NODE(varDecl->scpe) && !varDecl->static_flag)
                                        {
                                           ssa_name* ssaDef = nullptr;
-                                          if(is_single_write_memory && ga->memdef)
-                                          {
-                                             ssaDef = GetPointerS<ssa_name>(GET_NODE(ga->memdef));
-                                          }
-                                          else if(!is_single_write_memory && ga->vdef)
+                                          if(ga->vdef)
                                           {
                                              ssaDef = GetPointerS<ssa_name>(GET_NODE(ga->vdef));
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---VDEF: " + STR(ga->vdef));
@@ -822,7 +802,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                   if(tree_helper::is_a_nop_function_decl(fdCalled) || !is_a_writing_memory_call)
                   {
-                     if(gc->vdef || gc->vuses.size() || gc->vovers.size() || gc->memdef || gc->memuse)
+                     if(gc->vdef || gc->vuses.size() || gc->vovers.size())
                      {
                         restart_mem = true;
                      }
@@ -978,15 +958,10 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + (*stmt)->ToString());
                   const auto node_stmt = GET_NODE(*stmt);
                   const auto gn = GetPointerS<gimple_node>(node_stmt);
-                  if(gn->vdef && !is_single_write_memory)
+                  if(gn->vdef)
                   {
                      kill_vdef(TM, gn->vdef);
                      gn->vdef = nullptr;
-                  }
-                  else if(gn->memdef && is_single_write_memory)
-                  {
-                     kill_vdef(TM, gn->memdef);
-                     gn->memdef = nullptr;
                   }
                   else if(node_stmt->get_kind() == gimple_assign_K)
                   {
@@ -1090,7 +1065,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             const auto gn = GetPointerS<gimple_node>(GET_NODE(*stmt));
             if(!fdCalled->writing_memory && fdCalled->body)
             {
-               if(gn->vdef && !is_single_write_memory)
+               if(gn->vdef)
                {
                   if(fdCalled->reading_memory)
                   {
@@ -1119,17 +1094,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   restart_mem = true;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed VDEF/VOVER ");
                }
-               else if(gn->memdef && is_single_write_memory)
-               {
-                  if(!fdCalled->reading_memory)
-                  {
-                     /// fix memdef
-                     new_vssa_nop.push_back(kill_vdef(TM, gn->memdef));
-                     gn->memdef = nullptr;
-                     restart_mem = true;
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
-                  }
-               }
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
@@ -1155,25 +1119,15 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
          const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(*stmt));
 
-         if(!gn->vuses.empty() && !is_single_write_memory && GET_CONST_NODE(*stmt)->get_kind() != gimple_return_K)
+         if(!gn->vuses.empty() && GET_CONST_NODE(*stmt)->get_kind() != gimple_return_K)
          {
             fd->reading_memory = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory (1)");
          }
-         else if(gn->memuse && is_single_write_memory)
-         {
-            fd->reading_memory = true;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory (2)");
-         }
-         if(gn->vdef && !is_single_write_memory)
+         if(gn->vdef)
          {
             fd->writing_memory = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- writing_memory (3)");
-         }
-         else if(gn->memdef && is_single_write_memory)
-         {
-            fd->writing_memory = true;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- writing_memory (4)");
          }
          else if(const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(*stmt)))
          {

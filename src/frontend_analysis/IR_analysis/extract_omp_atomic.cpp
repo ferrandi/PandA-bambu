@@ -141,33 +141,6 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
       }
       if(gimple_to_be_removed)
       {
-         const auto gn = GetPointer<const gimple_node>(GET_NODE(gimple_to_be_removed));
-         if(gn->memdef)
-         {
-            const auto sn = GetPointerS<ssa_name>(GET_NODE(gn->memdef));
-            TreeNodeMap<size_t> to_be_removeds;
-            for(const auto& use : sn->CGetUseStmts())
-            {
-               if(GET_NODE(use.first)->get_kind() != gimple_phi_K)
-               {
-                  to_be_removeds.insert(use);
-               }
-            }
-            for(const auto& to_be_removed : to_be_removeds)
-            {
-               for(size_t counter = 0; counter < to_be_removed.second; counter++)
-               {
-                  sn->RemoveUse(to_be_removed.first);
-               }
-               const auto gnode = GetPointerS<gimple_node>(GET_NODE(to_be_removed.first));
-               gnode->vuses.erase(gn->memdef);
-               gnode->vovers.erase(gn->memdef);
-               if(gnode->memuse->index == gn->memdef->index)
-               {
-                  gnode->memuse = nullptr;
-               }
-            }
-         }
          block->RemoveStmt(gimple_to_be_removed, AppM);
       }
    }

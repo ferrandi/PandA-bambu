@@ -279,11 +279,6 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
                {
                   ssa->RemoveUse(call_stmt);
                }
-               if(gn->memuse && GET_INDEX_NODE(gn->memuse) == ssa->index)
-               {
-                  ssa->RemoveUse(call_stmt);
-                  gn->memuse = nullptr;
-               }
             }
             else
             {

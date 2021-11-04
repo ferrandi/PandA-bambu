@@ -175,13 +175,6 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             THROW_ASSERT(virtual_ssa_definitions.count(gn->vdef) == 0, gn->vdef->ToString() + " is defined also in " + STR(virtual_ssa_definitions.at(gn->vdef)));
             virtual_ssa_definitions[gn->vdef] = stmt;
          }
-         gn->memdef = nullptr;
-         if(gn->memuse)
-         {
-            GetPointerS<ssa_name>(GET_NODE(gn->memuse))->RemoveUse(stmt);
-            gn->memuse = nullptr;
-         }
-
          const auto& cur_bb = bb_index_map.at(gn->bb_index);
          const auto vo_it = gn->vdef ? gn->vovers.find(gn->vdef) : gn->vovers.end();
          if(vo_it != gn->vovers.end() && !function_behavior->CheckBBReachability(cur_bb, cur_bb))

@@ -1963,13 +1963,10 @@ void PhiOpt::ReplaceVirtualUses(const tree_nodeRef& old_vssa, const TreeNodeSet&
       const auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " use stmt " + GET_NODE(use_stmt)->ToString());
       const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt));
-      const auto has_vuses = (gn->memuse && gn->memuse->index == virtual_ssa->index) || gn->vuses.find(old_vssa) != gn->vuses.end();
+      const auto has_vuses = gn->vuses.find(old_vssa) != gn->vuses.end();
       const auto has_vovers = gn->vovers.find(old_vssa) != gn->vovers.end();
       THROW_ASSERT(has_vuses || has_vovers, old_vssa->ToString() + " is not in the vuses/vovers of " + use_stmt->ToString());
-      if(gn->memuse && gn->memuse->index == virtual_ssa->index)
-      {
-         gn->memuse = nullptr;
-      }
+
       if(has_vuses)
       {
          gn->vuses.erase(old_vssa);
