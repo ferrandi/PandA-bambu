@@ -582,7 +582,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                }();
                if(canBeProp)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Virtual op not used in any phi");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Virtual ssa " + GET_CONST_NODE(gn->vdef)->ToString() + " not used in any phi");
                   ReplaceVirtualUses(gn->vdef, gn->vuses);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removing gimple nop " + STR(gn->index));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");

@@ -181,11 +181,13 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             GetPointerS<ssa_name>(GET_NODE(gn->memuse))->RemoveUse(stmt);
             gn->memuse = nullptr;
          }
-         const auto cur_bb_index = gn->bb_index;
-         const auto& cur_bb = bb_index_map.at(cur_bb_index);
-         if(gn->vdef && gn->vovers.find(gn->vdef) != gn->vovers.end() && !function_behavior->CheckBBReachability(cur_bb, cur_bb))
+
+         const auto& cur_bb = bb_index_map.at(gn->bb_index);
+         const auto vo_it = gn->vdef ? gn->vovers.find(gn->vdef) : gn->vovers.end();
+         if(vo_it != gn->vovers.end() && !function_behavior->CheckBBReachability(cur_bb, cur_bb))
          {
-            gn->vovers.erase(gn->vdef);
+            gn->vovers.erase(vo_it);
+            GetPointerS<ssa_name>(GET_NODE(gn->vdef))->RemoveUse(stmt);
          }
          for(const auto& vover : gn->vovers)
          {
@@ -199,7 +201,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             const auto def_stmt = sn->CGetDefStmt();
             const auto use_bb_index = GetPointerS<const gimple_node>(GET_NODE(def_stmt))->bb_index;
             const auto& use_bb = bb_index_map.at(use_bb_index);
-            if(use_bb_index == cur_bb_index)
+            if(use_bb_index == gn->bb_index)
             {
                /// here we may have a Use-Def or a Def-Use. They are both perfectly fine.
                ++vu_it;
@@ -334,13 +336,10 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       }
       for(const auto& transitive_use : transitive_uses)
       {
-         for(size_t number_use = 0; number_use < transitive_use.second; number_use++)
-         {
-            sn->RemoveUse(transitive_use.first);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(virtual_ssa_definition.first) + " from vuses of " + STR(transitive_use.first));
-         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(virtual_ssa_definition.first) + " from vuses of " + STR(transitive_use.first));
          const auto gn = GetPointerS<gimple_node>(GET_NODE(transitive_use.first));
          gn->vuses.erase(virtual_ssa_definition.first);
+         sn->RemoveUse(transitive_use.first);
       }
 
       /// It is possible that the use is not reachable; this is due to the gcc alias oracle
