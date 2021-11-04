@@ -111,7 +111,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    ADD_OP_PHI_FLOW_EDGES,
 #endif
-   AGGREGATE_DATA_FLOW_ANALYSIS,
 #if HAVE_ZEBU_BUILT
    ARRAY_REF_FIX,
 #endif
@@ -229,7 +228,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    LUT_TRANSFORMATION,
 #endif
-   MEMORY_DATA_FLOW_ANALYSIS,
 #if HAVE_BAMBU_BUILT
    MULTI_WAY_IF,
    MULTIPLE_ENTRY_IF_REDUCTION,

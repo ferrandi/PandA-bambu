@@ -72,7 +72,6 @@
 #if HAVE_BAMBU_BUILT
 #include "add_op_phi_flow_edges.hpp"
 #endif
-#include "aggregate_data_flow_analysis.hpp"
 #if HAVE_ZEBU_BUILT
 #include "array_ref_fix.hpp"
 #endif
@@ -195,7 +194,6 @@
 #if HAVE_BAMBU_BUILT
 #include "lut_transformation.hpp"
 #endif
-#include "memory_data_flow_analysis.hpp"
 #if HAVE_BAMBU_BUILT
 #include "NI_SSA_liveness.hpp"
 #include "multi_way_if.hpp"
@@ -356,7 +354,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case ADD_OP_PHI_FLOW_EDGES:
 #endif
-      case AGGREGATE_DATA_FLOW_ANALYSIS:
 #if HAVE_ZEBU_BUILT
       case(ARRAY_REF_FIX):
 #endif
@@ -459,7 +456,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
-      case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
       case NI_SSA_LIVENESS:
@@ -756,7 +752,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case ADD_OP_PHI_FLOW_EDGES:
 #endif
-      case AGGREGATE_DATA_FLOW_ANALYSIS:
 #if HAVE_ZEBU_BUILT
       case(ARRAY_REF_FIX):
 #endif
@@ -859,7 +854,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
-      case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
       case NI_SSA_LIVENESS:
@@ -1014,10 +1008,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new AddOpPhiFlowEdges(AppM, function_id, design_flow_manager.lock(), parameters));
       }
 #endif
-      case AGGREGATE_DATA_FLOW_ANALYSIS:
-      {
-         return DesignFlowStepRef(new AggregateDataFlowAnalysis(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
 #if HAVE_ZEBU_BUILT
       case(ARRAY_REF_FIX):
       {
@@ -1280,10 +1270,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new lut_transformation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
-      case MEMORY_DATA_FLOW_ANALYSIS:
-      {
-         return DesignFlowStepRef(new MemoryDataFlowAnalysis(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
       {

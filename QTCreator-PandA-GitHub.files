@@ -2142,8 +2142,6 @@ src/frontend_analysis/behavior_analysis/add_op_loop_flow_edges.cpp
 src/frontend_analysis/behavior_analysis/add_op_loop_flow_edges.hpp
 src/frontend_analysis/behavior_analysis/add_op_phi_flow_edges.cpp
 src/frontend_analysis/behavior_analysis/add_op_phi_flow_edges.hpp
-src/frontend_analysis/behavior_analysis/aggregate_data_flow_analysis.cpp
-src/frontend_analysis/behavior_analysis/aggregate_data_flow_analysis.hpp
 src/frontend_analysis/behavior_analysis/basic_blocks_profiling.cpp
 src/frontend_analysis/behavior_analysis/basic_blocks_profiling.hpp
 src/frontend_analysis/behavior_analysis/bb_cdg_computation.cpp
@@ -2162,8 +2160,6 @@ src/frontend_analysis/behavior_analysis/host_profiling.cpp
 src/frontend_analysis/behavior_analysis/host_profiling.hpp
 src/frontend_analysis/behavior_analysis/loops_computation.cpp
 src/frontend_analysis/behavior_analysis/loops_computation.hpp
-src/frontend_analysis/behavior_analysis/memory_data_flow_analysis.cpp
-src/frontend_analysis/behavior_analysis/memory_data_flow_analysis.hpp
 src/frontend_analysis/behavior_analysis/op_cdg_computation.cpp
 src/frontend_analysis/behavior_analysis/op_cdg_computation.hpp
 src/frontend_analysis/behavior_analysis/op_feedback_edges_computation.cpp

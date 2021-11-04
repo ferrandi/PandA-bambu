@@ -78,7 +78,7 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
    {
       return Computedependencies<unsigned int>(DFG_SCA_SELECTOR, FB_DFG_SCA_SELECTOR, ADG_SCA_SELECTOR, FB_ADG_SCA_SELECTOR);
    }
-   else if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS or frontend_flow_step_type == MEMORY_DATA_FLOW_ANALYSIS
+   else if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
            or frontend_flow_step_type == REFINED_AGGREGATE_DATA_FLOW_ANALYSIS
 #endif
@@ -389,10 +389,6 @@ CustomSet<unsigned int> DataDependenceComputation::GetVariables(const vertex sta
    else if(frontend_flow_step_type == SCALAR_SSA_DATA_FLOW_ANALYSIS)
    {
       variable_type = FunctionBehavior_VariableType::SCALAR;
-   }
-   else if(frontend_flow_step_type == MEMORY_DATA_FLOW_ANALYSIS)
-   {
-      variable_type = FunctionBehavior_VariableType::MEMORY;
    }
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
    else if(frontend_flow_step_type == REFINED_AGGREGATE_DATA_FLOW_ANALYSIS)

@@ -25,7 +25,6 @@ noinst_HEADERS += \
    frontend_analysis/behavior_analysis/add_bb_ecfg_edges.hpp \
    frontend_analysis/behavior_analysis/add_op_exit_flow_edges.hpp \
    frontend_analysis/behavior_analysis/add_op_loop_flow_edges.hpp \
-   frontend_analysis/behavior_analysis/aggregate_data_flow_analysis.hpp \
    frontend_analysis/behavior_analysis/bb_cdg_computation.hpp \
    frontend_analysis/behavior_analysis/bb_feedback_edges_computation.hpp \
    frontend_analysis/behavior_analysis/bb_order_computation.hpp \
@@ -33,7 +32,6 @@ noinst_HEADERS += \
    frontend_analysis/behavior_analysis/data_dependence_computation.hpp \
    frontend_analysis/behavior_analysis/dom_post_dom_computation.hpp \
    frontend_analysis/behavior_analysis/loops_computation.hpp \
-   frontend_analysis/behavior_analysis/memory_data_flow_analysis.hpp \
    frontend_analysis/behavior_analysis/op_cdg_computation.hpp \
    frontend_analysis/behavior_analysis/op_feedback_edges_computation.hpp \
    frontend_analysis/behavior_analysis/op_order_computation.hpp \
@@ -46,7 +44,6 @@ lib_behavior_analysis_la_SOURCES = \
    frontend_analysis/behavior_analysis/add_bb_ecfg_edges.cpp \
    frontend_analysis/behavior_analysis/add_op_exit_flow_edges.cpp \
    frontend_analysis/behavior_analysis/add_op_loop_flow_edges.cpp \
-   frontend_analysis/behavior_analysis/aggregate_data_flow_analysis.cpp \
    frontend_analysis/behavior_analysis/bb_cdg_computation.cpp \
    frontend_analysis/behavior_analysis/bb_feedback_edges_computation.cpp \
    frontend_analysis/behavior_analysis/bb_order_computation.cpp \
@@ -54,7 +51,6 @@ lib_behavior_analysis_la_SOURCES = \
    frontend_analysis/behavior_analysis/data_dependence_computation.cpp \
    frontend_analysis/behavior_analysis/dom_post_dom_computation.cpp \
    frontend_analysis/behavior_analysis/loops_computation.cpp \
-   frontend_analysis/behavior_analysis/memory_data_flow_analysis.cpp \
    frontend_analysis/behavior_analysis/op_cdg_computation.cpp \
    frontend_analysis/behavior_analysis/op_feedback_edges_computation.cpp \
    frontend_analysis/behavior_analysis/op_order_computation.cpp \

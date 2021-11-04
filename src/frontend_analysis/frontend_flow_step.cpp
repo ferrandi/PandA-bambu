@@ -154,8 +154,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(ADD_OP_PHI_FLOW_EDGES):
          return "AddOpPhiFlowEdges";
 #endif
-      case(AGGREGATE_DATA_FLOW_ANALYSIS):
-         return "AggregateDataFlowAnalysis";
 #if HAVE_ZEBU_BUILT
       case(ARRAY_REF_FIX):
          return "ArrayRefFix";
@@ -356,8 +354,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(LUT_TRANSFORMATION):
          return "LutTransformation";
 #endif
-      case(MEMORY_DATA_FLOW_ANALYSIS):
-         return "MemoryDataFlowAnalysis";
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
          return "MultiWayIf";

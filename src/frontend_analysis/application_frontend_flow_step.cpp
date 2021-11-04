@@ -82,7 +82,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case ADD_OP_PHI_FLOW_EDGES:
 #endif
-      case AGGREGATE_DATA_FLOW_ANALYSIS:
 #if HAVE_ZEBU_BUILT
       case(ARRAY_REF_FIX):
 #endif
@@ -185,7 +184,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
-      case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
       case NI_SSA_LIVENESS:
