@@ -567,6 +567,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                   THROW_ASSERT(sn->virtual_flag, "");
                   const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
                   THROW_ASSERT(gn->vovers.find(defined_sn) == gn->vovers.end(), "vovers not handled");
+                  THROW_ASSERT(gn->vuses.find(defined_sn) != gn->vuses.end(), "vuse not found");
                   gn->vuses.erase(defined_sn);
                   uses_to_be_removed.insert(use_stmt.first);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removing use from just created statement");
@@ -585,6 +586,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                {
                   const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
                   THROW_ASSERT(gn->vovers.find(defined_sn) == gn->vovers.end(), "vovers not handled");
+                  THROW_ASSERT(gn->vuses.find(defined_sn) != gn->vuses.end(), "vuse not found");
                   gn->vuses.erase(defined_sn);
                   uses_to_be_removed.insert(use_stmt.first);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(defined_sn) + " from vuses of " + gn->ToString());

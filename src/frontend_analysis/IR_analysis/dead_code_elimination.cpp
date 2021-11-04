@@ -866,7 +866,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
           * check also phi operations. if a phi assigns an ssa which is not used
           * anymore, the phi can be removed
           */
-         const auto phi_list = bb->CGetPhiList();
+         const auto& phi_list = bb->CGetPhiList();
          std::list<tree_nodeRef> phis_to_be_removed;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing phis");
          for(auto phi = phi_list.rbegin(); phi != phi_list.rend(); phi++)
@@ -885,6 +885,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             // very strict condition for the elimination
             if(ssa->CGetNumberUses() == 0 && ssa->CGetDefStmts().size() == 1)
             {
+               THROW_ASSERT(ssa->CGetUseStmts().empty(), "");
                phis_to_be_removed.push_back(*phi);
                AppM->RegisterTransformation(GetName(), *phi);
             }
