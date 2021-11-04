@@ -566,8 +566,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                {
                   THROW_ASSERT(sn->virtual_flag, "");
                   const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
-                  THROW_ASSERT(std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return defined_sn->index == vover->index; }) == gn->vovers.end(), "vovers not handled");
-                  gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return defined_sn->index == vuse->index; });
+                  THROW_ASSERT(gn->vovers.find(defined_sn) == gn->vovers.end(), "vovers not handled");
+                  gn->vuses.erase(defined_sn);
                   uses_to_be_removed.insert(use_stmt.first);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removing use from just created statement");
                   continue;
@@ -584,14 +584,17 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                if(sn->virtual_flag && GET_NODE(use_stmt.first)->get_kind() != gimple_phi_K && !function_behavior->CheckBBReachability(*basic_block, use_bb))
                {
                   const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
-                  THROW_ASSERT(std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return defined_sn->index == vover->index; }) == gn->vovers.end(), "vovers not handled");
-                  gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return defined_sn->index == vuse->index; });
+                  THROW_ASSERT(gn->vovers.find(defined_sn) == gn->vovers.end(), "vovers not handled");
+                  gn->vuses.erase(defined_sn);
                   uses_to_be_removed.insert(use_stmt.first);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(defined_sn) + " from vuses of " + gn->ToString());
                   for(const auto& copy : copy_ids)
                   {
-                     gn->AddVuse(TM->GetTreeReindex(remaps[copy.second][sn->index]));
-                     GetPointerS<ssa_name>(TM->GetTreeNode(remaps[copy.second][sn->index]))->AddUseStmt(use_stmt.first);
+                     if(gn->AddVuse(TM->GetTreeReindex(remaps[copy.second][sn->index])))
+                     {
+                        const auto vssa = GetPointerS<ssa_name>(TM->GetTreeNode(remaps[copy.second][sn->index]));
+                        vssa->AddUseStmt(use_stmt.first);
+                     }
                   }
                }
                /// Use is in the considered loop

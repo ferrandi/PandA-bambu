@@ -479,7 +479,7 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
                         }
                         THROW_ASSERT(GET_NODE(stmt_uses.first)->get_kind() != gimple_phi_K || !GetPointerS<gimple_phi>(GET_NODE(stmt_uses.first))->virtual_flag, "");
                         const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt_uses.first));
-                        gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return pn->vdef->index == vuse->index; });
+                        gn->vuses.erase(pn->vdef);
                      }
                      THROW_ASSERT(ssa_vdef->CGetUseStmts().empty(), "");
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed vdef");

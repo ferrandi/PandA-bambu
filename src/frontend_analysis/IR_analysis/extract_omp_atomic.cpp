@@ -160,7 +160,7 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
                   sn->RemoveUse(to_be_removed.first);
                }
                const auto gnode = GetPointerS<gimple_node>(GET_NODE(to_be_removed.first));
-               gnode->vuses.remove_if([&](const tree_nodeRef& vuse) { return gn->memdef->index == vuse->index; });
+               gnode->vuses.erase(gn->memdef);
                if(gnode->memuse->index == gn->memdef->index)
                {
                   gnode->memuse = nullptr;

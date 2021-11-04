@@ -404,11 +404,11 @@ void bloc::Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, con
             }
             if(old_ga->vuses.size())
             {
-               new_ga->vuses.insert(new_ga->vuses.end(), old_ga->vuses.begin(), old_ga->vuses.end());
+               new_ga->vuses.insert(old_ga->vuses.begin(), old_ga->vuses.end());
             }
             if(old_ga->vovers.size())
             {
-               new_ga->vovers.insert(new_ga->vovers.end(), old_ga->vovers.begin(), old_ga->vovers.end());
+               new_ga->vovers.insert(old_ga->vovers.begin(), old_ga->vovers.end());
             }
          }
          if(next_stmt != list_of_stmt.end())
@@ -427,7 +427,7 @@ void bloc::Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, con
 
 void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef AppM)
 {
-   auto* ga = GetPointer<gimple_assign>(GET_NODE(statement));
+   const auto ga = GetPointer<gimple_assign>(GET_NODE(statement));
    if((ga && (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)) || (GetPointer<gimple_call>(GET_NODE(statement))))
    {
       const auto cg_man = AppM->GetCallGraphManager();

@@ -593,7 +593,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                                      }
                                                                      const auto gn_curr = GetPointerS<gimple_node>(GET_NODE(*curr_stmt));
                                                                      if(!found_load && gn_curr->vdef &&
-                                                                        (std::find_if(ga_used->vuses.begin(), ga_used->vuses.end(), [&](const tree_nodeRef& vuse) { return gn_curr->vdef->index == vuse->index; }) != ga_used->vuses.end() ||
+                                                                        (ga_used->vuses.find(gn_curr->vdef) != ga_used->vuses.end() ||
                                                                          (vdefvover_map.find(ssaDef->index) != vdefvover_map.end() &&
                                                                           vdefvover_map.find(ssaDef->index)->second.find(GET_INDEX_NODE(gn_curr->vdef)) != vdefvover_map.find(ssaDef->index)->second.end())))
                                                                      {
@@ -1098,9 +1098,11 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      {
                         if(!gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
                         {
-                           gn->AddVuse(vo);
-                           THROW_ASSERT(GET_NODE(vo)->get_kind() == ssa_name_K, "");
-                           GetPointerS<ssa_name>(GET_NODE(vo))->AddUseStmt(*stmt);
+                           if(gn->AddVuse(vo))
+                           {
+                              THROW_ASSERT(GET_NODE(vo)->get_kind() == ssa_name_K, "");
+                              GetPointerS<ssa_name>(GET_NODE(vo))->AddUseStmt(*stmt);
+                           }
                         }
                      }
                   }

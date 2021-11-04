@@ -535,15 +535,13 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       for(const auto& stmt : block.second->CGetStmtList())
       {
          const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
-         if(gn->get_kind() != gimple_nop_K || !gn->vdef || (std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return gn->vdef->index == vover->index; }) != gn->vovers.end() && gn->vovers.size() > 1) ||
-            (std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return gn->vdef->index == vover->index; }) == gn->vovers.end() && (!gn->vovers.empty())))
+         if(gn->get_kind() != gimple_nop_K || !gn->vdef || (gn->vovers.find(gn->vdef) != gn->vovers.end() && gn->vovers.size() > 1) || (gn->vovers.find(gn->vdef) == gn->vovers.end() && (!gn->vovers.empty())))
          {
             if(gn->get_kind() == gimple_nop_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---skipped gimple nop " + STR(gn->index) + (!gn->vdef ? "NOVDEF " : "VDEF ") +
-                                  ((std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return gn->vdef->index == vover->index; }) != gn->vovers.end() && gn->vovers.size() > 1) ? "cond1 " : "not cond1 ") +
-                                  ((std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return gn->vdef->index == vover->index; }) == gn->vovers.end() && (!gn->vovers.empty())) ? "cond2 " : "not cond2 "));
+                              "---skipped gimple nop " + STR(gn->index) + (!gn->vdef ? "NOVDEF " : "VDEF ") + ((gn->vovers.find(gn->vdef) != gn->vovers.end() && gn->vovers.size() > 1) ? "cond1 " : "not cond1 ") +
+                                  ((gn->vovers.find(gn->vdef) == gn->vovers.end() && (!gn->vovers.empty())) ? "cond2 " : "not cond2 "));
             }
             continue;
          }
@@ -735,7 +733,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       /// The value coming from false edge
       tree_nodeRef false_value = nullptr;
 
-      auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
+      const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
 
       /// The type of the expression
       const auto type_node = tree_helper::CGetType(gp->res);
@@ -764,8 +762,8 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       tree_nodeRef var = nullptr;
       if(GET_CONST_NODE(true_value)->get_kind() == ssa_name_K && GET_CONST_NODE(false_value)->get_kind() == ssa_name_K)
       {
-         const auto sn1 = GetPointer<const ssa_name>(GET_CONST_NODE(true_value));
-         const auto sn2 = GetPointer<const ssa_name>(GET_CONST_NODE(false_value));
+         const auto sn1 = GetPointerS<const ssa_name>(GET_CONST_NODE(true_value));
+         const auto sn2 = GetPointerS<const ssa_name>(GET_CONST_NODE(false_value));
          if(sn1->var && sn2->var && sn1->var->index == sn2->var->index)
          {
             var = sn1->var;
@@ -773,7 +771,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       }
       const auto gp_res = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res));
       const auto ssa_node = tree_man->create_ssa_name(var, type_node, gp_res->min, gp_res->max, false, gp->virtual_flag);
-      GetPointer<ssa_name>(GET_NODE(ssa_node))->bit_values = gp_res->bit_values;
+      GetPointerS<ssa_name>(GET_NODE(ssa_node))->bit_values = gp_res->bit_values;
       if(gp->virtual_flag)
       {
          /// Create a nop with virtual operands
@@ -783,7 +781,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
          const auto gimple_node_id = TM->new_tree_node_id();
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
          gimple_node = TM->GetTreeReindex(gimple_node_id);
-         auto gn = GetPointer<gimple_nop>(GET_NODE(gimple_node));
+         const auto gn = GetPointer<gimple_nop>(GET_NODE(gimple_node));
          gn->SetVdef(ssa_node);
          gn->AddVuse(true_value);
          gn->AddVuse(false_value);
@@ -996,8 +994,11 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
          }
          else
          {
-            std::list<tree_nodeRef> new_ssas;
-            std::transform(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(), std::back_inserter(new_ssas), [](const gimple_phi::DefEdge& de) { return de.first; });
+            TreeNodeSet new_ssas;
+            for(const auto& def_edge : gp->CGetDefEdgesList())
+            {
+               new_ssas.insert(def_edge.first);
+            }
             ReplaceVirtualUses(gp->res, new_ssas);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Substituted vuses ");
          }
@@ -1429,7 +1430,9 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
          }
          else
          {
-            std::list<tree_nodeRef> new_ssas = {first_value, second_value};
+            TreeNodeSet new_ssas;
+            new_ssas.insert(first_value);
+            new_ssas.insert(second_value);
             ReplaceVirtualUses(gp->res, new_ssas);
          }
       }
@@ -1952,7 +1955,7 @@ void PhiOpt::RemoveCondExpr(const tree_nodeRef statement)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed " + statement->ToString());
 }
 
-void PhiOpt::ReplaceVirtualUses(const tree_nodeRef& old_vssa, const std::list<tree_nodeRef>& new_vssa) const
+void PhiOpt::ReplaceVirtualUses(const tree_nodeRef& old_vssa, const TreeNodeSet& new_vssa) const
 {
    const auto virtual_ssa = GetPointerS<ssa_name>(GET_NODE(old_vssa));
    while(virtual_ssa->CGetUseStmts().size())
@@ -1960,22 +1963,22 @@ void PhiOpt::ReplaceVirtualUses(const tree_nodeRef& old_vssa, const std::list<tr
       const auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " use stmt " + GET_NODE(use_stmt)->ToString());
       const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt));
-      const auto has_vuses = (gn->memuse && gn->memuse->index == virtual_ssa->index) || std::find_if(gn->vuses.begin(), gn->vuses.end(), [&](const tree_nodeRef& vuse) { return virtual_ssa->index == vuse->index; }) != gn->vuses.end();
-      const auto has_vovers = std::find_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& vover) { return virtual_ssa->index == vover->index; }) != gn->vovers.end();
-      THROW_ASSERT(has_vuses || has_vovers, STR(old_vssa) + " is not in the vuses/vovers of " + STR(use_stmt));
+      const auto has_vuses = (gn->memuse && gn->memuse->index == virtual_ssa->index) || gn->vuses.find(old_vssa) != gn->vuses.end();
+      const auto has_vovers = gn->vovers.find(old_vssa) != gn->vovers.end();
+      THROW_ASSERT(has_vuses || has_vovers, old_vssa->ToString() + " is not in the vuses/vovers of " + use_stmt->ToString());
       if(gn->memuse && gn->memuse->index == virtual_ssa->index)
       {
          gn->memuse = nullptr;
       }
       if(has_vuses)
       {
-         gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return virtual_ssa->index == vuse->index; });
+         gn->vuses.erase(old_vssa);
       }
       if(has_vovers)
       {
-         gn->vovers.remove_if([&](const tree_nodeRef& vover) { return virtual_ssa->index == vover->index; });
+         gn->vovers.erase(old_vssa);
       }
-      for(auto uses = virtual_ssa->CGetUseStmts().begin()->second; uses; --uses)
+      for(auto uses = virtual_ssa->CGetUseStmts().begin()->second; uses > 0; --uses)
       {
          virtual_ssa->RemoveUse(use_stmt);
       }
@@ -1984,14 +1987,18 @@ void PhiOpt::ReplaceVirtualUses(const tree_nodeRef& old_vssa, const std::list<tr
          if(has_vuses)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add vuse " + GET_CONST_NODE(vssa)->ToString());
-            gn->AddVuse(vssa);
-            GetPointerS<ssa_name>(GET_NODE(vssa))->AddUseStmt(use_stmt);
+            if(gn->AddVuse(vssa))
+            {
+               GetPointerS<ssa_name>(GET_NODE(vssa))->AddUseStmt(use_stmt);
+            }
          }
          if(has_vovers)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add vover " + GET_CONST_NODE(vssa)->ToString());
-            gn->AddVover(vssa);
-            GetPointerS<ssa_name>(GET_NODE(vssa))->AddUseStmt(use_stmt);
+            if(gn->AddVover(vssa))
+            {
+               GetPointerS<ssa_name>(GET_NODE(vssa))->AddUseStmt(use_stmt);
+            }
          }
       }
    }

@@ -1894,8 +1894,12 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                         if(transformations.find(stmt->index) == transformations.end())
                         {
                            const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
-                           std::replace_if(
-                               gn->vuses.begin(), gn->vuses.end(), [&](const tree_nodeRef& vuse) { return ga->vdef->index == vuse->index; }, new_ga->vdef);
+                           const auto vuse_it = gn->vuses.find(ga->vdef);
+                           if(vuse_it != gn->vuses.end())
+                           {
+                              gn->vuses.erase(vuse_it);
+                              gn->vuses.insert(new_ga->vdef);
+                           }
                         }
                      }
                   }

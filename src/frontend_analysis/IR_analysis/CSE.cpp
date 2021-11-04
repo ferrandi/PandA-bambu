@@ -547,6 +547,7 @@ tree_nodeRef CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const sta
             const auto ae = GetPointerS<const addr_expr>(addr_node);
             ins.push_back(GET_INDEX_CONST_NODE(ae->op));
             const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(ae->op));
+            // TODO: may be optimized
             if(fd->undefined_flag || fd->writing_memory || fd->reading_memory || ga->vuses.size())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");

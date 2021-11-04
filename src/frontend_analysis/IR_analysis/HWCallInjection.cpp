@@ -353,7 +353,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
          GA->vuses.clear();
          GA->vovers.clear();
          THROW_ASSERT(builtinGimpleCall->vdef, "");
-         GA->vuses.push_back(builtinGimpleCall->vdef);
+         GA->vuses.insert(builtinGimpleCall->vdef);
 
          GA->pragmas.clear();
          GA->use_set = PointToSolutionRef(new PointToSolution());

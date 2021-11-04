@@ -123,7 +123,7 @@ DesignFlowStep_Status use_counting::InternalExec()
          const auto ssa_uses = tree_helper::ComputeSsaUses(statement_node);
          for(const auto& ssa_use : ssa_uses)
          {
-            auto sn = GetPointerS<ssa_name>(GET_NODE(ssa_use.first));
+            const auto sn = GetPointerS<ssa_name>(GET_NODE(ssa_use.first));
             for(auto uses = ssa_use.second; uses; --uses)
             {
                sn->AddUseStmt(statement_node);

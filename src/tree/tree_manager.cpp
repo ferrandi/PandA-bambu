@@ -930,11 +930,12 @@ void tree_manager::ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef&
 void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node, const tree_nodeRef& stmt, const bool definition) // NOLINT
 {
 #ifndef NDEBUG
-   const auto function_debug_level = Param->GetFunctionDebugLevel(GET_CLASS(*this), "ReplaceTreeNode");
+   const auto function_debug_level = tree_helper::debug_level;
+   // Param->GetFunctionDebugLevel(GET_CLASS(*this), "ReplaceTreeNode");
 #endif
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    tree_nodeRef curr_tn = GET_NODE(tn);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level,
                   "-->Replacing " + old_node->ToString() + " (" + GET_NODE(old_node)->get_kind_text() + ") with " + new_node->ToString() + "(" + GET_NODE(new_node)->get_kind_text() + ") starting from node: " + tn->ToString() + "(" +
                       GET_NODE(tn)->get_kind_text() + ")");
    if(GET_INDEX_NODE(tn) == GET_INDEX_NODE(old_node))
@@ -957,6 +958,9 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
                   GetPointerS<ssa_name>(GET_NODE(used_ssa.first))->RemoveUse(stmt);
                }
             }
+#ifndef NDEBUG
+            tn = new_node;
+#endif
             const auto new_used_ssas = tree_helper::ComputeSsaUses(new_node);
             for(const auto& new_used_ssa : new_used_ssas)
             {
@@ -970,11 +974,13 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
          {
             if(gn->vdef && gn->vdef->index == old_node->index)
             {
-               GetPointerS<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
+               const auto vssa = GetPointerS<ssa_name>(GET_NODE(new_node));
+               vssa->SetDefStmt(stmt);
             }
             if(gn->memdef && gn->memdef->index == old_node->index)
             {
-               GetPointerS<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
+               const auto vssa = GetPointerS<ssa_name>(GET_NODE(new_node));
+               vssa->SetDefStmt(stmt);
             }
             if(ga && ga->op0->index == old_node->index && GET_NODE(old_node)->get_kind() == ssa_name_K)
             {
@@ -983,20 +989,20 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             if(gp && gp->res->index == old_node->index && !GetPointer<cst_node>(GET_CONST_NODE(new_node)))
             {
                THROW_ASSERT(GET_CONST_NODE(new_node)->get_kind() == ssa_name_K, GET_CONST_NODE(new_node)->get_kind_text());
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level, "---Setting " + STR(stmt) + " as new define statement of " + STR(new_node));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level, "---Setting " + STR(stmt) + " as new define statement of " + STR(new_node));
                GetPointerS<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
             }
          }
       }
       tn = new_node;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level,
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level,
                      "<--Replaced " + old_node->ToString() + " (" + GET_NODE(old_node)->get_kind_text() + ") with " + new_node->ToString() + "(" + GET_NODE(new_node)->get_kind_text() + ") New statement: " + tn->ToString());
       return;
    }
    const auto gn = GetPointer<gimple_node>(curr_tn);
    if(gn)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level, "-->Checking virtuals");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level, "-->Checking virtuals");
       if(gn->memdef)
       {
          RecursiveReplaceTreeNode(gn->memdef, old_node, new_node, stmt, true);
@@ -1005,25 +1011,41 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       {
          RecursiveReplaceTreeNode(gn->memuse, old_node, new_node, stmt, false);
       }
-      for(auto& vuse : gn->vuses)
+      const auto vuse_it = gn->vuses.find(old_node);
+      if(vuse_it != gn->vuses.end())
       {
-         RecursiveReplaceTreeNode(vuse, old_node, new_node, stmt, false);
+         gn->vuses.erase(vuse_it);
+         const auto old_vssa = GetPointerS<ssa_name>(GET_NODE(old_node));
+         old_vssa->RemoveUse(stmt);
+         if(gn->AddVuse(new_node))
+         {
+            const auto new_vssa = GetPointerS<ssa_name>(GET_NODE(new_node));
+            new_vssa->AddUseStmt(stmt);
+         }
       }
-      for(auto& vover : gn->vovers)
+      const auto vover_it = gn->vovers.find(old_node);
+      if(vover_it != gn->vovers.end())
       {
-         RecursiveReplaceTreeNode(vover, old_node, new_node, stmt, false);
+         gn->vovers.erase(vover_it);
+         const auto old_vssa = GetPointerS<ssa_name>(GET_NODE(old_node));
+         old_vssa->RemoveUse(stmt);
+         if(gn->AddVover(new_node))
+         {
+            const auto new_vssa = GetPointerS<ssa_name>(GET_NODE(new_node));
+            new_vssa->AddUseStmt(stmt);
+         }
       }
       if(gn->vdef)
       {
          RecursiveReplaceTreeNode(gn->vdef, old_node, new_node, stmt, true);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level, "<--Checked virtuals");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level, "<--Checked virtuals");
    }
    switch(curr_tn->get_kind())
    {
       case gimple_assign_K:
       {
-         auto* gm = GetPointerS<gimple_assign>(curr_tn);
+         const auto gm = GetPointerS<gimple_assign>(curr_tn);
          RecursiveReplaceTreeNode(gm->op0, old_node, new_node, stmt, GET_NODE(new_node)->get_kind() == ssa_name_K);
          RecursiveReplaceTreeNode(gm->op1, old_node, new_node, stmt, false);
          for(auto& use : gm->use_set->variables)
@@ -1306,7 +1328,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       default:
          THROW_ERROR(std::string("Node not supported (") + STR(GET_INDEX_NODE(tn)) + std::string("): ") + curr_tn->get_kind_text());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level,
                   "<--Replaced " + old_node->ToString() + " (" + GET_NODE(old_node)->get_kind_text() + ") with " + new_node->ToString() + "(" + GET_NODE(new_node)->get_kind_text() + ") New statement: " + tn->ToString());
 }
 

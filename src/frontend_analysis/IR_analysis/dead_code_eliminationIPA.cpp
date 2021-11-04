@@ -272,8 +272,8 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
             if(ssa->virtual_flag)
             {
                const auto gn = GetPointerS<gimple_node>(GET_NODE(call_stmt));
-               gn->vuses.remove_if([&](const tree_nodeRef& vuse) { return (*arg_it)->index == vuse->index; });
-               gn->vovers.remove_if([&](const tree_nodeRef& vover) { return (*arg_it)->index == vover->index; });
+               gn->vuses.erase(*arg_it);
+               gn->vovers.erase(*arg_it);
                if(GET_INDEX_NODE(gn->memuse) == ssa->index)
                {
                   gn->memuse = nullptr;

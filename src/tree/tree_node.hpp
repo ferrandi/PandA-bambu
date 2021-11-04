@@ -1117,22 +1117,24 @@ struct gimple_node : public srcp, public WeightedNode
    void SetVdef(const tree_nodeRef& vdef);
 
    /// vuses of this statement
-   std::list<tree_nodeRef> vuses;
+   TreeNodeSet vuses;
 
    /**
     * Add a vuse
     * @param vuse is the vuse
+    * @return bool True if vuse has been added, false if vuse already exists
     */
-   void AddVuse(const tree_nodeRef& vuse);
+   bool AddVuse(const tree_nodeRef& vuse);
 
    /// vovers of this statement
-   std::list<tree_nodeRef> vovers;
+   TreeNodeSet vovers;
 
    /**
     * Add a vover
     * @param vover is the vover
+    * @return bool True if vover has been added, false if vover already exists
     */
-   void AddVover(const tree_nodeRef& vover);
+   bool AddVover(const tree_nodeRef& vover);
 
    /// list of pragmas associated to the function
    std::vector<tree_nodeRef> pragmas;
