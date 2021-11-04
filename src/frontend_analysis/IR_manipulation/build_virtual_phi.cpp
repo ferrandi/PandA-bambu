@@ -519,19 +519,19 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                   if((basic_block_graph->GetSelector(*ie) & CFG_SELECTOR) != 0)
                   {
                      const auto source = boost::source(*ie, *basic_block_graph);
-                     def_edges.push_back(gimple_phi::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(source), basic_block_graph->CGetBBNodeInfo(source)->block->number));
+                     const auto& vssa = reaching_defs.at(virtual_ssa_definition.first).at(source);
+                     def_edges.push_back(gimple_phi::DefEdge(vssa, basic_block_graph->CGetBBNodeInfo(source)->block->number));
                   }
                }
-               tree_nodeRef phi_def_ssa_node;
-               const auto phi_gimple_stmt = tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
-               THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index == tree_helper::CGetType(virtual_ssa_definition.first)->index, "");
-               // GetPointerS<ssa_name>(GET_NODE(phi_def_ssa_node))->AddUseStmt(phi_gimple_stmt); // TODO: This is wrong but it does not work without...
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa " + STR(phi_def_ssa_node));
-               GetPointerS<gimple_phi>(GET_NODE(phi_gimple_stmt))->SetSSAUsesComputed();
-               basic_block_graph->GetBBNodeInfo(current)->block->AddPhi(phi_gimple_stmt);
-               reaching_defs[virtual_ssa_definition.first][current] = phi_def_ssa_node;
-               added_phis[virtual_ssa_definition.first][current] = phi_gimple_stmt;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + STR(phi_gimple_stmt));
+               tree_nodeRef phi_res;
+               const auto phi_stmt = tree_man->create_phi_node(phi_res, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
+               THROW_ASSERT(tree_helper::CGetType(phi_res)->index == tree_helper::CGetType(virtual_ssa_definition.first)->index, "");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa " + phi_res->ToString());
+               GetPointerS<gimple_phi>(GET_NODE(phi_stmt))->SetSSAUsesComputed();
+               basic_block_graph->GetBBNodeInfo(current)->block->AddPhi(phi_stmt);
+               reaching_defs[virtual_ssa_definition.first][current] = phi_res;
+               added_phis[virtual_ssa_definition.first][current] = phi_stmt;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + phi_stmt->ToString());
             }
             else
             {
@@ -652,6 +652,24 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->GetBBGraph(FunctionBehavior::FBB)->WriteDot("BB_FCFG.dot");
+   }
+   for(const auto& ssa_bbv : added_phis)
+   {
+      for(const auto& bbv_phi : ssa_bbv.second)
+      {
+         const auto& bb = basic_block_graph->GetBBNodeInfo(bbv_phi.first)->block;
+         const auto phi_stmt = GetPointerS<gimple_phi>(GET_NODE(bbv_phi.second));
+         const auto vssa = GetPointerS<ssa_name>(GET_NODE(phi_stmt->res));
+         if(vssa->CGetNumberUses() == 0 || (vssa->CGetNumberUses() == 1 && GET_INDEX_NODE(vssa->CGetUseStmts().begin()->first) == phi_stmt->index))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing just created dead phi from BB" + STR(bb->number) + " - (" + GetPointerS<ssa_name>(GET_NODE(ssa_bbv.first))->ToString() + ") " + phi_stmt->ToString());
+            if(vssa->CGetNumberUses() == 1)
+            {
+               vssa->RemoveUse(bbv_phi.second);
+            }
+            bb->RemovePhi(bbv_phi.second);
+         }
+      }
    }
 #ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
