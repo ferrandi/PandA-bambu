@@ -926,7 +926,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(BIT_VALUE, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(CALL_GRAPH_BUILTIN_CALL, SAME_FUNCTION));
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
          relationships.insert(std::make_pair(ESSA, SAME_FUNCTION));
@@ -1445,48 +1444,59 @@ void Bit_Value::initialize()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Initialized ROMs loaded ssa bitvalues");
    }
 
-   const auto set_value = [&](const unsigned int node_id) {
+   const auto set_value = [&](unsigned int node_id) {
       if(node_id == 0)
       {
          return;
       }
-      const auto use_node = TM->GetTreeNode(node_id);
+      auto use_node = TM->GetTreeNode(node_id);
       if(!IsHandledByBitvalue(use_node))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable " + STR(use_node) + " of type " + STR(tree_helper::CGetType(use_node)) + " not considered");
          return;
       }
 
-      auto ssa_use = GetPointer<ssa_name>(use_node);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Use: " + STR(use_node));
-      if(ssa_use)
+      if(use_node->get_kind() == ssa_name_K)
       {
+         const auto ssa = GetPointerS<ssa_name>(use_node);
          const auto ssa_is_signed = tree_helper::IsSignedIntegerType(use_node);
          if(ssa_is_signed)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
             signed_var.insert(node_id);
          }
-         const auto def = ssa_use->CGetDefStmt();
-         if(!def)
+         const auto def = ssa->CGetDefStmt();
+         if(!def || (ssa->var != nullptr && ((GET_CONST_NODE(def)->get_kind() == gimple_nop_K) || ssa->volatile_flag) && !arguments.count(node_id) && GET_CONST_NODE(ssa->var)->get_kind() == var_decl_K))
          {
-            ssa_use->bit_values.clear();
-            best[node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed); // create_u_bitstring(BitLatticeManipulator::Size(use_node));
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---uninitialized ssa: " + bitstring_to_string(best.at(node_id)));
-         }
-         else if(ssa_use->var != nullptr && ((GET_CONST_NODE(def)->get_kind() == gimple_nop_K) || ssa_use->volatile_flag))
-         {
-            // in case of parameters
-            if(!arguments.count(node_id) && GET_CONST_NODE(ssa_use->var)->get_kind() == var_decl_K)
+            ssa->bit_values.clear();
+            best[node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed);
+            if(ssa->var)
             {
-               // first version of an uninitialized variable
-               ssa_use->bit_values.clear();
-               best[node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed); // create_u_bitstring(BitLatticeManipulator::Size(use_node));
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---first version of uninitialized var " + STR(GET_CONST_NODE(ssa_use->var)) + ": " + bitstring_to_string(best.at(node_id)));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---first version of uninitialized var " + STR(GET_CONST_NODE(ssa->var)));
+            }
+            else
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---uninitialized ssa");
+            }
+            if(AppM->ApplyNewTransformation())
+            {
+               const auto tree_man = AppM->get_tree_manager();
+               const auto ssa_node = tree_man->GetTreeReindex(node_id);
+               const auto cst_value = tree_man->CreateUniqueIntegerCst(0, ssa->type);
+               const auto uses = ssa->CGetUseStmts();
+               for(const auto& stmt_use : uses)
+               {
+                  tree_man->ReplaceTreeNode(stmt_use.first, ssa_node, cst_value);
+               }
+               AppM->RegisterTransformation(GetName(), ssa_node);
+               use_node = GET_NODE(cst_value);
+               node_id = GET_INDEX_NODE(cst_value);
             }
          }
       }
-      else if(GetPointer<const integer_cst>(use_node))
+
+      if(use_node->get_kind() == integer_cst_K)
       {
          const auto int_const = GetPointerS<const integer_cst>(use_node);
          const auto is_signed = tree_helper::IsSignedIntegerType(int_const->type);

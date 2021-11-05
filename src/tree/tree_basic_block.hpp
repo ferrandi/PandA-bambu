@@ -111,7 +111,7 @@ struct bloc
 
    void update_new_stmt(const tree_nodeRef& new_stmt);
 
-   gimple_assign* manageCallGraph(const application_managerRef AppM, const tree_nodeRef statement);
+   void manageCallGraph(const application_managerRef AppM, const tree_nodeRef statement);
    bool check_function_call(const tree_nodeRef statement, gimple_assign* ga, unsigned int& called_function_id);
 
  public:

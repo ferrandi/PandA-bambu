@@ -123,7 +123,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(PREDICATE_STATEMENTS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
@@ -146,7 +145,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
          {
             if(restart_ifmwi_opt)
             {
-               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
                relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
                relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
                relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
@@ -863,7 +861,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             for(auto stmt0 = list_of_stmt.begin(); stmt0 != list_of_stmt.end() && *stmt0 != *statement && gn->vdef; stmt0++)
             {
                tree_nodeRef tn0 = GET_NODE(*stmt0);
-               auto* gn0 = GetPointer<gimple_node>(tn0);
+               const auto gn0 = GetPointerS<gimple_node>(tn0);
                if(gn0->vuses.find(gn->vdef) != gn0->vuses.end())
                {
                   BB_def.insert(curr_bb);

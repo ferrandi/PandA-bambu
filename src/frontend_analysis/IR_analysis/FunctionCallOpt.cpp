@@ -179,7 +179,7 @@ void FunctionCallOpt::Initialize()
 
 DesignFlowStep_Status FunctionCallOpt::InternalExec()
 {
-   THROW_ASSERT(!parameters->IsParameter("no-inline"), "Function call inlining should not be executed");
+   THROW_ASSERT(!parameters->IsParameter("function-opt") || parameters->GetParameter<bool>("function-opt"), "Function call inlining should not be executed");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const auto TM = AppM->get_tree_manager();
    const auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));

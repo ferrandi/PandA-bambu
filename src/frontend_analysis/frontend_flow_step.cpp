@@ -212,8 +212,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #endif
       case(CHECK_SYSTEM_TYPE):
          return "CheckSystemType";
-      case CLEAN_VIRTUAL_PHI:
-         return "CleanVirtualPhi";
       case(COMPLETE_BB_GRAPH):
          return "CompleteBBGraph";
       case(COMPLETE_CALL_GRAPH):

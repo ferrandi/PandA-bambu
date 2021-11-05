@@ -112,7 +112,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case CHECK_PIPELINABLE_LOOPS:
 #endif
       case CHECK_SYSTEM_TYPE:
-      case CLEAN_VIRTUAL_PHI:
       case COMPLETE_BB_GRAPH:
 #if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:

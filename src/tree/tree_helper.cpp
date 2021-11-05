@@ -639,7 +639,7 @@ std::string tree_helper::GetFunctionName(const tree_managerConstRef& TM, const t
    }
    if(decl->get_kind() == function_decl_K)
    {
-      const auto fd = GetPointer<const function_decl>(decl);
+      const auto fd = GetPointerS<const function_decl>(decl);
       return print_function_name(TM, fd);
    }
    else
@@ -7915,6 +7915,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
    const auto gn = GetPointer<const gimple_node>(curr_tn);
    if(gn)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Computing virtual ssa uses");
       if(gn->memuse)
       {
          ComputeSsaUses(gn->memuse, ssa_uses);
@@ -7923,6 +7924,11 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       {
          ComputeSsaUses(vuse, ssa_uses);
       }
+      for(const auto& vover : gn->vovers)
+      {
+         ComputeSsaUses(vover, ssa_uses);
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Computed virtual ssa uses");
    }
 
    switch(curr_tn->get_kind())
@@ -8243,7 +8249,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
          THROW_UNREACHABLE("");
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--computed_ssa_uses_rec_ref " + STR(GET_INDEX_CONST_NODE(tn)));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Computed ssa uses in @" + STR(GET_INDEX_CONST_NODE(tn)));
 }
 
 bool tree_helper::is_a_nop_function_decl(const function_decl* fd)

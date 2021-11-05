@@ -102,11 +102,5 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
     * Determines the variables that require a memory access
     */
    DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 };
 #endif

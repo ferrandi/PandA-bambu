@@ -2110,8 +2110,6 @@ src/frontend_analysis/IR_analysis/virtual_phi_nodes_split.cpp
 src/frontend_analysis/IR_analysis/virtual_phi_nodes_split.hpp
 src/frontend_analysis/IR_manipulation/build_virtual_phi.cpp
 src/frontend_analysis/IR_manipulation/build_virtual_phi.hpp
-src/frontend_analysis/IR_manipulation/clean_virtual_phi.cpp
-src/frontend_analysis/IR_manipulation/clean_virtual_phi.hpp
 src/frontend_analysis/IR_manipulation/commutative_expr_restructuring.cpp
 src/frontend_analysis/IR_manipulation/commutative_expr_restructuring.hpp
 src/frontend_analysis/IR_manipulation/cond_expr_restructuring.cpp

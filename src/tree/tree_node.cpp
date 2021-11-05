@@ -311,20 +311,22 @@ gimple_node::gimple_node(unsigned int i) : WeightedNode(i), use_set(new PointToS
 {
 }
 
-void gimple_node::AddVdef(const tree_nodeRef& _vdef)
+void gimple_node::SetVdef(const tree_nodeRef& _vdef)
 {
-   THROW_ASSERT(not vdef, "Multiple virtual definitions in the same gimple");
+   THROW_ASSERT(!GET_CONST_NODE(_vdef) || (GET_CONST_NODE(_vdef)->get_kind() == ssa_name_K && GetPointerS<const ssa_name>(GET_CONST_NODE(_vdef))->virtual_flag), "");
    vdef = _vdef;
 }
 
-void gimple_node::AddVuse(const tree_nodeRef& vuse)
+bool gimple_node::AddVuse(const tree_nodeRef& vuse)
 {
-   vuses.insert(vuse);
+   THROW_ASSERT(!GET_CONST_NODE(vuse) || (GET_CONST_NODE(vuse)->get_kind() == ssa_name_K && GetPointerS<const ssa_name>(GET_CONST_NODE(vuse))->virtual_flag), "");
+   return vuses.insert(vuse).second;
 }
 
-void gimple_node::AddVover(const tree_nodeRef& vover)
+bool gimple_node::AddVover(const tree_nodeRef& vover)
 {
-   vovers.insert(vover);
+   THROW_ASSERT(!GET_CONST_NODE(vover) || (GET_CONST_NODE(vover)->get_kind() == ssa_name_K && GetPointerS<const ssa_name>(GET_CONST_NODE(vover))->virtual_flag), "");
+   return vovers.insert(vover).second;
 }
 
 void gimple_node::visit(tree_node_visitor* const v) const
@@ -987,7 +989,7 @@ void gimple_phi::visit(tree_node_visitor* const v) const
 void gimple_phi::AddDefEdge(const tree_managerRef& TM, const DefEdge& def_edge)
 {
    list_of_def_edge.push_back(def_edge);
-   if(updated_ssa_uses and bb_index != 0)
+   if(updated_ssa_uses && bb_index != 0)
    {
       const auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
       if(sn)
@@ -1008,7 +1010,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
    {
       if(def_edge == old_def_edge)
       {
-         if(updated_ssa_uses and bb_index != 0)
+         if(updated_ssa_uses && bb_index != 0)
          {
             auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
             if(sn)
@@ -1017,7 +1019,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
             }
          }
          def_edge = new_def_edge;
-         if(updated_ssa_uses and bb_index != 0)
+         if(updated_ssa_uses && bb_index != 0)
          {
             auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
             if(sn)
@@ -1032,7 +1034,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
 
 void gimple_phi::SetDefEdgeList(const tree_managerRef& TM, DefEdgeList new_list_of_def_edge)
 {
-   while(not list_of_def_edge.empty())
+   while(!list_of_def_edge.empty())
    {
       RemoveDefEdge(TM, list_of_def_edge.front());
    }
@@ -1051,7 +1053,7 @@ void gimple_phi::RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_r
    {
       if(*def_edge == to_be_removed)
       {
-         if(updated_ssa_uses and bb_index != 0)
+         if(updated_ssa_uses && bb_index != 0)
          {
             const auto sn = GetPointer<ssa_name>(GET_NODE(to_be_removed.first));
             if(sn)
@@ -1068,7 +1070,7 @@ void gimple_phi::RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_r
 
 void gimple_phi::SetSSAUsesComputed()
 {
-   THROW_ASSERT(not updated_ssa_uses, "SSA uses already set as updated");
+   THROW_ASSERT(!updated_ssa_uses, "SSA uses already set as updated");
    updated_ssa_uses = true;
 }
 
@@ -1259,7 +1261,50 @@ const TreeNodeSet ssa_name::CGetDefStmts() const
 
 void ssa_name::AddUseStmt(const tree_nodeRef& use_stmt)
 {
+#ifndef NDEBUG
+   size_t vuse_count = 0;
+   if(virtual_flag)
+   {
+      const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt));
+      vuse_count += static_cast<size_t>(std::count_if(gn->vuses.begin(), gn->vuses.end(), [&](const tree_nodeRef& tn) { return tn->index == index; }));
+      vuse_count += static_cast<size_t>(std::count_if(gn->vovers.begin(), gn->vovers.end(), [&](const tree_nodeRef& tn) { return tn->index == index; }));
+      vuse_count += static_cast<size_t>(gn->memuse && gn->memuse->index == index);
+      if(GET_CONST_NODE(use_stmt)->get_kind() == gimple_phi_K)
+      {
+         const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(use_stmt));
+         vuse_count += static_cast<size_t>(std::count_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) { return de.first->index == index; }));
+      }
+   }
+#endif
    use_stmts[use_stmt]++;
+#ifndef NDEBUG
+   if(virtual_flag && use_stmts.count(use_stmt) > vuse_count)
+   {
+      std::cout << "vssa: " << ToString() << std::endl;
+      const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt));
+      if(gn->vdef)
+      {
+         std::cout << "vdef: " << GET_CONST_NODE(gn->vdef)->ToString() << std::endl;
+      }
+      for(const auto& vuse : gn->vuses)
+      {
+         std::cout << "vuse: " << GET_CONST_NODE(vuse)->ToString() << std::endl;
+      }
+      for(const auto& vover : gn->vovers)
+      {
+         std::cout << "vover: " << GET_CONST_NODE(vover)->ToString() << std::endl;
+      }
+      if(gn->memdef)
+      {
+         std::cout << "memdef: " << GET_CONST_NODE(gn->memdef)->ToString() << std::endl;
+      }
+      if(gn->memuse)
+      {
+         std::cout << "memuse: " << GET_CONST_NODE(gn->memuse)->ToString() << std::endl;
+      }
+      THROW_UNREACHABLE("Virtual ssa used more than " + STR(vuse_count) + " time - " + GET_CONST_NODE(use_stmt)->ToString());
+   }
+#endif
 }
 
 void ssa_name::AddDefStmt(const tree_nodeRef& def)
@@ -1291,7 +1336,7 @@ size_t ssa_name::CGetNumberUses() const
 void ssa_name::RemoveUse(const tree_nodeRef& use_stmt)
 {
 #ifndef NDEBUG
-   if(use_stmts.find(use_stmt) == use_stmts.end() or use_stmts.find(use_stmt)->second == 0)
+   if(use_stmts.find(use_stmt) == use_stmts.end() || use_stmts.find(use_stmt)->second == 0)
    {
       INDENT_DBG_MEX(0, 0, use_stmt->ToString() + " is not in the use_stmts of " + ToString());
       for(const auto& current_use_stmt : use_stmts)
@@ -1542,7 +1587,7 @@ bool TreeNodeConstEqualTo::operator()(const tree_nodeConstRef x, const tree_node
 
 #endif
 
-#if not HAVE_UNORDERED
+#if !HAVE_UNORDERED
 TreeNodeSorter::TreeNodeSorter() = default;
 
 bool TreeNodeSorter::operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
@@ -1565,17 +1610,3 @@ TreeNodeConstSet::TreeNodeConstSet() : OrderedSetStd<tree_nodeConstRef, TreeNode
 {
 }
 #endif
-
-// unsigned int GET_INDEX_NODE(const tree_nodeRef& t)
-//{
-//   THROW_ASSERT(t->get_kind() == tree_reindex_K, "");
-//   THROW_ASSERT(t->index == GET_NODE(t)->index, "");
-//   return (GET_NODE(t))->index;
-//}
-
-// unsigned int GET_INDEX_CONST_NODE(const tree_nodeConstRef& t)
-//{
-//   THROW_ASSERT(t->get_kind() == tree_reindex_K, "");
-//   THROW_ASSERT(t->index == GET_CONST_NODE(t)->index, "");
-//   return (GET_CONST_NODE(t))->index;
-//}

@@ -76,6 +76,21 @@ REF_FORWARD_DECL(tree_node);
 class soft_float_cg_ext : public FunctionFrontendFlowStep
 {
  private:
+   /// Floating-point function version map
+   static CustomMap<CallGraph::vertex_descriptor, FunctionVersionRef> funcFF;
+
+   /// Static arguments list to feed specialization parameters of versioned functions
+   static CustomMap<unsigned int, std::array<tree_nodeRef, 8>> versioning_args;
+
+   static bool inline_math;
+   static bool inline_conversion;
+   static tree_nodeRef float32_type;
+   static tree_nodeRef float32_ptr_type;
+   static tree_nodeRef float64_type;
+   static tree_nodeRef float64_ptr_type;
+
+   static bool lowering_needed(const ssa_name* ssa);
+
    enum InterfaceType
    {
       INTERFACE_TYPE_NONE = 0,   // Cast rename not needed
@@ -121,19 +136,6 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
 
    /// Hardware implemented functions return values as real_type, thus a view_convert is necessary
    std::vector<ssa_name*> hwReturn;
-
-   /// Floating-point function version map
-   static CustomMap<CallGraph::vertex_descriptor, FunctionVersionRef> funcFF;
-
-   /// Static arguments list to feed specialization parameters of versioned functions
-   static CustomMap<unsigned int, std::array<tree_nodeRef, 8>> versioning_args;
-
-   static tree_nodeRef float32_type;
-   static tree_nodeRef float32_ptr_type;
-   static tree_nodeRef float64_type;
-   static tree_nodeRef float64_ptr_type;
-
-   static bool lowering_needed(const ssa_name* ssa);
 
    tree_nodeRef int_type_for(const tree_nodeRef& type, bool use_internal) const;
 

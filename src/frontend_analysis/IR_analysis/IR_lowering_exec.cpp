@@ -1033,8 +1033,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             {
                for(const auto& vd : bitfield_vdefs)
                {
-                  // TODO: ask, not really clear why this is necessary
-                  GetPointerS<gimple_node>(GET_NODE(*it_los))->vuses.insert(vd);
+                  GetPointer<gimple_node>(GET_NODE(*it_los))->AddVuse(vd);
                }
             }
 
@@ -2617,7 +2616,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            GetPointer<gimple_assign>(GET_NODE(load_ga))->vuses = ga->vuses;
                            for(auto vd : bitfield_vuses)
                            {
-                              GetPointer<gimple_assign>(GET_NODE(load_ga))->vuses.insert(vd);
+                              GetPointer<gimple_assign>(GET_NODE(load_ga))->AddVuse(vd);
                            }
                            THROW_ASSERT(ga->vdef, "unexpected condition");
                            bitfield_vdefs.insert(ga->vdef);
@@ -2866,7 +2865,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         GetPointer<gimple_assign>(GET_NODE(load_ga))->vuses = ga->vuses;
                         for(auto vd : bitfield_vuses)
                         {
-                           GetPointer<gimple_assign>(GET_NODE(load_ga))->vuses.insert(vd);
+                           GetPointer<gimple_assign>(GET_NODE(load_ga))->AddVuse(vd);
                         }
                         THROW_ASSERT(ga->vdef, "unexpected condition");
                         bitfield_vdefs.insert(ga->vdef);
