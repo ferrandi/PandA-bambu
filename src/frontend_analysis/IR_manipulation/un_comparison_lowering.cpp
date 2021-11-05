@@ -119,7 +119,7 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
          {
             const auto be = GetPointerS<const binary_expr>(GET_CONST_NODE(ga->op1));
             const auto srcp_string = be->include_name + ":" + STR(be->line_number) + ":" + STR(be->column_number);
-            kind new_kind;
+            kind new_kind = error_mark_K;
             if(rhs_kind == unlt_expr_K)
             {
                new_kind = ge_expr_K;
