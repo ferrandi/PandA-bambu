@@ -214,7 +214,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
          {
             const auto bb_index = bb->number;
             const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(bb->CGetPhiList().front()));
-            const auto gr = GetPointer<const gimple_return>(stmt);
+            const auto gr = GetPointerS<const gimple_return>(stmt);
             if(gr->op && GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->op))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- There is a split return possible at BB" + STR(bb_index));
@@ -231,7 +231,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                sl->list_of_bloc.erase(bb_index);
                modified = true;
             }
-            else if(gp->virtual_flag && GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->memuse))
+            else if(gp->virtual_flag && (!gr->memuse || GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->memuse)))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- There is a split return possible at BB" + STR(bb_index));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Create return statement based of def edges");
