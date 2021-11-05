@@ -231,14 +231,14 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                sl->list_of_bloc.erase(bb_index);
                modified = true;
             }
-            else if(gp->virtual_flag && (!gr->memuse || GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->memuse)))
+            else if(gp->virtual_flag)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- There is a split return possible at BB" + STR(bb_index));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Create return statement based of def edges");
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
                   const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP, 0);
-                  GetPointerS<gimple_return>(GET_NODE(new_gr))->memuse = def_edge.first;
+                  GetPointerS<gimple_return>(GET_NODE(new_gr))->AddVuse(def_edge.first);
                   const auto& pred_block = sl->list_of_bloc.at(def_edge.second);
                   create_return_and_fix_cfg(new_gr, pred_block, bb);
                }
