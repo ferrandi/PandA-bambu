@@ -1016,8 +1016,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       }
    } while(restart_analysis);
 
-   /// fix vdef/memdef
-   for(const auto block : blocks)
+   /// fix vdef
+   for(const auto& block : blocks)
    {
       const auto& bb = block.second;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb->number));
