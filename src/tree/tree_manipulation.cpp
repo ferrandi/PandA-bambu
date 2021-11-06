@@ -2640,7 +2640,7 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
       auto funID_name_mngl = create_identifier_node(function_name_mngl + funNameSuffix);
       remapping[GET_INDEX_NODE(funDecl->mngl)] = GET_INDEX_NODE(funID_name_mngl);
    }
-   const unsigned int new_functionDecl = tnd.create_tree_node(GET_NODE(tn), tree_node_dup_mode::FULL);
+   const auto new_functionDecl = tnd.create_tree_node(GET_NODE(tn), tree_node_dup_mode::FULL);
    return TreeM->GetTreeReindex(new_functionDecl);
 }
 
