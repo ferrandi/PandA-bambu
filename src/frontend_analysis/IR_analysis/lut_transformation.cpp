@@ -1506,7 +1506,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
             {
                auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
-               auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op0)));
+               auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(binaryExpression->op0));
 
                op1 = klut_e.get_constant_v(bits);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used {" + ConvertBitsToString(bits) + "}");
@@ -1514,7 +1514,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             else if(CheckIfPI(binaryExpression->op0, BB_index))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op0)->ToString());
-               op1 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op0)));
+               op1 = klut_e.create_pi_v(tree_helper::Size(binaryExpression->op0));
 
                int index = 0;
                std::for_each(op1.begin(), op1.end(), [&binaryExpression, &pis, &pis_offset, &index](auto /*op*/) {
@@ -1542,7 +1542,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
             {
                auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
-               auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op1)));
+               auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(binaryExpression->op1));
 
                op2 = klut_e.get_constant_v(bits);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used {" + ConvertBitsToString(bits) + "}");
@@ -1550,7 +1550,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             else if(CheckIfPI(binaryExpression->op1, BB_index))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op1)->ToString());
-               op2 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op1)));
+               op2 = klut_e.create_pi_v(tree_helper::Size(binaryExpression->op1));
 
                int index = 0;
                std::for_each(op2.begin(), op2.end(), [&binaryExpression, &pis, &pis_offset, &index](auto /*op*/) {

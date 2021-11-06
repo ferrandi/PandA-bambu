@@ -114,7 +114,7 @@ HLSCWriter::~HLSCWriter() = default;
 
 void HLSCWriter::WriteHeader()
 {
-   bool is_discrepancy = (Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) or (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw));
+   bool is_discrepancy = (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) || (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
    indented_output_stream->Append("#define _FILE_OFFSET_BITS 64\n\n");
    indented_output_stream->Append("#define __Inf (1.0/0.0)\n");
    indented_output_stream->Append("#define __Nan (0.0/0.0)\n\n");
@@ -905,7 +905,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    std::string fname;
    tree_helper::get_mangled_fname(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id)), fname);
    const auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
-   const auto& DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
+   const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
 
    std::vector<unsigned int> mem_interface;
    const auto& parameters = behavioral_helper->get_parameters();
@@ -930,6 +930,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
       for(const auto& l : mem)
       {
          std::string param = behavioral_helper->PrintVariable(l);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable '" + param + "'");
          const auto is_interface = std::find(parameters.begin(), parameters.end(), l) != parameters.end();
          std::string argTypename = "";
          if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end() && is_interface)
@@ -941,7 +942,6 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                argTypename = "";
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable " + param);
          if(param[0] == '"')
          {
             param = "@" + STR(l);
@@ -1246,7 +1246,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             indented_output_stream->Append("// next_object_offset > reserved_mem_bytes\n");
             WriteZeroedBytes(next_object_offset - reserved_mem_bytes);
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Considered memory variable " + param);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Considered memory variable '" + param + "'");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered test vector " + STR(v_idx));
       ++v_idx;
@@ -1268,8 +1268,8 @@ void HLSCWriter::WriteMainTestbench()
    const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
    const auto function_id = *(top_function_ids.begin());
-   const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(function_id);
+   const auto behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   const auto return_type = tree_helper::GetFunctionReturnType(TM->CGetTreeReindex(function_id));
 
    indented_output_stream->Append("#undef main\n");
    indented_output_stream->Append("int main()\n{\n");
@@ -1294,18 +1294,16 @@ void HLSCWriter::WriteMainTestbench()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written simulator init memory");
    // ---- WRITE VARIABLES DECLARATIONS ----
    // declaration of the return variable of the top function, if not void
-   if(return_type_index)
+   if(return_type)
    {
-      std::string ret_type = behavioral_helper->print_type(return_type_index);
-      if(tree_helper::is_a_vector(TM, return_type_index))
+      const auto ret_type = behavioral_helper->print_type(return_type->index);
+      if(tree_helper::IsVectorType(return_type))
       {
-         THROW_ERROR("return type of function under test " + behavioral_helper->get_function_name() + " is " + ret_type +
-                     "\n"
-                     "co-simulation does not support vectorized return types at top level");
+         THROW_ERROR("return type of function under test " + behavioral_helper->get_function_name() + " is " + STR(ret_type) + "\nco-simulation does not support vectorized return types at top level");
       }
 
       indented_output_stream->Append("// return variable initialization\n");
-      indented_output_stream->Append(ret_type + " " + std::string(RETURN_PORT_NAME) + ";\n");
+      indented_output_stream->Append(ret_type + " " RETURN_PORT_NAME ";\n");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written parameters declaration");
    // ---- WRITE PARAMETERS INITIALIZATION, FUNCTION CALLS AND CHECK RESULTS ----

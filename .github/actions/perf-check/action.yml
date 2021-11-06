@@ -83,4 +83,3 @@ runs:
           echo "::set-output name=better::1"
         fi
         exit 0
-        

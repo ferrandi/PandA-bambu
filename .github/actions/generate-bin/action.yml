@@ -8,7 +8,7 @@ inputs:
   jobs:
     description: 'Parallel jobs'
     required: false
-    default: 1
+    default: '1'
 outputs:
   appimage:
     description: 'Output appimage file'

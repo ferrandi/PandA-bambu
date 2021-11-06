@@ -407,7 +407,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Generate testbench for the input values defined in the specified XML\n"
       << "        file.\n\n"
       << "    --top-fname=<fun_name>\n"
-      << "        Define the top function to be synthesized.\n\n"
+      << "        Define the top function to be synthesized. (default=main)\n\n"
       << "    --top-rtldesign-name=<top_name>\n"
       << "        Define the top module name for the RTL backend.\n\n"
       << "    --inline-fname=<fun_name>[,<fun_name>]*\n"
@@ -500,7 +500,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform functional pipelining starting from the top function.\n\n"
       << "    --pipelining,-p=<func_name>[=<init_interval>][,<func_name>[=<init_interval>]]*\n"
       << "        Perform pipelining of comma separated list of specified functions with optional initiation interval (default II=1).\n"
-      << "        To inline softfloat operators it is possible to specify the __float_<op_name> prefix \n"
+      << "        To pipeline softfloat operators it is possible to specify the __float_<op_name> prefix \n"
       << "        or simply __float to pipeline all softfloat library.\n\n"
       << "    --fixed-scheduling=<file>\n"
       << "        Provide scheduling as an XML file.\n\n"
@@ -834,11 +834,10 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --max-ulp\n"
       << "        Define the maximal ULP (Unit in the last place, i.e., is the spacing\n"
       << "        between floating-point numbers) accepted.\n\n"
-      << "    --fp-format\n"
-      << "        Define arbitrary precision floating-point format by type or by function.\n"
-      << "        <func_name>*<exp_bits>*<frac_bits>*<exp_bias>*<round>*<nan>*<one>*<sub>*<sign>* (use comma separated list for multiple definitions)\n"
+      << "    --fp-format=<func_name>*<exp_bits>*<frac_bits>*<exp_bias>[*<round>][*<nan>][*<one>][*<sub>][*<sign>]\n"
+      << "        Define arbitrary precision floating-point format by function (use comma separated list for multiple definitions).\n"
       << "           func_name - Set arbitrary floating-point format for a specific function (using @ symbol here will resolve to the top function)\n"
-      << "                       (Arbitrary floating-point format will apply to specified function only, use --propaget-fp-format to extend it to called functions)\n"
+      << "                       (Arbitrary floating-point format will apply to specified function only, use --propagate-fp-format to extend it to called functions)\n"
       << "            exp_bits - Number of bits used by the exponent\n"
       << "           frac_bits - Number of bits used by the fractional value\n"
       << "            exp_bias - Bias applied to the unsigned value represented by the exponent bits\n"
@@ -847,6 +846,10 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "              one    - Floating-point representation will exploit hidden-one convention (default=1)\n"
       << "              sub    - Floating-point representation will exploit subnormals (default=0)\n"
       << "           sign_bit  - Set sign bit to a fixed value (1 or 0) or leave it data dependant (default=U)\n\n"
+      << "    --fp-format=inline-math\n"
+      << "        The \"inline-math\" flag may be added to fp-format option to force floating-point arithmetic operators always inline policy\n\n"
+      << "    --fp-format=inline-conversion\n"
+      << "        The \"inline-conversion\" flag may be added to fp-format option to force floating-point conversion operators always inline policy\n\n"
       << "    --fp-format-interface\n"
       << "        User-defined floating-point format is applied to top interface signature if required (default modifies top function body only)\n\n"
       << "    --fp-format-propagate\n"
@@ -921,6 +924,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "             BAMBU-AREA-MP        - this setup implies:\n"
       << "                                    -Os  -D'printf(fmt, ...)='\n"
       << "                                    --channels-type=MEM_ACC_NN\n"
+      << "                                    --channels-number=2\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    --DSP-allocation-coefficient=1.75\n"
       << "                                    --distram-threshold=256\n"
@@ -937,6 +941,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "             BAMBU-BALANCED-MP    - (default) this setup implies:\n"
       << "                                    -O2  -D'printf(fmt, ...)='\n"
       << "                                    --channels-type=MEM_ACC_NN\n"
+      << "                                    --channels-number=2\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    -fgcse-after-reload  -fipa-cp-clone\n"
       << "                                    -ftree-partial-pre  -funswitch-loops\n"
@@ -963,6 +968,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "             BAMBU-PERFORMANCE-MP - this setup implies:\n"
       << "                                    -O3  -D'printf(fmt, ...)='\n"
       << "                                    --channels-type=MEM_ACC_NN\n"
+      << "                                    --channels-number=2\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    --distram-threshold=512\n"
       << "                                    --disable-function-proxy\n"
@@ -3208,6 +3214,12 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
+
+   if(!isOption(OPT_top_functions_names))
+   {
+      setOption(OPT_top_functions_names, "main");
+      THROW_WARNING("Top function name was not specified: main will ");
+   }
 
    const auto sorted_dirs = [](const std::string& parent_dir) {
       std::vector<boost::filesystem::path> sorted_paths;

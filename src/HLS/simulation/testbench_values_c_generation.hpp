@@ -66,11 +66,6 @@ class TestbenchValuesCGeneration : public HLS_step
    const std::string output_directory;
 
    /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   virtual void Initialize();
-
-   /**
     * Compute the relationship of this step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this

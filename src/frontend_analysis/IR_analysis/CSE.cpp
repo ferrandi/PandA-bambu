@@ -109,16 +109,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
          }
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -137,16 +136,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               if(restart_phi_opt)
-               {
-                  relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-                  relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
-               }
                if(restart_bit_value && !parameters->getOption<int>(OPT_gcc_openmp_simd))
                {
                   relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
                }
                relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+               if(restart_phi_opt)
+               {
+                  relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               }
                break;
             }
             case DesignFlowStep_Status::SKIPPED:
@@ -173,9 +171,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 void CSE::Initialize()
 {
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-   if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
+   if(GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
-      schedule = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
+      schedule = GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
    }
 #endif
 }
@@ -270,14 +268,14 @@ DesignFlowStep_Status CSE::InternalExec()
          const auto eq_tn = hash_check(GET_NODE(stmt), bb, sl, unique_table);
          if(eq_tn)
          {
-            auto ref_ga = GetPointerS<gimple_assign>(eq_tn);
+            const auto ref_ga = GetPointerS<gimple_assign>(eq_tn);
             const auto dead_ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating/Removing " + STR(dead_ga->op0));
             ref_ga->temporary_address = ref_ga->temporary_address && dead_ga->temporary_address;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_ga->temporary_address" + (ref_ga->temporary_address ? std::string("T") : std::string("F")));
             // THROW_ASSERT(ref_ga->bb_index==dead_ga->bb_index, "unexpected condition");
             // THROW_ASSERT(ref_ga->bb_index==B->number, "unexpected condition");
-            auto ref_ssa = GetPointerS<ssa_name>(GET_NODE(ref_ga->op0));
+            const auto ref_ssa = GetPointerS<ssa_name>(GET_NODE(ref_ga->op0));
             const auto dead_ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(dead_ga->op0));
             if(dead_ssa->use_set && !ref_ssa->use_set)
             {
@@ -374,41 +372,33 @@ DesignFlowStep_Status CSE::InternalExec()
    return IR_changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tree_nodeRef right_part)
+bool CSE::has_memory_access(const gimple_assign* ga) const
 {
    const auto& fun_mem_data = function_behavior->get_function_mem();
+   const auto rhs_kind = GET_CONST_NODE(ga->op1)->get_kind();
    const auto op0_type = tree_helper::CGetType(ga->op0);
-   const auto op1_type = tree_helper::CGetType(right_part);
-   bool is_a_vector_bitfield = false;
+   const auto op1_type = tree_helper::CGetType(ga->op1);
    /// check for bit field ref of vector type
-   if(right_part->get_kind() == bit_field_ref_K)
-   {
-      const auto bfr = GetPointerS<const bit_field_ref>(right_part);
-      if(tree_helper::IsVectorType(bfr->op0))
-      {
-         is_a_vector_bitfield = true;
-      }
-   }
+   const auto is_a_vector_bitfield = rhs_kind == bit_field_ref_K && tree_helper::IsVectorType(GetPointerS<const bit_field_ref>(GET_CONST_NODE(ga->op1))->op0);
 
-   bool skip_check = right_part->get_kind() == var_decl_K || right_part->get_kind() == string_cst_K || right_part->get_kind() == constructor_K || (right_part->get_kind() == bit_field_ref_K && !is_a_vector_bitfield) ||
-                     right_part->get_kind() == component_ref_K || right_part->get_kind() == indirect_ref_K || right_part->get_kind() == misaligned_indirect_ref_K || right_part->get_kind() == array_ref_K || right_part->get_kind() == target_mem_ref_K ||
-                     right_part->get_kind() == target_mem_ref461_K or right_part->get_kind() == mem_ref_K;
-   if(right_part->get_kind() == realpart_expr_K || right_part->get_kind() == imagpart_expr_K)
+   bool skip_check = rhs_kind == var_decl_K || rhs_kind == string_cst_K || rhs_kind == constructor_K || (rhs_kind == bit_field_ref_K && !is_a_vector_bitfield) || rhs_kind == component_ref_K || rhs_kind == indirect_ref_K ||
+                     rhs_kind == misaligned_indirect_ref_K || rhs_kind == array_ref_K || rhs_kind == target_mem_ref_K || rhs_kind == target_mem_ref461_K or rhs_kind == mem_ref_K;
+   if(rhs_kind == realpart_expr_K || rhs_kind == imagpart_expr_K)
    {
-      const auto code1 = GET_CONST_NODE(GetPointerS<const unary_expr>(right_part)->op)->get_kind();
+      const auto code1 = GET_CONST_NODE(GetPointerS<const unary_expr>(GET_CONST_NODE(ga->op1))->op)->get_kind();
       if((code1 == bit_field_ref_K && !is_a_vector_bitfield) || code1 == component_ref_K || code1 == indirect_ref_K || code1 == bit_field_ref_K || code1 == misaligned_indirect_ref_K || code1 == mem_ref_K || code1 == array_ref_K ||
          code1 == target_mem_ref_K || code1 == target_mem_ref461_K)
       {
          skip_check = true;
       }
-      if(code1 == var_decl_K && fun_mem_data.find(GET_INDEX_CONST_NODE(GetPointerS<const unary_expr>(right_part)->op)) != fun_mem_data.end())
+      if(code1 == var_decl_K && fun_mem_data.find(GET_INDEX_CONST_NODE(GetPointerS<const unary_expr>(GET_CONST_NODE(ga->op1))->op)) != fun_mem_data.end())
       {
          skip_check = true;
       }
    }
-   if(right_part->get_kind() == view_convert_expr_K)
+   else if(rhs_kind == view_convert_expr_K)
    {
-      const auto vc = GetPointerS<const view_convert_expr>(right_part);
+      const auto vc = GetPointerS<const view_convert_expr>(GET_CONST_NODE(ga->op1));
       const auto vc_op_type = tree_helper::CGetType(vc->op);
       if(GET_CONST_NODE(op0_type)->get_kind() == record_type_K || GET_CONST_NODE(op0_type)->get_kind() == union_type_K)
       {
@@ -432,13 +422,13 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
    {
       skip_check = true;
    }
-   if(fun_mem_data.find(GET_INDEX_CONST_NODE(ga->op0)) != fun_mem_data.end() || fun_mem_data.find(right_part_index) != fun_mem_data.end())
+   if(fun_mem_data.find(GET_INDEX_CONST_NODE(ga->op0)) != fun_mem_data.end() || fun_mem_data.find(GET_INDEX_CONST_NODE(ga->op1)) != fun_mem_data.end())
    {
       skip_check = true;
    }
    if(op0_type && op1_type &&
-      ((GET_CONST_NODE(op0_type)->get_kind() == record_type_K && GET_CONST_NODE(op1_type)->get_kind() == record_type_K && right_part->get_kind() != view_convert_expr_K) ||
-       (GET_CONST_NODE(op0_type)->get_kind() == union_type_K && GET_CONST_NODE(op1_type)->get_kind() == union_type_K && right_part->get_kind() != view_convert_expr_K) || (GET_CONST_NODE(op0_type)->get_kind() == array_type_K)))
+      ((GET_CONST_NODE(op0_type)->get_kind() == record_type_K && GET_CONST_NODE(op1_type)->get_kind() == record_type_K && rhs_kind != view_convert_expr_K) ||
+       (GET_CONST_NODE(op0_type)->get_kind() == union_type_K && GET_CONST_NODE(op1_type)->get_kind() == union_type_K && rhs_kind != view_convert_expr_K) || (GET_CONST_NODE(op0_type)->get_kind() == array_type_K)))
    {
       skip_check = true;
    }
@@ -446,45 +436,43 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
    return skip_check;
 }
 
-tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* sl, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table)
+tree_nodeRef CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const statement_list* sl, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking: " + tn->ToString());
    if(GetPointer<const gimple_node>(tn)->keep)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null keep");
-      return tree_nodeRef();
+      return nullptr;
    }
    const auto ga = GetPointer<const gimple_assign>(tn);
    if(ga && (ga->clobber || ga->init_assignment))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null clobber/init_assignment");
-      return tree_nodeRef();
+      return nullptr;
    }
    if(ga && GET_CONST_NODE(ga->op0)->get_kind() == ssa_name_K)
    {
-      unsigned int bitwidth_values = tree_helper::Size(ga->op0);
-      if(GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1)))
+      auto bitwidth_values = tree_helper::Size(ga->op0);
+      const auto rhs = GET_CONST_NODE(ga->op1);
+      const auto rhs_kind = rhs->get_kind();
+      if(GetPointer<const binary_expr>(rhs))
       {
-         bitwidth_values = std::max(bitwidth_values, tree_helper::Size(GetPointerS<const binary_expr>(GET_CONST_NODE(ga->op1))->op0));
+         bitwidth_values = std::max(bitwidth_values, tree_helper::Size(GetPointerS<const binary_expr>(rhs)->op0));
       }
-      const auto right_part = GET_CONST_NODE(ga->op1);
-      const auto op_kind = right_part->get_kind();
-      if(op_kind != extract_bit_expr_K && op_kind != lut_expr_K && parameters->IsParameter("CSE_size") && bitwidth_values < parameters->GetParameter<unsigned int>("CSE_size"))
+      if(rhs_kind != extract_bit_expr_K && rhs_kind != lut_expr_K && parameters->IsParameter("CSE_size") && bitwidth_values < parameters->GetParameter<unsigned int>("CSE_size"))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: too small");
-         return tree_nodeRef();
+         return nullptr;
       }
-      unsigned int right_part_index = GET_INDEX_CONST_NODE(ga->op1);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Right part type: " + right_part->get_kind_text());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Right part type: " + rhs->get_kind_text());
 
       /// check for LOADs, STOREs, MEMSET, MEMCPY, etc. etc.
-      const auto skip_check = check_loads(ga, right_part_index, right_part);
-      std::vector<unsigned int> ins;
-      if(skip_check)
+      if(has_memory_access(ga))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked loads: null");
-         return tree_nodeRef();
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null memory");
+         return nullptr;
       }
+      std::vector<unsigned int> ins;
       /// We add type of right part; load from same address with different types must be considered different
       ins.push_back(tree_helper::CGetType(ga->op1)->index);
 
@@ -494,60 +482,55 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* s
          ins.push_back(ga->bb_index);
          for(const auto& vuse : ga->vuses)
          {
-            /// Check if the virtual is defined in the same basic block
-            const auto virtual_sn = GetPointer<const ssa_name>(GET_CONST_NODE(vuse));
-            const auto virtual_sn_def = virtual_sn->CGetDefStmt();
-            const auto virtual_sn_gn = GetPointer<const gimple_node>(GET_CONST_NODE(virtual_sn_def));
             ins.push_back(vuse->index);
+
+            /// Check if the virtual is defined in the same basic block
+            const auto virtual_sn = GetPointerS<const ssa_name>(GET_CONST_NODE(vuse));
+            const auto virtual_sn_def = virtual_sn->CGetDefStmt();
+            const auto virtual_sn_gn = GetPointerS<const gimple_node>(GET_CONST_NODE(virtual_sn_def));
+
             if(virtual_sn_gn->bb_index == ga->bb_index)
             {
-               THROW_ASSERT(static_cast<bool>(sl->list_of_bloc.count(ga->bb_index)), "");
-               for(const auto& stmt : sl->list_of_bloc.at(ga->bb_index)->CGetStmtList())
+               THROW_ASSERT(sl->list_of_bloc.count(ga->bb_index), "");
+               const auto& bb = sl->list_of_bloc.at(ga->bb_index);
+               const auto vdef_it = virtual_sn_def->get_kind() == gimple_phi_K ? bb->CGetStmtList().end() : std::find_if(bb->CGetStmtList().begin(), bb->CGetStmtList().end(), [&](const tree_nodeRef& stmt) { return stmt->index == virtual_sn_gn->index; });
+               const auto ga_it = std::find_if(vdef_it, bb->CGetStmtList().end(), [&](const tree_nodeRef& stmt) { return stmt->index == ga->index; });
+               if(ga_it != bb->CGetStmtList().end())
                {
-                  const auto gn = GetPointer<const gimple_node>(GET_CONST_NODE(stmt));
-                  if(gn->index == ga->index)
-                  {
-                     break;
-                  }
-                  /// For each vuse we insert def_stmt if it is before
-                  if(gn->vdef and gn->vdef->index == vuse->index)
-                  {
-                     ins.push_back(gn->index);
-                     break;
-                  }
+                  ins.push_back(virtual_sn_def->index);
                }
             }
          }
       }
-      if(op_kind == ssa_name_K)
+      if(rhs_kind == ssa_name_K)
       {
-         ins.push_back(right_part_index);
+         ins.push_back(rhs->index);
       }
-      else if(GetPointer<const cst_node>(right_part))
+      else if(GetPointer<const cst_node>(rhs))
       {
-         ins.push_back(right_part_index);
+         ins.push_back(rhs->index);
       }
-      else if(op_kind == nop_expr_K || op_kind == view_convert_expr_K || op_kind == convert_expr_K || op_kind == float_expr_K || op_kind == fix_trunc_expr_K)
+      else if(rhs_kind == nop_expr_K || rhs_kind == view_convert_expr_K || rhs_kind == convert_expr_K || rhs_kind == float_expr_K || rhs_kind == fix_trunc_expr_K)
       {
-         const auto ue = GetPointerS<const unary_expr>(right_part);
+         const auto ue = GetPointerS<const unary_expr>(rhs);
          ins.push_back(GET_INDEX_CONST_NODE(ue->op));
          const auto type_index = tree_helper::CGetType(ga->op0)->index;
          ins.push_back(type_index);
       }
-      else if(GetPointer<const unary_expr>(right_part))
+      else if(GetPointer<const unary_expr>(rhs))
       {
-         const auto ue = GetPointerS<const unary_expr>(right_part);
+         const auto ue = GetPointerS<const unary_expr>(rhs);
          ins.push_back(GET_INDEX_CONST_NODE(ue->op));
       }
-      else if(GetPointer<const binary_expr>(right_part))
+      else if(GetPointer<const binary_expr>(rhs))
       {
-         const auto be = GetPointerS<const binary_expr>(right_part);
+         const auto be = GetPointerS<const binary_expr>(rhs);
          ins.push_back(GET_INDEX_CONST_NODE(be->op0));
          ins.push_back(GET_INDEX_CONST_NODE(be->op1));
       }
-      else if(GetPointer<const ternary_expr>(right_part))
+      else if(GetPointer<const ternary_expr>(rhs))
       {
-         const auto te = GetPointerS<const ternary_expr>(right_part);
+         const auto te = GetPointerS<const ternary_expr>(rhs);
          ins.push_back(GET_INDEX_CONST_NODE(te->op0));
          ins.push_back(GET_INDEX_CONST_NODE(te->op1));
          if(te->op2)
@@ -555,19 +538,20 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* s
             ins.push_back(GET_INDEX_CONST_NODE(te->op2));
          }
       }
-      else if(GetPointer<const call_expr>(right_part))
+      else if(GetPointer<const call_expr>(rhs))
       {
-         const auto ce = GetPointerS<const call_expr>(right_part);
+         const auto ce = GetPointerS<const call_expr>(rhs);
          if(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K)
          {
             const auto addr_node = GET_CONST_NODE(ce->fn);
             const auto ae = GetPointerS<const addr_expr>(addr_node);
             ins.push_back(GET_INDEX_CONST_NODE(ae->op));
             const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(ae->op));
+            // TODO: may be optimized
             if(fd->undefined_flag || fd->writing_memory || fd->reading_memory || ga->vuses.size())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
-               return tree_nodeRef();
+               return nullptr;
             }
             for(const auto& arg : ce->args)
             {
@@ -577,12 +561,12 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* s
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
-            return tree_nodeRef();
+            return nullptr;
          }
       }
-      else if(GetPointer<const lut_expr>(right_part))
+      else if(GetPointer<const lut_expr>(rhs))
       {
-         const auto le = GetPointerS<const lut_expr>(right_part);
+         const auto le = GetPointerS<const lut_expr>(rhs);
          ins.push_back(GET_INDEX_CONST_NODE(le->op0));
          ins.push_back(GET_INDEX_CONST_NODE(le->op1));
          if(le->op2)
@@ -617,12 +601,8 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* s
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
-         return tree_nodeRef();
+         return nullptr;
       }
-
-      THROW_ASSERT(!ga->memdef, STR(tn));
-      THROW_ASSERT(!ga->vdef, STR(tn));
-      THROW_ASSERT(ga->vovers.empty(), STR(tn));
 
 #ifndef NDEBUG
       auto signature_message = "Signature of " + STR(tn->index) + " is ";
@@ -630,21 +610,25 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, const statement_list* s
       {
          signature_message += STR(temp_sign) + "-";
       }
+      signature_message.pop_back();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, signature_message);
 #endif
-      CSE_tuple_key_type t(op_kind, ins);
-      if(unique_table.find(bb)->second.find(t) != unique_table.find(bb)->second.end())
+      CSE_tuple_key_type t(rhs_kind, ins);
+      if(unique_table.at(bb_vertex).find(t) != unique_table.at(bb_vertex).end())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- statement = " + tn->ToString());
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- equivalent with = " + unique_table.find(bb)->second.find(t)->second->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- equivalent with = " + unique_table.at(bb_vertex).at(t)->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-         return unique_table.find(bb)->second.find(t)->second;
+         THROW_ASSERT(!ga->memdef, "Unexpected memdef " + ga->memdef->ToString() + " in " + tn->ToString());
+         THROW_ASSERT(!ga->vdef, "Unexpected vdef " + ga->vdef->ToString() + " in " + tn->ToString());
+         THROW_ASSERT(ga->vovers.empty(), "Unexpected vovers in " + tn->ToString());
+         return unique_table.at(bb_vertex).at(t);
       }
       else
       {
-         unique_table.find(bb)->second[t] = tn;
+         unique_table.at(bb_vertex)[t] = tn;
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
-   return tree_nodeRef();
+   return nullptr;
 }

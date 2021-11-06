@@ -158,7 +158,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
@@ -166,7 +165,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS)
          {
-            relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
             relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          }
          break;

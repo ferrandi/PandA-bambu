@@ -175,17 +175,12 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             THROW_ASSERT(virtual_ssa_definitions.count(gn->vdef) == 0, gn->vdef->ToString() + " is defined also in " + STR(virtual_ssa_definitions.at(gn->vdef)));
             virtual_ssa_definitions[gn->vdef] = stmt;
          }
-         gn->memdef = nullptr;
-         if(gn->memuse)
+         const auto& cur_bb = bb_index_map.at(gn->bb_index);
+         const auto vo_it = gn->vdef ? gn->vovers.find(gn->vdef) : gn->vovers.end();
+         if(vo_it != gn->vovers.end() && !function_behavior->CheckBBReachability(cur_bb, cur_bb))
          {
-            GetPointerS<ssa_name>(GET_NODE(gn->memuse))->RemoveUse(stmt);
-            gn->memuse = nullptr;
-         }
-         const auto cur_bb_index = gn->bb_index;
-         const auto& cur_bb = bb_index_map.at(cur_bb_index);
-         if(gn->vdef && gn->vovers.count(gn->vdef) && !function_behavior->CheckBBReachability(cur_bb, cur_bb))
-         {
-            gn->vovers.erase(gn->vdef);
+            gn->vovers.erase(vo_it);
+            GetPointerS<ssa_name>(GET_NODE(gn->vdef))->RemoveUse(stmt);
          }
          for(const auto& vover : gn->vovers)
          {
@@ -199,7 +194,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             const auto def_stmt = sn->CGetDefStmt();
             const auto use_bb_index = GetPointerS<const gimple_node>(GET_NODE(def_stmt))->bb_index;
             const auto& use_bb = bb_index_map.at(use_bb_index);
-            if(use_bb_index == cur_bb_index)
+            if(use_bb_index == gn->bb_index)
             {
                /// here we may have a Use-Def or a Def-Use. They are both perfectly fine.
                ++vu_it;
@@ -334,12 +329,10 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       }
       for(const auto& transitive_use : transitive_uses)
       {
-         for(size_t number_use = 0; number_use < transitive_use.second; number_use++)
-         {
-            sn->RemoveUse(transitive_use.first);
-            GetPointer<gimple_node>(GET_NODE(transitive_use.first))->vuses.erase(virtual_ssa_definition.first);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(virtual_ssa_definition.first) + " from vuses of " + STR(transitive_use.first));
-         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(virtual_ssa_definition.first) + " from vuses of " + STR(transitive_use.first));
+         const auto gn = GetPointerS<gimple_node>(GET_NODE(transitive_use.first));
+         gn->vuses.erase(virtual_ssa_definition.first);
+         sn->RemoveUse(transitive_use.first);
       }
 
       /// It is possible that the use is not reachable; this is due to the gcc alias oracle
@@ -377,7 +370,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       TM->create_tree_node(nop_id, gimple_nop_K, nop_IR_schema);
 
       const auto volatile_sn = tree_man->create_ssa_name(sn->var, tree_helper::CGetType(virtual_ssa_definition.first), nullptr, nullptr, true, true);
-      GetPointer<ssa_name>(GET_NODE(volatile_sn))->SetDefStmt(TM->GetTreeReindex(nop_id));
+      GetPointerS<ssa_name>(GET_NODE(volatile_sn))->SetDefStmt(TM->GetTreeReindex(nop_id));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created volatile ssa " + STR(volatile_sn));
 
       /// Set of basic blocks belonging to the loop
@@ -519,19 +512,19 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                   if((basic_block_graph->GetSelector(*ie) & CFG_SELECTOR) != 0)
                   {
                      const auto source = boost::source(*ie, *basic_block_graph);
-                     def_edges.push_back(gimple_phi::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(source), basic_block_graph->CGetBBNodeInfo(source)->block->number));
+                     const auto& vssa = reaching_defs.at(virtual_ssa_definition.first).at(source);
+                     def_edges.push_back(gimple_phi::DefEdge(vssa, basic_block_graph->CGetBBNodeInfo(source)->block->number));
                   }
                }
-               tree_nodeRef phi_def_ssa_node;
-               const auto phi_gimple_stmt = tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
-               THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index == tree_helper::CGetType(virtual_ssa_definition.first)->index, "");
-               GetPointerS<ssa_name>(GET_NODE(phi_def_ssa_node))->AddUseStmt(phi_gimple_stmt); // This is wrong but it does not work without...
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa " + STR(phi_def_ssa_node));
-               GetPointerS<gimple_phi>(GET_NODE(phi_gimple_stmt))->SetSSAUsesComputed();
-               basic_block_graph->GetBBNodeInfo(current)->block->AddPhi(phi_gimple_stmt);
-               reaching_defs[virtual_ssa_definition.first][current] = phi_def_ssa_node;
-               added_phis[virtual_ssa_definition.first][current] = phi_gimple_stmt;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + STR(phi_gimple_stmt));
+               tree_nodeRef phi_res;
+               const auto phi_stmt = tree_man->create_phi_node(phi_res, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
+               THROW_ASSERT(tree_helper::CGetType(phi_res)->index == tree_helper::CGetType(virtual_ssa_definition.first)->index, "");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa " + phi_res->ToString());
+               GetPointerS<gimple_phi>(GET_NODE(phi_stmt))->SetSSAUsesComputed();
+               basic_block_graph->GetBBNodeInfo(current)->block->AddPhi(phi_stmt);
+               reaching_defs[virtual_ssa_definition.first][current] = phi_res;
+               added_phis[virtual_ssa_definition.first][current] = phi_stmt;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + phi_stmt->ToString());
             }
             else
             {
@@ -547,30 +540,38 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             bool before_definition = definition_bb == current || function_behavior->CheckBBReachability(current, definition_bb);
             for(const auto& stmt : basic_block_graph->CGetBBNodeInfo(current)->block->CGetStmtList())
             {
+               const auto& reaching_def = reaching_defs.at(virtual_ssa_definition.first).at(current);
                if(use_stmts.count(stmt) && stmt->index != virtual_ssa_definition.second->index)
                {
                   if(before_definition)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding for anti dependence " + STR(reaching_defs.at(virtual_ssa_definition.first).at(current)) + " in " + STR(stmt));
-                     THROW_ASSERT(!GetPointerS<ssa_name>(GET_NODE(reaching_defs.at(virtual_ssa_definition.first).at(current)))->volatile_flag || !function_behavior->CheckBBFeedbackReachability(definition_bb, current), "");
-                     GetPointerS<gimple_node>(GET_NODE(stmt))->vuses.insert(reaching_defs.at(virtual_ssa_definition.first).at(current));
-                     GetPointerS<ssa_name>(GET_NODE(reaching_defs.at(virtual_ssa_definition.first).at(current)))->AddUseStmt(stmt);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding for anti dependence " + STR(reaching_def) + " in " + STR(stmt));
+                     THROW_ASSERT(!GetPointerS<ssa_name>(GET_NODE(reaching_def))->volatile_flag || !function_behavior->CheckBBFeedbackReachability(definition_bb, current), "");
+                     if(GetPointerS<gimple_node>(GET_NODE(stmt))->AddVuse(reaching_def))
+                     {
+                        GetPointerS<ssa_name>(GET_NODE(reaching_def))->AddUseStmt(stmt);
+                     }
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(virtual_ssa_definition.first) + " with " + STR(reaching_defs.at(virtual_ssa_definition.first).at(current)) + " in " + STR(stmt));
-                     THROW_ASSERT(!GetPointerS<ssa_name>(GET_NODE(reaching_defs.at(virtual_ssa_definition.first).at(current)))->volatile_flag || !function_behavior->CheckBBFeedbackReachability(definition_bb, current), "");
-                     TM->ReplaceTreeNode(stmt, virtual_ssa_definition.first, reaching_defs.at(virtual_ssa_definition.first).at(current));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(virtual_ssa_definition.first) + " with " + STR(reaching_def) + " in " + STR(stmt));
+                     THROW_ASSERT(!GetPointerS<ssa_name>(GET_NODE(reaching_def))->volatile_flag || !function_behavior->CheckBBFeedbackReachability(definition_bb, current), "");
+                     TM->ReplaceTreeNode(stmt, virtual_ssa_definition.first, reaching_def);
                   }
                }
                if(stmt->index == virtual_ssa_definition.second->index)
                {
                   before_definition = false;
                   const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
-                  if(gn->vovers.count(virtual_ssa_definition.first))
+                  if(gn->vovers.erase(virtual_ssa_definition.first))
                   {
-                     GetPointerS<gimple_node>(GET_NODE(stmt))->vovers.erase(virtual_ssa_definition.first);
-                     GetPointerS<gimple_node>(GET_NODE(stmt))->AddVover(reaching_defs.at(virtual_ssa_definition.first).at(current));
+                     const auto old_vssa = GetPointerS<ssa_name>(GET_NODE(virtual_ssa_definition.first));
+                     old_vssa->RemoveUse(stmt);
+                  }
+                  if(gn->AddVover(reaching_def))
+                  {
+                     const auto reaching_vssa = GetPointerS<ssa_name>(GET_NODE(reaching_def));
+                     reaching_vssa->AddUseStmt(stmt);
                   }
                   reaching_defs[virtual_ssa_definition.first][current] = virtual_ssa_definition.first;
                }
@@ -644,6 +645,24 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->GetBBGraph(FunctionBehavior::FBB)->WriteDot("BB_FCFG.dot");
+   }
+   for(const auto& ssa_bbv : added_phis)
+   {
+      for(const auto& bbv_phi : ssa_bbv.second)
+      {
+         const auto& bb = basic_block_graph->GetBBNodeInfo(bbv_phi.first)->block;
+         const auto phi_stmt = GetPointerS<gimple_phi>(GET_NODE(bbv_phi.second));
+         const auto vssa = GetPointerS<ssa_name>(GET_NODE(phi_stmt->res));
+         if(vssa->CGetNumberUses() == 0 || (vssa->CGetNumberUses() == 1 && GET_INDEX_NODE(vssa->CGetUseStmts().begin()->first) == phi_stmt->index))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing just created dead phi from BB" + STR(bb->number) + " - (" + GetPointerS<ssa_name>(GET_NODE(ssa_bbv.first))->ToString() + ") " + phi_stmt->ToString());
+            if(vssa->CGetNumberUses() == 1)
+            {
+               vssa->RemoveUse(bbv_phi.second);
+            }
+            bb->RemovePhi(bbv_phi.second);
+         }
+      }
    }
 #ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)

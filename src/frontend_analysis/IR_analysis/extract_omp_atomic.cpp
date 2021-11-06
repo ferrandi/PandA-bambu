@@ -73,9 +73,7 @@ ExtractOmpAtomic::ExtractOmpAtomic(const application_managerRef _AppM, unsigned 
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-ExtractOmpAtomic::~ExtractOmpAtomic()
-{
-}
+ExtractOmpAtomic::~ExtractOmpAtomic() = default;
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ExtractOmpAtomic::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -104,10 +102,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-void ExtractOmpAtomic::Initialize()
-{
-}
-
 DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
@@ -126,12 +120,12 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
       for(const auto& stmt : block->CGetStmtList())
       {
          const auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
-         if(pn and pn->scope and GetPointer<omp_pragma>(GET_NODE(pn->scope)))
+         if(pn && pn->scope && GetPointer<omp_pragma>(GET_NODE(pn->scope)))
          {
             const auto oa = GetPointer<omp_atomic_pragma>(GET_NODE(pn->directive));
             if(oa)
             {
-               if(block->list_of_pred.size() == 1 and block->list_of_pred.front() == BB_ENTRY and stmt == block->CGetStmtList().front())
+               if(block->list_of_pred.size() == 1 && block->list_of_pred.front() == BB_ENTRY && stmt == block->CGetStmtList().front())
                {
                   gimple_to_be_removed = stmt;
                   GetPointer<function_decl>(AppM->get_tree_manager()->get_tree_node_const(function_id))->omp_atomic = true;
@@ -147,31 +141,6 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
       }
       if(gimple_to_be_removed)
       {
-         const auto gn = GetPointer<const gimple_node>(GET_NODE(gimple_to_be_removed));
-         if(gn->memdef)
-         {
-            auto sn = GetPointer<ssa_name>(GET_NODE(gn->memdef));
-            TreeNodeMap<size_t> to_be_removeds;
-            for(const auto& use : sn->CGetUseStmts())
-            {
-               if(GET_NODE(use.first)->get_kind() != gimple_phi_K)
-               {
-                  to_be_removeds.insert(use);
-               }
-            }
-            for(const auto& to_be_removed : to_be_removeds)
-            {
-               for(size_t counter = 0; counter < to_be_removed.second; counter++)
-               {
-                  sn->RemoveUse(to_be_removed.first);
-               }
-               GetPointer<gimple_node>(GET_NODE(to_be_removed.first))->vuses.erase(gn->memdef);
-               if(GetPointer<gimple_node>(GET_NODE(to_be_removed.first))->memuse->index == gn->memdef->index)
-               {
-                  GetPointer<gimple_node>(GET_NODE(to_be_removed.first))->memuse = tree_nodeRef();
-               }
-            }
-         }
          block->RemoveStmt(gimple_to_be_removed, AppM);
       }
    }

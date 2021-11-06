@@ -109,10 +109,9 @@ struct bloc
    /// consistency of ssa uses
    bool updated_ssa_uses;
 
-   void update_new_stmt(const tree_nodeRef& new_stmt);
-
-   gimple_assign* manageCallGraph(const application_managerRef AppM, const tree_nodeRef statement);
-   bool check_function_call(const tree_nodeRef statement, gimple_assign* ga, unsigned int& called_function_id);
+   void update_new_stmt(const application_managerRef& AppM, const tree_nodeRef& new_stmt);
+   void manageCallGraph(const application_managerRef& AppM, const tree_nodeRef& statement);
+   bool check_function_call(const tree_nodeRef& statement, gimple_assign* ga, unsigned int& called_function_id);
 
  public:
    /// list_of_pred is the list of predecessors.

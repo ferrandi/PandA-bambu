@@ -100,7 +100,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             if(restart_ifmwi_opt)
             {
-               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
                relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
                relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
                relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
@@ -133,10 +132,6 @@ bool SDCCodeMotion::HasToBeExecuted() const
    }
    return parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
           GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch && FunctionFrontendFlowStep::HasToBeExecuted();
-}
-
-void SDCCodeMotion::Initialize()
-{
 }
 
 DesignFlowStep_Status SDCCodeMotion::InternalExec()
@@ -181,9 +176,4 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
    }
    function_behavior->UpdateBBVersion();
    return DesignFlowStep_Status::SUCCESS;
-}
-
-void SDCCodeMotion::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
-{
-   FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }

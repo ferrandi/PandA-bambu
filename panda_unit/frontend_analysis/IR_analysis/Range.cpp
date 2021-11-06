@@ -429,10 +429,19 @@ BOOST_AUTO_TEST_CASE(range_reminder)
    RangeRef bPositive(new Range(Regular, 8, 3, 6));
    RangeRef bNegative(new Range(Regular, 8, -6, -3));
    RangeRef bMix(new Range(Regular, 8, -3, 6));
+   RangeRef cHigh(new Range(Regular, 8, 10, 15));
+   RangeRef cLow(new Range(Regular, 8, 2, 4));
+   RangeRef three(new Range(Regular, 8, 3, 3));
+   RangeRef mThree(new Range(Regular, 8, -3, -3));
 
-   RangeRef invariant(new Range(Regular, 8, 1, 1));
+   RangeRef one(new Range(Regular, 8, 1, 1));
+   RangeRef invariant(new Range(Regular, 8, std::numeric_limits<char>::min(), std::numeric_limits<char>::min()));
 
-   auto sremPaI = aPositive->srem(invariant);
+   auto sremLcT = cLow->srem(three);
+   BOOST_REQUIRE_EQUAL(0, sremLcT->getSignedMin());
+   BOOST_REQUIRE_EQUAL(2, sremLcT->getSignedMax());
+
+   auto sremPaI = aPositive->srem(one);
    BOOST_REQUIRE_EQUAL(0, sremPaI->getSignedMax());
    BOOST_REQUIRE_EQUAL(0, sremPaI->getSignedMin());
 
@@ -443,6 +452,28 @@ BOOST_AUTO_TEST_CASE(range_reminder)
    auto sremPaNb = aPositive->srem(bNegative);
    BOOST_REQUIRE_EQUAL(0, sremPaNb->getSignedMin());
    BOOST_REQUIRE_EQUAL(5, sremPaNb->getSignedMax());
+
+   auto sremPaCh = aPositive->srem(cHigh);
+   BOOST_REQUIRE_EQUAL(aPositive->getSignedMax(), sremPaCh->getSignedMax());
+   BOOST_REQUIRE_EQUAL(aPositive->getSignedMin(), sremPaCh->getSignedMin());
+
+   auto sremPaCl = aPositive->srem(cLow);
+   BOOST_REQUIRE_EQUAL(cLow->getSignedMax() - 1, sremPaCl->getSignedMax());
+   BOOST_REQUIRE_EQUAL(0, sremPaCl->getSignedMin());
+
+   auto sremPnCl = aNegative->srem(cLow);
+   BOOST_REQUIRE_EQUAL(0, sremPnCl->getSignedMax());
+   BOOST_REQUIRE_EQUAL(-cLow->getSignedMax() + 1, sremPnCl->getSignedMin());
+
+   auto sremMaCl = aMix->srem(cLow);
+   BOOST_REQUIRE_EQUAL(cLow->getSignedMax() - 1, sremMaCl->getSignedMax());
+   BOOST_REQUIRE_EQUAL(-cLow->getSignedMax() + 1, sremMaCl->getSignedMin());
+
+   RangeRef all(new Range(Regular, 32, std::numeric_limits<int>::min(), std::numeric_limits<int>::max() - 1));
+   RangeRef min32(new Range(Regular, 32, std::numeric_limits<int>::min(), std::numeric_limits<int>::min()));
+   auto res = all->srem(min32);
+   BOOST_REQUIRE_EQUAL(std::numeric_limits<int>::max(), res->getSignedMax());
+   BOOST_REQUIRE_EQUAL(-std::numeric_limits<int>::max(), res->getSignedMin());
 }
 
 BOOST_AUTO_TEST_CASE(range_shl)
@@ -465,18 +496,20 @@ BOOST_AUTO_TEST_CASE(range_shl)
    BOOST_REQUIRE_EQUAL(12, posShl->getSignedMin());
    BOOST_REQUIRE_EQUAL(114, posShl->getSignedMax());
    posShl = pos->shl(eight);
-   BOOST_REQUIRE(posShl->isConstant());
-   BOOST_REQUIRE_EQUAL(0, posShl->getSignedMin());
-   BOOST_REQUIRE_EQUAL(0, posShl->getSignedMax());
+   // NOTE: C defined shift left should work as follows
+   // BOOST_REQUIRE(posShl->isConstant());
+   // BOOST_REQUIRE_EQUAL(0, posShl->getSignedMin());
+   // BOOST_REQUIRE_EQUAL(0, posShl->getSignedMax());
+   // NOTE: but the HDL implementation used by bambu only picks first ceil_log2(bitsize(datatype))
+   //       bits from right operand, thus Range::shl is implemented to stick to that implementation
+   BOOST_REQUIRE(posShl->isSameRange(pos));
    posShl = pos->shl(zero);
    BOOST_REQUIRE(posShl->isSameRange(pos));
 
    auto negShl = neg->shl(zeroSeven);
    BOOST_REQUIRE(negShl->isFullSet());
    negShl = neg->shl(eight);
-   BOOST_REQUIRE(negShl->isConstant());
-   BOOST_REQUIRE_EQUAL(0, negShl->getSignedMin());
-   BOOST_REQUIRE_EQUAL(0, negShl->getSignedMax());
+   BOOST_REQUIRE(negShl->isSameRange(neg));
    negShl = neg->shl(zero);
    BOOST_REQUIRE(negShl->isSameRange(neg));
 
@@ -485,9 +518,7 @@ BOOST_AUTO_TEST_CASE(range_shl)
    BOOST_REQUIRE_EQUAL(86, mixShl->getSignedMax());
    BOOST_REQUIRE_EQUAL(-54, mixShl->getSignedMin());
    mixShl = mix->shl(eight);
-   BOOST_REQUIRE(mixShl->isConstant());
-   BOOST_REQUIRE_EQUAL(0, mixShl->getSignedMin());
-   BOOST_REQUIRE_EQUAL(0, mixShl->getSignedMax());
+   BOOST_REQUIRE(mixShl->isSameRange(mix));
    mixShl = mix->shl(zero);
    BOOST_REQUIRE(mixShl->isSameRange(mix));
 
@@ -496,9 +527,7 @@ BOOST_AUTO_TEST_CASE(range_shl)
    BOOST_REQUIRE_EQUAL(-1, allOneShl->getSignedMax());
    BOOST_REQUIRE_EQUAL(-128, allOneShl->getSignedMin());
    allOneShl = allOne->shl(eight);
-   BOOST_REQUIRE(allOneShl->isConstant());
-   BOOST_REQUIRE_EQUAL(0, allOneShl->getSignedMin());
-   BOOST_REQUIRE_EQUAL(0, allOneShl->getSignedMax());
+   BOOST_REQUIRE(allOneShl->isSameRange(allOne));
 }
 
 BOOST_AUTO_TEST_CASE(range_abs)

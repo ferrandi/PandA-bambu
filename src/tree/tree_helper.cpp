@@ -639,7 +639,7 @@ std::string tree_helper::GetFunctionName(const tree_managerConstRef& TM, const t
    }
    if(decl->get_kind() == function_decl_K)
    {
-      const auto fd = GetPointer<const function_decl>(decl);
+      const auto fd = GetPointerS<const function_decl>(decl);
       return print_function_name(TM, fd);
    }
    else
@@ -1599,23 +1599,8 @@ unsigned int tree_helper::GetRealType(const tree_managerConstRef& TM, unsigned i
 
 tree_nodeConstRef tree_helper::GetRealType(const tree_nodeConstRef& _type)
 {
-   const auto type = _type->get_kind() == tree_reindex_K ? GET_CONST_NODE(_type) : _type;
-   const auto rt = GetPointer<const record_type>(type);
-   if(rt && rt->unql && (!rt->name || GET_CONST_NODE(rt->name)->get_kind() == identifier_node_K))
-   {
-      return rt->unql;
-   }
-   const auto ut = GetPointer<const union_type>(type);
-   if(ut && ut->unql && (!ut->name || GET_CONST_NODE(ut->name)->get_kind() == identifier_node_K))
-   {
-      return ut->unql;
-   }
-   const auto et = GetPointer<const enumeral_type>(type);
-   if(et && et->unql && (!et->name || GET_CONST_NODE(et->name)->get_kind() == identifier_node_K))
-   {
-      return et->unql;
-   }
-   return _type;
+   const auto utype = GetUnqualifiedType(_type);
+   return utype ? utype : _type;
 }
 
 unsigned int tree_helper::get_type_index(const tree_managerConstRef& TM, const unsigned int index, long long int& vec_size, bool& is_a_pointer, bool& is_a_function)
@@ -2613,7 +2598,11 @@ static bool same_size_fields(const tree_nodeConstRef& t)
    std::list<tree_nodeConstRef> listOfTypes;
    CustomUnorderedSet<unsigned int> already_visited;
    getBuiltinFieldTypes(t, listOfTypes, already_visited);
-   THROW_ASSERT(!listOfTypes.empty(), "at least one type is expected");
+   if(listOfTypes.empty())
+   {
+      return false;
+   }
+
    auto sizeFlds = 0u;
    for(const auto& fldType : listOfTypes)
    {
@@ -5193,12 +5182,18 @@ void tree_helper::extract_array_indexes(const tree_managerConstRef& TM, const un
 
 unsigned int tree_helper::GetUnqualified(const tree_managerConstRef& TM, unsigned int type)
 {
-   const tree_nodeRef typeNode = TM->get_tree_node_const(type);
-   if(GetPointer<type_node>(typeNode) and GetPointer<type_node>(typeNode)->unql)
+   const auto utype = GetUnqualifiedType(TM->CGetTreeNode(type));
+   return utype ? utype->index : 0;
+}
+
+tree_nodeConstRef tree_helper::GetUnqualifiedType(const tree_nodeConstRef& _type)
+{
+   const auto type = _type->get_kind() == tree_reindex_K ? GET_CONST_NODE(_type) : _type;
+   if(GetPointer<const type_node>(type) && GetPointerS<const type_node>(type)->unql)
    {
-      return GET_INDEX_CONST_NODE(GetPointer<type_node>(typeNode)->unql);
+      return GetPointerS<const type_node>(type)->unql;
    }
-   return 0;
+   return nullptr;
 }
 
 bool tree_helper::IsAligned(const tree_managerConstRef& TM, unsigned int type)
@@ -7920,6 +7915,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
    const auto gn = GetPointer<const gimple_node>(curr_tn);
    if(gn)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Computing virtual ssa uses");
       if(gn->memuse)
       {
          ComputeSsaUses(gn->memuse, ssa_uses);
@@ -7928,6 +7924,11 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       {
          ComputeSsaUses(vuse, ssa_uses);
       }
+      for(const auto& vover : gn->vovers)
+      {
+         ComputeSsaUses(vover, ssa_uses);
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Computed virtual ssa uses");
    }
 
    switch(curr_tn->get_kind())
@@ -8248,7 +8249,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
          THROW_UNREACHABLE("");
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--computed_ssa_uses_rec_ref " + STR(GET_INDEX_CONST_NODE(tn)));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Computed ssa uses in @" + STR(GET_INDEX_CONST_NODE(tn)));
 }
 
 bool tree_helper::is_a_nop_function_decl(const function_decl* fd)

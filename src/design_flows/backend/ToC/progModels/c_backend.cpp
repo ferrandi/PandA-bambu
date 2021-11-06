@@ -143,9 +143,9 @@ const CWriterRef CBackend::GetCWriter() const
 
 DesignFlowStep_Status CBackend::Exec()
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CBackend: writing " + file_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->writing " + file_name);
    // first write panda header
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CBackend: writing panda header");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->writing panda header");
    indented_output_stream->Append("/*\n");
    indented_output_stream->Append(" * Politecnico di Milano\n");
    indented_output_stream->Append(std::string(" * Code created using ") + PACKAGE_NAME + " - " + parameters->PrintVersion());
@@ -156,16 +156,16 @@ DesignFlowStep_Status CBackend::Exec()
       indented_output_stream->Append(" * " + parameters->getOption<std::string>(OPT_program_name) + " executed with: " + parameters->getOption<std::string>(OPT_cat_args) + "\n");
    }
    indented_output_stream->Append(" */\n");
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--CBackend: written panda header");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--written panda header");
    // write cwriter specific header
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CBackend: writing header");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->writing header");
    writer->WriteHeader();
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--CBackend: written header");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--written header");
    writeIncludes();
    WriteGlobalDeclarations();
    writeImplementations();
    writer->WriteFile(file_name);
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Cbackend: written " + file_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--written " + file_name);
    return DesignFlowStep_Status::SUCCESS;
 }
 
@@ -195,7 +195,7 @@ void CBackend::Initialize()
 
 void CBackend::WriteGlobalDeclarations()
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->CBackend: Writing global declarations");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing global declarations");
    writer->WriteGlobalDeclarations();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing function prototypes");
    for(const auto extBeg : functions_to_be_declared)
@@ -235,7 +235,7 @@ void CBackend::WriteGlobalDeclarations()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written function prototype of " + BH->get_function_name());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written function prototypes");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CBackend: Written global declarations");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written global declarations");
 }
 
 void CBackend::writeImplementations()

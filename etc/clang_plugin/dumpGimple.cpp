@@ -1454,7 +1454,7 @@ namespace llvm
 #if __clang_major__ > 11
                     || CallID == llvm::Intrinsic::abs
 #endif
-                    );
+            );
          }
 #endif
          default:
@@ -3203,7 +3203,9 @@ namespace llvm
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
+         {
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vuse");
+         }
          else
          {
             const auto Loc = llvm::MemoryLocation::get(inst);
@@ -3217,7 +3219,9 @@ namespace llvm
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
+         {
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
+         }
          else
          {
             const auto Loc = llvm::MemoryLocation::get(inst);
@@ -6227,7 +6231,7 @@ namespace llvm
 
    void DumpGimpleRaw::computeValueRange(const llvm::Module& M)
    {
-#if __clang_major__ < 12
+#if __clang_major__ < 11
       RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
       RA->runOnModule(M, modulePass, PtoSets_AA);
 #endif
@@ -6637,9 +6641,20 @@ namespace llvm
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
       bool res = false;
+#if PRINT_DBG_MSG
+      llvm::errs() << "Computing e-SSA\n";
+#endif
       compute_eSSA(M, &res);
+#if PRINT_DBG_MSG
+      llvm::errs() << "Computed e-SSA\n";
+#endif
       if(!earlyAnalysis)
+      {
+#if PRINT_DBG_MSG
+         llvm::errs() << "Building metadata\n";
+#endif
          buildMetaDataMap(M);
+      }
       res = !earlyAnalysis && lowerMemIntrinsics(M);
 
       auto res_RC = (!earlyAnalysis && RebuildConstants(M));
@@ -6660,6 +6675,9 @@ namespace llvm
          if(starting_function != "")
          {
 #define ANDERSEN 1
+#if PRINT_DBG_MSG
+            llvm::errs() << "Performing alias analysis\n";
+#endif
 #if ANDERSEN
             PtoSets_AA = new Andersen_AA(starting_function);
 #else
@@ -6671,7 +6689,14 @@ namespace llvm
          }
       }
 #endif
+
+#if PRINT_DBG_MSG
+      llvm::errs() << "Performing value-range analysis\n";
+#endif
       computeValueRange(M);
+#if PRINT_DBG_MSG
+      llvm::errs() << "Performed value-range analysis\n";
+#endif
 
 #ifdef DEBUG_RA
       assert(!llvm::verifyModule(M, &llvm::errs()));

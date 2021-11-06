@@ -93,6 +93,8 @@
 
 CustomMap<CallGraph::vertex_descriptor, FunctionVersionRef> soft_float_cg_ext::funcFF;
 CustomMap<unsigned int, std::array<tree_nodeRef, 8>> soft_float_cg_ext::versioning_args;
+bool soft_float_cg_ext::inline_math = false;
+bool soft_float_cg_ext::inline_conversion = false;
 tree_nodeRef soft_float_cg_ext::float32_type;
 tree_nodeRef soft_float_cg_ext::float32_ptr_type;
 tree_nodeRef soft_float_cg_ext::float64_type;
@@ -176,8 +178,22 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
    {
       const auto CGM = AppM->CGetCallGraphManager();
       auto opts = SplitString(parameters->getOption<std::string>(OPT_fp_format), ",");
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "-->Soft-float fp format specialization required:");
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "-->");
+      const auto inline_math_it = std::find(opts.begin(), opts.end(), "inline-math");
+      const auto inline_conversion_it = std::find(opts.begin(), opts.end(), "inline-conversion");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Soft-float fp format specialization required:");
+      if(inline_math_it != opts.end())
+      {
+         opts.erase(inline_math_it);
+         inline_math = true;
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Full inlining of floating-point arithmetic operators");
+      }
+      if(inline_conversion_it != opts.end())
+      {
+         opts.erase(inline_conversion_it);
+         inline_conversion = true;
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Full inlining of floating-point conversion operators");
+      }
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->");
       for(const auto& opt : opts)
       {
          auto format = SplitString(opt, "*");
@@ -235,15 +251,15 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             userFF->sign = format[8] == "U" ? bit_lattice::U : (format[8] == "1" ? bit_lattice::ONE : bit_lattice::ZERO);
          }
          funcFF.insert({function_v, FunctionVersionRef(new FunctionVersion(function_v, userFF))});
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, format[0] + " specialized with fp format " + userFF->mngl());
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, format[0] + " specialized with fp format " + userFF->mngl());
       }
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "<--");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
 
       // Propagate floating-point format specialization over to called functions
       if(parameters->isOption(OPT_fp_format_propagate) && parameters->getOption<bool>(OPT_fp_format_propagate))
       {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "Soft-float fp format propagation enabled:");
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "-->");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Soft-float fp format propagation enabled:");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->");
          for(const auto& root_func : CGM->GetRootFunctions())
          {
             std::list<CallGraph::vertex_descriptor> func_sort;
@@ -303,9 +319,9 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                }
 
                const auto func_id = AppM->CGetCallGraphManager()->get_function(func);
-               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level,
+               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                               "Analysing function " + tree_helper::print_type(TreeM, func_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(func_id)->CGetBehavioralHelper()))));
-               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "---FP format " + current_v->ToString());
+               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---FP format " + current_v->ToString());
 
                // Propagate current fp format to the called functions
                CallGraph::out_edge_iterator ei, ei_end;
@@ -338,9 +354,9 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                }
             }
          }
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "<--");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
       }
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "<--");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
    }
    THROW_ASSERT(AppM->CGetCallGraphManager()->IsVertex(function_id), "");
    const auto function_v = AppM->CGetCallGraphManager()->GetVertex(function_id);
@@ -520,7 +536,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->View-convert for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " + def_node->ToString());
          const auto ssa_ridx = TreeM->GetTreeReindex(ssa->index);
          // Hardware calls are for sure dealing with standard IEEE formats only
-         const auto int_ret_type = tree_helper::Size(GET_NODE(ssa->type)) == 32 ? float32_type : float64_type;
+         const auto int_ret_type = tree_helper::Size(ssa->type) == 32 ? float32_type : float64_type;
          const auto ret_vc = tree_man->create_unary_operation(int_ret_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
          const auto vc_stmt = tree_man->CreateGimpleAssign(int_ret_type, tree_nodeRef(), tree_nodeRef(), ret_vc, function_id, call_bb->number, BUILTIN_SRCP);
          const auto vc_ssa = GetPointerS<const gimple_assign>(GET_CONST_NODE(vc_stmt))->op0;
@@ -580,7 +596,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   vc_stmt = tree_man->CreateGimpleAssign(parm_type, tree_nodeRef(), tree_nodeRef(), vc, function_id, first_bb->number, BUILTIN_SRCP);
                   if(!_version->ieee_format())
                   {
-                     const auto ssa_ff = tree_helper::Size(GET_CONST_NODE(parmSSA->type)) == 32 ? float32FF : float64FF;
+                     const auto ssa_ff = tree_helper::Size(parmSSA->type) == 32 ? float32FF : float64FF;
                      inputInterface.insert({GetPointerS<ssa_name>(GET_CONST_NODE(GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0)), {ssa_ff, std::vector<unsigned int>()}});
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Input interface required for current parameter");
                   }
@@ -616,7 +632,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             vc_stmt = tree_man->CreateGimpleAssign(ret_ssa->type, tree_nodeRef(), tree_nodeRef(), vc, function_id, bb->number, BUILTIN_SRCP);
             if(!_version->ieee_format())
             {
-               const auto ssa_ff = tree_helper::Size(GET_CONST_NODE(ret_ssa->type)) == 32 ? float32FF : float64FF;
+               const auto ssa_ff = tree_helper::Size(ret_ssa->type) == 32 ? float32FF : float64FF;
                outputInterface.insert({ret_ssa, {ssa_ff, std::vector<tree_nodeRef>({vc_stmt})}});
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Output interface required for current variable use");
             }
@@ -1226,7 +1242,10 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
       out_var = GetPointer<const gimple_assign>(GET_CONST_NODE(nop_stmt))->op0;
       bb->PushAfter(nop_stmt, cast_stmt, AppM);
    }
-   FunctionCallOpt::RequestCallOpt(cast_stmt, function_id, FunctionOptType::INLINE);
+   if(inline_conversion)
+   {
+      FunctionCallOpt::RequestCallOpt(cast_stmt, function_id, FunctionOptType::INLINE);
+   }
 
    // Update functions float format map
    const auto called_func_vertex = AppM->CGetCallGraphManager()->GetVertex(spec_function->index);
@@ -1433,7 +1452,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing libm call with templatized version");
                // libm function calls may be replaced with their templatized version if available, avoiding conversion
                AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fn), GET_INDEX_CONST_NODE(current_statement));
-               is_f32 |= !ce->args.empty() && tree_helper::Size(GET_CONST_NODE(ce->args.front())) == 32;
+               is_f32 |= !ce->args.empty() && tree_helper::Size(ce->args.front()) == 32;
                const auto specFF = _version->ieee_format() ? (is_f32 ? float32FF : float64FF) : _version->userRequired;
                replaceWithCall(specFF, "__" + tf_fname, ce->args, current_statement, ga->op1, current_srcp);
                RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_NONE);
@@ -1536,7 +1555,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
 
          if(!_version->ieee_format() && tree_helper::IsRealType(SSA->type))
          {
-            const auto ssa_ff = tree_helper::Size(GET_CONST_NODE(SSA->type)) == 32 ? float32FF : float64FF;
+            const auto ssa_ff = tree_helper::Size(SSA->type) == 32 ? float32FF : float64FF;
             if((!_version->internal && std::find(paramBinding.begin(), paramBinding.end(), curr_tn) != paramBinding.end()) || type_interface & INTERFACE_TYPE_INPUT)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Input interface required for current parameter");
@@ -1642,8 +1661,11 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                      const auto fu_name = "__" + std::string(is_unsigned ? "u" : "") + "int" + bitsize_str_in + "_to_float" + bitsize_str_out;
                      THROW_ASSERT(!_version->ieee_format() || outFF, "");
                      replaceWithCall(_version->ieee_format() ? outFF : _version->userRequired, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
-                     // FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
-                     // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
+                     if(inline_conversion)
+                     {
+                        FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
+                     }
                      modified = true;
                   }
                   break;
@@ -1694,9 +1716,12 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                         std::vector<tree_nodeRef> args = {ue->op, TreeM->CreateUniqueIntegerCst(inFF->has_nan, bool_type), TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, bool_type)};
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(called_function, args, current_srcp));
                         CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index, GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
-                        FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(called_function->index));
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
+                        if(inline_conversion)
+                        {
+                           FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
+                        }
                      }
                      else
                      {
@@ -1805,8 +1830,11 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   const auto bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
                   const auto fu_name = "__float" + bitsize_str_in + "_to_" + (is_unsigned ? "u" : "") + "int" + bitsize_str_out + "_round_to_zero";
                   replaceWithCall(_version->ieee_format() ? inFF : _version->userRequired, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
-                  FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
+                  if(inline_conversion)
+                  {
+                     FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
+                  }
                   modified = true;
                   break;
                }
@@ -2093,9 +2121,10 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                const auto opFF = bitsize == 32 ? float32FF : (bitsize == 64 ? float64FF : nullptr);
                const auto fu_name = "__float_" + fu_suffix;
                replaceWithCall(_version->ieee_format() ? opFF : _version->userRequired, fu_name, {be->op0, be->op1}, current_statement, current_tree_node, current_srcp);
-               if(parameters->IsParameter("soft-float-always-inline") && parameters->GetParameter<unsigned int>("soft-float-always-inline") == 1)
+               if(inline_math)
                {
                   FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
                }
                modified = true;
             }
@@ -2105,7 +2134,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             if(curr_tn->get_kind() == mem_ref_K)
             {
                const auto mr = GetPointerS<mem_ref>(curr_tn);
-               mr->type = tree_helper::Size(GET_CONST_NODE(mr->type)) == 32 ? float32_type : float64_type;
+               mr->type = tree_helper::Size(mr->type) == 32 ? float32_type : float64_type;
             }
             else
             {

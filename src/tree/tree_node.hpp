@@ -1107,15 +1107,6 @@ struct gimple_node : public srcp, public WeightedNode
    /// whole memory operand def
    tree_nodeRef memdef;
 
-   /// vuses of this statement
-   TreeNodeSet vuses;
-
-   /**
-    * Add a vuse
-    * @param vuse is the vuse
-    */
-   void AddVuse(const tree_nodeRef& vuse);
-
    /// vdef of this statement
    tree_nodeRef vdef;
 
@@ -1123,7 +1114,17 @@ struct gimple_node : public srcp, public WeightedNode
     * Add a vdef
     * @param vdef is the vdef
     */
-   void AddVdef(const tree_nodeRef& vdef);
+   void SetVdef(const tree_nodeRef& vdef);
+
+   /// vuses of this statement
+   TreeNodeSet vuses;
+
+   /**
+    * Add a vuse
+    * @param vuse is the vuse
+    * @return bool True if vuse has been added, false if vuse already exists
+    */
+   bool AddVuse(const tree_nodeRef& vuse);
 
    /// vovers of this statement
    TreeNodeSet vovers;
@@ -1131,8 +1132,9 @@ struct gimple_node : public srcp, public WeightedNode
    /**
     * Add a vover
     * @param vover is the vover
+    * @return bool True if vover has been added, false if vover already exists
     */
-   void AddVover(const tree_nodeRef& vover);
+   bool AddVover(const tree_nodeRef& vover);
 
    /// list of pragmas associated to the function
    std::vector<tree_nodeRef> pragmas;

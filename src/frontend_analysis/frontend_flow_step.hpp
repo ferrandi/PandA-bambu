@@ -111,7 +111,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    ADD_OP_PHI_FLOW_EDGES,
 #endif
-   AGGREGATE_DATA_FLOW_ANALYSIS,
 #if HAVE_ZEBU_BUILT
    ARRAY_REF_FIX,
 #endif
@@ -145,7 +144,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    CHECK_CRITICAL_SESSION,
 #endif
    CHECK_SYSTEM_TYPE, //! Set the system flag to variables and types
-   CLEAN_VIRTUAL_PHI,
    COMPLETE_BB_GRAPH,
    COMPLETE_CALL_GRAPH,
 #if HAVE_BAMBU_BUILT
@@ -189,6 +187,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    FUNCTION_CALL_TYPE_CLEANUP,
    FUNCTION_CALL_OPT,
    FANOUT_OPT,
+   FIX_VDEF,
 #endif
 #if HAVE_ZEBU_BUILT
    GLOBAL_VARIABLES_ANALYSIS,
@@ -229,7 +228,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    LUT_TRANSFORMATION,
 #endif
-   MEMORY_DATA_FLOW_ANALYSIS,
 #if HAVE_BAMBU_BUILT
    MULTI_WAY_IF,
    MULTIPLE_ENTRY_IF_REDUCTION,

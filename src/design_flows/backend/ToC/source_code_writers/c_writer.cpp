@@ -502,8 +502,8 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
    instrWriter->declareFunction(function_id);
    indented_output_stream->Append("\n{\n");
 
-   const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   CustomSet<unsigned int> vars = GetLocalVariables(function_id);
+   const auto behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   auto vars = GetLocalVariables(function_id);
 
    for(const auto& funParam : behavioral_helper->GetParameters())
    {

@@ -1009,7 +1009,7 @@ void CheckSystemType::build_include_structures()
    }
    systemIncPath.push_back("/usr/local/share/hframework/include");
 #if HAVE_BAMBU_BUILT
-   if(not parameters->isOption(OPT_pretty_print))
+   if(!parameters->isOption(OPT_pretty_print))
    {
       systemIncPath.push_back(LIBBAMBU_SRCDIR);
    }

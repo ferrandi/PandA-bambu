@@ -46,7 +46,7 @@ std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] " << _ports_out[0]
 
 std::cout << "always @(*)\n";
 std::cout << "  for(ii=0; ii<PORTSIZE_"<< _ports_out[1].name << "; ii=ii+1)\n";
-std::cout << "    started0[ii] <= (started[ii] | " << _ports_in[2].name << "[ii]) & !" << _ports_in[5].name << ";\n";
+std::cout << "    started0[ii] = (started[ii] | " << _ports_in[2].name << "[ii]) & !" << _ports_in[5].name << ";\n";
 std::cout << "always @(posedge clock 1RESET_EDGE)\n";
 std::cout << "  if (1RESET_VALUE)\n";
 std::cout << "    started <= 0;\n";

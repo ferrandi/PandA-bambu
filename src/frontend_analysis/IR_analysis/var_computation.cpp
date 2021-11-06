@@ -187,7 +187,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
 
    const auto gn = GetPointer<const gimple_node>(tree_node);
 
-   if(GetPointer<const gimple_node>(tree_node) && (gn->memuse || gn->memdef || gn->vuses.size() || gn->vdef))
+   if(GetPointer<const gimple_node>(tree_node) && (gn->vuses.size() || gn->vdef))
    {
       AnalyzeVops(op_vertex, GetPointer<const gimple_node>(tree_node));
    }
@@ -684,18 +684,6 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
 
 void VarComputation::AnalyzeVops(const vertex op_vertex, const gimple_node* vop) const
 {
-   if(vop->memuse)
-   {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vop->memuse), FunctionBehavior_VariableType::MEMORY, FunctionBehavior_VariableAccessType::USE);
-   }
-   if(vop->memdef)
-   {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vop->memdef), FunctionBehavior_VariableType::MEMORY, FunctionBehavior_VariableAccessType::DEFINITION);
-      if(vop->memuse)
-      {
-         ogc->AddVariable(op_vertex, GET_INDEX_NODE(vop->memuse), FunctionBehavior_VariableType::MEMORY, FunctionBehavior_VariableAccessType::OVER);
-      }
-   }
    for(const auto& vuse : vop->vuses)
    {
       ogc->AddVariable(op_vertex, GET_INDEX_NODE(vuse), FunctionBehavior_VariableType::VIRTUAL, FunctionBehavior_VariableAccessType::USE);

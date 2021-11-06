@@ -266,17 +266,23 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
          auto ssa = GetPointer<ssa_name>(GET_NODE(*arg_it));
          if(ssa)
          {
-            THROW_ASSERT(ssa->CGetUseStmts().count(call_stmt), "ssa " + ssa->ToString() + " in " + call_stmt->ToString());
-            ssa->RemoveUse(call_stmt);
+            THROW_ASSERT(ssa->CGetUseStmts().count(call_stmt), "ssa " + ssa->ToString() + " not used in " + call_stmt->ToString());
 
-            auto gn = GetPointer<gimple_node>(GET_NODE(call_stmt));
-            if(tree_helper::is_virtual(TM, ssa->index))
+            if(ssa->virtual_flag)
             {
-               gn->vuses.erase(*arg_it);
-               if(GET_INDEX_NODE(gn->memuse) == ssa->index)
+               const auto gn = GetPointerS<gimple_node>(GET_NODE(call_stmt));
+               if(gn->vuses.erase(*arg_it))
                {
-                  gn->memuse = tree_nodeRef();
+                  ssa->RemoveUse(call_stmt);
                }
+               if(gn->vovers.erase(*arg_it))
+               {
+                  ssa->RemoveUse(call_stmt);
+               }
+            }
+            else
+            {
+               ssa->RemoveUse(call_stmt);
             }
          }
          arg_list.erase(arg_it);

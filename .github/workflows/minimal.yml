@@ -190,7 +190,6 @@ jobs:
         with:
           name: bambu_specific_test${{matrix.id}}
           path: ${{env.report-dir}}
-          
 
   gcc_regression_simple:
     needs: [build, specific-test]
@@ -653,12 +652,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-            - compiler: "I386_GCC7" 
-              args: 
-            - compiler: "I386_GCC7" 
-              args: "-c=-wH"
-            - compiler: "I386_CLANG11" 
-              args: "-c=--speculative-sdc-scheduling"
+          - compiler: 'I386_GCC7'
+            args: ''
+          - compiler: 'I386_GCC7'
+            args: '-c=-wH'
+          - compiler: 'I386_CLANG11'
+            args: '-c=--speculative-sdc-scheduling'
     env:
       script: generic_CHStone-memarch.sh
       args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}

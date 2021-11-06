@@ -207,9 +207,9 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < fa
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-//   PM.add(llvm::createGVNPass());
-//   PM.add(llvm::createGVNHoistPass());
-//   PM.add(llvm::createMergedLoadStoreMotionPass());
+   //   PM.add(llvm::createGVNPass());
+   //   PM.add(llvm::createGVNHoistPass());
+   //   PM.add(llvm::createMergedLoadStoreMotionPass());
    PM.add(llvm::createLowerAtomicPass());
    PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(llvm::createGlobalOptimizerPass());

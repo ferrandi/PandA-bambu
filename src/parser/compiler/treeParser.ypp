@@ -444,38 +444,38 @@ void add_op_name(const tree_nodeRef &curr, const std::string& token_s)
     (dynamic_cast<function_decl*>(curr.get()))->add(token_s);
   }
 
-template<class obj_node, class TRef>
+template<class obj_node, class TRef, typename R>
 inline
-void  addv(const TRef &curr, void (obj_node::*add_function)(const tree_nodeRef&), const unsigned int tree_index, const tree_managerRef TM)
+void  addv(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&), const unsigned int tree_index, const tree_managerRef TM)
   {
 ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index));
   }
 
-template<class obj_node, class TRef>
+template<class obj_node, class TRef, typename R>
 inline
-void  addv2(const TRef &curr, void (obj_node::*add_function)(const tree_nodeRef&, const tree_nodeRef&), const unsigned int tree_index_1, const unsigned int tree_index_2, const tree_managerRef TM)
+void  addv2(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&, const tree_nodeRef&), const unsigned int tree_index_1, const unsigned int tree_index_2, const tree_managerRef TM)
 {
 ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index_1), TM->GetTreeReindex(tree_index_2));
 }
 
-template<class obj_node, class TRef>
+template<class obj_node, class TRef, typename R>
 inline
-void  addv3(const TRef &curr, void (obj_node::*add_function)(const tree_nodeRef&, int), const unsigned int tree_index, const int value, const tree_managerRef TM)
+void  addv3(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&, int), const unsigned int tree_index, const int value, const tree_managerRef TM)
 {
 ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
 }
 
-template<class obj_node, class TRef>
+template<class obj_node, class TRef, typename R>
 inline
-void  add_unsigned(const TRef &curr, void (obj_node::*add_function)(const tree_nodeRef&, unsigned int), const unsigned int tree_index, const unsigned int value, const tree_managerRef TM)
+void  add_unsigned(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&, unsigned int), const unsigned int tree_index, const unsigned int value, const tree_managerRef TM)
 {
    ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
 }
 
 
-template<class obj_node, class TRefCurr, class TRef>
+template<class obj_node, class TRefCurr, class TRef, typename R>
 inline
-void  addo(const TRefCurr &curr, void (obj_node::*add_function)(const TRef&), const TRef & obj)
+void  addo(const TRefCurr &curr, R (obj_node::*add_function)(const TRef&), const TRef & obj)
   {
     ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(obj);
   }
@@ -2560,7 +2560,7 @@ bool pred;
    virtual_op : TOK_BISON_VUSE       {;}
                 node_id              {ADDV(gimple_node, AddVuse)}
               | TOK_BISON_VDEF       {;}
-                node_id              {ADDV(gimple_node, AddVdef)}
+                node_id              {ADDV(gimple_node, SetVdef)}
               | TOK_BISON_VOVER      {;}
                 node_id              {ADDV(gimple_node, AddVover)}
               ;

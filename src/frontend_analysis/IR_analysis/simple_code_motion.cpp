@@ -123,7 +123,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(PREDICATE_STATEMENTS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
@@ -146,7 +145,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
          {
             if(restart_ifmwi_opt)
             {
-               relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
                relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
                relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
                relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
@@ -281,7 +279,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          else
          {
             auto* be = GetPointer<binary_expr>(right);
-            unsigned int n_bit = std::max(tree_helper::Size(GET_NODE(be->op0)), tree_helper::Size(GET_NODE(be->op1)));
+            unsigned int n_bit = std::max(tree_helper::Size(be->op0), tree_helper::Size(be->op1));
             bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(be->op0)) || tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1));
             if(n_bit > 9 && !is_constant)
             {
@@ -302,7 +300,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          else
          {
             auto* te = GetPointer<ternary_expr>(right);
-            unsigned int n_bit = tree_helper::Size(GET_NODE(te->op0));
+            unsigned int n_bit = tree_helper::Size(te->op0);
             bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(te->op1));
             if(n_bit > 9 && !is_constant)
             {
@@ -429,8 +427,8 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          else
          {
             auto* be = GetPointer<binary_expr>(right);
-            unsigned int n_bit = std::max(tree_helper::Size(GET_NODE(be->op0)), tree_helper::Size(GET_NODE(be->op1)));
-            unsigned int n_bit_min = std::min(tree_helper::Size(GET_NODE(be->op0)), tree_helper::Size(GET_NODE(be->op1)));
+            unsigned int n_bit = std::max(tree_helper::Size(be->op0), tree_helper::Size(be->op1));
+            unsigned int n_bit_min = std::min(tree_helper::Size(be->op0), tree_helper::Size(be->op1));
             bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(be->op0)) || tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1));
 #if 0
             const bool is_gimple_cond_input = [&]()
@@ -468,8 +466,8 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          else
          {
             auto* be = GetPointer<ternary_expr>(right);
-            unsigned int n_bit = std::max(std::max(tree_helper::Size(GET_NODE(be->op0)), tree_helper::Size(GET_NODE(be->op1))), tree_helper::Size(GET_NODE(be->op2)));
-            unsigned int n_bit_min = std::min(std::min(tree_helper::Size(GET_NODE(be->op0)), tree_helper::Size(GET_NODE(be->op1))), tree_helper::Size(GET_NODE(be->op2)));
+            unsigned int n_bit = std::max(std::max(tree_helper::Size(be->op0), tree_helper::Size(be->op1)), tree_helper::Size(be->op2));
+            unsigned int n_bit_min = std::min(std::min(tree_helper::Size(be->op0), tree_helper::Size(be->op1)), tree_helper::Size(be->op2));
             bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(be->op0)) || tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1));
             if((n_bit > 9 && !is_constant && n_bit_min != 1) || n_bit > 16)
             {
@@ -482,7 +480,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case negate_expr_K:
       {
          auto* ne = GetPointer<negate_expr>(right);
-         unsigned int n_bit = tree_helper::Size(GET_NODE(ne->op));
+         unsigned int n_bit = tree_helper::Size(ne->op);
          bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(ne->op));
          if((n_bit > 9 && !is_constant) || n_bit > 16)
          {
@@ -863,7 +861,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             for(auto stmt0 = list_of_stmt.begin(); stmt0 != list_of_stmt.end() && *stmt0 != *statement && gn->vdef; stmt0++)
             {
                tree_nodeRef tn0 = GET_NODE(*stmt0);
-               auto* gn0 = GetPointer<gimple_node>(tn0);
+               const auto gn0 = GetPointerS<gimple_node>(tn0);
                if(gn0->vuses.find(gn->vdef) != gn0->vuses.end())
                {
                   BB_def.insert(curr_bb);

@@ -106,7 +106,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(COMPLETE_BB_GRAPH, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
          relationships.insert(std::make_pair(HDL_VAR_DECL_FIX, SAME_FUNCTION));
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }

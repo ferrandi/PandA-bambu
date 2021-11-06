@@ -3,7 +3,7 @@ name: Long clang
 on:
   pull_request:
     types: [closed]
-    braches:
+    branches:
       - main
 
   workflow_dispatch:
@@ -89,28 +89,34 @@ jobs:
     needs: [build]
     runs-on: [self-hosted, long]
     env:
-      basename: regression_simple
-      args: -c=--simulator=VERILATOR
+      args: -c=--simulator=VERILATOR -t150m
     strategy:
       fail-fast: false
       matrix:
-        compiler: [ 
-          I386_CLANG4, 
-          I386_CLANG5, 
-          I386_CLANG6, 
-          I386_CLANG7, 
-          I386_CLANG8,
-          I386_CLANG9, 
-          I386_CLANG10, 
-          I386_CLANG11, 
-          I386_CLANG12]
-        script: [ 
-          generic_gcc_regression_simple_bambu_pretty_print.sh, 
-          generic_gcc_regression_simple_bambu.sh, 
-          generic_gcc_regression_simple_eg_ext_pipelined.sh, 
-          generic_gcc_regression_simple_eg.sh, 
-          generic_gcc_regression_simple.sh ]
-        args: [ '', '-c=--speculative-sdc-scheduling']
+        compiler:
+          [
+            I386_CLANG4,
+            I386_CLANG5,
+            I386_CLANG6,
+            I386_CLANG7,
+            I386_CLANG8,
+            I386_CLANG9,
+            I386_CLANG10,
+            I386_CLANG11,
+            I386_CLANG12,
+          ]
+        script:
+          [
+            generic_gcc_regression_simple_bambu_pretty_print.sh,
+            generic_gcc_regression_simple_bambu.sh,
+            generic_gcc_regression_simple_eg_ext_pipelined.sh,
+            generic_gcc_regression_simple_eg.sh,
+          ]
+        args:
+          [
+            '',
+            '-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1',
+          ]
         exclude:
           - compiler: I386_CLANG4
             script: generic_gcc_regression_simple_eg.sh
@@ -152,7 +158,10 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_${{env.basename}}"
+          OUTNAME="$(echo '${{matrix.compiler}}_${{matrix.script}}' | sed -r 's/(I386_|\.sh|generic_gcc_)//g' | tr '[:upper:]' '[:lower:]')"
+          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
+            OUTNAME+="_sdc"
+          fi
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test suite
         id: suite
@@ -175,28 +184,30 @@ jobs:
     needs: [build, simulate-all]
     runs-on: [self-hosted, long, mentor]
     env:
-      basename: regression_simple-vhdl
       args: -c=--simulator=MODELSIM -c=-wH
     strategy:
       max-parallel: 2
       fail-fast: false
       matrix:
-        compiler: [ 
-          I386_CLANG4, 
-          I386_CLANG5, 
-          I386_CLANG6, 
-          I386_CLANG7, 
-          I386_CLANG8,
-          I386_CLANG9, 
-          I386_CLANG10, 
-          I386_CLANG11, 
-          I386_CLANG12]
-        script: [ 
-          generic_gcc_regression_simple_bambu_pretty_print.sh, 
-          generic_gcc_regression_simple_bambu.sh, 
-          generic_gcc_regression_simple_eg_ext_pipelined.sh, 
-          generic_gcc_regression_simple_eg.sh, 
-          generic_gcc_regression_simple.sh ]
+        compiler:
+          [
+            I386_CLANG4,
+            I386_CLANG5,
+            I386_CLANG6,
+            I386_CLANG7,
+            I386_CLANG8,
+            I386_CLANG9,
+            I386_CLANG10,
+            I386_CLANG11,
+            I386_CLANG12,
+          ]
+        script:
+          [
+            generic_gcc_regression_simple_bambu_pretty_print.sh,
+            generic_gcc_regression_simple_bambu.sh,
+            generic_gcc_regression_simple_eg_ext_pipelined.sh,
+            generic_gcc_regression_simple_eg.sh,
+          ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -219,7 +230,7 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_${{env.basename}}"
+          OUTNAME="$(echo '${{matrix.compiler}}_${{matrix.script}}' | sed -r 's/(I386_|\.sh|generic_gcc_)//g' | tr '[:upper:]' '[:lower:]')_vhdl"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test suite
         id: suite
@@ -280,7 +291,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -296,16 +307,18 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        compiler: [ 
-          I386_CLANG4, 
-          I386_CLANG5, 
-          I386_CLANG6, 
-          I386_CLANG7, 
-          I386_CLANG8,
-          I386_CLANG9, 
-          I386_CLANG10, 
-          I386_CLANG11, 
-          I386_CLANG12]
+        compiler:
+          [
+            I386_CLANG4,
+            I386_CLANG5,
+            I386_CLANG6,
+            I386_CLANG7,
+            I386_CLANG8,
+            I386_CLANG9,
+            I386_CLANG10,
+            I386_CLANG11,
+            I386_CLANG12,
+          ]
     env:
       script: generic_libm-tests.sh
       args: -c=--simulator=VERILATOR -c=-wH
@@ -342,7 +355,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{matrix.args}} ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -357,17 +370,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [ 
-          I386_CLANG4, 
-          I386_CLANG5, 
-          I386_CLANG6, 
-          I386_CLANG7, 
-          I386_CLANG8,
-          I386_CLANG9, 
-          I386_CLANG10, 
-          I386_CLANG11, 
-          I386_CLANG12]
-        args: [ '', '-c=--speculative-sdc-scheduling']
+        compiler:
+          [
+            I386_CLANG4,
+            I386_CLANG5,
+            I386_CLANG6,
+            I386_CLANG7,
+            I386_CLANG8,
+            I386_CLANG9,
+            I386_CLANG10,
+            I386_CLANG11,
+            I386_CLANG12,
+          ]
+        args: ['', '-c=--speculative-sdc-scheduling']
         exclude:
           - compiler: I386_CLANG4
             args: '-c=--speculatioe-sdc-scheduling'
@@ -383,7 +398,7 @@ jobs:
             args: '-c=--speculative-sdc-scheduling'
     env:
       script: generic_libm-tests.sh
-      args: -c=--simulator=VERILATOR
+      args: -c=--simulator=VERILATOR -t150m
       basename: libm
     steps:
       - name: Checkout repository
@@ -421,7 +436,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{matrix.args}} ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2

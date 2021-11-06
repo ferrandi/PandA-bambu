@@ -31,26 +31,29 @@
  *
  */
 /**
- * @file aggregate_data_flow_analysis.hpp
- * @brief Meta analysis step performing aggregate variable; dependence of this step is the actual step performing aggregate data flow analysis
+ * @file FixVdef.hpp
+ * @brief merge memory dependencies in virtual dependencies
  *
- * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
-#ifndef AGGREGATE_DATA_FLOW_ANALYSIS_HPP
-#define AGGREGATE_DATA_FLOW_ANALYSIS_HPP
+#ifndef FIXVDEF_HPP
+#define FIXVDEF_HPP
+#include "custom_set.hpp"                  // for unordered_set
+#include "design_flow_step.hpp"            // for DesignFlowStep
+#include "frontend_flow_step.hpp"          // for FrontendFlowStep...
+#include "function_frontend_flow_step.hpp" // for DesignFlowManage...
+#include "refcount.hpp"                    // for REF_FORWARD_DECL
+#include <utility>                         // for pair
 
-/// Superclass include
-#include "function_frontend_flow_step.hpp"
-
-#include "refcount.hpp"
-
-class AggregateDataFlowAnalysis : public FunctionFrontendFlowStep
+/**
+ * Compute the control flow graph for the operations.
+ */
+class FixVdef : public FunctionFrontendFlowStep
 {
- private:
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
@@ -59,21 +62,21 @@ class AggregateDataFlowAnalysis : public FunctionFrontendFlowStep
 
  public:
    /**
-    * Constructor
+    * Constructor.
+    * @param Param is the set of the parameters
     * @param AppM is the application manager
-    * @param function_index is the index of the function
-    * @param design_flow_manager is the design flow manager
-    * @param parameters is the set of the parameters
+    * @param function_id is the identifier of the function
+    * @param DesignFlowManagerConstRef is the design flow manager
     */
-   AggregateDataFlowAnalysis(const application_managerRef AppM, const unsigned int function_index, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   FixVdef(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor
     */
-   ~AggregateDataFlowAnalysis() override;
+   ~FixVdef() override;
 
    /**
-    * Cleans the fake data dependencies
+    * move memory dependencies to virtual in case of single wryte memories
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;
@@ -85,4 +88,6 @@ class AggregateDataFlowAnalysis : public FunctionFrontendFlowStep
     */
    void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
+
+
 #endif

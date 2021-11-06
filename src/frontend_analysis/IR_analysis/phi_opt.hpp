@@ -49,6 +49,8 @@
 /// Utility include
 #include "refcount.hpp"
 
+#include "tree_node.hpp"
+
 /**
  * @name forward declarations
  */
@@ -57,7 +59,6 @@ REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(Schedule);
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_manipulation);
-REF_FORWARD_DECL(tree_node);
 class statement_list;
 class gimple_cond;
 class gimple_phi;
@@ -182,6 +183,8 @@ class PhiOpt : public FunctionFrontendFlowStep
     * @param statement is the statement containing
     */
    void RemoveCondExpr(const tree_nodeRef statement);
+
+   void ReplaceVirtualUses(const tree_nodeRef& old_vssa, const TreeNodeSet& new_ssa) const;
 
    /**
     * Return the set of analyses in relationship with this design step

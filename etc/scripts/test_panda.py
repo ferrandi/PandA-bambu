@@ -570,6 +570,8 @@ parser.add_argument(
     "files", help="The files to be tested: they can be configuration files, directories containing benchmarks or source code files.", nargs='*', action="append")
 parser.add_argument('-l', "--benchmarks_list",
                     help="The file containing the list of tests to be performed", nargs='*', action="append")
+parser.add_argument('-s', "--skip_list",
+                    help="The comma separated list of benchmark names to skip from the list", type=str, default="")
 parser.add_argument('-b', "--benchmarks_root",
                     help="The directory containing benchmarks")
 parser.add_argument(
@@ -992,13 +994,21 @@ if not args.restart:
     # Name of benchmarks
     full_names = set()
 
+    full_name_skips = set()
+    bench_name_skips = set()
+    for s in args.skip_list.split(","):
+        if s.find(":") != -1:
+            full_name_skips.add(s)
+        else:
+            bench_name_skips.add(s)
+
     # Adding benchmark name
     logging.info("   Adding benchmark name")
     named_list_name = os.path.join(abs_path, "named_list")
     named_list = open(named_list_name, "w")
     lines = open(arged_list_name).readlines()
     for line in lines:
-        named_list.write(line.rstrip())
+        named_list_string = line.rstrip()
         # Retrieve configuration name and benchmark name
         configuration_name = ""
         benchmark_name = ""
@@ -1013,15 +1023,18 @@ if not args.restart:
                 logging.error("Missing benchmark name")
                 sys.exit(1)
             benchmark_name = os.path.basename(line.split()[0])[:-2]
-            named_list.write(" --benchmark-name=" + benchmark_name)
+            named_list_string += " --benchmark-name=" + benchmark_name
         full_name = configuration_name + ":" + benchmark_name
-        logging.info("     " + full_name)
         if full_name in full_names:
             logging.error(
                 "Duplicated configuration name - benchmark name: " + full_name)
             sys.exit(1)
+        if full_name in full_name_skips or benchmark_name in bench_name_skips:
+            logging.info("     " + full_name + "  skipped")
+            continue
+        logging.info("     " + full_name)
         full_names.add(full_name)
-        named_list.write("\n")
+        named_list.write(named_list_string + "\n")
     named_list.close()
 
     # Generating folder

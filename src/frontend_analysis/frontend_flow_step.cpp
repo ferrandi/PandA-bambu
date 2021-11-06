@@ -154,8 +154,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(ADD_OP_PHI_FLOW_EDGES):
          return "AddOpPhiFlowEdges";
 #endif
-      case(AGGREGATE_DATA_FLOW_ANALYSIS):
-         return "AggregateDataFlowAnalysis";
 #if HAVE_ZEBU_BUILT
       case(ARRAY_REF_FIX):
          return "ArrayRefFix";
@@ -212,8 +210,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #endif
       case(CHECK_SYSTEM_TYPE):
          return "CheckSystemType";
-      case CLEAN_VIRTUAL_PHI:
-         return "CleanVirtualPhi";
       case(COMPLETE_BB_GRAPH):
          return "CompleteBBGraph";
       case(COMPLETE_CALL_GRAPH):
@@ -289,6 +285,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case FIX_STRUCTS_PASSED_BY_VALUE:
          return "FixStructsPassedByValue";
+      case FIX_VDEF:
+         return "FixVdef";
       case FUNCTION_CALL_TYPE_CLEANUP:
          return "FunctionCallTypeCleanup";
       case FUNCTION_CALL_OPT:
@@ -356,8 +354,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(LUT_TRANSFORMATION):
          return "LutTransformation";
 #endif
-      case(MEMORY_DATA_FLOW_ANALYSIS):
-         return "MemoryDataFlowAnalysis";
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
          return "MultiWayIf";
@@ -388,7 +384,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "Parm2SSA";
 #if HAVE_BAMBU_BUILT
       case PARM_DECL_TAKEN_ADDRESS:
-         return "ParmDeclTakenAddress";
+         return "ParmDeclTakenAddressFix";
       case PHI_OPT:
          return "PhiOpt";
 #endif

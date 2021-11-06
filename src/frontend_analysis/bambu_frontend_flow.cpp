@@ -83,7 +83,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(ADD_ARTIFICIAL_CALL_FLOW_EDGES, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(ADD_OP_EXIT_FLOW_EDGES, WHOLE_APPLICATION));
          // relationships.insert(std::make_pair(ADD_OP_LOOP_FLOW_EDGES, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(AGGREGATE_DATA_FLOW_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(OP_CONTROL_DEPENDENCE_COMPUTATION, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(SCALAR_SSA_DATA_FLOW_ANALYSIS, WHOLE_APPLICATION));
 
@@ -102,7 +102,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(EXTRACT_PATTERNS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FANOUT_OPT, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, WHOLE_APPLICATION));
-         if(!parameters->IsParameter("no-inline"))
+         relationships.insert(std::make_pair(FIX_VDEF, WHOLE_APPLICATION));
+         if(!parameters->IsParameter("function-opt") || parameters->GetParameter<bool>("function-opt"))
          {
             relationships.insert(std::make_pair(FUNCTION_CALL_OPT, WHOLE_APPLICATION));
          }
@@ -264,11 +265,9 @@ bool BambuFrontendFlow::HasToBeExecuted() const
 
 DesignFlowStep_Status BambuFrontendFlow::Exec()
 {
-#ifndef NDEBUG
-   if(parameters->getOption<bool>(OPT_print_dot) or debug_level >= DEBUG_LEVEL_PEDANTIC)
+   if(parameters->getOption<bool>(OPT_print_dot) || debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph_final.dot");
    }
-#endif
    return DesignFlowStep_Status::EMPTY;
 }

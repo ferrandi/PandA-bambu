@@ -95,6 +95,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FIX_VDEF, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(HWCALL_INJECTION, SAME_FUNCTION));
          relationships.insert(std::make_pair(REBUILD_INITIALIZATION, SAME_FUNCTION));
@@ -769,7 +770,7 @@ static bool choose_mult_variant(unsigned int data_bitsize, long long int val, st
    return MULT_COST_LESS(alg.cost, Mult_cost);
 }
 
-tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long int ASSERT_PARAMETER(val), const struct algorithm& alg, enum mult_variant& variant, const tree_nodeRef stmt, const blocRef block, tree_nodeRef& type,
+tree_nodeRef IR_lowering::expand_mult_const(const tree_nodeRef& op0, unsigned long long int ASSERT_PARAMETER(val), const struct algorithm& alg, enum mult_variant& variant, const tree_nodeRef& stmt, const blocRef& block, const tree_nodeRef& type,
                                             const std::string& srcp_default)
 {
    long long int val_so_far = 0;
@@ -1014,7 +1015,7 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
    return accum;
 }
 
-tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef& type, const std::string& srcp_default)
+tree_nodeRef IR_lowering::expand_smod_pow2(const tree_nodeRef& op0, unsigned long long int d, const tree_nodeRef& stmt, const blocRef& block, const tree_nodeRef& type, const std::string& srcp_default)
 {
    unsigned long long int masklow;
    const auto logd = floor_log2(d);
@@ -1064,7 +1065,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long 
    return tree_man->create_binary_operation(type, temp_var, signmask_var, srcp_default, minus_expr_K);
 }
 
-tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef& type, const std::string& srcp_default)
+tree_nodeRef IR_lowering::expand_sdiv_pow2(const tree_nodeRef& op0, unsigned long long int d, const tree_nodeRef& stmt, const blocRef& block, const tree_nodeRef& type, const std::string& srcp_default)
 {
    const auto logd = floor_log2(d);
    const auto bt = tree_man->GetBooleanType();
@@ -1106,15 +1107,15 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
    return tree_man->create_binary_operation(type, t2_ga_var, logdConst, srcp_default, rshift_expr_K);
 }
 
-tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree_nodeRef old_target, const tree_nodeRef stmt, const blocRef block, tree_nodeRef& type_expr, const std::string& srcp_default)
+tree_nodeRef IR_lowering::expand_MC(const tree_nodeRef& op0, const integer_cst* ic_node, const tree_nodeRef& old_target, const tree_nodeRef& stmt, const blocRef& block, const tree_nodeRef& type_expr, const std::string& srcp_default)
 {
-   if(not AppM->ApplyNewTransformation())
+   if(!AppM->ApplyNewTransformation())
    {
       return old_target;
    }
    long long int ext_op1 = tree_helper::get_integer_cst_value(ic_node);
    short int mult_plus_ratio = 3;
-   unsigned int data_bitsize = tree_helper::Size(GET_NODE(op0));
+   unsigned int data_bitsize = tree_helper::Size(op0);
    unsigned int typeSize = tree_helper::Size(type_expr);
    if(typeSize < 64)
    {
@@ -1225,7 +1226,7 @@ tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree
    }
 }
 
-bool IR_lowering::expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeRef stmt, const blocRef block, const std::string& srcp_default, bool temp_addr)
+bool IR_lowering::expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeRef& stmt, const blocRef& block, const std::string& srcp_default, bool temp_addr)
 {
    tree_nodeRef accum;
    tree_nodeRef type_sum;
@@ -1392,7 +1393,7 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeR
    return changed;
 }
 
-tree_nodeRef IR_lowering::expand_mult_highpart(tree_nodeRef op0, unsigned long long int ml, tree_nodeRef type_expr, int data_bitsize, const std::list<tree_nodeRef>::const_iterator it_los, const blocRef block, const std::string& srcp_default)
+tree_nodeRef IR_lowering::expand_mult_highpart(const tree_nodeRef& op0, unsigned long long int ml, const tree_nodeRef& type_expr, int data_bitsize, const std::list<tree_nodeRef>::const_iterator it_los, const blocRef& block, const std::string& srcp_default)
 {
    /**
     long long int u0, v0, u1, v1, u0v0, u0v0h, u1v0, u0v0hu1v0, u0v1, u0v0hu1v0u0v1, u0v0hu1v0u0v1h, u1v1;
@@ -1679,7 +1680,7 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    return tree_man->create_binary_operation(type, pp_vd, offset, srcp_default, mem_ref_K);
 }
 
-bool IR_lowering::reached_max_transformation_limit(tree_nodeRef stmt)
+bool IR_lowering::reached_max_transformation_limit(const tree_nodeRef& stmt)
 {
    if(stmt)
    {

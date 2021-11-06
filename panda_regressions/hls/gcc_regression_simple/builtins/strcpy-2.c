@@ -45,3 +45,9 @@ main_test (void)
     abort ();
 #endif
 }
+
+int main()
+{
+   main_test();
+   return 0;
+}

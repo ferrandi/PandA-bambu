@@ -84,7 +84,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(OP_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(SCALAR_SSA_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
