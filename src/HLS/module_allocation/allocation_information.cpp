@@ -762,10 +762,10 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
       /// currently all the operations introduced after the allocation has been performed are bounded
       // BEAWARE: when adding operations here, check they are correctly handled by GetTimeLatency and GetCycleLatency
       THROW_ASSERT(GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)) || right_kind == ssa_name_K || right_kind == cond_expr_K || right_kind == vec_cond_expr_K || right_kind == convert_expr_K || right_kind == nop_expr_K ||
-                       right_kind == bit_ior_concat_expr_K || right_kind == extract_bit_expr_K || right_kind == lut_expr_K || right_kind == truth_not_expr_K || right_kind == bit_not_expr_K || right_kind == bit_xor_expr_K || right_kind == bit_ior_expr_K ||
-                       right_kind == bit_and_expr_K || right_kind == truth_and_expr_K || right_kind == truth_or_expr_K || right_kind == truth_xor_expr_K || right_kind == lshift_expr_K || right_kind == rshift_expr_K || right_kind == widen_mult_expr_K ||
-                       right_kind == mult_expr_K || right_kind == plus_expr_K || right_kind == minus_expr_K || right_kind == ternary_plus_expr_K || right_kind == eq_expr_K || right_kind == ne_expr_K || right_kind == lt_expr_K || right_kind == le_expr_K ||
-                       right_kind == gt_expr_K || right_kind == ge_expr_K || right_kind == ternary_mp_expr_K || right_kind == ternary_pm_expr_K || right_kind == ternary_mm_expr_K,
+                       right_kind == bit_ior_concat_expr_K || right_kind == extract_bit_expr_K || right_kind == lut_expr_K || right_kind == truth_not_expr_K || right_kind == bit_not_expr_K || right_kind == negate_expr_K || right_kind == bit_xor_expr_K ||
+                       right_kind == bit_ior_expr_K || right_kind == bit_and_expr_K || right_kind == truth_and_expr_K || right_kind == truth_or_expr_K || right_kind == truth_xor_expr_K || right_kind == lshift_expr_K || right_kind == rshift_expr_K ||
+                       right_kind == widen_mult_expr_K || right_kind == mult_expr_K || right_kind == plus_expr_K || right_kind == minus_expr_K || right_kind == ternary_plus_expr_K || right_kind == eq_expr_K || right_kind == ne_expr_K ||
+                       right_kind == lt_expr_K || right_kind == le_expr_K || right_kind == gt_expr_K || right_kind == ge_expr_K || right_kind == ternary_mp_expr_K || right_kind == ternary_pm_expr_K || right_kind == ternary_mm_expr_K,
                    "Unexpected right part: " + tree_node::GetString(right_kind));
       return true;
    }
@@ -1736,7 +1736,7 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
             return new_stmt_op->time_m->get_cycles();
          }
          else if(right_kind == ssa_name_K || right_kind == integer_cst_K || right_kind == cond_expr_K || right_kind == vec_cond_expr_K || right_kind == nop_expr_K || right_kind == convert_expr_K || right_kind == lut_expr_K ||
-                 right_kind == extract_bit_expr_K || right_kind == bit_ior_concat_expr_K || right_kind == truth_not_expr_K || right_kind == bit_not_expr_K || right_kind == truth_and_expr_K || right_kind == truth_or_expr_K ||
+                 right_kind == extract_bit_expr_K || right_kind == bit_ior_concat_expr_K || right_kind == truth_not_expr_K || right_kind == bit_not_expr_K || right_kind == negate_expr_K || right_kind == truth_and_expr_K || right_kind == truth_or_expr_K ||
                  right_kind == truth_xor_expr_K || right_kind == bit_and_expr_K || right_kind == bit_ior_expr_K || right_kind == bit_xor_expr_K || right_kind == rshift_expr_K || right_kind == lshift_expr_K || right_kind == plus_expr_K ||
                  right_kind == minus_expr_K || right_kind == eq_expr_K || right_kind == ne_expr_K || right_kind == lt_expr_K || right_kind == le_expr_K || right_kind == gt_expr_K || right_kind == ge_expr_K || right_kind == ternary_plus_expr_K ||
                  right_kind == ternary_mp_expr_K || right_kind == ternary_pm_expr_K || right_kind == ternary_mm_expr_K)
