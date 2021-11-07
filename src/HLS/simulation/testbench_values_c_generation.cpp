@@ -384,6 +384,42 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       if(parameters->isOption(OPT_pretty_print))
       {
          main_sources.insert(parameters->getOption<std::string>(OPT_pretty_print));
+
+         if(false
+#if HAVE_I386_CLANG4_COMPILER
+            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+#endif
+#if HAVE_I386_CLANG7_COMPILER
+            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+#endif
+#if HAVE_I386_CLANG8_COMPILER
+            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+#endif
+#if HAVE_I386_CLANG9_COMPILER
+            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+#endif
+#if HAVE_I386_CLANG10_COMPILER
+            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+#endif
+#if HAVE_I386_CLANG11_COMPILER
+            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
+#if HAVE_I386_CLANGVVD_COMPILER
+            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+#endif
+         )
+         {
+            compiler_flags += " -fbracket-depth=512 ";
+         }
       }
       else
       {

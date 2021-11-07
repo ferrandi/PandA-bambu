@@ -246,7 +246,9 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
          && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) != CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
+      {
          compiler_flags += " -fexcess-precision=standard ";
+      }
    }
    if(parameters->isOption(OPT_testbench_extra_gcc_flags))
    {
