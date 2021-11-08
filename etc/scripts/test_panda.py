@@ -571,7 +571,7 @@ parser.add_argument(
 parser.add_argument('-l', "--benchmarks_list",
                     help="The file containing the list of tests to be performed", nargs='*', action="append")
 parser.add_argument('-s', "--skip_list",
-                    help="The comma separated list of benchmark names to skip from the list", type=str, default="")
+                    help="The comma separated list of benchmark names to skip from the list", nargs='*', action="append")
 parser.add_argument('-b', "--benchmarks_root",
                     help="The directory containing benchmarks")
 parser.add_argument(
@@ -996,11 +996,14 @@ if not args.restart:
 
     full_name_skips = set()
     bench_name_skips = set()
-    for s in args.skip_list.split(","):
-        if s.find(":") != -1:
-            full_name_skips.add(s)
-        else:
-            bench_name_skips.add(s)
+    if args.skip_list:
+        skip_list = [
+            s for sub in args.skip_list for item in sub for s in item.split(',')]
+        for s in skip_list:
+            if s.find(":") != -1:
+                full_name_skips.add(s)
+            else:
+                bench_name_skips.add(s)
 
     # Adding benchmark name
     logging.info("   Adding benchmark name")
