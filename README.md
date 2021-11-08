@@ -20,10 +20,25 @@ released under the GNU General Public License version 3 and being
 developed at Politecnico di Milano (Italy).
 
 The source files currently distributed mainly cover the high-level synthesis 
-of C based descriptions. Patches and pull request could be submitted at https://github.com/ferrandi/PandA-bambu while stable releases are available for download through this 
+of C based descriptions. In particular, the tool Bambu provides a research environment to experiment with new ideas across HLS, high-level verification and debugging, FPGA/ASIC design, design flow space exploration, and parallel hardware accelerator design.
+Bambu accepts as input standard C/C++ specifications and compiler intermediate representations coming from the well-known Clang/LLVM and GCC compilers.
+The broad spectrum and flexibility of input formats allow the electronic design automation research community to explore and integrate new transformations and optimizations.
+
+If you use Bambu in your research, please cite:
+```
+@inproceedings{ferrandi2021bambu,
+  title={Bambu: an Open-Source Research Framework for the High-Level Synthesis of Complex Applications},
+  author={Ferrandi, Fabrizio and Castellana, Vito Giovanni and Curzel, Serena and Fezzardi, Pietro and Fiorito, Michele and Lattuada, Marco and Minutoli, Marco and Pilato, Christian and Tumeo, Antonino},
+  booktitle={DAC 2021: 58th ACM/IEEE Design Automation Conference},
+  year={2021}
+}
+```
+
+Patches and pull request could be submitted at https://github.com/ferrandi/PandA-bambu while stable releases are available for download through this 
 page http://panda.dei.polimi.it/?page_id=81. Documentation and Install instructions could be found on this website: http://panda.dei.polimi.it/ .
 
 For further information send an e-mail to panda-info@polimi.it or visit the google
 group page (https://groups.google.com/forum/#!forum/panda-project-discussions-questions) 
+
 
 
