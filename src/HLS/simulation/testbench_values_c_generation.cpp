@@ -418,7 +418,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 #endif
          )
          {
-            compiler_flags += " -fbracket-depth=512 ";
+            compiler_flags += " -fbracket-depth=1024 ";
          }
       }
       else
