@@ -14,8 +14,8 @@ env:
   dist-dir: dist
   report-dir: test-reports
   storage-url: ${{secrets.CI_STORAGE_URL}}
-  storage-user: '${{secrets.CI_STORAGE_USER}}'
-  storage-token: '${{secrets.CI_STORAGE_TOKEN}}'
+  storage-user: "${{secrets.CI_STORAGE_USER}}"
+  storage-token: "${{secrets.CI_STORAGE_TOKEN}}"
   host_jobs: $J
 
 jobs:
@@ -64,10 +64,10 @@ jobs:
         with:
           name: gcc-7-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Build Bambu application
         id: build
         uses: ./.github/actions/generate-bin
@@ -79,9 +79,9 @@ jobs:
         with:
           name: ${{env.dist-pkg}}
           path: ${{steps.build.outputs.appimage}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
           storage-compression: false
 
   gcc_regression_simple:
@@ -107,35 +107,35 @@ jobs:
           ]
         script:
           [
-            generic_gcc_regression_simple_bambu_pretty_print.sh,
+            generic_gcc_regression_simple_bambu_pretty_print.sh --skip_list 20071029-1,
             generic_gcc_regression_simple_bambu.sh,
             generic_gcc_regression_simple_eg_ext_pipelined.sh,
             generic_gcc_regression_simple_eg.sh,
           ]
         args:
           [
-            '',
-            '-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1',
+            "",
+            "-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1",
           ]
         exclude:
           - compiler: I386_CLANG4
             script: generic_gcc_regression_simple_eg.sh
-            args: ''
+            args: ""
           - compiler: I386_CLANG5
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: ''
+            args: ""
           - compiler: I386_CLANG6
             script: generic_gcc_regression_simple_bambu.sh
-            args: ''
+            args: ""
           - compiler: I386_CLANG7
             script: generic_gcc_regression_simple_bambu.sh
-            args: ''
+            args: ""
           - compiler: I386_CLANG11
             script: generic_gcc_regression_simple_bambu.sh
-            args: ''
+            args: ""
           - compiler: I386_CLANG12
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: ''
+            args: ""
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -143,9 +143,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -203,7 +203,7 @@ jobs:
           ]
         script:
           [
-            generic_gcc_regression_simple_bambu_pretty_print.sh,
+            generic_gcc_regression_simple_bambu_pretty_print.sh --skip_list 20071029-1,
             generic_gcc_regression_simple_bambu.sh,
             generic_gcc_regression_simple_eg_ext_pipelined.sh,
             generic_gcc_regression_simple_eg.sh,
@@ -215,9 +215,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -272,9 +272,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -330,9 +330,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -382,20 +382,20 @@ jobs:
             I386_CLANG11,
             I386_CLANG12,
           ]
-        args: ['', '-c=--speculative-sdc-scheduling']
+        args: ["", "-c=--speculative-sdc-scheduling"]
         exclude:
           - compiler: I386_CLANG4
-            args: '-c=--speculatioe-sdc-scheduling'
+            args: "-c=--speculatioe-sdc-scheduling"
           - compiler: I386_CLANG5
-            args: '-c=--speculative-sdc-scheduling'
+            args: "-c=--speculative-sdc-scheduling"
           - compiler: I386_CLANG6
-            args: '-c=--speculative-sdc-scheduling'
+            args: "-c=--speculative-sdc-scheduling"
           - compiler: I386_CLANG7
-            args: '-c=--speculative-sdc-scheduling'
+            args: "-c=--speculative-sdc-scheduling"
           - compiler: I386_CLANG11
-            args: '-c=--speculative-sdc-scheduling'
+            args: "-c=--speculative-sdc-scheduling"
           - compiler: I386_CLANG12
-            args: '-c=--speculative-sdc-scheduling'
+            args: "-c=--speculative-sdc-scheduling"
     env:
       script: generic_libm-tests.sh
       args: -c=--simulator=VERILATOR -t150m
@@ -407,9 +407,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
