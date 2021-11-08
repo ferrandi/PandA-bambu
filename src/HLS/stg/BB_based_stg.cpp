@@ -1160,7 +1160,13 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       }
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check unbounded");
-      technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(*it));
+      auto fu_id = HLS->Rfu->get_assign(*it);
+      /// interface operations cannot be copied or moved
+      if(HLS->allocation_information->get_fu_name(fu_id).second == INTERFACE_LIBRARY)
+      {
+         return;
+      }
+      technology_nodeRef tn = HLS->allocation_information->get_fu(fu_id);
       technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(*it)->GetOperation()));
       if(!GetPointer<operation>(op_tn)->is_bounded())
       {

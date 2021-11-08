@@ -374,6 +374,13 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, co
             THROW_ERROR("unexpected pattern");
          }
       }
+      else if(const auto gp = GetPointer<const gimple_phi>(use_stmt))
+      {
+         const auto op0SSA = GetPointerS<const ssa_name>(GET_CONST_NODE(gp->res));
+         THROW_ASSERT(argSSA, "unexpected condition");
+         THROW_ASSERT(!argSSA->virtual_flag, "unexpected condition");
+         classifyArgRecurse(Visited, op0SSA, sl, isRead, isWrite, unkwown_pattern, writeStmt, readStmt);
+      }
       else
       {
          unkwown_pattern = true;
@@ -694,8 +701,8 @@ void interface_infer::create_resource_Read_simple(const std::set<std::string>& o
             op->bounded = true;
             op->time_m->set_execution_time(EPSILON, 0);
             op->time_m->set_stage_period(0.0);
-            op->time_m->set_synthesis_dependent(true);
          }
+         op->time_m->set_synthesis_dependent(true);
       }
       if(isMultipleResource)
       {
