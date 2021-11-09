@@ -6231,7 +6231,7 @@ namespace llvm
 
    void DumpGimpleRaw::computeValueRange(const llvm::Module& M)
    {
-#if __clang_major__ < 11
+#if __clang_major__ < 10
       RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
       RA->runOnModule(M, modulePass, PtoSets_AA);
 #endif
