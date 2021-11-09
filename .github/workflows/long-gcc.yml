@@ -14,8 +14,8 @@ env:
   dist-dir: dist
   report-dir: test-reports
   storage-url: ${{secrets.CI_STORAGE_URL}}
-  storage-user: '${{secrets.CI_STORAGE_USER}}'
-  storage-token: '${{secrets.CI_STORAGE_TOKEN}}'
+  storage-user: "${{secrets.CI_STORAGE_USER}}"
+  storage-token: "${{secrets.CI_STORAGE_TOKEN}}"
   host_jobs: $J
 
 jobs:
@@ -55,82 +55,82 @@ jobs:
         with:
           name: gcc-4.5-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 4.6
         uses: ./.github/actions/storage-download
         with:
           name: gcc-4.6-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 4.7
         uses: ./.github/actions/storage-download
         with:
           name: gcc-4.7-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 4.8
         uses: ./.github/actions/storage-download
         with:
           name: gcc-4.8-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 4.9
         uses: ./.github/actions/storage-download
         with:
           name: gcc-4.9-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 5
         uses: ./.github/actions/storage-download
         with:
           name: gcc-5-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 6
         uses: ./.github/actions/storage-download
         with:
           name: gcc-6-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 7
         uses: ./.github/actions/storage-download
         with:
           name: gcc-7-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 8
         uses: ./.github/actions/storage-download
         with:
           name: gcc-8-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Build Bambu application
         id: build
         uses: ./.github/actions/generate-bin
@@ -142,9 +142,9 @@ jobs:
         with:
           name: ${{env.dist-pkg}}
           path: ${{steps.build.outputs.appimage}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
           storage-compression: false
 
   gcc_regression_simple:
@@ -171,19 +171,19 @@ jobs:
           ]
         script:
           [
-            generic_gcc_regression_simple_bambu_pretty_print.sh,
+            generic_gcc_regression_simple_bambu_pretty_print.sh --skip_list 20071029-1,
             generic_gcc_regression_simple_bambu.sh,
             generic_gcc_regression_simple_eg_ext_pipelined.sh,
             generic_gcc_regression_simple_eg.sh,
           ]
         args:
           [
-            '',
-            '-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1',
+            "",
+            "-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1",
           ]
         exclude:
           - compiler: I386_GCC49
-            script: generic_gcc_regression_simple_bambu_pretty_print.sh
+            script: generic_gcc_regression_simple_bambu_pretty_print.sh --skip_list 20071029-1
           - compiler: I386_GCC49
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
     steps:
@@ -193,9 +193,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -254,7 +254,7 @@ jobs:
           ]
         script:
           [
-            generic_gcc_regression_simple_bambu_pretty_print.sh,
+            generic_gcc_regression_simple_bambu_pretty_print.sh --skip_list 20071029-1,
             generic_gcc_regression_simple_bambu.sh,
             generic_gcc_regression_simple_eg_ext_pipelined.sh,
             generic_gcc_regression_simple_eg.sh,
@@ -269,9 +269,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -327,9 +327,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -385,9 +385,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -437,7 +437,7 @@ jobs:
             I386_GCC7,
             I386_GCC8,
           ]
-        args: ['', '-c=--speculative-sdc-scheduling']
+        args: ["", "-c=--speculative-sdc-scheduling"]
     env:
       script: generic_libm-tests.sh
       args: -c=--simulator=VERILATOR -t150m
@@ -449,9 +449,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -500,38 +500,38 @@ jobs:
         include:
           - basename: softfloat
             script: ./examples/softfloat/generic_softfloat.sh
-            batch: '5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0,5CSEMA5F31C6_6.6 --flopoco,5CSEMA5F31C6_10.0 --flopoco,5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco'
+            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0,5CSEMA5F31C6_6.6 --flopoco,5CSEMA5F31C6_10.0 --flopoco,5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
-            batch: '5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0'
+            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0"
             compiler: I386_GCC49
           - basename: libm
             script: ./examples/libm/generic_libm.sh
-            batch: '5CSEMA5F31C6_6.6,5CSEMA5F31C6_7.5,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0'
+            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_7.5,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0"
             compiler: I386_GCC49
           - basename: libm-flopoco
             script: ./examples/libm/generic_libm.sh
-            batch: '5CSEMA5F31C6_6.6 --flopoco,5CSEMA5F31C6_7.5 --flopoco,5CSEMA5F31C6_10.0 --flopoco,5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_5.0 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco'
+            batch: "5CSEMA5F31C6_6.6 --flopoco,5CSEMA5F31C6_7.5 --flopoco,5CSEMA5F31C6_10.0 --flopoco,5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_5.0 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-BALANCED-MP
-            batch: '5CSEMA5F31C6_10.0 --aligned-access,5CSEMA5F31C6_15.0 --aligned-access,5SGXEA7N2F45C1_5.0 --aligned-access,5SGXEA7N2F45C1_10.0 --aligned-access,EP2C70F896C6-R_10.0 --aligned-access,EP2C70F896C6-R_15.0 --aligned-access'
+            batch: "5CSEMA5F31C6_10.0 --aligned-access,5CSEMA5F31C6_15.0 --aligned-access,5SGXEA7N2F45C1_5.0 --aligned-access,5SGXEA7N2F45C1_10.0 --aligned-access,EP2C70F896C6-R_10.0 --aligned-access,EP2C70F896C6-R_15.0 --aligned-access"
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh -lchstone_altera_O3_list
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP
-            batch: '5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0,EP2C70F896C6-R_15.0'
+            batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0,EP2C70F896C6-R_15.0"
           - basename: hls_study
             script: ./examples/hls_study/generic_hls_study.sh
             compiler: I386_GCC49
-            batch: '5SGXEA7N2F45C1_2.5 --aligned-access'
+            batch: "5SGXEA7N2F45C1_2.5 --aligned-access"
           - basename: omp_simd
             script: ./examples/omp_simd/generic_omp_simd.sh
             compiler: I386_GCC49
-            batch: '5SGXEA7N2F45C1_10.0'
+            batch: "5SGXEA7N2F45C1_10.0"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -539,9 +539,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -599,47 +599,47 @@ jobs:
         include:
           - basename: softfloat
             script: ./examples/softfloat/generic_softfloat.sh
-            batch: 'xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0,xc7vx330t-1ffg1157_10.0 --flopoco,xc7vx690t-3ffg1930-VVD_5.0 --flopoco,xc7vx690t-3ffg1930-VVD_10.0 --flopoco,xc7z020-1clg484-VVD_5.0 --flopoco,xc7z020-1clg484-VVD_10.0 --flopoco'
+            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0,xc7vx330t-1ffg1157_10.0 --flopoco,xc7vx690t-3ffg1930-VVD_5.0 --flopoco,xc7vx690t-3ffg1930-VVD_10.0 --flopoco,xc7z020-1clg484-VVD_5.0 --flopoco,xc7z020-1clg484-VVD_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
-            batch: 'xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0'
+            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0"
             compiler: I386_GCC49
           - basename: libm
             script: ./examples/libm/generic_libm.sh
-            batch: 'xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0'
+            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0"
             compiler: I386_GCC49
           - basename: libm-flopoco
             script: ./examples/libm/generic_libm.sh
-            batch: 'xc7vx330t-1ffg1157_10.0 --flopoco,xc7vx690t-3ffg1930-VVD_5.0 --flopoco,xc7vx690t-3ffg1930-VVD_10.0 --flopoco,xc7z020-1clg484-VVD_5.0 --flopoco,xc7z020-1clg484-VVD_10.0 --flopoco'
+            batch: "xc7vx330t-1ffg1157_10.0 --flopoco,xc7vx690t-3ffg1930-VVD_5.0 --flopoco,xc7vx690t-3ffg1930-VVD_10.0 --flopoco,xc7z020-1clg484-VVD_5.0 --flopoco,xc7z020-1clg484-VVD_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-BALANCED-MP
-            batch: 'xc7vx330t-1ffg1157_10.0 --aligned-access,xc7vx690t-3ffg1930-VVD_5.0 --aligned-access,xc7vx690t-3ffg1930-VVD_10.0 --aligned-access,xc7z020-1clg484-VVD_10.0 --aligned-access,xc7z020-1clg484-VVD_15.0 --aligned-access'
+            batch: "xc7vx330t-1ffg1157_10.0 --aligned-access,xc7vx690t-3ffg1930-VVD_5.0 --aligned-access,xc7vx690t-3ffg1930-VVD_10.0 --aligned-access,xc7z020-1clg484-VVD_10.0 --aligned-access,xc7z020-1clg484-VVD_15.0 --aligned-access"
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh -lchstone_altera_O3_list
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP
-            batch: 'xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_10.0,xc7z020-1clg484-VVD_15.0'
+            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_10.0,xc7z020-1clg484-VVD_15.0"
           - basename: MachSuite
             script: ./examples/MachSuite/generic_MachSuite.sh
             compiler: I386_GCC49
-            batch: 'xc7vx690t-3ffg1930-VVD_10.0'
+            batch: "xc7vx690t-3ffg1930-VVD_10.0"
           - basename: hls_study
             script: ./examples/hls_study/generic_hls_study.sh
             compiler: I386_GCC49
-            batch: 'xc7vx690t-3ffg1930-VVD_2.5 --aligned-access'
+            batch: "xc7vx690t-3ffg1930-VVD_2.5 --aligned-access"
           - basename: omp_simd
             script: ./examples/omp_simd/generic_omp_simd.sh
             compiler: I386_GCC49
-            batch: 'xc7vx690t-3ffg1930-VVD_10.0'
+            batch: "xc7vx690t-3ffg1930-VVD_10.0"
           - basename: parallel_queries
             script: ./examples/parallel_queries/context_switch_xilinx_10_1DB_simulate.sh
             compiler: I386_GCC49
             args: -c=--evaluation=CYCLES
-            batch: 'xc7vx690t-3ffg1930-VVD_10.0'
+            batch: "xc7vx690t-3ffg1930-VVD_10.0"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -647,9 +647,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -706,21 +706,21 @@ jobs:
         include:
           - basename: softfloat
             script: ./examples/softfloat/generic_softfloat.sh
-            batch: 'LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco'
+            batch: "LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
-            batch: 'LFE335EA8FN484C_10.0'
+            batch: "LFE335EA8FN484C_10.0"
             compiler: I386_GCC49
           - basename: libm
             script: ./examples/libm/generic_libm.sh
-            batch: 'LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco'
+            batch: "LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: CHStone
             script: ./examples/CHStone/generic_CHStone.sh
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-BALANCED-MP
-            batch: 'LFE335EA8FN484C_15.0 -O2 --aligned-access --experimental-setup=BAMBU-BALANCED-MP,LFE335EA8FN484C_15.0 -O3 --experimental-setup=BAMBU-PERFORMANCE-MP'
+            batch: "LFE335EA8FN484C_15.0 -O2 --aligned-access --experimental-setup=BAMBU-BALANCED-MP,LFE335EA8FN484C_15.0 -O3 --experimental-setup=BAMBU-PERFORMANCE-MP"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -728,9 +728,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash

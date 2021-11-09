@@ -130,6 +130,7 @@ PLUGIN_TEST
          ac_save_CFLAGS="$CFLAGS"
       done
       if test "x$I386_GCC45_PLUGIN_COMPILER" != x; then
+         echo "OK, we have found the compiler"
          build_I386_GCC45=yes;
          build_I386_GCC45_EMPTY_PLUGIN=yes;
          build_I386_GCC45_SSA_PLUGIN=yes;

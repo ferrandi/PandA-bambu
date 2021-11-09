@@ -3218,7 +3218,7 @@ void BambuParameter::CheckParameters()
    if(!isOption(OPT_top_functions_names))
    {
       setOption(OPT_top_functions_names, "main");
-      THROW_WARNING("Top function name was not specified: main will ");
+      THROW_WARNING("Top function name was not specified: main will be set as top");
    }
 
    const auto sorted_dirs = [](const std::string& parent_dir) {
