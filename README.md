@@ -31,8 +31,6 @@ If you use Bambu in your research, please cite:
   booktitle={2021 58th ACM/IEEE Design Automation Conference (DAC)}, 
   title={Invited: Bambu: an Open-Source Research Framework for the High-Level Synthesis of Complex Applications}, 
   year={2021},
-  volume={},
-  number={},
   pages={1327-1330},
   abstract = {This paper presents the open-source high-level synthesis (HLS) research framework Bambu. Bambu provides a research environment to experiment with new ideas across HLS, high-level verification and debugging, FPGA/ASIC design, design flow space exploration, and parallel hardware accelerator design. The tool accepts as input standard C/C++ specifications and compiler intermediate representations (IRs) coming from the well-known Clang/LLVM and GCC compilers. The broad spectrum and flexibility of input formats allow the electronic design automation (EDA) research community to explore and integrate new transformations and optimizations. The easily extendable modular framework already includes many optimizations and HLS benchmarks used to evaluate the QoR of the tool against existing approaches [1]. The integration with synthesis and verification backends (commercial and open-source) allows researchers to quickly test any new finding and easily obtain performance and resource usage metrics for a given application. Different FPGA devices are supported from several different vendors: AMD/Xilinx, Intel/Altera, Lattice Semiconductor, and NanoXplore. Finally, integration with the OpenRoad open-source end-to-end silicon compiler perfectly fits with the recent push towards open-source EDA.},
   publisher={{IEEE}},
