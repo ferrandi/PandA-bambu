@@ -2494,8 +2494,10 @@ dequeue_and_serialize ()
 #endif
       serialize_child ("var", SSA_NAME_VAR (t));
       serialize_int ("vers", SSA_NAME_VERSION (t));
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
       if (POINTER_TYPE_P (TREE_TYPE (t)) && SSA_NAME_PTR_INFO (t))
         dump_pt_solution(&(SSA_NAME_PTR_INFO (t)->pt), "use", "use_vars");
+#endif
       if (TREE_THIS_VOLATILE (t))
         serialize_string("volatile");
       else
@@ -3116,7 +3118,7 @@ dequeue_and_serialize_gimple ()
               serialize_child ("arg", gimple_call_arg(g, arg_index));
            }
         }
-#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) && !defined(SPARC) && !defined(ARM) && (__GNUC__ == 4 && __GNUC_MINOR__ < 8)
+#if (__GNUC__ == 4 && __GNUC_MINOR__ > 6) && !defined(SPARC) && !defined(ARM) && (__GNUC__ == 4 && __GNUC_MINOR__ < 8)
         pt = gimple_call_use_set (g);
         if (!pt_solution_empty_p (pt))
            dump_pt_solution(pt, "use", "use_vars");
