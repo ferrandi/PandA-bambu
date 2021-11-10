@@ -138,9 +138,9 @@ DesignFlowStep_Status BlockFix::InternalExec()
    /// Checking if there are gimple_labels which can be removed
    /// Computing reachable labels
    CustomSet<unsigned int> reachable_labels;
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
-      for(auto statement : block.second->CGetStmtList())
+      for(const auto& statement : block.second->CGetStmtList())
       {
          const auto* gg = GetPointer<const gimple_goto>(GET_NODE(statement));
          if(gg)
@@ -165,7 +165,7 @@ DesignFlowStep_Status BlockFix::InternalExec()
       }
    }
    std::list<std::pair<tree_nodeRef, unsigned int>> to_be_removed;
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       for(auto statement : block.second->CGetStmtList())
       {
@@ -182,11 +182,18 @@ DesignFlowStep_Status BlockFix::InternalExec()
       }
    }
 
-   for(auto removing : to_be_removed)
+   for(const auto& removing : to_be_removed)
    {
       sl->list_of_bloc[removing.second]->RemoveStmt(removing.first, AppM);
    }
 
-   function_behavior->UpdateBBVersion();
-   return DesignFlowStep_Status::SUCCESS;
+   if(to_be_removed.empty())
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
+   else
+   {
+      function_behavior->UpdateBBVersion();
+      return DesignFlowStep_Status::SUCCESS;
+   }
 }
