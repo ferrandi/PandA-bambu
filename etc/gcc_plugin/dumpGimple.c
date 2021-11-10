@@ -706,7 +706,7 @@ void dump_pt_solution(struct pt_solution *pt, const char * first_tag, const char
 
 /* Add T to the end of the queue of nodes to serialize.  Returns the index
    assigned to T.  */
-void index_insert(serialize_queue_p dq, unsigned int index, unsigned int ann, unsigned int has_body, tree t)
+void index_insert(serialize_queue_p dq, unsigned int index, unsigned int ann, tree t)
 {
    struct tree_2_ints min;
    min.key = (tree)t;
@@ -736,6 +736,7 @@ void index_insert(serialize_queue_p dq, unsigned int index, unsigned int ann, un
 #endif
    m->key = t;
    m->value = index;
+   unsigned int has_body = t && (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) && t == cfun->decl? 1 : 0;
    m->has_body = has_body;
    gcc_assert(index <= di_local_index);
    m->ann = ann;
@@ -776,8 +777,7 @@ queue (tree t)
     dq = XNEW (struct serialize_queue);
 
   /* Create a new entry in the hash table.  */
-  unsigned int has_body = t && (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) ? 1 : 0;
-  index_insert(dq, index, ann, has_body, t);
+  index_insert(dq, index, ann, t);
 
   /* Add it to the end of the queue.  */
   dq->next = 0;
@@ -832,7 +832,7 @@ queue_gimple (GIMPLE_type g)
     dq_gimple = XNEW (struct serialize_queue);
 
   /* Create a new entry in the hash table.  */
-  index_insert(dq, index, ann, 0, (tree)g);
+  index_insert(dq, index, ann, (tree)g);
   dq_gimple->node_index = dq->node_index;
 
   /* Add it to the end of the queue.  */
@@ -889,7 +889,7 @@ queue_statement (struct control_flow_graph * cfg)
     dq_cfg = XNEW (struct serialize_queue);
 
   /* Create a new entry in the hash table.  */
-  index_insert(dq, index, ann, 0, (tree)cfg);
+  index_insert(dq, index, ann, (tree)cfg);
   dq_cfg->node_index = dq->node_index;
 
   /* Add it to the end of the queue.  */
@@ -3408,7 +3408,7 @@ SerializeGimpleGlobalTreeNode(tree t)
    }
 
    /* Queue up the first node when not yet considered.  */
-   unsigned int has_body = (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) ? 1 : 0;
+   unsigned int has_body = (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) && t == cfun->decl ? 1 : 0;
    unsigned int ann = MAKE_ANN(0, 0, 0);
    in.key = t;
    in.ann = ann;
