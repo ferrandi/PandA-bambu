@@ -89,5 +89,4 @@ class FixVdef : public FunctionFrontendFlowStep
    void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 
-
 #endif
