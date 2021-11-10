@@ -3462,7 +3462,7 @@ SerializeGimpleGlobalTreeNode(tree t)
 #endif
    if (!n)
       queue (t);
-   else if (FUNCTION_DECL == TREE_CODE(t) && gimple_has_body_p (t))
+   else if (FUNCTION_DECL == TREE_CODE(t) && gimple_has_body_p (t) && !gimple_has_body_p (n->key))
    {
       in.key = t;
       in.ann = ann;
