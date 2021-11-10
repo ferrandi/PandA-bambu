@@ -66,8 +66,7 @@ static char *outdir_name;
 
 /* Information about a node to be dumped.  */
 #define ZERO_OR_ONE(val) (val != 0 ? 1 : 0)
-#define MAKE_ANN(binfo_val, gimple_val, statement_val) (ZERO_OR_ONE(binfo_val) | (ZERO_OR_ONE(gimple_val) << 1) | (ZERO_OR_ONE(statement_val) << 2) )
-#define IS_BINFO(val) (val&1)
+#define MAKE_ANN(fun_body, gimple_val, statement_val) (ZERO_OR_ONE(fun_body) | (ZERO_OR_ONE(gimple_val) << 1) | (ZERO_OR_ONE(statement_val) << 2) )
 #define IS_GIMPLE(val) (val&2)
 #define IS_STATEMENT(val) (val&4)
 
@@ -754,7 +753,8 @@ queue (tree t)
   serialize_queue_p dq;
   unsigned int index;
   struct tree_2_ints in;
-  unsigned int ann = MAKE_ANN(0, 0, 0);
+  unsigned int has_body = t && (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) ? 1 : 0;
+  unsigned int ann = MAKE_ANN(has_body, 0, 0);
   in.key = (tree) t;
   in.ann = ann;
 #if (__GNUC__ > 4)
@@ -928,7 +928,8 @@ queue_and_serialize_index (const char *field, tree t)
     return;
 
   /* See if we've already queued or dumped this node.  */
-  unsigned int ann = MAKE_ANN(0, 0, 0);
+  unsigned int has_body = (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) ? 1 : 0;
+  unsigned int ann = MAKE_ANN(has_body, 0, 0);
   in.key = t;
   in.ann = ann;
 #if (__GNUC__ > 4) 
@@ -2175,9 +2176,7 @@ dequeue_and_serialize ()
   serialize_index (index);
 
   /* And the type of node this is.  */
-  if (IS_BINFO(ann))
-    code_name = "binfo";
-  else if(TREE_CODE (t) == TARGET_MEM_REF)
+  if(TREE_CODE (t) == TARGET_MEM_REF)
     code_name = "target_mem_ref461";
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 && __GNUC_PATCHLEVEL__>= 1)
   else if(TREE_CODE (t) == BIT_NOT_EXPR && TREE_CODE (TREE_TYPE (t)) == BOOLEAN_TYPE) /*incorrect encoding of not of a boolean expression*/
@@ -2209,46 +2208,6 @@ dequeue_and_serialize ()
   //    serialize_vops(t);
   // }
 
-  /* Although BINFOs are TREE_VECs, we serialize them specially so as to be
-     more informative.  */
-  if (IS_BINFO(ann))
-  {
-    unsigned ix;
-    tree base;
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
-    vec<tree,va_gc> *accesses = BINFO_BASE_ACCESSES (t);
-#else
-    VEC(tree,gc) *accesses = BINFO_BASE_ACCESSES (t);
-#endif
-    serialize_child ("type", BINFO_TYPE (t));
-
-    if (BINFO_VIRTUAL_P (t))
-      serialize_string ("virt");
-
-    serialize_int ("bases", BINFO_N_BASE_BINFOS (t));
-    for (ix = 0; BINFO_BASE_ITERATE (t, ix, base); ix++)
-    {
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
-      tree access = (accesses ? (*accesses)[ix] : access_public_node);
-#else
-      tree access = (accesses ? VEC_index (tree, accesses, ix) : access_public_node);
-#endif
-      const char *string = NULL;
-
-      if (access == access_public_node)
-        string = "pub";
-      else if (access == access_protected_node)
-        string = "prot";
-      else if (access == access_private_node)
-        string = "priv";
-      else
-        gcc_unreachable ();
-
-      serialize_string (string);
-    }
-
-    goto done;
-  }
 
   /* We can knock off a bunch of expression nodes in exactly the same
      way.  */
@@ -2958,7 +2917,9 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
       break;
     }
 
+#ifdef CPP_LANGUAGE
  done:
+#endif
 
   /* Terminate the line.  */
   fprintf (serialize_gimple_info.stream, "\n");
@@ -3324,7 +3285,6 @@ dequeue_and_serialize_statement ()
   serialize_queue_p dq;
   struct tree_2_ints * stn_index;
   unsigned int index;
-  unsigned int ann;
   const char* code_name;
   basic_block bb;
 
@@ -3333,7 +3293,6 @@ dequeue_and_serialize_statement ()
   stn_index = dq->node_index;
   index = stn_index->value;
   gcc_assert(index <= di_local_index);
-  ann = stn_index->ann;
 
   /* Remove the node from the queue, and put it on the free list.  */
   serialize_gimple_info.queue = dq->next;
@@ -3346,10 +3305,7 @@ dequeue_and_serialize_statement ()
   serialize_index (index);
 
   /* And the type of node this is.  */
-  if (IS_BINFO(ann))
-    code_name = "binfo";
-  else
-    code_name = "statement_list";
+  code_name = "statement_list";
   fprintf (serialize_gimple_info.stream, "%-16s ", code_name);
   serialize_gimple_info.column = 25;
 
@@ -3452,7 +3408,8 @@ SerializeGimpleGlobalTreeNode(tree t)
    }
 
    /* Queue up the first node when not yet considered.  */
-   unsigned int ann = MAKE_ANN(0, 0, 0);
+   unsigned int has_body = (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) ? 1 : 0;
+   unsigned int ann = MAKE_ANN(has_body, 0, 0);
    in.key = t;
    in.ann = ann;
 #if (__GNUC__ > 4)
@@ -3462,7 +3419,7 @@ SerializeGimpleGlobalTreeNode(tree t)
 #endif
    if (!n)
       queue (t);
-   else if (FUNCTION_DECL == TREE_CODE(t) && gimple_has_body_p (t) && !gimple_has_body_p (n->key))
+   else if ((TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t))
    {
       in.key = t;
       in.ann = ann;
