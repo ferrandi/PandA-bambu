@@ -2,10 +2,12 @@
 Eighth public release of PandA framework.
 
 New features introduced:
-- Added support to CLANG/LLVM compiler versions 8, 9,10 and 11.
+- Added support to CLANG/LLVM compiler versions 8, 9,10, 11 and 12.
 - Added support to Xilinx Vitis HLS LLVM 2020.2.  https://github.com/Xilinx/HLS
 - Added support to Svelto methodology. Reference paper: M. Minutoli, V. Castellana, N. Saporetti, S. Devecchi, M. Lattuada, P. Fezzardi, A. Tumeo, and F. Ferrandi, “Svelto: High-Level Synthesis of Multi-Threaded Accelerators for Graph Analytics,” IEEE Transactions on Computers, iss. 01, pp. 1-14, 2021.
 - Added support to Tensor flow optimization. Reference paper: M. Siracusa and F. Ferrandi, “Tensor Optimization for High-Level Synthesis Design Flows,” IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, Best Paper Candidate of CODES+ISSS 2020, vol. 39, iss. 11, pp. 4217-4228, 2020. 
+- Example of integration between Soda-Opt (https://gitlab.pnnl.gov/sodalite/soda-opt) and Bambu: Reference paper: S. Curzel, N. Bohm Agostini, S. Song, I. Dagli, A. Limaye, C. Tan, M. Minutoli, V. G. Castellana, V. Amatya, J. Manzano, A. Das, F. Ferrandi, A. Tumeo, "Automated Generation of Integrated Digital and Spiking Neuromorphic Machine Learning Accelerators", 2021 40th International Conference on Computer-Aided Design (ICCAD).
+- Paper describing the PandA-bambu framework: F. Ferrandi, V.G. Castellana, S. Curzel, P. Fezzardi, M, Fiorito, M. Lattuada, M. Minutoli, C. Pilato, A. Tumeo, "Invited: Bambu: an Open-Source Research Framework for the High-Level Synthesis of Complex Applications," 2021 58th ACM/IEEE Design Automation Conference (DAC), pp. 1327-1330.
 - Improved support to discrepancy analysis. Reference paper: P. Fezzardi and F. Ferrandi, “Automated Bug Detection for High-Level Synthesis of Multi-Threaded Irregular Applications,” ACM Trans. Parallel Comput., vol. 7, iss. 4, 2020. 
 - Added initial support to ASIC flow based on Yosys+OpenROAD projects (see https://theopenroadproject.org/)
 - Simplified the simulation/synthesis backends integration. In case the used simulator or synthesizer is in the system path, the configuration can be as simple as ../configure --prefix=/opt/panda
