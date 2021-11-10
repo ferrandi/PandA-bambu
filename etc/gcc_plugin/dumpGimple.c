@@ -613,7 +613,6 @@ SerializeGimpleEnd()
       next_dq = dq->next;
       unsigned int ann = MAKE_ANN(0, 1, 0);
       in.key = dq->node_index->key;
-      in.has_body = 0;
       in.ann = ann;
 #if (__GNUC__ > 4) 
       di_local_nodes_index->remove_elt(&in);
@@ -629,7 +628,6 @@ SerializeGimpleEnd()
       next_dq = dq->next;
       unsigned int ann = MAKE_ANN(0, 0, 1);
       in.key = dq->node_index->key;
-      in.has_body = 0;
       in.ann = ann;
 #if (__GNUC__ > 4) 
       di_local_nodes_index->remove_elt(&in);
@@ -712,7 +710,6 @@ void index_insert(serialize_queue_p dq, unsigned int index, unsigned int ann, un
 {
    struct tree_2_ints min;
    min.key = (tree)t;
-   min.has_body = has_body;
    min.ann = ann;
 #if (__GNUC__ > 4)
    tree_2_ints ** slot;
@@ -739,6 +736,7 @@ void index_insert(serialize_queue_p dq, unsigned int index, unsigned int ann, un
 #endif
    m->key = t;
    m->value = index;
+   m->has_body = has_body;
    gcc_assert(index <= di_local_index);
    m->ann = ann;
 
@@ -756,10 +754,8 @@ queue (tree t)
   serialize_queue_p dq;
   unsigned int index;
   struct tree_2_ints in;
-  unsigned int has_body = t && (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) ? 1 : 0;
   unsigned int ann = MAKE_ANN(0, 0, 0);
   in.key = (tree) t;
-  in.has_body = has_body;
   in.ann = ann;
 #if (__GNUC__ > 4)
   assert (!di_local_nodes_index->find (&in));
@@ -780,6 +776,7 @@ queue (tree t)
     dq = XNEW (struct serialize_queue);
 
   /* Create a new entry in the hash table.  */
+  unsigned int has_body = t && (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) ? 1 : 0;
   index_insert(dq, index, ann, has_body, t);
 
   /* Add it to the end of the queue.  */
@@ -805,7 +802,6 @@ queue_gimple (GIMPLE_type g)
   struct tree_2_ints in;
   unsigned int ann = MAKE_ANN(0, 1, 0);
   in.key = (tree) g;
-  in.has_body = 0;
   in.ann = ann;
 
 #if (__GNUC__ > 4) 
@@ -865,7 +861,6 @@ queue_statement (struct control_flow_graph * cfg)
   struct tree_2_ints in;
   unsigned int ann = MAKE_ANN(0,0,1);
   in.key = (tree) cfg;
-  in.has_body = 0;
   in.ann = ann;
 #if (__GNUC__ > 4)
   assert (!di_local_nodes_index->find (&in));
@@ -934,10 +929,8 @@ queue_and_serialize_index (const char *field, tree t)
     return;
 
   /* See if we've already queued or dumped this node.  */
-  unsigned int has_body = (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) ? 1 : 0;
   unsigned int ann = MAKE_ANN(0, 0, 0);
   in.key = t;
-  in.has_body = has_body;
   in.ann = ann;
 #if (__GNUC__ > 4) 
   n = di_local_nodes_index->find (&in);
@@ -979,7 +972,6 @@ queue_and_serialize_gimple_index (const char *field, GIMPLE_type g)
   /* See if we've already queued or dumped this node.  */
   unsigned int ann = MAKE_ANN(0, 1, 0);
   in.key = (tree)g;
-  in.has_body = 0;
   in.ann = ann;
 #if (__GNUC__ > 4)
   n = di_local_nodes_index->find (&in);
@@ -1021,7 +1013,6 @@ queue_and_serialize_statement_index (const char *field, struct control_flow_grap
   /* See if we've already queued or dumped this node.  */
   unsigned int ann = MAKE_ANN(0,0,1);
   in.key = (tree)cfg;
-  in.has_body = 0;
   in.ann = ann;
 #if (__GNUC__ > 4)
   n = di_local_nodes_index->find (&in);
@@ -3420,7 +3411,6 @@ SerializeGimpleGlobalTreeNode(tree t)
    unsigned int has_body = (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) ? 1 : 0;
    unsigned int ann = MAKE_ANN(0, 0, 0);
    in.key = t;
-   in.has_body = has_body;
    in.ann = ann;
 #if (__GNUC__ > 4)
    n = di_local_nodes_index->find(&in);
@@ -3429,7 +3419,7 @@ SerializeGimpleGlobalTreeNode(tree t)
 #endif
    if (!n)
       queue (t);
-   else if ((TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) && !n->has_body)
+   else if (has_body && !n->has_body)
    {
       in.key = t;
       in.ann = ann;
