@@ -1376,7 +1376,6 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       /// check if first state duplication is required
       if(in_degree_following_Bb[bbVertex] > 1)
       {
-
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "src state:" + stg->CGetStateInfo(first_state[bbVertex])->name);
          BOOST_FOREACH(EdgeDescriptor oedge, boost::out_edges(first_state[bbVertex], *stg))
          {

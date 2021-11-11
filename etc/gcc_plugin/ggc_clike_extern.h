@@ -1,6 +1,7 @@
 struct GTY(()) tree_2_ints {
   tree key;
   unsigned int value;
+  unsigned int has_body;
   unsigned int ann;
 };
 struct GTY(()) dg_descriptor_tree {
