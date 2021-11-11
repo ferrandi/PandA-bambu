@@ -76,11 +76,13 @@
 /// utility include
 #include "utility.hpp"
 
-TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                                     const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION)
 {
    flag_cpp = _HLSMgr.get()->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) &&
-              (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) || !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
+              (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) ||
+               !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
@@ -144,7 +146,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
          bool is_memory = false;
          std::string test_v = "0";
-         if(mem_vars.find(*l) != mem_vars.end() && std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end())
+         if(mem_vars.find(*l) != mem_vars.end() &&
+            std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end())
          {
             is_memory = true;
             test_v = TestbenchGenerationBaseStep::print_var_init(TM, *l, HLSMgr->Rmem);
@@ -214,7 +217,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             }
             else
             {
-               const CInitializationParserFunctorRef c_initialization_parser_functor(new ComputeReservedMemory(TM, lnode));
+               const CInitializationParserFunctorRef c_initialization_parser_functor(
+                   new ComputeReservedMemory(TM, lnode));
                c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
                reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
             }
@@ -225,9 +229,11 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                HLSMgr->RSim->param_mem_size[v_idx][*l] = reserved_bytes;
                HLSMgr->Rmem->reserve_space(reserved_bytes);
 
-               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                              "---Parameter " + param + " (" + STR((*l)) + ") (testvector " + STR(v_idx) + ") allocated at " + STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
-                                  " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
+               INDENT_OUT_MEX(
+                   OUTPUT_LEVEL_VERBOSE, output_level,
+                   "---Parameter " + param + " (" + STR((*l)) + ") (testvector " + STR(v_idx) + ") allocated at " +
+                       STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
+                       " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
             }
          }
          else if(!is_memory)
@@ -242,23 +248,32 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          /// check the next free aligned address
          if(l_next != mem.end() && mem_vars.find(*l_next) != mem_vars.end() && mem_vars.find(*l) != mem_vars.end())
          {
-            next_object_offset = HLSMgr->Rmem->get_base_address(*l_next, function_id) - HLSMgr->Rmem->get_base_address(*l, function_id);
+            next_object_offset =
+                HLSMgr->Rmem->get_base_address(*l_next, function_id) - HLSMgr->Rmem->get_base_address(*l, function_id);
          }
-         else if(mem_vars.find(*l) != mem_vars.end() && (l_next == mem.end() || HLSMgr->RSim->param_address.at(v_idx).find(*l_next) == HLSMgr->RSim->param_address.at(v_idx).end()))
+         else if(mem_vars.find(*l) != mem_vars.end() &&
+                 (l_next == mem.end() ||
+                  HLSMgr->RSim->param_address.at(v_idx).find(*l_next) == HLSMgr->RSim->param_address.at(v_idx).end()))
          {
             next_object_offset = HLSMgr->Rmem->get_memory_address() - HLSMgr->Rmem->get_base_address(*l, function_id);
          }
-         else if(l_next != mem.end() && mem_vars.find(*l) != mem_vars.end() && HLSMgr->RSim->param_address.at(v_idx).find(*l_next) != HLSMgr->RSim->param_address.at(v_idx).end())
+         else if(l_next != mem.end() && mem_vars.find(*l) != mem_vars.end() &&
+                 HLSMgr->RSim->param_address.at(v_idx).find(*l_next) != HLSMgr->RSim->param_address.at(v_idx).end())
          {
-            next_object_offset = HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second - HLSMgr->Rmem->get_base_address(*l, function_id);
+            next_object_offset = HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second -
+                                 HLSMgr->Rmem->get_base_address(*l, function_id);
          }
-         else if(l_next != mem.end() && HLSMgr->RSim->param_address.at(v_idx).find(*l) != HLSMgr->RSim->param_address.at(v_idx).end() && HLSMgr->RSim->param_address.at(v_idx).find(*l_next) != HLSMgr->RSim->param_address.at(v_idx).end())
+         else if(l_next != mem.end() &&
+                 HLSMgr->RSim->param_address.at(v_idx).find(*l) != HLSMgr->RSim->param_address.at(v_idx).end() &&
+                 HLSMgr->RSim->param_address.at(v_idx).find(*l_next) != HLSMgr->RSim->param_address.at(v_idx).end())
          {
-            next_object_offset = HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second - HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
+            next_object_offset = HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second -
+                                 HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
          }
          else if(HLSMgr->RSim->param_address.at(v_idx).find(*l) != HLSMgr->RSim->param_address.at(v_idx).end())
          {
-            next_object_offset = HLSMgr->Rmem->get_memory_address() - HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
+            next_object_offset =
+                HLSMgr->Rmem->get_memory_address() - HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
          }
          else
          {
@@ -266,7 +281,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
 
          if(next_object_offset < reserved_bytes)
-            THROW_ERROR("more allocated memory than expected  next_object_offset=" + STR(next_object_offset) + " reserved_bytes=" + STR(reserved_bytes));
+            THROW_ERROR("more allocated memory than expected  next_object_offset=" + STR(next_object_offset) +
+                        " reserved_bytes=" + STR(reserved_bytes));
          HLSMgr->RSim->param_next_off[v_idx][*l] = next_object_offset;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + param);
       }
@@ -276,14 +292,16 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    return;
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:

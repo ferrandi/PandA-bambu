@@ -61,7 +61,8 @@ REF_FORWARD_DECL(target_device);
 class xml_element;
 
 #include "DesignParameters.hpp"
-#define ADD_RES_VAR(name) xml_reserved_vars.push_back(xml_set_variable_tRef(new xml_set_variable_t((name), nullptr, nullptr)))
+#define ADD_RES_VAR(name) \
+   xml_reserved_vars.push_back(xml_set_variable_tRef(new xml_set_variable_t((name), nullptr, nullptr)))
 
 #define PARAM_top_id "top_id"
 #define PARAM_target_device "target_device"
@@ -167,7 +168,8 @@ class SynthesisTool
    /**
     * Constructor
     */
-   SynthesisTool(const ParameterConstRef& Param, std::string tool_exec, const target_deviceRef& device, const std::string& _flow_name, std::string default_output_dir);
+   SynthesisTool(const ParameterConstRef& Param, std::string tool_exec, const target_deviceRef& device,
+                 const std::string& _flow_name, std::string default_output_dir);
 
    /**
     * Destructor
@@ -232,7 +234,8 @@ class SynthesisTool
    /**
     * Factory method
     */
-   static SynthesisToolRef create_synthesis_tool(type_t type, const ParameterConstRef& Param, const std::string& output_dir, const target_deviceRef& device);
+   static SynthesisToolRef create_synthesis_tool(type_t type, const ParameterConstRef& Param,
+                                                 const std::string& output_dir, const target_deviceRef& device);
 
    /**
     * Actual parsing of parameters and script nodes

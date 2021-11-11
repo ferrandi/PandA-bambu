@@ -70,7 +70,8 @@ class rebuild_initialization : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -80,7 +81,8 @@ class rebuild_initialization : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   rebuild_initialization(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   rebuild_initialization(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id,
+                          const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor
@@ -104,7 +106,8 @@ class rebuild_initialization2 : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * @brief extract_var_decl_ppe
@@ -138,7 +141,8 @@ class rebuild_initialization2 : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   rebuild_initialization2(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   rebuild_initialization2(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id,
+                           const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

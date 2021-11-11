@@ -73,7 +73,8 @@ class AuxDesignFlowStep : public DesignFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   AuxDesignFlowStep(std::string name, const AuxDesignFlowStepType type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   AuxDesignFlowStep(std::string name, const AuxDesignFlowStepType type,
+                     const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -110,7 +111,8 @@ class AuxDesignFlowStep : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Compute the signature of a sdf design flow step

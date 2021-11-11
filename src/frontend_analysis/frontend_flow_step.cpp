@@ -58,34 +58,53 @@
 #include "tree_manager.hpp"                   // for tree_managerConstRef
 #include <iosfwd>                             // for ofstream
 
-FrontendFlowStep::FrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters), AppM(_AppM), frontend_flow_step_type(_frontend_flow_step_type), print_counter(0)
+FrontendFlowStep::FrontendFlowStep(const application_managerRef _AppM,
+                                   const FrontendFlowStepType _frontend_flow_step_type,
+                                   const DesignFlowManagerConstRef _design_flow_manager,
+                                   const ParameterConstRef _parameters)
+    : DesignFlowStep(_design_flow_manager, _parameters),
+      AppM(_AppM),
+      frontend_flow_step_type(_frontend_flow_step_type),
+      print_counter(0)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 FrontendFlowStep::~FrontendFlowStep() = default;
 
-void FrontendFlowStep::CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships, const application_managerConstRef application_manager,
-                                   DesignFlowStepSet& relationships)
+void FrontendFlowStep::CreateSteps(
+    const DesignFlowManagerConstRef design_flow_manager,
+    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships,
+    const application_managerConstRef application_manager, DesignFlowStepSet& relationships)
 {
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
-   const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager->CGetDesignFlowStepFactory("Frontend"));
-   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
-   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; ++frontend_relationship)
+   const auto* frontend_flow_step_factory =
+       GetPointer<const FrontendFlowStepFactory>(design_flow_manager->CGetDesignFlowStepFactory("Frontend"));
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>::const_iterator frontend_relationship,
+       frontend_relationship_end = frontend_relationships.end();
+   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end;
+       ++frontend_relationship)
    {
       switch(frontend_relationship->second)
       {
          case(ALL_FUNCTIONS):
          {
-            const auto call_graph_computation_step = design_flow_manager->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
-            const auto cg_design_flow_step = call_graph_computation_step ? design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step : frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+            const auto call_graph_computation_step = design_flow_manager->GetDesignFlowStep(
+                ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
+            const auto cg_design_flow_step =
+                call_graph_computation_step ?
+                    design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
+                    frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
             relationships.insert(cg_design_flow_step);
             const auto functions_with_body = application_manager->CGetCallGraphManager()->GetReachedBodyFunctions();
             for(const auto function_with_body_id : functions_with_body)
             {
-               const auto sdf_step = design_flow_manager->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, function_with_body_id));
-               const auto design_flow_step = sdf_step ? design_flow_graph->CGetDesignFlowStepInfo(sdf_step)->design_flow_step : frontend_flow_step_factory->CreateFunctionFrontendFlowStep(frontend_relationship->first, function_with_body_id);
+               const auto sdf_step = design_flow_manager->GetDesignFlowStep(
+                   FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, function_with_body_id));
+               const auto design_flow_step =
+                   sdf_step ? design_flow_graph->CGetDesignFlowStepInfo(sdf_step)->design_flow_step :
+                              frontend_flow_step_factory->CreateFunctionFrontendFlowStep(frontend_relationship->first,
+                                                                                         function_with_body_id);
                relationships.insert(design_flow_step);
             }
             break;
@@ -121,9 +140,11 @@ void FrontendFlowStep::CreateSteps(const DesignFlowManagerConstRef design_flow_m
    }
 }
 
-void FrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
+void FrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relationships,
+                                            const DesignFlowStep::RelationshipType relationship_type)
 {
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships = ComputeFrontendRelationships(relationship_type);
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships =
+       ComputeFrontendRelationships(relationship_type);
    CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
 }
 
@@ -544,7 +565,8 @@ void FrontendFlowStep::PrintTreeManager(const bool before) const
 {
    const tree_managerConstRef tree_manager = AppM->get_tree_manager();
    const std::string prefix = before ? "before" : "after";
-   const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + prefix + "_" + GetName();
+   const std::string file_name =
+       parameters->getOption<std::string>(OPT_output_temporary_directory) + prefix + "_" + GetName();
    const std::string suffix = print_counter == 0 ? "" : "_" + STR(print_counter);
    const std::string raw_file_name = file_name + suffix + ".raw";
    std::ofstream raw_file(raw_file_name.c_str());

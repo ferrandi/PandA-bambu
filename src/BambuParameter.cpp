@@ -413,7 +413,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --inline-fname=<fun_name>[,<fun_name>]*\n"
       << "        Define functions to be always inlined.\n"
       << "        Automatic inlining is always performed using internal metrics.\n"
-      << "        Maximum cost to allow function inlining is defined through --panda-parameter=inline-max-cost=<value>. (default=100)\n\n"
+      << "        Maximum cost to allow function inlining is defined through "
+         "--panda-parameter=inline-max-cost=<value>. (default=100)\n\n"
       << "    --file-input-data=<file_list>\n"
       << "        A comma-separated list of input files used by the C specification.\n\n"
       << "    --C-no-parse=<file>\n"
@@ -430,13 +431,14 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --generate-interface=<type>\n"
       << "        Wrap the top level module with an external interface.\n"
       << "        Possible values for <type> and related interfaces:\n"
-      << "            MINIMAL  -  (minimal interface - default)\n"
-      << "            INFER    -  (top function is built with an hardware interface inferred from the pragmas or from the top function signature)\n"
-      << "            WB4      -  (WishBone 4 interface)\n"
+      << "            MINIMAL  -  minimal interface (default)\n"
+      << "            INFER    -  top function is built with an hardware interface inferred from\n"
+      << "                        the pragmas or from the top function signature\n"
+      << "            WB4      -  WishBone 4 interface\n"
 #if HAVE_EXPERIMENTAL
-      << "            AXI4LITE -  (AXI4-Lite interface)\n"
-      << "            FSL      -  (interface to the FSL bus)\n"
-      << "            NPI      -  (interface to the NPI bus)\n"
+      << "            AXI4LITE -  AXI4-Lite interface\n"
+      << "            FSL      -  interface to the FSL bus\n"
+      << "            NPI      -  interface to the NPI bus\n"
 #endif
       << "\n"
       << "    --interface-xml-filename=<filename>\n"
@@ -494,12 +496,14 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
       << "    --speculative-sdc-scheduling,-s\n"
       << "        Perform scheduling by using speculative SDC.\n"
-      << "        The speculative SDC is more conservative, in case --panda-parameter=enable-conservative-sdc=1 is passed.\n\n"
+      << "        The speculative SDC is more conservative, in case \n"
+      << "        --panda-parameter=enable-conservative-sdc=1 is passed.\n\n"
 #endif
       << "    --pipelining,-p\n"
       << "        Perform functional pipelining starting from the top function.\n\n"
       << "    --pipelining,-p=<func_name>[=<init_interval>][,<func_name>[=<init_interval>]]*\n"
-      << "        Perform pipelining of comma separated list of specified functions with optional initiation interval (default II=1).\n"
+      << "        Perform pipelining of comma separated list of specified functions with optional \n"
+      << "        initiation interval (default II=1).\n"
       << "        To pipeline softfloat operators it is possible to specify the __float_<op_name> prefix \n"
       << "        or simply __float to pipeline all softfloat library.\n\n"
       << "    --fixed-scheduling=<file>\n"
@@ -586,7 +590,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            UNIQUE             - use a 1-to-1 binding algorithm\n\n"
       << std::endl;
    os << "    --shared-input-registers\n"
-      << "        The module bindings and the register binding try to share more resources by sharing the input registers\n\n"
+      << "        The module bindings and the register binding try to share more resources by \n"
+      << "        sharing the input registers\n\n"
       << std::endl;
 
    // Memory allocation options
@@ -814,30 +819,39 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        primary input and outpur ports to IOBs).\n\n"
       << "    --soft-float\n"
       << "        Enable the soft-based implementation of floating-point operations.\n"
-      << "        Bambu uses as default a faithfully rounded version of softfloat with rounding mode equal to round to nearest even.\n\n"
+      << "        Bambu uses as default a faithfully rounded version of softfloat with rounding mode\n"
+      << "        equal to round to nearest even.\n\n"
       << "        This is the default for bambu.\n\n"
 #if HAVE_FLOPOCO
       << "    --flopoco\n"
       << "        Enable the flopoco-based implementation of floating-point operations.\n\n"
 #endif
       << "    --softfloat-subnormal\n"
-      << "        Enable the soft-based implementation of floating-point operations with subnormals support.\n\n"
+      << "        Enable the soft-based implementation of floating-point operations with\n"
+      << "        subnormals support.\n\n"
       << "    --softfloat-noexception\n"
-      << "        Enable the soft-base implementation of floating-point operations without infinity and NaN handling.\n\n"
+      << "        Enable the soft-base implementation of floating-point operations without\n"
+      << "        infinity and NaN handling.\n\n"
       << "    --softfloat-norounding\n"
       << "        Enable the soft-based implementation of floating-point operations without rounding.\n\n"
       << "    --libm-std-rounding\n"
-      << "        Enable the use of classical libm. This library combines a customized version of glibc, newlib and musl libm implementations into a single libm library synthetizable with bambu.\n"
+      << "        Enable the use of classical libm. This library combines a customized version of \n"
+      << "        glibc, newlib and musl libm implementations into a single libm library synthetizable\n"
+      << "        with bambu.\n"
       << "        Without this option, Bambu uses as default a faithfully rounded version of libm.\n\n"
       << "    --soft-fp\n"
-      << "        Enable the use of soft_fp GCC library instead of bambu customized version of John R. Hauser softfloat library.\n\n"
+      << "        Enable the use of soft_fp GCC library instead of bambu customized version of John R. Hauser "
+         "softfloat library.\n\n"
       << "    --max-ulp\n"
       << "        Define the maximal ULP (Unit in the last place, i.e., is the spacing\n"
       << "        between floating-point numbers) accepted.\n\n"
       << "    --fp-format=<func_name>*<exp_bits>*<frac_bits>*<exp_bias>[*<round>][*<nan>][*<one>][*<sub>][*<sign>]\n"
-      << "        Define arbitrary precision floating-point format by function (use comma separated list for multiple definitions).\n"
-      << "           func_name - Set arbitrary floating-point format for a specific function (using @ symbol here will resolve to the top function)\n"
-      << "                       (Arbitrary floating-point format will apply to specified function only, use --propagate-fp-format to extend it to called functions)\n"
+      << "        Define arbitrary precision floating-point format by function (use comma separated\n"
+      << "        list for multiple definitions).\n"
+      << "           func_name - Set arbitrary floating-point format for a specific function (using\n"
+      << "                       @ symbol here will resolve to the top function)\n"
+      << "                       (Arbitrary floating-point format will apply to specified function\n"
+      << "                       only, use --propagate-fp-format to extend it to called functions)\n"
       << "            exp_bits - Number of bits used by the exponent\n"
       << "           frac_bits - Number of bits used by the fractional value\n"
       << "            exp_bias - Bias applied to the unsigned value represented by the exponent bits\n"
@@ -847,11 +861,14 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "              sub    - Floating-point representation will exploit subnormals (default=0)\n"
       << "           sign_bit  - Set sign bit to a fixed value (1 or 0) or leave it data dependant (default=U)\n\n"
       << "    --fp-format=inline-math\n"
-      << "        The \"inline-math\" flag may be added to fp-format option to force floating-point arithmetic operators always inline policy\n\n"
+      << "        The \"inline-math\" flag may be added to fp-format option to force floating-point\n"
+      << "        arithmetic operators always inline policy\n\n"
       << "    --fp-format=inline-conversion\n"
-      << "        The \"inline-conversion\" flag may be added to fp-format option to force floating-point conversion operators always inline policy\n\n"
+      << "        The \"inline-conversion\" flag may be added to fp-format option to force floating-point\n"
+      << "        conversion operators always inline policy\n\n"
       << "    --fp-format-interface\n"
-      << "        User-defined floating-point format is applied to top interface signature if required (default modifies top function body only)\n\n"
+      << "        User-defined floating-point format is applied to top interface signature if required\n"
+      << "        (default modifies top function body only)\n\n"
       << "    --fp-format-propagate\n"
       << "        Propagate user-defined floating-point format to called function when possible\n\n"
       << "    --hls-div=<method>\n"
@@ -867,7 +884,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        operations starting from a C library based implementation:\n"
       << "             SRT4 - use a C-based Sweeney, Robertson, Tocher floating point division with radix 4 (default)\n"
       << "             G    - use a C-based Goldschmidt floating point division.\n"
-      << "             SF   - use a C-based floating point division as describe in soft-fp library (it requires --soft-fp).\n"
+      << "             SF   - use a C-based floating point division as describe in soft-fp library\n"
+      << "                    (it requires --soft-fp).\n"
       << "    --skip-pipe-parameter=<value>\n"
       << "        Used during the allocation of pipelined units. <value> specifies how\n"
       << "        many pipelined units, compliant with the clock period, will be skipped.\n"
@@ -890,7 +908,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "             yes   - all inputs are registered\n"
       << "             no    - none of the inputs is registered\n\n"
       << "    --fsm-encoding=value\n"
-      << "             auto    - it depends on the target technology. VVD prefers one encoding while the other are fine with the standard binary encoding. (default)\n"
+      << "             auto    - it depends on the target technology. VVD prefers one encoding\n"
+      << "                       while the other are fine with the standard binary encoding. (default)\n"
       << "             one-hot - one hot encoding\n"
       << "             binary  - binary encoding\n\n"
       << "    --cprf=value\n"
@@ -998,7 +1017,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        (default=no).\n\n";
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    os << "    --num-accelerators\n"
-      << "        Set the number of physical accelerator instantiated in parallel sections. It must be a power of two (default=4).\n\n";
+      << "        Set the number of physical accelerator instantiated in parallel sections. It must\n"
+      << "        be a power of two (default=4).\n\n";
 #endif
 #if HAVE_EXPERIMENTAL
    os << "    --xml-config <file>\n"
@@ -1095,17 +1115,23 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --mentor-optimizer=<0|1>\n"
       << "        Enable or disable mentor optimizer. (default=enabled)\n\n"
       << "    --nanoxplore-bypass=<name>\n"
-      << "        Define NanoXplore bypass when using NanoXplore. User may set NANOXPLORE_BYPASS variable otherwise.\n\n"
+      << "        Define NanoXplore bypass when using NanoXplore. User may set NANOXPLORE_BYPASS\n"
+      << "        variable otherwise.\n\n"
       << "    --altera-root=<path>\n"
-      << "        Define Altera tools path. Given path is searched for Quartus. (default=/opt/altera:/opt/intelFPGA)\n\n"
+      << "        Define Altera tools path. Given path is searched for Quartus.\n"
+      << "        (default=/opt/altera:/opt/intelFPGA)\n\n"
       << "    --lattice-root=<path>\n"
-      << "        Define Lattice tools path. Given path is searched for Diamond. (default=/opt/diamond:/usr/local/diamond)\n\n"
+      << "        Define Lattice tools path. Given path is searched for Diamond.\n"
+      << "        (default=/opt/diamond:/usr/local/diamond)\n\n"
       << "    --mentor-root=<path>\n"
-      << "        Define Mentor tools path. Given directory is searched for Modelsim and Visualizer (default=/opt/mentor)\n\n"
+      << "        Define Mentor tools path. Given directory is searched for Modelsim and Visualizer\n"
+      << "        (default=/opt/mentor)\n\n"
       << "    --nanoxplore-root=<path>\n"
-      << "        Define NanoXplore tools path. Given directory is searched for NXMap. (default=/opt/NanoXplore/NXMap)\n\n"
+      << "        Define NanoXplore tools path. Given directory is searched for NXMap.\n"
+      << "        (default=/opt/NanoXplore/NXMap)\n\n"
       << "    --xilinx-root=<path>\n"
-      << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado (default=/opt/Xilinx)\n\n"
+      << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado\n"
+      << "        (default=/opt/Xilinx)\n\n"
       << std::endl;
 }
 
@@ -1124,7 +1150,8 @@ void BambuParameter::PrintProgramName(std::ostream& os) const
    os << std::endl;
 }
 
-BambuParameter::BambuParameter(const std::string& _program_name, int _argc, char** const _argv) : Parameter(_program_name, _argc, _argv)
+BambuParameter::BambuParameter(const std::string& _program_name, int _argc, char** const _argv)
+    : Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
 }
@@ -1336,7 +1363,8 @@ int BambuParameter::Exec()
       {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
 #if !HAVE_UNORDERED
 #ifndef NDEBUG
-      {"test-multiple-non-deterministic-flows", required_argument, nullptr, INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS},
+      {"test-multiple-non-deterministic-flows", required_argument, nullptr,
+       INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS},
       {"test-single-non-deterministic-flow", required_argument, nullptr, INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW},
 #endif
 #endif
@@ -1782,7 +1810,8 @@ int BambuParameter::Exec()
              * objectives, not the mode, hence the mode set from other options
              * has precedence
              */
-            if(not isOption(OPT_evaluation_mode) or getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
+            if(not isOption(OPT_evaluation_mode) or
+               getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
             {
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
@@ -1802,7 +1831,8 @@ int BambuParameter::Exec()
             }
             if(optarg == nullptr)
             {
-               if(isOption(OPT_evaluation_mode) and getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT)
+               if(isOption(OPT_evaluation_mode) and
+                  getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT)
                {
                   std::string to_add =
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
@@ -1825,7 +1855,8 @@ int BambuParameter::Exec()
                   add_evaluation_objective_string(objective_string, to_add);
                }
 #if HAVE_EXPERIMENTAL
-               else if(isOption(OPT_evaluation_mode) and getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::ESTIMATION)
+               else if(isOption(OPT_evaluation_mode) and
+                       getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::ESTIMATION)
                {
                   add_evaluation_objective_string(objective_string, "AREA,"
                                                                     "TIME,"
@@ -1889,11 +1920,13 @@ int BambuParameter::Exec()
              * objectives, not the mode, hence the mode set from other options
              * has precedence
              */
-            if(not isOption(OPT_evaluation_mode) or getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
+            if(not isOption(OPT_evaluation_mode) or
+               getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
             {
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
-            else if(isOption(OPT_evaluation_mode) and getOption<Evaluation_Mode>(OPT_evaluation_mode) != Evaluation_Mode::EXACT)
+            else if(isOption(OPT_evaluation_mode) and
+                    getOption<Evaluation_Mode>(OPT_evaluation_mode) != Evaluation_Mode::EXACT)
             {
                THROW_ERROR("Simulation is only supported with EXACT evaluation mode");
             }
@@ -2030,7 +2063,8 @@ int BambuParameter::Exec()
 #if HAVE_ILP_BUILT
          case 's':
          {
-            if(scheduling_set_p and getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING)
+            if(scheduling_set_p and
+               getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING)
             {
                THROW_ERROR("BadParameters: only one scheduler can be specified");
             }
@@ -2270,7 +2304,8 @@ int BambuParameter::Exec()
             {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
 #if HAVE_EXPERIMENTAL
-               else if(std::string(optarg) == "S") setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
+               else if(std::string(optarg) == "S")
+                   setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
 #endif
             }
             else if(std::string(optarg) == "H")
@@ -2920,7 +2955,8 @@ int BambuParameter::Exec()
    }
    setOption(OPT_cat_args, cat_args);
 
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, getOption<int>(OPT_output_level), " ==  Bambu executed with: " + cat_args + "\n");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, getOption<int>(OPT_output_level),
+                  " ==  Bambu executed with: " + cat_args + "\n");
 
    while(optind < argc)
    {
@@ -2932,31 +2968,41 @@ int BambuParameter::Exec()
       }
       else if(file_type == Parameters_FileFormat::FF_XML_TEC)
       {
-         const auto tech_files = isOption(OPT_technology_file) ? getOption<std::string>(OPT_technology_file) + STR_CST_string_separator : "";
+         const auto tech_files = isOption(OPT_technology_file) ?
+                                     getOption<std::string>(OPT_technology_file) + STR_CST_string_separator :
+                                     "";
          setOption(OPT_technology_file, tech_files + argv[optind]);
       }
 #if HAVE_FROM_AADL_ASN_BUILT
       else if(file_type == Parameters_FileFormat::FF_AADL)
       {
-         const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
+         const auto input_file =
+             isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
          setOption(OPT_input_file, input_file + filename);
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_AADL));
       }
 #endif
-      else if(file_type == Parameters_FileFormat::FF_C || file_type == Parameters_FileFormat::FF_OBJECTIVEC || file_type == Parameters_FileFormat::FF_CPP || file_type == Parameters_FileFormat::FF_FORTRAN
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
-    HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
+      else if(file_type == Parameters_FileFormat::FF_C || file_type == Parameters_FileFormat::FF_OBJECTIVEC ||
+              file_type == Parameters_FileFormat::FF_CPP || file_type == Parameters_FileFormat::FF_FORTRAN
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
+    HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
+    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
+    HAVE_I386_CLANGVVD_COMPILER
               || file_type == Parameters_FileFormat::FF_LLVM || file_type == Parameters_FileFormat::FF_LLVM_CPP
 #endif
       )
       {
-         const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
+         const auto input_file =
+             isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
          setOption(OPT_input_file, input_file + filename);
          setOption(OPT_input_format, static_cast<int>(file_type));
       }
-      else if(file_type == Parameters_FileFormat::FF_RAW or (isOption(OPT_input_format) and getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW))
+      else if(file_type == Parameters_FileFormat::FF_RAW or
+              (isOption(OPT_input_format) and
+               getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW))
       {
-         const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
+         const auto input_file =
+             isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
          setOption(OPT_input_file, input_file + filename);
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_RAW));
          if(!isOption(OPT_pretty_print))
@@ -2996,7 +3042,8 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
          optimizations = getOption<std::string>(OPT_gcc_optimizations);
       }
       THROW_ASSERT(isOption(OPT_input_file), "Input file not specified");
-      if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos && !isOption(OPT_top_design_name))
+      if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos &&
+         !isOption(OPT_top_design_name))
       {
          if(optimizations != "")
          {
@@ -3018,192 +3065,257 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
    /// Set the default value for OPT_gcc_m32_mx32
    if(!isOption(OPT_gcc_m32_mx32))
    {
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) ||                  \
-    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) ||                   \
-    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64) ||       \
-    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64) || (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64) || \
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) ||          \
+    (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) ||           \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) ||             \
+    (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) ||         \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64) ||     \
+    (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64) ||     \
+    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64) ||   \
+    (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64) || (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64) || \
     (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
       if(false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
          setOption(OPT_gcc_m32_mx32, "-m64");
 #endif
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) ||                  \
-    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) ||                   \
-    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_MX32) ||       \
-    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_MX32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_MX32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32) || (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_MX32) || \
-    (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) ||        \
+    (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) ||         \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) ||           \
+    (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) ||       \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32) ||   \
+    (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32) || (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_MX32) ||   \
+    (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_MX32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_MX32) || \
+    (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32) ||                                                         \
+    (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_MX32) || (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
       if(false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
          setOption(OPT_gcc_m32_mx32, "-mx32");
 #endif
-#if(HAVE_I386_GCC45_COMPILER) || (HAVE_I386_GCC46_COMPILER) || (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32) || \
-    (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32)
+#if(HAVE_I386_GCC45_COMPILER) || (HAVE_I386_GCC46_COMPILER) || (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32) || \
+    (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32) ||       \
+    (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32) ||           \
+    (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32)
       if(false
 #if(HAVE_I386_GCC45_COMPILER)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC45
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC45
 #endif
 #if(HAVE_I386_GCC46_COMPILER)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC46
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC46
 #endif
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+         ||
+         getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
       )
          setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #endif
-#if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32) ||      \
-    (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M32) || (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M32) || (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32) || \
+#if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32) ||      \
+    (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32) || (HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32) ||     \
+    (HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M32) || (HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M32) ||     \
+    (HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M32) || (HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32) || \
     (HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M32) || (HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
       if(false
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
          setOption(OPT_gcc_m32_mx32, "-m32");
@@ -3223,7 +3335,8 @@ void BambuParameter::CheckParameters()
 
    const auto sorted_dirs = [](const std::string& parent_dir) {
       std::vector<boost::filesystem::path> sorted_paths;
-      std::copy(boost::filesystem::directory_iterator(parent_dir), boost::filesystem::directory_iterator(), std::back_inserter(sorted_paths));
+      std::copy(boost::filesystem::directory_iterator(parent_dir), boost::filesystem::directory_iterator(),
+                std::back_inserter(sorted_paths));
       std::sort(sorted_paths.begin(), sorted_paths.end());
       return sorted_paths;
    };
@@ -3233,10 +3346,15 @@ void BambuParameter::CheckParameters()
    const auto search_quartus = [&](const std::string& dir) {
       if(boost::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
       {
-         if(system(STR("bash -c \"if [[ \\\"$(" + dir + "/quartus/bin/quartus_sh --version | grep Version | awk '{print $2}' | awk -F'.' '{print $1}')\\\" -lt \\\"14\\\" ]]; then exit 1; else exit 0; fi\" > /dev/null 2>&1").c_str()))
+         if(system(STR("bash -c \"if [[ \\\"$(" + dir +
+                       "/quartus/bin/quartus_sh --version | grep Version | awk '{print $2}' | awk -F'.' '{print "
+                       "$1}')\\\" -lt \\\"14\\\" ]]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
+                       .c_str()))
          {
             setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
-            if(system(STR("bash -c \"" + dir + "/quartus/bin/quartus_sh --help | grep \\\"\\-\\-64bit\\\"\" > /dev/null 2>&1").c_str()) == 0)
+            if(system(STR("bash -c \"" + dir +
+                          "/quartus/bin/quartus_sh --help | grep \\\"\\-\\-64bit\\\"\" > /dev/null 2>&1")
+                          .c_str()) == 0)
             {
                setOption(OPT_quartus_13_64bit, true);
             }
@@ -3459,7 +3577,8 @@ void BambuParameter::CheckParameters()
          for(const auto& vivado_dir : boost::filesystem::directory_iterator(xilinx_dir))
          {
             const auto vivado_path = vivado_dir.path().string();
-            if(boost::filesystem::is_directory(vivado_dir) && vivado_path.find("Vivado") > vivado_path.find_last_of('/'))
+            if(boost::filesystem::is_directory(vivado_dir) &&
+               vivado_path.find("Vivado") > vivado_path.find_last_of('/'))
             {
                for(const auto& ver_dir : sorted_dirs(vivado_path))
                {
@@ -3478,13 +3597,19 @@ void BambuParameter::CheckParameters()
    setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
    if(getOption<bool>(OPT_verilator))
    {
-      setOption(OPT_verilator_l2_name, system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
-      const auto has_timescale_override = system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+      setOption(OPT_verilator_l2_name,
+                system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
+                       "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
+      const auto has_timescale_override =
+          system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid "
+                 "Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
       if(has_timescale_override)
       {
          setOption(OPT_verilator_timescale_override, "1ps/1ps");
       }
-      const auto thread_support = system("bash -c \"if [[ \\\"$(verilator --version | head -n1 | awk -F' ' '{print $2}'| awk -F'.' '{print $1}')\\\" = \\\"4\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+      const auto thread_support =
+          system("bash -c \"if [[ \\\"$(verilator --version | head -n1 | awk -F' ' '{print $2}'| awk -F'.' '{print "
+                 "$1}')\\\" = \\\"4\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
       if(getOption<bool>(OPT_verilator_parallel) && !thread_support)
       {
          THROW_WARNING("Installed version of Verilator does not support multi-threading.");
@@ -3547,7 +3672,8 @@ void BambuParameter::CheckParameters()
    }
 
 #if HAVE_TASTE
-   if(isOption(OPT_input_format) and getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
+   if(isOption(OPT_input_format) and
+      getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
    {
       setOption(OPT_generate_taste_architecture, true);
       setOption(OPT_clock_period, 20);
@@ -3569,7 +3695,8 @@ void BambuParameter::CheckParameters()
    /// target device options
    if(not isOption(OPT_device_string))
    {
-      std::string device_string = getOption<std::string>("device_name") + getOption<std::string>("device_speed") + getOption<std::string>("device_package");
+      std::string device_string = getOption<std::string>("device_name") + getOption<std::string>("device_speed") +
+                                  getOption<std::string>("device_package");
       if(isOption("device_synthesis_tool") && getOption<std::string>("device_synthesis_tool") != "")
       {
          device_string += "-" + getOption<std::string>("device_synthesis_tool");
@@ -3577,7 +3704,9 @@ void BambuParameter::CheckParameters()
       setOption(OPT_device_string, device_string);
    }
 
-   if(isOption(OPT_channels_type) and (getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1 or getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN) and
+   if(isOption(OPT_channels_type) and
+      (getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1 or
+       getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN) and
       not isOption(OPT_channels_number))
    {
       setOption(OPT_channels_number, 2);
@@ -3609,7 +3738,8 @@ void BambuParameter::CheckParameters()
    }
 
    /// controller options
-   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
+   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or
+      getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
       getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR)
    {
       setOption(OPT_stg, true);
@@ -3642,7 +3772,9 @@ void BambuParameter::CheckParameters()
             objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
          }
 
-         if(is_evaluation_objective_string(objective_vector, "TIME") or is_evaluation_objective_string(objective_vector, "TOTAL_TIME") or is_evaluation_objective_string(objective_vector, "CYCLES") or
+         if(is_evaluation_objective_string(objective_vector, "TIME") or
+            is_evaluation_objective_string(objective_vector, "TOTAL_TIME") or
+            is_evaluation_objective_string(objective_vector, "CYCLES") or
             is_evaluation_objective_string(objective_vector, "TOTAL_CYCLES"))
          {
             if(not getOption<bool>(OPT_generate_testbench))
@@ -3652,7 +3784,8 @@ void BambuParameter::CheckParameters()
             }
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
-            return s == "AREA" or s == "AREAxTIME" or s == "TIME" or s == "TOTAL_TIME" or s == "CYCLES" or s == "TOTAL_CYCLES" or s == "BRAMS" or s == "CLOCK_SLACK" or s == "DSPS" or
+            return s == "AREA" or s == "AREAxTIME" or s == "TIME" or s == "TOTAL_TIME" or s == "CYCLES" or
+                   s == "TOTAL_CYCLES" or s == "BRAMS" or s == "CLOCK_SLACK" or s == "DSPS" or
 #if HAVE_EXPERIMENTAL
                    s == "EDGES_REDUCTION" or
 #endif
@@ -3670,7 +3803,9 @@ void BambuParameter::CheckParameters()
 #if HAVE_EXPERIMENTAL
       else if(getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::ESTIMATION)
       {
-         const auto is_valid_evaluation_mode = [](const std::string& s) -> bool { return s == "AREA" or s == "TIME" or s == "CLOCK_SLACK"; };
+         const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
+            return s == "AREA" or s == "TIME" or s == "CLOCK_SLACK";
+         };
          if(not all_of(objective_vector.begin(), objective_vector.end(), is_valid_evaluation_mode))
          {
             THROW_ERROR("BadParameters: evaluation mode LINEAR don't support the evaluation objectives");
@@ -3684,21 +3819,25 @@ void BambuParameter::CheckParameters()
    }
 #if HAVE_EXPERIMENTAL
    /// Export and interface generation
-   if(getOption<bool>(OPT_export_core) && getOption<HLSFlowStep_Type>(OPT_export_core_mode) == HLSFlowStep_Type::EXPORT_PCORE)
+   if(getOption<bool>(OPT_export_core) &&
+      getOption<HLSFlowStep_Type>(OPT_export_core_mode) == HLSFlowStep_Type::EXPORT_PCORE)
    {
       setOption(OPT_interface, true);
       setOption(OPT_interface_type, HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION);
    }
 #endif
 
-   if(isOption(OPT_interface_type) && getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+   if(isOption(OPT_interface_type) &&
+      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
       setOption(OPT_expose_globals, false);
    }
 
    if(!getOption<bool>(OPT_expose_globals))
    {
-      if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE && (!isOption(OPT_interface_type) || getOption<HLSFlowStep_Type>(OPT_interface_type) != HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
+      if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE &&
+         (!isOption(OPT_interface_type) ||
+          getOption<HLSFlowStep_Type>(OPT_interface_type) != HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
       {
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
       }
@@ -3718,7 +3857,9 @@ void BambuParameter::CheckParameters()
    if(flag_cpp)
    {
       /// add -I <ac_types_dir> and -I <ac_math_dir>
-      std::string includes = "-isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) + " -isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include"));
+      std::string includes =
+          "-isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) +
+          " -isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include"));
       if(isOption(OPT_gcc_includes))
       {
          includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
@@ -3773,7 +3914,9 @@ void BambuParameter::CheckParameters()
       }
       add_experimental_setup_compiler_options(!flag_cpp);
    }
-   else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED" or getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP" or getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
+   else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED" or
+           getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP" or
+           getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
    {
       std::string tuning_optimizations;
       if(not isOption(OPT_compiler_opt_level))
@@ -3782,64 +3925,84 @@ void BambuParameter::CheckParameters()
          /// GCC SECTION
          if(false
 #if HAVE_I386_GCC45_COMPILER
-            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC45
+            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                   CompilerWrapper_CompilerTarget::CT_I386_GCC45
 #endif
 #if HAVE_I386_GCC46_COMPILER
-            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC46
+            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                   CompilerWrapper_CompilerTarget::CT_I386_GCC46
 #endif
 #if HAVE_I386_GCC47_COMPILER
-            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                   CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if HAVE_I386_GCC48_COMPILER
-            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                   CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                   CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                   CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                   CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                   CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+            or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                   CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
          )
          {
-            tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" + STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator + "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
+            tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" +
+                                    STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator +
+                                    "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
             if(false
 #if HAVE_I386_GCC48_COMPILER
-               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                      CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                      CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                      CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                      CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                      CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                      CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
             )
             {
-               tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
+               tuning_optimizations +=
+                   STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
             }
             if(false
 #if HAVE_I386_GCC7_COMPILER
-               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                      CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+               or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                      CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
             )
             {
@@ -3849,34 +4012,44 @@ void BambuParameter::CheckParameters()
          /// CLANG SECTION
          else if(false
 #if HAVE_I386_CLANG4_COMPILER
-                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                        CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                        CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                        CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                        CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                        CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                        CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                        CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                        CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if HAVE_I386_CLANG12_COMPILER
-                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                        CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+                 or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                        CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
          )
          {
@@ -3926,9 +4099,13 @@ void BambuParameter::CheckParameters()
       if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
       {
          const auto source_files = getOption<const CustomSet<std::string>>(OPT_input_file);
-         if(source_files.size() > 1 && isOption(OPT_input_format) && getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
+         if(source_files.size() > 1 && isOption(OPT_input_format) &&
+            getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
          {
-            auto concat_filename = boost::filesystem::path(getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_concat_c_file)).string()).string();
+            auto concat_filename =
+                boost::filesystem::path(getOption<std::string>(OPT_output_temporary_directory) + "/" +
+                                        boost::filesystem::unique_path(std::string(STR_CST_concat_c_file)).string())
+                    .string();
             std::ofstream filestream(concat_filename.c_str());
             for(const auto& source_file : source_files)
             {
@@ -4075,7 +4252,8 @@ void BambuParameter::CheckParameters()
       {
          if(getOption<unsigned int>(OPT_channels_number) >= getOption<unsigned int>(OPT_memory_banks_number))
          {
-            THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of memory_bank");
+            THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of "
+                        "memory_bank");
          }
          if(getOption<std::string>(OPT_registered_inputs) != "auto")
          {
@@ -4125,7 +4303,8 @@ void BambuParameter::CheckParameters()
    }
 
    /// base address and initial internal address checks
-   if(isOption(OPT_initial_internal_address) && (getOption<unsigned long long int>(OPT_base_address) == 0 || getOption<unsigned int>(OPT_initial_internal_address) == 0))
+   if(isOption(OPT_initial_internal_address) && (getOption<unsigned long long int>(OPT_base_address) == 0 ||
+                                                 getOption<unsigned int>(OPT_initial_internal_address) == 0))
    {
       std::string optimizations;
       if(isOption(OPT_gcc_optimizations))
@@ -4145,37 +4324,52 @@ void BambuParameter::CheckParameters()
       setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_11);
       setOption(OPT_channels_number, 1);
    }
-   if(isOption(OPT_channels_number) and getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_11)
+   if(isOption(OPT_channels_number) and
+      getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_11)
    {
       if(getOption<unsigned int>(OPT_channels_number) != 1)
       {
          THROW_ERROR("the number of channels cannot be specified for MEM_ACC_11");
       }
    }
-   if(isOption(OPT_channels_number) and (getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1 or getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN))
+   if(isOption(OPT_channels_number) and
+      (getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1 or
+       getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN))
    {
-      if(getOption<unsigned int>(OPT_channels_number) > 2 and getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::NO_BRAM and
-         getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
+      if(getOption<unsigned int>(OPT_channels_number) > 2 and
+         getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::NO_BRAM and
+         getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
+             MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
       {
-         THROW_ERROR("no more than two channels is supported for MEM_ACC_N1 and MEM_ACC_NN: try to add this option --memory-allocation-policy=NO_BRAM or --memory-allocation-policy=EXT_PIPELINED_BRAM");
+         THROW_ERROR("no more than two channels is supported for MEM_ACC_N1 and MEM_ACC_NN: try to add this option "
+                     "--memory-allocation-policy=NO_BRAM or --memory-allocation-policy=EXT_PIPELINED_BRAM");
       }
    }
-   if(getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+   if(getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN and
+      isOption(OPT_interface_type) and
+      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
    {
       THROW_ERROR("Wishbone 4 interface does not yet support multi-channel architectures (MEM_ACC_NN)");
    }
 
-   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::ALL_BRAM and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::ALL_BRAM and
+      isOption(OPT_interface_type) and
+      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
    {
       THROW_ERROR("Wishbone 4 interface does not yet support --memory-allocation-policy=ALL_BRAM");
    }
 
-   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::EXT_PIPELINED_BRAM and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
+          MemoryAllocation_Policy::EXT_PIPELINED_BRAM and
+      isOption(OPT_interface_type) and
+      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
    {
       THROW_ERROR("Wishbone 4 interface does not yet support --memory-allocation-policy=EXT_PIPELINED_BRAM");
    }
 
-   if(isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION and (isOption(OPT_clock_name) or isOption(OPT_reset_name) or isOption(OPT_start_name) or isOption(OPT_done_name)))
+   if(isOption(OPT_interface_type) and
+      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION and
+      (isOption(OPT_clock_name) or isOption(OPT_reset_name) or isOption(OPT_start_name) or isOption(OPT_done_name)))
    {
       THROW_ERROR("Wishbone 4 interface does not allow the renaming of the control signals");
    }
@@ -4186,38 +4380,48 @@ void BambuParameter::CheckParameters()
       {
          THROW_ERROR("No input file specified");
       }
-      if(isOption(OPT_gcc_optimizations) and getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) != std::string::npos and getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos and
+      if(isOption(OPT_gcc_optimizations) and
+         getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) != std::string::npos and
+         getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos and
          getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos)
       {
          THROW_ERROR("-fwhole-program cannot be used with multiple input files");
       }
    }
 #if HAVE_EXPERIMENTAL
-   if(isOption(OPT_interface_type) && getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION)
+   if(isOption(OPT_interface_type) &&
+      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION)
    {
-      if(isOption(OPT_evaluation_objectives) && getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos)
+      if(isOption(OPT_evaluation_objectives) &&
+         getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos)
          THROW_ERROR("AXI-based synthesis has to be performed outside of bambu");
       else
-         THROW_WARNING("Note that synthesis and simulation scripts generated by bambu for AXI-based designs are actually only templates not real synthesis scripts\n");
+         THROW_WARNING("Note that synthesis and simulation scripts generated by bambu for AXI-based designs are "
+                       "actually only templates not real synthesis scripts\n");
    }
 #endif
-   if(isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy) and isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw))
+   if(isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy) and isOption(OPT_discrepancy_hw) and
+      getOption<bool>(OPT_discrepancy_hw))
    {
       THROW_ERROR("--discrepancy and --discrepancy-hw are mutually exclusive");
    }
-   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and getOption<HLSFlowStep_Type>(OPT_controller_architecture) != HLSFlowStep_Type::FSM_CONTROLLER_CREATOR)
+   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and
+      getOption<HLSFlowStep_Type>(OPT_controller_architecture) != HLSFlowStep_Type::FSM_CONTROLLER_CREATOR)
    {
       THROW_ERROR("--discrepancy-hw is only compatible with classic FSM controllers");
    }
-   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and static_cast<HDLWriter_Language>(getOption<unsigned int>(OPT_writer_language)) != HDLWriter_Language::VERILOG)
+   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and
+      static_cast<HDLWriter_Language>(getOption<unsigned int>(OPT_writer_language)) != HDLWriter_Language::VERILOG)
    {
       THROW_ERROR("--discrepancy-hw is only compatible with Verilog");
    }
-   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm) != HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION)
+   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and
+      getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm) != HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION)
    {
       THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with dominator function allocation");
    }
-   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and isOption(OPT_disable_function_proxy) and getOption<bool>(OPT_disable_function_proxy))
+   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and isOption(OPT_disable_function_proxy) and
+      getOption<bool>(OPT_disable_function_proxy))
    {
       THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with function proxies");
    }
@@ -4225,35 +4429,45 @@ void BambuParameter::CheckParameters()
    {
       if(false
 #if HAVE_I386_GCC45_COMPILER
-         or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC45
+         or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC45
 #endif
 #if HAVE_I386_GCC46_COMPILER
-         or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC46
+         or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC46
 #endif
 #if HAVE_I386_GCC47_COMPILER
-         or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+         or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if HAVE_I386_GCC48_COMPILER
-         or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+         or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-         or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+         or getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
       )
       {
-         THROW_WARNING("discrepancy analysis can report false positives with old compilers, use --compiler=I386_GCC5 or higher to avoid them");
+         THROW_WARNING("discrepancy analysis can report false positives with old compilers, use --compiler=I386_GCC5 "
+                       "or higher to avoid them");
       }
    }
-   if((isOption(OPT_generate_vcd) and getOption<bool>(OPT_generate_vcd)) or (isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy)))
+   if((isOption(OPT_generate_vcd) and getOption<bool>(OPT_generate_vcd)) or
+      (isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy)))
    {
       if(not isOption(OPT_generate_testbench) or not getOption<bool>(OPT_generate_testbench))
       {
          THROW_ERROR("Testbench generation required. (--generate-tb or --simulate undeclared).");
       }
    }
-   if((getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos) or (isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy)))
+   if((getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT and
+       getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos) or
+      (isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy)))
    {
-      if(isOption(OPT_top_functions_names) and getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
+      if(isOption(OPT_top_functions_names) and
+         getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
       {
          THROW_ERROR("Simulation cannot be enabled with multiple top functions");
       }
@@ -4289,32 +4503,50 @@ void BambuParameter::CheckParameters()
       THROW_ERROR("Include directories and library directories for Python bindings are missing.\n"
                   "use --testbench-extra-gcc-flags=\"string\" to provide them");
    }
-   setOption<unsigned int>(OPT_host_compiler, static_cast<unsigned int>(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)));
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and
-      (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
+   setOption<unsigned int>(OPT_host_compiler,
+                           static_cast<unsigned int>(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)));
+   if(isOption(OPT_evaluation_objectives) and
+      getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and
+      isOption(OPT_device_string) and
+      (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or
+       getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or
+       getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
    {
       if(getOption<std::string>(OPT_simulator) == "VERILATOR")
       {
-         THROW_WARNING("Simulation of Lattice device may not work with VERILATOR. Recent versions ignore some issue in Verilog Lattice libraries.");
+         THROW_WARNING("Simulation of Lattice device may not work with VERILATOR. Recent versions ignore some issue in "
+                       "Verilog Lattice libraries.");
       }
    }
    if(isOption(OPT_lattice_settings))
    {
-      if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and isOption(OPT_device_string) and
-         (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C") and !getOption<bool>(OPT_connect_iob))
+      if(isOption(OPT_evaluation_objectives) and
+         getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and
+         isOption(OPT_device_string) and
+         (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or
+          getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or
+          getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C") and
+         !getOption<bool>(OPT_connect_iob))
       {
          THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
       }
    }
    else
    {
-      if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and
-         (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
+      if(isOption(OPT_evaluation_objectives) and
+         getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and
+         isOption(OPT_device_string) and
+         (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or
+          getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or
+          getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
       {
-         THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support. See documentation about --lattice-root option.");
+         THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support. See documentation about "
+                     "--lattice-root option.");
       }
    }
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and (not isOption(OPT_simulator) or getOption<std::string>(OPT_simulator) == ""))
+   if(isOption(OPT_evaluation_objectives) and
+      getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and
+      (not isOption(OPT_simulator) or getOption<std::string>(OPT_simulator) == ""))
    {
       THROW_ERROR("At least a simulator must be enabled");
    }
@@ -4749,9 +4981,11 @@ void BambuParameter::SetDefaults()
 
 void BambuParameter::add_bambu_library(std::string lib)
 {
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
-    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||               \
-    HAVE_I386_CLANGVVD_COMPILER
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER ||   \
+    HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER ||      \
+    HAVE_I386_GCC8_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || \
+    HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||                            \
+    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER
    auto preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
    std::string archive_files;
    bool is_subnormals = isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal);
@@ -4784,115 +5018,134 @@ void BambuParameter::add_bambu_library(std::string lib)
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC45))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc45" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_gcc45" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC46_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC46))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc46" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_gcc46" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC47_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC47))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc47" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_gcc47" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC48_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC48))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc48" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_gcc48" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC49_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc49" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_gcc49" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC5))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc5" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_gcc5" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC6))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc6" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_gcc6" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC7))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc7" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_gcc7" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC8_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC8))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc8" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_gcc8" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG4_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG4))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang4" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_clang4" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG5))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang5" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_clang5" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG6))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang6" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_clang6" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG7))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang7" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_clang7" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG8_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG8))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang8" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_clang8" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG9_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG9))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang9" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_clang9" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG10_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang10" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_clang10" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG11_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang11" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_clang11" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG12_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang12" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_clang12" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD))
    {
-      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clangvvd" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib +
+                                       "_clangvvd" + VSuffix + ".a");
    }
 #endif
 }

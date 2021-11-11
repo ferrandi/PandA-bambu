@@ -84,14 +84,16 @@ void read_genlib_technology_File(const std::string& fn, const technology_manager
  * @param TM is the initial technology manager.
  * @return the technology manager.
  */
-void read_technology_File(const std::string& f, const technology_managerRef& TM, const ParameterConstRef& Param, const target_deviceRef& device);
+void read_technology_File(const std::string& f, const technology_managerRef& TM, const ParameterConstRef& Param,
+                          const target_deviceRef& device);
 
 /**
  * Read and update a library or a set of libraries based on the parameter options
  * @param TM is the technology manager.
  * @param Param is the class containing all the parameters
  */
-void read_technology_library(const technology_managerRef& TM, const ParameterConstRef& param, const target_deviceRef& device);
+void read_technology_library(const technology_managerRef& TM, const ParameterConstRef& param,
+                             const target_deviceRef& device);
 
 /**
  * Write an xml file describing a single library.
@@ -107,7 +109,8 @@ void write_xml_technology_File(const std::string& f, library_manager* LM, Target
  * @param TM is the technology manager.
  * @param libraries names of the libraries to dump. If empty or not given, it dumps all libraries
  */
-void write_lib_technology_File(const std::string& f, technology_managerRef const& TM, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
+void write_lib_technology_File(const std::string& f, technology_managerRef const& TM,
+                               const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
 
 /**
  * Write a liberty file describing a single library
@@ -125,7 +128,8 @@ void write_lib_technology_File(const std::string& f, library_manager* LM, Target
  * @param TM is the technology manager.
  * @param libraries names of the libraries to dump. If empty or not given, it dumps all libraries
  */
-void write_lef_technology_File(const std::string& f, technology_managerRef const& TM, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
+void write_lef_technology_File(const std::string& f, technology_managerRef const& TM, TargetDevice_Type dv_type,
+                               const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
 #endif
 
 /**
@@ -149,6 +153,8 @@ void write_technology_File(unsigned int type, const std::string& f, library_mana
  * @param TM is the technology manager.
  * @param libraries names of the libraries to dump. If empty or not given, it dumps all libraries
  */
-void write_technology_File(unsigned int type, const std::string& f, const technology_managerRef& TM, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
+void write_technology_File(unsigned int type, const std::string& f, const technology_managerRef& TM,
+                           TargetDevice_Type dv_type,
+                           const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
 
 #endif

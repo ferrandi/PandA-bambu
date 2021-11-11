@@ -54,7 +54,8 @@
 #include "operations_graph_constructor.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-OpCdgComputation::OpCdgComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+OpCdgComputation::OpCdgComputation(const ParameterConstRef _Param, const application_managerRef _AppM,
+                                   unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, OP_CONTROL_DEPENDENCE_COMPUTATION, _design_flow_manager, _Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -62,7 +63,8 @@ OpCdgComputation::OpCdgComputation(const ParameterConstRef _Param, const applica
 
 OpCdgComputation::~OpCdgComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> OpCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+OpCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -120,7 +122,9 @@ DesignFlowStep_Status OpCdgComputation::InternalExec()
          const auto source_operation = source_operations.back();
          for(const auto target_operation : target_operations)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding Control Dependence " + GET_NAME(fcfg, source_operation) + "-->" + GET_NAME(fcfg, target_operation));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Adding Control Dependence " + GET_NAME(fcfg, source_operation) + "-->" +
+                               GET_NAME(fcfg, target_operation));
             function_behavior->ogc->AddEdge(source_operation, target_operation, CDG_SELECTOR);
             for(const auto label : labels)
             {
@@ -131,7 +135,8 @@ DesignFlowStep_Status OpCdgComputation::InternalExec()
    }
 
    VertexIterator basic_block, basic_block_end;
-   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*bb_cdg); basic_block != basic_block_end; basic_block++)
+   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*bb_cdg); basic_block != basic_block_end;
+       basic_block++)
    {
       const auto bb_node_info = bb_cdg->CGetBBNodeInfo(*basic_block);
       const auto cer_index = bb_node_info->cer;

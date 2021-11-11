@@ -56,15 +56,21 @@
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-VirtualAggregateDataFlowAnalysis::VirtualAggregateDataFlowAnalysis(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const unsigned int _function_index, const ParameterConstRef _parameters)
-    : DataDependenceComputation(_AppM, _function_index, VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)
+VirtualAggregateDataFlowAnalysis::VirtualAggregateDataFlowAnalysis(const application_managerRef _AppM,
+                                                                   const DesignFlowManagerConstRef _design_flow_manager,
+                                                                   const unsigned int _function_index,
+                                                                   const ParameterConstRef _parameters)
+    : DataDependenceComputation(_AppM, _function_index, VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS, _design_flow_manager,
+                                _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 VirtualAggregateDataFlowAnalysis::~VirtualAggregateDataFlowAnalysis() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> VirtualAggregateDataFlowAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+VirtualAggregateDataFlowAnalysis::ComputeFrontendRelationships(
+    const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -99,7 +105,9 @@ void VirtualAggregateDataFlowAnalysis::Initialize()
          EdgeIterator edge, edge_end;
          for(boost::tie(edge, edge_end) = boost::edges(*fsaodg); edge != edge_end; edge++)
          {
-            function_behavior->ogc->RemoveSelector(*edge, DFG_AGG_SELECTOR | FB_DFG_AGG_SELECTOR | ADG_AGG_SELECTOR | FB_ADG_AGG_SELECTOR | ODG_AGG_SELECTOR | FB_ODG_AGG_SELECTOR);
+            function_behavior->ogc->RemoveSelector(*edge, DFG_AGG_SELECTOR | FB_DFG_AGG_SELECTOR | ADG_AGG_SELECTOR |
+                                                              FB_ADG_AGG_SELECTOR | ODG_AGG_SELECTOR |
+                                                              FB_ODG_AGG_SELECTOR);
          }
       }
    }

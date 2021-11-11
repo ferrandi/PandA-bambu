@@ -57,7 +57,10 @@
 /// HLS/binding/storage_value_insertion includes
 #include "storage_value_information.hpp"
 
-conflict_based_register::conflict_based_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+conflict_based_register::conflict_based_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                                 unsigned int _funId,
+                                                 const DesignFlowManagerConstRef _design_flow_manager,
+                                                 const HLSFlowStep_Type _hls_flow_step_type)
     : reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type), cg(nullptr)
 {
 }
@@ -71,7 +74,9 @@ void conflict_based_register::create_conflict_graph()
    unsigned int cg_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
    cg = new conflict_graph(cg_num_vertices);
    color_vec.resize(cg_num_vertices);
-   color = boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&>(&color_vec.front(), boost::get(boost::vertex_index, *cg));
+   color =
+       boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
+                                    cg_vertices_size_type&>(&color_vec.front(), boost::get(boost::vertex_index, *cg));
    /// conflict graph creation
    const std::list<vertex>& support = HLS->Rliv->get_support();
 

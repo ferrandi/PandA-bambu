@@ -104,7 +104,9 @@
 #include <fstream>
 #include <utility>
 
-DiscrepancyLog::DiscrepancyLog(const HLS_managerConstRef HLSMgr, const vcd_trace_head& t, const uint64_t c_context, std::string _c_val, const unsigned int _el_idx, const std::string::size_type _first_c_bit, const std::string::size_type _c_size,
+DiscrepancyLog::DiscrepancyLog(const HLS_managerConstRef HLSMgr, const vcd_trace_head& t, const uint64_t c_context,
+                               std::string _c_val, const unsigned int _el_idx,
+                               const std::string::size_type _first_c_bit, const std::string::size_type _c_size,
                                const unsigned int _b)
     : op_start_time(t.op_start_time),
       op_end_time(t.op_end_time),
@@ -129,29 +131,40 @@ DiscrepancyLog::DiscrepancyLog(const HLS_managerConstRef HLSMgr, const vcd_trace
 
 DiscrepancyLog::~DiscrepancyLog() = default;
 
-vcd_utility::vcd_utility(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+vcd_utility::vcd_utility(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                         const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::VCD_UTILITY),
       TM(HLSMgr->get_tree_manager()),
       Discr(_HLSMgr->RDiscr),
-      allow_uninitialized((parameters->isOption(OPT_discrepancy_force) and parameters->getOption<bool>(OPT_discrepancy_force))),
-      present_state_name(static_cast<HDLWriter_Language>(_parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VERILOG ? "_present_state" : "present_state")
+      allow_uninitialized(
+          (parameters->isOption(OPT_discrepancy_force) and parameters->getOption<bool>(OPT_discrepancy_force))),
+      present_state_name(static_cast<HDLWriter_Language>(_parameters->getOption<unsigned int>(OPT_writer_language)) ==
+                                 HDLWriter_Language::VERILOG ?
+                             "_present_state" :
+                             "present_state")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   THROW_ASSERT(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy), "Step " + STR(__PRETTY_FUNCTION__) + " should not be added without discrepancy");
+   THROW_ASSERT(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy),
+                "Step " + STR(__PRETTY_FUNCTION__) + " should not be added without discrepancy");
    THROW_ASSERT(HLSMgr->RDiscr, "Discr data structure is not correctly initialized");
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> vcd_utility::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+vcd_utility::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -168,7 +181,8 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-static const std::list<sig_variation>& get_signal_variations(const vcd_parser::vcd_trace_t& vcd_trace, const std::string& scope, const std::string& signal_name)
+static const std::list<sig_variation>& get_signal_variations(const vcd_parser::vcd_trace_t& vcd_trace,
+                                                             const std::string& scope, const std::string& signal_name)
 {
    const auto scopes_end = vcd_trace.end();
    const auto scopes_it = vcd_trace.find(scope);
@@ -190,7 +204,8 @@ unsigned long long vcd_utility::GetClockPeriod(const vcd_parser::vcd_trace_t& vc
    std::string top_scope = Discr->unfolded_v_to_scope.at(Discr->unfolded_root_v);
    const std::string controller_scope = top_scope + "Controller_i" + STR(HIERARCHY_SEPARATOR);
    const auto clock_signal_name = STR(CLOCK_PORT_NAME);
-   const std::list<sig_variation>& clock_sig_variations = get_signal_variations(vcd_trace, controller_scope, clock_signal_name);
+   const std::list<sig_variation>& clock_sig_variations =
+       get_signal_variations(vcd_trace, controller_scope, clock_signal_name);
    auto clock_var_it = clock_sig_variations.begin();
    const auto clock_var_beg = clock_var_it;
    const auto clock_var_end = clock_sig_variations.end();
@@ -220,7 +235,8 @@ DesignFlowStep_Status vcd_utility::Exec()
       {
          one_hot_encoding = true;
       }
-      else if(parameters->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx" && HLSMgr->get_HLS(funId)->STG->get_number_of_states() < 256)
+      else if(parameters->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx" &&
+              HLSMgr->get_HLS(funId)->STG->get_number_of_states() < 256)
       {
          one_hot_encoding = true;
       }
@@ -239,7 +255,8 @@ DesignFlowStep_Status vcd_utility::Exec()
    soft_discr_list.clear();
 
    std::ofstream disc_stat_file;
-   std::string disc_stat_filename = parameters->getOption<std::string>(OPT_output_directory) + "/simulation/dynamic_discrepancy_stats";
+   std::string disc_stat_filename =
+       parameters->getOption<std::string>(OPT_output_directory) + "/simulation/dynamic_discrepancy_stats";
    disc_stat_file.open(disc_stat_filename, std::ofstream::app);
    if(not disc_stat_file.is_open())
    {
@@ -262,7 +279,8 @@ DesignFlowStep_Status vcd_utility::Exec()
    {
       STOP_TIME(vcd_parse_time);
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsed vcd file " + vcd_filename + " in " + print_cpu_time(vcd_parse_time) + " seconds");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                  "Parsed vcd file " + vcd_filename + " in " + print_cpu_time(vcd_parse_time) + " seconds");
    /* parse the discrepancy trace coming from C execution */
    const std::string& discrepancy_data_filename = HLSMgr->RDiscr->c_trace_filename;
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsing C trace file " + discrepancy_data_filename);
@@ -276,12 +294,15 @@ DesignFlowStep_Status vcd_utility::Exec()
    {
       STOP_TIME(ctrace_parse_time);
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsed C trace file " + discrepancy_data_filename + " in " + print_cpu_time(ctrace_parse_time) + " seconds");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                  "Parsed C trace file " + discrepancy_data_filename + " in " + print_cpu_time(ctrace_parse_time) +
+                      " seconds");
 
    auto& c_op_trace = Discr->c_op_trace;
    if(c_op_trace.empty())
    {
-      THROW_WARNING("Discrepancy Analysis: the trace of the C execution is empty. Discrepancy Analysis cannot be performed");
+      THROW_WARNING(
+          "Discrepancy Analysis: the trace of the C execution is empty. Discrepancy Analysis cannot be performed");
       if((not parameters->isOption(OPT_no_clean)) or (!parameters->getOption<bool>(OPT_no_clean)))
       {
          if((not parameters->isOption(OPT_generate_vcd)) or (!parameters->getOption<bool>(OPT_generate_vcd)))
@@ -309,13 +330,15 @@ DesignFlowStep_Status vcd_utility::Exec()
    {
       const DiscrepancyOpInfo& op_info = c.first;
       const std::list<std::pair<uint64_t, std::string>>& optrace = c.second;
-      THROW_ASSERT(HLSMgr->RDiscr->opid_to_outsignal.find(op_info.op_id) != HLSMgr->RDiscr->opid_to_outsignal.end(), "can't find out signal for operation " + STR(op_info.op_id));
+      THROW_ASSERT(HLSMgr->RDiscr->opid_to_outsignal.find(op_info.op_id) != HLSMgr->RDiscr->opid_to_outsignal.end(),
+                   "can't find out signal for operation " + STR(op_info.op_id));
       std::string& outsigname = HLSMgr->RDiscr->opid_to_outsignal.at(op_info.op_id);
       /*
        * setup the heads for the multiple vcd traces in hw related to an
        * operation in C
        */
-      THROW_ASSERT(Discr->f_id_to_scope.find(op_info.stg_fun_id) != Discr->f_id_to_scope.end(), "no scope for function " + STR(op_info.stg_fun_id));
+      THROW_ASSERT(Discr->f_id_to_scope.find(op_info.stg_fun_id) != Discr->f_id_to_scope.end(),
+                   "no scope for function " + STR(op_info.stg_fun_id));
       const auto& scope_set = Discr->f_id_to_scope.at(op_info.stg_fun_id);
       if(not scope_set.empty())
       {
@@ -330,9 +353,11 @@ DesignFlowStep_Status vcd_utility::Exec()
          /* select the variations of the output sign&l */
          const std::list<sig_variation>& op_out_vars = get_signal_variations(vcd_trace, datapath_scope, outsigname);
          /* select the variations of state signal of the state machine */
-         const std::list<sig_variation>& present_state_vars = get_signal_variations(vcd_trace, controller_scope, present_state_name);
+         const std::list<sig_variation>& present_state_vars =
+             get_signal_variations(vcd_trace, controller_scope, present_state_name);
          /* select the variations of the start port signals */
-         const std::list<sig_variation>& start_vars = get_signal_variations(vcd_trace, controller_scope, STR(START_PORT_NAME));
+         const std::list<sig_variation>& start_vars =
+             get_signal_variations(vcd_trace, controller_scope, STR(START_PORT_NAME));
          /*
           * calculate the initial state of the FSM. this is used by the
           * vcd_trace_head to compute the exact starting time for the operation,
@@ -347,7 +372,10 @@ DesignFlowStep_Status vcd_utility::Exec()
          vertex first_state = boost::target(*oe, *stg);
          const unsigned int initial_state_id = stg->CGetStateTransitionGraphInfo()->vertex_to_state_id.at(first_state);
 
-         op_id_to_scope_to_vcd_head.at(op_info.op_id).insert(std::make_pair(scope, vcd_trace_head(op_info, fullsigname, present_state_vars, op_out_vars, start_vars, initial_state_id, GetClockPeriod(vcd_trace), HLSMgr, TM, isOneHot(op_info.stg_fun_id))));
+         op_id_to_scope_to_vcd_head.at(op_info.op_id)
+             .insert(std::make_pair(scope, vcd_trace_head(op_info, fullsigname, present_state_vars, op_out_vars,
+                                                          start_vars, initial_state_id, GetClockPeriod(vcd_trace),
+                                                          HLSMgr, TM, isOneHot(op_info.stg_fun_id))));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed scope " + scope);
       }
 
@@ -365,7 +393,8 @@ DesignFlowStep_Status vcd_utility::Exec()
       const auto ct_end = optrace.cend();
       while(ct_it != ct_end)
       {
-         struct vcd_trace_head& vcd_head = op_id_to_scope_to_vcd_head.at(op_info.op_id).at(Discr->context_to_scope.at(ct_it->first));
+         struct vcd_trace_head& vcd_head =
+             op_id_to_scope_to_vcd_head.at(op_info.op_id).at(Discr->context_to_scope.at(ct_it->first));
          switch(vcd_head.state)
          {
             case vcd_trace_head::checked:
@@ -430,8 +459,10 @@ DesignFlowStep_Status vcd_utility::Exec()
    {
       STOP_TIME(discrepancy_time);
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Discrepancy analysis executed in " + print_cpu_time(discrepancy_time) + " seconds");
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Possibly lost address checks = " + STR(possibly_lost_address));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---Discrepancy analysis executed in " + print_cpu_time(discrepancy_time) + " seconds");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---Possibly lost address checks = " + STR(possibly_lost_address));
 
    disc_stat_file << "Possibly lost address checks = ";
    disc_stat_file << possibly_lost_address << "\n";
@@ -440,7 +471,8 @@ DesignFlowStep_Status vcd_utility::Exec()
    disc_stat_file.flush();
    disc_stat_file.close();
 
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---DISCREPANCY CHECKS: " + STR(Discr->n_checked_operations) + "/" + STR(Discr->n_total_operations));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---DISCREPANCY CHECKS: " + STR(Discr->n_checked_operations) + "/" + STR(Discr->n_total_operations));
 
    bool first_discrepancy_print = true;
    if(not discr_list.empty() or not soft_discr_list.empty())
@@ -487,9 +519,12 @@ DesignFlowStep_Status vcd_utility::Exec()
       {
          before_discrepancy = discr_list.empty() or not t.second.starts_after(discr_list.front().op_start_time);
 
-         suspended_op_never_ends = t.second.state == vcd_trace_head::suspended and t.second.consecutive_state_executions != std::numeric_limits<decltype(t.second.consecutive_state_executions)>::max();
+         suspended_op_never_ends = t.second.state == vcd_trace_head::suspended and
+                                   t.second.consecutive_state_executions !=
+                                       std::numeric_limits<decltype(t.second.consecutive_state_executions)>::max();
 
-         if(before_discrepancy and t.second.has_been_initialized and (t.second.state == vcd_trace_head::init_fail or suspended_op_never_ends))
+         if(before_discrepancy and t.second.has_been_initialized and
+            (t.second.state == vcd_trace_head::init_fail or suspended_op_never_ends))
          {
             if(first_discrepancy_print)
             {
@@ -542,7 +577,8 @@ bool vcd_utility::detect_mismatch(const vcd_trace_head& t, const uint64_t c_cont
 {
    const std::string& vcd_val = t.out_var_it->value;
    bool is_mismatch = false;
-   if(parameters->isOption(OPT_discrepancy_force) and parameters->getOption<bool>(OPT_discrepancy_force) and vcd_val.find_first_not_of("01") != std::string::npos)
+   if(parameters->isOption(OPT_discrepancy_force) and parameters->getOption<bool>(OPT_discrepancy_force) and
+      vcd_val.find_first_not_of("01") != std::string::npos)
    {
       /*
        * The user is saying that he/she guarantees that there are no uninitialized
@@ -595,7 +631,8 @@ bool vcd_utility::detect_mismatch(const vcd_trace_head& t, const uint64_t c_cont
    return is_mismatch;
 }
 
-bool vcd_utility::detect_mismatch_element(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val, const unsigned int el_idx)
+bool vcd_utility::detect_mismatch_element(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val,
+                                          const unsigned int el_idx)
 {
 #if HAVE_ASSERTS
    const std::string& vcd_val = t.out_var_it->value;
@@ -668,13 +705,17 @@ bool vcd_utility::detect_mismatch_element(const vcd_trace_head& t, const uint64_
    return is_mismatch;
 }
 
-bool vcd_utility::detect_mismatch_simple(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val, const unsigned int el_idx, const std::string::size_type first_c_bit, const std::string::size_type c_size)
+bool vcd_utility::detect_mismatch_simple(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val,
+                                         const unsigned int el_idx, const std::string::size_type first_c_bit,
+                                         const std::string::size_type c_size)
 {
    unsigned int base_index = 0; // this is set when an address mismatch is detected
    const bool resized = c_val.length() != c_size;
    const std::string& resized_c_val = resized ? c_val.substr(first_c_bit, c_size) : c_val;
 
-   THROW_ASSERT(not resized or (t.op_info.type & (DISCR_COMPLEX | DISCR_VECTOR)), "operation " + STR(t.op_info.op_id) + " assigns ssa " + STR(t.op_info.ssa_name) + ": only complex or vectors are supposed to be resized for discrepancy analysis");
+   THROW_ASSERT(not resized or (t.op_info.type & (DISCR_COMPLEX | DISCR_VECTOR)),
+                "operation " + STR(t.op_info.op_id) + " assigns ssa " + STR(t.op_info.ssa_name) +
+                    ": only complex or vectors are supposed to be resized for discrepancy analysis");
 
    const std::string& vcd = t.out_var_it->value;
 
@@ -690,9 +731,11 @@ bool vcd_utility::detect_mismatch_simple(const vcd_trace_head& t, const uint64_t
 
    if(discrepancy_found and (t.op_info.type & DISCR_ADDR))
    {
-      THROW_ASSERT(not(t.op_info.type & DISCR_REAL) and not(t.op_info.type & DISCR_COMPLEX), "address ssa cannot be real or complex: "
-                                                                                             "real = " +
-                                                                                                 STR(static_cast<bool>(t.op_info.type & DISCR_VECTOR)) + "complex = " + STR(static_cast<bool>(t.op_info.type & DISCR_COMPLEX)));
+      THROW_ASSERT(not(t.op_info.type & DISCR_REAL) and not(t.op_info.type & DISCR_COMPLEX),
+                   "address ssa cannot be real or complex: "
+                   "real = " +
+                       STR(static_cast<bool>(t.op_info.type & DISCR_VECTOR)) +
+                       "complex = " + STR(static_cast<bool>(t.op_info.type & DISCR_COMPLEX)));
       mismatched_integers++;
       /*
        * if the ssa stores an address first we try to find a regular
@@ -709,10 +752,13 @@ bool vcd_utility::detect_mismatch_simple(const vcd_trace_head& t, const uint64_t
    return discrepancy_found;
 }
 
-void vcd_utility::update_discr_list(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val, const unsigned int el_idx, const std::string::size_type first_c_bit, const std::string::size_type c_size, const unsigned int base_index)
+void vcd_utility::update_discr_list(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val,
+                                    const unsigned int el_idx, const std::string::size_type first_c_bit,
+                                    const std::string::size_type c_size, const unsigned int base_index)
 {
    bool hard_discrepancy = true;
-   if(parameters->isOption(OPT_discrepancy_permissive_ptrs) and parameters->getOption<bool>(OPT_discrepancy_permissive_ptrs) and (t.op_info.type & DISCR_ADDR))
+   if(parameters->isOption(OPT_discrepancy_permissive_ptrs) and
+      parameters->getOption<bool>(OPT_discrepancy_permissive_ptrs) and (t.op_info.type & DISCR_ADDR))
    {
       hard_discrepancy = false;
    }
@@ -766,7 +812,8 @@ void vcd_utility::update_discr_list(const vcd_trace_head& t, const uint64_t c_co
 
 bool vcd_utility::detect_binary_float_mismatch(const std::string& c_val, const std::string& resized_vcd_val) const
 {
-   THROW_ASSERT(c_val.length() == resized_vcd_val.length(), STR(c_val.length()) + " != " + STR(resized_vcd_val.length()));
+   THROW_ASSERT(c_val.length() == resized_vcd_val.length(),
+                STR(c_val.length()) + " != " + STR(resized_vcd_val.length()));
    union
    {
       float f;
@@ -820,7 +867,8 @@ bool vcd_utility::detect_binary_float_mismatch(const std::string& c_val, const s
 
 bool vcd_utility::detect_binary_double_mismatch(const std::string& c_val, const std::string& resized_vcd_val) const
 {
-   THROW_ASSERT(c_val.length() == resized_vcd_val.length(), STR(c_val.length()) + " != " + STR(resized_vcd_val.length()));
+   THROW_ASSERT(c_val.length() == resized_vcd_val.length(),
+                STR(c_val.length()) + " != " + STR(resized_vcd_val.length()));
    union
    {
       double f;
@@ -872,7 +920,9 @@ bool vcd_utility::detect_binary_double_mismatch(const std::string& c_val, const 
    return false;
 }
 
-bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context, const std::string& c_val, const std::string& vcd_val, const unsigned int base_index) const
+bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context,
+                                                const std::string& c_val, const std::string& vcd_val,
+                                                const unsigned int base_index) const
 {
    const auto context_it = Discr->c_addr_map.find(c_context);
    THROW_ASSERT(context_it != Discr->c_addr_map.end(), "no address map found for context " + STR(c_context));
@@ -891,8 +941,10 @@ bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info
       c_addr_offset = c_base_addr - c_addr;
    }
    /* don't detect mismatch for out of bounds address */
-   const uint64_t memory_area_bitsize = std::max(8u, tree_helper::Size(tree_helper::CGetType(TM->CGetTreeReindex(base_index))));
-   THROW_ASSERT(memory_area_bitsize % 8 == 0, "bitsize of a variable in memory must be multiple of 8 --> is " + STR(memory_area_bitsize));
+   const uint64_t memory_area_bitsize =
+       std::max(8u, tree_helper::Size(tree_helper::CGetType(TM->CGetTreeReindex(base_index))));
+   THROW_ASSERT(memory_area_bitsize % 8 == 0,
+                "bitsize of a variable in memory must be multiple of 8 --> is " + STR(memory_area_bitsize));
    if(c_offset_is_negative or ((memory_area_bitsize / 8) <= (c_addr - c_base_addr)))
    {
       return false;
@@ -902,7 +954,8 @@ bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info
     * representing the pointer can be wider than 32 bits. in that case we take
     * the lowest 32 bits
     */
-   const std::string& resized_vcd_val = c_val.length() < vcd_val.length() ? vcd_val.substr(vcd_val.length() - c_val.length()) : vcd_val;
+   const std::string& resized_vcd_val =
+       c_val.length() < vcd_val.length() ? vcd_val.substr(vcd_val.length() - c_val.length()) : vcd_val;
    /*
     * detect a mismatch if some of the resized address bits are not zeros or ones
     */
@@ -929,7 +982,9 @@ bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info
    }
 }
 
-bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context, const std::string& c_val, const std::string& vcd_val, unsigned int& base_index)
+bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context,
+                                          const std::string& c_val, const std::string& vcd_val,
+                                          unsigned int& base_index)
 {
    const auto* ssa = GetPointer<const ssa_name>(TM->get_tree_node_const(op_info.ssa_name_node_id));
    base_index = tree_helper::get_base_index(TM, op_info.ssa_name_node_id);
@@ -947,8 +1002,10 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
          for(const tree_nodeRef& pointed_var_decl_id : ssa->use_set->variables)
          {
             base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(pointed_var_decl_id));
-            THROW_ASSERT(base_index != 0 and HLSMgr->Rmem->has_base_address(base_index), "opid = " + STR(op_info.op_id) + " base index = " + STR(base_index) + " has no base address");
-            THROW_ASSERT(Discr->c_addr_map.find(c_context) != Discr->c_addr_map.end(), "no address map found for context " + STR(c_context));
+            THROW_ASSERT(base_index != 0 and HLSMgr->Rmem->has_base_address(base_index),
+                         "opid = " + STR(op_info.op_id) + " base index = " + STR(base_index) + " has no base address");
+            THROW_ASSERT(Discr->c_addr_map.find(c_context) != Discr->c_addr_map.end(),
+                         "no address map found for context " + STR(c_context));
             if(Discr->c_addr_map.at(c_context).find(base_index) != Discr->c_addr_map.at(c_context).end())
             {
 #if HAVE_ASSERTS
@@ -960,7 +1017,8 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
                }
             }
          }
-         THROW_ASSERT(at_least_one_pointed_variable_is_in_scope == true, "no pointed variable are in scope for opid = " + STR(op_info.op_id));
+         THROW_ASSERT(at_least_one_pointed_variable_is_in_scope == true,
+                      "no pointed variable are in scope for opid = " + STR(op_info.op_id));
       }
       else
       {
@@ -995,7 +1053,8 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
    return false;
 }
 
-bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::string& c_val, const std::string& vcd_val) const
+bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::string& c_val,
+                                          const std::string& vcd_val) const
 {
    if(t.op_info.type & DISCR_REAL)
    {
@@ -1042,7 +1101,8 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
    }
    else // is an integer
    {
-      std::string bitvalue = GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(t.op_info.ssa_name_node_id)))->bit_values;
+      std::string bitvalue =
+          GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(t.op_info.ssa_name_node_id)))->bit_values;
       auto first_not_x_pos = bitvalue.find_first_not_of("xX");
       if(first_not_x_pos == std::string::npos)
       {
@@ -1103,7 +1163,8 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, bool one_hot_encodi
                          STR(GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))) +
                          "\n"
                          "|  bitvalue string for ssa id is " +
-                         STR(l.ssa_id) + " " + GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))->bit_values + "\n";
+                         STR(l.ssa_id) + " " +
+                         GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))->bit_values + "\n";
 
    if(l.type & DISCR_ADDR)
    {
@@ -1128,8 +1189,11 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, bool one_hot_encodi
                                                  STR(c_addr) + " c_base_addr = " + STR(c_base_addr));
          out_msg += "|  address offset in C: " + STR(c_addr_offset) + "\n";
 #if HAVE_ASSERTS
-         const uint64_t memory_area_bitsize = std::max(8u, tree_helper::Size(tree_helper::CGetType(TM->CGetTreeReindex(l.base_index))));
-         THROW_ASSERT(memory_area_bitsize % 8 == 0, "bitsize of a variable in memory must be multiple of 8 --> is " + STR(memory_area_bitsize) + ": this should be catched by an assertion earlier");
+         const uint64_t memory_area_bitsize =
+             std::max(8u, tree_helper::Size(tree_helper::CGetType(TM->CGetTreeReindex(l.base_index))));
+         THROW_ASSERT(memory_area_bitsize % 8 == 0, "bitsize of a variable in memory must be multiple of 8 --> is " +
+                                                        STR(memory_area_bitsize) +
+                                                        ": this should be catched by an assertion earlier");
 #endif
       }
       else
@@ -1152,7 +1216,8 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, bool one_hot_encodi
          out_msg += "|  address in vcd: " + STR(vcd_addr) + "\n";
 
          uint64_t vcd_addr_offset = vcd_addr >= vcd_base_addr ? vcd_addr - vcd_base_addr : vcd_base_addr - vcd_addr;
-         out_msg += "|  address offset in vcd: " + (vcd_addr >= vcd_base_addr ? std::string("") : std::string("-")) + STR(vcd_addr_offset) + "\n";
+         out_msg += "|  address offset in vcd: " + (vcd_addr >= vcd_base_addr ? std::string("") : std::string("-")) +
+                    STR(vcd_addr_offset) + "\n";
       }
       else
       {
@@ -1198,7 +1263,8 @@ void vcd_utility::print_failed_vcd_head(const vcd_trace_head& t, bool one_hot_en
       }
       case vcd_trace_head::no_start_state:
       {
-         out_msg += "|  cannot find next start state for operation " + STR(t.op_info.stg_fun_id) + "_" + STR(t.op_info.op_id) +
+         out_msg += "|  cannot find next start state for operation " + STR(t.op_info.stg_fun_id) + "_" +
+                    STR(t.op_info.op_id) +
                     "\n"
                     "|  previous execution started at time  " +
                     STR(t.op_start_time) +
@@ -1212,7 +1278,8 @@ void vcd_utility::print_failed_vcd_head(const vcd_trace_head& t, bool one_hot_en
       }
       case vcd_trace_head::no_end_state:
       {
-         out_msg += "|  cannot find next end state for operation " + STR(t.op_info.stg_fun_id) + "_" + STR(t.op_info.op_id) +
+         out_msg += "|  cannot find next end state for operation " + STR(t.op_info.stg_fun_id) + "_" +
+                    STR(t.op_info.op_id) +
                     "\n"
                     "|  never reaches an end in HDL simulation\n"
                     "|  failed operation starts at time " +
@@ -1232,7 +1299,8 @@ void vcd_utility::print_failed_vcd_head(const vcd_trace_head& t, bool one_hot_en
    INDENT_OUT_MEX(verbosity, output_level, out_msg);
 }
 
-std::string vcd_utility::compute_fsm_state_from_vcd_string(const std::string& vcd_state_string, bool one_hot_encoding) const
+std::string vcd_utility::compute_fsm_state_from_vcd_string(const std::string& vcd_state_string,
+                                                           bool one_hot_encoding) const
 {
    if(vcd_state_string.find_first_not_of("01") != std::string::npos)
    {

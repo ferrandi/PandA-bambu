@@ -87,7 +87,8 @@ class mux_obj : public generic_obj
     * @param name is the id
     * @param target is the overall mux tree target
     */
-   mux_obj(const generic_objRef first, const generic_objRef second, unsigned int level, const std::string& name, const generic_objRef overall_target);
+   mux_obj(const generic_objRef first, const generic_objRef second, unsigned int level, const std::string& name,
+           const generic_objRef overall_target);
 
    /**
     * Destructor.

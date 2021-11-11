@@ -59,7 +59,8 @@
 #include "allocation_information.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
-unique_binding::unique_binding(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+unique_binding::unique_binding(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                               const DesignFlowManagerConstRef _design_flow_manager)
     : fu_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::UNIQUE_MODULE_BINDING)
 {
 }

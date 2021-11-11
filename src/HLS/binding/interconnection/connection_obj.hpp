@@ -75,7 +75,8 @@ class connection_obj
     * @param _type is the type of the interconnection
     * @param _live_variable is the set of variables crossing the connection
     */
-   connection_obj(element_t _type, const CustomOrderedSet<data_transfer>& _live_variable) : type(_type), live_variable(_live_variable)
+   connection_obj(element_t _type, const CustomOrderedSet<data_transfer>& _live_variable)
+       : type(_type), live_variable(_live_variable)
    {
    }
 

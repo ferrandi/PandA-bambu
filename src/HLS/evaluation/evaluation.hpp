@@ -78,7 +78,8 @@ class Evaluation
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -86,7 +87,8 @@ class Evaluation
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of evaluation
     */
-   Evaluation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   Evaluation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+              const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

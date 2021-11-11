@@ -112,7 +112,8 @@ enum class DesignFlowStep_Status
 class DesignFlowStep
 {
  protected:
-   /// True if this step represents a composition of design flow steps (e.g., a flow); must be set by specialized constructors
+   /// True if this step represents a composition of design flow steps (e.g., a flow); must be set by specialized
+   /// constructors
    bool composed;
 
    /// The design flow manager
@@ -189,7 +190,8 @@ class DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   virtual void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) = 0;
+   virtual void ComputeRelationships(DesignFlowStepSet& relationship,
+                                     const DesignFlowStep::RelationshipType relationship_type) = 0;
 
    /**
     * Write the label for a dot graph

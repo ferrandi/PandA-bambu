@@ -45,7 +45,9 @@
 #include <boost/filesystem.hpp>
 
 // constructor
-QuartusPowerWrapper::QuartusPowerWrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) : AlteraWrapper(_Param, QUARTUS_POWER_TOOL_EXEC, _device, _output_dir, QUARTUS_POWER_TOOL_ID)
+QuartusPowerWrapper::QuartusPowerWrapper(const ParameterConstRef _Param, const std::string& _output_dir,
+                                         const target_deviceRef _device)
+    : AlteraWrapper(_Param, QUARTUS_POWER_TOOL_EXEC, _device, _output_dir, QUARTUS_POWER_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the QUARTUS_POWER wrapper...");
 }

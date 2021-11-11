@@ -72,11 +72,15 @@
 #include "tree_node.hpp"    // for tree_nodeRef, tree_node
 #include "tree_reindex.hpp"
 
-application_manager::application_manager(const FunctionExpanderConstRef function_expander, const bool _single_root_function, const bool _allow_recursive_functions, const ParameterConstRef _Param)
+application_manager::application_manager(const FunctionExpanderConstRef function_expander,
+                                         const bool _single_root_function, const bool _allow_recursive_functions,
+                                         const ParameterConstRef _Param)
     : TM(new tree_manager(_Param)),
-      call_graph_manager(new CallGraphManager(function_expander, _single_root_function, _allow_recursive_functions, TM, _Param)),
+      call_graph_manager(
+          new CallGraphManager(function_expander, _single_root_function, _allow_recursive_functions, TM, _Param)),
       Param(_Param),
-      address_bitsize(_Param->isOption(OPT_addr_bus_bitsize) ? _Param->getOption<unsigned int>(OPT_addr_bus_bitsize) : 32),
+      address_bitsize(_Param->isOption(OPT_addr_bus_bitsize) ? _Param->getOption<unsigned int>(OPT_addr_bus_bitsize) :
+                                                               32),
       single_root_function(_single_root_function),
 #if HAVE_PRAGMA_BUILT
       PM(new pragma_manager(application_managerRef(this, null_deleter()), _Param)),
@@ -85,7 +89,10 @@ application_manager::application_manager(const FunctionExpanderConstRef function
       debug_level(_Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 #if HAVE_FROM_DISCREPANCY_BUILT
       ,
-      RDiscr(((_Param->isOption(OPT_discrepancy) and _Param->getOption<bool>(OPT_discrepancy)) or (_Param->isOption(OPT_discrepancy_hw) and _Param->getOption<bool>(OPT_discrepancy_hw))) ? new Discrepancy() : nullptr)
+      RDiscr(((_Param->isOption(OPT_discrepancy) and _Param->getOption<bool>(OPT_discrepancy)) or
+              (_Param->isOption(OPT_discrepancy_hw) and _Param->getOption<bool>(OPT_discrepancy_hw))) ?
+                 new Discrepancy() :
+                 nullptr)
 #endif
 {
    const auto original_file_names = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
@@ -322,9 +329,12 @@ tree_nodeConstRef application_manager::GetProducedValue(const tree_nodeConstRef&
 }
 
 #if HAVE_CODESIGN
-void application_manager::AddActorGraphManager(const unsigned int function_index, const ActorGraphManagerRef actor_graph_manager)
+void application_manager::AddActorGraphManager(const unsigned int function_index,
+                                               const ActorGraphManagerRef actor_graph_manager)
 {
-   THROW_ASSERT(const_output_actor_graphs.find(function_index) == const_output_actor_graphs.end(), "Function " + boost::lexical_cast<std::string>(function_index) + " has alread an actor graph manager associated");
+   THROW_ASSERT(const_output_actor_graphs.find(function_index) == const_output_actor_graphs.end(),
+                "Function " + boost::lexical_cast<std::string>(function_index) +
+                    " has alread an actor graph manager associated");
    const_output_actor_graphs[function_index] = actor_graph_manager;
    output_actor_graphs[function_index] = actor_graph_manager;
 }
@@ -336,13 +346,15 @@ const CustomUnorderedMap<unsigned int, ActorGraphManagerConstRef>& application_m
 
 const ActorGraphManagerConstRef application_manager::CGetActorGraph(const unsigned int function_index) const
 {
-   THROW_ASSERT(const_output_actor_graphs.find(function_index) != const_output_actor_graphs.end(), "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found");
+   THROW_ASSERT(const_output_actor_graphs.find(function_index) != const_output_actor_graphs.end(),
+                "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found");
    return const_output_actor_graphs.find(function_index)->second;
 }
 
 ActorGraphManagerRef application_manager::GetActorGraph(const unsigned int function_index)
 {
-   THROW_ASSERT(output_actor_graphs.find(function_index) != output_actor_graphs.end(), "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found ");
+   THROW_ASSERT(output_actor_graphs.find(function_index) != output_actor_graphs.end(),
+                "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found ");
    return output_actor_graphs.find(function_index)->second;
 }
 
@@ -393,9 +405,13 @@ void application_manager::RegisterTransformation(const std::string&
    if(new_tn)
    {
       const auto tn = new_tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(new_tn) : new_tn;
-      tn_str = tn->get_kind() == function_decl_K ? ("@" + STR(new_tn->index) + tree_helper::print_function_name(get_tree_manager(), GetPointerS<const function_decl>(tn))) : tn->ToString();
+      tn_str = tn->get_kind() == function_decl_K ?
+                   ("@" + STR(new_tn->index) +
+                    tree_helper::print_function_name(get_tree_manager(), GetPointerS<const function_decl>(tn))) :
+                   tn->ToString();
    }
-   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_max_transformations), step + " - " + tn_str + " Transformations " + STR(cfg_transformations));
+   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_max_transformations),
+                step + " - " + tn_str + " Transformations " + STR(cfg_transformations));
    cfg_transformations++;
    if(Param->getOption<size_t>(OPT_max_transformations) != std::numeric_limits<size_t>::max())
    {
@@ -406,14 +422,17 @@ void application_manager::RegisterTransformation(const std::string&
 
 bool application_manager::isParmUsed(unsigned int functionID, unsigned parm_index) const
 {
-   return Parm2SSA_map.find(functionID) != Parm2SSA_map.end() && Parm2SSA_map.find(functionID)->second.count(parm_index);
+   return Parm2SSA_map.find(functionID) != Parm2SSA_map.end() &&
+          Parm2SSA_map.find(functionID)->second.count(parm_index);
 }
 
 unsigned application_manager::getSSAFromParm(unsigned int functionID, unsigned parm_index) const
 {
    THROW_ASSERT(parm_index, "unexpected null parm_decl index");
-   THROW_ASSERT(Parm2SSA_map.find(functionID) != Parm2SSA_map.end(), "relation not computed for function id: " + STR(functionID));
-   THROW_ASSERT(Parm2SSA_map.find(functionID)->second.find(parm_index) != Parm2SSA_map.find(functionID)->second.end(), "unexpected condition " + STR(functionID) + " " + STR(parm_index));
+   THROW_ASSERT(Parm2SSA_map.find(functionID) != Parm2SSA_map.end(),
+                "relation not computed for function id: " + STR(functionID));
+   THROW_ASSERT(Parm2SSA_map.find(functionID)->second.find(parm_index) != Parm2SSA_map.find(functionID)->second.end(),
+                "unexpected condition " + STR(functionID) + " " + STR(parm_index));
    return Parm2SSA_map.find(functionID)->second.find(parm_index)->second;
 }
 
@@ -434,7 +453,8 @@ void application_manager::setSSAFromParm(unsigned int functionID, unsigned int p
       }
       else
       {
-         THROW_ASSERT(Parm2SSA_map.find(functionID)->second.find(parm_index)->second == ssa_index, "unexpected condition " + STR(functionID) + " " + STR(parm_index) + " " + STR(ssa_index));
+         THROW_ASSERT(Parm2SSA_map.find(functionID)->second.find(parm_index)->second == ssa_index,
+                      "unexpected condition " + STR(functionID) + " " + STR(parm_index) + " " + STR(ssa_index));
       }
    }
 }

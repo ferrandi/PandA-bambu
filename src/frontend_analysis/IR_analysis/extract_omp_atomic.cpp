@@ -67,7 +67,9 @@
 #include "dbgPrintHelper.hpp"
 #include "utility.hpp"
 
-ExtractOmpAtomic::ExtractOmpAtomic(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+ExtractOmpAtomic::ExtractOmpAtomic(const application_managerRef _AppM, unsigned int _function_id,
+                                   const DesignFlowManagerConstRef _design_flow_manager,
+                                   const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_OMP_ATOMIC, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -75,7 +77,8 @@ ExtractOmpAtomic::ExtractOmpAtomic(const application_managerRef _AppM, unsigned 
 
 ExtractOmpAtomic::~ExtractOmpAtomic() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ExtractOmpAtomic::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+ExtractOmpAtomic::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto TM = AppM->get_tree_manager();
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -113,7 +116,8 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
    bool changed = false;
    const auto basic_block_graph = function_behavior->CGetBBGraph(FunctionBehavior::BB);
    VertexIterator basic_block, basic_block_end;
-   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph); basic_block != basic_block_end; basic_block++)
+   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph); basic_block != basic_block_end;
+       basic_block++)
    {
       const auto block = basic_block_graph->CGetBBNodeInfo(*basic_block)->block;
       tree_nodeRef gimple_to_be_removed;
@@ -125,10 +129,12 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
             const auto oa = GetPointer<omp_atomic_pragma>(GET_NODE(pn->directive));
             if(oa)
             {
-               if(block->list_of_pred.size() == 1 && block->list_of_pred.front() == BB_ENTRY && stmt == block->CGetStmtList().front())
+               if(block->list_of_pred.size() == 1 && block->list_of_pred.front() == BB_ENTRY &&
+                  stmt == block->CGetStmtList().front())
                {
                   gimple_to_be_removed = stmt;
-                  GetPointer<function_decl>(AppM->get_tree_manager()->get_tree_node_const(function_id))->omp_atomic = true;
+                  GetPointer<function_decl>(AppM->get_tree_manager()->get_tree_node_const(function_id))->omp_atomic =
+                      true;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found Atomic Omp function");
                   changed = true;
                }

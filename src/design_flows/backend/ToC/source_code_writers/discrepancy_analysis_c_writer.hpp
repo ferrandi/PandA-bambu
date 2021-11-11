@@ -85,7 +85,9 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
    /**
     * Constructor
     */
-   DiscrepancyAnalysisCWriter(const HLSCBackendInformationConstRef _hls_c_backend_information, const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer, const IndentedOutputStreamRef _indented_output_stream,
+   DiscrepancyAnalysisCWriter(const HLSCBackendInformationConstRef _hls_c_backend_information,
+                              const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer,
+                              const IndentedOutputStreamRef _indented_output_stream,
                               const ParameterConstRef _parameters, bool _verbose);
 
    /**
@@ -102,7 +104,9 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
     * @param helper is the behavioral helper associated with the function
     * @param varFunc is the printer functor
     */
-   void DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& locally_declared_type, const BehavioralHelperConstRef BH,
+   void DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared,
+                              CustomSet<unsigned int>& already_declared_variables,
+                              CustomSet<std::string>& locally_declared_type, const BehavioralHelperConstRef BH,
                               const var_pp_functorConstRef varFunc) override;
 
    void WriteFunctionDeclaration(const unsigned int funId) override;

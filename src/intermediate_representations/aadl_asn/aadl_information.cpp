@@ -45,11 +45,13 @@
 #include "exceptions.hpp"
 #include <boost/algorithm/string/replace.hpp>
 
-AadlInformation::AadlParameter::AadlParameter() : endianess(NATIVE_ENDIANESS), direction(INOUT), num_registers(0), bambu_address(0), pointer(false)
+AadlInformation::AadlParameter::AadlParameter()
+    : endianess(NATIVE_ENDIANESS), direction(INOUT), num_registers(0), bambu_address(0), pointer(false)
 {
 }
 
-AadlInformation::AadlParameter::EndianessType AadlInformation::AadlParameter::Endianess(const std::string& endianess_string)
+AadlInformation::AadlParameter::EndianessType
+AadlInformation::AadlParameter::Endianess(const std::string& endianess_string)
 {
    if(endianess_string == "UPER")
    {
@@ -67,7 +69,8 @@ AadlInformation::AadlParameter::EndianessType AadlInformation::AadlParameter::En
    return BIG_ENDIANESS;
 }
 
-AadlInformation::AadlParameter::Direction AadlInformation::AadlParameter::GetDirection(const std::string& direction_string)
+AadlInformation::AadlParameter::Direction
+AadlInformation::AadlParameter::GetDirection(const std::string& direction_string)
 {
    if(direction_string == "IN")
    {

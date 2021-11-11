@@ -235,7 +235,8 @@ bool xml_script_node_t::evaluate_condition(const std::string* condition, const D
    return evaluate_condition(condition);
 }
 
-xml_set_entry_t::xml_set_entry_t(std::string _value, const std::string* _condition) : xml_script_node_t(NODE_ENTRY), value(std::move(_value))
+xml_set_entry_t::xml_set_entry_t(std::string _value, const std::string* _condition)
+    : xml_script_node_t(NODE_ENTRY), value(std::move(_value))
 {
    condition = _condition ? new std::string(*_condition) : nullptr;
 }
@@ -296,7 +297,9 @@ bool xml_set_entry_t::checkCondition(const DesignParametersRef& dp) const
    return evaluate_condition(condition, dp);
 }
 
-xml_set_variable_t::xml_set_variable_t(std::string _name, const std::string* _singleValue, const std::string* _condition) : xml_script_node_t(NODE_VARIABLE), name(std::move(_name))
+xml_set_variable_t::xml_set_variable_t(std::string _name, const std::string* _singleValue,
+                                       const std::string* _condition)
+    : xml_script_node_t(NODE_VARIABLE), name(std::move(_name))
 {
    singleValue = _singleValue ? new std::string(*_singleValue) : nullptr;
    multiValues.clear();
@@ -393,7 +396,9 @@ bool xml_set_variable_t::checkCondition(const DesignParametersRef& dp) const
    return evaluate_condition(condition, dp);
 }
 
-xml_parameter_t::xml_parameter_t(const std::string* _name, const std::string* _singleValue, const std::string* _condition, const std::string& _separator, bool _curlyBrackets) : xml_script_node_t(NODE_PARAMETER)
+xml_parameter_t::xml_parameter_t(const std::string* _name, const std::string* _singleValue,
+                                 const std::string* _condition, const std::string& _separator, bool _curlyBrackets)
+    : xml_script_node_t(NODE_PARAMETER)
 {
    name = name ? new std::string(*_name) : nullptr;
    singleValue = _singleValue ? new std::string(*_singleValue) : nullptr;
@@ -516,7 +521,9 @@ bool xml_parameter_t::checkCondition(const DesignParametersRef& dp) const
    return evaluate_condition(condition, dp);
 }
 
-xml_command_t::xml_command_t(const std::string* _name, const std::string* _value, const std::string* _condition, const std::string* _output) : xml_script_node_t(NODE_COMMAND)
+xml_command_t::xml_command_t(const std::string* _name, const std::string* _value, const std::string* _condition,
+                             const std::string* _output)
+    : xml_script_node_t(NODE_COMMAND)
 {
    name = _name ? new std::string(*_name) : nullptr;
    value = _value ? new std::string(*_value) : nullptr;
@@ -626,7 +633,9 @@ bool xml_command_t::checkCondition(const DesignParametersRef& dp) const
    return evaluate_condition(condition, dp);
 }
 
-xml_shell_t::xml_shell_t(const std::string* _name, const std::string* _value, const std::string* _condition, const std::string* _output) : xml_script_node_t(NODE_SHELL)
+xml_shell_t::xml_shell_t(const std::string* _name, const std::string* _value, const std::string* _condition,
+                         const std::string* _output)
+    : xml_script_node_t(NODE_SHELL)
 {
    name = _name ? new std::string(*_name) : nullptr;
    value = _value ? new std::string(*_value) : nullptr;
@@ -736,13 +745,16 @@ bool xml_shell_t::checkCondition(const DesignParametersRef& dp) const
    return evaluate_condition(condition, dp);
 }
 
-xml_ite_block_t::xml_ite_block_t(const std::string* _condition) : xml_script_node_t(NODE_ITE_BLOCK), condition(_condition ? *_condition : "")
+xml_ite_block_t::xml_ite_block_t(const std::string* _condition)
+    : xml_script_node_t(NODE_ITE_BLOCK), condition(_condition ? *_condition : "")
 {
    this->thenNodes.clear();
    this->elseNodes.clear();
 }
 
-xml_ite_block_t::xml_ite_block_t(const xml_element* element) : xml_script_node_t(NODE_ITE_BLOCK), condition(element->get_attribute("condition") ? element->get_attribute("condition")->get_value() : "")
+xml_ite_block_t::xml_ite_block_t(const xml_element* element)
+    : xml_script_node_t(NODE_ITE_BLOCK),
+      condition(element->get_attribute("condition") ? element->get_attribute("condition")->get_value() : "")
 {
    thenNodes.clear();
    elseNodes.clear();

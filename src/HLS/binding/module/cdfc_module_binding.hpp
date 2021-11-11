@@ -196,13 +196,15 @@ struct edge_cdfc_selector
 };
 
 /// bulk compatibility graph
-using boost_cdfc_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t>, edge_cdfc_selector>;
+using boost_cdfc_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS,
+                                               boost::property<boost::vertex_index_t, std::size_t>, edge_cdfc_selector>;
 
 using boost_cdfc_graphRef = refcount<boost_cdfc_graph>;
 using boost_cdfc_graphConstRef = refcount<const boost_cdfc_graph>;
 
 /// compatibility graph
-using cdfc_graph = boost::filtered_graph<boost_cdfc_graph, cdfc_graph_edge_selector<boost_cdfc_graph>, cdfc_graph_vertex_selector<boost_cdfc_graph>>;
+using cdfc_graph = boost::filtered_graph<boost_cdfc_graph, cdfc_graph_edge_selector<boost_cdfc_graph>,
+                                         cdfc_graph_vertex_selector<boost_cdfc_graph>>;
 
 /// refcount version of cdfc_graph
 using cdfc_graphRef = refcount<cdfc_graph>;
@@ -322,7 +324,8 @@ class CdfcGraph : public graph
     * @param selector is the selector which identifies the edges of this graph
     * @param vertices is the set of vertexes on which the graph is filtered.
     */
-   CdfcGraph(const CdfcGraphsCollectionRef cdfc_graphs_collection, const int selector, const CustomUnorderedSet<vertex>& vertices);
+   CdfcGraph(const CdfcGraphsCollectionRef cdfc_graphs_collection, const int selector,
+             const CustomUnorderedSet<vertex>& vertices);
 
    /**
     * Destructor
@@ -366,7 +369,8 @@ enum conn_code
 
 /// put into relation an operation vertex with its sources
 /// op vertex -> vector of port index -> set of pair < conn code, pair of < tree_var/storage_value, null/vertex> >
-using connection_relation = CustomUnorderedMap<vertex, std::vector<CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>>>;
+using connection_relation =
+    CustomUnorderedMap<vertex, std::vector<CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>>>;
 
 /**
  * Class managing the module allocation.
@@ -377,21 +381,32 @@ class cdfc_module_binding : public fu_binding_creator
    /// Threshold used in sharing of functional units
    const double small_normalized_resource_area;
 
-   bool false_loop_search(cdfc_vertex start, unsigned k, const cdfc_graphConstRef& cdfc, const cdfc_graphConstRef& cg, std::deque<cdfc_edge>& candidate_edges);
-   bool false_loop_search_cdfc_1(cdfc_vertex src, unsigned int level, unsigned k, cdfc_vertex start, const cdfc_graphConstRef& cdfc, const cdfc_graphConstRef& cg, std::deque<cdfc_edge>& candidate_edges, std::vector<bool>& visited,
+   bool false_loop_search(cdfc_vertex start, unsigned k, const cdfc_graphConstRef& cdfc, const cdfc_graphConstRef& cg,
+                          std::deque<cdfc_edge>& candidate_edges);
+   bool false_loop_search_cdfc_1(cdfc_vertex src, unsigned int level, unsigned k, cdfc_vertex start,
+                                 const cdfc_graphConstRef& cdfc, const cdfc_graphConstRef& cg,
+                                 std::deque<cdfc_edge>& candidate_edges, std::vector<bool>& visited,
                                  std::vector<bool>& cg_visited, std::vector<bool>& cdfc_visited);
-   bool false_loop_search_cdfc_more(cdfc_vertex src, unsigned int level, unsigned k, cdfc_vertex start, const cdfc_graphConstRef& cdfc, const cdfc_graphConstRef& cg, std::deque<cdfc_edge>& candidate_edges, std::vector<bool>& visited,
+   bool false_loop_search_cdfc_more(cdfc_vertex src, unsigned int level, unsigned k, cdfc_vertex start,
+                                    const cdfc_graphConstRef& cdfc, const cdfc_graphConstRef& cg,
+                                    std::deque<cdfc_edge>& candidate_edges, std::vector<bool>& visited,
                                     std::vector<bool>& cg_visited, std::vector<bool>& cdfc_visited);
-   bool can_be_clustered(vertex v, OpGraphConstRef fsdg, const fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, const double mux_time);
+   bool can_be_clustered(vertex v, OpGraphConstRef fsdg, const fu_bindingConstRef fu,
+                         const CustomUnorderedMap<vertex, double>& slack_time, const double mux_time);
 
-   int weight_computation(bool cond1, bool cond2, vertex v1, vertex v2, const double mux_time, const OpGraphConstRef fdfg, const fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time,
+   int weight_computation(bool cond1, bool cond2, vertex v1, vertex v2, const double mux_time,
+                          const OpGraphConstRef fdfg, const fu_bindingConstRef fu,
+                          const CustomUnorderedMap<vertex, double>& slack_time,
+                          CustomUnorderedMap<vertex, double>& starting_time,
 #ifdef HC_APPROACH
                           spec_hierarchical_clustering& hc,
 #endif
                           connection_relation& con_rel, double controller_delay, unsigned int prec);
 
-   void update_slack_starting_time(const OpGraphConstRef fdfg, OpVertexSet& sorted_vertices, CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time, bool update_starting_time, bool only_backward,
-                                   bool only_forward);
+   void update_slack_starting_time(const OpGraphConstRef fdfg, OpVertexSet& sorted_vertices,
+                                   CustomUnorderedMap<vertex, double>& slack_time,
+                                   CustomUnorderedMap<vertex, double>& starting_time, bool update_starting_time,
+                                   bool only_backward, bool only_forward);
 
    void initialize_connection_relation(connection_relation& con_rel, const OpVertexSet& all_candidate_vertices);
 
@@ -406,7 +421,9 @@ class cdfc_module_binding : public fu_binding_creator
    /**
     * This is the constructor of the class.
     */
-   cdfc_module_binding(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   cdfc_module_binding(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                       const DesignFlowManagerConstRef design_flow_manager,
+                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    /**
     * Destructor.

@@ -70,7 +70,8 @@ class xml_text_node : public xml_node
       {
          // remove \t \n \r and spaces at the beginning
          size_t len_index = escaped.length();
-         while(len_index > 0 && (escaped[len_index - 1] == ' ' || escaped[len_index - 1] == '\t' || escaped[len_index - 1] == '\r' || escaped[len_index - 1] == '\n'))
+         while(len_index > 0 && (escaped[len_index - 1] == ' ' || escaped[len_index - 1] == '\t' ||
+                                 escaped[len_index - 1] == '\r' || escaped[len_index - 1] == '\n'))
          {
             len_index--;
          }
@@ -100,8 +101,8 @@ class xml_text_node : public xml_node
    }
 
    /** Set the text of this content node
-    * @param content The text. This must be unescaped, meaning that the predefined entities will be created for you where necessary.
-    * See get_content().
+    * @param content The text. This must be unescaped, meaning that the predefined entities will be created for you
+    * where necessary. See get_content().
     */
    void set_content(const std::string& content)
    {

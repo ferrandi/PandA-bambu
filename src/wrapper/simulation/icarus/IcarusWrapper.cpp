@@ -81,7 +81,8 @@
 #define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/icarus"))
 
 // constructor
-IcarusWrapper::IcarusWrapper(const ParameterConstRef& _Param, std::string _suffix) : SimulationTool(_Param), suffix(std::move(_suffix))
+IcarusWrapper::IcarusWrapper(const ParameterConstRef& _Param, std::string _suffix)
+    : SimulationTool(_Param), suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the Icarus wrapper...");
    boost::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
@@ -94,7 +95,8 @@ void IcarusWrapper::CheckExecution()
 {
 }
 
-void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
+void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
+                                   const std::list<std::string>& file_list)
 {
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_icarus.log";
    script << "#IVERILOG" << std::endl; //-gstrict-expr-width
@@ -115,11 +117,14 @@ void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string
 }
 
 #if HAVE_EXPERIMENTAL
-unsigned int IcarusWrapper::convert_to_xml(const std::string& SourceFileName, const std::string& LibraryName, const std::string& TargetFileName)
+unsigned int IcarusWrapper::convert_to_xml(const std::string& SourceFileName, const std::string& LibraryName,
+                                           const std::string& TargetFileName)
 {
-   std::string output_file = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
+   std::string output_file =
+       Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
    unsigned int icarus_debug_level = Param->getOption<unsigned int>(OPT_icarus_debug_level);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Converting file \"" + SourceFileName + "\" into \"" + TargetFileName + "\"");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                 "Converting file \"" + SourceFileName + "\" into \"" + TargetFileName + "\"");
    std::string command = std::string(IVL);
    if(LibraryName.size())
       command += " -X \"" + LibraryName + "\"";
@@ -145,13 +150,15 @@ unsigned int IcarusWrapper::convert_to_xml(const std::string& SourceFileName, co
    {
       TmpFileName = FileList[0];
    }
-   command += " -x " + TargetFileName + " -d " + boost::lexical_cast<std::string>(icarus_debug_level) + std::string(" ") + TmpFileName;
+   command += " -x " + TargetFileName + " -d " + boost::lexical_cast<std::string>(icarus_debug_level) +
+              std::string(" ") + TmpFileName;
    int err = PandaSystem(Param, command, output_file);
    if(temp_file)
       boost::filesystem::remove_all(TmpFileName);
    if(!err)
    {
-      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "File \"" + SourceFileName + "\" converted without errors into \"" + TargetFileName + "\"");
+      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                    "File \"" + SourceFileName + "\" converted without errors into \"" + TargetFileName + "\"");
       if(output_level >= OUTPUT_LEVEL_VERBOSE)
          CopyStdout(output_file);
    }
@@ -162,7 +169,8 @@ unsigned int IcarusWrapper::convert_to_xml(const std::string& SourceFileName, co
 
 unsigned int IcarusWrapper::compile_verilog(const std::string& FileName)
 {
-   std::string output_file = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
+   std::string output_file =
+       Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Compiling file \"" + FileName + "\"");
    std::string IncludeList, Include;
    if(Param->isOption("include"))

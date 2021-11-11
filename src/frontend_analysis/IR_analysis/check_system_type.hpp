@@ -114,7 +114,8 @@ class CheckSystemType : public FunctionFrontendFlowStep
     * @param curr_tn is the root of the subtree to be examinated; it must not be a tree_reindex
     * @param index is the index of the tree_node
     */
-   void recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index, CustomUnorderedSet<unsigned int>& already_visited);
+   void recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index,
+                            CustomUnorderedSet<unsigned int>& already_visited);
 
    /**
     * Check if an header is a system header
@@ -138,7 +139,8 @@ class CheckSystemType : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -148,7 +150,8 @@ class CheckSystemType : public FunctionFrontendFlowStep
     * @param function_id is the index of the function
     * @param design_flow_manager is the design flow manager
     */
-   CheckSystemType(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   CheckSystemType(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id,
+                   const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

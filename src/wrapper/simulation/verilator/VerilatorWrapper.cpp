@@ -73,7 +73,8 @@
 #define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/verilator"))
 
 // constructor
-VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, std::string _suffix) : SimulationTool(_Param), suffix(std::move(_suffix))
+VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, std::string _suffix)
+    : SimulationTool(_Param), suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the VERILATOR wrapper...");
    std::string verilator_beh_dir = SIM_SUBDIR + suffix;
@@ -91,7 +92,8 @@ void VerilatorWrapper::CheckExecution()
 {
 }
 
-void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
+void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
+                                      const std::list<std::string>& file_list)
 {
    for(const auto& file : file_list)
    {
@@ -100,8 +102,9 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Mixed simulation not supported by Verilator");
       }
    }
-   bool generate_vcd_output =
-       (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) || (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) || (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
+   bool generate_vcd_output = (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) ||
+                              (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
+                              (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
 
    const auto output_directory = Param->getOption<std::string>(OPT_output_directory);
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_verilator.log";
@@ -112,7 +115,9 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #else
    script << "verilator";
 #endif
-   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET";
+   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix +
+                 "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT "
+                 "-Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET";
 #else
 #ifdef _WIN32
    /// this removes the dependency from perl on MinGW32

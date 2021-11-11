@@ -139,10 +139,12 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
             HLS_C->set_number_fu(globalRC.first.first, globalRC.first.second, globalRC.second);
          }
       }
-      HLSMgr->hlsMap[functionId] = hlsRef(new hls(HLSMgr->get_parameter(), functionId, Operations, HLSMgr->get_HLS_target(), HLS_C));
+      HLSMgr->hlsMap[functionId] =
+          hlsRef(new hls(HLSMgr->get_parameter(), functionId, Operations, HLSMgr->get_HLS_target(), HLS_C));
       if(HLSMgr->design_interface_constraints.find(functionId) != HLSMgr->design_interface_constraints.end())
       {
-         const auto& function_design_interface_constraints = HLSMgr->design_interface_constraints.find(functionId)->second;
+         const auto& function_design_interface_constraints =
+             HLSMgr->design_interface_constraints.find(functionId)->second;
          for(const auto& lib_resmap : function_design_interface_constraints)
          {
             for(const auto& res_num : lib_resmap.second)
@@ -295,9 +297,11 @@ std::vector<HLS_manager::io_binding_type> HLS_manager::get_required_values(unsig
 
 bool HLS_manager::is_register_compatible(unsigned int var) const
 {
-   return tree_helper::is_ssa_name(TM, var) and not tree_helper::is_virtual(TM, var) and // virtual ssa_name is not considered
-          not tree_helper::is_parameter(TM, var) and                                     // parameters have been already stored in a register by the calling function
-          not Rmem->has_base_address(var);                                               // ssa_name allocated in memory
+   return tree_helper::is_ssa_name(TM, var) and
+          not tree_helper::is_virtual(TM, var) and // virtual ssa_name is not considered
+          not tree_helper::is_parameter(
+              TM, var) and                 // parameters have been already stored in a register by the calling function
+          not Rmem->has_base_address(var); // ssa_name allocated in memory
 }
 
 bool HLS_manager::is_reading_writing_function(unsigned funID) const
@@ -314,7 +318,8 @@ bool HLS_manager::IsSingleWriteMemory() const
    {
       return true;
    }
-   return get_HLS_target() and get_HLS_target()->get_target_device()->has_parameter("is_single_write_memory") and get_HLS_target()->get_target_device()->get_parameter<std::string>("is_single_write_memory") == "1";
+   return get_HLS_target() and get_HLS_target()->get_target_device()->has_parameter("is_single_write_memory") and
+          get_HLS_target()->get_target_device()->get_parameter<std::string>("is_single_write_memory") == "1";
 }
 
 unsigned int HLS_manager::GetMemVersion() const

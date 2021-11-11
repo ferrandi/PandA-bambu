@@ -56,7 +56,9 @@ class top_entity_parallel_cs : public top_entity
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    unsigned BW_loop_iter(const structural_objectRef circuit);
    void connect_loop_iter(const structural_objectRef circuit, unsigned loopBW);
@@ -67,7 +69,9 @@ class top_entity_parallel_cs : public top_entity
    void resize_controller_parallel(structural_objectRef controller_circuit, unsigned loopBW);
 
  public:
-   top_entity_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type);
+   top_entity_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                          const DesignFlowManagerConstRef design_flow_manager,
+                          const HLSFlowStep_Type _hls_flow_step_type);
 
    /**
     * Destructor

@@ -58,7 +58,9 @@ class conflict_based_register : public reg_binding_creator
    /// conflict graph
    conflict_graph* cg;
 
-   boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&> color;
+   boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
+                                cg_vertices_size_type&>
+       color;
 
  private:
    std::vector<cg_vertices_size_type> color_vec;
@@ -69,7 +71,9 @@ class conflict_based_register : public reg_binding_creator
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the register binding algorithm
     */
-   conflict_based_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   conflict_based_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                           const DesignFlowManagerConstRef design_flow_manager,
+                           const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor of the class.

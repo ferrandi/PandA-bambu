@@ -56,13 +56,15 @@ bool GenericObjSorter::operator()(const generic_objRef& x, const generic_objRef&
    {
       return false;
    }
-   THROW_ASSERT(x->get_string() != y->get_string() or x->get_string().find("CONSTANT") != std::string::npos, x->get_string());
+   THROW_ASSERT(x->get_string() != y->get_string() or x->get_string().find("CONSTANT") != std::string::npos,
+                x->get_string());
    return x->get_string() < y->get_string();
 }
 
 GenericObjUnsignedIntSorter::GenericObjUnsignedIntSorter() = default;
 
-bool GenericObjUnsignedIntSorter::operator()(const std::pair<generic_objRef, int>& x, const std::pair<generic_objRef, int>& y) const
+bool GenericObjUnsignedIntSorter::operator()(const std::pair<generic_objRef, int>& x,
+                                             const std::pair<generic_objRef, int>& y) const
 {
    if(x.first == y.first)
    {

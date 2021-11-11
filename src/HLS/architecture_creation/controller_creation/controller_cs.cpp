@@ -34,8 +34,8 @@
  * @file controller_creator_base_step.hpp
  * @brief Base class for all the controller creation algorithms.
  *
- * This class is a pure virtual one, that has to be specilized in order to implement a particular algorithm to create the
- * controller.
+ * This class is a pure virtual one, that has to be specilized in order to implement a particular algorithm to create
+ * the controller.
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
@@ -54,7 +54,9 @@
 #include "dbgPrintHelper.hpp"
 #include "math_function.hpp"
 
-controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                             const DesignFlowManagerConstRef _design_flow_manager,
+                             const HLSFlowStep_Type _hls_flow_step_type)
     : fsm_controller(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
 }
@@ -94,7 +96,8 @@ void controller_cs::add_selector_register_file_port(structural_objectRef circuit
    {
       num_slots = 1;
    }
-   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
+   structural_type_descriptorRef port_type =
+       structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Selector signal...");
    /// add selector port
    SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);

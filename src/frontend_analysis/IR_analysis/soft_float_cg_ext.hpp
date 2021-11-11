@@ -144,7 +144,8 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    void ssa_lowering(ssa_name* ssa, bool internal_type) const;
 
    /**
-    * Replace current_tree_node with a call_expr to fu_name function specialized with specFF fp format in current_statement
+    * Replace current_tree_node with a call_expr to fu_name function specialized with specFF fp format in
+    * current_statement
     *
     * @param specFF FP format for fu_name function specialization
     * @param fu_name Function name
@@ -153,7 +154,9 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * @param current_tree_node
     * @param current_scrp
     */
-   void replaceWithCall(const FloatFormatRef& specFF, const std::string& fu_name, std::vector<tree_nodeRef> args, const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, const std::string& current_scrp);
+   void replaceWithCall(const FloatFormatRef& specFF, const std::string& fu_name, std::vector<tree_nodeRef> args,
+                        const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node,
+                        const std::string& current_scrp);
 
    /**
     * Recursive examine tree node
@@ -162,18 +165,21 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * @param castRename is the required interface type bitmask reported using InterfaceType enum
     * @return bool True if IR has been modified, else false
     */
-   bool RecursiveExaminate(const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, int castRename);
+   bool RecursiveExaminate(const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node,
+                           int castRename);
 
    /**
     * Generate necessary statements to convert ssa variable from inFF to outFF and insert them after stmt in bb
     * @param bb Generated operations will be inserted in this basic block
-    * @param stmt Generated statements will be inserted after this statement, if nullptr they will be inserted at the beginning of the BB
+    * @param stmt Generated statements will be inserted after this statement, if nullptr they will be inserted at the
+    * beginning of the BB
     * @param ssa Real type ssa_name tree reindex to be converted from inFF to outFF
     * @param inFF Input float format, if nullptr will be deduced as standard IEEE 754 type from ssa bitwidth
     * @param outFF Output float format, if nullptr will be deduced as standard IEEE 754 type from ssa bitwidth
     * @return tree_nodeRef New ssa_name tree reindex reference representing converted input ssa
     */
-   tree_nodeRef generate_interface(const blocRef& bb, tree_nodeRef stmt, const tree_nodeRef& ssa, FloatFormatRef inFF, FloatFormatRef outFF) const;
+   tree_nodeRef generate_interface(const blocRef& bb, tree_nodeRef stmt, const tree_nodeRef& ssa, FloatFormatRef inFF,
+                                   FloatFormatRef outFF) const;
 
    /**
     * Cast real type constant from inFF to outFF format
@@ -204,7 +210,8 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -214,7 +221,8 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * @param fun_id is the function index
     * @param design_flow_manager is the design flow manager
     */
-   soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
+   soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id,
+                     const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -241,29 +249,46 @@ struct FloatFormat
    bool has_subnorm;
    bit_lattice sign;
 
-   FloatFormat(uint8_t _exp_bits, uint8_t _frac_bits, int32_t _exp_bias, bool _has_rounding = true, bool _has_nan = true, bool _has_one = true, bool _has_subnorm = false, bit_lattice _sign = bit_lattice::U)
-       : exp_bits(_exp_bits), frac_bits(_frac_bits), exp_bias(_exp_bias), has_rounding(_has_rounding), has_nan(_has_nan), has_one(_has_one), has_subnorm(_has_subnorm), sign(_sign)
+   FloatFormat(uint8_t _exp_bits, uint8_t _frac_bits, int32_t _exp_bias, bool _has_rounding = true,
+               bool _has_nan = true, bool _has_one = true, bool _has_subnorm = false,
+               bit_lattice _sign = bit_lattice::U)
+       : exp_bits(_exp_bits),
+         frac_bits(_frac_bits),
+         exp_bias(_exp_bias),
+         has_rounding(_has_rounding),
+         has_nan(_has_nan),
+         has_one(_has_one),
+         has_subnorm(_has_subnorm),
+         sign(_sign)
    {
    }
 
    bool operator==(const FloatFormat& other) const
    {
-      return std::tie(exp_bits, frac_bits, exp_bias, has_rounding, has_nan, has_one, has_subnorm, sign) == std::tie(other.exp_bits, other.frac_bits, other.exp_bias, other.has_rounding, other.has_nan, other.has_one, other.has_subnorm, other.sign);
+      return std::tie(exp_bits, frac_bits, exp_bias, has_rounding, has_nan, has_one, has_subnorm, sign) ==
+             std::tie(other.exp_bits, other.frac_bits, other.exp_bias, other.has_rounding, other.has_nan, other.has_one,
+                      other.has_subnorm, other.sign);
    }
 
    bool operator!=(const FloatFormat& other) const
    {
-      return std::tie(exp_bits, frac_bits, exp_bias, has_rounding, has_nan, has_one, has_subnorm, sign) != std::tie(other.exp_bits, other.frac_bits, other.exp_bias, other.has_rounding, other.has_nan, other.has_one, other.has_subnorm, other.sign);
+      return std::tie(exp_bits, frac_bits, exp_bias, has_rounding, has_nan, has_one, has_subnorm, sign) !=
+             std::tie(other.exp_bits, other.frac_bits, other.exp_bias, other.has_rounding, other.has_nan, other.has_one,
+                      other.has_subnorm, other.sign);
    }
 
    bool ieee_format() const
    {
-      return ((exp_bits == 8 && frac_bits == 23 && exp_bias == -127) || (exp_bits == 11 && frac_bits == 52 && exp_bias == -1023)) && (has_rounding && has_nan && has_one && !has_subnorm && sign == bit_lattice::U);
+      return ((exp_bits == 8 && frac_bits == 23 && exp_bias == -127) ||
+              (exp_bits == 11 && frac_bits == 52 && exp_bias == -1023)) &&
+             (has_rounding && has_nan && has_one && !has_subnorm && sign == bit_lattice::U);
    }
 
    std::string mngl() const
    {
-      return "e" + STR(+exp_bits) + "m" + STR(+frac_bits) + "b" + ((exp_bias < 0) ? ("_" + STR(-exp_bias)) : STR(exp_bias)) + (has_rounding ? "r" : "") + (has_nan ? "n" : "") + (has_one ? "h" : "") + (has_subnorm ? "s" : "") +
+      return "e" + STR(+exp_bits) + "m" + STR(+frac_bits) + "b" +
+             ((exp_bias < 0) ? ("_" + STR(-exp_bias)) : STR(exp_bias)) + (has_rounding ? "r" : "") +
+             (has_nan ? "n" : "") + (has_one ? "h" : "") + (has_subnorm ? "s" : "") +
              (sign != bit_lattice::U ? bitstring_to_string({sign}) : "");
    }
 };
@@ -287,11 +312,15 @@ class FunctionVersion
    {
    }
 
-   FunctionVersion(CallGraph::vertex_descriptor func_v, const FloatFormatRef& userFormat = nullptr) : function_vertex(func_v), userRequired(userFormat), internal(true)
+   FunctionVersion(CallGraph::vertex_descriptor func_v, const FloatFormatRef& userFormat = nullptr)
+       : function_vertex(func_v), userRequired(userFormat), internal(true)
    {
    }
 
-   FunctionVersion(const FunctionVersion& other) : function_vertex(other.function_vertex), userRequired(other.ieee_format() ? nullptr : new FloatFormat(*other.userRequired)), internal(other.internal)
+   FunctionVersion(const FunctionVersion& other)
+       : function_vertex(other.function_vertex),
+         userRequired(other.ieee_format() ? nullptr : new FloatFormat(*other.userRequired)),
+         internal(other.internal)
    {
    }
 
@@ -302,7 +331,8 @@ class FunctionVersion
    int compare(const FunctionVersion& other, bool format_only = false) const
    {
       return ((function_vertex != other.function_vertex || internal != other.internal) && !format_only) ||
-             !((userRequired == nullptr && other.userRequired == nullptr) || (userRequired != nullptr && other.userRequired != nullptr && *userRequired == *other.userRequired));
+             !((userRequired == nullptr && other.userRequired == nullptr) ||
+               (userRequired != nullptr && other.userRequired != nullptr && *userRequired == *other.userRequired));
    }
 
    bool operator==(const FunctionVersion& other) const

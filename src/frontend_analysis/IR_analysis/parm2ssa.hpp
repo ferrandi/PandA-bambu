@@ -69,13 +69,15 @@ class parm2ssa : public FunctionFrontendFlowStep
    /**
     * Recursive tree node analysis
     */
-   void recursive_analysis(tree_nodeRef& tn, const std::string& srcp, CustomUnorderedSet<unsigned int>& already_visited_ae);
+   void recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
+                           CustomUnorderedSet<unsigned int>& already_visited_ae);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -84,7 +86,8 @@ class parm2ssa : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   parm2ssa(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
+   parm2ssa(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id,
+            const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

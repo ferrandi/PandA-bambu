@@ -58,7 +58,19 @@ class clb_model : public area_model
 {
  public:
    /// type of resources
-   using value_t = enum { REGISTERS, SLICE, SLICE_LUTS, LUT_FF_PAIRS, ALMS, LOGIC_ELEMENTS, FUNCTIONAL_ELEMENTS, LOGIC_AREA, DSP, BRAM, POWER };
+   using value_t = enum {
+      REGISTERS,
+      SLICE,
+      SLICE_LUTS,
+      LUT_FF_PAIRS,
+      ALMS,
+      LOGIC_ELEMENTS,
+      FUNCTIONAL_ELEMENTS,
+      LOGIC_AREA,
+      DSP,
+      BRAM,
+      POWER
+   };
 
  protected:
    /// a double value representing the area of the component

@@ -64,14 +64,16 @@ class create_tree_manager : public ApplicationFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Compute the relationships of a step with other steps
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
@@ -80,7 +82,8 @@ class create_tree_manager : public ApplicationFrontendFlowStep
     * @param AppM is the reference to the application manager
     * @param design_flow_manager is the design flow manager
     */
-   create_tree_manager(const ParameterConstRef _parameters, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
+   create_tree_manager(const ParameterConstRef _parameters, const application_managerRef AppM,
+                       const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

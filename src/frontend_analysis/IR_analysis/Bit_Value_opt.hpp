@@ -68,7 +68,8 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
    /// when true IR has been modified
    bool modified;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * do bit value based optimization such as:
@@ -88,7 +89,8 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   Bit_Value_opt(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   Bit_Value_opt(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id,
+                 const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

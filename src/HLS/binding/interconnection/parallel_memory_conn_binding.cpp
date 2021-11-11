@@ -32,7 +32,8 @@
  */
 /**
  * @file parallel_memory_conn_binding.hpp
- * @brief Data structure used to store the interconnection binding of datapath elements when parallel memory controller is adopted
+ * @brief Data structure used to store the interconnection binding of datapath elements when parallel memory controller
+ * is adopted
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
@@ -58,7 +59,9 @@
 /// HLS/functions
 #include "omp_functions.hpp"
 
-ParallelMemoryConnBinding::ParallelMemoryConnBinding(const BehavioralHelperConstRef _behavioral_helper, const ParameterConstRef _parameters) : conn_binding(_behavioral_helper, _parameters)
+ParallelMemoryConnBinding::ParallelMemoryConnBinding(const BehavioralHelperConstRef _behavioral_helper,
+                                                     const ParameterConstRef _parameters)
+    : conn_binding(_behavioral_helper, _parameters)
 {
 }
 
@@ -78,7 +81,8 @@ void ParallelMemoryConnBinding::add_to_SM(const HLS_managerRef HLSMgr, const hls
       GetPointer<port_o>(done)->add_n_ports(memory_banks_number, done);
       const auto component_done = component.first->find_member(DONE_PORT_NAME, port_o_K, component.first);
       THROW_ASSERT(component_done, "");
-      const auto component_done_signal = GetPointer<port_o>(component_done)->find_bounded_object(component.first->get_owner());
+      const auto component_done_signal =
+          GetPointer<port_o>(component_done)->find_bounded_object(component.first->get_owner());
       THROW_ASSERT(component_done_signal, component_done->get_path());
       for(unsigned int memory_bank_index = 0; memory_bank_index < memory_banks_number; memory_bank_index++)
       {
@@ -89,7 +93,8 @@ void ParallelMemoryConnBinding::add_to_SM(const HLS_managerRef HLSMgr, const hls
       GetPointer<port_o>(op)->add_n_ports(memory_banks_number, op);
       const auto access_allowed_component = component.first->find_member("access_allowed", port_o_K, component.first);
       THROW_ASSERT(access_allowed_component, "");
-      const auto access_allowed_component_sign = SM->add_sign_vector("access_allowed_" + component.first->get_id(), memory_banks_number, circuit, op->get_typeRef());
+      const auto access_allowed_component_sign = SM->add_sign_vector("access_allowed_" + component.first->get_id(),
+                                                                     memory_banks_number, circuit, op->get_typeRef());
       SM->add_connection(op, access_allowed_component_sign);
       SM->add_connection(access_allowed_component_sign, access_allowed_component);
 

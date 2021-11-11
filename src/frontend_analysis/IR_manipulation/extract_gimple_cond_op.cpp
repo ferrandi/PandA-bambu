@@ -60,8 +60,11 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-ExtractGimpleCondOp::ExtractGimpleCondOp(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const unsigned int _function_id, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_GIMPLE_COND_OP, _design_flow_manager, _parameters), bb_modified(false)
+ExtractGimpleCondOp::ExtractGimpleCondOp(const application_managerRef _AppM,
+                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                         const unsigned int _function_id, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_GIMPLE_COND_OP, _design_flow_manager, _parameters),
+      bb_modified(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -73,7 +76,8 @@ void ExtractGimpleCondOp::Initialize()
    bb_modified = false;
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> ExtractGimpleCondOp::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+ExtractGimpleCondOp::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -113,7 +117,8 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
       {
          const auto last_stmt = stmt_list.back();
          auto gc = GetPointer<gimple_cond>(GET_NODE(last_stmt));
-         if(gc && (!tree_helper::IsBooleanType(gc->op0) || (GET_NODE(gc->op0)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(gc->op0)))))
+         if(gc && (!tree_helper::IsBooleanType(gc->op0) ||
+                   (GET_NODE(gc->op0)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(gc->op0)))))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---fixing gimple cond: " + last_stmt->ToString());
             auto new_gc_cond = tree_man->ExtractCondition(last_stmt, block.second, function_id);

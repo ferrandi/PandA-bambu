@@ -84,7 +84,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                         unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, SPLIT_RETURN, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -92,7 +93,8 @@ SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_
 
 SplitReturn::~SplitReturn() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> SplitReturn::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+SplitReturn::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -129,9 +131,12 @@ bool SplitReturn::HasToBeExecuted() const
       return false;
    }
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-   if(parameters->isOption(OPT_scheduling_algorithm) && parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
+   if(parameters->isOption(OPT_scheduling_algorithm) &&
+      parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
    {
-      return GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch && FunctionFrontendFlowStep::HasToBeExecuted();
+      return GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) &&
+             GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch &&
+             FunctionFrontendFlowStep::HasToBeExecuted();
    }
    else
 #endif
@@ -149,18 +154,22 @@ DesignFlowStep_Status SplitReturn::InternalExec()
    const auto fd = GetPointerS<const function_decl>(f_node);
    const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
 
-   const auto create_return_and_fix_cfg = [&](const tree_nodeRef& new_gr, const blocRef& pred_block, const blocRef& curr_bb) -> void {
+   const auto create_return_and_fix_cfg = [&](const tree_nodeRef& new_gr, const blocRef& pred_block,
+                                              const blocRef& curr_bb) -> void {
       const auto bb_index = curr_bb->number;
       if(pred_block->list_of_succ.size() == 1)
       {
          pred_block->PushBack(new_gr, AppM);
-         pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
+         pred_block->list_of_succ.erase(
+             std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
          pred_block->list_of_succ.push_back(curr_bb->list_of_succ.front());
       }
       else
       {
          const auto new_basic_block_index = (sl->list_of_bloc.rbegin())->first + 1;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created BB" + STR(new_basic_block_index) + " as new successor of BB" + STR(pred_block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Created BB" + STR(new_basic_block_index) + " as new successor of BB" +
+                            STR(pred_block->number));
          const auto new_block = blocRef(new bloc(new_basic_block_index));
          sl->list_of_bloc[new_basic_block_index] = new_block;
          new_block->loop_id = curr_bb->loop_id;
@@ -172,7 +181,8 @@ DesignFlowStep_Status SplitReturn::InternalExec()
          /// Add successor as succ basic block
          new_block->list_of_succ.push_back(curr_bb->list_of_succ.front());
          /// Fix successor of predecessor
-         pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
+         pred_block->list_of_succ.erase(
+             std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
          pred_block->list_of_succ.push_back(new_basic_block_index);
          if(pred_block->true_edge == bb_index)
          {
@@ -206,7 +216,9 @@ DesignFlowStep_Status SplitReturn::InternalExec()
    for(const auto& bbi_bb : list_of_bloc)
    {
       auto& bb = bbi_bb.second;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Considering BB" + STR(bb->number) + " " + STR(bb->CGetPhiList().size()) + " " + STR(bb->CGetStmtList().size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "--- Considering BB" + STR(bb->number) + " " + STR(bb->CGetPhiList().size()) + " " +
+                         STR(bb->CGetStmtList().size()));
       if(bb->list_of_pred.size() > 1 && bb->CGetPhiList().size() == 1 && bb->CGetStmtList().size() == 1)
       {
          const auto stmt = GET_CONST_NODE(bb->CGetStmtList().front());
@@ -217,11 +229,13 @@ DesignFlowStep_Status SplitReturn::InternalExec()
             const auto gr = GetPointerS<const gimple_return>(stmt);
             if(gr->op && GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->op))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- There is a split return possible at BB" + STR(bb_index));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "--- There is a split return possible at BB" + STR(bb_index));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Create return statement based of def edges");
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
-                  const auto new_gr = tree_man->create_gimple_return(ret_type, def_edge.first, function_id, BUILTIN_SRCP, 0);
+                  const auto new_gr =
+                      tree_man->create_gimple_return(ret_type, def_edge.first, function_id, BUILTIN_SRCP, 0);
                   auto& pred_block = sl->list_of_bloc.at(def_edge.second);
                   create_return_and_fix_cfg(new_gr, pred_block, bb);
                }
@@ -233,7 +247,8 @@ DesignFlowStep_Status SplitReturn::InternalExec()
             }
             else if(gp->virtual_flag)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- There is a split return possible at BB" + STR(bb_index));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "--- There is a split return possible at BB" + STR(bb_index));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Create return statement based of def edges");
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {

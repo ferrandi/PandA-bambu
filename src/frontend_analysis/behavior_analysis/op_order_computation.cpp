@@ -54,7 +54,8 @@
 #include "operations_graph_constructor.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-OpOrderComputation::OpOrderComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+OpOrderComputation::OpOrderComputation(const ParameterConstRef _Param, const application_managerRef _AppM,
+                                       unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, OP_ORDER_COMPUTATION, _design_flow_manager, _Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -62,7 +63,8 @@ OpOrderComputation::OpOrderComputation(const ParameterConstRef _Param, const app
 
 OpOrderComputation::~OpOrderComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> OpOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+OpOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -115,7 +117,8 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
    while(!to_visit.empty())
    {
       vertex actual = to_visit.front();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking vertex " + GET_NAME(cfg, actual) + " : " + boost::lexical_cast<std::string>(index));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Checking vertex " + GET_NAME(cfg, actual) + " : " + boost::lexical_cast<std::string>(index));
       to_visit.pop_front();
       MARK[actual] = true;
       function_behavior->lm->add(actual, index++);
@@ -133,7 +136,8 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
          {
             if(!MARK[boost::source(*i, *cfg)])
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not adding because of predecessor " + GET_NAME(cfg, boost::source(*i, *cfg)));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Not adding because of predecessor " + GET_NAME(cfg, boost::source(*i, *cfg)));
                toadd = false;
                break;
             }

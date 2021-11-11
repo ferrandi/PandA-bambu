@@ -83,9 +83,12 @@ void EucalyptusParameter::PrintHelp(std::ostream& os) const
    PrintGeneralOptionsUsage(os);
    os << "\n"
       << "  Library Estimation:\n"
-      << "    --target-device=<file>          Specify the type of the device, separated by commas (e.g.,: \"xc7z020,-1,clg484\")\n"
-      << "    --target-datafile=file          Specify a data XML file describing some defaults value for the target device.\n"
-      << "    --target-scriptfile=file        Specify a script XML file including the scripts for the synthesis w.r.t. the target device.\n"
+      << "    --target-device=<file>          Specify the type of the device, separated by commas (e.g.,: "
+         "\"xc7z020,-1,clg484\")\n"
+      << "    --target-datafile=file          Specify a data XML file describing some defaults value for the target "
+         "device.\n"
+      << "    --target-scriptfile=file        Specify a script XML file including the scripts for the synthesis w.r.t. "
+         "the target device.\n"
       << "    --clock-period=value            Specify the period of the clock signal (default 10 nanoseconds)\n"
       << "    --characterize=<component_name> Characterize the given component"
 #if HAVE_EXPERIMENTAL
@@ -99,7 +102,8 @@ void EucalyptusParameter::PrintHelp(std::ostream& os) const
       << std::endl;
 }
 
-EucalyptusParameter::EucalyptusParameter(const std::string& _program_name, int _argc, char** const _argv) : Parameter(_program_name, _argc, _argv)
+EucalyptusParameter::EucalyptusParameter(const std::string& _program_name, int _argc, char** const _argv)
+    : Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
 }
@@ -172,7 +176,8 @@ int EucalyptusParameter::Exec()
             {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
 #if HAVE_EXPERIMENTAL
-               else if(std::string(optarg) == "S") setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
+               else if(std::string(optarg) == "S")
+                   setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
 #endif
             }
             else if(std::string(optarg) == "H")
@@ -281,7 +286,8 @@ void EucalyptusParameter::CheckParameters()
    Parameter::CheckParameters();
    const auto sorted_dirs = [](const std::string& parent_dir) {
       std::vector<boost::filesystem::path> sorted_paths;
-      std::copy(boost::filesystem::directory_iterator(parent_dir), boost::filesystem::directory_iterator(), std::back_inserter(sorted_paths));
+      std::copy(boost::filesystem::directory_iterator(parent_dir), boost::filesystem::directory_iterator(),
+                std::back_inserter(sorted_paths));
       std::sort(sorted_paths.begin(), sorted_paths.end());
       return sorted_paths;
    };
@@ -291,10 +297,15 @@ void EucalyptusParameter::CheckParameters()
    const auto search_quartus = [&](const std::string& dir) {
       if(boost::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
       {
-         if(system(STR("bash -c \"if [[ \\\"$(" + dir + "/quartus/bin/quartus_sh --version | grep Version | awk '{print $2}' | awk -F'.' '{print $1}')\\\" -lt \\\"14\\\" ]]; then exit 1; else exit 0; fi\" > /dev/null 2>&1").c_str()))
+         if(system(STR("bash -c \"if [[ \\\"$(" + dir +
+                       "/quartus/bin/quartus_sh --version | grep Version | awk '{print $2}' | awk -F'.' '{print "
+                       "$1}')\\\" -lt \\\"14\\\" ]]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
+                       .c_str()))
          {
             setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
-            if(system(STR("bash -c \"" + dir + "/quartus/bin/quartus_sh --help | grep \\\"\\-\\-64bit\\\"\" > /dev/null 2>&1").c_str()) == 0)
+            if(system(STR("bash -c \"" + dir +
+                          "/quartus/bin/quartus_sh --help | grep \\\"\\-\\-64bit\\\"\" > /dev/null 2>&1")
+                          .c_str()) == 0)
             {
                setOption(OPT_quartus_13_64bit, true);
             }
@@ -517,7 +528,8 @@ void EucalyptusParameter::CheckParameters()
          for(const auto& vivado_dir : boost::filesystem::directory_iterator(xilinx_dir))
          {
             const auto vivado_path = vivado_dir.path().string();
-            if(boost::filesystem::is_directory(vivado_dir) && vivado_path.find("Vivado") > vivado_path.find_last_of('/'))
+            if(boost::filesystem::is_directory(vivado_dir) &&
+               vivado_path.find("Vivado") > vivado_path.find_last_of('/'))
             {
                for(const auto& ver_dir : sorted_dirs(vivado_path))
                {
@@ -536,13 +548,19 @@ void EucalyptusParameter::CheckParameters()
    setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
    if(getOption<bool>(OPT_verilator))
    {
-      setOption(OPT_verilator_l2_name, system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
-      const auto has_timescale_override = system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+      setOption(OPT_verilator_l2_name,
+                system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
+                       "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
+      const auto has_timescale_override =
+          system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid "
+                 "Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
       if(has_timescale_override)
       {
          setOption(OPT_verilator_timescale_override, "1ps/1ps");
       }
-      const auto thread_support = system("bash -c \"if [[ \\\"$(verilator --version | head -n1 | awk -F' ' '{print $2}'| awk -F'.' '{print $1}')\\\" = \\\"4\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+      const auto thread_support =
+          system("bash -c \"if [[ \\\"$(verilator --version | head -n1 | awk -F' ' '{print $2}'| awk -F'.' '{print "
+                 "$1}')\\\" = \\\"4\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
       if(getOption<bool>(OPT_verilator_parallel) && !thread_support)
       {
          THROW_WARNING("Installed version of Verilator does not support multi-threading.");
@@ -605,7 +623,8 @@ void EucalyptusParameter::CheckParameters()
    }
    if(not isOption(OPT_device_string))
    {
-      std::string device_string = getOption<std::string>("device_name") + getOption<std::string>("device_speed") + getOption<std::string>("device_package");
+      std::string device_string = getOption<std::string>("device_name") + getOption<std::string>("device_speed") +
+                                  getOption<std::string>("device_package");
       if(isOption("device_synthesis_tool") && !getOption<std::string>("device_synthesis_tool").empty())
       {
          device_string += "-" + getOption<std::string>("device_synthesis_tool");

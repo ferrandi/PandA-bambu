@@ -78,16 +78,18 @@ class ToolManager
    int debug_level;
 
    /**
-    * Execute the command and check the return code. If an error is occurred, an exception is raised with the given message
-    * If the permissive flag is given, it raises simply a warning
+    * Execute the command and check the return code. If an error is occurred, an exception is raised with the given
+    * message If the permissive flag is given, it raises simply a warning
     * @param log_file is the file where output will be saved
     */
-   int execute_command(const std::string& _command_, const std::string& error_message, const std::string& log_file, bool permissive = false, bool throw_message = true);
+   int execute_command(const std::string& _command_, const std::string& error_message, const std::string& log_file,
+                       bool permissive = false, bool throw_message = true);
 
    /**
     * Check if a command exist on a given host provided a configuration script
     */
-   int check_command(const std::string& _tool_, const std::string& setupscr, const std::string& _host_, bool permissive = false);
+   int check_command(const std::string& _tool_, const std::string& setupscr, const std::string& _host_,
+                     bool permissive = false);
    /**
     * Generate the command to the executed on the remote host
     */
@@ -131,7 +133,8 @@ class ToolManager
    /**
     * Configuration of the tool
     */
-   void configure(const std::string& _tool_, const std::string& setupscr, const std::string& _host_ = "", const std::string& _remote_path_ = "", bool force_remote = false);
+   void configure(const std::string& _tool_, const std::string& setupscr, const std::string& _host_ = "",
+                  const std::string& _remote_path_ = "", bool force_remote = false);
 
    /**
     * Execute the tool
@@ -140,7 +143,9 @@ class ToolManager
     * @param log_file is the log file
     * @return a flag that is true if the execution has been terminated with success, false otherwise.
     */
-   int execute(const std::vector<std::string>& parameters, const std::vector<std::string>& input_files, const std::vector<std::string>& output_files = std::vector<std::string>(), const std::string& log_file = std::string(), bool permissive = false);
+   int execute(const std::vector<std::string>& parameters, const std::vector<std::string>& input_files,
+               const std::vector<std::string>& output_files = std::vector<std::string>(),
+               const std::string& log_file = std::string(), bool permissive = false);
 
    /**
     * Determine the relative paths of the inputs files

@@ -33,7 +33,8 @@
 /**
  * @file port_swapping.hpp
  * @brief Implementation of the port swapping algorithm described in the following paper:
- *   Hao Cong, Song Chen and T. Yoshimura, "Port assignment for interconnect reduction in high-level synthesis," Proceedings of Technical Program of 2012 VLSI Design, Automation and Test, Hsinchu, 2012, pp. 1-4.
+ *   Hao Cong, Song Chen and T. Yoshimura, "Port assignment for interconnect reduction in high-level synthesis,"
+ * Proceedings of Technical Program of 2012 VLSI Design, Automation and Test, Hsinchu, 2012, pp. 1-4.
  *
  * @author Alessandro Comodi <alessandro.comodi@mail.polimi.it>
  * @author Davide Conficconi <davide.conficconi@mail.polimi.it>
@@ -52,7 +53,8 @@
 class port_swapping : public HLSFunctionStep
 {
  private:
-   using PSGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_color_t, boost::default_color_type>>;
+   using PSGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property,
+                                         boost::property<boost::edge_color_t, boost::default_color_type>>;
    using PSEdge = boost::graph_traits<PSGraph>::edge_descriptor;
    using PSVertex = boost::graph_traits<PSGraph>::vertex_descriptor;
    using PSE = std::pair<unsigned int, unsigned int>;
@@ -77,14 +79,16 @@ class port_swapping : public HLSFunctionStep
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
     * Constructor
     * @param design_flow_manager is the design flow manager
     */
-   port_swapping(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   port_swapping(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                 const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.
@@ -98,7 +102,8 @@ class port_swapping : public HLSFunctionStep
     * @param num_vertices_g number of vertices in the graph
     * @param vset structure that contains the vertices and the relative level and the belongings
     */
-   void vertex_levels(const std::vector<PSE>& spt_edges, PSVertex root, size_t num_vertices_g, std::vector<PSVSet>& vset);
+   void vertex_levels(const std::vector<PSE>& spt_edges, PSVertex root, size_t num_vertices_g,
+                      std::vector<PSVSet>& vset);
 
    /**
     * This function calculates the distances between two vertices in a spanning tree
@@ -138,7 +143,8 @@ class port_swapping : public HLSFunctionStep
     * @param num_vertices_g number of vertices in the graph
     * @param root vertex from which the spanning tree is calculated
     */
-   void port_swapping_algorithm(PSGraph& g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g, PSVertex root);
+   void port_swapping_algorithm(PSGraph& g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g,
+                                PSVertex root);
 
    /**
     * This function is the wrapper that executes port_swapping_algorithms and extracts the best solution

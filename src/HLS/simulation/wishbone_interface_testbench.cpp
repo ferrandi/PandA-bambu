@@ -87,8 +87,11 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-WishboneInterfaceTestbench::WishboneInterfaceTestbench(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
-    : TestbenchGenerationBaseStep(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::WB4_TESTBENCH_GENERATION)
+WishboneInterfaceTestbench::WishboneInterfaceTestbench(const ParameterConstRef _parameters,
+                                                       const HLS_managerRef _HLSMgr,
+                                                       const DesignFlowManagerConstRef _design_flow_manager)
+    : TestbenchGenerationBaseStep(_parameters, _HLSMgr, _design_flow_manager,
+                                  HLSFlowStep_Type::WB4_TESTBENCH_GENERATION)
 {
 }
 
@@ -117,15 +120,19 @@ void WishboneInterfaceTestbench::write_wishbone_input_signal_declaration(const t
          }
 
          writer->write(writer->type_converter(port_obj->get_typeRef()) + writer->type_converter_size(port_obj));
-         if(port_obj->get_kind() != port_o_K && port_obj->get_typeRef()->type != structural_type_descriptor::VECTOR_BOOL)
+         if(port_obj->get_kind() != port_o_K &&
+            port_obj->get_typeRef()->type != structural_type_descriptor::VECTOR_BOOL)
          {
             unsigned int lsb = GetPointer<port_o>(mod->get_in_port(i))->get_lsb();
-            writer->write("[" + STR(GetPointer<port_o>(mod->get_in_port(i))->get_ports_size() - 1 + lsb) + ":" + STR(lsb) + "] ");
+            writer->write("[" + STR(GetPointer<port_o>(mod->get_in_port(i))->get_ports_size() - 1 + lsb) + ":" +
+                          STR(lsb) + "] ");
          }
          writer->write(HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id()) + ";\n");
-         if(port_obj->get_typeRef()->treenode > 0 && tree_helper::IsPointerType(TreeM->CGetTreeReindex(port_obj->get_typeRef()->treenode)))
+         if(port_obj->get_typeRef()->treenode > 0 &&
+            tree_helper::IsPointerType(TreeM->CGetTreeReindex(port_obj->get_typeRef()->treenode)))
          {
-            auto pt_node = tree_helper::CGetPointedType(tree_helper::CGetType(TreeM->CGetTreeReindex(port_obj->get_typeRef()->treenode)));
+            auto pt_node = tree_helper::CGetPointedType(
+                tree_helper::CGetType(TreeM->CGetTreeReindex(port_obj->get_typeRef()->treenode)));
             while(GetPointer<const array_type>(GET_CONST_NODE(pt_node)))
             {
                pt_node = GetPointer<const array_type>(GET_CONST_NODE(pt_node))->elts;
@@ -156,14 +163,17 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
    const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_functions.size() == 1, "");
    const unsigned int topFunctionId = *(top_functions.begin());
-   const BehavioralHelperConstRef behavioral_helper = HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
+   const BehavioralHelperConstRef behavioral_helper =
+       HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
    const memoryRef mem = HLSMgr->Rmem;
    const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
    std::vector<std::string> parameterNames;
    for(auto const& function_parameter : function_parameters)
    {
       unsigned int var = function_parameter.first;
-      std::string variableName = (var == behavioral_helper->GetFunctionReturnType(topFunctionId)) ? RETURN_PORT_NAME : behavioral_helper->PrintVariable(var);
+      std::string variableName = (var == behavioral_helper->GetFunctionReturnType(topFunctionId)) ?
+                                     RETURN_PORT_NAME :
+                                     behavioral_helper->PrintVariable(var);
       parameterNames.push_back(variableName);
    }
    bool has_return = behavioral_helper->GetFunctionReturnType(topFunctionId);
@@ -433,7 +443,8 @@ void WishboneInterfaceTestbench::write_memory_handler() const
    writer->write("if (cyc_om & stb_om)\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
-   writer->write("if (we_om && base_addr <= addr_om && addr_om <= (base_addr + MEMSIZE - " + STR(dataBusByteSize) + "))\n");
+   writer->write("if (we_om && base_addr <= addr_om && addr_om <= (base_addr + MEMSIZE - " + STR(dataBusByteSize) +
+                 "))\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    writer->write(STR(STD_OPENING_CHAR));
@@ -442,12 +453,14 @@ void WishboneInterfaceTestbench::write_memory_handler() const
    for(unsigned int j = 0; j < dataBusByteSize; ++j)
    {
       caseValue = (caseValue | (1U << j));
-      writer->write(boost::lexical_cast<std::string>(dataBusByteSize) + "'d" + boost::lexical_cast<std::string>(caseValue) + ":\n");
+      writer->write(boost::lexical_cast<std::string>(dataBusByteSize) + "'d" +
+                    boost::lexical_cast<std::string>(caseValue) + ":\n");
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       for(unsigned int i = 0; i <= j; ++i)
       {
-         writer->write("_bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "] <= dat_om[" + STR((i * 8) + 7) + ":" + STR((i * 8)) + "];\n");
+         writer->write("_bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "] <= dat_om[" + STR((i * 8) + 7) +
+                       ":" + STR((i * 8)) + "];\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -463,7 +476,8 @@ void WishboneInterfaceTestbench::write_memory_handler() const
    writer->write("endcase\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
-   writer->write("if (!we_om && base_addr <= addr_om && addr_om <= (base_addr + MEMSIZE - " + STR(dataBusByteSize) + "))\n");
+   writer->write("if (!we_om && base_addr <= addr_om && addr_om <= (base_addr + MEMSIZE - " + STR(dataBusByteSize) +
+                 "))\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    writer->write(STR(STD_OPENING_CHAR));
@@ -472,12 +486,14 @@ void WishboneInterfaceTestbench::write_memory_handler() const
    for(unsigned int j = 0; j < dataBusByteSize; ++j)
    {
       caseValue = (caseValue | (1U << j));
-      writer->write(boost::lexical_cast<std::string>(dataBusByteSize) + "'d" + boost::lexical_cast<std::string>(caseValue) + ":\n");
+      writer->write(boost::lexical_cast<std::string>(dataBusByteSize) + "'d" +
+                    boost::lexical_cast<std::string>(caseValue) + ":\n");
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       for(unsigned int i = 0; i <= j; ++i)
       {
-         writer->write("dat_im[" + STR((i * 8) + 7) + ":" + STR((i * 8)) + "] <= _bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "];\n");
+         writer->write("dat_im[" + STR((i * 8) + 7) + ":" + STR((i * 8)) +
+                       "] <= _bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "];\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -510,16 +526,19 @@ void WishboneInterfaceTestbench::write_wishbone_output_signal_declaration(bool& 
       for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
       {
          std::string portId = mod->get_out_port(i)->get_id();
-         writer->write("wire " + writer->type_converter(mod->get_out_port(i)->get_typeRef()) + writer->type_converter_size(mod->get_out_port(i)));
+         writer->write("wire " + writer->type_converter(mod->get_out_port(i)->get_typeRef()) +
+                       writer->type_converter_size(mod->get_out_port(i)));
          if(portId == "irq" && mod->get_out_port(i)->get_kind() == port_vector_o_K)
          {
             hasMultiIrq |= GetPointer<port_o>(mod->get_out_port(i))->get_ports_size() > 1;
          }
 
-         if(mod->get_out_port(i)->get_kind() != port_o_K && mod->get_out_port(i)->get_typeRef()->type != structural_type_descriptor::VECTOR_BOOL)
+         if(mod->get_out_port(i)->get_kind() != port_o_K &&
+            mod->get_out_port(i)->get_typeRef()->type != structural_type_descriptor::VECTOR_BOOL)
          {
             unsigned int lsb = GetPointer<port_o>(mod->get_out_port(i))->get_lsb();
-            writer->write("[" + STR(GetPointer<port_o>(mod->get_out_port(i))->get_ports_size() - 1 + lsb) + ":" + STR(lsb) + "] ");
+            writer->write("[" + STR(GetPointer<port_o>(mod->get_out_port(i))->get_ports_size() - 1 + lsb) + ":" +
+                          STR(lsb) + "] ");
          }
          withMemory |= portId == WB_STBOM_PORT_NAME || portId == WB_CYCOM_PORT_NAME;
          writer->write(HDL_manager::convert_to_identifier(writer.get(), portId) + ";\n");
@@ -528,7 +547,8 @@ void WishboneInterfaceTestbench::write_wishbone_output_signal_declaration(bool& 
    }
 }
 
-void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, bool& withMemory, bool& hasMultiIrq) const
+void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, bool& withMemory,
+                                               bool& hasMultiIrq) const
 {
    write_wishbone_callFSM_signal_declaration();
    writer->write("reg " + std::string(START_PORT_NAME) + ";\n");
@@ -542,7 +562,8 @@ void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM,
    const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_functions.size() == 1, "");
    const unsigned int topFunctionId = *(top_functions.begin());
-   const BehavioralHelperConstRef behavioral_helper = HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
+   const BehavioralHelperConstRef behavioral_helper =
+       HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
    const memoryRef mem = HLSMgr->Rmem;
    const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
    for(auto const& function_parameter : function_parameters)
@@ -568,17 +589,21 @@ void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM,
          writer->write_comment(variableName + " -> " + STR(function_parameter.first) + "\n");
          writer->write("reg [" + STR(expectedVariableBitSize) + "-1:0] ex_" + variableName + ";\n");
          writer->write("reg [" + STR(variableBitSize) + "-1:0] registered_" + variableName + ";\n");
-         writer->write("parameter ADDRESS_OFFSET_" + variableName + " = " + STR(mem->get_parameter_base_address(topFunctionId, var)) + ";\n");
+         writer->write("parameter ADDRESS_OFFSET_" + variableName + " = " +
+                       STR(mem->get_parameter_base_address(topFunctionId, var)) + ";\n");
       }
       else
       {
          writer->write_comment(variableName + " -> " + STR(var) + "\n");
-         writer->write("reg [" + STR(variableBitSize) + "-1:0] " + HDL_manager::convert_to_identifier(writer.get(), variableName) + ";\n");
-         writer->write("parameter ADDRESS_OFFSET_" + variableName + " = " + STR(mem->get_parameter_base_address(topFunctionId, var)) + ";\n");
+         writer->write("reg [" + STR(variableBitSize) + "-1:0] " +
+                       HDL_manager::convert_to_identifier(writer.get(), variableName) + ";\n");
+         writer->write("parameter ADDRESS_OFFSET_" + variableName + " = " +
+                       STR(mem->get_parameter_base_address(topFunctionId, var)) + ";\n");
          if(tree_helper::IsPointerType(variableType))
          {
             const auto pt_type = tree_helper::CGetPointedType(variableType);
-            /// FIXME: real numbers at the moment have to be considered differently because of computation of ulp; c++ code is still managed in the old way
+            /// FIXME: real numbers at the moment have to be considered differently because of computation of ulp; c++
+            /// code is still managed in the old way
             if(tree_helper::IsRealType(pt_type))
             {
                writer->write("reg [" + STR(expectedVariableBitSize - 1) + ":0] ex_" + variableName + ";\n");
@@ -602,14 +627,17 @@ void WishboneInterfaceTestbench::write_file_reading_operations() const
    const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_functions.size() == 1, "");
    const unsigned int topFunctionId = *(top_functions.begin());
-   const BehavioralHelperConstRef behavioral_helper = HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
+   const BehavioralHelperConstRef behavioral_helper =
+       HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
    const memoryRef mem = HLSMgr->Rmem;
    const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
    std::vector<std::string> parameterNames;
    for(auto const& function_parameter : function_parameters)
    {
       unsigned int var = function_parameter.first;
-      std::string variableName = (var == behavioral_helper->GetFunctionReturnType(topFunctionId)) ? RETURN_PORT_NAME : behavioral_helper->PrintVariable(var);
+      std::string variableName = (var == behavioral_helper->GetFunctionReturnType(topFunctionId)) ?
+                                     RETURN_PORT_NAME :
+                                     behavioral_helper->PrintVariable(var);
       parameterNames.push_back(variableName);
    }
    std::string topFunctionName = behavioral_helper->PrintVariable(topFunctionId);

@@ -72,7 +72,8 @@ class compute_implicit_calls : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void replace_with_memcpy(tree_nodeRef stmt, const statement_list* sl, tree_manipulationRef tree_man) const;
 
@@ -86,7 +87,8 @@ class compute_implicit_calls : public FunctionFrontendFlowStep
     * @param function_id is the node id of the function analyzed.
     * @param design_flow_manager is the design flow manager
     */
-   compute_implicit_calls(const ParameterConstRef parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
+   compute_implicit_calls(const ParameterConstRef parameters, const application_managerRef AppM,
+                          unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

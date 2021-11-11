@@ -32,7 +32,8 @@
  */
 /**
  * @file parallel_memory_conn_binding.hpp
- * @brief Data structure used to store the interconnection binding of datapath elements when parallel memory controller is adopted
+ * @brief Data structure used to store the interconnection binding of datapath elements when parallel memory controller
+ * is adopted
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *

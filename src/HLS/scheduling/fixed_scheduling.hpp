@@ -52,7 +52,8 @@ class fixed_scheduling : public Scheduling
     * Constructor
     * @param design_flow_manager is the design flow manager
     */
-   fixed_scheduling(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   fixed_scheduling(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                    const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

@@ -118,7 +118,9 @@ class ActorGraphBackend
     * @param parameters is the set of input parameters
     * @param verbose specifies if comments have to be printed
     */
-   ActorGraphBackend(const PartitioningManagerConstRef& partitioning_manager, const CustomUnorderedMap<ActorGraph_Type, ActorGraphBackendRef>& actor_graph_backends, const CWriterRef& c_writer, const IndentedOutputStreamRef& indented_output_stream,
+   ActorGraphBackend(const PartitioningManagerConstRef& partitioning_manager,
+                     const CustomUnorderedMap<ActorGraph_Type, ActorGraphBackendRef>& actor_graph_backends,
+                     const CWriterRef& c_writer, const IndentedOutputStreamRef& indented_output_stream,
                      const ParameterConstRef& parameters, const bool verbose);
 
    /**

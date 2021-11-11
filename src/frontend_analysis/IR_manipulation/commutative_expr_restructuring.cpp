@@ -80,7 +80,9 @@
 
 #define EPSILON 0.0001
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> commutative_expr_restructuring::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+commutative_expr_restructuring::ComputeFrontendRelationships(
+    const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -94,16 +96,20 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          /// Not executed
          if(GetStatus() != DesignFlowStep_Status::SUCCESS)
          {
-            if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING && GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+            if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING &&
+               GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
                GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
             {
                /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
-               const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
+               const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
+                   FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
                if(update_schedule)
                {
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-                  const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
-                  if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != function_behavior->GetBBVersion())
+                  const DesignFlowStepRef design_flow_step =
+                      design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                  if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
+                     function_behavior->GetBBVersion())
                   {
                      relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
                      break;
@@ -129,7 +135,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-commutative_expr_restructuring::commutative_expr_restructuring(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+commutative_expr_restructuring::commutative_expr_restructuring(const application_managerRef _AppM,
+                                                               unsigned int _function_id,
+                                                               const DesignFlowManagerConstRef _design_flow_manager,
+                                                               const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, COMMUTATIVE_EXPR_RESTRUCTURING, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -150,10 +159,13 @@ bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn
    {
       return false;
    }
-   return opKind == mult_expr_K || opKind == widen_mult_expr_K || opKind == widen_sum_expr_K || opKind == bit_ior_expr_K || opKind == bit_xor_expr_K || opKind == bit_and_expr_K || opKind == eq_expr_K || opKind == ne_expr_K || opKind == plus_expr_K;
+   return opKind == mult_expr_K || opKind == widen_mult_expr_K || opKind == widen_sum_expr_K ||
+          opKind == bit_ior_expr_K || opKind == bit_xor_expr_K || opKind == bit_and_expr_K || opKind == eq_expr_K ||
+          opKind == ne_expr_K || opKind == plus_expr_K;
 }
 
-tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeConstRef tn, const bool first, bool is_third_node) const
+tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeConstRef tn, const bool first,
+                                                             bool is_third_node) const
 {
    const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
    const auto be = GetPointer<const binary_expr>(GET_NODE(ga->op1));
@@ -185,7 +197,8 @@ tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeCons
    {
       return tree_nodeRef();
    }
-   if(schedule->GetStartingTime(ga->index) == schedule->GetEndingTime(def->index) or (schedule->get_cstep_end(def->index).second + 1) == schedule->get_cstep(ga->index).second)
+   if(schedule->GetStartingTime(ga->index) == schedule->GetEndingTime(def->index) or
+      (schedule->get_cstep_end(def->index).second + 1) == schedule->get_cstep(ga->index).second)
    {
       return sn->CGetDefStmt();
    }
@@ -237,7 +250,8 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          }
          if(second_stmt)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained with a second commutative expression: " + STR(second_stmt));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Chained with a second commutative expression: " + STR(second_stmt));
             third_stmt = IsCommExprChain(second_stmt, true, true);
             if(!third_stmt)
             {
@@ -278,7 +292,8 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          operands.insert(std::make_pair(third_be->op1, third_stmt));
          for(const auto& operand : operands)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing when " + STR(operand.first) + " used in " + STR(operand.second) + " is ready");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Analyzing when " + STR(operand.first) + " used in " + STR(operand.second) + " is ready");
             const auto sn = GetPointer<const ssa_name>(GET_NODE(operand.first));
             if(sn)
             {
@@ -288,23 +303,36 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
                   const auto def_stmt = sn->CGetDefStmt();
                   const auto ending_time = schedule->GetEndingTime(def_stmt->index);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ending time is " + STR(ending_time));
-                  const auto connection_time = allocation_information->GetConnectionTime(def_stmt->index, operand.second->index, schedule->get_cstep(def_stmt->index));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connection time is " + STR(connection_time));
+                  const auto connection_time = allocation_information->GetConnectionTime(
+                      def_stmt->index, operand.second->index, schedule->get_cstep(def_stmt->index));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Connection time is " + STR(connection_time));
                   const auto current_operand_ready_time = ending_time + connection_time;
                   operand_ready_time = std::max(operand_ready_time, current_operand_ready_time);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New ready time is " + STR(operand_ready_time));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---New ready time is " + STR(operand_ready_time));
                }
             }
          }
 
          const auto comm_expr_time1 = allocation_information->GetTimeLatency((*stmt)->index, fu_binding::UNKNOWN).first;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of first operation is " + STR(comm_expr_time1));
-         const auto comm_expr_time2 = allocation_information->GetTimeLatency(second_stmt->index, fu_binding::UNKNOWN).first;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of second operation is " + STR(comm_expr_time2));
-         const auto comm_expr_time3 = allocation_information->GetTimeLatency(third_stmt->index, fu_binding::UNKNOWN).first;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of third operation is " + STR(comm_expr_time3));
-         const auto new_ending_time = operand_ready_time + std::max(comm_expr_time1, comm_expr_time3) + comm_expr_time2 + allocation_information->GetConnectionTime(third_ga->index, second_ga->index, schedule->get_cstep(third_ga->index));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operand ready time " + STR(operand_ready_time) + " - New ending time " + STR(new_ending_time) + " - Old ending time " + STR(old_time));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Delay of first operation is " + STR(comm_expr_time1));
+         const auto comm_expr_time2 =
+             allocation_information->GetTimeLatency(second_stmt->index, fu_binding::UNKNOWN).first;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Delay of second operation is " + STR(comm_expr_time2));
+         const auto comm_expr_time3 =
+             allocation_information->GetTimeLatency(third_stmt->index, fu_binding::UNKNOWN).first;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Delay of third operation is " + STR(comm_expr_time3));
+         const auto new_ending_time = operand_ready_time + std::max(comm_expr_time1, comm_expr_time3) +
+                                      comm_expr_time2 +
+                                      allocation_information->GetConnectionTime(third_ga->index, second_ga->index,
+                                                                                schedule->get_cstep(third_ga->index));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Operand ready time " + STR(operand_ready_time) + " - New ending time " +
+                            STR(new_ending_time) + " - Old ending time " + STR(old_time));
          if(new_ending_time + EPSILON >= old_time)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Increased execution time");
@@ -324,7 +352,8 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          {
             std::swap(first_value, second_value);
          }
-         const auto comm_expr_node = tree_man->create_binary_operation(type_node, first_value, second_value, BUILTIN_SRCP, comm_expr_kind);
+         const auto comm_expr_node =
+             tree_man->create_binary_operation(type_node, first_value, second_value, BUILTIN_SRCP, comm_expr_kind);
 
          /// Create the ssa in the left part
          tree_nodeRef var = nullptr;
@@ -342,18 +371,24 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          GetPointer<ssa_name>(GET_CONST_NODE(ssa_node))->bit_values = first_ga_op0->bit_values;
 
          /// Create the assign
-         const auto gimple_assign_node = tree_man->create_gimple_modify_stmt(ssa_node, comm_expr_node, function_id, BUILTIN_SRCP, block.first);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + GET_CONST_NODE(gimple_assign_node)->ToString());
+         const auto gimple_assign_node =
+             tree_man->create_gimple_modify_stmt(ssa_node, comm_expr_node, function_id, BUILTIN_SRCP, block.first);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Created " + GET_CONST_NODE(gimple_assign_node)->ToString());
          /// Set the bit value for the intermediate ssa to correctly update execution time
          block.second->PushBefore(gimple_assign_node, *stmt, AppM);
          new_tree_nodes.push_back(gimple_assign_node);
 
          /// Inserting last commutative expression
-         const auto root_comm_expr = tree_man->create_binary_operation(type_node, first_operand_of_second ? second_be->op0 : second_be->op1, ssa_node, BUILTIN_SRCP, comm_expr_kind);
+         const auto root_comm_expr =
+             tree_man->create_binary_operation(type_node, first_operand_of_second ? second_be->op0 : second_be->op1,
+                                               ssa_node, BUILTIN_SRCP, comm_expr_kind);
 
          /// Create the assign
-         const auto root_gimple_node = tree_man->create_gimple_modify_stmt(first_ga->op0, root_comm_expr, function_id, BUILTIN_SRCP, block.first);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + GET_CONST_NODE(root_gimple_node)->ToString());
+         const auto root_gimple_node =
+             tree_man->create_gimple_modify_stmt(first_ga->op0, root_comm_expr, function_id, BUILTIN_SRCP, block.first);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Created " + GET_CONST_NODE(root_gimple_node)->ToString());
          block.second->Replace(*stmt, root_gimple_node, true, AppM);
          new_tree_nodes.push_back(root_gimple_node);
          AppM->RegisterTransformation(GetName(), root_gimple_node);
@@ -372,7 +407,8 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
          {
             WriteBBGraphDot("BB_Inside_" + GetName() + "_" + STR(counter) + ".dot");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_Inside_" + GetName() + "_" + STR(counter) + ".dot");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Written BB_Inside_" + GetName() + "_" + STR(counter) + ".dot");
             counter++;
          }
          const double new_time = schedule->GetEndingTime(GET_INDEX_CONST_NODE(root_gimple_node));
@@ -386,8 +422,10 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
             }
 
             /// Adding old statements
-            next_stmt ? block.second->PushBefore(second_stmt, next_stmt, AppM) : block.second->PushBack(second_stmt, AppM);
-            next_stmt ? block.second->PushBefore(first_stmt, next_stmt, AppM) : block.second->PushBack(first_stmt, AppM);
+            next_stmt ? block.second->PushBefore(second_stmt, next_stmt, AppM) :
+                        block.second->PushBack(second_stmt, AppM);
+            next_stmt ? block.second->PushBefore(first_stmt, next_stmt, AppM) :
+                        block.second->PushBack(first_stmt, AppM);
 
             /// Recomputing schedule
             for(const auto& temp_stmt : list_of_stmt)
@@ -399,7 +437,9 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
             stmt = std::prev(next_stmt_ptr);
             continue;
          }
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Commutative expression restructuring applied on three " + comm_expr_kind_text + " operations");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                        "-->Commutative expression restructuring applied on three " + comm_expr_kind_text +
+                            " operations");
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
          /// Restarting
          modified = true;
@@ -434,16 +474,20 @@ bool commutative_expr_restructuring::HasToBeExecuted() const
       return false;
    }
 #if HAVE_ILP_BUILT
-   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING && GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING &&
+      GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
       /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
-      const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
+      const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
+          FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
       if(update_schedule)
       {
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
-         if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != function_behavior->GetBBVersion())
+         const DesignFlowStepRef design_flow_step =
+             design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+         if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
+            function_behavior->GetBBVersion())
          {
             return false;
          }

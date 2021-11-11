@@ -86,7 +86,8 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void kill_uses(const tree_managerRef& TM, const tree_nodeRef& op0) const;
 
@@ -110,7 +111,8 @@ class dead_code_elimination : public FunctionFrontendFlowStep
 
    void fix_sdc_motion(tree_nodeRef removedStmt) const;
 
-   blocRef move2emptyBB(const tree_managerRef& TM, const unsigned int new_bbi, const statement_list* sl, const blocRef& bb_pred, const unsigned int cand_bb_dest, const unsigned int bb_dest) const;
+   blocRef move2emptyBB(const tree_managerRef& TM, const unsigned int new_bbi, const statement_list* sl,
+                        const blocRef& bb_pred, const unsigned int cand_bb_dest, const unsigned int bb_dest) const;
 
  public:
    /**
@@ -120,7 +122,8 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     * @param function_id is the index of the function
     * @param design_flow_manager is the design flow manager
     */
-   dead_code_elimination(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   dead_code_elimination(const ParameterConstRef _parameters, const application_managerRef AppM,
+                         unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -139,7 +142,8 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     */
    bool HasToBeExecuted() const override;
 
-   static void fix_sdc_motion(DesignFlowManagerConstRef design_flow_manager, unsigned int function_id, tree_nodeRef removedStmt);
+   static void fix_sdc_motion(DesignFlowManagerConstRef design_flow_manager, unsigned int function_id,
+                              tree_nodeRef removedStmt);
 };
 
 #endif

@@ -95,8 +95,12 @@ CustomUnorderedSet<std::string> CheckSystemType::not_supported_leon3_functions;
 
 CustomUnorderedMapUnstable<std::string, std::string> CheckSystemType::undefined_library_function_include;
 
-CheckSystemType::CheckSystemType(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, CHECK_SYSTEM_TYPE, _design_flow_manager, _parameters), behavioral_helper(AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()), TM(AppM->get_tree_manager()), already_executed(false)
+CheckSystemType::CheckSystemType(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                                 unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, CHECK_SYSTEM_TYPE, _design_flow_manager, _parameters),
+      behavioral_helper(AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()),
+      TM(AppM->get_tree_manager()),
+      already_executed(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    if(inclNameToPath.size() == 0)
@@ -107,7 +111,8 @@ CheckSystemType::CheckSystemType(const ParameterConstRef _parameters, const appl
 
 CheckSystemType::~CheckSystemType() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CheckSystemType::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CheckSystemType::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -175,7 +180,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& tn, CustomUnordere
    recursive_examinate(GET_NODE(tn), GET_INDEX_NODE(tn), already_visited);
 }
 
-void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index, CustomUnorderedSet<unsigned int>& already_visited)
+void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index,
+                                          CustomUnorderedSet<unsigned int>& already_visited)
 {
    THROW_ASSERT(curr_tn, "Empty current tree node");
    if(already_visited.find(index) != already_visited.end())
@@ -234,7 +240,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          auto* fd = GetPointer<function_decl>(curr_tn);
          bool is_system;
          std::string include = std::get<0>(behavioral_helper->get_definition(index, is_system));
-         if(fd and (library_system_functions.find(tree_helper::print_function_name(TM, fd)) != library_system_functions.end()))
+         if(fd and
+            (library_system_functions.find(tree_helper::print_function_name(TM, fd)) != library_system_functions.end()))
          {
             dn->library_system_flag = true;
          }
@@ -284,7 +291,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          {
             fd = GetPointer<function_decl>(curr_tn);
             auto* sr = GetPointer<srcp>(curr_tn);
-            if(fd->type and fd->undefined_flag and !fd->operating_system_flag and !fd->library_system_flag and sr->include_name != "<built-in>")
+            if(fd->type and fd->undefined_flag and !fd->operating_system_flag and !fd->library_system_flag and
+               sr->include_name != "<built-in>")
             {
                auto* ft = GetPointer<function_type>(GET_NODE(fd->type));
                if(!ft->prms and ft->retn and GetPointer<integer_type>(GET_NODE(ft->retn)))
@@ -335,7 +343,9 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                }
             }
          }
-         if(curr_tn->get_kind() == var_decl_K and dn->artificial_flag and (behavioral_helper->PrintVariable(dn->index) == "__FUNCTION__" or behavioral_helper->PrintVariable(dn->index) == "__PRETTY_FUNCTION__"))
+         if(curr_tn->get_kind() == var_decl_K and dn->artificial_flag and
+            (behavioral_helper->PrintVariable(dn->index) == "__FUNCTION__" or
+             behavioral_helper->PrintVariable(dn->index) == "__PRETTY_FUNCTION__"))
          {
             dn->library_system_flag = true;
          }
@@ -572,7 +582,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                   if(td->name and GetPointer<identifier_node>(GET_NODE(td->name)))
                   {
                      auto* in = GetPointer<identifier_node>(GET_NODE(td->name));
-                     if(parameters->isOption(OPT_gcc_standard) and parameters->getOption<std::string>(OPT_gcc_standard) == "c99" and in->strg == "_Bool")
+                     if(parameters->isOption(OPT_gcc_standard) and
+                        parameters->getOption<std::string>(OPT_gcc_standard) == "c99" and in->strg == "_Bool")
                      {
                         const std::string INT = "int";
                         in->strg = INT;
@@ -766,13 +777,17 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             case CASE_TERNARY_EXPRESSION:
             case CASE_UNARY_EXPRESSION:
             default:
-               THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(curr_tn->get_kind_text()));
+               THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
+                                "Not supported node: " + std::string(curr_tn->get_kind_text()));
          }
          bool is_system;
          std::string include = std::get<0>(behavioral_helper->get_definition(index, is_system));
 #if HAVE_BAMBU_BUILT
-         if((include.find("etc/libbambu") != std::string::npos) || (include.find(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) != std::string::npos) ||
-            (include.find(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include")) != std::string::npos) || (ty->name && (GetPointer<const type_decl>(GET_CONST_NODE(ty->name))) && (GetPointer<const type_decl>(GET_CONST_NODE(ty->name))->libbambu_flag)))
+         if((include.find("etc/libbambu") != std::string::npos) ||
+            (include.find(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) != std::string::npos) ||
+            (include.find(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include")) != std::string::npos) ||
+            (ty->name && (GetPointer<const type_decl>(GET_CONST_NODE(ty->name))) &&
+             (GetPointer<const type_decl>(GET_CONST_NODE(ty->name))->libbambu_flag)))
          {
             ty->libbambu_flag = true;
          }
@@ -968,7 +983,8 @@ void CheckSystemType::build_include_structures()
    //   inclNameToPath[FILENAME_NORM("soft-fp/bambu-arch.h")] = FILENAME_NORM("stdlib.h");
 
    std::vector<std::string> Splitted;
-   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(
+       parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
    compiler_wrapper->GetSystemIncludes(Splitted);
 
    for(auto& tok_iter : Splitted)
@@ -982,7 +998,8 @@ void CheckSystemType::build_include_structures()
             temp = tok_iter;
             if(boost::algorithm::starts_with(temp, "z:/mingw"))
             {
-               temp = temp.replace(0, 8, FILENAME_NORM(mingw_prefix)); /// replace z:/mingw at the beginning of the string
+               temp =
+                   temp.replace(0, 8, FILENAME_NORM(mingw_prefix)); /// replace z:/mingw at the beginning of the string
             }
             temp = FILENAME_NORM(temp);
          }

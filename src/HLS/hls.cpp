@@ -88,7 +88,8 @@
 
 #include "dbgPrintHelper.hpp"
 
-static void computeResources(const structural_objectRef circ, const technology_managerRef TM, std::map<std::string, unsigned int>& resources);
+static void computeResources(const structural_objectRef circ, const technology_managerRef TM,
+                             std::map<std::string, unsigned int>& resources);
 
 /*************************************************************************************************
  *                                                                                               *
@@ -96,7 +97,8 @@ static void computeResources(const structural_objectRef circ, const technology_m
  *                                                                                               *
  *************************************************************************************************/
 
-hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet _operations, const HLS_targetRef _HLS_T, const HLS_constraintsRef _HLS_C)
+hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet _operations, const HLS_targetRef _HLS_T,
+         const HLS_constraintsRef _HLS_C)
     : functionId(_function_id),
       operations(std::move(_operations)),
       HLS_T(_HLS_T),
@@ -182,7 +184,8 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
                LOAD_XVM(library, EnodeC);
             }
             unsigned int fu_type;
-            if(allocation_information->is_artificial_fu(String2Id[std::make_pair(fu_name, library)].front()) || allocation_information->is_assign(String2Id[std::make_pair(fu_name, library)].front()))
+            if(allocation_information->is_artificial_fu(String2Id[std::make_pair(fu_name, library)].front()) ||
+               allocation_information->is_assign(String2Id[std::make_pair(fu_name, library)].front()))
             {
                fu_type = String2Id[std::make_pair(fu_name, library)].front();
                String2Id[std::make_pair(fu_name, library)].pop_front();
@@ -245,7 +248,8 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
    }
 }
 
-static void computeResources(const structural_objectRef circ, const technology_managerRef TM, std::map<std::string, unsigned int>& resources)
+static void computeResources(const structural_objectRef circ, const technology_managerRef TM,
+                             std::map<std::string, unsigned int>& resources)
 {
    const module* mod = GetPointer<module>(circ);
    for(unsigned int l = 0; l < mod->get_internal_objects_size(); l++)

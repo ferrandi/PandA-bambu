@@ -55,7 +55,8 @@ class unique_binding_register : public reg_binding_creator
     * Constructor of the class.
     * @param design_flow_manager is the design flow manager
     */
-   unique_binding_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   unique_binding_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                           const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor of the class.

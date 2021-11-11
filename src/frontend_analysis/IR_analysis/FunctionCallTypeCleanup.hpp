@@ -64,7 +64,8 @@ class FunctionCallTypeCleanup : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * @brief
@@ -78,7 +79,8 @@ class FunctionCallTypeCleanup : public FunctionFrontendFlowStep
     * @return true when parameters have been modified
     * @return false when no modification is applied
     */
-   bool ParametersTypeCleanup(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const blocRef& block, const tree_nodeRef& stmt, std::vector<tree_nodeRef>& args, const std::string& srcp) const;
+   bool ParametersTypeCleanup(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const blocRef& block,
+                              const tree_nodeRef& stmt, std::vector<tree_nodeRef>& args, const std::string& srcp) const;
 
  public:
    /**
@@ -88,7 +90,8 @@ class FunctionCallTypeCleanup : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   FunctionCallTypeCleanup(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   FunctionCallTypeCleanup(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id,
+                           const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

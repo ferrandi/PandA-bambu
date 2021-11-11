@@ -77,7 +77,8 @@ class HLSCWriter : public CWriter
     */
    size_t WriteBinaryMemoryInit(const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset);
 
-   size_t WriteBinaryMemoryInitToFile(std::ofstream& parameter_init_file, const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset);
+   size_t WriteBinaryMemoryInitToFile(std::ofstream& parameter_init_file, const std::string& binary_string,
+                                      const size_t data_bitsize, std::string& bits_offset);
 
    /**
     * Write global variables needed by the tesbench
@@ -108,7 +109,8 @@ class HLSCWriter : public CWriter
     * removed when tesbench memory allocation and c testbench creation will
     * be executed as separate steps)
     */
-   void WriteParamInitialization(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned int v_idx);
+   void WriteParamInitialization(const BehavioralHelperConstRef behavioral_helper,
+                                 const std::map<std::string, std::string>& curr_test_vector, const unsigned int v_idx);
 
    /**
     * Writes a call to the top function to be tested, using its parameters.
@@ -123,7 +125,8 @@ class HLSCWriter : public CWriter
     * the tested function. The output is in a format that is recognized by
     * the HDL testbench generation
     */
-   void WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned v_idx);
+   void WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper,
+                             const std::map<std::string, std::string>& curr_test_vector, const unsigned v_idx);
 
    /**
     * Write some print statements used to dump the values used by the HDL to
@@ -170,7 +173,8 @@ class HLSCWriter : public CWriter
     * @param nesting_level is the level of nesting of the currently printed field/element
     * @param input specifies if the input syntax must be used
     */
-   void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string& param, const unsigned int type, const unsigned int nesting_level, bool input);
+   void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string& param,
+                           const unsigned int type, const unsigned int nesting_level, bool input);
 
  public:
    /**
@@ -182,8 +186,9 @@ class HLSCWriter : public CWriter
     * @param Param is the set of parameters
     * @param verbose tells if annotations
     */
-   HLSCWriter(const HLSCBackendInformationConstRef hls_c_backend_information, const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef _parameters,
-              bool verbose = true);
+   HLSCWriter(const HLSCBackendInformationConstRef hls_c_backend_information, const application_managerConstRef _AppM,
+              const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream,
+              const ParameterConstRef _parameters, bool verbose = true);
 
    /**
     * Destructor

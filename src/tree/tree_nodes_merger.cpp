@@ -1420,12 +1420,19 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
    // cppcheck-suppress unusedVariable
    bool attr_p;
 
-#define ATTR_SEQ                                                                                                                                                                                                                                              \
-   (TOK_NEW)(TOK_DELETE)(TOK_ASSIGN)(TOK_MEMBER)(TOK_PUBLIC)(TOK_PROTECTED)(TOK_PRIVATE)(TOK_NORETURN)(TOK_VOLATILE)(TOK_NOINLINE)(TOK_ALWAYS_INLINE)(TOK_USED)(TOK_UNUSED)(TOK_CONST)(TOK_TRANSPARENT_UNION)(TOK_CONSTRUCTOR)(TOK_DESTRUCTOR)(TOK_MODE)(     \
-       TOK_SECTION)(TOK_ALIGNED)(TOK_WEAK)(TOK_ALIAS)(TOK_NO_INSTRUMENT_FUNCTION)(TOK_MALLOC)(TOK_NO_STACK_LIMIT)(TOK_PURE)(TOK_DEPRECATED)(TOK_VECTOR_SIZE)(TOK_VISIBILITY)(TOK_TLS_MODEL)(TOK_NONNULL)(TOK_NOTHROW)(TOK_MAY_ALIAS)(TOK_WARN_UNUSED_RESULT)( \
-       TOK_FORMAT)(TOK_FORMAT_ARG)(TOK_NULL)(TOK_GLOBAL_INIT)(TOK_GLOBAL_FINI)(TOK_CONVERSION)(TOK_VIRTUAL)(TOK_LSHIFT)(TOK_MUTABLE)(TOK_PSEUDO_TMPL)(TOK_VECNEW)(TOK_VECDELETE)(TOK_POS)(TOK_NEG)(TOK_ADDR)(TOK_DEREF)(TOK_LNOT)(TOK_NOT)(TOK_PREINC)(       \
-       TOK_PREDEC)(TOK_PLUSASSIGN)(TOK_PLUS)(TOK_MINUSASSIGN)(TOK_MINUS)(TOK_MULTASSIGN)(TOK_MULT)(TOK_DIVASSIGN)(TOK_DIV)(TOK_MODASSIGN)(TOK_MOD)(TOK_ANDASSIGN)(TOK_AND)(TOK_ORASSIGN)(TOK_OR)(TOK_XORASSIGN)(TOK_XOR)(TOK_LSHIFTASSIGN)(TOK_RSHIFTASSIGN)( \
-       TOK_RSHIFT)(TOK_EQ)(TOK_NE)(TOK_LT)(TOK_GT)(TOK_LE)(TOK_GE)(TOK_LAND)(TOK_LOR)(TOK_COMPOUND)(TOK_MEMREF)(TOK_REF)(TOK_SUBS)(TOK_POSTINC)(TOK_POSTDEC)(TOK_CALL)(TOK_THUNK)(TOK_THIS_ADJUSTING)(TOK_RESULT_ADJUSTING)(TOK_BITFIELD)
+#define ATTR_SEQ                                                                                                      \
+   (TOK_NEW)(TOK_DELETE)(TOK_ASSIGN)(TOK_MEMBER)(TOK_PUBLIC)(TOK_PROTECTED)(TOK_PRIVATE)(TOK_NORETURN)(TOK_VOLATILE)( \
+       TOK_NOINLINE)(TOK_ALWAYS_INLINE)(TOK_USED)(TOK_UNUSED)(TOK_CONST)(TOK_TRANSPARENT_UNION)(TOK_CONSTRUCTOR)(     \
+       TOK_DESTRUCTOR)(TOK_MODE)(TOK_SECTION)(TOK_ALIGNED)(TOK_WEAK)(TOK_ALIAS)(TOK_NO_INSTRUMENT_FUNCTION)(          \
+       TOK_MALLOC)(TOK_NO_STACK_LIMIT)(TOK_PURE)(TOK_DEPRECATED)(TOK_VECTOR_SIZE)(TOK_VISIBILITY)(TOK_TLS_MODEL)(     \
+       TOK_NONNULL)(TOK_NOTHROW)(TOK_MAY_ALIAS)(TOK_WARN_UNUSED_RESULT)(TOK_FORMAT)(TOK_FORMAT_ARG)(TOK_NULL)(        \
+       TOK_GLOBAL_INIT)(TOK_GLOBAL_FINI)(TOK_CONVERSION)(TOK_VIRTUAL)(TOK_LSHIFT)(TOK_MUTABLE)(TOK_PSEUDO_TMPL)(      \
+       TOK_VECNEW)(TOK_VECDELETE)(TOK_POS)(TOK_NEG)(TOK_ADDR)(TOK_DEREF)(TOK_LNOT)(TOK_NOT)(TOK_PREINC)(TOK_PREDEC)(  \
+       TOK_PLUSASSIGN)(TOK_PLUS)(TOK_MINUSASSIGN)(TOK_MINUS)(TOK_MULTASSIGN)(TOK_MULT)(TOK_DIVASSIGN)(TOK_DIV)(       \
+       TOK_MODASSIGN)(TOK_MOD)(TOK_ANDASSIGN)(TOK_AND)(TOK_ORASSIGN)(TOK_OR)(TOK_XORASSIGN)(TOK_XOR)(                 \
+       TOK_LSHIFTASSIGN)(TOK_RSHIFTASSIGN)(TOK_RSHIFT)(TOK_EQ)(TOK_NE)(TOK_LT)(TOK_GT)(TOK_LE)(TOK_GE)(TOK_LAND)(     \
+       TOK_LOR)(TOK_COMPOUND)(TOK_MEMREF)(TOK_REF)(TOK_SUBS)(TOK_POSTINC)(TOK_POSTDEC)(TOK_CALL)(TOK_THUNK)(          \
+       TOK_THIS_ADJUSTING)(TOK_RESULT_ADJUSTING)(TOK_BITFIELD)
 #define ATTR_MACRO(r, data, elem)                                                                                   \
    attr_p = GetPointer<attr>(source_tn)->list_attr.find(TOK(elem)) != GetPointer<attr>(source_tn)->list_attr.end(); \
    if(attr_p)                                                                                                       \
@@ -1436,50 +1443,54 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
 #undef ATTR_SEQ
 }
 
-#define SET_NODE_ID(field, type)                                                                                          \
-   if(GetPointer<type>(source_tn)->field)                                                                                 \
-   {                                                                                                                      \
-      unsigned int node_id = GET_INDEX_NODE(GetPointer<type>(source_tn)->field);                                          \
-      THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + boost::lexical_cast<std::string>(node_id)); \
-      node_id = remap.find(node_id)->second;                                                                              \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM->GetTreeReindex(node_id);                                       \
+#define SET_NODE_ID(field, type)                                                      \
+   if(GetPointer<type>(source_tn)->field)                                             \
+   {                                                                                  \
+      unsigned int node_id = GET_INDEX_NODE(GetPointer<type>(source_tn)->field);      \
+      THROW_ASSERT(remap.find(node_id) != remap.end(),                                \
+                   "missing an index: " + boost::lexical_cast<std::string>(node_id)); \
+      node_id = remap.find(node_id)->second;                                          \
+      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM->GetTreeReindex(node_id);   \
    }
 
-#define SEQ_SET_NODE_ID(list_field, type)                                                                                    \
-   if(!GetPointer<type>(source_tn)->list_field.empty())                                                                      \
-   {                                                                                                                         \
-      for(auto i : GetPointer<type>(source_tn)->list_field)                                                                  \
-      {                                                                                                                      \
-         unsigned int node_id = GET_INDEX_NODE(i);                                                                           \
-         THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + boost::lexical_cast<std::string>(node_id)); \
-         node_id = remap.find(node_id)->second;                                                                              \
-         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeReindex(node_id));                         \
-      }                                                                                                                      \
+#define SEQ_SET_NODE_ID(list_field, type)                                                            \
+   if(!GetPointer<type>(source_tn)->list_field.empty())                                              \
+   {                                                                                                 \
+      for(auto i : GetPointer<type>(source_tn)->list_field)                                          \
+      {                                                                                              \
+         unsigned int node_id = GET_INDEX_NODE(i);                                                   \
+         THROW_ASSERT(remap.find(node_id) != remap.end(),                                            \
+                      "missing an index: " + boost::lexical_cast<std::string>(node_id));             \
+         node_id = remap.find(node_id)->second;                                                      \
+         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeReindex(node_id)); \
+      }                                                                                              \
    }
 
-#define SET_SET_NODE_ID(list_field, type)                                                                                    \
-   if(!GetPointer<type>(source_tn)->list_field.empty())                                                                      \
-   {                                                                                                                         \
-      for(auto i : GetPointer<type>(source_tn)->list_field)                                                                  \
-      {                                                                                                                      \
-         unsigned int node_id = GET_INDEX_NODE(i);                                                                           \
-         THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + boost::lexical_cast<std::string>(node_id)); \
-         node_id = remap.find(node_id)->second;                                                                              \
-         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.insert(TM->GetTreeReindex(node_id));                            \
-      }                                                                                                                      \
+#define SET_SET_NODE_ID(list_field, type)                                                         \
+   if(!GetPointer<type>(source_tn)->list_field.empty())                                           \
+   {                                                                                              \
+      for(auto i : GetPointer<type>(source_tn)->list_field)                                       \
+      {                                                                                           \
+         unsigned int node_id = GET_INDEX_NODE(i);                                                \
+         THROW_ASSERT(remap.find(node_id) != remap.end(),                                         \
+                      "missing an index: " + boost::lexical_cast<std::string>(node_id));          \
+         node_id = remap.find(node_id)->second;                                                   \
+         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.insert(TM->GetTreeReindex(node_id)); \
+      }                                                                                           \
    }
 
-#define LSEQ_SET_NODE_ID(list_field, type)                                                                                   \
-   if(!GetPointer<type>(source_tn)->list_field.empty())                                                                      \
-   {                                                                                                                         \
-      std::list<tree_nodeRef>::const_iterator vend = GetPointer<type>(source_tn)->list_field.end();                          \
-      for(std::list<tree_nodeRef>::const_iterator i = GetPointer<type>(source_tn)->list_field.begin(); i != vend; ++i)       \
-      {                                                                                                                      \
-         unsigned int node_id = GET_INDEX_NODE(*i);                                                                          \
-         THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + boost::lexical_cast<std::string>(node_id)); \
-         node_id = remap.find(node_id)->second;                                                                              \
-         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeReindex(node_id));                         \
-      }                                                                                                                      \
+#define LSEQ_SET_NODE_ID(list_field, type)                                                                             \
+   if(!GetPointer<type>(source_tn)->list_field.empty())                                                                \
+   {                                                                                                                   \
+      std::list<tree_nodeRef>::const_iterator vend = GetPointer<type>(source_tn)->list_field.end();                    \
+      for(std::list<tree_nodeRef>::const_iterator i = GetPointer<type>(source_tn)->list_field.begin(); i != vend; ++i) \
+      {                                                                                                                \
+         unsigned int node_id = GET_INDEX_NODE(*i);                                                                    \
+         THROW_ASSERT(remap.find(node_id) != remap.end(),                                                              \
+                      "missing an index: " + boost::lexical_cast<std::string>(node_id));                               \
+         node_id = remap.find(node_id)->second;                                                                        \
+         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeReindex(node_id));                   \
+      }                                                                                                                \
    }
 
 #define SET_VALUE(field, type) (dynamic_cast<type*>(curr_tree_node_ptr)->field = GetPointer<type>(source_tn)->field)
@@ -1502,7 +1513,8 @@ void tree_node_index_factory::operator()(const WeightedNode* obj, unsigned int& 
    SET_VALUE(weight_information->instruction_size, WeightedNode);
 #if HAVE_RTL_BUILT
    SET_VALUE(weight_information->rtl_instruction_size, WeightedNode);
-   dynamic_cast<WeightedNode*>(curr_tree_node_ptr)->weight_information->rtl_nodes = GetPointer<WeightedNode>(source_tn)->weight_information->rtl_nodes;
+   dynamic_cast<WeightedNode*>(curr_tree_node_ptr)->weight_information->rtl_nodes =
+       GetPointer<WeightedNode>(source_tn)->weight_information->rtl_nodes;
 #endif
 #endif
 }
@@ -1778,7 +1790,8 @@ void tree_node_index_factory::operator()(const constructor* obj, unsigned int& m
          node_id2 = remap.find(node_id2)->second;
          if(node_id1)
          {
-            dynamic_cast<constructor*>(curr_tree_node_ptr)->add_idx_valu(TM->GetTreeReindex(node_id1), TM->GetTreeReindex(node_id2));
+            dynamic_cast<constructor*>(curr_tree_node_ptr)
+                ->add_idx_valu(TM->GetTreeReindex(node_id1), TM->GetTreeReindex(node_id2));
          }
          else
          {
@@ -1979,7 +1992,8 @@ void tree_node_index_factory::operator()(const gimple_phi* obj, unsigned int& ma
       unsigned int node_id = GET_INDEX_NODE(def_edge.first);
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
       node_id = remap.find(node_id)->second;
-      dynamic_cast<gimple_phi*>(curr_tree_node_ptr)->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(node_id), def_edge.second));
+      dynamic_cast<gimple_phi*>(curr_tree_node_ptr)
+          ->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(node_id), def_edge.second));
    }
    SET_VALUE(virtual_flag, gimple_phi);
 }
@@ -2089,7 +2103,8 @@ void tree_node_index_factory::operator()(const ssa_name* obj, unsigned int& mask
    for(const auto& def_stmt : GetPointer<const ssa_name>(source_tn)->CGetDefStmts())
    {
       unsigned int node_id = def_stmt->index;
-      THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + boost::lexical_cast<std::string>(node_id));
+      THROW_ASSERT(remap.find(node_id) != remap.end(),
+                   "missing an index: " + boost::lexical_cast<std::string>(node_id));
       node_id = remap.find(node_id)->second;
       dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddDefStmt(TM->GetTreeReindex(node_id));
    }

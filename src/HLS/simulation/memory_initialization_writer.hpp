@@ -79,8 +79,11 @@ class MemoryInitializationWriter : public MemoryInitializationWriterBase
     * @param testbench_generation_memory_type is the type of initialization being printed
     * @param parameters is the set of input parameters
     */
-   MemoryInitializationWriter(std::ofstream& output_stream, const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter,
-                              const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
+   MemoryInitializationWriter(std::ofstream& output_stream, const tree_managerConstRef TM,
+                              const BehavioralHelperConstRef behavioral_helper,
+                              const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter,
+                              const TestbenchGeneration_MemoryType testbench_generation_memory_type,
+                              const ParameterConstRef parameters);
 
    /**
     * Process an element

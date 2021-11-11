@@ -190,7 +190,8 @@ class hls
    /**
     *
     */
-   hls(const ParameterConstRef Param, unsigned int function_id, OpVertexSet operations, const HLS_targetRef HLS_T, const HLS_constraintsRef HLS_C);
+   hls(const ParameterConstRef Param, unsigned int function_id, OpVertexSet operations, const HLS_targetRef HLS_T,
+       const HLS_constraintsRef HLS_C);
 
    /**
     * Destructor

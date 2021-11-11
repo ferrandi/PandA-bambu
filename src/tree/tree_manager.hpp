@@ -147,7 +147,8 @@ class tree_manager
    unsigned int collapse_into_counter;
 
    /**
-    * check for decl_node and return true if not suitable for symbol table or otherwise its symbol_name and symbol_scope.
+    * check for decl_node and return true if not suitable for symbol table or otherwise its symbol_name and
+    * symbol_scope.
     * @param tn is the tree node to be examinated
     * @param TM is a refcount to this TODO: could be removed?
     * @param symbol_name is where symbol name will be stored
@@ -155,22 +156,29 @@ class tree_manager
     * @param node_id is the index of the tree node
     * @return true if symbol has not to be inserted into symbol table
     */
-   bool check_for_decl(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name, std::string& symbol_scope, unsigned int node_id, const CustomUnorderedMap<unsigned int, std::string>& global_type_unql_symbol_table);
+   bool check_for_decl(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name,
+                       std::string& symbol_scope, unsigned int node_id,
+                       const CustomUnorderedMap<unsigned int, std::string>& global_type_unql_symbol_table);
 
    /**
     * check for type and return true if not suitable for symbol table or otherwise its symbol_name and symbol_scope.
     */
-   bool check_for_type(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name, std::string& symbol_scope, const CustomUnorderedMapUnstable<std::string, unsigned int>& global_type_symbol_table, unsigned int node_id);
+   bool check_for_type(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name,
+                       std::string& symbol_scope,
+                       const CustomUnorderedMapUnstable<std::string, unsigned int>& global_type_symbol_table,
+                       unsigned int node_id);
 
    /**
-    * Erase the information about variable usage (remove stmt from use_stmts attribute) in ssa variables recursively contained in node tn.
+    * Erase the information about variable usage (remove stmt from use_stmts attribute) in ssa variables recursively
+    * contained in node tn.
     * @param tn is the node from which the recursion begin.
     * @param stmt is the statement that is removed from the usage vector of ssa variables.
     */
    void erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& stmt);
 
    /**
-    * Insert the information about variable usage (insert stmt in use_stmts attribute) in ssa variables recursively contained in node tn.
+    * Insert the information about variable usage (insert stmt in use_stmts attribute) in ssa variables recursively
+    * contained in node tn.
     * @param tn is the node from which the recursion begin.
     * @param stmt is the statement that is inserted in the usage vector of ssa variables.
     */
@@ -189,7 +197,8 @@ class tree_manager
     * @param stmt is the statement from which the recursion originates (necessary to update ssa_nodes usage information)
     * @param definition is true if old_node is a ssa_name in the left part of a gimple_assign
     */
-   void RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node, const tree_nodeRef& stmt, bool definition); // NOLINT
+   void RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node,
+                                 const tree_nodeRef& stmt, bool definition); // NOLINT
 
    /**
     * This is the constructor of the tree_manager which initializes the vector of functions.
@@ -254,7 +263,8 @@ class tree_manager
 
    /**
     * Factory method.
-    * It creates a tree_node of type equal tree_node_type by using a relation (tree_node_schema) between tree node fields and their values.
+    * It creates a tree_node of type equal tree_node_type by using a relation (tree_node_schema) between tree node
+    * fields and their values.
     * @param node_id is the node id of the created object.
     * @param tree_node_type is the type of the node added to the tree_manager expressed as a treeVocabularyTokenTypes.
     * @param tree_node_schema expresses the value of the field of the tree node created.
@@ -265,14 +275,16 @@ class tree_manager
     * TM->create_tree_node(identifier_node_id, TOK(TOK_IDENTIFIER_NODE), identifier_schema);
     * will add an identifier node to the tree_manager TM.
     */
-   void create_tree_node(const unsigned int node_id, enum kind tree_node_type, std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema);
+   void create_tree_node(const unsigned int node_id, enum kind tree_node_type,
+                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema);
 
    /**
     * if there exist return the node id of a tree node compatible with the tree_node_schema and of type tree_node_type.
     * @param tree_node_type is the type of the node added to the tree_manager expressed as a treeVocabularyTokenTypes.
     * @param tree_node_schema expresses the value of the field of the tree node created.
     */
-   unsigned int find(enum kind tree_node_type, const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema);
+   unsigned int find(enum kind tree_node_type,
+                     const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema);
 
    /**
     * Return a new node id in the intermediate representation.
@@ -376,7 +388,9 @@ class tree_manager
     * @param tn is the top tree node of the tree to be collapsed
     * @param removed_nodes is the set of nodes removed during collapsing
     */
-   void collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc, const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes, const application_managerRef AppM);
+   void collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc,
+                      const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes,
+                      const application_managerRef AppM);
 
    /// increment the number a parallel loop
    void add_parallel_loop();

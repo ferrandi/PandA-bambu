@@ -61,7 +61,8 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 
-StorageValueInformation::StorageValueInformation(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) : number_of_storage_values(0), HLS_mgr(_HLS_mgr), function_id(_function_id)
+StorageValueInformation::StorageValueInformation(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id)
+    : number_of_storage_values(0), HLS_mgr(_HLS_mgr), function_id(_function_id)
 {
 }
 
@@ -79,7 +80,8 @@ void StorageValueInformation::Initialize()
    VertexIterator ki, ki_end;
    for(boost::tie(ki, ki_end) = boost::vertices(*data); ki != ki_end; ++ki)
    {
-      const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(*ki)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+      const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(*ki)->GetVariables(
+          FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
       if(not scalar_defs.empty())
       {
          auto it_end = scalar_defs.end();
@@ -88,7 +90,8 @@ void StorageValueInformation::Initialize()
 #endif
          for(auto it = scalar_defs.begin(); it != it_end; ++it)
          {
-            if(tree_helper::is_ssa_name(TreeM, *it) && !tree_helper::is_virtual(TreeM, *it) && !tree_helper::is_parameter(TreeM, *it))
+            if(tree_helper::is_ssa_name(TreeM, *it) && !tree_helper::is_virtual(TreeM, *it) &&
+               !tree_helper::is_parameter(TreeM, *it))
             {
                HLS->storage_value_information->vw2vertex[*it] = *ki;
 #if HAVE_ASSERTS
@@ -102,7 +105,8 @@ void StorageValueInformation::Initialize()
             INDENT_DBG_MEX(DEBUG_LEVEL_NONE, 0, GET_NAME(data, *ki) + " defines:");
             for(const auto scalar_def : scalar_defs)
             {
-               if(tree_helper::is_ssa_name(TreeM, scalar_def) and not tree_helper::is_virtual(TreeM, scalar_def) and not tree_helper::is_parameter(TreeM, scalar_def))
+               if(tree_helper::is_ssa_name(TreeM, scalar_def) and not tree_helper::is_virtual(TreeM, scalar_def) and
+                  not tree_helper::is_parameter(TreeM, scalar_def))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_NONE, 0, STR(TreeM->CGetTreeNode(scalar_def)));
                }
@@ -121,11 +125,13 @@ unsigned int StorageValueInformation::get_number_of_storage_values() const
 
 unsigned int StorageValueInformation::get_variable_index(unsigned int storage_value_index) const
 {
-   THROW_ASSERT(variable_index_map.find(storage_value_index) != variable_index_map.end(), "the storage value is missing");
+   THROW_ASSERT(variable_index_map.find(storage_value_index) != variable_index_map.end(),
+                "the storage value is missing");
    return variable_index_map.find(storage_value_index)->second;
 }
 
-int StorageValueInformation::get_compatibility_weight(unsigned int storage_value_index1, unsigned int storage_value_index2) const
+int StorageValueInformation::get_compatibility_weight(unsigned int storage_value_index1,
+                                                      unsigned int storage_value_index2) const
 {
    unsigned int var1 = get_variable_index(storage_value_index1);
    unsigned int var2 = get_variable_index(storage_value_index2);
@@ -137,7 +143,8 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    }
 #endif
    THROW_ASSERT(vw2vertex.find(var1) != vw2vertex.end(), "variable not in the map " + STR(var1));
-   THROW_ASSERT(vw2vertex.find(var2) != vw2vertex.end(), "variable " + STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var2)) + " not in the map");
+   THROW_ASSERT(vw2vertex.find(var2) != vw2vertex.end(),
+                "variable " + STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var2)) + " not in the map");
    vertex v1 = vw2vertex.find(var1)->second;
    bool is_a_phi1 = (GET_TYPE(data, v1) & TYPE_PHI) != 0;
    vertex v2 = vw2vertex.find(var2)->second;
@@ -161,7 +168,8 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    /// disabled input register sharing
    if(HLS_mgr->get_parameter()->getOption<bool>(OPT_shared_input_registers))
    {
-      static const std::vector<std::string> labels = {"mult_expr", "widen_mult_expr", "ternary_plus_expr", "ternary_mm_expr", "ternary_pm_expr", "ternary_mp_expr"};
+      static const std::vector<std::string> labels = {"mult_expr",       "widen_mult_expr", "ternary_plus_expr",
+                                                      "ternary_mm_expr", "ternary_pm_expr", "ternary_mp_expr"};
       for(const auto& label : labels)
       {
          // check if v1 or v2 drive complex operations
@@ -170,31 +178,36 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
          if(!(GET_TYPE(data, v1) & TYPE_ENTRY))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "-->Statement with USE first variable");
-            std::for_each(it_succ_v1.first, it_succ_v1.second, [this, &op_succ_of_v1_port0, &op_succ_of_v1_port1, &op_succ_of_v1_port2, &var1, &label](const vertex succ) {
-               const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
-               const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "---[" + STR(succ_id) + "] type: " + STR(op_label));
-               if((op_label == label))
-               {
-                  std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
-                  if(std::get<0>(var_read[0]) == var1)
-                  {
-                     op_succ_of_v1_port0.insert(succ_id);
-                  }
-                  else if(std::get<0>(var_read[1]) == var1)
-                  {
-                     op_succ_of_v1_port1.insert(succ_id);
-                  }
-                  else if(var_read.size() == 3 && std::get<0>(var_read[2]) == var1)
-                  {
-                     op_succ_of_v1_port2.insert(succ_id);
-                  }
-                  else
-                  {
-                     THROW_ERROR("unexpected case:" + STR(succ_id) + "|" + STR(std::get<0>(var_read[0])) + ":" + STR(std::get<0>(var_read[1])));
-                  }
-               }
-            });
+            std::for_each(it_succ_v1.first, it_succ_v1.second,
+                          [this, &op_succ_of_v1_port0, &op_succ_of_v1_port1, &op_succ_of_v1_port2, &var1,
+                           &label](const vertex succ) {
+                             const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
+                             const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
+                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
+                                            "---[" + STR(succ_id) + "] type: " + STR(op_label));
+                             if((op_label == label))
+                             {
+                                std::vector<HLS_manager::io_binding_type> var_read =
+                                    HLS_mgr->get_required_values(function_id, succ);
+                                if(std::get<0>(var_read[0]) == var1)
+                                {
+                                   op_succ_of_v1_port0.insert(succ_id);
+                                }
+                                else if(std::get<0>(var_read[1]) == var1)
+                                {
+                                   op_succ_of_v1_port1.insert(succ_id);
+                                }
+                                else if(var_read.size() == 3 && std::get<0>(var_read[2]) == var1)
+                                {
+                                   op_succ_of_v1_port2.insert(succ_id);
+                                }
+                                else
+                                {
+                                   THROW_ERROR("unexpected case:" + STR(succ_id) + "|" + STR(std::get<0>(var_read[0])) +
+                                               ":" + STR(std::get<0>(var_read[1])));
+                                }
+                             }
+                          });
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
          }
 
@@ -202,31 +215,35 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
          if(!(GET_TYPE(data, v2) & TYPE_ENTRY))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "-->Statement with USE second variable");
-            std::for_each(it_succ_v2.first, it_succ_v2.second, [this, &op_succ_of_v2_port0, &op_succ_of_v2_port1, &op_succ_of_v2_port2, &var2, &label](const vertex succ) {
-               const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
-               const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "---[" + STR(succ_id) + "] type: " + STR(op_label));
-               if(op_label == label)
-               {
-                  std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
-                  if(std::get<0>(var_read[0]) == var2)
-                  {
-                     op_succ_of_v2_port0.insert(succ_id);
-                  }
-                  else if(std::get<0>(var_read[1]) == var2)
-                  {
-                     op_succ_of_v2_port1.insert(succ_id);
-                  }
-                  else if(var_read.size() == 3 && std::get<0>(var_read[2]) == var2)
-                  {
-                     op_succ_of_v2_port2.insert(succ_id);
-                  }
-                  else
-                  {
-                     THROW_ERROR("unexpected case");
-                  }
-               }
-            });
+            std::for_each(it_succ_v2.first, it_succ_v2.second,
+                          [this, &op_succ_of_v2_port0, &op_succ_of_v2_port1, &op_succ_of_v2_port2, &var2,
+                           &label](const vertex succ) {
+                             const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
+                             const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
+                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
+                                            "---[" + STR(succ_id) + "] type: " + STR(op_label));
+                             if(op_label == label)
+                             {
+                                std::vector<HLS_manager::io_binding_type> var_read =
+                                    HLS_mgr->get_required_values(function_id, succ);
+                                if(std::get<0>(var_read[0]) == var2)
+                                {
+                                   op_succ_of_v2_port0.insert(succ_id);
+                                }
+                                else if(std::get<0>(var_read[1]) == var2)
+                                {
+                                   op_succ_of_v2_port1.insert(succ_id);
+                                }
+                                else if(var_read.size() == 3 && std::get<0>(var_read[2]) == var2)
+                                {
+                                   op_succ_of_v2_port2.insert(succ_id);
+                                }
+                                else
+                                {
+                                   THROW_ERROR("unexpected case");
+                                }
+                             }
+                          });
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
          }
 
@@ -262,7 +279,8 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
    // ------------
 
-   const CustomSet<unsigned int>& ssa_read1 = data->CGetOpNodeInfo(v1)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
+   const CustomSet<unsigned int>& ssa_read1 = data->CGetOpNodeInfo(v1)->GetVariables(
+       FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
    if(is_a_phi1)
    {
       if(ssa_read1.find(var2) != ssa_read1.end())
@@ -270,7 +288,8 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
          return 5;
       }
    }
-   const CustomSet<unsigned int>& ssa_read2 = data->CGetOpNodeInfo(v2)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
+   const CustomSet<unsigned int>& ssa_read2 = data->CGetOpNodeInfo(v2)->GetVariables(
+       FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
    if(is_a_phi2)
    {
       if(ssa_read2.find(var1) != ssa_read2.end())
@@ -315,7 +334,9 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
                   if(vw2vertex.find(*it2) != vw2vertex.end())
                   {
                      vertex from_v2 = vw2vertex.find(*it2)->second;
-                     if(fu.lock()->get_assign(from_v1) == fu.lock()->get_assign(from_v2) && fu.lock()->get_index(from_v1) != INFINITE_UINT && fu.lock()->get_index(from_v1) == fu.lock()->get_index(from_v2))
+                     if(fu.lock()->get_assign(from_v1) == fu.lock()->get_assign(from_v2) &&
+                        fu.lock()->get_index(from_v1) != INFINITE_UINT &&
+                        fu.lock()->get_index(from_v1) == fu.lock()->get_index(from_v2))
                      {
                         they_have_common_inputs = true;
                         break;
@@ -346,7 +367,8 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    return 1;
 }
 
-bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const
+bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_value_index1,
+                                                           unsigned int storage_value_index2) const
 {
    const auto var1_nid = get_variable_index(storage_value_index1);
    const auto var2_nid = get_variable_index(storage_value_index2);
@@ -359,5 +381,8 @@ bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_
    const auto isReal2 = tree_helper::IsRealType(var2);
    const auto size1 = tree_helper::Size(var1);
    const auto size2 = tree_helper::Size(var2);
-   return isInt1 == isInt2 && isReal1 == isReal2 && (((isInt1 && isInt2) || (isReal1 && isReal2)) ? size1 == size2 : resize_to_1_8_16_32_64_128_256_512(size1) == resize_to_1_8_16_32_64_128_256_512(size2));
+   return isInt1 == isInt2 && isReal1 == isReal2 &&
+          (((isInt1 && isInt2) || (isReal1 && isReal2)) ?
+               size1 == size2 :
+               resize_to_1_8_16_32_64_128_256_512(size1) == resize_to_1_8_16_32_64_128_256_512(size2));
 }

@@ -80,7 +80,8 @@
 #include "dbgPrintHelper.hpp"
 #include "utility.hpp"
 
-GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                                     const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
@@ -88,15 +89,18 @@ GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _pa
 
 GenerateSimulationScripts::~GenerateSimulationScripts() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -125,7 +129,9 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    std::list<std::string> full_list;
    std::copy(HLSMgr->aux_files.begin(), HLSMgr->aux_files.end(), std::back_inserter(full_list));
    std::copy(HLSMgr->hdl_files.begin(), HLSMgr->hdl_files.end(), std::back_inserter(full_list));
-   if(parameters->isOption(OPT_lattice_pmi_tdpbe) && parameters->isOption(OPT_lattice_pmi_mul) && BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_target()->get_target_device(), parameters) == BackendFlow::LATTICE_FPGA)
+   if(parameters->isOption(OPT_lattice_pmi_tdpbe) && parameters->isOption(OPT_lattice_pmi_mul) &&
+      BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_target()->get_target_device(), parameters) ==
+          BackendFlow::LATTICE_FPGA)
    {
       full_list.push_back(parameters->getOption<std::string>(OPT_lattice_pmi_tdpbe));
       full_list.push_back(parameters->getOption<std::string>(OPT_lattice_pmi_mul));

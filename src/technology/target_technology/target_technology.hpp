@@ -76,7 +76,8 @@ class target_technology
    /// Technology type
    target_t type;
 
-   /// Map containing all the parameters of the technology. All the values are stored as strings and they have correctly converted through the get_parameter template.
+   /// Map containing all the parameters of the technology. All the values are stored as strings and they have correctly
+   /// converted through the get_parameter template.
    std::map<std::string, std::string> parameters;
 
    /**

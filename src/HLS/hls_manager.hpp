@@ -64,7 +64,8 @@ REF_FORWARD_DECL(BackendFlow);
 class HLS_manager : public application_manager
 {
  public:
-   /// tuple set used to represent the required values or the constant default value associated with the inputs of a node
+   /// tuple set used to represent the required values or the constant default value associated with the inputs of a
+   /// node
    using io_binding_type = std::tuple<unsigned int, unsigned int>;
 
  private:
@@ -114,9 +115,11 @@ class HLS_manager : public application_manager
    std::map<std::string, std::map<std::string, std::string>> design_interface;
    /// store the design interface array size coming from an xml file: function_name->parameter_name->interface_arraysize
    std::map<std::string, std::map<std::string, std::string>> design_interface_arraysize;
-   /// store the design interface array size coming from an xml file: function_name->parameter_name->interface_attribute2
+   /// store the design interface array size coming from an xml file:
+   /// function_name->parameter_name->interface_attribute2
    std::map<std::string, std::map<std::string, std::string>> design_interface_attribute2;
-   /// store the design interface array size coming from an xml file: function_name->parameter_name->interface_attribute3
+   /// store the design interface array size coming from an xml file:
+   /// function_name->parameter_name->interface_attribute3
    std::map<std::string, std::map<std::string, std::string>> design_interface_attribute3;
    /// store the design interface typenames coming from an xml file: function_name->parameter_name->interface_typename
    std::map<std::string, std::map<std::string, std::string>> design_interface_typename;
@@ -124,14 +127,17 @@ class HLS_manager : public application_manager
    std::map<std::string, std::vector<std::string>> design_interface_typename_signature;
    /// store the design interface original signature coming from an xml file: function_name->typename_signature
    std::map<std::string, std::vector<std::string>> design_interface_typename_orig_signature;
-   /// store the design interface typename includes coming from an xml file: function_name->parameter_name->interface_typenameinclude
+   /// store the design interface typename includes coming from an xml file:
+   /// function_name->parameter_name->interface_typenameinclude
    std::map<std::string, std::map<std::string, std::string>> design_interface_typenameinclude;
    /// store the design interface read references of parameters: function_name->bb_index->parameter_name->list_of_loads
    std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_loads;
-   /// store the design interface write references of parameters: function_name->bb_index->parameter_name->list_of_stores
+   /// store the design interface write references of parameters:
+   /// function_name->bb_index->parameter_name->list_of_stores
    std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_stores;
 
-   /// store the constraints on resources added to manage the I/O interfaces: function_id->library_name->resource_function_name->number of resources
+   /// store the constraints on resources added to manage the I/O interfaces:
+   /// function_id->library_name->resource_function_name->number of resources
    std::map<unsigned, std::map<std::string, std::map<std::string, unsigned int>>> design_interface_constraints;
 
    /// global resource constraints

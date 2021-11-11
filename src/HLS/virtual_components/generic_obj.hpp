@@ -223,7 +223,8 @@ class GenericObjSorter : std::binary_function<generic_objRef, generic_objRef, bo
    bool operator()(const generic_objRef& x, const generic_objRef& y) const;
 };
 
-class GenericObjUnsignedIntSorter : std::binary_function<std::pair<generic_objRef, unsigned int>, std::pair<generic_objRef, unsigned int>, bool>
+class GenericObjUnsignedIntSorter
+    : std::binary_function<std::pair<generic_objRef, unsigned int>, std::pair<generic_objRef, unsigned int>, bool>
 {
  public:
    /**

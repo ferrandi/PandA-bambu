@@ -37,7 +37,8 @@
  * Mihai Budiu Seth Copen Goldstein
  * http://www.cs.cmu.edu/~seth/papers/budiu-tr00.pdf
  * This technical report is an extension of the following paper:
- * Mihai Budiu, Majd Sakr, Kip Walker, Seth Copen Goldstein: BitValue Inference: Detecting and Exploiting Narrow Bitwidth Computations. Euro-Par 2000: 969-979
+ * Mihai Budiu, Majd Sakr, Kip Walker, Seth Copen Goldstein: BitValue Inference: Detecting and Exploiting Narrow
+ * Bitwidth Computations. Euro-Par 2000: 969-979
  *
  * Created on: May 27, 2014
  *
@@ -104,596 +105,598 @@
 #include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-const std::map<bit_lattice, std::map<bit_lattice, std::map<bit_lattice, std::deque<bit_lattice>>>> Bit_Value::plus_expr_map = {
-    // a b carry
-    {
-        bit_lattice::X,
+const std::map<bit_lattice, std::map<bit_lattice, std::map<bit_lattice, std::deque<bit_lattice>>>>
+    Bit_Value::plus_expr_map = {
+        // a b carry
         {
+            bit_lattice::X,
             {
-                bit_lattice::X,
                 {
+                    bit_lattice::X,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::X},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ZERO, bit_lattice::X},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::ZERO, bit_lattice::X},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::X},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ZERO, bit_lattice::X},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::ZERO, bit_lattice::X},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ZERO,
                 {
+                    bit_lattice::ZERO,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ZERO, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::ZERO, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ZERO, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ONE,
                 {
+                    bit_lattice::ONE,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::U,
                 {
+                    bit_lattice::U,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
             },
         },
-    },
-    {
-        bit_lattice::ZERO,
         {
+            bit_lattice::ZERO,
             {
-                bit_lattice::X,
                 {
+                    bit_lattice::X,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ZERO, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::ZERO, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ZERO, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ZERO,
                 {
+                    bit_lattice::ZERO,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ZERO, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::ZERO, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ZERO, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ONE,
                 {
+                    bit_lattice::ONE,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::U,
                 {
+                    bit_lattice::U,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
             },
         },
-    },
-    {
-        bit_lattice::ONE,
         {
+            bit_lattice::ONE,
             {
-                bit_lattice::X,
                 {
+                    bit_lattice::X,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ZERO,
                 {
+                    bit_lattice::ZERO,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ONE,
                 {
+                    bit_lattice::ONE,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ONE, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::ONE, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ONE, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::ONE, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::U,
                 {
+                    bit_lattice::U,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
             },
         },
-    },
-    {
-        bit_lattice::U,
         {
+            bit_lattice::U,
             {
-                bit_lattice::X,
                 {
+                    bit_lattice::X,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ZERO,
                 {
+                    bit_lattice::ZERO,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ONE,
                 {
+                    bit_lattice::ONE,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::U,
                 {
+                    bit_lattice::U,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
             },
         },
-    },
 };
 
-const std::map<bit_lattice, std::map<bit_lattice, std::map<bit_lattice, std::deque<bit_lattice>>>> Bit_Value::minus_expr_map = {
-    // a b borrow
-    {
-        bit_lattice::X,
+const std::map<bit_lattice, std::map<bit_lattice, std::map<bit_lattice, std::deque<bit_lattice>>>>
+    Bit_Value::minus_expr_map = {
+        // a b borrow
         {
+            bit_lattice::X,
             {
-                bit_lattice::X,
                 {
+                    bit_lattice::X,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::X},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ZERO, bit_lattice::X},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::ZERO, bit_lattice::X},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::X},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ZERO, bit_lattice::X},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::ZERO, bit_lattice::X},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ZERO,
                 {
+                    bit_lattice::ZERO,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ONE,
                 {
+                    bit_lattice::ONE,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::U,
                 {
+                    bit_lattice::U,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ZERO, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
             },
         },
-    },
-    {
-        bit_lattice::ZERO,
         {
+            bit_lattice::ZERO,
             {
-                bit_lattice::X,
                 {
+                    bit_lattice::X,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ZERO, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ZERO, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ZERO,
                 {
+                    bit_lattice::ZERO,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ONE,
                 {
+                    bit_lattice::ONE,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ONE, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::ONE, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ONE, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::ONE, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::U,
                 {
+                    bit_lattice::U,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
             },
         },
-    },
-    {
-        bit_lattice::ONE,
         {
+            bit_lattice::ONE,
             {
-                bit_lattice::X,
                 {
+                    bit_lattice::X,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::ZERO, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ZERO,
                 {
+                    bit_lattice::ZERO,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::ZERO, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ONE,
                 {
+                    bit_lattice::ONE,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::ZERO},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::ONE},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::ZERO},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::ONE},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::U,
                 {
+                    bit_lattice::U,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
             },
         },
-    },
-    {
-        bit_lattice::U,
         {
+            bit_lattice::U,
             {
-                bit_lattice::X,
                 {
+                    bit_lattice::X,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ZERO,
                 {
+                    bit_lattice::ZERO,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::ZERO, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::ZERO, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::ONE,
                 {
+                    bit_lattice::ONE,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::ONE, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::ONE, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
-            },
-            {
-                bit_lattice::U,
                 {
+                    bit_lattice::U,
                     {
-                        bit_lattice::ZERO,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::ONE,
-                        {bit_lattice::U, bit_lattice::U},
-                    },
-                    {
-                        bit_lattice::U,
-                        {bit_lattice::U, bit_lattice::U},
+                        {
+                            bit_lattice::ZERO,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::ONE,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
+                        {
+                            bit_lattice::U,
+                            {bit_lattice::U, bit_lattice::U},
+                        },
                     },
                 },
             },
         },
-    },
 };
 
 const std::map<bit_lattice, std::map<bit_lattice, bit_lattice>> Bit_Value::bit_ior_expr_map = {
@@ -815,7 +818,8 @@ const std::map<bit_lattice, std::map<bit_lattice, bit_lattice>> Bit_Value::bit_a
 
 unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Pointer resizing starting from " + TM->CGetTreeNode(output_id)->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Pointer resizing starting from " + TM->CGetTreeNode(output_id)->ToString());
    unsigned int var = tree_helper::get_base_index(TM, output_id);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Base variable is " + TM->CGetTreeNode(var)->ToString());
    unsigned int address_bitsize;
@@ -826,7 +830,8 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
       {
          if(var and function_behavior->is_variable_mem(var))
          {
-            unsigned long long int max_addr = hm->Rmem->get_base_address(var, function_id) + BitLatticeManipulator::size(TM, var) / 8;
+            unsigned long long int max_addr =
+                hm->Rmem->get_base_address(var, function_id) + BitLatticeManipulator::size(TM, var) / 8;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Maximum address is " + STR(max_addr - 1));
             for(address_bitsize = 1; max_addr > (1ull << address_bitsize); ++address_bitsize)
             {
@@ -909,15 +914,19 @@ unsigned int Bit_Value::lsb_to_zero(const addr_expr* ae, bool safe) const
    return found ? index : 0;
 }
 
-Bit_Value::Bit_Value(const ParameterConstRef params, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm)
-    : FunctionFrontendFlowStep(AM, f_id, BIT_VALUE, dfm, params), BitLatticeManipulator(AM->get_tree_manager(), parameters->get_class_debug_level(GET_CLASS(*this))), not_frontend(false)
+Bit_Value::Bit_Value(const ParameterConstRef params, const application_managerRef AM, unsigned int f_id,
+                     const DesignFlowManagerConstRef dfm)
+    : FunctionFrontendFlowStep(AM, f_id, BIT_VALUE, dfm, params),
+      BitLatticeManipulator(AM->get_tree_manager(), parameters->get_class_debug_level(GET_CLASS(*this))),
+      not_frontend(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 Bit_Value::~Bit_Value() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> Bit_Value::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+Bit_Value::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -963,7 +972,8 @@ bool Bit_Value::HasToBeExecuted() const
 
 void Bit_Value::Initialize()
 {
-   const auto bambu_frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BAMBU_FRONTEND_FLOW);
+   const auto bambu_frontend_flow_signature =
+       ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BAMBU_FRONTEND_FLOW);
    not_frontend = design_flow_manager.lock()->GetStatus(bambu_frontend_flow_signature) == DesignFlowStep_Status::EMPTY;
 
    const auto tn = TM->CGetTreeNode(function_id);
@@ -972,13 +982,15 @@ void Bit_Value::Initialize()
    THROW_ASSERT(fd->body, "Function has not a body");
    const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
    /// store the IR BB graph ala boost::graph
-   BBGraphsCollectionRef bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
+   BBGraphsCollectionRef bb_graphs_collection(
+       new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraph cfg(bb_graphs_collection, CFG_SELECTOR);
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
    for(const auto& block : sl->list_of_bloc)
    {
-      inverse_vertex_map.insert(std::make_pair(block.first, bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)))));
+      inverse_vertex_map.insert(
+          std::make_pair(block.first, bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)))));
    }
 
    /// add edges
@@ -988,7 +1000,8 @@ void Bit_Value::Initialize()
       const auto curr_bb = curr_bb_pair.second;
       for(const auto& lop : curr_bb->list_of_pred)
       {
-         THROW_ASSERT(static_cast<bool>(inverse_vertex_map.count(lop)), "BB" + STR(lop) + " (successor of BB" + STR(curr_bbi) + ") does not exist");
+         THROW_ASSERT(static_cast<bool>(inverse_vertex_map.count(lop)),
+                      "BB" + STR(lop) + " (successor of BB" + STR(curr_bbi) + ") does not exist");
          bb_graphs_collection->AddEdge(inverse_vertex_map.at(lop), inverse_vertex_map.at(curr_bbi), CFG_SELECTOR);
       }
 
@@ -1002,12 +1015,15 @@ void Bit_Value::Initialize()
 
       if(curr_bb->list_of_succ.empty())
       {
-         bb_graphs_collection->AddEdge(inverse_vertex_map.at(curr_bbi), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
+         bb_graphs_collection->AddEdge(inverse_vertex_map.at(curr_bbi), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID),
+                                       CFG_SELECTOR);
       }
    }
    /// add a connection between entry and exit thus avoiding problems with non terminating code
-   bb_graphs_collection->AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
-   dominance<BBGraph> bb_dominators(cfg, inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), parameters);
+   bb_graphs_collection->AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID),
+                                 inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
+   dominance<BBGraph> bb_dominators(cfg, inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID),
+                                    inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), parameters);
    bb_dominators.calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
 
    BBGraphRef dt(new BBGraph(bb_graphs_collection, D_SELECTOR));
@@ -1024,7 +1040,8 @@ void Bit_Value::Initialize()
    dt->TopologicalSort(v_topological);
    THROW_ASSERT(v_topological.size(), "");
    bb_topological.reserve(v_topological.size());
-   std::transform(v_topological.begin(), v_topological.end(), std::back_inserter(bb_topological), [&](const vertex& v) { return dt->CGetBBNodeInfo(v)->block; });
+   std::transform(v_topological.begin(), v_topological.end(), std::back_inserter(bb_topological),
+                  [&](const vertex& v) { return dt->CGetBBNodeInfo(v)->block; });
 }
 
 DesignFlowStep_Status Bit_Value::InternalExec()
@@ -1081,7 +1098,9 @@ void Bit_Value::print_bitstring_map(const CustomMap<unsigned int, std::deque<bit
    const auto BH = function_behavior->CGetBehavioralHelper();
    for(const auto& m : map)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "var_uid: " + STR(m.first) + ":" + BH->PrintVariable(m.first) + " bitstring: " + bitstring_to_string(m.second));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "var_uid: " + STR(m.first) + ":" + BH->PrintVariable(m.first) +
+                         " bitstring: " + bitstring_to_string(m.second));
    }
 #endif
 }
@@ -1104,9 +1123,12 @@ bool Bit_Value::update_IR()
             {
                break;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Variable: " + ssa->ToString() + " bitstring: " + ssa->bit_values + " -> " + bitstring_to_string(b.second));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "Variable: " + ssa->ToString() + " bitstring: " + ssa->bit_values + " -> " +
+                               bitstring_to_string(b.second));
             ssa->bit_values = bitstring_to_string(b.second);
-            // ssa->range = Range::fromBitValues(b.second, static_cast<Range::bw_t>(BitLatticeManipulator::Size(tn)), signed_var.count(ssa->index));
+            // ssa->range = Range::fromBitValues(b.second, static_cast<Range::bw_t>(BitLatticeManipulator::Size(tn)),
+            // signed_var.count(ssa->index));
             res = true;
             AppM->RegisterTransformation(GetName(), tn);
          }
@@ -1120,7 +1142,9 @@ bool Bit_Value::update_IR()
             {
                break;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Function: " + tree_helper::name_function(TM, b.first) + " bitstring: " + fd->bit_values + " -> " + bitstring_to_string(b.second));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "Function: " + tree_helper::name_function(TM, b.first) + " bitstring: " + fd->bit_values +
+                               " -> " + bitstring_to_string(b.second));
             fd->bit_values = bitstring_to_string(b.second);
             res = true;
             AppM->RegisterTransformation(GetName(), tn);
@@ -1163,9 +1187,11 @@ void Bit_Value::initialize()
          if(i == 0)
          {
             // never analyze artificial calls
-            THROW_ASSERT(AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() == MEMCPY, "function " + function_behavior->CGetBehavioralHelper()->get_function_name() + " calls function " +
-                                                                                                                           AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() +
-                                                                                                                           " with an artificial call: this should not happen");
+            THROW_ASSERT(AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() == MEMCPY,
+                         "function " + function_behavior->CGetBehavioralHelper()->get_function_name() +
+                             " calls function " +
+                             AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() +
+                             " with an artificial call: this should not happen");
             continue;
          }
          if(rbf.find(called_id) != rbf.end())
@@ -1191,10 +1217,16 @@ void Bit_Value::initialize()
       }
       const auto parmssa = TM->CGetTreeNode(parmssa_id);
       const auto p = GetPointerS<const ssa_name>(parmssa);
-      const auto b = p->CGetUseStmts().empty() ? create_x_bitstring(1) : (p->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(parmssa)) : string_to_bitstring(p->bit_values));
+      const auto b = p->CGetUseStmts().empty() ?
+                         create_x_bitstring(1) :
+                         (p->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(parmssa)) :
+                                                  string_to_bitstring(p->bit_values));
       best[parmssa_id] = b;
       arguments.insert(parmssa_id);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter " + STR(GET_CONST_NODE(parm_decl_node)) + "(" + STR(GET_INDEX_CONST_NODE(parm_decl_node)) + ") bound to " + parmssa->ToString() + ": " + bitstring_to_string(b) + "");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "Parameter " + STR(GET_CONST_NODE(parm_decl_node)) + "(" +
+                         STR(GET_INDEX_CONST_NODE(parm_decl_node)) + ") bound to " + parmssa->ToString() + ": " +
+                         bitstring_to_string(b) + "");
    }
 
    /*
@@ -1206,14 +1238,16 @@ void Bit_Value::initialize()
 
    if(!fret_type_node || !IsHandledByBitvalue(fret_type_node))
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Function returning " + (fret_type_node ? STR(fret_type_node) : "void") + " not considered");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "Function returning " + (fret_type_node ? STR(fret_type_node) : "void") + " not considered");
    }
    else
    {
       const auto is_signed = tree_helper::IsSignedIntegerType(fret_type_node);
       if(fd->bit_values.empty())
       {
-         best[function_id] = fd->range ? fd->range->getBitValues(is_signed) : create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
+         best[function_id] = fd->range ? fd->range->getBitValues(is_signed) :
+                                         create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
       }
       else
       {
@@ -1258,13 +1292,18 @@ void Bit_Value::initialize()
                if(lhs->get_kind() == ssa_name_K)
                {
                   const auto lhs_nid = GET_INDEX_CONST_NODE(ga->op0);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzing " + stmt_node->get_kind_text() + "(" + STR(stmt_node->index) + "): " + STR(stmt_node));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "Analyzing " + stmt_node->get_kind_text() + "(" + STR(stmt_node->index) +
+                                     "): " + STR(stmt_node));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---LHS: " + STR(lhs));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---RHS: " + GET_CONST_NODE(ga->op1)->get_kind_text());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---RHS: " + GET_CONST_NODE(ga->op1)->get_kind_text());
 
                   if(!IsHandledByBitvalue(lhs))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable " + STR(GetPointerS<const ssa_name>(lhs)) + " of type " + STR(tree_helper::CGetType(lhs)) + " not considered");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "---variable " + STR(GetPointerS<const ssa_name>(lhs)) + " of type " +
+                                        STR(tree_helper::CGetType(lhs)) + " not considered");
                   }
                   else
                   {
@@ -1276,14 +1315,18 @@ void Bit_Value::initialize()
                      }
                      /// check if this assignment is a load from a constant array
                      const auto ga_op1_kind = GET_CONST_NODE(ga->op1)->get_kind();
-                     if(ga_op1_kind == array_ref_K || ga_op1_kind == mem_ref_K || ga_op1_kind == target_mem_ref_K || ga_op1_kind == target_mem_ref461_K || ga_op1_kind == var_decl_K)
+                     if(ga_op1_kind == array_ref_K || ga_op1_kind == mem_ref_K || ga_op1_kind == target_mem_ref_K ||
+                        ga_op1_kind == target_mem_ref461_K || ga_op1_kind == var_decl_K)
                      {
                         const auto hm = GetPointer<const HLS_manager>(AppM);
                         const auto base_index = tree_helper::get_base_index(TM, GET_INDEX_CONST_NODE(ga->op1));
                         const auto var_node = TM->GetTreeNode(base_index);
                         auto vd = GetPointer<var_decl>(var_node);
-                        if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm && hm->Rmem && hm->Rmem->get_enable_hls_bit_value() && function_behavior->is_variable_mem(base_index) &&
-                           hm->Rmem->is_sds_var(base_index) && vd && vd->init)
+                        if(base_index &&
+                           AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm &&
+                           hm->Rmem && hm->Rmem->get_enable_hls_bit_value() &&
+                           function_behavior->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index) && vd &&
+                           vd->init)
                         {
                            std::deque<bit_lattice> current_inf;
                            if(GET_CONST_NODE(vd->init)->get_kind() == constructor_K)
@@ -1293,7 +1336,9 @@ void Bit_Value::initialize()
                            else if(GET_CONST_NODE(vd->init)->get_kind() == integer_cst_K)
                            {
                               const auto int_const = GetPointerS<const integer_cst>(GET_CONST_NODE(vd->init));
-                              current_inf = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)), tree_helper::IsSignedIntegerType(int_const->type));
+                              current_inf = create_bitstring_from_constant(
+                                  int_const->value, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)),
+                                  tree_helper::IsSignedIntegerType(int_const->type));
                            }
                            else if(GET_CONST_NODE(vd->init)->get_kind() == string_cst_K)
                            {
@@ -1304,7 +1349,8 @@ void Bit_Value::initialize()
                               current_inf = create_u_bitstring(BitLatticeManipulator::Size(lhs));
                            }
 
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Used the init bitstring " + bitstring_to_string(current_inf));
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                          "---Used the init bitstring " + bitstring_to_string(current_inf));
 
                            vd->bit_values = bitstring_to_string(current_inf);
                            best[lhs_nid] = current_inf;
@@ -1314,8 +1360,11 @@ void Bit_Value::initialize()
                            best[lhs_nid] = create_u_bitstring(BitLatticeManipulator::Size(lhs));
                         }
                         /// and now something for the written variables
-                        if(base_index && AppM->get_written_objects().find(base_index) != AppM->get_written_objects().end() && hm && hm->Rmem && hm->Rmem->get_enable_hls_bit_value() && function_behavior->is_variable_mem(base_index) &&
-                           hm->Rmem->is_private_memory(base_index) && hm->Rmem->is_sds_var(base_index))
+                        if(base_index &&
+                           AppM->get_written_objects().find(base_index) != AppM->get_written_objects().end() && hm &&
+                           hm->Rmem && hm->Rmem->get_enable_hls_bit_value() &&
+                           function_behavior->is_variable_mem(base_index) && hm->Rmem->is_private_memory(base_index) &&
+                           hm->Rmem->is_sds_var(base_index))
                         {
                            if(vd)
                            {
@@ -1331,7 +1380,9 @@ void Bit_Value::initialize()
                                     else if(GET_CONST_NODE(vd->init)->get_kind() == integer_cst_K)
                                     {
                                        const auto int_const = GetPointerS<const integer_cst>(GET_CONST_NODE(vd->init));
-                                       current_inf = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)), tree_helper::IsSignedIntegerType(int_const->type));
+                                       current_inf = create_bitstring_from_constant(
+                                           int_const->value, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)),
+                                           tree_helper::IsSignedIntegerType(int_const->type));
                                     }
                                     else if(GET_CONST_NODE(vd->init)->get_kind() == string_cst_K)
                                     {
@@ -1346,45 +1397,62 @@ void Bit_Value::initialize()
                                  {
                                     current_inf.push_back(bit_lattice::ZERO);
                                  }
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Computed the init bitstring for " + function_behavior->CGetBehavioralHelper()->PrintVariable(base_index) + " = " + bitstring_to_string(current_inf));
+                                 INDENT_DBG_MEX(
+                                     DEBUG_LEVEL_PEDANTIC, debug_level,
+                                     "---Computed the init bitstring for " +
+                                         function_behavior->CGetBehavioralHelper()->PrintVariable(base_index) + " = " +
+                                         bitstring_to_string(current_inf));
                                  for(const auto& cur_var : hm->Rmem->get_source_values(base_index))
                                  {
                                     const auto cur_node = TM->CGetTreeNode(cur_var);
                                     const auto source_is_signed = tree_helper::IsSignedIntegerType(cur_node);
                                     const auto source_type = tree_helper::CGetType(cur_node);
                                     const auto source_type_size = BitLatticeManipulator::Size(source_type);
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---source node: " + STR(cur_node) + " source is signed: " + STR(source_is_signed) + " loaded is signed: " + STR(lhs_signed));
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                   "---source node: " + STR(cur_node) + " source is signed: " +
+                                                       STR(source_is_signed) + " loaded is signed: " + STR(lhs_signed));
                                     std::deque<bit_lattice> cur_bitstring;
                                     if(cur_node->get_kind() == ssa_name_K)
                                     {
                                        const auto ssa = GetPointerS<const ssa_name>(cur_node);
                                        if(!IsHandledByBitvalue(source_type))
                                        {
-                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Not handled by bitvalue");
+                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                         "---Not handled by bitvalue");
                                           cur_bitstring = create_u_bitstring(BitLatticeManipulator::Size(cur_node));
-                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
+                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                         "---bitstring = " + bitstring_to_string(cur_bitstring));
                                        }
                                        else
                                        {
-                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is handled by bitvalue");
+                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                         "---Is handled by bitvalue");
                                           cur_bitstring = string_to_bitstring(ssa->bit_values);
-                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
+                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                         "---bitstring = " + bitstring_to_string(cur_bitstring));
                                           if(cur_bitstring.size() != 0)
                                           {
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring not empty");
-                                             if(cur_bitstring.size() < source_type_size && source_is_signed != lhs_signed)
+                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                            "---bitstring not empty");
+                                             if(cur_bitstring.size() < source_type_size &&
+                                                source_is_signed != lhs_signed)
                                              {
-                                                cur_bitstring = sign_extend_bitstring(cur_bitstring, source_is_signed, source_type_size);
-                                                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
+                                                cur_bitstring = sign_extend_bitstring(cur_bitstring, source_is_signed,
+                                                                                      source_type_size);
+                                                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                               "---bitstring = " + bitstring_to_string(cur_bitstring));
                                              }
                                              sign_reduce_bitstring(cur_bitstring, lhs_signed);
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
+                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                            "---bitstring = " + bitstring_to_string(cur_bitstring));
                                           }
                                           else
                                           {
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring empty --> using U");
+                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                            "---bitstring empty --> using U");
                                              cur_bitstring = create_u_bitstring(BitLatticeManipulator::Size(cur_node));
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
+                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                            "---bitstring = " + bitstring_to_string(cur_bitstring));
                                           }
                                        }
                                     }
@@ -1392,32 +1460,44 @@ void Bit_Value::initialize()
                                     {
                                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Integer constant");
                                        const auto cst = GetPointerS<const integer_cst>(cur_node);
-                                       cur_bitstring = create_bitstring_from_constant(cst->value, source_type_size, lhs_signed);
-                                       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
+                                       cur_bitstring =
+                                           create_bitstring_from_constant(cst->value, source_type_size, lhs_signed);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                      "---bitstring = " + bitstring_to_string(cur_bitstring));
                                        sign_reduce_bitstring(cur_bitstring, lhs_signed);
-                                       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                      "---bitstring = " + bitstring_to_string(cur_bitstring));
                                     }
                                     else
                                     {
                                        cur_bitstring = create_u_bitstring(BitLatticeManipulator::Size(cur_node));
-                                       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bitstring = " + bitstring_to_string(cur_bitstring));
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                      "---bitstring = " + bitstring_to_string(cur_bitstring));
                                     }
                                     current_inf = inf(current_inf, cur_bitstring, lhs);
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---inf = " + bitstring_to_string(current_inf));
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                   "---inf = " + bitstring_to_string(current_inf));
                                  }
                                  vd->bit_values = bitstring_to_string(current_inf);
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                                "---Bit Value: variable " + function_behavior->CGetBehavioralHelper()->PrintVariable(base_index) + " trimmed to bitsize: " + STR(vd->bit_values.size()) + " with bit-value pattern: " + vd->bit_values);
+                                 INDENT_DBG_MEX(
+                                     DEBUG_LEVEL_PEDANTIC, debug_level,
+                                     "---Bit Value: variable " +
+                                         function_behavior->CGetBehavioralHelper()->PrintVariable(base_index) +
+                                         " trimmed to bitsize: " + STR(vd->bit_values.size()) +
+                                         " with bit-value pattern: " + vd->bit_values);
                                  private_variables[base_index] = current_inf;
                               }
                               const auto var_inf = private_variables.at(base_index);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Init bitstring for a private written memory variable " + bitstring_to_string(var_inf));
+                              INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                             "---Init bitstring for a private written memory variable " +
+                                                 bitstring_to_string(var_inf));
                               best[lhs_nid] = var_inf;
                            }
                         }
                      }
                   }
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzed " + stmt_node->get_kind_text() + ": " + STR(stmt_node));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "Analyzed " + stmt_node->get_kind_text() + ": " + STR(stmt_node));
                }
             }
             else if(stmt_node->get_kind() == gimple_asm_K)
@@ -1430,9 +1510,12 @@ void Bit_Value::initialize()
                   const auto ssa = GetPointer<const ssa_name>(GET_CONST_NODE(tl->valu));
                   if(ssa && !ssa->CGetUseStmts().empty() && IsHandledByBitvalue(tl->valu))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzing " + stmt_node->get_kind_text() + "(" + STR(stmt_node->index) + ")");
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Initializing bitstring for an asm instruction");
-                     best[GET_INDEX_CONST_NODE(tl->valu)] = create_u_bitstring(BitLatticeManipulator::Size(GET_CONST_NODE(tl->valu)));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "Analyzing " + stmt_node->get_kind_text() + "(" + STR(stmt_node->index) + ")");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "---Initializing bitstring for an asm instruction");
+                     best[GET_INDEX_CONST_NODE(tl->valu)] =
+                         create_u_bitstring(BitLatticeManipulator::Size(GET_CONST_NODE(tl->valu)));
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzed " + stmt_node->get_kind_text());
                   }
                }
@@ -1452,7 +1535,9 @@ void Bit_Value::initialize()
       auto use_node = TM->GetTreeNode(node_id);
       if(!IsHandledByBitvalue(use_node))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable " + STR(use_node) + " of type " + STR(tree_helper::CGetType(use_node)) + " not considered");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---variable " + STR(use_node) + " of type " + STR(tree_helper::CGetType(use_node)) +
+                            " not considered");
          return;
       }
 
@@ -1467,13 +1552,15 @@ void Bit_Value::initialize()
             signed_var.insert(node_id);
          }
          const auto def = ssa->CGetDefStmt();
-         if(!def || (ssa->var != nullptr && ((GET_CONST_NODE(def)->get_kind() == gimple_nop_K) || ssa->volatile_flag) && !arguments.count(node_id) && GET_CONST_NODE(ssa->var)->get_kind() == var_decl_K))
+         if(!def || (ssa->var != nullptr && ((GET_CONST_NODE(def)->get_kind() == gimple_nop_K) || ssa->volatile_flag) &&
+                     !arguments.count(node_id) && GET_CONST_NODE(ssa->var)->get_kind() == var_decl_K))
          {
             ssa->bit_values.clear();
             best[node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed);
             if(ssa->var)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---first version of uninitialized var " + STR(GET_CONST_NODE(ssa->var)));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                              "---first version of uninitialized var " + STR(GET_CONST_NODE(ssa->var)));
             }
             else
             {
@@ -1500,14 +1587,16 @@ void Bit_Value::initialize()
       {
          const auto int_const = GetPointerS<const integer_cst>(use_node);
          const auto is_signed = tree_helper::IsSignedIntegerType(int_const->type);
-         best[node_id] = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(use_node), is_signed);
+         best[node_id] =
+             create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(use_node), is_signed);
          if(is_signed)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
             signed_var.insert(node_id);
          }
          sign_reduce_bitstring(best.at(node_id), is_signed);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---updated bitstring: " + bitstring_to_string(best.at(node_id)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---updated bitstring: " + bitstring_to_string(best.at(node_id)));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    };
@@ -1529,7 +1618,8 @@ void Bit_Value::initialize()
 #endif
       for(const auto& phi : B->CGetPhiList())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzing phi(" + STR(GET_INDEX_CONST_NODE(phi)) + "): " + STR(phi));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "Analyzing phi(" + STR(GET_INDEX_CONST_NODE(phi)) + "): " + STR(phi));
          const auto pn = GetPointerS<const gimple_phi>(GET_CONST_NODE(phi));
          const auto is_virtual = pn->virtual_flag;
          if(!is_virtual)
@@ -1540,7 +1630,9 @@ void Bit_Value::initialize()
             THROW_ASSERT(ssa, "unexpected condition");
             if(!IsHandledByBitvalue(pn->res))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable " + STR(ssa) + " of type " + STR(tree_helper::CGetType(pn->res)) + " not considered id: " + STR(res_nid));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                              "---variable " + STR(ssa) + " of type " + STR(tree_helper::CGetType(pn->res)) +
+                                  " not considered id: " + STR(res_nid));
                continue;
             }
             if(tree_helper::IsSignedIntegerType(pn->res))
@@ -1559,7 +1651,8 @@ void Bit_Value::initialize()
                best[res_nid] = create_x_bitstring(1);
                if(best.count(res_nid))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---updated bitstring: " + bitstring_to_string(best.at(res_nid)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---updated bitstring: " + bitstring_to_string(best.at(res_nid)));
                }
             }
             else
@@ -1574,7 +1667,8 @@ void Bit_Value::initialize()
                }
                if(best.count(res_nid))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---updated bitstring: " + bitstring_to_string(best.at(res_nid)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---updated bitstring: " + bitstring_to_string(best.at(res_nid)));
                }
 
                for(const auto& def_edge : pn->CGetDefEdgesList())
@@ -1591,7 +1685,9 @@ void Bit_Value::initialize()
          // ga->op1 is equal to var_decl when it binds a newly declared variable to an ssa variable. ie. int a;
          // we can skip this assignment and focus on the ssa variable
          const auto stmt_node = GET_CONST_NODE(stmt);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzing " + stmt_node->get_kind_text() + "(" + STR(GET_INDEX_CONST_NODE(stmt)) + "): " + STR(stmt_node));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "Analyzing " + stmt_node->get_kind_text() + "(" + STR(GET_INDEX_CONST_NODE(stmt)) +
+                            "): " + STR(stmt_node));
          if(stmt_node->get_kind() == gimple_assign_K)
          {
             const auto ga = GetPointerS<const gimple_assign>(stmt_node);
@@ -1606,7 +1702,9 @@ void Bit_Value::initialize()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->LHS: " + STR(lhs_ssa));
                if(!IsHandledByBitvalue(lhs))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable " + STR(lhs_ssa) + " of type " + STR(tree_helper::CGetType(lhs)) + " not considered");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---variable " + STR(lhs_ssa) + " of type " + STR(tree_helper::CGetType(lhs)) +
+                                     " not considered");
                }
                else
                {
@@ -1628,7 +1726,8 @@ void Bit_Value::initialize()
                      best[lhs_nid] = create_x_bitstring(1);
                   }
                   /// check if this assignment is a load from a constant array
-                  else if(ga_op1_kind == array_ref_K || ga_op1_kind == mem_ref_K || ga_op1_kind == target_mem_ref_K || ga_op1_kind == target_mem_ref461_K || ga_op1_kind == var_decl_K)
+                  else if(ga_op1_kind == array_ref_K || ga_op1_kind == mem_ref_K || ga_op1_kind == target_mem_ref_K ||
+                          ga_op1_kind == target_mem_ref461_K || ga_op1_kind == var_decl_K)
                   {
                      // this computation was moved above, to make sure that no
                      // bitstrings (computed by previous execution of the same
@@ -1640,10 +1739,10 @@ void Bit_Value::initialize()
                   {
                      HLS_manager*  hm = GetPointer<HLS_manager>(AppM);
                      unsigned int var = tree_helper::get_base_index(TM, lhs_nid);
-                     if(var && hm && hm->Rmem && hm->Rmem->get_enable_hls_bit_value() && function_behavior->is_variable_mem(var))
-                        best[lhs_nid] = create_u_bitstring(pointer_resizing(AppM, lhs_nid, function_behavior, function_id, not_frontend, parameters));
-                     else
-                        best[lhs_nid] = create_u_bitstring (BitLatticeManipulator::Size(GET_NODE(ga->op0)));
+                     if(var && hm && hm->Rmem && hm->Rmem->get_enable_hls_bit_value() &&
+                  function_behavior->is_variable_mem(var)) best[lhs_nid] = create_u_bitstring(pointer_resizing(AppM,
+                  lhs_nid, function_behavior, function_id, not_frontend, parameters)); else best[lhs_nid] =
+                  create_u_bitstring (BitLatticeManipulator::Size(GET_NODE(ga->op0)));
                   }*/
                   else if(ga_op1_kind == call_expr_K || ga_op1_kind == aggr_init_expr_K)
                   {
@@ -1653,14 +1752,20 @@ void Bit_Value::initialize()
                         const auto addr_node = GET_CONST_NODE(ce->fn);
                         const auto ae = GetPointerS<const addr_expr>(addr_node);
                         const auto fu_decl_node = GET_CONST_NODE(ae->op);
-                        THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
+                        THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) +
+                                                                                      " is not function_decl but " +
+                                                                                      fu_decl_node->get_kind_text());
                         const auto ret_type_node = tree_helper::GetFunctionReturnType(fu_decl_node);
                         if(IsHandledByBitvalue(ret_type_node))
                         {
                            const auto called_fd = GetPointer<const function_decl>(fu_decl_node);
-                           const auto new_bitvalue = called_fd->bit_values.empty() ?
-                                                         (called_fd->range ? called_fd->range->getBitValues(tree_helper::IsSignedIntegerType(ret_type_node)) : create_u_bitstring(BitLatticeManipulator::Size(GET_CONST_NODE(ga->op0)))) :
-                                                         string_to_bitstring(called_fd->bit_values);
+                           const auto new_bitvalue =
+                               called_fd->bit_values.empty() ?
+                                   (called_fd->range ?
+                                        called_fd->range->getBitValues(
+                                            tree_helper::IsSignedIntegerType(ret_type_node)) :
+                                        create_u_bitstring(BitLatticeManipulator::Size(GET_CONST_NODE(ga->op0)))) :
+                                   string_to_bitstring(called_fd->bit_values);
                            if(best[lhs_nid].empty())
                            {
                               best[lhs_nid] = new_bitvalue;
@@ -1673,7 +1778,8 @@ void Bit_Value::initialize()
                      }
                      else if(GET_CONST_NODE(ce->fn)->get_kind() != ssa_name_K)
                      {
-                        THROW_UNREACHABLE("call node  " + STR(GET_CONST_NODE(ce->fn)) + " is a " + GET_CONST_NODE(ce->fn)->get_kind_text());
+                        THROW_UNREACHABLE("call node  " + STR(GET_CONST_NODE(ce->fn)) + " is a " +
+                                          GET_CONST_NODE(ce->fn)->get_kind_text());
                      }
                   }
                   else if(ga_op1_kind == lut_expr_K)
@@ -1702,7 +1808,8 @@ void Bit_Value::initialize()
                      }
                   }
                   THROW_ASSERT(best.count(lhs_nid), "");
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---updated bitstring: " + bitstring_to_string(best.at(lhs_nid)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---updated bitstring: " + bitstring_to_string(best.at(lhs_nid)));
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "RHS: " + GET_CONST_NODE(ga->op1)->get_kind_text());
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
@@ -1723,7 +1830,8 @@ void Bit_Value::initialize()
 
                   if(!IsHandledByBitvalue(out_node))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---variable of type " + STR(tree_helper::CGetType(out_node)) + " not considered");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "---variable of type " + STR(tree_helper::CGetType(out_node)) + " not considered");
                   }
                   else
                   {
@@ -1735,7 +1843,8 @@ void Bit_Value::initialize()
                         signed_var.insert(out_node->index);
                      }
                      best[out_node->index] = create_u_bitstring(BitLatticeManipulator::Size(out_node));
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---updated bitstring: " + bitstring_to_string(best.at(out_node->index)));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "---updated bitstring: " + bitstring_to_string(best.at(out_node->index)));
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
                }
@@ -1743,7 +1852,8 @@ void Bit_Value::initialize()
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---LHS unhandled for statement kind: " + STR(stmt_node->index));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---LHS unhandled for statement kind: " + STR(stmt_node->index));
          }
 
          std::vector<std::tuple<unsigned int, unsigned int>> vars_read;
@@ -1755,7 +1865,8 @@ void Bit_Value::initialize()
             set_value(ssa_use_node_id);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzed " + stmt_node->get_kind_text() + ": " + STR(stmt_node));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "Analyzed " + stmt_node->get_kind_text() + ": " + STR(stmt_node));
 #ifndef NDEBUG
          statement_num++;
 #endif

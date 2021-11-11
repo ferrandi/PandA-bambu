@@ -48,7 +48,8 @@ class SerializeMutualExclusions : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -58,7 +59,8 @@ class SerializeMutualExclusions : public FunctionFrontendFlowStep
     * @param DesignFlowManagerConstRef is the design flow manager
     * @param parameters is the set of input parameters
     */
-   SerializeMutualExclusions(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   SerializeMutualExclusions(const application_managerRef AppM, unsigned int function_id,
+                             const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor

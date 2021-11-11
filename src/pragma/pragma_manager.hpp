@@ -186,21 +186,24 @@ class pragma_manager
     * @param bb_vertex is the basic block to which for operation belongs
     * @return true if there is an associated pragma
     */
-   bool CheckOmpFor(const application_managerConstRef app_man, const unsigned int function_index, const vertex bb_operation_vertex) const;
+   bool CheckOmpFor(const application_managerConstRef app_man, const unsigned int function_index,
+                    const vertex bb_operation_vertex) const;
 
    /**
     * Check if a omp for pragma is associated with the loop; if yes, add the gimple_for
     * @param function_index is the index of the function
     * @param bb_vertex is the basic block to which for operation belongs
     */
-   void CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex, const application_managerRef AppM);
+   void CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex,
+                       const application_managerRef AppM);
 
    /**
     * Check if a omp simd pragma is associated with the loop; if yes, add information to the loop
     * @param function_index is the index of the function
     * @param bb_vertex is the basic block to which for operation belongs
     */
-   void CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex, const application_managerRef AppM);
+   void CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex,
+                        const application_managerRef AppM);
 
    /**
     * Get mapping of a function given by the pragma

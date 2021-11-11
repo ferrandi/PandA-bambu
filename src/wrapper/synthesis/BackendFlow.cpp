@@ -129,7 +129,8 @@
 #include <boost/algorithm/string/case_conv.hpp>
 
 #if HAVE_IPXACT_BUILT
-void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_PARAMETER(Param), const std::string& xml_file)
+void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_PARAMETER(Param),
+                                                  const std::string& xml_file)
 {
    if(!boost::filesystem::exists(xml_file))
       THROW_ERROR("File \"" + xml_file + "\" does not exist!");
@@ -194,7 +195,8 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
                         {
                            value = child_value->get_child_text()->get_content();
                         }
-                        INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---adding parameter \"" + referenceId + "\" with value \"" + value + "\"");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                                       "---adding parameter \"" + referenceId + "\" with value \"" + value + "\"");
                         parameter_values[referenceId] = value;
                      }
                   }
@@ -203,7 +205,8 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
          }
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--Parsed configuration file of design \"" + component_name + "\"");
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                  "<--Parsed configuration file of design \"" + component_name + "\"");
 }
 #endif
 
@@ -250,7 +253,8 @@ BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef
       if(vendor == "xilinx")
       {
 #if HAVE_TASTE
-         if(parameters->isOption(OPT_generate_taste_architecture) and parameters->getOption<bool>(OPT_generate_taste_architecture))
+         if(parameters->isOption(OPT_generate_taste_architecture) and
+            parameters->getOption<bool>(OPT_generate_taste_architecture))
          {
             return XILINX_TASTE_FPGA;
          }
@@ -281,7 +285,8 @@ BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef
    return UNKNOWN;
 }
 
-BackendFlowRef BackendFlow::CreateFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target)
+BackendFlowRef BackendFlow::CreateFlow(const ParameterConstRef Param, const std::string& flow_name,
+                                       const target_managerRef target)
 {
    type_t type = DetermineBackendFlowType(target->get_target_device(), Param);
    switch(type)
@@ -309,7 +314,9 @@ BackendFlowRef BackendFlow::CreateFlow(const ParameterConstRef Param, const std:
    return BackendFlowRef();
 }
 
-std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM, const std::list<std::string>& hdl_files, const std::list<std::string>& aux_files)
+std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM,
+                                                  const std::list<std::string>& hdl_files,
+                                                  const std::list<std::string>& aux_files)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating synthesis scripts");
    auto resource_name = "_" + fu_name;
@@ -338,7 +345,8 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    {
       const technology_nodeRef tn = TM->get_fu(resource_name, library);
       actual_parameters->parameter_values[PARAM_clk_period] = STR(GetPointer<functional_unit>(tn)->get_clock_period());
-      actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000 * GetPointer<functional_unit>(tn)->get_clock_period());
+      actual_parameters->parameter_values[PARAM_clk_period_ps] =
+          STR(1000 * GetPointer<functional_unit>(tn)->get_clock_period());
       if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
       {
          is_combinational = true;
@@ -350,8 +358,10 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       if(library.size())
       {
          const technology_nodeRef tn = TM->get_fu(fu_name, library);
-         actual_parameters->parameter_values[PARAM_clk_period] = STR(GetPointer<functional_unit>(tn)->get_clock_period());
-         actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000 * GetPointer<functional_unit>(tn)->get_clock_period());
+         actual_parameters->parameter_values[PARAM_clk_period] =
+             STR(GetPointer<functional_unit>(tn)->get_clock_period());
+         actual_parameters->parameter_values[PARAM_clk_period_ps] =
+             STR(1000 * GetPointer<functional_unit>(tn)->get_clock_period());
          if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
          {
             is_combinational = true;
@@ -368,7 +378,8 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    }
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(is_combinational);
    bool time_constrained = false;
-   if(actual_parameters->parameter_values.find(PARAM_clk_period) != actual_parameters->parameter_values.end() and boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) != 0.0)
+   if(actual_parameters->parameter_values.find(PARAM_clk_period) != actual_parameters->parameter_values.end() and
+      boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) != 0.0)
    {
       time_constrained = true;
    }
@@ -378,7 +389,8 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       actual_parameters->parameter_values[PARAM_clk_period] = STR(PARAM_clk_period_default);
       actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000 * PARAM_clk_period_default);
    }
-   actual_parameters->parameter_values[PARAM_clk_freq] = STR(1000 / boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]));
+   actual_parameters->parameter_values[PARAM_clk_freq] =
+       STR(1000 / boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]));
 
    if(Param->isOption(OPT_clock_name))
    {
@@ -405,7 +417,8 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    if(Param->isOption(OPT_backend_script_extensions))
    {
       actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
-      actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
+      actual_parameters->parameter_values[PARAM_backend_script_extensions] =
+          Param->getOption<std::string>(OPT_backend_script_extensions);
    }
    else
    {
@@ -450,7 +463,8 @@ void BackendFlow::ExecuteSynthesis()
    ToolManagerRef tool(new ToolManager(Param));
    tool->configure(generated_synthesis_script, "");
    std::vector<std::string> parameters, input_files, output_files;
-   const std::string synthesis_file_output = Param->getOption<std::string>(OPT_output_temporary_directory) + "/synthesis_output";
+   const std::string synthesis_file_output =
+       Param->getOption<std::string>(OPT_output_temporary_directory) + "/synthesis_output";
    tool->execute(parameters, input_files, output_files, synthesis_file_output, false);
 
    CheckSynthesisResults();
@@ -493,7 +507,8 @@ void BackendFlow::parse_flow(const XMLDomParserRef parser)
 void BackendFlow::xload(const xml_element* node)
 {
    LOAD_XVFM(default_flow_parameters->chain_name, node, name);
-   THROW_ASSERT(default_flow_parameters->chain_name == flow_name, "wrong values: " + default_flow_parameters->chain_name + " vs. " + flow_name);
+   THROW_ASSERT(default_flow_parameters->chain_name == flow_name,
+                "wrong values: " + default_flow_parameters->chain_name + " vs. " + flow_name);
 
    const xml_node::node_list list = node->get_children();
    for(const auto& l : list)
@@ -695,20 +710,24 @@ void BackendFlow::add_backend_step(const BackendStepRef& step)
 
 std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->creating scripts for module \"" + dp->component_name + "\" on chain \"" + dp->chain_name + "\"");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                  "-->creating scripts for module \"" + dp->component_name + "\" on chain \"" + dp->chain_name + "\"");
 
    CustomOrderedSet<std::string> module_undefined_parameters = undefined_parameters;
    DesignParametersRef exec_params = default_flow_parameters->clone();
    exec_params->component_name = dp->component_name;
-   THROW_ASSERT(exec_params->chain_name == dp->chain_name, "Mismatching!! exec = \"" + exec_params->chain_name + "\" vs. dp = \"" + dp->chain_name + "\"");
+   THROW_ASSERT(exec_params->chain_name == dp->chain_name,
+                "Mismatching!! exec = \"" + exec_params->chain_name + "\" vs. dp = \"" + dp->chain_name + "\"");
 
    for(auto p = dp->parameter_values.begin(); p != dp->parameter_values.end(); ++p)
    {
       exec_params->parameter_values[p->first] = p->second;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->setting parameter \"" + p->first + "\" to value \"" + p->second + "\"");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                     "-->setting parameter \"" + p->first + "\" to value \"" + p->second + "\"");
       if(module_undefined_parameters.find(p->first) != module_undefined_parameters.end())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---removed parameter \"" + p->first + "\" from undefined parameters");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                        "---removed parameter \"" + p->first + "\" from undefined parameters");
          module_undefined_parameters.erase(p->first);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
@@ -785,18 +804,22 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
    parameters.push_back("+x");
    parameters.push_back(generated_synthesis_script);
    input_files.push_back(generated_synthesis_script);
-   tool->execute(parameters, input_files, output_files, Param->getOption<std::string>(OPT_output_temporary_directory) + "/synthesis_script_generation_output");
+   tool->execute(parameters, input_files, output_files,
+                 Param->getOption<std::string>(OPT_output_temporary_directory) + "/synthesis_script_generation_output");
 
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
       create_xml_scripts("exported_flow.xml");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Completed the generation of scripts for module \"" + exec_params->component_name + "\" on chain \"" + exec_params->chain_name + "\"");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                  "<--Completed the generation of scripts for module \"" + exec_params->component_name +
+                      "\" on chain \"" + exec_params->chain_name + "\"");
 
    return generated_synthesis_script;
 }
 
-void BackendFlow::set_initial_parameters(const DesignParametersRef& _flow_parameters, const CustomOrderedSet<std::string>& _undefined_parameters)
+void BackendFlow::set_initial_parameters(const DesignParametersRef& _flow_parameters,
+                                         const CustomOrderedSet<std::string>& _undefined_parameters)
 {
    default_flow_parameters = _flow_parameters;
    undefined_parameters = _undefined_parameters;

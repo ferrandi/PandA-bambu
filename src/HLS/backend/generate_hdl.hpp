@@ -54,13 +54,15 @@ class generate_hdl : public HLS_step
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
     * Constructor.
     */
-   generate_hdl(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   generate_hdl(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+                const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

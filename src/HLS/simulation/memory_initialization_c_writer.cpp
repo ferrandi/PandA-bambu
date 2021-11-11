@@ -52,9 +52,14 @@
 #include "indented_output_stream.hpp"
 #include "utility.hpp"
 
-MemoryInitializationCWriter::MemoryInitializationCWriter(const IndentedOutputStreamRef _indented_output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes,
-                                                         const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters)
-    : MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter, _testbench_generation_memory_type, _parameters), indented_output_stream(_indented_output_stream)
+MemoryInitializationCWriter::MemoryInitializationCWriter(
+    const IndentedOutputStreamRef _indented_output_stream, const tree_managerConstRef _TM,
+    const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes,
+    const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type,
+    const ParameterConstRef _parameters)
+    : MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter,
+                                     _testbench_generation_memory_type, _parameters),
+      indented_output_stream(_indented_output_stream)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -78,10 +83,12 @@ static bool is_all_8zeros(const std::string& str)
 
 void MemoryInitializationCWriter::Process(const std::string& content)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing C code to write " + content + " in binary form to initialize memory");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Writing C code to write " + content + " in binary form to initialize memory");
    tree_nodeConstRef base_type;
    /// Second, according to the type let's how many elements have to have been processed
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Currently writing " + GET_CONST_NODE(status.back().first)->get_kind_text());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Currently writing " + GET_CONST_NODE(status.back().first)->get_kind_text());
    switch(GET_CONST_NODE(status.back().first)->get_kind())
    {
       case pointer_type_K:
@@ -110,7 +117,8 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case type_argument_pack_K:
       case type_pack_expansion_K:
       case vector_type_K:
-         THROW_ERROR("Unexpected type in initializing parameter/variable: " + GET_CONST_NODE(status.back().first)->get_kind_text());
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " +
+                     GET_CONST_NODE(status.back().first)->get_kind_text());
          break;
       case aggr_init_expr_K:
       case binfo_K:
@@ -139,7 +147,8 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + GET_CONST_NODE(status.back().first)->get_kind_text());
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
+                          "Not supported node: " + GET_CONST_NODE(status.back().first)->get_kind_text());
    }
    THROW_ASSERT(base_type, "");
    std::string binary_value = "";
@@ -182,7 +191,8 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case type_argument_pack_K:
       case type_pack_expansion_K:
       case vector_type_K:
-         THROW_ERROR("Unexpected type in initializing parameter/variable: " + GET_CONST_NODE(base_type)->get_kind_text());
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " +
+                     GET_CONST_NODE(base_type)->get_kind_text());
          break;
       case aggr_init_expr_K:
       case binfo_K:
@@ -211,7 +221,8 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + GET_CONST_NODE(base_type)->get_kind_text());
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
+                          "Not supported node: " + GET_CONST_NODE(base_type)->get_kind_text());
    }
    THROW_ASSERT(binary_value.size() % 8 == 0, "");
    written_bytes += binary_value.size() / 8;
@@ -220,7 +231,9 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case TestbenchGeneration_MemoryType::INPUT_PARAMETER:
       {
          THROW_ASSERT(write_in_a_file, "unexpected condition");
-         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " +
+                                        behavioral_helper->PrintVariable(function_parameter->index) +
+                                        " value: " + content + "\\n\");\n");
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + binary_value + "\\n\");\n");
          break;
       }
@@ -235,7 +248,9 @@ void MemoryInitializationCWriter::Process(const std::string& content)
          }
          else
          {
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
+            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable: " +
+                                           behavioral_helper->PrintVariable(function_parameter->index) +
+                                           " value: " + content + "\\n\");\n");
             if(is_all_8zeros(binary_value))
             {
                indented_output_stream->Append("for (__testbench_index = 0; "
@@ -248,7 +263,8 @@ void MemoryInitializationCWriter::Process(const std::string& content)
             {
                for(size_t bit = 0; bit < binary_value.size(); bit += 8)
                {
-                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
+                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" +
+                                                 binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
                }
             }
          }
@@ -257,10 +273,13 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case TestbenchGeneration_MemoryType::OUTPUT_PARAMETER:
       {
          THROW_ASSERT(write_in_a_file, "unexpected condition");
-         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output: " +
+                                        behavioral_helper->PrintVariable(function_parameter->index) +
+                                        " value: " + content + "\\n\");\n");
          for(size_t bit = 0; bit < binary_value.size(); bit += 8)
          {
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o" + binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
+            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o" +
+                                           binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
          }
          break;
       }
@@ -269,7 +288,9 @@ void MemoryInitializationCWriter::Process(const std::string& content)
          THROW_UNREACHABLE("");
    }
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added code to write " + content + " (" + STR(binary_value.size() / 8) + " bytes) in binary form to initialize memory");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--Added code to write " + content + " (" + STR(binary_value.size() / 8) +
+                      " bytes) in binary form to initialize memory");
 }
 
 void MemoryInitializationCWriter::ActivateFileInit(const std::string& filename)

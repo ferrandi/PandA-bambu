@@ -82,12 +82,14 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
    /**
     * @brief Map storing the implementation of the forward_transfer's plus_expr.
     */
-   static const std::map<bit_lattice, std::map<bit_lattice, std::map<bit_lattice, std::deque<bit_lattice>>>> plus_expr_map;
+   static const std::map<bit_lattice, std::map<bit_lattice, std::map<bit_lattice, std::deque<bit_lattice>>>>
+       plus_expr_map;
 
    /**
     * @brief Map storing the implementation of the forward_transfer's minus_expr.
     */
-   static const std::map<bit_lattice, std::map<bit_lattice, std::map<bit_lattice, std::deque<bit_lattice>>>> minus_expr_map;
+   static const std::map<bit_lattice, std::map<bit_lattice, std::map<bit_lattice, std::deque<bit_lattice>>>>
+       minus_expr_map;
 
    /**
     * @brief Map storing the implementation of the forward_transfer's bit_ior_expr_map.
@@ -135,16 +137,19 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
    unsigned int lsb_to_zero(const addr_expr* ae, bool safe) const;
 
    /**
-    * Initializes best with C type as bitstring, signed_var and arguments using the information taken from the syntax tree given by the application manager.
+    * Initializes best with C type as bitstring, signed_var and arguments using the information taken from the syntax
+    * tree given by the application manager.
     *
     *
     * Scan all the gimple assign statements in each bloc
-    * if the left hand side is signed this is inserted into the signed_var set (this information is used by the signextension)
+    * if the left hand side is signed this is inserted into the signed_var set (this information is used by the
+    * signextension)
     *
     * for each lhs variable in the gimple_assign instruction and entry is created in the best map
     * the entry in the map is of the type <GET_INDEX_NODE(lhs), bit_string of <U>s of the variable lenght>
-    * for each gimple_assign the used variables are checked against the values in the parm set in order to identify the parameters of the function
-    * when those are found their ssa index node is added in the best map and in the arguments map ( used by the clear() function )
+    * for each gimple_assign the used variables are checked against the values in the parm set in order to identify the
+    * parameters of the function when those are found their ssa index node is added in the best map and in the arguments
+    * map ( used by the clear() function )
     *
     *
     * Scans each phi in the bloc (not virtual)
@@ -166,23 +171,24 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
    void clear_current();
 
    /**
-    * Applies the forward algorithm, as described in the paper, analyzing each assignment statement following the program order, and each phi.
-    * Uses the forward_transfer() function to compute the output's bitstring, that stores in current.
-    * The algorithm loops until current is modified.
+    * Applies the forward algorithm, as described in the paper, analyzing each assignment statement following the
+    * program order, and each phi. Uses the forward_transfer() function to compute the output's bitstring, that stores
+    * in current. The algorithm loops until current is modified.
     * @see forward_transfer()
     */
    void forward();
 
    /**
-    * Applies the backward algorithm, as described in the paper, analyzing each assignment statement starting from the output, going up to the inputs, and each phi.
-    * Uses the backward_transfer() function to compute the output's bitstring, that stores in current.
-    * The algorithm loops until current is modified.
+    * Applies the backward algorithm, as described in the paper, analyzing each assignment statement starting from the
+    * output, going up to the inputs, and each phi. Uses the backward_transfer() function to compute the output's
+    * bitstring, that stores in current. The algorithm loops until current is modified.
     * @see backward_transfer()
     */
    void backward();
 
    /**
-    * Takes a gimple assignment, analyzes the operation performed from the rhs and its input bitstring, and generate a bitstring from the output.
+    * Takes a gimple assignment, analyzes the operation performed from the rhs and its input bitstring, and generate a
+    * bitstring from the output.
     * @param ga assignment to analyze
     * @return output bitstring
     */
@@ -217,7 +223,8 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     */
    std::deque<bit_lattice> get_current_or_best(const tree_nodeConstRef& tn) const;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -227,7 +234,8 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   Bit_Value(const ParameterConstRef Param, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm);
+   Bit_Value(const ParameterConstRef Param, const application_managerRef AM, unsigned int f_id,
+             const DesignFlowManagerConstRef dfm);
 
    /**
     *  Destructor

@@ -38,7 +38,8 @@
 
 #include <utility>
 
-sig_variation::sig_variation(unsigned long long ts, std::string val, unsigned long long d) : time_stamp(ts), value(std::move(val)), duration(d)
+sig_variation::sig_variation(unsigned long long ts, std::string val, unsigned long long d)
+    : time_stamp(ts), value(std::move(val)), duration(d)
 {
 }
 

@@ -32,7 +32,8 @@
  */
 /**
  * @file basic_blocks_profiling_c_writer.cpp
- * @brief This file contains the routines necessary to create a C executable program with instrumented edges for profiling of executions of single basic blocks
+ * @brief This file contains the routines necessary to create a C executable program with instrumented edges for
+ * profiling of executions of single basic blocks
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
@@ -63,8 +64,12 @@
 #include "indented_output_stream.hpp"
 #include "string_manipulation.hpp"
 
-BasicBlocksProfilingCWriter::BasicBlocksProfilingCWriter(const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _Param, bool _verbose)
-    : CWriter(_AppM, _instruction_writer, _indented_output_stream, _Param, _verbose), EdgeCWriter(_AppM, _instruction_writer, _indented_output_stream, _Param, _verbose)
+BasicBlocksProfilingCWriter::BasicBlocksProfilingCWriter(const application_managerConstRef _AppM,
+                                                         const InstructionWriterRef _instruction_writer,
+                                                         const IndentedOutputStreamRef _indented_output_stream,
+                                                         const ParameterConstRef _Param, bool _verbose)
+    : CWriter(_AppM, _instruction_writer, _indented_output_stream, _Param, _verbose),
+      EdgeCWriter(_AppM, _instruction_writer, _indented_output_stream, _Param, _verbose)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
 }
@@ -133,7 +138,9 @@ void BasicBlocksProfilingCWriter::WriteGlobalDeclarations()
    indented_output_stream->Append("void _end_tp() __attribute__ ((no_instrument_function, destructor));\n");
    indented_output_stream->Append("void _end_tp()\n");
    indented_output_stream->Append("{\n");
-   indented_output_stream->Append("FILE* h_file = fopen(\"" + Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_host_profiling_data + "\", \"w\");\n");
+   indented_output_stream->Append("FILE* h_file = fopen(\"" +
+                                  Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                  STR_CST_host_profiling_data + "\", \"w\");\n");
    indented_output_stream->Append("int i = 0;\n");
    for(const auto function : functions)
    {

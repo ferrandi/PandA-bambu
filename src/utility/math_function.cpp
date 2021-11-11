@@ -54,11 +54,14 @@
 /// Header include
 #include "math_function.hpp"
 
-long double get_point_line_distance(const AugmentedVector<long double>& point, const AugmentedVector<long double>& line_point1, const AugmentedVector<long double>& line_point2)
+long double get_point_line_distance(const AugmentedVector<long double>& point,
+                                    const AugmentedVector<long double>& line_point1,
+                                    const AugmentedVector<long double>& line_point2)
 {
    long double t;
    long double dq = 0;
-   THROW_ASSERT(point.size() == line_point1.size() and line_point1.size() == line_point2.size(), "Different dimension of space");
+   THROW_ASSERT(point.size() == line_point1.size() and line_point1.size() == line_point2.size(),
+                "Different dimension of space");
 
    t = -1 * ((line_point1 - point) * (line_point2 - line_point1)) / powl((line_point2 - line_point1).Norm2(), 2);
 

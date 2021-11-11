@@ -71,13 +71,15 @@ class BitLatticeManipulator
 
    /**
     * @brief Map of the current bit-values of each variable.
-    * Map storing the current bit-values of the variables at the end of each iteration of forward_transfer or backward_transfer.
+    * Map storing the current bit-values of the variables at the end of each iteration of forward_transfer or
+    * backward_transfer.
     */
    CustomMap<unsigned int, std::deque<bit_lattice>> current;
 
    /**
     * @brief Map of the best bit-values of each variable.
-    * Map storing the best bit-values of the variables at the end of all the iterations of forward_transfer or backward_transfer.
+    * Map storing the best bit-values of the variables at the end of all the iterations of forward_transfer or
+    * backward_transfer.
     */
    CustomMap<unsigned int, std::deque<bit_lattice>> best;
 
@@ -86,7 +88,8 @@ class BitLatticeManipulator
     */
    CustomSet<unsigned int> signed_var;
 
-   /// The debug level of methods of this class - it cannot be named debug_level because of ambiguity of FrontendFlowStep::debug_level derived classes
+   /// The debug level of methods of this class - it cannot be named debug_level because of ambiguity of
+   /// FrontendFlowStep::debug_level derived classes
    const int bl_debug_level;
 
    bool IsSignedIntegerType(const tree_nodeConstRef& tn) const;
@@ -98,9 +101,11 @@ class BitLatticeManipulator
     * @param output_uid is the id of the tree node for which the bitvalue is * computed
     * @return the sup of the two bitstrings.
     */
-   std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const unsigned int output_uid) const;
+   std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
+                               const unsigned int output_uid) const;
 
-   std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const tree_nodeConstRef& out_node) const;
+   std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
+                               const tree_nodeConstRef& out_node) const;
 
    /**
     * Computes the inf between two bitstrings
@@ -109,9 +114,11 @@ class BitLatticeManipulator
     * @param output_uid is the id of the tree node for which the bitvalue is * computed
     * @return inf between the two bitstrings
     */
-   std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const unsigned int output_uid) const;
+   std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
+                               const unsigned int output_uid) const;
 
-   std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const tree_nodeConstRef& out_node) const;
+   std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
+                               const tree_nodeConstRef& out_node) const;
 
    /**
     * auxiliary function used to build the bitstring lattice for read-only arrays
@@ -170,7 +177,8 @@ class BitLatticeManipulator
     * @param final_size desired length of the bitstrign
     * @return the extended bitstring
     */
-   static std::deque<bit_lattice> sign_extend_bitstring(const std::deque<bit_lattice>& bitstring, bool bitstring_is_signed, size_t final_size);
+   static std::deque<bit_lattice> sign_extend_bitstring(const std::deque<bit_lattice>& bitstring,
+                                                        bool bitstring_is_signed, size_t final_size);
 
    /**
     * @brief Reduce the size of a bitstring
@@ -185,9 +193,11 @@ class BitLatticeManipulator
 
    static bit_lattice bit_inf(const bit_lattice a, const bit_lattice b);
 
-   static std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
+   static std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
+                                      const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
 
-   static std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
+   static std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
+                                      const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
 
    static unsigned int Size(const tree_nodeConstRef& t);
 

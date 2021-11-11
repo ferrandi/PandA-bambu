@@ -62,7 +62,8 @@
 
 #include "dbgPrintHelper.hpp"
 
-fixed_scheduling::fixed_scheduling(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+fixed_scheduling::fixed_scheduling(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                   unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
     : Scheduling(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::FIXED_SCHEDULING)
 {
 }

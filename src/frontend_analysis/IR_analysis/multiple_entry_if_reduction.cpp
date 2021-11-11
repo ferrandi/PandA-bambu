@@ -35,13 +35,13 @@
  * @file multiple_entry_if_reduction.cpp
  * @brief This class implements the reduction of blocks with n input and m output
  * These operations can be done if the BB contains only conditional statements and phi
- * First duplicate the block on all the n input and add the respective connections to predecessor and successors (bidirectional)
- * Each duplicate starts as an empty one with only connections
- * Then the new BB is populated by conditional functions derivated from the original statement list
+ * First duplicate the block on all the n input and add the respective connections to predecessor and successors
+ * (bidirectional) Each duplicate starts as an empty one with only connections Then the new BB is populated by
+ * conditional functions derivated from the original statement list
  *    - if cond is defined outside the BB keep them
- *    - if cond is defined in the BB then modify it leaving only the component of the condition defined in the BB predecessor
- * After that the phi statement defined in the original BB are added to the successors blocks changing this ssa names
- * To keep the tree coherent each time that an old ssa name of a phi is used substitute it with the new one
+ *    - if cond is defined in the BB then modify it leaving only the component of the condition defined in the BB
+ * predecessor After that the phi statement defined in the original BB are added to the successors blocks changing this
+ * ssa names To keep the tree coherent each time that an old ssa name of a phi is used substitute it with the new one
  * Then remove the old BB connections from predecessor and successors and eventually eliminate it
  *
  * for more details look at the comments in the code
@@ -115,7 +115,9 @@ REF_FORWARD_DECL(tree_node_dup);
 
 #define MAX_DOUBLE std::numeric_limits<double>::max();
 
-MultipleEntryIfReduction::MultipleEntryIfReduction(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+MultipleEntryIfReduction::MultipleEntryIfReduction(const ParameterConstRef _parameters,
+                                                   const application_managerRef _AppM, unsigned int _function_id,
+                                                   const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, MULTIPLE_ENTRY_IF_REDUCTION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -123,7 +125,8 @@ MultipleEntryIfReduction::MultipleEntryIfReduction(const ParameterConstRef _para
 
 MultipleEntryIfReduction::~MultipleEntryIfReduction() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> MultipleEntryIfReduction::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+MultipleEntryIfReduction::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -178,7 +181,8 @@ bool MultipleEntryIfReduction::HasToBeExecuted() const
    {
       return false;
    }
-   const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id));
+   const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(
+       FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id));
    if(!frontend_step)
    {
       return false;
@@ -195,7 +199,8 @@ void MultipleEntryIfReduction::Initialize()
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
    sl = GetPointerS<statement_list>(GET_NODE(fd->body));
-   if(GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->allocation_information)
+   if(GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) &&
+      GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->allocation_information)
    {
       allocation_information = GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->allocation_information;
    }
@@ -205,7 +210,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
 {
    THROW_ASSERT(parameters->IsParameter("meif_threshold"), "");
    const auto threshold = parameters->GetParameter<double>("meif_threshold");
-   const auto max_iteration_number = parameters->IsParameter("meif_max_iterations_number") ? parameters->GetParameter<size_t>("meif_max_iterations_number") : std::numeric_limits<size_t>::max();
+   const auto max_iteration_number = parameters->IsParameter("meif_max_iterations_number") ?
+                                         parameters->GetParameter<size_t>("meif_max_iterations_number") :
+                                         std::numeric_limits<size_t>::max();
 
    static size_t executed_iteration = 0;
    if(executed_iteration >= max_iteration_number)
@@ -227,7 +234,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
    const auto bb_index_map = bb_cfg->CGetBBGraphInfo()->bb_index_map;
 
    VertexIterator basic_block, basic_block_end;
-   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*bb_fcfg); basic_block != basic_block_end; basic_block++)
+   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*bb_fcfg); basic_block != basic_block_end;
+       basic_block++)
    {
       const auto block = bb_cfg->CGetBBNodeInfo(*basic_block)->block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block->number));
@@ -243,7 +251,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          continue;
       }
       const auto last_stmt = GET_NODE(block->CGetStmtList().back());
-      if((!parameters->IsParameter("MEIR_y") || !parameters->GetParameter<bool>("MEIR_y")) && last_stmt->get_kind() != gimple_cond_K && last_stmt->get_kind() != gimple_multi_way_if_K)
+      if((!parameters->IsParameter("MEIR_y") || !parameters->GetParameter<bool>("MEIR_y")) &&
+         last_stmt->get_kind() != gimple_cond_K && last_stmt->get_kind() != gimple_multi_way_if_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because does not end with a condition");
          continue;
@@ -272,15 +281,22 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
 
       if(vdef_op)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because there is at least a vdef or a computation of an address");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Skipped because there is at least a vdef or a computation of an address");
          continue;
       }
 
       const auto area_weight = GetAreaCost(block->CGetStmtList());
-      const auto multiplier = (parameters->IsParameter("MEIR_single") && parameters->GetParameter<bool>("MEIR_single")) ? 1 : static_cast<double>(boost::in_degree(*basic_block, *bb_fcfg) - 1);
+      const auto multiplier =
+          (parameters->IsParameter("MEIR_single") && parameters->GetParameter<bool>("MEIR_single")) ?
+              1 :
+              static_cast<double>(boost::in_degree(*basic_block, *bb_fcfg) - 1);
       if(area_weight * multiplier > threshold)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because too large " + STR(area_weight) + " * " + STR((static_cast<double>(boost::in_degree(*basic_block, *bb_fcfg)) - 1)) + " to be duplicated");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Skipped because too large " + STR(area_weight) + " * " +
+                            STR((static_cast<double>(boost::in_degree(*basic_block, *bb_fcfg)) - 1)) +
+                            " to be duplicated");
          continue;
       }
 
@@ -290,7 +306,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because header loop");
          continue;
       }
-      const bool source_feedback = boost::out_degree(*basic_block, *bb_cfg) != boost::out_degree(*basic_block, *bb_fcfg);
+      const bool source_feedback =
+          boost::out_degree(*basic_block, *bb_cfg) != boost::out_degree(*basic_block, *bb_fcfg);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Duplicating BB");
       modified = true;
 
@@ -304,7 +321,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       /// Create the copies
       CustomMap<unsigned int, unsigned int> copy_ids;
       InEdgeIterator to_be_copied_ie, to_be_copied_ie_end;
-      for(boost::tie(to_be_copied_ie, to_be_copied_ie_end) = boost::in_edges(*basic_block, *bb_cfg); to_be_copied_ie != to_be_copied_ie_end; to_be_copied_ie++)
+      for(boost::tie(to_be_copied_ie, to_be_copied_ie_end) = boost::in_edges(*basic_block, *bb_cfg);
+          to_be_copied_ie != to_be_copied_ie_end; to_be_copied_ie++)
       {
          const auto source = boost::source(*to_be_copied_ie, *bb_cfg);
          const auto source_block = bb_cfg->CGetBBNodeInfo(source)->block;
@@ -323,7 +341,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          new_block->SetSSAUsesComputed();
          sl->list_of_bloc[new_bb_index] = new_block;
 
-         std::replace(source_block->list_of_succ.begin(), source_block->list_of_succ.end(), block->number, new_bb_index);
+         std::replace(source_block->list_of_succ.begin(), source_block->list_of_succ.end(), block->number,
+                      new_bb_index);
          if(source_block->true_edge == block->number)
          {
             source_block->true_edge = new_bb_index;
@@ -351,7 +370,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                new_block->false_edge = target_id;
             }
          }
-         if(source_block->CGetStmtList().size() && GetPointer<gimple_multi_way_if>(GET_NODE(source_block->CGetStmtList().back())))
+         if(source_block->CGetStmtList().size() &&
+            GetPointer<gimple_multi_way_if>(GET_NODE(source_block->CGetStmtList().back())))
          {
             const auto gmwi = GetPointerS<gimple_multi_way_if>(GET_NODE(source_block->CGetStmtList().back()));
             for(auto& cond : gmwi->list_of_cond)
@@ -382,7 +402,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                if(def_edge.second == block->number)
                {
                   const auto sn = GetPointer<const ssa_name>(GET_NODE(def_edge.first));
-                  if(!sn || GetPointerS<const gimple_node>(GET_CONST_NODE(sn->CGetDefStmt()))->bb_index != block->number)
+                  if(!sn ||
+                     GetPointerS<const gimple_node>(GET_CONST_NODE(sn->CGetDefStmt()))->bb_index != block->number)
                   {
                      for(const auto& copy_id : copy_ids)
                      {
@@ -404,9 +425,11 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed phi " + STR(phi));
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed phis of BB" + STR(target_block->number));
-         if(std::find(target_block->list_of_pred.begin(), target_block->list_of_pred.end(), block->number) != target_block->list_of_pred.end())
+         if(std::find(target_block->list_of_pred.begin(), target_block->list_of_pred.end(), block->number) !=
+            target_block->list_of_pred.end())
          {
-            target_block->list_of_pred.erase(std::find(target_block->list_of_pred.begin(), target_block->list_of_pred.end(), block->number));
+            target_block->list_of_pred.erase(
+                std::find(target_block->list_of_pred.begin(), target_block->list_of_pred.end(), block->number));
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed phis");
@@ -458,7 +481,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             defined_sns.insert(old_gp->res);
             for(const auto& def_edge : old_gp->CGetDefEdgesList())
             {
-               THROW_ASSERT(copy_ids.count(def_edge.second), "Copy BB connected to BB" + STR(def_edge.second) + " not found");
+               THROW_ASSERT(copy_ids.count(def_edge.second),
+                            "Copy BB connected to BB" + STR(def_edge.second) + " not found");
                reaching_defs[copy_ids[def_edge.second]] = def_edge.first;
                remaps[copy_ids[def_edge.second]][old_gp->res->index] = def_edge.first->index;
             }
@@ -471,7 +495,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                defined_sns.insert(old_ga->op0);
             }
          }
-         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_multi_way_if_K || GET_CONST_NODE(gimple)->get_kind() == gimple_cond_K || GET_CONST_NODE(gimple)->get_kind() == gimple_return_K)
+         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_multi_way_if_K ||
+                 GET_CONST_NODE(gimple)->get_kind() == gimple_cond_K ||
+                 GET_CONST_NODE(gimple)->get_kind() == gimple_return_K)
          {
          }
          else
@@ -489,7 +515,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             for(const auto& ssa_use : ssa_uses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use " + STR(ssa_use.first));
-               if(GetPointerS<const gimple_node>(GET_CONST_NODE(GetPointerS<const ssa_name>(GET_CONST_NODE(ssa_use.first))->CGetDefStmt()))->bb_index == block->number)
+               if(GetPointerS<const gimple_node>(
+                      GET_CONST_NODE(GetPointerS<const ssa_name>(GET_CONST_NODE(ssa_use.first))->CGetDefStmt()))
+                      ->bb_index == block->number)
                {
 #if HAVE_ASSERTS
                   for(const auto& copy : copy_ids)
@@ -511,17 +539,21 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                }
                if(ga->vdef)
                {
-                  const auto new_ssa = tree_man->create_ssa_name(nullptr, GetPointerS<const ssa_name>(GET_CONST_NODE(ga->vdef))->type, nullptr, nullptr);
+                  const auto new_ssa = tree_man->create_ssa_name(
+                      nullptr, GetPointerS<const ssa_name>(GET_CONST_NODE(ga->vdef))->type, nullptr, nullptr);
                   GetPointerS<ssa_name>(GET_NODE(new_ssa))->virtual_flag = true;
                   remaps[copy.second][ga->vdef->index] = new_ssa->index;
                   reaching_defs[copy.second] = new_ssa;
                }
                const auto new_stmt = tree_node_dups[copy.second]->create_tree_node(GET_NODE(gimple));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New statement (" + STR(new_stmt) + ") is " + STR(TM->CGetTreeNode(new_stmt)));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---New statement (" + STR(new_stmt) + ") is " + STR(TM->CGetTreeNode(new_stmt)));
                sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeReindex(new_stmt), AppM);
             }
          }
-         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_multi_way_if_K || GET_CONST_NODE(gimple)->get_kind() == gimple_cond_K || GET_CONST_NODE(gimple)->get_kind() == gimple_return_K)
+         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_multi_way_if_K ||
+                 GET_CONST_NODE(gimple)->get_kind() == gimple_cond_K ||
+                 GET_CONST_NODE(gimple)->get_kind() == gimple_return_K)
          {
             const auto ssa_uses = tree_helper::ComputeSsaUses(gimple);
             for(const auto& ssa_use : ssa_uses)
@@ -529,7 +561,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use " + STR(ssa_use.first));
                for(const auto& copy : copy_ids)
                {
-                  if((GetPointerS<const gimple_node>(GET_CONST_NODE(GetPointerS<const ssa_name>(GET_CONST_NODE(ssa_use.first))->CGetDefStmt()))->bb_index != block->number))
+                  if((GetPointerS<const gimple_node>(
+                          GET_CONST_NODE(GetPointerS<const ssa_name>(GET_CONST_NODE(ssa_use.first))->CGetDefStmt()))
+                          ->bb_index != block->number))
                   {
                      /// Defined in a different basic block
                      remaps[copy.second][ssa_use.first->index] = ssa_use.first->index;
@@ -544,7 +578,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             for(const auto& copy : copy_ids)
             {
                const auto new_stmt = tree_node_dups[copy.second]->create_tree_node(GET_NODE(gimple));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New statement is " + STR(TM->CGetTreeNode(new_stmt)));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---New statement is " + STR(TM->CGetTreeNode(new_stmt)));
                sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeReindex(new_stmt), AppM);
             }
          }
@@ -560,7 +595,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             TreeNodeSet uses_to_be_removed;
             for(const auto& use_stmt : sn->CGetUseStmts())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use in " + STR(use_stmt.first->index) + " " + STR(use_stmt.first));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "-->Considering use in " + STR(use_stmt.first->index) + " " + STR(use_stmt.first));
                const auto use_bb_index = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt.first))->bb_index;
                if(bb_index_map.find(use_bb_index) == bb_index_map.end())
                {
@@ -582,14 +618,16 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                auto use_depth = loops->CGetLoop(use_loop_id)->depth;
 
                /// Management of vuses for overwrite
-               if(sn->virtual_flag && GET_NODE(use_stmt.first)->get_kind() != gimple_phi_K && !function_behavior->CheckBBReachability(*basic_block, use_bb))
+               if(sn->virtual_flag && GET_NODE(use_stmt.first)->get_kind() != gimple_phi_K &&
+                  !function_behavior->CheckBBReachability(*basic_block, use_bb))
                {
                   const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
                   THROW_ASSERT(gn->vovers.find(defined_sn) == gn->vovers.end(), "vovers not handled");
                   THROW_ASSERT(gn->vuses.find(defined_sn) != gn->vuses.end(), "vuse not found");
                   gn->vuses.erase(defined_sn);
                   uses_to_be_removed.insert(use_stmt.first);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(defined_sn) + " from vuses of " + gn->ToString());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Removing " + STR(defined_sn) + " from vuses of " + gn->ToString());
                   for(const auto& copy : copy_ids)
                   {
                      if(gn->AddVuse(TM->GetTreeReindex(remaps[copy.second][sn->index])))
@@ -606,7 +644,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                   continue;
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition and use are in different loops");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current loop is " + STR(loop_id) + " (depth is " + STR(depth) + ") - Use loop is " + STR(use_loop_id) + " (depth " + STR(use_depth) + ")");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Current loop is " + STR(loop_id) + " (depth is " + STR(depth) + ") - Use loop is " +
+                                  STR(use_loop_id) + " (depth " + STR(use_depth) + ")");
                /// Use is in a more nested loop
                while(use_depth > depth)
                {
@@ -625,7 +665,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                   loop_id = loops->CGetLoop(loop_id)->Parent()->GetId();
                   depth = loops->CGetLoop(loop_id)->depth;
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Loop to be considered updated to " + STR(loop_id));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "<--Loop to be considered updated to " + STR(loop_id));
             }
             for(const auto& use_to_be_removed : uses_to_be_removed)
             {
@@ -639,11 +680,13 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             while(current_loop->GetId() != loop_id)
             {
                phi_headers.insert(current_loop->GetHeader());
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
                current_loop = current_loop->Parent();
             }
             phi_headers.insert(current_loop->GetHeader());
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
 
             /// Set of basic blocks belonging to the loop
             CustomUnorderedSet<vertex> loop_basic_blocks;
@@ -656,19 +699,25 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                CustomSet<vertex> to_be_removed;
                for(const auto current : loop_basic_blocks)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering BB" + STR(bb_cfg->CGetBBNodeInfo(current)->block->number));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Considering BB" + STR(bb_cfg->CGetBBNodeInfo(current)->block->number));
                   bool reachable = false;
                   for(const auto use_bb : use_bbs)
                   {
                      if(function_behavior->CheckBBReachability(current, use_bb))
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(bb_cfg->CGetBBNodeInfo(use_bb)->block->number) + " can be reached from BB" + STR(bb_cfg->CGetBBNodeInfo(current)->block->number));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---BB" + STR(bb_cfg->CGetBBNodeInfo(use_bb)->block->number) +
+                                           " can be reached from BB" +
+                                           STR(bb_cfg->CGetBBNodeInfo(current)->block->number));
                         reachable = true;
                         break;
                      }
                      else if(current == use_bb)
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(bb_cfg->CGetBBNodeInfo(use_bb)->block->number) + " contains a use");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---BB" + STR(bb_cfg->CGetBBNodeInfo(use_bb)->block->number) +
+                                           " contains a use");
                         reachable = true;
                         break;
                      }
@@ -680,15 +729,18 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                }
                for(const auto removable : to_be_removed)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_cfg->CGetBBNodeInfo(removable)->block->number));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Removing BB" + STR(bb_cfg->CGetBBNodeInfo(removable)->block->number));
                   loop_basic_blocks.erase(removable);
                }
             }
 
             /// Set of basic blocks to be analyzed
-            std::set<vertex, bb_vertex_order_by_map> to_be_processed(bb_vertex_order_by_map(function_behavior->get_bb_map_levels()));
+            std::set<vertex, bb_vertex_order_by_map> to_be_processed(
+                bb_vertex_order_by_map(function_behavior->get_bb_map_levels()));
             OutEdgeIterator oe_basic_block, oe_basic_block_end;
-            for(boost::tie(oe_basic_block, oe_basic_block_end) = boost::out_edges(*basic_block, *bb_cfg); oe_basic_block != oe_basic_block_end; oe_basic_block++)
+            for(boost::tie(oe_basic_block, oe_basic_block_end) = boost::out_edges(*basic_block, *bb_cfg);
+                oe_basic_block != oe_basic_block_end; oe_basic_block++)
             {
                const auto target = boost::target(*oe_basic_block, *bb_cfg);
                if(loop_basic_blocks.find(target) != loop_basic_blocks.end())
@@ -711,7 +763,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single entry BB");
                   const auto source_id = current_block->list_of_pred.front();
-                  if(reaching_defs.find(current_id) == reaching_defs.end() && reaching_defs.find(source_id) != reaching_defs.end())
+                  if(reaching_defs.find(current_id) == reaching_defs.end() &&
+                     reaching_defs.find(source_id) != reaching_defs.end())
                   {
                      reaching_defs[current_id] = reaching_defs[source_id];
                   }
@@ -728,25 +781,32 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                      const auto source_id = bb_fcfg->CGetBBNodeInfo(source)->block->number;
                      if(bb_fcfg->GetSelector(*ie) & FB_CFG_SELECTOR)
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping feedback edge coming from BB" + STR(source_id));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Skipping feedback edge coming from BB" + STR(source_id));
                      }
                      else if(source_id == block->number)
                      {
                         for(const auto& copy_id : copy_ids)
                         {
-                           THROW_ASSERT(reaching_defs.find(copy_id.second) != reaching_defs.end(), "Definition coming from BB" + STR(copy_id.second) + " not found");
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(reaching_defs.find(copy_id.second)->second) + " from BB" + STR(copy_id.second));
+                           THROW_ASSERT(reaching_defs.find(copy_id.second) != reaching_defs.end(),
+                                        "Definition coming from BB" + STR(copy_id.second) + " not found");
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---" + STR(reaching_defs.find(copy_id.second)->second) + " from BB" +
+                                              STR(copy_id.second));
                            local_reaching_defs.insert(reaching_defs.find(copy_id.second)->second);
                         }
                      }
                      else if(reaching_defs.find(source_id) != reaching_defs.end())
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(reaching_defs.find(source_id)->second) + " from BB" + STR(source_id));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---" + STR(reaching_defs.find(source_id)->second) + " from BB" +
+                                           STR(source_id));
                         local_reaching_defs.insert(reaching_defs[source_id]);
                      }
                      else
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing comes from BB" + STR(source_id));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Nothing comes from BB" + STR(source_id));
                         build_phi = false;
                      }
                   }
@@ -772,7 +832,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                               {
                                  THROW_ASSERT(reaching_defs.find(copy_id.second) != reaching_defs.end(), "");
                                  THROW_ASSERT(reaching_defs.find(copy_id.second)->second, "");
-                                 def_edges.push_back(gimple_phi::DefEdge(reaching_defs[copy_id.second], copy_id.second));
+                                 def_edges.push_back(
+                                     gimple_phi::DefEdge(reaching_defs[copy_id.second], copy_id.second));
                               }
                            }
                            else
@@ -785,17 +846,24 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                               }
                               else
                               {
-                                 THROW_ASSERT(bb_fcfg->CGetBBNodeInfo(current)->loop_id == bb_fcfg->CGetBBNodeInfo(current)->block->number, "");
+                                 THROW_ASSERT(bb_fcfg->CGetBBNodeInfo(current)->loop_id ==
+                                                  bb_fcfg->CGetBBNodeInfo(current)->block->number,
+                                              "");
                                  def_edges.push_back(gimple_phi::DefEdge(reaching_defs[current_id], source_id));
                               }
                            }
                         }
                         tree_nodeRef phi_def_ssa_node;
-                        const auto phi_gimple_stmt = tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, current_id, sn->virtual_flag);
-                        THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index == tree_helper::CGetType(TM->CGetTreeReindex(sn->index))->index, "");
+                        const auto phi_gimple_stmt = tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id,
+                                                                               current_id, sn->virtual_flag);
+                        THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index ==
+                                         tree_helper::CGetType(TM->CGetTreeReindex(sn->index))->index,
+                                     "");
                         auto new_gp = GetPointerS<gimple_phi>(GET_NODE(phi_gimple_stmt));
                         new_gp->SetSSAUsesComputed();
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa_" + STR(GetPointer<const ssa_name>(GET_CONST_NODE(phi_def_ssa_node))->vers));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Created ssa_" +
+                                           STR(GetPointer<const ssa_name>(GET_CONST_NODE(phi_def_ssa_node))->vers));
                         bb_cfg->GetBBNodeInfo(current)->block->AddPhi(phi_gimple_stmt);
                         reaching_defs[current_id] = phi_def_ssa_node;
                         added_phis[current] = phi_gimple_stmt;
@@ -813,7 +881,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         auto local_gp = GetPointerS<gimple_phi>(GET_NODE(local_phi));
                         for(const auto& def_edge : local_gp->CGetDefEdgesList())
                         {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(def_edge.first) + " comes from BB" + STR(def_edge.second));
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---" + STR(def_edge.first) + " comes from BB" + STR(def_edge.second));
                            if(def_edge.first->index == sn->index)
                            {
                               if(def_edge.second == block->number)
@@ -821,14 +890,18 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                                  for(const auto& copy_id : copy_ids)
                                  {
                                     const auto new_source_id = copy_id.second;
-                                    THROW_ASSERT(reaching_defs.find(new_source_id) != reaching_defs.end(), "Defintion coming from " + STR(new_source_id) + " not found");
-                                    new_def_edge_list.push_back(gimple_phi::DefEdge(reaching_defs.find(new_source_id)->second, new_source_id));
+                                    THROW_ASSERT(reaching_defs.find(new_source_id) != reaching_defs.end(),
+                                                 "Defintion coming from " + STR(new_source_id) + " not found");
+                                    new_def_edge_list.push_back(
+                                        gimple_phi::DefEdge(reaching_defs.find(new_source_id)->second, new_source_id));
                                  }
                               }
                               else
                               {
-                                 THROW_ASSERT(reaching_defs.find(def_edge.second) != reaching_defs.end(), "Defintion coming from " + STR(def_edge.second) + " not found");
-                                 new_def_edge_list.push_back(gimple_phi::DefEdge(reaching_defs.find(def_edge.second)->second, def_edge.second));
+                                 THROW_ASSERT(reaching_defs.find(def_edge.second) != reaching_defs.end(),
+                                              "Defintion coming from " + STR(def_edge.second) + " not found");
+                                 new_def_edge_list.push_back(
+                                     gimple_phi::DefEdge(reaching_defs.find(def_edge.second)->second, def_edge.second));
                               }
                            }
                            else
@@ -837,7 +910,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                            }
                         }
                         local_gp->SetDefEdgeList(TM, new_def_edge_list);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed in " + local_gp->ToString());
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "<--Transformed in " + local_gp->ToString());
                      }
                   }
                }
@@ -849,7 +923,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                   {
                      if(use_stmts.find(stmt) != use_stmts.end())
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(sn) + " with " + STR(reaching_defs[current_id]) + " in " + STR(stmt));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Replacing " + STR(sn) + " with " + STR(reaching_defs[current_id]) + " in " +
+                                           STR(stmt));
                         TM->ReplaceTreeNode(stmt, TM->GetTreeReindex(sn->index), reaching_defs[current_id]);
                      }
                   }
@@ -862,7 +938,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                   const auto target = boost::target(*oe, *bb_fcfg);
                   if(loop_basic_blocks.find(target) != loop_basic_blocks.end())
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering BB" + STR(bb_fcfg->CGetBBNodeInfo(target)->block->number));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Considering BB" + STR(bb_fcfg->CGetBBNodeInfo(target)->block->number));
                      if((bb_fcfg->GetSelector(*oe) & FB_CFG_SELECTOR) != 0)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connected by feedback edge");
@@ -875,7 +952,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                               if(def_edge.first->index == sn->index && def_edge.second == current_id)
                               {
                                  THROW_ASSERT(reaching_defs.find(current_id) != reaching_defs.end(), "");
-                                 gp->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(reaching_defs.find(current_id)->second, def_edge.second));
+                                 gp->ReplaceDefEdge(
+                                     TM, def_edge,
+                                     gimple_phi::DefEdge(reaching_defs.find(current_id)->second, def_edge.second));
                               }
                            }
                         }
@@ -888,7 +967,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked successors");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked BB" + STR(bb_cfg->CGetBBNodeInfo(current)->block->number));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "<--Checked BB" + STR(bb_cfg->CGetBBNodeInfo(current)->block->number));
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated uses of " + sn->ToString());
          }
@@ -897,14 +977,16 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       /// If the basic block is the source of a feedback edge, fix the phi in the header
       if(source_feedback)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Duplicating BB is source of feeback edges - Fixing header phis");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Duplicating BB is source of feeback edges - Fixing header phis");
          for(boost::tie(oe, oe_end) = boost::out_edges(*basic_block, *bb_fcfg); oe != oe_end; oe++)
          {
             if(bb_fcfg->GetSelector(*oe) & FB_CFG_SELECTOR)
             {
                const auto header = boost::target(*oe, *bb_fcfg);
                const auto& header_bb_node_info = bb_fcfg->CGetBBNodeInfo(header)->block;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BB" + STR(header_bb_node_info->number) + " is the header");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "BB" + STR(header_bb_node_info->number) + " is the header");
                for(const auto& phi : header_bb_node_info->CGetPhiList())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing " + STR(phi));
@@ -922,8 +1004,12 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         for(const auto& copy : copy_ids)
                         {
                            THROW_ASSERT(remaps.find(copy.second) != remaps.end(), STR(copy.second));
-                           THROW_ASSERT(remaps.find(copy.second)->second.find(old_def_edge.first->index) != remaps.find(copy.second)->second.end(), STR(old_def_edge.first->index) + " " + STR(TM->CGetTreeNode(old_def_edge.first->index)));
-                           new_def_edge_list.push_back(gimple_phi::DefEdge(TM->GetTreeReindex(remaps[copy.second][old_def_edge.first->index]), copy.second));
+                           THROW_ASSERT(remaps.find(copy.second)->second.find(old_def_edge.first->index) !=
+                                            remaps.find(copy.second)->second.end(),
+                                        STR(old_def_edge.first->index) + " " +
+                                            STR(TM->CGetTreeNode(old_def_edge.first->index)));
+                           new_def_edge_list.push_back(gimple_phi::DefEdge(
+                               TM->GetTreeReindex(remaps[copy.second][old_def_edge.first->index]), copy.second));
                         }
                      }
                   }
@@ -932,7 +1018,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Duplicated BB is source of feeback edges - Fixing header phis");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Duplicated BB is source of feeback edges - Fixing header phis");
       }
       while(block->CGetStmtList().size())
       {
@@ -952,7 +1039,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
    if(modified)
    {
       function_behavior->UpdateBBVersion();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->starting erasing blocks " + STR(block_to_erase.size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->starting erasing blocks " + STR(block_to_erase.size()));
       /// eliminate the  blocks (remove them from the tree)
 
       while(!block_to_erase.empty())

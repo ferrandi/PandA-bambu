@@ -80,7 +80,8 @@
 #include <string>
 #include <tuple>
 
-easy_module_binding::easy_module_binding(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+easy_module_binding::easy_module_binding(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                         unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::EASY_MODULE_BINDING)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
@@ -104,17 +105,20 @@ void easy_module_binding::Initialize()
    }
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> easy_module_binding::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+easy_module_binding::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::SAME_FUNCTION));
          if(HLSMgr->get_HLS(funId))
          {
-            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->chaining_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->chaining_algorithm, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          break;
       }
@@ -175,7 +179,8 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Easy binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "-->Easy binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
    /// check easy binding and compute the list of vertices for which a sharing is possible
    if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
    {
@@ -199,7 +204,11 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
          if(node_id)
          {
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
-                           "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
+                           "---" + GET_NAME(sdg, op) + "(" +
+                               (node_id == ENTRY_ID ?
+                                    "ENTRY" :
+                                    (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) +
+                               ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
          }
       }
    }
@@ -215,7 +224,9 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
          fu_unit = fu.get_assign(op);
          if(allocation_information->is_vertex_bounded(fu_unit) ||
             (allocation_information->is_memory_unit(fu_unit) &&
-             (!allocation_information->is_readonly_memory_unit(fu_unit) || (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
+             (!allocation_information->is_readonly_memory_unit(fu_unit) ||
+              (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) &&
+               (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
              allocation_information->get_number_channels(fu_unit) == 1) ||
             n_shared_fu.find(fu_unit)->second == 1)
          {
@@ -225,16 +236,22 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
             if(node_id)
             {
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
-                              "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
+                              "---" + GET_NAME(sdg, op) + "(" +
+                                  (node_id == ENTRY_ID ?
+                                       "ENTRY" :
+                                       (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) +
+                                  ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
             }
          }
       }
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
    }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform easy binding: " + print_cpu_time(step_time) + " seconds");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "Time to perform easy binding: " + print_cpu_time(step_time) + " seconds");
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)

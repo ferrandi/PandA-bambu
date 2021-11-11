@@ -147,7 +147,15 @@ struct StateInfo : public NodeInfo
    /**
     * Constructor
     */
-   StateInfo() : funId(0), is_dummy(false), is_duplicated(false), sourceBb(0), isOriginalState(false), clonedState(NULL_VERTEX), all_paths(false), loopId(0)
+   StateInfo()
+       : funId(0),
+         is_dummy(false),
+         is_duplicated(false),
+         sourceBb(0),
+         isOriginalState(false),
+         clonedState(NULL_VERTEX),
+         all_paths(false),
+         loopId(0)
    {
    }
 };
@@ -289,7 +297,8 @@ class StateTransitionGraphsCollection : public graphs_collection
     * @param state_transition_graph_info is the info to be associated with the graph
     * @param parameters is the set of input parameters
     */
-   StateTransitionGraphsCollection(const StateTransitionGraphInfoRef state_transition_graph_info, const ParameterConstRef parameters);
+   StateTransitionGraphsCollection(const StateTransitionGraphInfoRef state_transition_graph_info,
+                                   const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -304,7 +313,8 @@ class StateTransitionGraphsCollection : public graphs_collection
     * @param info is the information to be associated
     * @return the created edge
     */
-   inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector, const TransitionInfoRef info)
+   inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector,
+                                 const TransitionInfoRef info)
    {
       THROW_ASSERT(not ExistsEdge(source, target), "Trying to create an already existing edge");
       return InternalAddEdge(source, target, selector, RefcountCast<EdgeInfo>(info));
@@ -333,7 +343,8 @@ struct StateTransitionGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int selector, CustomUnorderedSet<vertex>& sub);
+   StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int selector,
+                        CustomUnorderedSet<vertex>& sub);
 
    /**
     * Destructor
@@ -372,7 +383,9 @@ struct StateTransitionGraph : public graph
     */
    inline vertex GetVertex(unsigned int state_id) const
    {
-      THROW_ASSERT(CGetStateTransitionGraphInfo()->state_id_to_vertex.find(state_id) != CGetStateTransitionGraphInfo()->state_id_to_vertex.end(), "State ID " + STR(state_id) + " was not stored");
+      THROW_ASSERT(CGetStateTransitionGraphInfo()->state_id_to_vertex.find(state_id) !=
+                       CGetStateTransitionGraphInfo()->state_id_to_vertex.end(),
+                   "State ID " + STR(state_id) + " was not stored");
       return CGetStateTransitionGraphInfo()->state_id_to_vertex.at(state_id);
    }
 
@@ -483,7 +496,8 @@ class TransitionWriter : public EdgeWriter
 class last_intermediate_state
 {
  public:
-   last_intermediate_state(StateTransitionGraphConstRef input_state_graph, bool enable) : state_graph(input_state_graph), pipeline(enable)
+   last_intermediate_state(StateTransitionGraphConstRef input_state_graph, bool enable)
+       : state_graph(input_state_graph), pipeline(enable)
    {
    }
 
@@ -529,7 +543,8 @@ class next_unique_state
       bool multiple_out_edges = false;
 #endif
       vertex next_state = NULL_VERTEX;
-      for(boost::tie(out_edge, out_edge_end) = boost::out_edges(state, *state_graph); out_edge != out_edge_end; ++out_edge)
+      for(boost::tie(out_edge, out_edge_end) = boost::out_edges(state, *state_graph); out_edge != out_edge_end;
+          ++out_edge)
       {
          next_state = boost::target(*out_edge, *state_graph);
          THROW_ASSERT(not multiple_out_edges, "First state has multiple out edges");

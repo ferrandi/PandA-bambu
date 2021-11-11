@@ -112,7 +112,8 @@
 #define OPT_MINUS_MAP 269
 #define OPT_GC_SECTIONS 270
 
-tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string& _program_name, int _argc, char** const _argv) : Parameter(_program_name, _argc, _argv)
+tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string& _program_name, int _argc, char** const _argv)
+    : Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
 }
@@ -312,9 +313,11 @@ int tree_panda_gcc_parameter::Exec()
          }
          case OPT_PRINT_FILE_NAME:
          {
-            const CompilerWrapper_OptimizationSet optimization_set = getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
+            const CompilerWrapper_OptimizationSet optimization_set =
+                getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
             refcount<tree_panda_gcc_parameter> param(this, null_deleter());
-            CompilerWrapperRef Wrap = CompilerWrapperRef(new CompilerWrapper(param, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, optimization_set));
+            CompilerWrapperRef Wrap = CompilerWrapperRef(
+                new CompilerWrapper(param, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, optimization_set));
             Wrap->QueryCompilerConfig("--print-file-name=" + std::string(optarg));
             return EXIT_SUCCESS;
          }
@@ -403,7 +406,8 @@ void tree_panda_gcc_parameter::CheckParameters()
 
 void tree_panda_gcc_parameter::PrintHelp(std::ostream& os) const
 {
-   os << "Usage: " << getOption<std::string>(OPT_program_name) << " [options] <input_file1> [<input_file2> ... <input_fileN>]" << std::endl;
+   os << "Usage: " << getOption<std::string>(OPT_program_name)
+      << " [options] <input_file1> [<input_file2> ... <input_fileN>]" << std::endl;
    os << std::endl;
    os << "Options: \n"
       << "\n";

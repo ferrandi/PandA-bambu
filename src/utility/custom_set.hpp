@@ -51,7 +51,8 @@
 #include <set>
 #include <unordered_set>
 
-template <class _Value, class _Hash = std::hash<_Value>, class _Pred = std::equal_to<_Value>, class _Alloc = std::allocator<_Value>>
+template <class _Value, class _Hash = std::hash<_Value>, class _Pred = std::equal_to<_Value>,
+          class _Alloc = std::allocator<_Value>>
 using UnorderedSetStd = std::unordered_set<_Value, _Hash, _Pred, _Alloc>;
 
 template <typename Key, typename Compare = std::less<Key>, typename Alloc = std::allocator<Key>>
@@ -63,7 +64,8 @@ using OrderedSetStd = std::set<Key, Compare, Alloc>;
 #endif
 #include <algorithm>
 
-template <class _Value, class _Hash = std::hash<_Value>, class _Pred = std::equal_to<_Value>, class _Alloc = std::allocator<_Value>>
+template <class _Value, class _Hash = std::hash<_Value>, class _Pred = std::equal_to<_Value>,
+          class _Alloc = std::allocator<_Value>>
 using UnorderedSetStdStable = UnorderedSetStd<_Value, _Hash, _Pred, _Alloc>;
 
 template <class T, class _Hash = std::hash<T>, class _Pred = std::equal_to<T>, class _Alloc = std::allocator<T>>
@@ -135,7 +137,8 @@ class CustomOrderedSet : public OrderedSetStd<Key, Compare, _Alloc>
    CustomOrderedSet operator-(const CustomOrderedSet& other) const
    {
       CustomOrderedSet return_value;
-      std::set_difference(this->begin(), this->end(), other.begin(), other.end(), std::inserter(return_value, return_value.begin()));
+      std::set_difference(this->begin(), this->end(), other.begin(), other.end(),
+                          std::inserter(return_value, return_value.begin()));
       return return_value;
    }
 
@@ -207,10 +210,12 @@ using CustomSet = CustomOrderedSet<T>;
 #pragma clang diagnostic pop
 #endif
 
-template <class _Value, class _Hash = typename absl::node_hash_set<_Value>::hasher, class _Pred = typename absl::node_hash_set<_Value>::key_equal, class _Alloc = std::allocator<_Value>>
+template <class _Value, class _Hash = typename absl::node_hash_set<_Value>::hasher,
+          class _Pred = typename absl::node_hash_set<_Value>::key_equal, class _Alloc = std::allocator<_Value>>
 using UnorderedSetStdStable = absl::node_hash_set<_Value, _Hash, _Pred, _Alloc>;
 
-template <class T, class _Hash = typename absl::flat_hash_set<T>::hasher, class _Eq = typename absl::flat_hash_set<T>::key_equal, class _Alloc = std::allocator<T>>
+template <class T, class _Hash = typename absl::flat_hash_set<T>::hasher,
+          class _Eq = typename absl::flat_hash_set<T>::key_equal, class _Alloc = std::allocator<T>>
 class CustomUnorderedSet : public absl::flat_hash_set<T, _Hash, _Eq, _Alloc>
 {
  public:
@@ -279,7 +284,8 @@ class CustomOrderedSet : public absl::btree_set<Key, Compare, Alloc>
    CustomOrderedSet operator-(const CustomOrderedSet& other) const
    {
       CustomOrderedSet return_value;
-      std::set_difference(this->begin(), this->end(), other.begin(), other.end(), std::inserter(return_value, return_value.begin()));
+      std::set_difference(this->begin(), this->end(), other.begin(), other.end(),
+                          std::inserter(return_value, return_value.begin()));
       return return_value;
    }
 

@@ -63,11 +63,15 @@ priority_static_mobility::priority_static_mobility(const ASLAPRef& aslap)
       {
          continue;
       }
-      operator[](*vIt) = from_strongtype_cast<int>(-alap->get_cstep(*vIt).second + asap->get_cstep(*vIt).second); /// Note that usually high priority in list based means low mobility.
+      operator[](*vIt) = from_strongtype_cast<int>(
+          -alap->get_cstep(*vIt).second +
+          asap->get_cstep(*vIt).second); /// Note that usually high priority in list based means low mobility.
    }
 }
 
-priority_dynamic_mobility::priority_dynamic_mobility(const ASLAPRef& aslap, const OpVertexSet& _ready_nodes, unsigned int _ctrl_step_multiplier) : ready_nodes(_ready_nodes), ctrl_step_multiplier(_ctrl_step_multiplier)
+priority_dynamic_mobility::priority_dynamic_mobility(const ASLAPRef& aslap, const OpVertexSet& _ready_nodes,
+                                                     unsigned int _ctrl_step_multiplier)
+    : ready_nodes(_ready_nodes), ctrl_step_multiplier(_ctrl_step_multiplier)
 {
    const ScheduleConstRef asap = aslap->CGetASAP();
    const ScheduleConstRef alap = aslap->CGetALAP();
@@ -80,7 +84,9 @@ priority_dynamic_mobility::priority_dynamic_mobility(const ASLAPRef& aslap, cons
       {
          continue;
       }
-      operator[](*vIt) = from_strongtype_cast<int>(-alap->get_cstep(*vIt).second + asap->get_cstep(*vIt).second); /// Note that usually high priority in list based means low mobility.
+      operator[](*vIt) = from_strongtype_cast<int>(
+          -alap->get_cstep(*vIt).second +
+          asap->get_cstep(*vIt).second); /// Note that usually high priority in list based means low mobility.
    }
 }
 

@@ -88,7 +88,8 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/range/adaptor/reversed.hpp>
 
-PhiOpt::PhiOpt(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+PhiOpt::PhiOpt(const application_managerRef _AppM, unsigned int _function_id,
+               const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, PHI_OPT, _design_flow_manager, _parameters), bb_modified(false)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -96,7 +97,8 @@ PhiOpt::PhiOpt(const application_managerRef _AppM, unsigned int _function_id, co
 
 PhiOpt::~PhiOpt() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> PhiOpt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+PhiOpt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -134,7 +136,8 @@ void PhiOpt::Initialize()
    const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
    sl = GetPointerS<statement_list>(GET_NODE(fd->body));
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING && GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING &&
+      GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
       schedule = GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
@@ -183,7 +186,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       for(const auto& block : sl->list_of_bloc)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking BB" + STR(block.first));
-         if(block.second->list_of_pred.size() >= 2 && block.second->CGetPhiList().size() && block.second->CGetStmtList().empty())
+         if(block.second->list_of_pred.size() >= 2 && block.second->CGetPhiList().size() &&
+            block.second->CGetStmtList().empty())
          {
             const auto successor = block.second->list_of_succ.front();
             THROW_ASSERT(sl->list_of_bloc.count(successor), "");
@@ -192,7 +196,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             const bool common_predecessor = [&]() {
                for(auto predecessor : block.second->list_of_pred)
                {
-                  if(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), predecessor) != succ_block->list_of_pred.end())
+                  if(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), predecessor) !=
+                     succ_block->list_of_pred.end())
                   {
                      return true;
                   }
@@ -229,7 +234,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             }();
             if(!only_phi_use)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because not used only in the second phi");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "<--Skipped because not used only in the second phi");
                continue;
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to the basic block to be merged");
@@ -246,7 +252,9 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
             {
                WriteBBGraphDot("BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) + ".dot");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) + ".dot");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Written BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) +
+                                  ".dot");
             }
          }
       }
@@ -289,7 +297,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          if(block.second->list_of_succ.size() == 1)
          {
             const auto succ_block = block.second->list_of_succ.front();
-            THROW_ASSERT(sl->list_of_bloc.count(succ_block), "Successor block BB" + STR(succ_block) + " does not exist");
+            THROW_ASSERT(sl->list_of_bloc.count(succ_block),
+                         "Successor block BB" + STR(succ_block) + " does not exist");
             if(sl->list_of_bloc.at(succ_block)->list_of_pred.size() == 1)
             {
                if(AppM->ApplyNewTransformation())
@@ -332,10 +341,13 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       {
          THROW_ASSERT(sl->list_of_bloc.count(bloc_to_be_analyzed), "");
          const auto& block = sl->list_of_bloc.at(bloc_to_be_analyzed);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block->number) + " Stmts= " + STR(block->CGetStmtList().size()) + " Phis=" + STR(block->CGetPhiList().size()));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Analyzing BB" + STR(block->number) + " Stmts= " + STR(block->CGetStmtList().size()) +
+                            " Phis=" + STR(block->CGetPhiList().size()));
 
          /// Remove nop
-         if(block->CGetStmtList().size() == 1 && GET_CONST_NODE(block->CGetStmtList().front())->get_kind() == gimple_nop_K)
+         if(block->CGetStmtList().size() == 1 &&
+            GET_CONST_NODE(block->CGetStmtList().front())->get_kind() == gimple_nop_K)
          {
             block->RemoveStmt(block->CGetStmtList().front(), AppM);
             bb_modified = true;
@@ -388,7 +400,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
          {
             WriteBBGraphDot("BB_Before_" + GetName() + "_Before_BB" + STR(block->number) + ".dot");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_Before_" + GetName() + "_Before_BB" + STR(block->number) + ".dot");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Written BB_Before_" + GetName() + "_Before_BB" + STR(block->number) + ".dot");
          }
          const auto pattern_type = IdentifyPattern(block->number);
          switch(pattern_type)
@@ -510,7 +523,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          if(block.second->list_of_succ.size() == 1)
          {
             const auto succ_block = block.second->list_of_succ.front();
-            THROW_ASSERT(sl->list_of_bloc.count(succ_block), "Successor block BB" + STR(succ_block) + " does not exist");
+            THROW_ASSERT(sl->list_of_bloc.count(succ_block),
+                         "Successor block BB" + STR(succ_block) + " does not exist");
             if(sl->list_of_bloc.at(succ_block)->list_of_pred.size() == 1)
             {
                if(AppM->ApplyNewTransformation())
@@ -535,13 +549,19 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       for(const auto& stmt : block.second->CGetStmtList())
       {
          const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
-         if(gn->get_kind() != gimple_nop_K || !gn->vdef || (gn->vovers.find(gn->vdef) != gn->vovers.end() && gn->vovers.size() > 1) || (gn->vovers.find(gn->vdef) == gn->vovers.end() && (!gn->vovers.empty())))
+         if(gn->get_kind() != gimple_nop_K || !gn->vdef ||
+            (gn->vovers.find(gn->vdef) != gn->vovers.end() && gn->vovers.size() > 1) ||
+            (gn->vovers.find(gn->vdef) == gn->vovers.end() && (!gn->vovers.empty())))
          {
             if(gn->get_kind() == gimple_nop_K)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---skipped gimple nop " + STR(gn->index) + (!gn->vdef ? "NOVDEF " : "VDEF ") + ((gn->vovers.find(gn->vdef) != gn->vovers.end() && gn->vovers.size() > 1) ? "cond1 " : "not cond1 ") +
-                                  ((gn->vovers.find(gn->vdef) == gn->vovers.end() && (!gn->vovers.empty())) ? "cond2 " : "not cond2 "));
+               INDENT_DBG_MEX(
+                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                   "---skipped gimple nop " + STR(gn->index) + (!gn->vdef ? "NOVDEF " : "VDEF ") +
+                       ((gn->vovers.find(gn->vdef) != gn->vovers.end() && gn->vovers.size() > 1) ? "cond1 " :
+                                                                                                   "not cond1 ") +
+                       ((gn->vovers.find(gn->vdef) == gn->vovers.end() && (!gn->vovers.empty())) ? "cond2 " :
+                                                                                                   "not cond2 "));
             }
             continue;
          }
@@ -582,7 +602,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                }();
                if(canBeProp)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Virtual ssa " + GET_CONST_NODE(gn->vdef)->ToString() + " not used in any phi");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "-->Virtual ssa " + GET_CONST_NODE(gn->vdef)->ToString() + " not used in any phi");
                   ReplaceVirtualUses(gn->vdef, gn->vuses);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removing gimple nop " + STR(gn->index));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -612,8 +633,11 @@ void PhiOpt::ApplyDiffNothing(const unsigned int bb_index)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Duplicating empty basic block");
    const auto& curr_block = sl->list_of_bloc.at(bb_index);
    const auto& succ_block = sl->list_of_bloc.at(curr_block->list_of_succ.front());
-   THROW_ASSERT(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index) != succ_block->list_of_pred.end(), "bb_index not included in the list of pred: " + STR(bb_index) + " succ: " + STR(succ_block->number));
-   succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
+   THROW_ASSERT(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index) !=
+                    succ_block->list_of_pred.end(),
+                "bb_index not included in the list of pred: " + STR(bb_index) + " succ: " + STR(succ_block->number));
+   succ_block->list_of_pred.erase(
+       std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
 
    CustomSet<unsigned int> created_bbs;
 
@@ -623,7 +647,8 @@ void PhiOpt::ApplyDiffNothing(const unsigned int bb_index)
 
       /// Create empty basic block
       const auto new_basic_block_index = (sl->list_of_bloc.rbegin())->first + 1;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Created BB" + STR(new_basic_block_index) + " as new successor of BB" + STR(pred));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Created BB" + STR(new_basic_block_index) + " as new successor of BB" + STR(pred));
       created_bbs.insert(new_basic_block_index);
       const auto new_block = blocRef(new bloc(new_basic_block_index));
       sl->list_of_bloc[new_basic_block_index] = new_block;
@@ -639,7 +664,8 @@ void PhiOpt::ApplyDiffNothing(const unsigned int bb_index)
       new_block->list_of_succ.push_back(succ_block->number);
 
       /// Fix successor of predecessor
-      pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
+      pred_block->list_of_succ.erase(
+          std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
       pred_block->list_of_succ.push_back(new_basic_block_index);
       if(pred_block->true_edge == bb_index)
       {
@@ -753,8 +779,10 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       }
       THROW_ASSERT(true_value, "True value not found");
       THROW_ASSERT(false_value, "False value not found");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From true edge " + GET_CONST_NODE(true_value)->ToString());
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From false edge " + GET_CONST_NODE(false_value)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---From true edge " + GET_CONST_NODE(true_value)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---From false edge " + GET_CONST_NODE(false_value)->ToString());
 
       tree_nodeRef gimple_node;
 
@@ -770,7 +798,8 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
          }
       }
       const auto gp_res = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res));
-      const auto ssa_node = tree_man->create_ssa_name(var, type_node, gp_res->min, gp_res->max, false, gp->virtual_flag);
+      const auto ssa_node =
+          tree_man->create_ssa_name(var, type_node, gp_res->min, gp_res->max, false, gp->virtual_flag);
       GetPointerS<ssa_name>(GET_NODE(ssa_node))->bit_values = gp_res->bit_values;
       if(gp->virtual_flag)
       {
@@ -789,11 +818,15 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       else
       {
          /// Create the cond expr
-         const auto cond_expr_node = tree_man->create_ternary_operation(type_node, condition, true_value, false_value, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
+         const auto cond_expr_node = tree_man->create_ternary_operation(
+             type_node, condition, true_value, false_value, BUILTIN_SRCP,
+             (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
 
          /// Create the assign
-         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP, pred_block->number);
+         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP,
+                                                           pred_block->number);
       }
       pred_block->PushBack(gimple_node, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + GET_CONST_NODE(gimple_node)->ToString());
@@ -826,7 +859,8 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
    pred_block->list_of_succ.push_back(succ_block->number);
 
    /// Refactoring of the cfg - updating the successor
-   succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
+   succ_block->list_of_pred.erase(
+       std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
 
    /// Remove the current basic block
    sl->list_of_bloc.erase(bb_index);
@@ -869,7 +903,8 @@ void PhiOpt::ApplyIfNothing(const unsigned int bb_index)
    pred_block->list_of_succ.push_back(pred_block->false_edge);
 
    /// Refactoring of the cfg - updating the successor
-   succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
+   succ_block->list_of_pred.erase(
+       std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
    succ_block->list_of_pred.push_back(pred_block->number);
 
    /// Remove the current basic block
@@ -897,11 +932,13 @@ void PhiOpt::ApplyGimpleNothing(const unsigned int bb_index)
    }
 
    /// Refactoring of the cfg - updating the predecessor
-   pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
+   pred_block->list_of_succ.erase(
+       std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
    pred_block->list_of_succ.push_back(succ_block->number);
 
    /// Refactoring of the cfg - updating the successor
-   succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
+   succ_block->list_of_pred.erase(
+       std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
    succ_block->list_of_pred.push_back(pred_block->number);
 
    /// Remove the current basic block
@@ -957,13 +994,17 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
          }
          else
          {
-            THROW_UNREACHABLE(std::string(true_edge ? "BB is on the true edge" : "BB is on the false edge") + " - Condition comes from BB" + STR(def_edge.second) + " - If basic block is BB" + STR((pred_block->number)));
+            THROW_UNREACHABLE(std::string(true_edge ? "BB is on the true edge" : "BB is on the false edge") +
+                              " - Condition comes from BB" + STR(def_edge.second) + " - If basic block is BB" +
+                              STR((pred_block->number)));
          }
       }
       THROW_ASSERT(true_value, "True value not found");
       THROW_ASSERT(false_value, "False value not found");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From true edge " + GET_CONST_NODE(true_value)->ToString());
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From false edge " + GET_CONST_NODE(false_value)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---From true edge " + GET_CONST_NODE(true_value)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---From false edge " + GET_CONST_NODE(false_value)->ToString());
 
       if(gp->virtual_flag)
       {
@@ -1006,13 +1047,18 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       else
       {
          /// Create the cond expr
-         const auto cond_expr_node = tree_man->create_ternary_operation(type_node, condition, true_value, false_value, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
+         const auto cond_expr_node = tree_man->create_ternary_operation(
+             type_node, condition, true_value, false_value, BUILTIN_SRCP,
+             (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
 
          /// Create the assign
-         const auto gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP, succ_block->number);
+         const auto gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id,
+                                                                      BUILTIN_SRCP, succ_block->number);
          succ_block->PushFront(gimple_node, AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created " + GET_CONST_NODE(gimple_node)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Created " + GET_CONST_NODE(gimple_node)->ToString());
       }
    }
 
@@ -1028,7 +1074,8 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
    pred_block->list_of_succ.push_back(succ_block->number);
 
    /// Refactoring of the cfg - updating the successor
-   succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
+   succ_block->list_of_pred.erase(
+       std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
 
    /// Remove the current basic block
    sl->list_of_bloc.erase(bb_index);
@@ -1093,7 +1140,8 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
    const auto new_cond = [&]() -> unsigned int {
       if(second_condition.first)
       {
-         const auto new_node = tree_man->CreateOrExpr(first_condition.first, second_condition.first, pred_block, function_id);
+         const auto new_node =
+             tree_man->CreateOrExpr(first_condition.first, second_condition.first, pred_block, function_id);
          return new_node->index;
       }
       else
@@ -1160,7 +1208,8 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
 
       /// Create the ssa with the new input of the phi
       tree_nodeRef var;
-      if(GET_CONST_NODE(first_value)->get_kind() == ssa_name_K && GET_CONST_NODE(second_value)->get_kind() == ssa_name_K)
+      if(GET_CONST_NODE(first_value)->get_kind() == ssa_name_K &&
+         GET_CONST_NODE(second_value)->get_kind() == ssa_name_K)
       {
          const auto sn1 = GetPointer<const ssa_name>(GET_CONST_NODE(first_value));
          const auto sn2 = GetPointer<const ssa_name>(GET_CONST_NODE(second_value));
@@ -1170,7 +1219,8 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
          }
       }
       const auto gp_res = GetPointer<const ssa_name>(GET_NODE(gp->res));
-      const auto ssa_node = tree_man->create_ssa_name(var, type_node, gp_res->min, gp_res->max, false, gp->virtual_flag);
+      const auto ssa_node =
+          tree_man->create_ssa_name(var, type_node, gp_res->min, gp_res->max, false, gp->virtual_flag);
       GetPointer<ssa_name>(GET_NODE(ssa_node))->bit_values = gp_res->bit_values;
       tree_nodeRef gimple_node;
       if(gp->virtual_flag)
@@ -1190,10 +1240,13 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       else
       {
          /// Create the cond expr
-         const auto cond_expr_node = tree_man->create_ternary_operation(type_node, first_condition.first, first_value, second_value, BUILTIN_SRCP, (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
+         const auto cond_expr_node = tree_man->create_ternary_operation(
+             type_node, first_condition.first, first_value, second_value, BUILTIN_SRCP,
+             (tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(type_node)) ? vec_cond_expr_K : cond_expr_K));
 
          /// Create the assign
-         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP, pred_block->number);
+         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP,
+                                                           pred_block->number);
       }
       pred_block->PushBack(gimple_node, AppM);
 
@@ -1225,10 +1278,12 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
    }
 
    /// Refactoring of the cfg - updating the predecessor
-   pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
+   pred_block->list_of_succ.erase(
+       std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
 
    /// Refactoring of the cfg - updating the successor
-   succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
+   succ_block->list_of_pred.erase(
+       std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
 
    /// Remove the current basic block
    sl->list_of_bloc.erase(bb_index);
@@ -1267,11 +1322,13 @@ void PhiOpt::ApplyMultiNothing(const unsigned int bb_index)
    }
 
    /// Refactoring of the cfg - updating the predecessor
-   pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
+   pred_block->list_of_succ.erase(
+       std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
    pred_block->list_of_succ.push_back(succ_block->number);
 
    /// Refactoring of the cfg - updating the successor
-   succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
+   succ_block->list_of_pred.erase(
+       std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
    succ_block->list_of_pred.push_back(pred_block->number);
 
    /// Remove the current basic block
@@ -1338,7 +1395,8 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
    const auto new_cond = [&]() -> tree_nodeRef {
       if(second_condition.first)
       {
-         const auto new_node = tree_man->CreateOrExpr(first_condition.first, second_condition.first, pred_block, function_id);
+         const auto new_node =
+             tree_man->CreateOrExpr(first_condition.first, second_condition.first, pred_block, function_id);
          return new_node;
       }
       return nullptr;
@@ -1439,15 +1497,19 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       else
       {
          /// Create the cond expr
-         const auto cond_expr_node = tree_man->create_ternary_operation(type_node, first_condition.first, first_value, second_value, BUILTIN_SRCP, (tree_helper::IsVectorType(type_node) ? vec_cond_expr_K : cond_expr_K));
+         const auto cond_expr_node = tree_man->create_ternary_operation(
+             type_node, first_condition.first, first_value, second_value, BUILTIN_SRCP,
+             (tree_helper::IsVectorType(type_node) ? vec_cond_expr_K : cond_expr_K));
 
          /// Create the assign
-         new_gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP, succ_block->number);
+         new_gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP,
+                                                               succ_block->number);
       }
       if(!gp->virtual_flag || create_gimple_nop)
       {
          succ_block->PushFront(new_gimple_node, AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added gimple assignment " + GET_CONST_NODE(new_gimple_node)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Added gimple assignment " + GET_CONST_NODE(new_gimple_node)->ToString());
       }
    }
 
@@ -1463,7 +1525,8 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
    }
 
    /// Refactoring of the cfg - updating the predecessor
-   pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
+   pred_block->list_of_succ.erase(
+       std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
 
    /// Refactoring of the cfg - updating the successor
    succ_block->list_of_pred.clear();
@@ -1483,19 +1546,25 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty basic block connected to Entry");
       return PhiOpt_PatternType::UNCHANGED;
    }
-   if(std::find(curr_block->list_of_succ.begin(), curr_block->list_of_succ.end(), bb_index) != curr_block->list_of_succ.end())
+   if(std::find(curr_block->list_of_succ.begin(), curr_block->list_of_succ.end(), bb_index) !=
+      curr_block->list_of_succ.end())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Sink BB");
       return PhiOpt_PatternType::UNCHANGED;
    }
-   if(curr_block->CGetStmtList().empty() && curr_block->list_of_pred.size() == 2 && curr_block->list_of_succ.size() == 1)
+   if(curr_block->CGetStmtList().empty() && curr_block->list_of_pred.size() == 2 &&
+      curr_block->list_of_succ.size() == 1)
    {
       const auto succ_bbi = curr_block->list_of_succ.front();
       const auto loop_bb = std::find(curr_block->list_of_pred.begin(), curr_block->list_of_pred.end(), succ_bbi);
-      const auto infinite_empty_loop = sl->list_of_bloc.at(succ_bbi)->CGetStmtList().empty() && loop_bb != curr_block->list_of_pred.end();
+      const auto infinite_empty_loop =
+          sl->list_of_bloc.at(succ_bbi)->CGetStmtList().empty() && loop_bb != curr_block->list_of_pred.end();
       if(infinite_empty_loop)
       {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Infinite empty loop is present in the code in function " + tree_helper::print_function_name(TM, GetPointerS<const function_decl>(TM->CGetTreeNode(function_id))));
+         INDENT_OUT_MEX(
+             OUTPUT_LEVEL_MINIMUM, output_level,
+             "Infinite empty loop is present in the code in function " +
+                 tree_helper::print_function_name(TM, GetPointerS<const function_decl>(TM->CGetTreeNode(function_id))));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Infinite empty loop");
          return PhiOpt_PatternType::UNCHANGED;
       }
@@ -1514,15 +1583,19 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
       const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(phi));
       if(phi_size != gp->CGetDefEdgesList().size())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unknown because successor contain phi " + STR(phi) + " with different size: " + STR(phi_size) + " vs. " + STR(gp->CGetDefEdgesList().size()));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Unknown because successor contain phi " + STR(phi) +
+                            " with different size: " + STR(phi_size) + " vs. " + STR(gp->CGetDefEdgesList().size()));
          return PhiOpt_PatternType::UNKNOWN;
       }
    }
-   if(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), succ_block->number) == pred_block->list_of_succ.end())
+   if(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), succ_block->number) ==
+      pred_block->list_of_succ.end())
    {
       if(pred_block->list_of_succ.size() == 1)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty basic block with predecessor with single Exit");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Empty basic block with predecessor with single Exit");
          return PhiOpt_PatternType::GIMPLE_NOTHING;
       }
       if(pred_block->CGetStmtList().size())
@@ -1530,18 +1603,23 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
          const auto pred_last_stmt = GET_CONST_NODE(pred_block->CGetStmtList().back());
          if(pred_last_stmt->get_kind() == gimple_cond_K)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block dominated by if which can be removed");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--Basic block dominated by if which can be removed");
             return PhiOpt_PatternType::IF_NOTHING;
          }
          if(pred_last_stmt->get_kind() == gimple_multi_way_if_K)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block dominated by multi way if which can be removed");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--Basic block dominated by multi way if which can be removed");
             return PhiOpt_PatternType::MULTI_NOTHING;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unknown because it can be removed but it is controlled by " + pred_last_stmt->get_kind_text());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Unknown because it can be removed but it is controlled by " +
+                            pred_last_stmt->get_kind_text());
          return PhiOpt_PatternType::UNKNOWN;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unknown because it can be removed but predecessor is empty");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Unknown because it can be removed but predecessor is empty");
       return PhiOpt_PatternType::UNKNOWN;
    }
    if(phi_size == 0)
@@ -1594,11 +1672,14 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
                   }
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---First condition is " + (first_condition ? first_condition->ToString() : "default"));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Second condition is " + (second_condition ? second_condition->ToString() : "default"));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---First condition is " + (first_condition ? first_condition->ToString() : "default"));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Second condition is " + (second_condition ? second_condition->ToString() : "default"));
             if(!first_condition || !second_condition
 #if HAVE_BAMBU_BUILT
-               || schedule->EvaluateCondsMerging(pred_last_stmt->index, first_condition->index, second_condition->index, function_id)
+               || schedule->EvaluateCondsMerging(pred_last_stmt->index, first_condition->index, second_condition->index,
+                                                 function_id)
 #endif
             )
             {
@@ -1607,14 +1688,16 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--New gimple multi way if would increase basic block latency");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "<--New gimple multi way if would increase basic block latency");
                return PhiOpt_PatternType::UNCHANGED;
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty path to phi to be removed");
          return PhiOpt_PatternType::MULTI_REMOVE;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unknown because dominator of phi is " + pred_last_stmt->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Unknown because dominator of phi is " + pred_last_stmt->ToString());
       return PhiOpt_PatternType::UNKNOWN;
    }
    if(pred_block->CGetStmtList().empty())
@@ -1631,14 +1714,16 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
    if(pred_last_stmt->get_kind() == gimple_multi_way_if_K)
    {
       /// Successor is ending if of the function
-      if(succ_block->CGetStmtList().size() == 1 && GetPointer<const gimple_return>(GET_CONST_NODE(succ_block->CGetStmtList().front())))
+      if(succ_block->CGetStmtList().size() == 1 &&
+         GetPointer<const gimple_return>(GET_CONST_NODE(succ_block->CGetStmtList().front())))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty path to phi to be merged");
          return PhiOpt_PatternType::MULTI_MERGE;
       }
       if(schedule)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Potentially is a path to phi to be merged. Checking timing");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Potentially is a path to phi to be merged. Checking timing");
          /// Simulate to add the cond expr and check if there are problems with timing
 
          /// The gimple multi way if
@@ -1682,25 +1767,33 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
                {
                   first_value = def_edge.first;
                }
-               else if((!first_edge && bb_index == def_edge.second) || (first_edge && pred_block->number == def_edge.second))
+               else if((!first_edge && bb_index == def_edge.second) ||
+                       (first_edge && pred_block->number == def_edge.second))
                {
                   second_value = def_edge.first;
                }
             }
 
             /// Create the cond expr
-            const auto cond_expr_node = tree_man->create_ternary_operation(type_node, condition, first_value, second_value, BUILTIN_SRCP, (tree_helper::IsVectorType(type_node) ? vec_cond_expr_K : cond_expr_K));
+            const auto cond_expr_node = tree_man->create_ternary_operation(
+                type_node, condition, first_value, second_value, BUILTIN_SRCP,
+                (tree_helper::IsVectorType(type_node) ? vec_cond_expr_K : cond_expr_K));
 
             /// Create the assign
-            /// Workaround: we need to consider the overhead due to multiplexers associated with the phi; for this reason definition is one of the operands; this is not fully consistent, but it is a temporary assignment
-            const auto gimple_assign_node = tree_man->create_gimple_modify_stmt(first_value, cond_expr_node, function_id, BUILTIN_SRCP, 0);
+            /// Workaround: we need to consider the overhead due to multiplexers associated with the phi; for this
+            /// reason definition is one of the operands; this is not fully consistent, but it is a temporary assignment
+            const auto gimple_assign_node =
+                tree_man->create_gimple_modify_stmt(first_value, cond_expr_node, function_id, BUILTIN_SRCP, 0);
 
             /// Created statement is not added to the predecessor
 #if HAVE_BAMBU_BUILT
-            if(schedule && schedule->CanBeMoved(GET_INDEX_CONST_NODE(gimple_assign_node), pred_block->number) != FunctionFrontendFlowStep_Movable::MOVABLE)
+            if(schedule && schedule->CanBeMoved(GET_INDEX_CONST_NODE(gimple_assign_node), pred_block->number) !=
+                               FunctionFrontendFlowStep_Movable::MOVABLE)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty path to phi to be merged, but modifying would increase the latency of predecessor");
+               INDENT_DBG_MEX(
+                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                   "<--Empty path to phi to be merged, but modifying would increase the latency of predecessor");
                return PhiOpt_PatternType::UNCHANGED;
             }
 #endif
@@ -1710,7 +1803,8 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty path to phi to be merged");
       return PhiOpt_PatternType::MULTI_MERGE;
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unknown because dominator of phi is " + pred_last_stmt->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--Unknown because dominator of phi is " + pred_last_stmt->ToString());
    return PhiOpt_PatternType::UNKNOWN;
 }
 
@@ -1738,7 +1832,8 @@ void PhiOpt::SinglePhiOptimization(const unsigned int bb_index)
          }
       }
 
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing " + left_part->ToString() + " with " + right_part->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Replacing " + left_part->ToString() + " with " + right_part->ToString());
       for(const auto& use_stmt : use_stmts)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before ssa replacement " + use_stmt->ToString());
@@ -1750,7 +1845,8 @@ void PhiOpt::SinglePhiOptimization(const unsigned int bb_index)
    }
    while(curr_block->CGetPhiList().size())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + curr_block->CGetPhiList().front()->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Removing " + curr_block->CGetPhiList().front()->ToString());
       curr_block->RemovePhi(curr_block->CGetPhiList().front());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed phis of BB" + STR(bb_index));
@@ -1758,7 +1854,8 @@ void PhiOpt::SinglePhiOptimization(const unsigned int bb_index)
 
 void PhiOpt::ChainOptimization(const unsigned int bb_index)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Applying chaining optimization starting from BB" + STR(bb_index));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Applying chaining optimization starting from BB" + STR(bb_index));
    const auto& curr_block = sl->list_of_bloc.at(bb_index);
    const auto& succ_block = sl->list_of_bloc.at(curr_block->list_of_succ.front());
 
@@ -1786,7 +1883,8 @@ void PhiOpt::ChainOptimization(const unsigned int bb_index)
       if(succ_succ != bloc::EXIT_BLOCK_ID)
       {
          const auto& succ_succ_block = sl->list_of_bloc.at(succ_succ);
-         succ_succ_block->list_of_pred.erase(std::find(succ_succ_block->list_of_pred.begin(), succ_succ_block->list_of_pred.end(), succ_block->number));
+         succ_succ_block->list_of_pred.erase(
+             std::find(succ_succ_block->list_of_pred.begin(), succ_succ_block->list_of_pred.end(), succ_block->number));
          succ_succ_block->list_of_pred.push_back(curr_block->number);
          for(const auto& phi : succ_succ_block->CGetPhiList())
          {
@@ -1812,7 +1910,8 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Merging phi of BB" + STR(bb_index));
    const auto& curr_block = sl->list_of_bloc.at(bb_index);
-   THROW_ASSERT(curr_block->list_of_succ.size() == 1, "BB" + STR(bb_index) + " has " + STR(curr_block->list_of_succ.size()));
+   THROW_ASSERT(curr_block->list_of_succ.size() == 1,
+                "BB" + STR(bb_index) + " has " + STR(curr_block->list_of_succ.size()));
    const auto& succ_block = sl->list_of_bloc.at(curr_block->list_of_succ.front());
    const auto& pred_succ_block = succ_block->list_of_pred;
    // This check has to be performed here since the structure of the basic block may be changed in the meanwhile
@@ -1839,7 +1938,8 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
       {
          if(def_edge.second == bb_index)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found " + def_edge.first->ToString() + " coming from BB" + STR(def_edge.second));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Found " + def_edge.first->ToString() + " coming from BB" + STR(def_edge.second));
             const auto def_to_be_removed = GET_CONST_NODE(def_edge.first);
             if(def_to_be_removed->get_kind() == ssa_name_K)
             {
@@ -1847,7 +1947,8 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
                const auto phi_to_be_removed = GetPointer<const gimple_phi>(GET_CONST_NODE(def_stmt));
                if(phi_to_be_removed && phi_to_be_removed->bb_index == bb_index)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + def_edge.first->ToString() + " comes from a phi to be removed");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---" + def_edge.first->ToString() + " comes from a phi to be removed");
                   /// Removing phi only if number of uses is 1
                   if(GetPointerS<const ssa_name>(def_to_be_removed)->CGetNumberUses() == 1)
                   {
@@ -1855,17 +1956,23 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
                   }
                   for(const auto& curr_def_edge : phi_to_be_removed->CGetDefEdgesList())
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding from phi of predecessor <" + curr_def_edge.first->ToString() + ", BB" + STR(curr_def_edge.second) + ">");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Adding from phi of predecessor <" + curr_def_edge.first->ToString() + ", BB" +
+                                        STR(curr_def_edge.second) + ">");
                      new_list_of_def_edge.push_back(curr_def_edge);
                   }
                }
                else
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---" + def_edge.first->ToString() + " is defined in a " + GET_CONST_NODE(def_stmt)->get_kind_text() + " in BB" + STR(GetPointer<const gimple_node>(GET_CONST_NODE(def_stmt))->bb_index));
+                                 "---" + def_edge.first->ToString() + " is defined in a " +
+                                     GET_CONST_NODE(def_stmt)->get_kind_text() + " in BB" +
+                                     STR(GetPointer<const gimple_node>(GET_CONST_NODE(def_stmt))->bb_index));
                   for(auto predecessor : curr_block->list_of_pred)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding from predecessor <" + def_edge.first->ToString() + ", BB" + STR(predecessor) + ">");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Adding from predecessor <" + def_edge.first->ToString() + ", BB" +
+                                        STR(predecessor) + ">");
                      new_list_of_def_edge.push_back(decltype(def_edge)(def_edge.first, predecessor));
                   }
                }
@@ -1874,14 +1981,17 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
             {
                for(auto predecessor : curr_block->list_of_pred)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding from predecessor <" + def_edge.first->ToString() + ", BB" + STR(predecessor) + ">");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Adding from predecessor <" + def_edge.first->ToString() + ", BB" +
+                                     STR(predecessor) + ">");
                   new_list_of_def_edge.push_back(decltype(def_edge)(def_edge.first, predecessor));
                }
             }
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Readding <" + def_edge.first->ToString() + ", BB" + STR(def_edge.second) + ">");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Readding <" + def_edge.first->ToString() + ", BB" + STR(def_edge.second) + ">");
             new_list_of_def_edge.push_back(def_edge);
          }
       }
@@ -1912,7 +2022,8 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
    for(auto predecessor : curr_block->list_of_pred)
    {
       const auto& pred_block = sl->list_of_bloc.at(predecessor);
-      pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
+      pred_block->list_of_succ.erase(
+          std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
       pred_block->list_of_succ.push_back(succ_block->number);
       if(pred_block->true_edge == bb_index)
       {
@@ -1941,8 +2052,10 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
    }
 
    /// Fixing successor
-   succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
-   std::copy(curr_block->list_of_pred.begin(), curr_block->list_of_pred.end(), std::back_inserter(succ_block->list_of_pred));
+   succ_block->list_of_pred.erase(
+       std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
+   std::copy(curr_block->list_of_pred.begin(), curr_block->list_of_pred.end(),
+             std::back_inserter(succ_block->list_of_pred));
 
    /// Erasing basic block
    sl->list_of_bloc.erase(bb_index);
@@ -1978,7 +2091,8 @@ void PhiOpt::ReplaceVirtualUses(const tree_nodeRef& old_vssa, const TreeNodeSet&
       const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt));
       const auto has_vuses = gn->vuses.find(old_vssa) != gn->vuses.end();
       const auto has_vovers = gn->vovers.find(old_vssa) != gn->vovers.end();
-      THROW_ASSERT(has_vuses || has_vovers, old_vssa->ToString() + " is not in the vuses/vovers of " + use_stmt->ToString());
+      THROW_ASSERT(has_vuses || has_vovers,
+                   old_vssa->ToString() + " is not in the vuses/vovers of " + use_stmt->ToString());
 
       if(has_vuses)
       {

@@ -65,7 +65,9 @@
 
 #include "string_manipulation.hpp" // for GET_CLASS
 
-HDLFunctionDeclFix::HDLFunctionDeclFix(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+HDLFunctionDeclFix::HDLFunctionDeclFix(const application_managerRef _AppM,
+                                       const DesignFlowManagerConstRef _design_flow_manager,
+                                       const ParameterConstRef _parameters)
     : ApplicationFrontendFlowStep(_AppM, HDL_FUNCTION_DECL_FIX, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -77,8 +79,10 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
 {
    bool changed_tree = false;
    const tree_managerRef TM = AppM->get_tree_manager();
-   const auto hdl_writer_type = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
-   const auto hdl_writer = language_writer::create_writer(hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_target()->get_technology_manager(), parameters);
+   const auto hdl_writer_type =
+       static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+   const auto hdl_writer = language_writer::create_writer(
+       hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_target()->get_technology_manager(), parameters);
    const auto hdl_reserved_names = hdl_writer->GetHDLReservedNames();
    std::remove_const<decltype(hdl_reserved_names)>::type found_names;
    if(hdl_writer_type == HDLWriter_Language::VHDL)
@@ -101,7 +105,8 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
          continue;
       }
       auto in = GetPointer<identifier_node>(GET_NODE(fd->name));
-      const auto identifier = hdl_writer_type == HDLWriter_Language::VHDL ? boost::to_upper_copy<std::string>(in->strg) : in->strg;
+      const auto identifier =
+          hdl_writer_type == HDLWriter_Language::VHDL ? boost::to_upper_copy<std::string>(in->strg) : in->strg;
       if(found_names.find(identifier) != found_names.end())
       {
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
@@ -124,7 +129,8 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
    return changed_tree ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HDLFunctionDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+HDLFunctionDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)

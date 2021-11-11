@@ -69,14 +69,17 @@ class mem_dominator_allocation : public memory_allocation
    std::map<std::string, std::set<std::string>> user_external_objects;
 
    /// function checking if the current variable has to allocated inside the accelerator or outside
-   virtual bool is_internal_obj(unsigned int var_index, const std::string& var_name, const std::string& fun_name, bool multiple_top_call_graph, const tree_managerRef TreeM);
+   virtual bool is_internal_obj(unsigned int var_index, const std::string& var_name, const std::string& fun_name,
+                                bool multiple_top_call_graph, const tree_managerRef TreeM);
 
  public:
    /**
     * Constructor
     * @param design_flow_manager is the design flow manager
     */
-   mem_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+   mem_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+                            const DesignFlowManagerConstRef design_flow_manager,
+                            const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
                             const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);
 
    /**

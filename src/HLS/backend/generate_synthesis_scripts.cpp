@@ -61,7 +61,8 @@
 /// wrapper/synthesis include
 #include "BackendFlow.hpp"
 
-GenerateSynthesisScripts::GenerateSynthesisScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+GenerateSynthesisScripts::GenerateSynthesisScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                                   const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
@@ -69,14 +70,16 @@ GenerateSynthesisScripts::GenerateSynthesisScripts(const ParameterConstRef _para
 
 GenerateSynthesisScripts::~GenerateSynthesisScripts() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> GenerateSynthesisScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+GenerateSynthesisScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -101,7 +104,8 @@ DesignFlowStep_Status GenerateSynthesisScripts::Exec()
 
    const hlsRef top_hls = HLSMgr->get_HLS(top_fun_id);
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(top_fun_id);
-   HLSMgr->get_backend_flow()->GenerateSynthesisScripts(FB->CGetBehavioralHelper()->get_function_name(), top_hls->top, HLSMgr->hdl_files, HLSMgr->aux_files);
+   HLSMgr->get_backend_flow()->GenerateSynthesisScripts(FB->CGetBehavioralHelper()->get_function_name(), top_hls->top,
+                                                        HLSMgr->hdl_files, HLSMgr->aux_files);
    return DesignFlowStep_Status::SUCCESS;
 }
 

@@ -88,8 +88,10 @@ class HLSFunctionStep : public HLS_step
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of this hls flow step
     */
-   HLSFunctionStep(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
-                   const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+   HLSFunctionStep(
+       const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+       const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**
     * Destructor
@@ -120,7 +122,9 @@ class HLSFunctionStep : public HLS_step
     * @param function_id is the index of the function
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization, const unsigned int function_id);
+   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+                                             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+                                             const unsigned int function_id);
 
    /**
     * Return the name of this design step
@@ -133,7 +137,8 @@ class HLSFunctionStep : public HLS_step
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Execute the step

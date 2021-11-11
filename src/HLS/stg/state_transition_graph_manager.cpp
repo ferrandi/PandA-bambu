@@ -80,18 +80,27 @@
 #include "boost/graph/topological_sort.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
-StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS, const ParameterConstRef _Param)
-    : state_transition_graphs_collection(
-          StateTransitionGraphsCollectionRef(new StateTransitionGraphsCollection(StateTransitionGraphInfoRef(new StateTransitionGraphInfo(_HLSMgr->CGetFunctionBehavior(_HLS->functionId)->CGetOpGraph(FunctionBehavior::CFG))), _Param))),
-      ACYCLIC_STG_graph(StateTransitionGraphRef(new StateTransitionGraph(state_transition_graphs_collection, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL))),
-      STG_graph(StateTransitionGraphRef(new StateTransitionGraph(state_transition_graphs_collection, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL | TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK))),
-      EPP_STG_graph(StateTransitionGraphRef(new StateTransitionGraph(state_transition_graphs_collection, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL | TransitionInfo::StateTransitionType::ST_EDGE_EPP))),
+StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS,
+                                                         const ParameterConstRef _Param)
+    : state_transition_graphs_collection(StateTransitionGraphsCollectionRef(new StateTransitionGraphsCollection(
+          StateTransitionGraphInfoRef(new StateTransitionGraphInfo(
+              _HLSMgr->CGetFunctionBehavior(_HLS->functionId)->CGetOpGraph(FunctionBehavior::CFG))),
+          _Param))),
+      ACYCLIC_STG_graph(StateTransitionGraphRef(new StateTransitionGraph(
+          state_transition_graphs_collection, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL))),
+      STG_graph(StateTransitionGraphRef(new StateTransitionGraph(
+          state_transition_graphs_collection, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL |
+                                                  TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK))),
+      EPP_STG_graph(StateTransitionGraphRef(new StateTransitionGraph(
+          state_transition_graphs_collection,
+          TransitionInfo::StateTransitionType::ST_EDGE_NORMAL | TransitionInfo::StateTransitionType::ST_EDGE_EPP))),
       op_function_graph(_HLSMgr->CGetFunctionBehavior(_HLS->functionId)->CGetOpGraph(FunctionBehavior::CFG)),
       Param(_Param),
       output_level(_Param->getOption<int>(OPT_output_level)),
       debug_level(_Param->getOption<int>(OPT_debug_level)),
       HLS(_HLS),
-      STG_builder(StateTransitionGraph_constructorRef(new StateTransitionGraph_constructor(state_transition_graphs_collection, _HLSMgr, _HLS->functionId)))
+      STG_builder(StateTransitionGraph_constructorRef(
+          new StateTransitionGraph_constructor(state_transition_graphs_collection, _HLSMgr, _HLS->functionId)))
 {
    STG_builder->create_entry_state();
    STG_builder->create_exit_state();
@@ -191,7 +200,8 @@ CustomOrderedSet<vertex> StateTransitionGraphManager::get_states(const vertex& o
          }
       }
    }
-   THROW_ASSERT(vertex_set.size() > 0, "Something wrong! Operation " + GET_NAME(op_function_graph, op) + " is executed " + "into no states");
+   THROW_ASSERT(vertex_set.size() > 0,
+                "Something wrong! Operation " + GET_NAME(op_function_graph, op) + " is executed " + "into no states");
    return vertex_set;
 }
 
@@ -243,11 +253,16 @@ unsigned int StateTransitionGraphManager::get_number_of_states() const
 void StateTransitionGraphManager::print_statistics() const
 {
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of states: " + STR(get_number_of_states()));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---" + std::string("Is a DAG: ") + (STG_graph->CGetStateTransitionGraphInfo()->is_a_dag ? "T" : "F"));
-   if(STG_graph->CGetStateTransitionGraphInfo()->min_cycles != 0 && STG_graph->CGetStateTransitionGraphInfo()->max_cycles != 0)
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
+                  "---" + std::string("Is a DAG: ") +
+                      (STG_graph->CGetStateTransitionGraphInfo()->is_a_dag ? "T" : "F"));
+   if(STG_graph->CGetStateTransitionGraphInfo()->min_cycles != 0 &&
+      STG_graph->CGetStateTransitionGraphInfo()->max_cycles != 0)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Minimum number of cycles: " + STR(STG_graph->CGetStateTransitionGraphInfo()->min_cycles));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Maximum number of cycles " + STR(STG_graph->CGetStateTransitionGraphInfo()->max_cycles));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "---Minimum number of cycles: " + STR(STG_graph->CGetStateTransitionGraphInfo()->min_cycles));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "---Maximum number of cycles " + STR(STG_graph->CGetStateTransitionGraphInfo()->max_cycles));
    }
 }
 
@@ -255,7 +270,8 @@ void StateTransitionGraphManager::add_multi_unbounded_obj(vertex s, const Custom
 {
    if(multi_unbounded_table.find(s) == multi_unbounded_table.end())
    {
-      multi_unbounded_table[s] = generic_objRef(new multi_unbounded_obj(s, ops, std::string("mu_") + STG_graph->CGetStateInfo(s)->name));
+      multi_unbounded_table[s] =
+          generic_objRef(new multi_unbounded_obj(s, ops, std::string("mu_") + STG_graph->CGetStateInfo(s)->name));
    }
 }
 
@@ -281,7 +297,8 @@ void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, str
       auto mu = state2mu.second;
       std::string name = mu->get_string();
       std::string library = HLS->HLS_T->get_technology_manager()->get_library(SIMPLEJOIN_STD);
-      structural_objectRef mu_mod = SM->add_module_from_technology_library(name, SIMPLEJOIN_STD, library, circuit, HLS->HLS_T->get_technology_manager());
+      structural_objectRef mu_mod = SM->add_module_from_technology_library(name, SIMPLEJOIN_STD, library, circuit,
+                                                                           HLS->HLS_T->get_technology_manager());
       specialise_mu(mu_mod, mu);
 
       structural_objectRef port_ck = mu_mod->find_member(CLOCK_PORT_NAME, port_o_K, mu_mod);

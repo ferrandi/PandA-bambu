@@ -75,7 +75,12 @@ unsigned int PragmaParser::number = 0;
 unsigned int PragmaParser::file_counter = 0;
 
 // constructor
-PragmaParser::PragmaParser(const pragma_managerRef _PM, const ParameterConstRef _Param) : PM(_PM), debug_level(_Param->get_class_debug_level(GET_CLASS(*this))), Param(_Param), level(0), search_function(false)
+PragmaParser::PragmaParser(const pragma_managerRef _PM, const ParameterConstRef _Param)
+    : PM(_PM),
+      debug_level(_Param->get_class_debug_level(GET_CLASS(*this))),
+      Param(_Param),
+      level(0),
+      search_function(false)
 {
    THROW_ASSERT(PM, "Pragma manager not initialized");
 }
@@ -86,10 +91,12 @@ PragmaParser::~PragmaParser() = default;
 std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Substituting pragma in " + OldFile);
-   THROW_ASSERT(boost::filesystem::exists(boost::filesystem::path(OldFile)), "Input file \"" + OldFile + "\" does not exist");
+   THROW_ASSERT(boost::filesystem::exists(boost::filesystem::path(OldFile)),
+                "Input file \"" + OldFile + "\" does not exist");
 
    boost::filesystem::path old_path(OldFile);
-   std::string FileName = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_pragma_prefix + boost::lexical_cast<std::string>(file_counter) + "_" + GetLeafFileName(old_path);
+   std::string FileName = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_pragma_prefix +
+                          boost::lexical_cast<std::string>(file_counter) + "_" + GetLeafFileName(old_path);
    std::ofstream fileOutput(FileName, std::ios::out);
 
    file_counter++;
@@ -163,7 +170,8 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
          if(i == '{')
          {
             level++;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found {: Current level " + boost::lexical_cast<std::string>(level));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Found {: Current level " + boost::lexical_cast<std::string>(level));
             if(!found)
             {
                for(auto& FloatingPragma : FloatingPragmas)
@@ -185,7 +193,8 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
                OpenPragmas[level].clear();
             }
             level--;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found }: Current level " + boost::lexical_cast<std::string>(level));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Found }: Current level " + boost::lexical_cast<std::string>(level));
          }
       }
 
@@ -265,7 +274,8 @@ bool PragmaParser::recognize_omp_pragma(std::string& line)
       THROW_ERROR("Unsupported openmp directive in line " + line);
    }
    bool single_line_pragma = false;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found directive " + pragma_manager::omp_directive_keywords[omp_pragma_type]);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Found directive " + pragma_manager::omp_directive_keywords[omp_pragma_type]);
    switch(omp_pragma_type)
    {
       case(pragma_manager::OMP_ATOMIC):
@@ -314,7 +324,9 @@ bool PragmaParser::recognize_omp_pragma(std::string& line)
    original_line.erase(0, original_line.find(omp_pragma_directive) + omp_pragma_directive.size());
    if(not single_line_pragma)
    {
-      FloatingPragmas.push_back(STR_CST_pragma_keyword_omp "\", \"" + omp_pragma_directive + (original_line.size() ? "\", \"" + original_line.substr(1, original_line.size() - 1) : ""));
+      FloatingPragmas.push_back(
+          STR_CST_pragma_keyword_omp "\", \"" + omp_pragma_directive +
+          (original_line.size() ? "\", \"" + original_line.substr(1, original_line.size() - 1) : ""));
    }
 
    if(original_line.size())
@@ -333,7 +345,8 @@ bool PragmaParser::recognize_call_point_hw_pragma(std::string& line) const
    line += ", ";
    std::vector<std::string> splitted = SplitString(old_line, " ");
    THROW_ASSERT(splitted.size() == 4 or splitted.size() == 5, "Error in syntax of mapping pragma: " + old_line);
-   THROW_ASSERT(splitted[2] == std::string(STR_CST_pragma_keyword_call_point_hw), "Expecting " + std::string(STR_CST_pragma_keyword_call_point_hw) + " - Found : " + splitted[2]);
+   THROW_ASSERT(splitted[2] == std::string(STR_CST_pragma_keyword_call_point_hw),
+                "Expecting " + std::string(STR_CST_pragma_keyword_call_point_hw) + " - Found : " + splitted[2]);
    line += "\"" + std::string(STR_CST_pragma_keyword_call_point_hw) + "\"";
    line += ", \"" + splitted[3] + "\"";
    if(splitted.size() == 5)

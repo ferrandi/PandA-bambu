@@ -46,7 +46,8 @@ class TestbenchMemoryAllocation : public HLS_step
    /**
     * Constructor
     */
-   TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager);
+   TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                             const DesignFlowManagerConstRef _design_flow_manager);
 
    /**
     * Destructor
@@ -61,7 +62,8 @@ class TestbenchMemoryAllocation : public HLS_step
    /**
     * Compute the HLS relationships of this step
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  protected:
    /**

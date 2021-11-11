@@ -126,20 +126,25 @@
 #include <boost/regex.hpp>
 
 const std::string pragma_manager::omp_directive_keywords[pragma_manager::OMP_UNKNOWN] = {
-    "atomic", "barrier", "critical", "declare simd", "for", "parallel for", "parallel sections", "parallel", "sections", "section", "simd", "target", "task",
+    "atomic",   "barrier",  "critical", "declare simd", "for",    "parallel for", "parallel sections",
+    "parallel", "sections", "section",  "simd",         "target", "task",
 };
 
 unsigned int num_task = 0;
 
 pragma_manager::pragma_manager(const application_managerRef _application_manager, const ParameterConstRef _param)
-    : application_manager(_application_manager), TM(_application_manager->get_tree_manager()), param(_param), debug_level(_param->get_class_debug_level(GET_CLASS(*this)))
+    : application_manager(_application_manager),
+      TM(_application_manager->get_tree_manager()),
+      param(_param),
+      debug_level(_param->get_class_debug_level(GET_CLASS(*this)))
 {
    if(param->isOption(OPT_blackbox))
    {
       const auto black_box_functions = param->getOption<const CustomSet<std::string>>(OPT_blackbox);
       for(const auto& black_box_function : black_box_functions)
       {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, param->getOption<int>(OPT_output_level), "Function \"" + black_box_function + "\" is a blackbox");
+         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, param->getOption<int>(OPT_output_level),
+                       "Function \"" + black_box_function + "\" is a blackbox");
          BlackBoxFunctions.insert(black_box_function);
          // addBlackBoxPragma(black_box_function);
       }
@@ -183,7 +188,8 @@ CustomUnorderedSet<std::string> pragma_manager::getFunctionCallPragmas(const std
    }
 }
 
-void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_name, const CustomUnorderedSet<std::string>& pragmas)
+void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_name,
+                                                  const CustomUnorderedSet<std::string>& pragmas)
 {
    for(auto pragma : pragmas)
    {
@@ -196,7 +202,8 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_na
       {
          std::vector<std::string> splitted = SplitString(pragma, " \t\n");
          // #[\0]pragma call_hw N1 N2
-         std::vector<std::string>::iterator it = std::find(splitted.begin(), splitted.end(), STR_CST_pragma_keyword_call_hw);
+         std::vector<std::string>::iterator it =
+             std::find(splitted.begin(), splitted.end(), STR_CST_pragma_keyword_call_hw);
          THROW_ASSERT(it != splitted.end(), "Something wrong");
          do
          {
@@ -208,8 +215,14 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_na
          {
             ++it;
          } while(it != splitted.end() && it->size() == 0);
-         const MappingAnnotationRef mapping_annotation = MappingAnnotationRef(new UnimodalMappingAnnotation(GetPointer<PartitioningManager>(application_manager)->CGetArchitectureManager()->get_machineRef_by_name(HW_component), param));
-         GetPointer<PartitioningManager>(application_manager)->GetMappingAnnotations()->AddPragmaMappingAnnotation(function_name, mapping_annotation);
+         const MappingAnnotationRef mapping_annotation =
+             MappingAnnotationRef(new UnimodalMappingAnnotation(GetPointer<PartitioningManager>(application_manager)
+                                                                    ->CGetArchitectureManager()
+                                                                    ->get_machineRef_by_name(HW_component),
+                                                                param));
+         GetPointer<PartitioningManager>(application_manager)
+             ->GetMappingAnnotations()
+             ->AddPragmaMappingAnnotation(function_name, mapping_annotation);
          continue;
       }
       expr = boost::regex(".*issue.*$", boost::regex::grep);
@@ -279,7 +292,8 @@ unsigned int pragma_manager::addBlackBoxPragma(const std::string& function_name,
 
 unsigned int pragma_manager::AddOmpSimdPragma(const std::string& line, unsigned int function_id) const
 {
-   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> simd_tree_node_schema, omp_pragma_tree_node_schema, tree_node_schema;
+   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> simd_tree_node_schema, omp_pragma_tree_node_schema,
+       tree_node_schema;
    unsigned int scope_id = TM->new_tree_node_id();
    TM->create_tree_node(scope_id, omp_pragma_K, omp_pragma_tree_node_schema);
 
@@ -303,7 +317,8 @@ unsigned int pragma_manager::AddOmpSimdPragma(const std::string& line, unsigned 
    return pragma_id;
 }
 
-CustomUnorderedMapUnstable<std::string, std::string> pragma_manager::ExtractClauses(const std::string& clauses_list) const
+CustomUnorderedMapUnstable<std::string, std::string>
+pragma_manager::ExtractClauses(const std::string& clauses_list) const
 {
    CustomUnorderedMapUnstable<std::string, std::string> clauses_map;
    if(!clauses_list.size())
@@ -370,11 +385,14 @@ std::string pragma_manager::getGenericPragma(unsigned int number) const
    return GenericPragmas.find(number)->second;
 }
 
-bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, const unsigned int function_index, const vertex bb_operation_vertex) const
+bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, const unsigned int function_index,
+                                 const vertex bb_operation_vertex) const
 {
    const BBGraphConstRef bb_cfg = app_man->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB);
    vertex current = bb_operation_vertex;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Looking for an openmp associated with loop " + boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Looking for an openmp associated with loop " +
+                      boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
    while(boost::in_degree(current, *bb_cfg) == 1)
    {
       const BBNodeInfoConstRef info = bb_cfg->CGetBBNodeInfo(current);
@@ -401,11 +419,14 @@ bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, cons
    return false;
 }
 
-void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex, const application_managerRef AppM)
+void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex,
+                                    const application_managerRef AppM)
 {
    const auto bb_cfg = application_manager->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB);
    vertex current = bb_operation_vertex;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Looking for an openmp associated with loop " + boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Looking for an openmp associated with loop " +
+                      boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
    while(boost::in_degree(current, *bb_cfg) == 1)
    {
       const auto info = bb_cfg->CGetBBNodeInfo(current);
@@ -423,7 +444,8 @@ void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const ver
                {
                   info->block->RemoveStmt(stmt, AppM);
                   const auto FB = application_manager->GetFunctionBehavior(function_index);
-                  FB->GetLoops()->GetLoop(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number)->loop_type |= DOALL_LOOP;
+                  FB->GetLoops()->GetLoop(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number)->loop_type |=
+                      DOALL_LOOP;
                   // FB->UpdateBBVersion();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Found");
                   return;
@@ -438,11 +460,14 @@ void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const ver
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not found");
 }
 
-void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex, const application_managerRef AppM)
+void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex,
+                                     const application_managerRef AppM)
 {
    const auto bb_cfg = application_manager->GetFunctionBehavior(function_index)->GetBBGraph(FunctionBehavior::BB);
    const auto current_loop_id = bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->loop_id;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Looking for an openmp simd associated with loop " + boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Looking for an openmp simd associated with loop " +
+                      boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
    if(boost::in_degree(bb_operation_vertex, *bb_cfg) != 1)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not found");
@@ -491,7 +516,8 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed vdef");
                   }
                   const auto FB = application_manager->GetFunctionBehavior(function_index);
-                  FB->GetLoops()->GetLoop(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number)->loop_type |= DOALL_LOOP;
+                  FB->GetLoops()->GetLoop(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number)->loop_type |=
+                      DOALL_LOOP;
                   // FB->UpdateBBVersion();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Found");
                   return;

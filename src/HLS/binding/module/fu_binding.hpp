@@ -84,8 +84,8 @@ struct jms_sorter
 
 /**
  * Class managing the functional-unit binding.
- * It stores the functional-unit binding, that is, the mapping of operations in the behavioral description onto the set of
- * allocated functional units.
+ * It stores the functional-unit binding, that is, the mapping of operations in the behavioral description onto the set
+ * of allocated functional units.
  */
 class fu_binding
 {
@@ -133,19 +133,25 @@ class fu_binding
    /**
     * fill the memory of the array ref
     * @param TreeM is the tree_manager
-    * @param init_file_a is the file where the data is written (all data stored in this file in case is_memory_splitted is false
-    * @param initi_file_b is the file where the data is written (only the odd elements are store in this file and only if is_memory_splitted is true
+    * @param init_file_a is the file where the data is written (all data stored in this file in case is_memory_splitted
+    * is false
+    * @param initi_file_b is the file where the data is written (only the odd elements are store in this file and only
+    * if is_memory_splitted is true
     * @param ar is the array ref variable declaration
     * @param vec_size is the number of the element of the array
     * @param elts_size is the element size in bits
     * @param is_memory_splitted is true when the allocated memory is splitted into two sets of BRAMs
     */
-   void fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar, long long int& vec_size, unsigned int& elts_size, const memoryRef mem, bool is_memory_splitted, bool is_sds, module* fu_module);
+   void fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
+                              long long int& vec_size, unsigned int& elts_size, const memoryRef mem,
+                              bool is_memory_splitted, bool is_sds, module* fu_module);
 
    /**
     * Add an instance of the current port
     */
-   structural_objectRef add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu, const std::string& name, const OpVertexSet& ops, structural_objectRef clock_port, structural_objectRef reset_port);
+   structural_objectRef add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu,
+                                 const std::string& name, const OpVertexSet& ops, structural_objectRef clock_port,
+                                 structural_objectRef reset_port);
 
    /**
     * check the module parametrization
@@ -158,9 +164,13 @@ class fu_binding
     * @param curr_gate is the current gate
     * @param var_call_sites_rel put into relation proxied variables and modules referring to such variables
     */
-   void kill_proxy_memory_units(std::map<unsigned int, unsigned int>& memory_units, structural_objectRef curr_gate, std::map<unsigned int, std::list<structural_objectRef>>& var_call_sites_rel, std::map<unsigned int, unsigned int>& reverse_memory_units);
+   void kill_proxy_memory_units(std::map<unsigned int, unsigned int>& memory_units, structural_objectRef curr_gate,
+                                std::map<unsigned int, std::list<structural_objectRef>>& var_call_sites_rel,
+                                std::map<unsigned int, unsigned int>& reverse_memory_units);
 
-   void kill_proxy_function_units(std::map<unsigned int, std::string>& wrapped_units, structural_objectRef curr_gate, std::map<std::string, std::list<structural_objectRef>>& fun_call_sites_rel, std::map<std::string, unsigned int>& reverse_wrapped_units);
+   void kill_proxy_function_units(std::map<unsigned int, std::string>& wrapped_units, structural_objectRef curr_gate,
+                                  std::map<std::string, std::list<structural_objectRef>>& fun_call_sites_rel,
+                                  std::map<std::string, unsigned int>& reverse_wrapped_units);
 
    /**
     * connect proxies with storage components
@@ -169,10 +179,14 @@ class fu_binding
     * @param var_call_sites_rel is the relation between var and call sites having a proxy as module parameter
     * @param SM is the structural manager
     */
-   void manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>& mem_obj, std::map<unsigned int, unsigned int>& reverse_memory_units, std::map<unsigned int, std::list<structural_objectRef>>& var_call_sites_rel,
+   void manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>& mem_obj,
+                                      std::map<unsigned int, unsigned int>& reverse_memory_units,
+                                      std::map<unsigned int, std::list<structural_objectRef>>& var_call_sites_rel,
                                       const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id);
 
-   void manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>& fun_obj, std::map<std::string, unsigned int>& reverse_function_units, std::map<std::string, std::list<structural_objectRef>>& fun_call_sites_rel,
+   void manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>& fun_obj,
+                                        std::map<std::string, unsigned int>& reverse_function_units,
+                                        std::map<std::string, std::list<structural_objectRef>>& fun_call_sites_rel,
                                         const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id);
 
  public:
@@ -203,7 +217,8 @@ class fu_binding
     * @param _parameters
     * @return the correct class of fu_binding
     */
-   static fu_bindingRef create_fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters);
+   static fu_bindingRef create_fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id,
+                                          const ParameterConstRef _parameters);
 
    /**
     * Binds an operation vertex to a functional unit. The functional unit is identified by an id and
@@ -279,7 +294,8 @@ class fu_binding
 
    generic_objRef get(unsigned int name, unsigned int index)
    {
-      return (unique_table.count(std::make_pair(name, index))) ? unique_table[std::make_pair(name, index)] : generic_objRef();
+      return (unique_table.count(std::make_pair(name, index))) ? unique_table[std::make_pair(name, index)] :
+                                                                 generic_objRef();
    }
 
    /**
@@ -305,15 +321,23 @@ class fu_binding
    /**
     * Instance the functional unit inside the structural representation of the datapath
     */
-   virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
+   virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port,
+                          structural_objectRef reset_port);
 
-   virtual void manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, structural_objectRef port_in, unsigned int dir, structural_objectRef circuit, unsigned int num);
+   virtual void manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM,
+                                          structural_objectRef port_in, unsigned int dir, structural_objectRef circuit,
+                                          unsigned int num);
 
    /**
     * Manage the connections between memory ports
     */
-   static void manage_memory_ports_chained(const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit);
-   virtual void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& unique_id);
+   static void manage_memory_ports_chained(const structural_managerRef SM,
+                                           const std::list<structural_objectRef>& memory_modules,
+                                           const structural_objectRef circuit);
+   virtual void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM,
+                                                     const std::list<structural_objectRef>& memory_modules,
+                                                     const structural_objectRef circuit, const hlsRef HLS,
+                                                     unsigned int& unique_id);
 
    /**
     * Return the operations that are executed by the given functional unit
@@ -323,18 +347,26 @@ class fu_binding
    /**
     * Specialize the functional unit based on variables associated with the corresponding operations
     */
-   void specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int fu, const OpVertexSet& operations, unsigned int ar);
+   void specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int fu,
+                      const OpVertexSet& operations, unsigned int ar);
 
    /**
     * Specialize a memory unit
     */
-   void specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long rangesize, bool is_memory_splitted, bool is_sparse_memory, bool is_sds);
+   void specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj,
+                               unsigned int ar, std::string& base_address, unsigned long long rangesize,
+                               bool is_memory_splitted, bool is_sparse_memory, bool is_sds);
 
-   static void write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef init_node, std::vector<std::string>& init_file, const memoryRef mem, unsigned int element_precision);
+   static void write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef init_node,
+                          std::vector<std::string>& init_file, const memoryRef mem, unsigned int element_precision);
 
-   virtual bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, const structural_objectRef curr_gate, unsigned int num);
+   virtual bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM,
+                                    const structural_objectRef curr_gate, unsigned int num);
 
-   virtual void join_merge_split(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs, const structural_objectRef circuit, unsigned int& unique_id);
+   virtual void
+   join_merge_split(const structural_managerRef SM, const hlsRef HLS,
+                    std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs,
+                    const structural_objectRef circuit, unsigned int& unique_id);
 
    /**
     * specify if vertex v have or not its ports swapped

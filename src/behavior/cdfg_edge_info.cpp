@@ -82,7 +82,8 @@ bool CdfgEdgeInfo::CfgEdgeF() const
 
 bool CdfgEdgeInfo::Switch() const
 {
-   return not CdgEdgeT() and not CdgEdgeF() and not CfgEdgeT() and not CfgEdgeF() and (labels.find(CDG_SELECTOR) != labels.end() or labels.find(CFG_SELECTOR) != labels.end());
+   return not CdgEdgeT() and not CdgEdgeF() and not CfgEdgeT() and not CfgEdgeF() and
+          (labels.find(CDG_SELECTOR) != labels.end() or labels.find(CFG_SELECTOR) != labels.end());
 }
 
 const std::string CdfgEdgeInfo::PrintLabels(const int selector, const BehavioralHelperConstRef BH) const

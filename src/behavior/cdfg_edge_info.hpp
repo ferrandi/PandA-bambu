@@ -150,42 +150,48 @@ struct CdfgEdgeInfo : public EdgeInfo
  * @param data is the graph.
  * @param edge_index is the index of the cdfg edge.
  */
-#define CDG_TRUE_CHECK(data, edge_index) Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->CdgEdgeT()
+#define CDG_TRUE_CHECK(data, edge_index) \
+   Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->CdgEdgeT()
 
 /**
  * check if the edge is a else control dependence edge
  * @param data is the graph.
  * @param edge_index is the index of the cdfg edge.
  */
-#define CDG_FALSE_CHECK(data, edge_index) Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->CdgEdgeF()
+#define CDG_FALSE_CHECK(data, edge_index) \
+   Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->CdgEdgeF()
 
 /**
  * check if the edge is a then control flow edge
  * @param data is the graph.
  * @param edge_index is the index of the cdfg edge.
  */
-#define CFG_TRUE_CHECK(data, edge_index) Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->CfgEdgeT()
+#define CFG_TRUE_CHECK(data, edge_index) \
+   Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->CfgEdgeT()
 
 /**
  * check if the edge is a else control flow edge
  * @param data is the graph.
  * @param edge_index is the index of the cdfg edge.
  */
-#define CFG_FALSE_CHECK(data, edge_index) Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->CfgEdgeF()
+#define CFG_FALSE_CHECK(data, edge_index) \
+   Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->CfgEdgeF()
 
 /**
  * check if the edge is a then flow edge
  * @param data is the graph.
  * @param edge_index is the index of the cdfg edge.
  */
-#define FLG_TRUE_CHECK(data, edge_index) Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->FlgEdgeT()
+#define FLG_TRUE_CHECK(data, edge_index) \
+   Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->FlgEdgeT()
 
 /**
  * check if the edge is a else flow edge
  * @param data is the graph.
  * @param edge_index is the index of the cdfg edge.
  */
-#define FLG_FALSE_CHECK(data, edge_index) Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->FlgEdgeF()
+#define FLG_FALSE_CHECK(data, edge_index) \
+   Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data)) and Cget_edge_info<CdfgEdgeInfo>(edge_index, *(data))->FlgEdgeF()
 
 /**
  * Helper macro returning the NodeID of a certain type associated with an edge.

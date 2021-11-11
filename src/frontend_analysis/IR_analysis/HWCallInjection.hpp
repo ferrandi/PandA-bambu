@@ -44,12 +44,14 @@ class HWCallInjection : public FunctionFrontendFlowStep
  private:
    static unsigned int builtinWaitCallDeclIdx;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
 
    void buildBuiltinCall(const blocRef& block, const tree_nodeRef& stmt);
 
  public:
-   HWCallInjection(const ParameterConstRef Param, const application_managerRef AppM, unsigned int funId, const DesignFlowManagerConstRef DFM);
+   HWCallInjection(const ParameterConstRef Param, const application_managerRef AppM, unsigned int funId,
+                   const DesignFlowManagerConstRef DFM);
 
    ~HWCallInjection() override;
 

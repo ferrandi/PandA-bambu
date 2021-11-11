@@ -95,8 +95,9 @@ static char** alloc_argv(int& argc, char* argv[])
    {
       char* tmp;
       // std::cerr << argv[i] << std::endl;
-      if(strcmp(argv[i], "-include") == 0 || strcmp(argv[i], "-isystem") == 0 || strcmp(argv[i], "-iquote") == 0 || strcmp(argv[i], "-isysroot") == 0 || strcmp(argv[i], "-imultilib") == 0 || strcmp(argv[i], "-MF") == 0 || strcmp(argv[i], "-MT") == 0 ||
-         strcmp(argv[i], "-MQ") == 0)
+      if(strcmp(argv[i], "-include") == 0 || strcmp(argv[i], "-isystem") == 0 || strcmp(argv[i], "-iquote") == 0 ||
+         strcmp(argv[i], "-isysroot") == 0 || strcmp(argv[i], "-imultilib") == 0 || strcmp(argv[i], "-MF") == 0 ||
+         strcmp(argv[i], "-MT") == 0 || strcmp(argv[i], "-MQ") == 0)
       {
          tmp = alloc_long_option(argv, i, dec);
       }
@@ -205,13 +206,17 @@ int main(int argc, char* argv_orig[])
             }
          }
 
-         const CompilerWrapper_OptimizationSet optimization_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
-         const CompilerWrapper_CompilerTarget compiler_target = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+         const CompilerWrapper_OptimizationSet optimization_set =
+             Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
+         const CompilerWrapper_CompilerTarget compiler_target =
+             Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
          CompilerWrapperRef Wrap = CompilerWrapperRef(new CompilerWrapper(Param, compiler_target, optimization_set));
 
          const auto input_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
 
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Created list of files: " + boost::lexical_cast<std::string>(input_files.size()) + " input source code files to be concatenated");
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                       "Created list of files: " + boost::lexical_cast<std::string>(input_files.size()) +
+                           " input source code files to be concatenated");
 
          std::map<std::string, std::string> temp_input_files;
          for(const auto& input_file : input_files)
@@ -261,7 +266,8 @@ int main(int argc, char* argv_orig[])
                   THROW_ERROR("File " + archive_file + " does not exist");
                }
                std::string temporary_directory_pattern;
-               temporary_directory_pattern = Param->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
+               temporary_directory_pattern =
+                   Param->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
                // The %s are required by the mkdtemp function
                boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
                boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
@@ -275,7 +281,8 @@ int main(int argc, char* argv_orig[])
                {
                   THROW_ERROR("ar returns an error during archive extraction ");
                }
-               for(auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(temp_path_obtained), {}))
+               for(auto& entry :
+                   boost::make_iterator_range(boost::filesystem::directory_iterator(temp_path_obtained), {}))
                {
                   const tree_managerRef TM_new = ParseTreeFile(Param, entry.path().string());
                   TM->merge_tree_managers(TM_new);

@@ -68,7 +68,9 @@
 #define LATTICE_DSP "LATTICE_DSPS"
 #define LATTICE_MEM "LATTICE_MEM"
 
-LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
+LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
+                                       const target_managerRef _target)
+    : BackendFlow(_Param, _flow_name, _target)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Lattice Backend Flow ::.");
 
@@ -101,8 +103,11 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
       {
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/lattice/") + default_data[device_string]));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                     "Importing default scripts for target device family: " + device_string);
+      parser = XMLDomParserRef(
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/lattice/") +
+                           default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -253,10 +258,14 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
    std::ofstream sdc_file(sdc_filename.c_str());
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
-      sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      if((boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) || (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) && !Param->isOption(OPT_backend_sdc_extensions))
+      sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock +
+                      " [get_ports " + clock + "]\n";
+      if((boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) ||
+          (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) &&
+         !Param->isOption(OPT_backend_sdc_extensions))
       {
-         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] +
+                         " -from [all_inputs] -to [all_outputs]\n";
       }
    }
    else

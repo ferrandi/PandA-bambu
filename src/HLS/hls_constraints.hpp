@@ -94,7 +94,8 @@ class HLS_constraints
    /// Variable storing the number of registers.
    unsigned int registers;
 
-   /// name of the function which the constraints are associated with; emtpy string means that they are global constraints
+   /// name of the function which the constraints are associated with; emtpy string means that they are global
+   /// constraints
    std::string fun_name;
 
    /// The set of input parameters
@@ -137,7 +138,8 @@ class HLS_constraints
     * @param library is the library of name.
     * @param n_resources is the maximum number of fu available (default is infinite).
     */
-   void set_number_fu(const std::string& name, const std::string& library, unsigned int n_resources = std::numeric_limits<unsigned int>::max());
+   void set_number_fu(const std::string& name, const std::string& library,
+                      unsigned int n_resources = std::numeric_limits<unsigned int>::max());
 
    /**
     * This method returns the maximum number of functional units available for the design.
@@ -161,7 +163,8 @@ class HLS_constraints
     * @param fu_library is the name of the library where the functional unit fu_name is contained.
     * @param fu_index is the ith functional unit instance.
     */
-   void bind_vertex_to_fu(const std::string& vertex_name, const std::string& fu_name, const std::string& fu_library, const unsigned int fu_index);
+   void bind_vertex_to_fu(const std::string& vertex_name, const std::string& fu_name, const std::string& fu_library,
+                          const unsigned int fu_index);
 
    /**
     * Binds a vertex to a functional unit.
@@ -247,7 +250,8 @@ class HLS_constraints
     * @param fu_library is the name of the library where the functional unit fu_name is contained.
     * @param fu_index is the ith functional unit instance.
     */
-   void xwriteFUConstraints(xml_element* Enode, const std::string& fu_name, const std::string& fu_library, unsigned int number_fu, bool forDump = false);
+   void xwriteFUConstraints(xml_element* Enode, const std::string& fu_name, const std::string& fu_library,
+                            unsigned int number_fu, bool forDump = false);
 
    /**
     * Writes the binding constraints (i.e., functional unit, instance and library) associated with an operation
@@ -256,7 +260,8 @@ class HLS_constraints
     * @param fu_name is the name of the functional unit
     * @param fu_library is the name of the library where the functional unit fu_name is contained.
     */
-   void xwriteBindingConstraints(xml_element* Enode, const std::string& vertex_name, const std::string& fu_name, const std::string& fu_library, unsigned int fu_index);
+   void xwriteBindingConstraints(xml_element* Enode, const std::string& vertex_name, const std::string& fu_name,
+                                 const std::string& fu_library, unsigned int fu_index);
 
    /**
     * Writes the scheduling constraints (i.e., priority value) associated with an operation

@@ -88,7 +88,9 @@
 #define FEEDBACK_SELECTOR 1 << 1
 //@}
 
-CallGraphManager::CallGraphManager(const FunctionExpanderConstRef _function_expander, const bool _single_root_function, const bool _allow_recursive_functions, const tree_managerConstRef _tree_manager, const ParameterConstRef _Param)
+CallGraphManager::CallGraphManager(const FunctionExpanderConstRef _function_expander, const bool _single_root_function,
+                                   const bool _allow_recursive_functions, const tree_managerConstRef _tree_manager,
+                                   const ParameterConstRef _Param)
     : call_graphs_collection(new CallGraphsCollection(CallGraphInfoRef(new CallGraphInfo()), _Param)),
       call_graph(new CallGraph(call_graphs_collection, STD_SELECTOR | FEEDBACK_SELECTOR)),
       tree_manager(_tree_manager),
@@ -104,7 +106,9 @@ CallGraphManager::~CallGraphManager() = default;
 
 void CallGraphManager::AddFunction(unsigned int new_function_id, const FunctionBehaviorRef fun_behavior)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding function: " + fun_behavior->CGetBehavioralHelper()->get_function_name() + " id: " + STR(new_function_id));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Adding function: " + fun_behavior->CGetBehavioralHelper()->get_function_name() +
+                      " id: " + STR(new_function_id));
    if(!IsVertex(new_function_id))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---new vertex");
@@ -119,29 +123,40 @@ void CallGraphManager::AddFunction(unsigned int new_function_id, const FunctionB
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---vertex already present");
       THROW_ASSERT(call_graph->GetCallGraphInfo()->behaviors.at(new_function_id) == fun_behavior,
-                   "adding a different behavior for " + STR(new_function_id) + "prev: " + STR(call_graph->GetCallGraphInfo()->behaviors.at(new_function_id)) + "new: " + STR(fun_behavior));
+                   "adding a different behavior for " + STR(new_function_id) +
+                       "prev: " + STR(call_graph->GetCallGraphInfo()->behaviors.at(new_function_id)) +
+                       "new: " + STR(fun_behavior));
    }
 }
 
-void CallGraphManager::AddCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type)
+void CallGraphManager::AddCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                                    enum FunctionEdgeInfo::CallType call_type)
 {
 #if !defined(NDEBUG) || HAVE_ASSERTS
-   const auto caller_name = "(" + STR(caller_id) + ") " + tree_helper::print_function_name(tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
-   const auto called_name = "(" + STR(called_id) + ") " + tree_helper::print_function_name(tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(called_id)));
+   const auto caller_name = "(" + STR(caller_id) + ") " +
+                            tree_helper::print_function_name(
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
+   const auto called_name = "(" + STR(called_id) + ") " +
+                            tree_helper::print_function_name(
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(called_id)));
 #endif
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call with id: " + STR(call_id) + " from " + caller_name + " to " + called_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Adding call with id: " + STR(call_id) + " from " + caller_name + " to " + called_name);
    if(IsCallPoint(caller_id, called_id, call_id, call_type))
    {
       return;
    }
-   THROW_ASSERT(!IsCallPoint(caller_id, called_id, call_id, FunctionEdgeInfo::CallType::call_any), "call id " + STR(call_id) + " from " + caller_name + " to " + called_name + " was already in the call graph with the same call type");
+   THROW_ASSERT(!IsCallPoint(caller_id, called_id, call_id, FunctionEdgeInfo::CallType::call_any),
+                "call id " + STR(call_id) + " from " + caller_name + " to " + called_name +
+                    " was already in the call graph with the same call type");
    THROW_ASSERT(IsVertex(caller_id), "caller function should be already added to the call_graph");
    THROW_ASSERT(IsVertex(called_id), "called function should be already added to the call_graph");
    const auto src = GetVertex(caller_id);
    const auto tgt = GetVertex(called_id);
    if(called_by.at(caller_id).find(called_id) == called_by.at(caller_id).end())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---No previous call from " + caller_name + " to " + called_name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---No previous call from " + caller_name + " to " + called_name);
       called_by.at(caller_id).insert(called_id);
       call_graphs_collection->AddEdge(src, tgt, STD_SELECTOR);
       try
@@ -161,7 +176,8 @@ void CallGraphManager::AddCallPoint(unsigned int caller_id, unsigned int called_
    EdgeDescriptor e;
    bool found;
    boost::tie(e, found) = boost::edge(src, tgt, *CGetCallGraph());
-   THROW_ASSERT(found, "call id " + STR(call_id) + " from " + caller_name + " to " + called_name + " was not in the call graph");
+   THROW_ASSERT(found, "call id " + STR(call_id) + " from " + caller_name + " to " + called_name +
+                           " was not in the call graph");
 
    const auto functionEdgeInfo = get_edge_info<FunctionEdgeInfo, CallGraph>(e, *call_graph);
    THROW_ASSERT(call_id, "");
@@ -189,7 +205,8 @@ void CallGraphManager::AddCallPoint(unsigned int caller_id, unsigned int called_
    ComputeRootAndReachedFunctions();
 }
 
-bool CallGraphManager::IsCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type) const
+bool CallGraphManager::IsCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                                   enum FunctionEdgeInfo::CallType call_type) const
 {
    if(!IsVertex(caller_id) || !IsVertex(called_id))
    {
@@ -211,10 +228,15 @@ bool CallGraphManager::IsCallPoint(unsigned int caller_id, unsigned int called_i
    bool found;
    boost::tie(e, found) = boost::edge(src, tgt, *CGetCallGraph());
 #if HAVE_ASSERTS
-   const auto caller_name = "(" + STR(caller_id) + ") " + tree_helper::print_function_name(tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
-   const auto called_name = "(" + STR(called_id) + ") " + tree_helper::print_function_name(tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(called_id)));
+   const auto caller_name = "(" + STR(caller_id) + ") " +
+                            tree_helper::print_function_name(
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
+   const auto called_name = "(" + STR(called_id) + ") " +
+                            tree_helper::print_function_name(
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(called_id)));
 #endif
-   THROW_ASSERT(found, "call id " + STR(call_id) + " from " + caller_name + " to " + called_name + " was not in the call graph");
+   THROW_ASSERT(found, "call id " + STR(call_id) + " from " + caller_name + " to " + called_name +
+                           " was not in the call graph");
 
    const auto functionEdgeInfo = get_edge_info<FunctionEdgeInfo, CallGraph>(e, *call_graph);
 
@@ -234,7 +256,9 @@ bool CallGraphManager::IsCallPoint(unsigned int caller_id, unsigned int called_i
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "function_address! present? " + STR(res));
          break;
       case FunctionEdgeInfo::CallType::call_any:
-         res = functionEdgeInfo->direct_call_points.count(call_id) || functionEdgeInfo->indirect_call_points.count(call_id) || functionEdgeInfo->function_addresses.count(call_id);
+         res = functionEdgeInfo->direct_call_points.count(call_id) ||
+               functionEdgeInfo->indirect_call_points.count(call_id) ||
+               functionEdgeInfo->function_addresses.count(call_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "any call! present? " + STR(res));
          break;
       default:
@@ -243,20 +267,26 @@ bool CallGraphManager::IsCallPoint(unsigned int caller_id, unsigned int called_i
    return res;
 }
 
-void CallGraphManager::AddFunctionAndCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id, const FunctionBehaviorRef called_function_behavior, enum FunctionEdgeInfo::CallType call_type)
+void CallGraphManager::AddFunctionAndCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                                               const FunctionBehaviorRef called_function_behavior,
+                                               enum FunctionEdgeInfo::CallType call_type)
 {
    AddFunction(called_id, called_function_behavior);
    AddCallPoint(caller_id, called_id, call_id, call_type);
 }
 
-void CallGraphManager::AddFunctionAndCallPoint(const application_managerRef AppM, unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type)
+void CallGraphManager::AddFunctionAndCallPoint(const application_managerRef AppM, unsigned int caller_id,
+                                               unsigned int called_id, unsigned int call_id,
+                                               enum FunctionEdgeInfo::CallType call_type)
 {
-   if(tree_helper::print_function_name(tree_manager, GetPointer<const function_decl>(tree_manager->CGetTreeNode(called_id))) != BUILTIN_WAIT_CALL)
+   if(tree_helper::print_function_name(
+          tree_manager, GetPointer<const function_decl>(tree_manager->CGetTreeNode(called_id))) != BUILTIN_WAIT_CALL)
    {
       if(!IsVertex(called_id))
       {
          bool has_body = tree_manager->get_implementation_node(called_id) != 0;
-         BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, called_id, has_body, AppM->get_parameter()));
+         BehavioralHelperRef helper =
+             BehavioralHelperRef(new BehavioralHelper(AppM, called_id, has_body, AppM->get_parameter()));
          FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, AppM->get_parameter()));
          AddFunctionAndCallPoint(caller_id, called_id, call_id, FB, call_type);
       }
@@ -270,7 +300,8 @@ void CallGraphManager::AddFunctionAndCallPoint(const application_managerRef AppM
 void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int callid)
 {
    const auto called_id = Cget_node_info<FunctionInfo, CallGraph>(boost::target(e, *call_graph), *call_graph)->nodeID;
-   const auto called_name = tree_helper::print_function_name(tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(called_id)));
+   const auto called_name = tree_helper::print_function_name(
+       tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(called_id)));
    if(called_name == BUILTIN_WAIT_CALL)
    {
       return;
@@ -311,14 +342,19 @@ void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int call
    }
 
 #if !defined(NDEBUG) || HAVE_ASSERTS
-   const auto caller_name = "(" + STR(caller_id) + ") " + tree_helper::print_function_name(tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
+   const auto caller_name = "(" + STR(caller_id) + ") " +
+                            tree_helper::print_function_name(
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
 #endif
-   THROW_ASSERT(found_calls, "call id " + STR(callid) + " is not a call point in function " + caller_name + " for function (" + STR(called_id) + ") " + called_name);
-   THROW_ASSERT(found_calls == 1, "call id " + STR(callid) + " is a multiple call point in function " + caller_name + " for function (" + STR(called_id) + ") " + called_name);
+   THROW_ASSERT(found_calls, "call id " + STR(callid) + " is not a call point in function " + caller_name +
+                                 " for function (" + STR(called_id) + ") " + called_name);
+   THROW_ASSERT(found_calls == 1, "call id " + STR(callid) + " is a multiple call point in function " + caller_name +
+                                      " for function (" + STR(called_id) + ") " + called_name);
 
    if(direct_calls.empty() && indirect_calls.empty() && function_addresses.empty())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed function call edge: " + caller_name + " -> (" + STR(called_id) + ") " + called_name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "Removed function call edge: " + caller_name + " -> (" + STR(called_id) + ") " + called_name);
       const auto called_v = boost::target(e, *call_graphs_collection);
       boost::remove_edge(boost::source(e, *call_graphs_collection), called_v, *call_graphs_collection);
       called_by.at(caller_id).erase(called_id);
@@ -329,12 +365,16 @@ void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int call
       // if(it == it_end)
       // {
       //    call_graphs_collection->RemoveVertex(called_v);
-      //    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed dangling function vertex: (" + STR(called_id) + ") " + called_name);
+      //    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed dangling function vertex: (" +
+      //    STR(called_id) + ") " + called_name);
       // }
    }
    else
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "There are still " + STR(direct_calls.size()) + " direct calls, " + STR(indirect_calls.size()) + " indirect calls, and " + STR(function_addresses.size()) + " places where the address is taken");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "There are still " + STR(direct_calls.size()) + " direct calls, " + STR(indirect_calls.size()) +
+                         " indirect calls, and " + STR(function_addresses.size()) +
+                         " places where the address is taken");
    }
    if(indirect_calls.empty() && function_addresses.empty())
    {
@@ -342,9 +382,11 @@ void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int call
    }
 }
 
-void CallGraphManager::RemoveCallPoint(const unsigned int caller_id, const unsigned int called_id, const unsigned int call_id)
+void CallGraphManager::RemoveCallPoint(const unsigned int caller_id, const unsigned int called_id,
+                                       const unsigned int call_id)
 {
-   const auto called_name = tree_helper::print_function_name(tree_manager, GetPointer<const function_decl>(tree_manager->CGetTreeNode(called_id)));
+   const auto called_name = tree_helper::print_function_name(
+       tree_manager, GetPointer<const function_decl>(tree_manager->CGetTreeNode(called_id)));
    if(called_name == BUILTIN_WAIT_CALL)
    {
       return;
@@ -355,9 +397,12 @@ void CallGraphManager::RemoveCallPoint(const unsigned int caller_id, const unsig
    bool found;
    boost::tie(e, found) = boost::edge(caller_vertex, called_vertex, *CGetCallGraph());
 #if HAVE_ASSERTS
-   const auto caller_name = "(" + STR(caller_id) + ") " + tree_helper::print_function_name(tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
+   const auto caller_name = "(" + STR(caller_id) + ") " +
+                            tree_helper::print_function_name(
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
 #endif
-   THROW_ASSERT(found, "call id " + STR(call_id) + " is not a call point in function " + caller_name + " for function (" + STR(called_id) + ") " + called_name);
+   THROW_ASSERT(found, "call id " + STR(call_id) + " is not a call point in function " + caller_name +
+                           " for function (" + STR(called_id) + ") " + called_name);
    RemoveCallPoint(e, call_id);
 }
 
@@ -407,7 +452,9 @@ bool CallGraphManager::ExistsAddressedFunction() const
 CustomOrderedSet<unsigned int> CallGraphManager::GetAddressedFunctions() const
 {
    CustomOrderedSet<unsigned int> reachable_addressed_fun_ids;
-   std::set_intersection(reached_body_functions.cbegin(), reached_body_functions.cend(), addressed_functions.cbegin(), addressed_functions.cend(), std::inserter(reachable_addressed_fun_ids, reachable_addressed_fun_ids.begin()));
+   std::set_intersection(reached_body_functions.cbegin(), reached_body_functions.cend(), addressed_functions.cbegin(),
+                         addressed_functions.cend(),
+                         std::inserter(reachable_addressed_fun_ids, reachable_addressed_fun_ids.begin()));
    return reachable_addressed_fun_ids;
 }
 
@@ -428,7 +475,8 @@ const CallGraphConstRef CallGraphManager::CGetCallSubGraph(const CustomUnordered
 
 vertex CallGraphManager::GetVertex(const unsigned int index) const
 {
-   THROW_ASSERT(functionID_vertex_map.find(index) != functionID_vertex_map.end(), "this vertex does not exist " + STR(index));
+   THROW_ASSERT(functionID_vertex_map.find(index) != functionID_vertex_map.end(),
+                "this vertex does not exist " + STR(index));
    return functionID_vertex_map.at(index);
 }
 
@@ -462,7 +510,8 @@ const CustomOrderedSet<unsigned int> CallGraphManager::get_called_by(unsigned in
    }
 }
 
-const CustomUnorderedSet<unsigned int> CallGraphManager::get_called_by(const OpGraphConstRef cfg, const vertex& caller) const
+const CustomUnorderedSet<unsigned int> CallGraphManager::get_called_by(const OpGraphConstRef cfg,
+                                                                       const vertex& caller) const
 {
    return cfg->CGetOpNodeInfo(caller)->called;
 }
@@ -473,7 +522,8 @@ void CallGraphManager::ComputeRootAndReachedFunctions()
    /// If top function option has been passed
    THROW_ASSERT(Param->isOption(OPT_top_functions_names), "Top function must be defined by the user");
    const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Top functions passed by user: " + Param->getOption<std::string>(OPT_top_functions_names));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Top functions passed by user: " + Param->getOption<std::string>(OPT_top_functions_names));
    for(const auto& top_function_name : top_functions_names)
    {
       const auto top_function = tree_manager->GetFunction(top_function_name);
@@ -483,7 +533,10 @@ void CallGraphManager::ComputeRootAndReachedFunctions()
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root function (" + STR(top_function->index) + ") " + tree_helper::print_function_name(tree_manager, GetPointer<const function_decl>(GET_CONST_NODE(top_function))));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Root function (" + STR(top_function->index) + ") " +
+                            tree_helper::print_function_name(
+                                tree_manager, GetPointer<const function_decl>(GET_CONST_NODE(top_function))));
          root_functions.insert(top_function->index);
       }
    }
@@ -496,14 +549,18 @@ void CallGraphManager::ComputeRootAndReachedFunctions()
       if(IsVertex(root_fun_id))
       {
          const auto top_vertex = GetVertex(root_fun_id);
-         boost::depth_first_visit(*call_graph, top_vertex, vis, boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index_t(), *call_graph), boost::white_color));
+         boost::depth_first_visit(*call_graph, top_vertex, vis,
+                                  boost::make_iterator_property_map(color_vec.begin(),
+                                                                    boost::get(boost::vertex_index_t(), *call_graph),
+                                                                    boost::white_color));
       }
    }
 }
 
 const CustomOrderedSet<unsigned int> CallGraphManager::GetRootFunctions() const
 {
-   THROW_ASSERT(boost::num_vertices(*call_graph) == 0 || root_functions.size(), "Root functions have not yet been computed");
+   THROW_ASSERT(boost::num_vertices(*call_graph) == 0 || root_functions.size(),
+                "Root functions have not yet been computed");
    return root_functions;
 }
 
@@ -520,7 +577,10 @@ CustomOrderedSet<unsigned int> CallGraphManager::GetReachedBodyFunctionsFrom(uns
    CalledFunctionsVisitor vis(allow_recursive_functions, this, f_list, dummy);
    std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
    const auto top_vertex = GetVertex(from);
-   boost::depth_first_visit(*call_graph, top_vertex, vis, boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index_t(), *call_graph), boost::white_color));
+   boost::depth_first_visit(*call_graph, top_vertex, vis,
+                            boost::make_iterator_property_map(color_vec.begin(),
+                                                              boost::get(boost::vertex_index_t(), *call_graph),
+                                                              boost::white_color));
    return f_list;
 }
 
@@ -529,7 +589,8 @@ CustomOrderedSet<unsigned int> CallGraphManager::GetReachedLibraryFunctions() co
    return reached_library_functions;
 }
 
-void CallGraphManager::expandCallGraphFromFunction(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM, unsigned int f_id, int DL)
+void CallGraphManager::expandCallGraphFromFunction(CustomUnorderedSet<unsigned int>& AV,
+                                                   const application_managerRef AM, unsigned int f_id, int DL)
 {
    const auto TM = AM->get_tree_manager();
    const auto has_body = TM->get_implementation_node(f_id) != 0;
@@ -549,13 +610,16 @@ void CallGraphManager::expandCallGraphFromFunction(CustomUnorderedSet<unsigned i
          {
             for(const auto& stmt : b.second->CGetStmtList())
             {
-               call_graph_computation_recursive(AV, AM, f_id, TM, stmt, stmt->index, FunctionEdgeInfo::CallType::function_address, DL);
+               call_graph_computation_recursive(AV, AM, f_id, TM, stmt, stmt->index,
+                                                FunctionEdgeInfo::CallType::function_address, DL);
             }
          }
       }
    }
 }
-void CallGraphManager::addCallPointAndExpand(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM, unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type, int DL)
+void CallGraphManager::addCallPointAndExpand(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM,
+                                             unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                                             enum FunctionEdgeInfo::CallType call_type, int DL)
 {
    bool has_been_previously_added = AM->GetCallGraphManager()->IsVertex(called_id);
    AM->GetCallGraphManager()->AddFunctionAndCallPoint(AM, caller_id, called_id, call_id, call_type);
@@ -565,7 +629,10 @@ void CallGraphManager::addCallPointAndExpand(CustomUnorderedSet<unsigned int>& A
    }
 }
 
-void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM, unsigned int current, const tree_managerRef& TM, const tree_nodeRef& tn, unsigned int node_stmt,
+void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsigned int>& AV,
+                                                        const application_managerRef AM, unsigned int current,
+                                                        const tree_managerRef& TM, const tree_nodeRef& tn,
+                                                        unsigned int node_stmt,
                                                         enum FunctionEdgeInfo::CallType call_type, int DL)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -582,7 +649,9 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
          AV.insert(ind);
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, DL, "-->Recursive analysis of " + STR(ind) + " of type " + curr_tn->get_kind_text() + "(statement is " + tn->ToString() + ")");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, DL,
+                  "-->Recursive analysis of " + STR(ind) + " of type " + curr_tn->get_kind_text() + "(statement is " +
+                      tn->ToString() + ")");
 
    switch(curr_tn->get_kind())
    {
@@ -661,7 +730,8 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
             fun_node = ce->fn;
          }
 
-         call_graph_computation_recursive(AV, AM, current, TM, fun_node, node_stmt, FunctionEdgeInfo::CallType::direct_call, DL);
+         call_graph_computation_recursive(AV, AM, current, TM, fun_node, node_stmt,
+                                          FunctionEdgeInfo::CallType::direct_call, DL);
          for(auto& arg : ce->args)
          {
             call_graph_computation_recursive(AV, AM, current, TM, arg, node_stmt, call_type, DL);
@@ -685,7 +755,8 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
          {
             fun_node = ce->fn;
          }
-         call_graph_computation_recursive(AV, AM, current, TM, fun_node, node_stmt, FunctionEdgeInfo::CallType::direct_call, DL);
+         call_graph_computation_recursive(AV, AM, current, TM, fun_node, node_stmt,
+                                          FunctionEdgeInfo::CallType::direct_call, DL);
          for(auto& arg : ce->args)
          {
             call_graph_computation_recursive(AV, AM, current, TM, arg, node_stmt, call_type, DL);
@@ -893,8 +964,14 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, DL, "<--Completed the recursive analysis of node " + STR(ind));
 }
 
-CalledFunctionsVisitor::CalledFunctionsVisitor(const bool _allow_recursive_functions, const CallGraphManager* _call_graph_manager, CustomOrderedSet<unsigned int>& _body_functions, CustomOrderedSet<unsigned int>& _library_functions)
-    : allow_recursive_functions(_allow_recursive_functions), call_graph_manager(_call_graph_manager), body_functions(_body_functions), library_functions(_library_functions)
+CalledFunctionsVisitor::CalledFunctionsVisitor(const bool _allow_recursive_functions,
+                                               const CallGraphManager* _call_graph_manager,
+                                               CustomOrderedSet<unsigned int>& _body_functions,
+                                               CustomOrderedSet<unsigned int>& _library_functions)
+    : allow_recursive_functions(_allow_recursive_functions),
+      call_graph_manager(_call_graph_manager),
+      body_functions(_body_functions),
+      library_functions(_library_functions)
 {
 }
 
@@ -905,7 +982,9 @@ void CalledFunctionsVisitor::back_edge(const EdgeDescriptor& e, const CallGraph&
       const auto& behaviors = g.CGetCallGraphInfo()->behaviors;
       const auto source = boost::source(e, g);
       const auto target = boost::target(e, g);
-      THROW_ERROR("Recursive functions not yet supported: " + behaviors.at(call_graph_manager->get_function(source))->CGetBehavioralHelper()->get_function_name() + "-->" +
+      THROW_ERROR("Recursive functions not yet supported: " +
+                  behaviors.at(call_graph_manager->get_function(source))->CGetBehavioralHelper()->get_function_name() +
+                  "-->" +
                   behaviors.at(call_graph_manager->get_function(target))->CGetBehavioralHelper()->get_function_name());
    }
 }

@@ -78,7 +78,8 @@ struct tree_node_dup : public tree_node_mask
     * @param _remap_loop_id is the base index to renumber loop ids in blocs (default = 0, no remapping)
     * @param _use_counting set use counting on nodes after duplication (bloc, gimple_phi) (default = false)
     */
-   tree_node_dup(CustomUnorderedMapStable<unsigned int, unsigned int>& _remap, const application_managerRef _AppM, unsigned int _remap_bbi = 0, unsigned int _remap_loop_id = 0, bool _use_counting = false);
+   tree_node_dup(CustomUnorderedMapStable<unsigned int, unsigned int>& _remap, const application_managerRef _AppM,
+                 unsigned int _remap_bbi = 0, unsigned int _remap_loop_id = 0, bool _use_counting = false);
 
    /// tree_node visitors
    BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)

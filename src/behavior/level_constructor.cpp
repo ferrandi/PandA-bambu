@@ -42,7 +42,9 @@
  */
 #include "level_constructor.hpp"
 
-level_constructor::level_constructor(std::map<vertex, unsigned int>& _map_levels_true, std::deque<vertex>& _deque_levels_true) : map_levels_true(_map_levels_true), deque_levels_true(_deque_levels_true)
+level_constructor::level_constructor(std::map<vertex, unsigned int>& _map_levels_true,
+                                     std::deque<vertex>& _deque_levels_true)
+    : map_levels_true(_map_levels_true), deque_levels_true(_deque_levels_true)
 {
 }
 

@@ -89,7 +89,8 @@ static CustomUnorderedMap<kind, size_t> op_costs = {{mult_expr_K, DEAFULT_MAX_IN
                                                     {nop_expr_K, 0},
                                                     {call_expr_K, 8}};
 
-FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const application_managerRef _AppM,
+                                 unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, FUNCTION_CALL_OPT, _design_flow_manager, Param), caller_bb()
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -110,7 +111,9 @@ FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const applicatio
          {
             auto& inline_set = (!(toks.size() > 1) || toks.at(1) == "1") ? always_inline : never_inline;
             inline_set.insert(fnode->index);
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required " + STR((!(toks.size() > 1) || toks.at(1) == "1") ? "always" : "never") + " inline for function " + fname);
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "Required " + STR((!(toks.size() > 1) || toks.at(1) == "1") ? "always" : "never") +
+                               " inline for function " + fname);
          }
          else
          {
@@ -122,7 +125,8 @@ FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const applicatio
 
 FunctionCallOpt::~FunctionCallOpt() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> FunctionCallOpt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+FunctionCallOpt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -179,7 +183,8 @@ void FunctionCallOpt::Initialize()
 
 DesignFlowStep_Status FunctionCallOpt::InternalExec()
 {
-   THROW_ASSERT(!parameters->IsParameter("function-opt") || parameters->GetParameter<bool>("function-opt"), "Function call inlining should not be executed");
+   THROW_ASSERT(!parameters->IsParameter("function-opt") || parameters->GetParameter<bool>("function-opt"),
+                "Function call inlining should not be executed");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const auto TM = AppM->get_tree_manager();
    const auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
@@ -204,22 +209,27 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
             if(gn->bb_index != 0 && bb_it != sl->list_of_bloc.end())
             {
                const auto& bb = bb_it->second;
-               if(std::find_if(bb->CGetStmtList().cbegin(), bb->CGetStmtList().cend(), [&](const tree_nodeRef& tn) { return GET_INDEX_CONST_NODE(tn) == stmt_id; }) != bb->CGetStmtList().cend())
+               if(std::find_if(bb->CGetStmtList().cbegin(), bb->CGetStmtList().cend(), [&](const tree_nodeRef& tn) {
+                     return GET_INDEX_CONST_NODE(tn) == stmt_id;
+                  }) != bb->CGetStmtList().cend())
                {
                   if(!AppM->ApplyNewTransformation())
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Max transformations reached, skipping function inlining...");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Max transformations reached, skipping function inlining...");
                      break;
                   }
                   if(opt_type == FunctionOptType::INLINE)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inlining required for call statement " + GET_CONST_NODE(stmt)->ToString());
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "Inlining required for call statement " + GET_CONST_NODE(stmt)->ToString());
                      tree_man->InlineFunctionCall(stmt, bb, fd);
                      AppM->RegisterTransformation(GetName(), nullptr);
                   }
                   else if(opt_type == FunctionOptType::VERSION)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Versioning required for call statement " + GET_CONST_NODE(stmt)->ToString());
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "Versioning required for call statement " + GET_CONST_NODE(stmt)->ToString());
                      const auto call_node = GET_CONST_NODE(stmt);
                      tree_nodeRef called_fn;
                      tree_nodeRef ret_val = nullptr;
@@ -247,7 +257,8 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      {
                         called_fn = GetPointerS<const unary_expr>(GET_CONST_NODE(called_fn))->op;
                      }
-                     THROW_ASSERT(GET_CONST_NODE(called_fn)->get_kind() == function_decl_K, "Call statement should address a function declaration");
+                     THROW_ASSERT(GET_CONST_NODE(called_fn)->get_kind() == function_decl_K,
+                                  "Call statement should address a function declaration");
 
                      const auto version_fn = tree_man->CloneFunction(called_fn, "_const" + STR(version_uid++));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call before versioning : " + STR(stmt));
@@ -257,16 +268,21 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                         const auto ga = GetPointerS<const gimple_assign>(call_node);
                         AppM->GetCallGraphManager()->RemoveCallPoint(function_id, called_fn->index, stmt->index);
                         TM->ReplaceTreeNode(stmt, ga->op1, ce);
-                        CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, version_fn->index, stmt->index, FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+                        CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, version_fn->index,
+                                                                stmt->index, FunctionEdgeInfo::CallType::direct_call,
+                                                                DEBUG_LEVEL_NONE);
                         AppM->RegisterTransformation(GetName(), stmt);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call after versioning  : " + STR(stmt));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Call after versioning  : " + STR(stmt));
                      }
                      else
                      {
-                        const auto version_call = tree_man->create_gimple_call(version_fn, *args, function_id, BUILTIN_SRCP, bb->number);
+                        const auto version_call =
+                            tree_man->create_gimple_call(version_fn, *args, function_id, BUILTIN_SRCP, bb->number);
                         bb->Replace(stmt, version_call, true, AppM);
                         AppM->RegisterTransformation(GetName(), version_call);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call after versioning  : " + STR(version_call));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Call after versioning  : " + STR(version_call));
                      }
                   }
                   else
@@ -277,17 +293,20 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                }
                else
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Statement " + STR(stmt_id) + " was not present in BB" + STR(bb->number));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "Statement " + STR(stmt_id) + " was not present in BB" + STR(bb->number));
                }
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BB" + STR(gn->bb_index) + " was not found in current function");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "BB" + STR(gn->bb_index) + " was not found in current function");
             }
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Statement " + STR(stmt_id) + " was not in tree manager");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Statement " + STR(stmt_id) + " was not in tree manager");
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -318,7 +337,8 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       const auto body_cost = compute_cost(sl, has_simd, has_memory);
       const auto omp_simd_enabled = parameters->getOption<int>(OPT_gcc_openmp_simd);
       has_simd &= omp_simd_enabled;
-      const bool force_inline = always_inline.count(function_id) || ((body_cost * call_count) < max_inline_cost) || call_count == 1;
+      const bool force_inline =
+          always_inline.count(function_id) || ((body_cost * call_count) < max_inline_cost) || call_count == 1;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function information:");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal loops : " + STR(loop_count));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call points    : " + STR(call_count));
@@ -333,7 +353,10 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
          {
             const auto caller_id = CGM->get_function(ie->m_source);
             caller_bb.insert(std::make_pair(caller_id, AppM->CGetFunctionBehavior(caller_id)->GetBBVersion()));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing call points from " + tree_helper::print_function_name(TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Analysing call points from " +
+                               tree_helper::print_function_name(
+                                   TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
             const auto caller_node = TM->CGetTreeNode(caller_id);
             THROW_ASSERT(caller_node->get_kind() == function_decl_K, "");
@@ -345,7 +368,8 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                const auto caller_has_simd = tree_helper::has_omp_simd(caller_sl);
                if(caller_has_simd)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Caller has OpenMP SIMD constructs, analysis postponed");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "<--Caller has OpenMP SIMD constructs, analysis postponed");
                   continue;
                }
             }
@@ -360,7 +384,8 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                {
                   // TODO: alias analysis is not able to handle inlining yet
                   all_inlined = false;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call statement carries alias dependencies, skipping...");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Call statement carries alias dependencies, skipping...");
                   continue;
                }
                if(force_inline)
@@ -368,12 +393,17 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                   if(!omp_simd_enabled || loop_count == 0)
                   {
                      const auto is_unique_bb_call = [&]() -> bool {
-                        THROW_ASSERT(caller_sl->list_of_bloc.count(call_gn->bb_index), "BB" + STR(call_gn->bb_index) + " not found in function " + tree_helper::print_function_name(TM, caller_fd) + " (" + STR(call_id) + ")");
+                        THROW_ASSERT(caller_sl->list_of_bloc.count(call_gn->bb_index),
+                                     "BB" + STR(call_gn->bb_index) + " not found in function " +
+                                         tree_helper::print_function_name(TM, caller_fd) + " (" + STR(call_id) + ")");
                         const auto bb = caller_sl->list_of_bloc.at(call_gn->bb_index);
                         for(const auto& tn : bb->CGetStmtList())
                         {
                            if(tn->index != call_gn->index &&
-                              (GET_CONST_NODE(tn)->get_kind() == gimple_call_K || (GET_CONST_NODE(tn)->get_kind() == gimple_assign_K && GET_CONST_NODE(GetPointerS<const gimple_assign>(GET_CONST_NODE(tn))->op1)->get_kind() == call_expr_K)))
+                              (GET_CONST_NODE(tn)->get_kind() == gimple_call_K ||
+                               (GET_CONST_NODE(tn)->get_kind() == gimple_assign_K &&
+                                GET_CONST_NODE(GetPointerS<const gimple_assign>(GET_CONST_NODE(tn))->op1)->get_kind() ==
+                                    call_expr_K)))
                            {
                               return false;
                            }
@@ -383,24 +413,33 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      if(is_unique_bb_call || loop_count == 0)
                      {
                         opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(always_inline.count(function_id) ? "Always inline function" : "Low body cost function") + ", inlining required");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---" +
+                                           STR(always_inline.count(function_id) ? "Always inline function" :
+                                                                                  "Low body cost function") +
+                                           ", inlining required");
                         continue;
                      }
                      else
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(call_gn->bb_index) + " from function " + tree_helper::print_function_name(TM, caller_fd) + " has multiple call points, skipping...");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---BB" + STR(call_gn->bb_index) + " from function " +
+                                           tree_helper::print_function_name(TM, caller_fd) +
+                                           " has multiple call points, skipping...");
                      }
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inlining of functions with internal loops disabled with OpenMP, skipping...");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Inlining of functions with internal loops disabled with OpenMP, skipping...");
                   }
                }
                const auto all_const_args = HasConstantArgs(TM->CGetTreeReindex(call_id));
                if(all_const_args && loop_count == 0)
                {
                   opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::VERSION));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current call has all constant arguments, versioning required");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Current call has all constant arguments, versioning required");
                   continue;
                }
                all_inlined = false;
@@ -410,17 +449,25 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                caller_bb.erase(caller_id);
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysed call points from " + tree_helper::print_function_name(TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Analysed call points from " +
+                               tree_helper::print_function_name(
+                                   TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
          }
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function has " + STR((has_simd && has_memory) ? "OpenMP SIMD and memory access" : (has_simd ? "OpenMP SIMD" : "memory access")) + " constructs, inlining postponed");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "Current function has " +
+                            STR((has_simd && has_memory) ? "OpenMP SIMD and memory access" :
+                                                           (has_simd ? "OpenMP SIMD" : "memory access")) +
+                            " constructs, inlining postponed");
       }
    }
    else
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function has zero call points, skipping analysis...");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "Current function has zero call points, skipping analysis...");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    if(modified)
@@ -489,7 +536,8 @@ size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd,
          const auto stmt = GET_CONST_NODE(stmt_rdx);
          if(stmt->get_kind() == gimple_assign_K)
          {
-            // if(tree_helper::IsLoad(stmt, function_behavior->get_function_mem()) || tree_helper::IsStore(stmt, function_behavior->get_function_mem()))
+            // if(tree_helper::IsLoad(stmt, function_behavior->get_function_mem()) || tree_helper::IsStore(stmt,
+            // function_behavior->get_function_mem()))
             // {
             //    has_memory = true;
             // }
@@ -539,13 +587,15 @@ size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd,
 size_t FunctionCallOpt::detect_loops(const statement_list* body) const
 {
    /// store the IR BB graph ala boost::graph
-   BBGraphsCollectionRef bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
+   BBGraphsCollectionRef bb_graphs_collection(
+       new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraph cfg(bb_graphs_collection, CFG_SELECTOR);
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
    for(const auto& block : body->list_of_bloc)
    {
-      inverse_vertex_map.insert(std::make_pair(block.first, bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)))));
+      inverse_vertex_map.insert(
+          std::make_pair(block.first, bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)))));
    }
 
    /// add edges
@@ -555,7 +605,8 @@ size_t FunctionCallOpt::detect_loops(const statement_list* body) const
       const auto& curr_bb = curr_bb_pair.second;
       for(const auto& lop : curr_bb->list_of_pred)
       {
-         THROW_ASSERT(static_cast<bool>(inverse_vertex_map.count(lop)), "BB" + STR(lop) + " (successor of BB" + STR(curr_bbi) + ") does not exist");
+         THROW_ASSERT(static_cast<bool>(inverse_vertex_map.count(lop)),
+                      "BB" + STR(lop) + " (successor of BB" + STR(curr_bbi) + ") does not exist");
          bb_graphs_collection->AddEdge(inverse_vertex_map.at(lop), inverse_vertex_map.at(curr_bbi), CFG_SELECTOR);
       }
 
@@ -569,10 +620,12 @@ size_t FunctionCallOpt::detect_loops(const statement_list* body) const
 
       if(curr_bb->list_of_succ.empty())
       {
-         bb_graphs_collection->AddEdge(inverse_vertex_map.at(curr_bbi), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
+         bb_graphs_collection->AddEdge(inverse_vertex_map.at(curr_bbi), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID),
+                                       CFG_SELECTOR);
       }
    }
-   bb_graphs_collection->AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
+   bb_graphs_collection->AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID),
+                                 inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
    std::map<size_t, UnorderedSetStdStable<vertex>> sccs;
    cfg.GetStronglyConnectedComponents(sccs);
    size_t loop_count = 0;

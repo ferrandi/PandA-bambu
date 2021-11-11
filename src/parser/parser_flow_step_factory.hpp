@@ -63,7 +63,8 @@ class ParserFlowStepFactory : public DesignFlowStepFactory
     * @param AppM is the application manager
     * @param parameters is the set of input parameters
     */
-   ParserFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerRef AppM, const ParameterConstRef parameters);
+   ParserFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerRef AppM,
+                         const ParameterConstRef parameters);
 
    /**
     * Destructor

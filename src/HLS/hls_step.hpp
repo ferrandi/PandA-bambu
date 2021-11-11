@@ -285,7 +285,9 @@ class HLS_step : public DesignFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
  public:
    /**
@@ -295,7 +297,8 @@ class HLS_step : public DesignFlowStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of this hls flow step
     */
-   HLS_step(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+   HLS_step(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+            const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**
@@ -315,7 +318,8 @@ class HLS_step : public DesignFlowStep
     * @param hls_flow_step_specialization is how the step has to be specialized
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+                                             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    /**
     * Return the name of this design step
@@ -345,7 +349,8 @@ class HLS_step : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 };
 /// refcount definition of the class
 using HLS_stepRef = refcount<HLS_step>;
@@ -367,14 +372,18 @@ namespace std
 } // namespace std
 
 /**
- * Definition of hash function for std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>
+ * Definition of hash function for std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef,
+ * HLSFlowStep_Relationship>
  */
 namespace std
 {
    template <>
-   struct hash<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> : public unary_function<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>, size_t>
+   struct hash<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+       : public unary_function<
+             std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>, size_t>
    {
-      size_t operator()(std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> step) const
+      size_t
+      operator()(std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> step) const
       {
          std::size_t ret = 0;
          hash<int> hasher;
@@ -392,7 +401,8 @@ namespace std
 namespace std
 {
    template <>
-   struct hash<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>> : public unary_function<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>, size_t>
+   struct hash<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>
+       : public unary_function<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>, size_t>
    {
       size_t operator()(std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> step) const
       {

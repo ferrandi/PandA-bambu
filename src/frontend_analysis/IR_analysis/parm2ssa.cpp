@@ -76,7 +76,8 @@
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-parm2ssa::parm2ssa(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+parm2ssa::parm2ssa(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id,
+                   const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, PARM2SSA, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -84,7 +85,8 @@ parm2ssa::parm2ssa(const ParameterConstRef _parameters, const application_manage
 
 parm2ssa::~parm2ssa() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> parm2ssa::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+parm2ssa::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -125,7 +127,8 @@ DesignFlowStep_Status parm2ssa::InternalExec()
    auto* fd = GetPointer<function_decl>(curr_tn);
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Analyzing function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
 
    for(auto arg : fd->list_of_args)
    {
@@ -159,11 +162,13 @@ DesignFlowStep_Status parm2ssa::InternalExec()
          }
          else
          {
-            AppM->setSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg), beforeParm2SSA.find(GET_INDEX_CONST_NODE(arg))->second);
+            AppM->setSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg),
+                                 beforeParm2SSA.find(GET_INDEX_CONST_NODE(arg))->second);
          }
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--Analyzed function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
    const auto afterParm2SSA = AppM->getACopyParm2SSA(function_id);
    auto modified = afterParm2SSA != beforeParm2SSA;
    if(modified)
@@ -173,12 +178,15 @@ DesignFlowStep_Status parm2ssa::InternalExec()
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, CustomUnorderedSet<unsigned int>& already_visited_ae)
+void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
+                                  CustomUnorderedSet<unsigned int>& already_visited_ae)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef curr_tn = GET_NODE(tn);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " + curr_tn->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " +
+                      curr_tn->ToString());
    switch(curr_tn->get_kind())
    {
       case call_expr_K:
@@ -234,7 +242,9 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, Cus
             auto defStmt = sn->CGetDefStmt();
             if(GET_NODE(sn->var)->get_kind() == parm_decl_K && GET_NODE(defStmt)->get_kind() == gimple_nop_K)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Setting " + STR(GET_INDEX_NODE(sn->var)) + "-> " + STR(GET_INDEX_NODE(tn)) + " " + STR(GET_INDEX_NODE(tn)));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Setting " + STR(GET_INDEX_NODE(sn->var)) + "-> " + STR(GET_INDEX_NODE(tn)) + " " +
+                                  STR(GET_INDEX_NODE(tn)));
                AppM->setSSAFromParm(function_id, GET_INDEX_NODE(sn->var), GET_INDEX_NODE(tn));
             }
             recursive_analysis(sn->var, srcp, already_visited_ae);
@@ -492,6 +502,7 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, Cus
       default:
          THROW_UNREACHABLE("");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed recursively " + STR(GET_INDEX_NODE(tn)) + ": " + STR(tn));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--Analyzed recursively " + STR(GET_INDEX_NODE(tn)) + ": " + STR(tn));
    return;
 }

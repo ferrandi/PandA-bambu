@@ -138,10 +138,12 @@ struct bloc
    /// flag for header of reducible parallelizable loop
    unsigned int hpl;
 
-   /// in case the last statement is a gimple_cond associated with an if statement this member contains the basic block reference to the then statements.
+   /// in case the last statement is a gimple_cond associated with an if statement this member contains the basic block
+   /// reference to the then statements.
    unsigned int true_edge;
 
-   /// in case the last statement is a gimple_cond associated with an if statement this member contains the basic block reference to the else statements.
+   /// in case the last statement is a gimple_cond associated with an if statement this member contains the basic block
+   /// reference to the else statements.
    unsigned int false_edge;
 
 #if HAVE_BAMBU_BUILT
@@ -200,7 +202,8 @@ struct bloc
     * @param new_stmt is the new statement to be added
     * @param move_virtuals specifies if memdef and vdef have to be transferred
     */
-   void Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, const bool move_virtuals, const application_managerRef AppM);
+   void Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, const bool move_virtuals,
+                const application_managerRef AppM);
 
    /**
     * Add a statement before a specified one

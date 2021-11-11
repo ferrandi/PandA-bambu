@@ -41,7 +41,9 @@
 /// Header include
 #include "storage_value_information_fsm.hpp"
 
-StorageValueInformationFsm::StorageValueInformationFsm(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) : StorageValueInformation(_HLS_mgr, _function_id)
+StorageValueInformationFsm::StorageValueInformationFsm(const HLS_managerConstRef _HLS_mgr,
+                                                       const unsigned int _function_id)
+    : StorageValueInformation(_HLS_mgr, _function_id)
 {
 }
 

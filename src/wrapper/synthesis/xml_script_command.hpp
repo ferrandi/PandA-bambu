@@ -72,7 +72,16 @@ REF_FORWARD_DECL(xml_ite_block_t);
 #define TAG_FOREACH "foreach"
 
 /// Node types.
-using xml_script_node_enum_t = enum xml_script_node_enum_t { NODE_UNKNOWN = 0, NODE_ENTRY = 1, NODE_VARIABLE = 2, NODE_PARAMETER = 3, NODE_COMMAND = 4, NODE_SHELL = 5, NODE_ITE_BLOCK = 6, NODE_FOREACH = 7 };
+using xml_script_node_enum_t = enum xml_script_node_enum_t {
+   NODE_UNKNOWN = 0,
+   NODE_ENTRY = 1,
+   NODE_VARIABLE = 2,
+   NODE_PARAMETER = 3,
+   NODE_COMMAND = 4,
+   NODE_SHELL = 5,
+   NODE_ITE_BLOCK = 6,
+   NODE_FOREACH = 7
+};
 
 /** \class xml_script_node_t
  * This is the abstract class which describes a generic synthesis script node,
@@ -198,7 +207,8 @@ class xml_parameter_t : public xml_script_node_t
    std::string separator;
    bool curlyBrackets;
 
-   xml_parameter_t(const std::string* _name, const std::string* _singleValue, const std::string* _condition, const std::string& _separator, bool _curlyBrackets);
+   xml_parameter_t(const std::string* _name, const std::string* _singleValue, const std::string* _condition,
+                   const std::string& _separator, bool _curlyBrackets);
    explicit xml_parameter_t(const xml_element* element);
 
    ~xml_parameter_t() override;
@@ -224,7 +234,8 @@ class xml_command_t : public xml_script_node_t
    std::string* condition;
    std::string* output;
 
-   xml_command_t(const std::string* _name, const std::string* _value, const std::string* _condition, const std::string* _output);
+   xml_command_t(const std::string* _name, const std::string* _value, const std::string* _condition,
+                 const std::string* _output);
    explicit xml_command_t(const xml_element* element);
 
    ~xml_command_t() override;
@@ -250,7 +261,8 @@ class xml_shell_t : public xml_script_node_t
    std::string* condition;
    std::string* output;
 
-   xml_shell_t(const std::string* _name, const std::string* _value, const std::string* _condition, const std::string* _output);
+   xml_shell_t(const std::string* _name, const std::string* _value, const std::string* _condition,
+               const std::string* _output);
    explicit xml_shell_t(const xml_element* element);
 
    ~xml_shell_t() override;

@@ -84,8 +84,8 @@ class xml_comment_node : public xml_node
    }
 
    /** Set the text of this content node
-    * @param content The text. This must be unescaped, meaning that the predefined entities will be created for you where necessary.
-    * See get_content().
+    * @param content The text. This must be unescaped, meaning that the predefined entities will be created for you
+    * where necessary. See get_content().
     */
    void set_content(const std::string& content)
    {

@@ -81,7 +81,8 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -91,7 +92,8 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
     * @param function_id is the node id of the function analyzed.
     * @param design_flow_manager is the design flow manager
     */
-   determine_memory_accesses(const ParameterConstRef parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
+   determine_memory_accesses(const ParameterConstRef parameters, const application_managerRef AppM,
+                             unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

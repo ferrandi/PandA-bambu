@@ -86,7 +86,9 @@ struct DiscrepancyLog
     */
    unsigned int base_index;
 
-   DiscrepancyLog(const HLS_managerConstRef HLSMgr, const vcd_trace_head& t, const uint64_t c_context, std::string _c_val, const unsigned int el_idx, const std::string::size_type _first_c_bit, const std::string::size_type _c_size, const unsigned int _b);
+   DiscrepancyLog(const HLS_managerConstRef HLSMgr, const vcd_trace_head& t, const uint64_t c_context,
+                  std::string _c_val, const unsigned int el_idx, const std::string::size_type _first_c_bit,
+                  const std::string::size_type _c_size, const unsigned int _b);
 
    ~DiscrepancyLog();
 };
@@ -97,7 +99,8 @@ class vcd_utility : public HLS_step
    /**
     * Constructor
     */
-   vcd_utility(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   vcd_utility(const ParameterConstRef parameters, const HLS_managerRef HLSMgr,
+               const DesignFlowManagerConstRef design_flow_manager);
 
    /* Destructor */
    ~vcd_utility() override = default;
@@ -134,7 +137,8 @@ class vcd_utility : public HLS_step
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    bool detect_mismatch(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val);
 
@@ -144,15 +148,23 @@ class vcd_utility : public HLS_step
 
    bool detect_binary_double_mismatch(const std::string& c_val, const std::string& resized_vcd_val) const;
 
-   bool detect_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context, const std::string& c_val, const std::string& vcd_val, unsigned int& base_index);
+   bool detect_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context, const std::string& c_val,
+                                const std::string& vcd_val, unsigned int& base_index);
 
-   bool detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context, const std::string& c_val, const std::string& vcd_val, const unsigned int base_index) const;
+   bool detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context,
+                                      const std::string& c_val, const std::string& vcd_val,
+                                      const unsigned int base_index) const;
 
-   bool detect_mismatch_element(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val, const unsigned int el_idx);
+   bool detect_mismatch_element(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val,
+                                const unsigned int el_idx);
 
-   bool detect_mismatch_simple(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val, const unsigned int el_idx, const std::string::size_type first_c_bit, const std::string::size_type c_size);
+   bool detect_mismatch_simple(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val,
+                               const unsigned int el_idx, const std::string::size_type first_c_bit,
+                               const std::string::size_type c_size);
 
-   void update_discr_list(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val, const unsigned int el_idx, const std::string::size_type first_c_bit, const std::string::size_type c_size, const unsigned int base_index);
+   void update_discr_list(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val,
+                          const unsigned int el_idx, const std::string::size_type first_c_bit,
+                          const std::string::size_type c_size, const unsigned int base_index);
 
    void print_failed_vcd_head(const vcd_trace_head& t, bool one_hot_encoding, const int verbosity) const;
 

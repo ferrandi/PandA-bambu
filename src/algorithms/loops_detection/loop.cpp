@@ -260,7 +260,8 @@ void Loop::ComputeLandingPadExits()
    {
       vertex block = *source;
       graph::out_edge_iterator e_out_iter, e_out_iter_end;
-      for(boost::tie(e_out_iter, e_out_iter_end) = boost::out_edges(block, *g); e_out_iter != e_out_iter_end; ++e_out_iter)
+      for(boost::tie(e_out_iter, e_out_iter_end) = boost::out_edges(block, *g); e_out_iter != e_out_iter_end;
+          ++e_out_iter)
       {
          vertex target = boost::target(*e_out_iter, *g);
          // If target does not belong to this loop, then this is an exit block

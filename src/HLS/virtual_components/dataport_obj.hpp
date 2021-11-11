@@ -72,7 +72,8 @@ class dataport_obj : public generic_obj
    /**
     * Constructor
     */
-   dataport_obj(const std::string& _name, const std::string& _parameter, unsigned int _bitsize) : generic_obj(DATA_PORT, _name), parameter(_parameter), bitsize(_bitsize)
+   dataport_obj(const std::string& _name, const std::string& _parameter, unsigned int _bitsize)
+       : generic_obj(DATA_PORT, _name), parameter(_parameter), bitsize(_bitsize)
    {
    }
 

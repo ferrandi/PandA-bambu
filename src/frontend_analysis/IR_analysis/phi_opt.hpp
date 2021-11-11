@@ -132,7 +132,8 @@ class PhiOpt : public FunctionFrontendFlowStep
    void ApplyIfMerge(const unsigned int bb_index);
 
    /**
-    * Transform the control flow graph by eliminating an empty basic block dominated by gimple_cond without modifying phi
+    * Transform the control flow graph by eliminating an empty basic block dominated by gimple_cond without modifying
+    * phi
     * @param bb_index is the index of the empty basic block
     */
    void ApplyIfNothing(const unsigned int bb_index);
@@ -150,7 +151,8 @@ class PhiOpt : public FunctionFrontendFlowStep
    void ApplyMultiMerge(const unsigned int bb_index);
 
    /**
-    * Transform the control flow graph by eliminating an empty basic block dominated by gimple_multi_way_if without modifying phi
+    * Transform the control flow graph by eliminating an empty basic block dominated by gimple_multi_way_if without
+    * modifying phi
     * @param bb_index is the index of the empty basic block
     */
    void ApplyMultiNothing(const unsigned int bb_index);
@@ -190,7 +192,8 @@ class PhiOpt : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -200,7 +203,8 @@ class PhiOpt : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   PhiOpt(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   PhiOpt(const application_managerRef AppM, unsigned int function_id,
+          const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor

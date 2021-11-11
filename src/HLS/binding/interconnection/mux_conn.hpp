@@ -71,7 +71,9 @@ class mux_conn : public connection_obj
     * @param live_variable is the set of data transfers
     * @param _mux_tree is mux tree for the new connection
     */
-   mux_conn(const CustomOrderedSet<data_transfer>& _live_variable, const std::vector<std::pair<generic_objRef, unsigned int>>& _mux_tree) : connection_obj(BY_MUX, _live_variable), mux_tree(_mux_tree)
+   mux_conn(const CustomOrderedSet<data_transfer>& _live_variable,
+            const std::vector<std::pair<generic_objRef, unsigned int>>& _mux_tree)
+       : connection_obj(BY_MUX, _live_variable), mux_tree(_mux_tree)
    {
    }
 

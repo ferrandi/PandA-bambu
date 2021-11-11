@@ -118,7 +118,8 @@ class CallGraphManager
     * @param call_id is the tree node index of the call statement
     * @param call_type is the type of call
     */
-   void AddCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type);
+   void AddCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                     enum FunctionEdgeInfo::CallType call_type);
    /**
     * Creates a new called function and directly adds the call to the call graph
     * @param caller_id is the function id of the caller
@@ -127,7 +128,9 @@ class CallGraphManager
     * @param called_function_behavior is the FunctionBehavior of the called function
     * @param call_type is the type of call
     */
-   void AddFunctionAndCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id, const FunctionBehaviorRef called_function_behavior, enum FunctionEdgeInfo::CallType call_type);
+   void AddFunctionAndCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                                const FunctionBehaviorRef called_function_behavior,
+                                enum FunctionEdgeInfo::CallType call_type);
    /**
     * Returns true if the call point is present
     * @param caller_id is the function id of the caller
@@ -135,7 +138,8 @@ class CallGraphManager
     * @param call_id is the tree node index of the call statement
     * @param call_type is the type of call
     */
-   bool IsCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type) const;
+   bool IsCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                    enum FunctionEdgeInfo::CallType call_type) const;
 
    /**
     * Compute the root and reached functions, maintaining the internal data
@@ -149,13 +153,16 @@ class CallGraphManager
 
    /**
     * Constructor. The data structure is initialized.
-    * @param function_expander is the functor used to determine if a function has to be considered during construction of call graph
+    * @param function_expander is the functor used to determine if a function has to be considered during construction
+    * of call graph
     * @param single_root_function specifies if only one root function has to be considered
     * @param allow_recursive_functions specifies if recursive functions are allowed
     * @param tree_manager is the tree manager
     * @param Param is the set of input parameters
     */
-   CallGraphManager(const FunctionExpanderConstRef function_expander, const bool single_root_function, const bool allow_recursive_functions, const tree_managerConstRef tree_manager, const ParameterConstRef Param);
+   CallGraphManager(const FunctionExpanderConstRef function_expander, const bool single_root_function,
+                    const bool allow_recursive_functions, const tree_managerConstRef tree_manager,
+                    const ParameterConstRef Param);
 
    /**
     * Destructor
@@ -255,7 +262,8 @@ class CallGraphManager
     * @param call_id is the tree node index of the call statement
     * @param call_type is the type of call
     */
-   void AddFunctionAndCallPoint(const application_managerRef AppM, unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type);
+   void AddFunctionAndCallPoint(const application_managerRef AppM, unsigned int caller_id, unsigned int called_id,
+                                unsigned int call_id, enum FunctionEdgeInfo::CallType call_type);
 
    /**
     * Remove a function call, like RemoveCallPoint with a different API
@@ -298,10 +306,15 @@ class CallGraphManager
     * @param node_stmt is the analyzed tree node
     * @param call_type is the type of call to be added
     */
-   static void call_graph_computation_recursive(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM, unsigned int current, const tree_managerRef& TM, const tree_nodeRef& tn, unsigned int node_stmt,
-                                                enum FunctionEdgeInfo::CallType call_type, int DL);
-   static void expandCallGraphFromFunction(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM, unsigned int f_id, int DL);
-   static void addCallPointAndExpand(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM, unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type, int DL);
+   static void call_graph_computation_recursive(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM,
+                                                unsigned int current, const tree_managerRef& TM, const tree_nodeRef& tn,
+                                                unsigned int node_stmt, enum FunctionEdgeInfo::CallType call_type,
+                                                int DL);
+   static void expandCallGraphFromFunction(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM,
+                                           unsigned int f_id, int DL);
+   static void addCallPointAndExpand(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM,
+                                     unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                                     enum FunctionEdgeInfo::CallType call_type, int DL);
 };
 using CallGraphManagerRef = refcount<CallGraphManager>;
 using CallGraphManagerConstRef = refcount<const CallGraphManager>;
@@ -332,7 +345,9 @@ struct CalledFunctionsVisitor : public boost::default_dfs_visitor
     * @param body_functions is where results will be stored
     * @param library_functions is where results will be stored
     */
-   CalledFunctionsVisitor(const bool allow_recursive_functions, const CallGraphManager* call_graph_manager, CustomOrderedSet<unsigned int>& body_functions, CustomOrderedSet<unsigned int>& library_functions);
+   CalledFunctionsVisitor(const bool allow_recursive_functions, const CallGraphManager* call_graph_manager,
+                          CustomOrderedSet<unsigned int>& body_functions,
+                          CustomOrderedSet<unsigned int>& library_functions);
 
    void back_edge(const EdgeDescriptor& edge, const CallGraph& g);
 

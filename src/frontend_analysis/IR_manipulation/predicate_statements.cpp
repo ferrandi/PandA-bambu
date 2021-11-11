@@ -62,15 +62,19 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-PredicateStatements::PredicateStatements(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, FrontendFlowStepType::PREDICATE_STATEMENTS, _design_flow_manager, _parameters)
+PredicateStatements::PredicateStatements(const application_managerRef _AppM, unsigned int _function_id,
+                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                         const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, FrontendFlowStepType::PREDICATE_STATEMENTS, _design_flow_manager,
+                               _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 PredicateStatements::~PredicateStatements() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> PredicateStatements::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+PredicateStatements::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -129,7 +133,8 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
       for(const auto& stmt : block.second->CGetStmtList())
       {
          const auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
-         if(behavioral_helper->CanBeSpeculated(stmt->index) || !ga || (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))
+         if(behavioral_helper->CanBeSpeculated(stmt->index) || !ga ||
+            (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))
          {
             continue;
          }

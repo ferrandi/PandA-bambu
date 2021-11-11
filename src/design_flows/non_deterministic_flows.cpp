@@ -61,7 +61,8 @@ const std::string NonDeterministicFlows::ComputeArgString(const size_t seed) con
       else
       {
          arg_string += " ";
-         if(arg.find("--test-single-non-deterministic-flow") == std::string::npos and arg.find("--test-multiple-non-deterministic-flows") == std::string::npos)
+         if(arg.find("--test-single-non-deterministic-flow") == std::string::npos and
+            arg.find("--test-multiple-non-deterministic-flows") == std::string::npos)
          {
             arg_string += arg;
          }
@@ -82,7 +83,8 @@ bool NonDeterministicFlows::ExecuteTool(const size_t seed) const
       boost::filesystem::remove_all(new_directory);
    }
    boost::filesystem::create_directory(new_directory);
-   const auto ret = PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, new_directory + "/tool_execution_output");
+   const auto ret =
+       PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, new_directory + "/tool_execution_output");
    if(IsError(ret))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Failure");
@@ -95,7 +97,9 @@ bool NonDeterministicFlows::ExecuteTool(const size_t seed) const
    }
 }
 
-NonDeterministicFlows::NonDeterministicFlows(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : DesignFlow(_design_flow_manager, DesignFlow_Type::NON_DETERMINISTIC_FLOWS, _parameters)
+NonDeterministicFlows::NonDeterministicFlows(const DesignFlowManagerConstRef _design_flow_manager,
+                                             const ParameterConstRef _parameters)
+    : DesignFlow(_design_flow_manager, DesignFlow_Type::NON_DETERMINISTIC_FLOWS, _parameters)
 {
 }
 

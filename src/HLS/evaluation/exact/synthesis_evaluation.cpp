@@ -65,14 +65,16 @@
 /// wrapper/synthesis include
 #include "BackendFlow.hpp"
 
-SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager)
+SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr,
+                                         const DesignFlowManagerConstRef _design_flow_manager)
     : EvaluationBaseStep(_Param, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::SYNTHESIS_EVALUATION)
 {
 }
 
 SynthesisEvaluation::~SynthesisEvaluation() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> SynthesisEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+SynthesisEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -80,12 +82,14 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       case PRECEDENCE_RELATIONSHIP:
       {
 #if HAVE_SIMULATION_WRAPPER_BUILT
-         ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
 #endif
 #if HAVE_VCD_BUILT
          if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::TOP_FUNCTION));
          }
 #endif
          break;
@@ -96,16 +100,20 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       }
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
 #if HAVE_TASTE
          if(parameters->getOption<bool>(OPT_generate_taste_architecture))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT,
+                                       HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
          else
 #endif
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
          break;
       }
@@ -131,42 +139,56 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
 
          if(area_m)
          {
-            double slices = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE) : 0;
+            double slices =
+                GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE) : 0;
             if(slices != 0.0)
             {
                HLSMgr->evaluations["SLICE"] = std::vector<double>(1, slices);
             }
-            double sliceLuts = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE_LUTS) : 0;
+            double sliceLuts = GetPointer<clb_model>(area_m) ?
+                                   GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE_LUTS) :
+                                   0;
             if(sliceLuts != 0.0)
             {
                HLSMgr->evaluations["SLICE_LUTS"] = std::vector<double>(1, sliceLuts);
             }
-            double lut_ff_pairs = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LUT_FF_PAIRS) : 0;
+            double lut_ff_pairs = GetPointer<clb_model>(area_m) ?
+                                      GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LUT_FF_PAIRS) :
+                                      0;
             if(lut_ff_pairs != 0.0)
             {
                HLSMgr->evaluations["LUT_FF_PAIRS"] = std::vector<double>(1, lut_ff_pairs);
             }
-            double logic_elements = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_ELEMENTS) : 0;
+            double logic_elements = GetPointer<clb_model>(area_m) ?
+                                        GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_ELEMENTS) :
+                                        0;
             if(logic_elements != 0.0)
             {
                HLSMgr->evaluations["LOGIC_ELEMENTS"] = std::vector<double>(1, logic_elements);
             }
-            double functional_elements = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::FUNCTIONAL_ELEMENTS) : 0;
+            double functional_elements =
+                GetPointer<clb_model>(area_m) ?
+                    GetPointer<clb_model>(area_m)->get_resource_value(clb_model::FUNCTIONAL_ELEMENTS) :
+                    0;
             if(functional_elements != 0.0)
             {
                HLSMgr->evaluations["FUNCTIONAL_ELEMENTS"] = std::vector<double>(1, functional_elements);
             }
-            double logic_area = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_AREA) : 0;
+            double logic_area = GetPointer<clb_model>(area_m) ?
+                                    GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_AREA) :
+                                    0;
             if(logic_area != 0.0)
             {
                HLSMgr->evaluations["LOGIC_AREA"] = std::vector<double>(1, logic_area);
             }
-            double power = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::POWER) : 0;
+            double power =
+                GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::POWER) : 0;
             if(power != 0.0)
             {
                HLSMgr->evaluations["POWER"] = std::vector<double>(1, power);
             }
-            double alms = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::ALMS) : 0;
+            double alms =
+                GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::ALMS) : 0;
             if(alms != 0.0)
             {
                HLSMgr->evaluations["ALMS"] = std::vector<double>(1, alms);
@@ -190,7 +212,8 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
          time_modelRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
          double minimum_period = time_m->get_execution_time();
 
-         double clock_period = HLSMgr->get_HLS(*(HLSMgr->GetCallGraphManager()->GetRootFunctions().begin()))->HLS_C->get_clock_period();
+         double clock_period =
+             HLSMgr->get_HLS(*(HLSMgr->GetCallGraphManager()->GetRootFunctions().begin()))->HLS_C->get_clock_period();
          double slack = clock_period - minimum_period;
          if(parameters->getOption<bool>(OPT_timing_violation_abort) and slack < 0.0)
          {

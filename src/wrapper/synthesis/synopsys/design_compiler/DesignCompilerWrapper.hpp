@@ -86,7 +86,15 @@ REF_FORWARD_DECL(time_model);
 class DesignCompilerWrapper : public SynopsysWrapper
 {
  public:
-   using report_t = enum { REPORT_AREA = 0, REPORT_TIME, REPORT_POWER, REPORT_CELL, SYNTHESIS_RESULT, SYNTHESIS_LOG, SDC_CONSTRAINTS };
+   using report_t = enum {
+      REPORT_AREA = 0,
+      REPORT_TIME,
+      REPORT_POWER,
+      REPORT_CELL,
+      SYNTHESIS_RESULT,
+      SYNTHESIS_LOG,
+      SDC_CONSTRAINTS
+   };
 
    using opt_level_t = enum { MEDIUM = 0, HIGH, ULTRA };
 
@@ -276,7 +284,8 @@ class DesignCompilerWrapper : public SynopsysWrapper
     * @param Param is the set of parameters
     * @param output_dir is the path to the directory where all the results will be stored
     */
-   DesignCompilerWrapper(const ParameterConstRef _Param, const target_deviceRef _device, const std::string& _output_dir);
+   DesignCompilerWrapper(const ParameterConstRef _Param, const target_deviceRef _device,
+                         const std::string& _output_dir);
 
    /**
     * Destructor

@@ -32,7 +32,8 @@
  */
 /**
  * @file c_writer.cpp
- * @brief This file contains the routines necessary to create a C executable program starting from an abstract decription of the threads composing the application.
+ * @brief This file contains the routines necessary to create a C executable program starting from an abstract
+ * decription of the threads composing the application.
  *
  * This file contains the routines necessary to create a C executable program
  * starting from an abstract decription of the threads composing the application.
@@ -167,7 +168,8 @@
 namespace std
 {
    template <>
-   struct hash<std::pair<tree_nodeRef, tree_nodeRef>> : public std::unary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::size_t>
+   struct hash<std::pair<tree_nodeRef, tree_nodeRef>>
+       : public std::unary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::size_t>
    {
       std::size_t operator()(const std::pair<tree_nodeRef, tree_nodeRef>& val) const
       {
@@ -182,7 +184,8 @@ class TreeNodesPairSet : public CustomUnorderedSet<std::pair<tree_nodeRef, tree_
 {
 };
 #else
-class TreeNodesPairSorter : public std::binary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::pair<tree_nodeRef, tree_nodeRef>, bool>
+class TreeNodesPairSorter
+    : public std::binary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::pair<tree_nodeRef, tree_nodeRef>, bool>
 {
  public:
    /**
@@ -207,7 +210,8 @@ class TreeNodesPairSet : public OrderedSetStd<std::pair<tree_nodeRef, tree_nodeR
 {
 };
 #endif
-CWriter::CWriter(const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _Param, bool _verbose)
+CWriter::CWriter(const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer,
+                 const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _Param, bool _verbose)
     : AppM(_AppM),
       TM(_AppM->get_tree_manager()),
       indented_output_stream(_indented_output_stream),
@@ -231,84 +235,113 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type,
                                       c_backend_information
 #endif
                                   ,
-                                  const application_managerConstRef app_man, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef parameters, const bool verbose)
+                                  const application_managerConstRef app_man,
+                                  const IndentedOutputStreamRef indented_output_stream,
+                                  const ParameterConstRef parameters, const bool verbose)
 {
    switch(type)
    {
 #if HAVE_HOST_PROFILING_BUILT
       case(CBackend::CB_BBP):
       {
-         const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-         return CWriterRef(new BasicBlocksProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
+         const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(
+             ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
+         return CWriterRef(
+             new BasicBlocksProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
       }
 #endif
 #if HAVE_HLS_BUILT
       case(CBackend::CB_DISCREPANCY_ANALYSIS):
       {
-         const InstructionWriterRef instruction_writer(new discrepancy_instruction_writer(app_man, indented_output_stream, parameters));
+         const InstructionWriterRef instruction_writer(
+             new discrepancy_instruction_writer(app_man, indented_output_stream, parameters));
 
-         return CWriterRef(new DiscrepancyAnalysisCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man, instruction_writer, indented_output_stream, parameters, verbose));
+         return CWriterRef(
+             new DiscrepancyAnalysisCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man,
+                                            instruction_writer, indented_output_stream, parameters, verbose));
       }
 #endif
 #if HAVE_TARGET_PROFILING
       case(CBackend::CB_ESCAPED_SEQUENTIAL):
       {
-         const EscapeCBackendInformation* escape_c_backend_information = GetPointer<const EscapeCBackendInformation>(c_backend_information);
-         const InstrumentWriterRef instrument_writer = InstrumentWriter::CreateInstrumentWriter(indented_output_stream, escape_c_backend_information->profiling_architecture, parameters);
-         const InstructionWriterRef instruction_writer(
-             new EscapeInstructionWriter(escape_c_backend_information->profiling_architecture, app_man, instrument_writer, indented_output_stream, escape_c_backend_information->exitings_after, escape_c_backend_information->exitings_before, parameters));
+         const EscapeCBackendInformation* escape_c_backend_information =
+             GetPointer<const EscapeCBackendInformation>(c_backend_information);
+         const InstrumentWriterRef instrument_writer = InstrumentWriter::CreateInstrumentWriter(
+             indented_output_stream, escape_c_backend_information->profiling_architecture, parameters);
+         const InstructionWriterRef instruction_writer(new EscapeInstructionWriter(
+             escape_c_backend_information->profiling_architecture, app_man, instrument_writer, indented_output_stream,
+             escape_c_backend_information->exitings_after, escape_c_backend_information->exitings_before, parameters));
          return CWriterRef(new CWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
       }
 #endif
 #if HAVE_BAMBU_BUILT
       case(CBackend::CB_HLS):
       {
-         const InstructionWriterRef instruction_writer(new HLSInstructionWriter(app_man, indented_output_stream, parameters));
-         return CWriterRef(new HLSCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man, instruction_writer, indented_output_stream, parameters, verbose));
+         const InstructionWriterRef instruction_writer(
+             new HLSInstructionWriter(app_man, indented_output_stream, parameters));
+         return CWriterRef(new HLSCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man,
+                                          instruction_writer, indented_output_stream, parameters, verbose));
       }
 #endif
 #if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
       case(CBackend::CB_INSTRUMENTED_PARALLEL):
       {
-         const InstrumentCBackendInformation* instrument_c_backend_information = GetPointer<const InstrumentCBackendInformation>(c_backend_information);
-         const InstrumentWriterRef instrument_writer = InstrumentWriter::CreateInstrumentWriter(indented_output_stream, instrument_c_backend_information->profiling_architecture, parameters);
-         const InstructionWriterRef instruction_writer(new InstrumentInstructionWriter(instrument_c_backend_information->profiling_architecture, app_man, instrument_writer, indented_output_stream, parameters));
-         return CWriterRef(new InstrumentParallelCWriter(RefcountCast<const PartitioningManager>(app_man), instrument_writer, instruction_writer, indented_output_stream, parameters, verbose));
+         const InstrumentCBackendInformation* instrument_c_backend_information =
+             GetPointer<const InstrumentCBackendInformation>(c_backend_information);
+         const InstrumentWriterRef instrument_writer = InstrumentWriter::CreateInstrumentWriter(
+             indented_output_stream, instrument_c_backend_information->profiling_architecture, parameters);
+         const InstructionWriterRef instruction_writer(
+             new InstrumentInstructionWriter(instrument_c_backend_information->profiling_architecture, app_man,
+                                             instrument_writer, indented_output_stream, parameters));
+         return CWriterRef(new InstrumentParallelCWriter(RefcountCast<const PartitioningManager>(app_man),
+                                                         instrument_writer, instruction_writer, indented_output_stream,
+                                                         parameters, verbose));
       }
 #endif
 #if HAVE_TARGET_PROFILING
       case(CBackend::CB_INSTRUMENTED_SEQUENTIAL):
       {
-         const InstrumentCBackendInformation* instrument_c_backend_information = GetPointer<const InstrumentCBackendInformation>(c_backend_information);
-         const InstrumentWriterRef instrument_writer = InstrumentWriter::CreateInstrumentWriter(indented_output_stream, instrument_c_backend_information->profiling_architecture, parameters);
-         const InstructionWriterRef instruction_writer(new InstrumentInstructionWriter(instrument_c_backend_information->profiling_architecture, app_man, instrument_writer, indented_output_stream, parameters));
+         const InstrumentCBackendInformation* instrument_c_backend_information =
+             GetPointer<const InstrumentCBackendInformation>(c_backend_information);
+         const InstrumentWriterRef instrument_writer = InstrumentWriter::CreateInstrumentWriter(
+             indented_output_stream, instrument_c_backend_information->profiling_architecture, parameters);
+         const InstructionWriterRef instruction_writer(
+             new InstrumentInstructionWriter(instrument_c_backend_information->profiling_architecture, app_man,
+                                             instrument_writer, indented_output_stream, parameters));
          if(parameters->getOption<int>(OPT_analysis_level) >= static_cast<int>(InstrumentWriter_Level::AL_LOOP))
          {
-            return CWriterRef(new LoopsInstrumentCWriter(app_man, instrument_writer, instruction_writer, indented_output_stream, parameters, verbose));
+            return CWriterRef(new LoopsInstrumentCWriter(app_man, instrument_writer, instruction_writer,
+                                                         indented_output_stream, parameters, verbose));
          }
          else
          {
-            return CWriterRef(new InstrumentCWriter(app_man, instrument_writer, instruction_writer, indented_output_stream, parameters, verbose));
+            return CWriterRef(new InstrumentCWriter(app_man, instrument_writer, instruction_writer,
+                                                    indented_output_stream, parameters, verbose));
          }
       }
 #endif
 #if HAVE_ZEBU_BUILT
       case(CBackend::CB_POINTED_DATA_EVALUATION):
       {
-         const InstructionWriterRef instruction_writer(new MemoryProfilingInstructionWriter(app_man, indented_output_stream, parameters));
+         const InstructionWriterRef instruction_writer(
+             new MemoryProfilingInstructionWriter(app_man, indented_output_stream, parameters));
          return CWriterRef(new MemoryProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters));
       }
 #endif
 #if HAVE_GRAPH_PARTITIONING_BUILT
       case(CBackend::CB_PARALLEL):
       {
-         const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(parameters->getOption<ActorGraphBackend_Type>(OPT_fork_join_backend), app_man, indented_output_stream, parameters);
-         return CWriterRef(new ParallelCWriter(RefcountCast<const PartitioningManager>(app_man), instruction_writer, indented_output_stream, parameters, verbose));
+         const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(
+             parameters->getOption<ActorGraphBackend_Type>(OPT_fork_join_backend), app_man, indented_output_stream,
+             parameters);
+         return CWriterRef(new ParallelCWriter(RefcountCast<const PartitioningManager>(app_man), instruction_writer,
+                                               indented_output_stream, parameters, verbose));
       }
 #endif
       case(CBackend::CB_SEQUENTIAL):
       {
-         const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
+         const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(
+             ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
          return CWriterRef(new CWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
       }
       default:
@@ -397,9 +430,12 @@ void CWriter::WriteHeader()
    if(is_readc_needed)
    {
       indented_output_stream->Append("#include <unistd.h>\n");
-      indented_output_stream->Append("short int __bambu_readc(int fd){char buf[1];int res = read(fd,buf,1);return res > 0 ? buf[0] : -1;}\n");
       indented_output_stream->Append(
-          "long long int __bambu_read4c(int fd){long long int buf;int res = read(fd,&buf,4);return res == 4 ? buf : (res==3 ? (buf|(1ULL<<35)) : (res==2 ? (buf|(1ULL<<35)|(1ULL<<34)) : (res == 1 ? (buf|(1ULL<<35)|(1ULL<<34)|(1ULL<<33)) : "
+          "short int __bambu_readc(int fd){char buf[1];int res = read(fd,buf,1);return res > 0 ? buf[0] : -1;}\n");
+      indented_output_stream->Append(
+          "long long int __bambu_read4c(int fd){long long int buf;int res = read(fd,&buf,4);return res == 4 ? buf : "
+          "(res==3 ? (buf|(1ULL<<35)) : (res==2 ? (buf|(1ULL<<35)|(1ULL<<34)) : (res == 1 ? "
+          "(buf|(1ULL<<35)|(1ULL<<34)|(1ULL<<33)) : "
           "(buf|(1ULL<<35)|(1ULL<<34)|(1ULL<<33)|(1ULL<<32))) ));}\n");
    }
    if(is_builtin_cond_expr32)
@@ -438,7 +474,8 @@ void CWriter::DeclareFunctionTypes(const tree_nodeConstRef& tn)
 {
    const auto FB = AppM->CGetFunctionBehavior(tn->index);
    const auto behavioral_helper = FB->CGetBehavioralHelper();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Declaring function types for " + behavioral_helper->get_function_name());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Declaring function types for " + behavioral_helper->get_function_name());
 
    // In case the function parameters are of a non built_in type I have
    // to declare their type
@@ -454,7 +491,8 @@ void CWriter::DeclareFunctionTypes(const tree_nodeConstRef& tn)
    {
       DeclareType(return_type, behavioral_helper, globally_declared_types);
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared function types for " + behavioral_helper->get_function_name());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--Declared function types for " + behavioral_helper->get_function_name());
 }
 
 const CustomSet<unsigned int> CWriter::GetLocalVariables(const unsigned int function_id) const
@@ -479,15 +517,21 @@ void CWriter::WriteFunctionDeclaration(const unsigned int funId)
    const auto behavioral_helper = FB->CGetBehavioralHelper();
    const auto funName = behavioral_helper->get_function_name();
 #if HAVE_ARM_COMPILER
-   if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_ARM_GCC and behavioral_helper->is_var_args())
+   if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+          CompilerWrapper_CompilerTarget::CT_ARM_GCC and
+      behavioral_helper->is_var_args())
    {
-      THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() + ")produced using arm compiler can not be compiled by x86 compilers");
+      THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() +
+                                       ")produced using arm compiler can not be compiled by x86 compilers");
    }
 #endif
 #if HAVE_SPARC_COMPILER
-   if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_SPARC_GCC and behavioral_helper->is_var_args())
+   if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+          CompilerWrapper_CompilerTarget::CT_SPARC_GCC and
+      behavioral_helper->is_var_args())
    {
-      THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() + ") produced using sparc compiler can not be compiled by x86 compilers");
+      THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() +
+                                       ") produced using sparc compiler can not be compiled by x86 compilers");
    }
 #endif
    if(funName != "main")
@@ -551,7 +595,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting writing BB" + STR(bb_number));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   THROW_ASSERT(bb_frontier.find(current_vertex) == bb_frontier.end(), "current_vertex cannot be part of the basic block frontier");
+   THROW_ASSERT(bb_frontier.find(current_vertex) == bb_frontier.end(),
+                "current_vertex cannot be part of the basic block frontier");
    // if this basic block has already been analyzed do nothing
    if(bb_analyzed.find(current_vertex) != bb_analyzed.end())
    {
@@ -564,7 +609,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
    // print a comment with info on the basicblock
    if(this->verbose)
    {
-      indented_output_stream->Append("//Basic block " + STR(bb_number) + " - loop " + STR(bb_node_info->loop_id) + "\n");
+      indented_output_stream->Append("//Basic block " + STR(bb_number) + " - loop " + STR(bb_node_info->loop_id) +
+                                     "\n");
    }
    // check if some extra strings must be printed before or after the basic
    // block. this is used for splitting the phi nodes
@@ -610,17 +656,24 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
       {
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering operation " + GET_NAME(local_rec_cfgGraph, st));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "This is basic block is not empty in this task. Last operation to be printed id " + GET_NAME(local_rec_cfgGraph, st));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "Considering operation " + GET_NAME(local_rec_cfgGraph, st));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "This is basic block is not empty in this task. Last operation to be printed id " +
+                         GET_NAME(local_rec_cfgGraph, st));
       last_stmt = st;
       is_there = true;
       break;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    /// check the feasibility
-   bool last_statement_is_a_cond_or_goto = is_there and local_rec_behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block) != 0 && last_stmt == stmts_list.back();
+   bool last_statement_is_a_cond_or_goto =
+       is_there and local_rec_behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block) != 0 &&
+       last_stmt == stmts_list.back();
 
-   THROW_ASSERT(!last_statement_is_a_cond_or_goto || !is_there || (last_statement_is_a_cond_or_goto && last_stmt == stmts_list.back()), "inconsistent recursion");
+   THROW_ASSERT(!last_statement_is_a_cond_or_goto || !is_there ||
+                    (last_statement_is_a_cond_or_goto && last_stmt == stmts_list.back()),
+                "inconsistent recursion");
    // check if the basic block starts with a label
    bool start_with_a_label = local_rec_behavioral_helper->start_with_a_label(bb_node_info->block);
    if(start_with_a_label)
@@ -636,30 +689,38 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
 
    if(!add_bb_label && !start_with_a_label && boost::in_degree(current_vertex, *local_rec_bb_fcfgGraph) > 1)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block has an indegree > 1 and not associated label");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "Basic block has an indegree > 1 and not associated label");
       InEdgeIterator inE, inEEnd;
       for(boost::tie(inE, inEEnd) = boost::in_edges(current_vertex, *local_rec_bb_fcfgGraph); inE != inEEnd; inE++)
       {
          vertex source = boost::source(*inE, *local_rec_bb_fcfgGraph);
          const auto pred_bb_node_info = local_rec_bb_fcfgGraph->CGetBBNodeInfo(source);
          // This condition match first basic block of case preceded by a case without break
-         if(pred_bb_node_info->statements_list.size() && (GET_TYPE(local_rec_cfgGraph, *(pred_bb_node_info->statements_list.rbegin())) & TYPE_SWITCH) && post_dominators->get_immediate_dominator(source) != current_vertex)
+         if(pred_bb_node_info->statements_list.size() &&
+            (GET_TYPE(local_rec_cfgGraph, *(pred_bb_node_info->statements_list.rbegin())) & TYPE_SWITCH) &&
+            post_dominators->get_immediate_dominator(source) != current_vertex)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block is the first case of a case preceded by a case without break");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Basic block is the first case of a case preceded by a case without break");
             add_bb_label = true;
             break;
          }
          // Basic block start the body of a short circuit
          else if(!bb_analyzed.count(source) && !((FB_CFG_SELECTOR & local_rec_bb_fcfgGraph->GetSelector(*inE))))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block should start with a label since is the body of a short-circuit");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Basic block should start with a label since is the body of a short-circuit");
             add_bb_label = true;
             break;
          }
          // Basic block is a header loop, but it does not end with while or for
-         else if((!bb_analyzed.count(source) || current_vertex == source) && (stmts_list.empty() || ((GET_TYPE(local_rec_cfgGraph, *(stmts_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)) == 0)))
+         else if((!bb_analyzed.count(source) || current_vertex == source) &&
+                 (stmts_list.empty() ||
+                  ((GET_TYPE(local_rec_cfgGraph, *(stmts_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)) == 0)))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block is the header of a loop and it does not end with while or for");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Basic block is the header of a loop and it does not end with while or for");
             add_bb_label = true;
             break;
          }
@@ -697,7 +758,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
    vIterBegin = vIter;
    if(is_there)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "There are instructions to be printed for this pair task - basic block");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "There are instructions to be printed for this pair task - basic block");
 
       // fill the renaming table in case it is needed
       if(renaming_table.find(current_vertex) != renaming_table.end())
@@ -711,7 +773,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
       bool prefix_has_to_be_printed = basic_block_prefix.find(bb_number) != basic_block_prefix.end();
       do
       {
-         // We can print results of split of phi nodes if they have not yet been printed and if label has already been printed (or there was not any label to be printed)
+         // We can print results of split of phi nodes if they have not yet been printed and if label has already been
+         // printed (or there was not any label to be printed)
          if(prefix_has_to_be_printed and not label_has_to_be_printed)
          {
             prefix_has_to_be_printed = false;
@@ -721,9 +784,11 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
          {
             continue;
          }
-         // If there is not any label to be printed, label_has_to_be_printed is already false, otherwise the label will be printed during this loop iteration
+         // If there is not any label to be printed, label_has_to_be_printed is already false, otherwise the label will
+         // be printed during this loop iteration
          label_has_to_be_printed = false;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Preparing printing of operation " + GET_NAME(local_rec_cfgGraph, *vIter));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "Preparing printing of operation " + GET_NAME(local_rec_cfgGraph, *vIter));
          // Write in the C file extra information before the instruction itself
          if(this->verbose)
          {
@@ -734,7 +799,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
          if(start_with_a_label && vIter == vIterBegin)
          {
             InEdgeIterator inE, inEEnd;
-            for(boost::tie(inE, inEEnd) = boost::in_edges(current_vertex, *local_rec_bb_fcfgGraph); inE != inEEnd; inE++)
+            for(boost::tie(inE, inEEnd) = boost::in_edges(current_vertex, *local_rec_bb_fcfgGraph); inE != inEEnd;
+                inE++)
             {
                if(FB_CFG_SELECTOR & local_rec_bb_fcfgGraph->GetSelector(*inE))
                {
@@ -744,14 +810,17 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
          }
          bool isLastIntruction = last_stmt == *vIter;
          /// in case we have phi nodes we check if some assignments should be printed
-         bool print_phi_now = ((GET_TYPE(local_rec_cfgGraph, *vIter) & (TYPE_IF | TYPE_WHILE | TYPE_FOR | TYPE_SWITCH | TYPE_MULTIIF))) || local_rec_behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block);
+         bool print_phi_now = ((GET_TYPE(local_rec_cfgGraph, *vIter) &
+                                (TYPE_IF | TYPE_WHILE | TYPE_FOR | TYPE_SWITCH | TYPE_MULTIIF))) ||
+                              local_rec_behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block);
          if(add_phi_nodes_assignment && isLastIntruction && print_phi_now)
          {
             indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
          }
          if((GET_TYPE(local_rec_cfgGraph, *vIter) & (TYPE_VPHI)) == 0)
          {
-            if(GET_TYPE(local_rec_cfgGraph, *vIter) & (TYPE_WHILE | TYPE_FOR) and this->verbose and local_rec_function_behavior->CGetLoops()->CGetLoop(bb_node_info->loop_id)->loop_type & DOALL_LOOP)
+            if(GET_TYPE(local_rec_cfgGraph, *vIter) & (TYPE_WHILE | TYPE_FOR) and this->verbose and
+               local_rec_function_behavior->CGetLoops()->CGetLoop(bb_node_info->loop_id)->loop_type & DOALL_LOOP)
             {
                indented_output_stream->Append("//#pragma omp parallel for\n");
             }
@@ -783,14 +852,18 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Operation is an if");
             const unsigned int& bb_true_number = bb_node_info->block->true_edge;
-            THROW_ASSERT(bb_graph_info->bb_index_map.find(bb_true_number) != bb_graph_info->bb_index_map.end(), "BB" + STR(bb_true_number) + " does not exist");
+            THROW_ASSERT(bb_graph_info->bb_index_map.find(bb_true_number) != bb_graph_info->bb_index_map.end(),
+                         "BB" + STR(bb_true_number) + " does not exist");
             const vertex true_vertex = bb_graph_info->bb_index_map.find(bb_true_number)->second;
-            THROW_ASSERT(bb_graph_info->bb_index_map.find(bb_node_info->block->false_edge) != bb_graph_info->bb_index_map.end(), "BB" + STR(bb_node_info->block->false_edge) + " does not exist");
+            THROW_ASSERT(bb_graph_info->bb_index_map.find(bb_node_info->block->false_edge) !=
+                             bb_graph_info->bb_index_map.end(),
+                         "BB" + STR(bb_node_info->block->false_edge) + " does not exist");
             vertex false_vertex = bb_graph_info->bb_index_map.find(bb_node_info->block->false_edge)->second;
             bool add_false_to_goto = false;
             if(bb_frontier.find(true_vertex) == bb_frontier.end())
             {
-               if(bb_frontier.find(false_vertex) == bb_frontier.end() && goto_list.find(false_vertex) == goto_list.end())
+               if(bb_frontier.find(false_vertex) == bb_frontier.end() &&
+                  goto_list.find(false_vertex) == goto_list.end())
                {
                   goto_list.insert(false_vertex);
                   add_false_to_goto = true;
@@ -801,7 +874,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                }
                else
                {
-                  THROW_ASSERT(basic_blocks_labels.find(bb_true_number) != basic_blocks_labels.end(), "I do not know the destination");
+                  THROW_ASSERT(basic_blocks_labels.find(bb_true_number) != basic_blocks_labels.end(),
+                               "I do not know the destination");
                   indented_output_stream->Append("   goto " + basic_blocks_labels.find(bb_true_number)->second + ";\n");
                   goto_list.insert(true_vertex);
                }
@@ -819,7 +893,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "False BB is not on the frontier");
                false_vertex = bb_graph_info->bb_index_map.find(bb_node_info->block->false_edge)->second;
-               if(not(FB_CFG_SELECTOR & local_rec_bb_fcfgGraph->GetSelector(boost::edge(current_vertex, false_vertex, *local_rec_bb_fcfgGraph).first)))
+               if(not(FB_CFG_SELECTOR & local_rec_bb_fcfgGraph->GetSelector(
+                                            boost::edge(current_vertex, false_vertex, *local_rec_bb_fcfgGraph).first)))
                {
                   indented_output_stream->Append("else\n");
                   if(bb_analyzed.find(false_vertex) == bb_analyzed.end())
@@ -828,22 +903,32 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                   }
                   else
                   {
-                     THROW_ASSERT(basic_blocks_labels.find(bb_node_info->block->false_edge) != basic_blocks_labels.end(), "I do not know the destination");
-                     indented_output_stream->Append("   goto " + basic_blocks_labels.find(bb_node_info->block->false_edge)->second + ";\n");
+                     THROW_ASSERT(basic_blocks_labels.find(bb_node_info->block->false_edge) !=
+                                      basic_blocks_labels.end(),
+                                  "I do not know the destination");
+                     indented_output_stream->Append(
+                         "   goto " + basic_blocks_labels.find(bb_node_info->block->false_edge)->second + ";\n");
                   }
                }
                /// Feedback edge on the false path of an if
                else
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Target is a header");
-                  const vertex target = boost::target(boost::edge(current_vertex, false_vertex, *local_rec_bb_fcfgGraph).first, *local_rec_bb_fcfgGraph);
+                  const vertex target =
+                      boost::target(boost::edge(current_vertex, false_vertex, *local_rec_bb_fcfgGraph).first,
+                                    *local_rec_bb_fcfgGraph);
                   const BBNodeInfoConstRef target_bb_node_info = local_rec_bb_fcfgGraph->CGetBBNodeInfo(target);
                   /// Target is not a while or a for
-                  if(target_bb_node_info->statements_list.empty() or ((GET_TYPE(local_rec_cfgGraph, *(target_bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)) == 0))
+                  if(target_bb_node_info->statements_list.empty() or
+                     ((GET_TYPE(local_rec_cfgGraph, *(target_bb_node_info->statements_list.rbegin())) &
+                       (TYPE_WHILE | TYPE_FOR)) == 0))
                   {
                      indented_output_stream->Append("else\n");
-                     THROW_ASSERT(basic_blocks_labels.find(bb_node_info->block->false_edge) != basic_blocks_labels.end(), "I do not know the destination");
-                     indented_output_stream->Append("   goto " + basic_blocks_labels.find(bb_node_info->block->false_edge)->second + ";\n");
+                     THROW_ASSERT(basic_blocks_labels.find(bb_node_info->block->false_edge) !=
+                                      basic_blocks_labels.end(),
+                                  "I do not know the destination");
+                     indented_output_stream->Append(
+                         "   goto " + basic_blocks_labels.find(bb_node_info->block->false_edge)->second + ";\n");
                   }
                }
             }
@@ -857,7 +942,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
             {
                if(bb_analyzed.find(true_vertex) == bb_analyzed.end())
                {
-                  WriteBodyLoop(local_rec_function_behavior->CGetBehavioralHelper()->get_function_index(), bb_node_info->block->number, true_vertex, true);
+                  WriteBodyLoop(local_rec_function_behavior->CGetBehavioralHelper()->get_function_index(),
+                                bb_node_info->block->number, true_vertex, true);
                }
                else
                {
@@ -898,7 +984,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                const vertex bb_vertex = bb_graph_info->bb_index_map.find(bb_index_num)->second;
                if(cond != gmwi->list_of_cond.front())
                {
-                  bool to_be_added = bb_frontier.find(bb_vertex) == bb_frontier.end() && goto_list.find(bb_vertex) == goto_list.end();
+                  bool to_be_added =
+                      bb_frontier.find(bb_vertex) == bb_frontier.end() && goto_list.find(bb_vertex) == goto_list.end();
                   add_elseif_to_goto[bb_index_num] = to_be_added;
                   if(to_be_added)
                   {
@@ -919,7 +1006,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                   if(cond.first)
                   {
                      indented_output_stream->Append("else if(");
-                     indented_output_stream->Append(local_rec_behavioral_helper->PrintVariable(GET_INDEX_NODE(cond.first)));
+                     indented_output_stream->Append(
+                         local_rec_behavioral_helper->PrintVariable(GET_INDEX_NODE(cond.first)));
                      indented_output_stream->Append(")\n");
                   }
                   else
@@ -927,7 +1015,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                      indented_output_stream->Append("else\n");
                   }
                }
-               if(add_elseif_to_goto.find(bb_index_num) != add_elseif_to_goto.end() && add_elseif_to_goto.find(bb_index_num)->second)
+               if(add_elseif_to_goto.find(bb_index_num) != add_elseif_to_goto.end() &&
+                  add_elseif_to_goto.find(bb_index_num)->second)
                {
                   goto_list.erase(bb_vertex);
                }
@@ -941,8 +1030,10 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor has already been examined");
 
-                     THROW_ASSERT(basic_blocks_labels.find(bb_index_num) != basic_blocks_labels.end(), "I do not know the destination " + STR(bb_index_num));
-                     indented_output_stream->Append("   goto " + basic_blocks_labels.find(bb_index_num)->second + ";\n");
+                     THROW_ASSERT(basic_blocks_labels.find(bb_index_num) != basic_blocks_labels.end(),
+                                  "I do not know the destination " + STR(bb_index_num));
+                     indented_output_stream->Append("   goto " + basic_blocks_labels.find(bb_index_num)->second +
+                                                    ";\n");
                      goto_list.insert(bb_vertex);
                   }
                }
@@ -968,7 +1059,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
 #endif
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining successor " + STR(bb_number_next_bb));
                CustomOrderedSet<unsigned int>::const_iterator eIdBeg, eIdEnd;
-               CustomOrderedSet<unsigned int> Set = local_rec_bb_fcfgGraph->CGetBBEdgeInfo(*oE)->get_labels(CFG_SELECTOR);
+               CustomOrderedSet<unsigned int> Set =
+                   local_rec_bb_fcfgGraph->CGetBBEdgeInfo(*oE)->get_labels(CFG_SELECTOR);
                for(eIdBeg = Set.begin(), eIdEnd = Set.end(); eIdBeg != eIdEnd; ++eIdBeg)
                {
                   if(*eIdBeg == default_COND)
@@ -995,7 +1087,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed current basic block");
                      }
 
-                     indented_output_stream->Append("case " + local_rec_behavioral_helper->PrintConstant(TM->CGetTreeReindex(*eIdBeg)));
+                     indented_output_stream->Append(
+                         "case " + local_rec_behavioral_helper->PrintConstant(TM->CGetTreeReindex(*eIdBeg)));
                   }
                   indented_output_stream->Append(":\n");
                }
@@ -1014,7 +1107,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor has already been examined");
                   const unsigned int next_bb_number = next_bb_node_info->block->number;
 
-                  THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(), "I do not know the destination " + STR(next_bb_number));
+                  THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(),
+                               "I do not know the destination " + STR(next_bb_number));
                   indented_output_stream->Append("   goto " + basic_blocks_labels.find(next_bb_number)->second + ";\n");
                }
             }
@@ -1055,16 +1149,20 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                vertex next_bb = boost::target(*oE, *local_rec_bb_fcfgGraph);
                if(bb_frontier.find(next_bb) != bb_frontier.end())
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not adding goto since target is in the frontier");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "Not adding goto since target is in the frontier");
                   continue;
                }
                if(FB_CFG_SELECTOR & local_rec_bb_fcfgGraph->GetSelector(*oE))
                {
                   const vertex target = boost::target(*oE, *local_rec_bb_fcfgGraph);
                   const BBNodeInfoConstRef target_bb_node_info = local_rec_bb_fcfgGraph->CGetBBNodeInfo(target);
-                  if(target_bb_node_info->statements_list.size() and (GET_TYPE(local_rec_cfgGraph, *(target_bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)))
+                  if(target_bb_node_info->statements_list.size() and
+                     (GET_TYPE(local_rec_cfgGraph, *(target_bb_node_info->statements_list.rbegin())) &
+                      (TYPE_WHILE | TYPE_FOR)))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not adding a goto since target is a while/for");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "Not adding a goto since target is a while/for");
                      continue;
                   }
                }
@@ -1076,7 +1174,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                {
                   const BBNodeInfoConstRef next_bb_node_info = local_rec_bb_fcfgGraph->CGetBBNodeInfo(next_bb);
                   const unsigned int next_bb_number = next_bb_node_info->block->number;
-                  THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(), "I do not know the destination");
+                  THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(),
+                               "I do not know the destination");
                   indented_output_stream->Append("   goto " + basic_blocks_labels.find(next_bb_number)->second + ";\n");
                   goto_list.insert(next_bb);
                }
@@ -1093,7 +1192,9 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
          indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
          add_semicolon = false;
       }
-      if(!local_rec_behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block) && ((stmts_list.empty()) || ((GET_TYPE(local_rec_cfgGraph, *stmts_list.rbegin()) & (TYPE_SWITCH | TYPE_WHILE | TYPE_FOR)) == 0)))
+      if(!local_rec_behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block) &&
+         ((stmts_list.empty()) ||
+          ((GET_TYPE(local_rec_cfgGraph, *stmts_list.rbegin()) & (TYPE_SWITCH | TYPE_WHILE | TYPE_FOR)) == 0)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not end with a cond or goto nor switch");
          const vertex bbentry = local_rec_bb_fcfgGraph->CGetBBGraphInfo()->entry_vertex;
@@ -1103,13 +1204,16 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended writing basic block " + STR(bb_number));
             return;
          }
-         THROW_ASSERT(boost::out_degree(current_vertex, *local_rec_bb_fcfgGraph) <= 1, "only one edge expected BB(" + STR(bb_number) + ") Fun(" + STR(local_rec_behavioral_helper->get_function_index()) + ")");
+         THROW_ASSERT(boost::out_degree(current_vertex, *local_rec_bb_fcfgGraph) <= 1,
+                      "only one edge expected BB(" + STR(bb_number) + ") Fun(" +
+                          STR(local_rec_behavioral_helper->get_function_index()) + ")");
          OutEdgeIterator oE, oEEnd;
          for(boost::tie(oE, oEEnd) = boost::out_edges(current_vertex, *local_rec_bb_fcfgGraph); oE != oEEnd; oE++)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining the only? successor");
             vertex next_bb = boost::target(*oE, *local_rec_bb_fcfgGraph);
-            if(bb_frontier.find(next_bb) != bb_frontier.end() or boost::in_degree(next_bb, *local_rec_bb_fcfgGraph) == 1)
+            if(bb_frontier.find(next_bb) != bb_frontier.end() or
+               boost::in_degree(next_bb, *local_rec_bb_fcfgGraph) == 1)
             {
                continue;
             }
@@ -1118,7 +1222,9 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
             {
                const vertex target = boost::target(*oE, *local_rec_bb_fcfgGraph);
                const BBNodeInfoConstRef target_bb_node_info = local_rec_bb_fcfgGraph->CGetBBNodeInfo(target);
-               if(target_bb_node_info->statements_list.size() and (GET_TYPE(local_rec_cfgGraph, *(target_bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)))
+               if(target_bb_node_info->statements_list.size() and
+                  (GET_TYPE(local_rec_cfgGraph, *(target_bb_node_info->statements_list.rbegin())) &
+                   (TYPE_WHILE | TYPE_FOR)))
                {
                   continue;
                }
@@ -1127,7 +1233,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor does not belong to frontier");
             const BBNodeInfoConstRef next_bb_node_info = local_rec_bb_fcfgGraph->CGetBBNodeInfo(next_bb);
             const unsigned int next_bb_number = next_bb_node_info->block->number;
-            THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(), "I do not know the destination");
+            THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(),
+                         "I do not know the destination");
             indented_output_stream->Append("   goto " + basic_blocks_labels.find(next_bb_number)->second + ";\n");
             goto_list.insert(next_bb);
             add_semicolon = false;
@@ -1143,11 +1250,14 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
    {
       // recurse on the post dominator
       bb_frontier.erase(bb_PD);
-      THROW_ASSERT(bb_analyzed.find(bb_PD) == bb_analyzed.end(), "something of wrong happen " + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb_PD)->block->number) + " Fun(" + STR(local_rec_behavioral_helper->get_function_index()) + ")");
+      THROW_ASSERT(bb_analyzed.find(bb_PD) == bb_analyzed.end(),
+                   "something of wrong happen " + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb_PD)->block->number) +
+                       " Fun(" + STR(local_rec_behavioral_helper->get_function_index()) + ")");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printing the post dominator");
       writeRoutineInstructions_rec(bb_PD, false, function_index);
    }
-   if((analyze_bb_PD || is_there || add_bb_label || add_phi_nodes_assignment || add_phi_nodes_assignment_prefix) && bracket)
+   if((analyze_bb_PD || is_there || add_bb_label || add_phi_nodes_assignment || add_phi_nodes_assignment_prefix) &&
+      bracket)
    {
       indented_output_stream->Append("}\n");
    }
@@ -1155,7 +1265,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended writing basic block " + STR(bb_number));
 }
 
-void CWriter::compute_phi_nodes(const FunctionBehaviorConstRef function_behavior, const OpVertexSet& instructions, var_pp_functorConstRef variableFunctor)
+void CWriter::compute_phi_nodes(const FunctionBehaviorConstRef function_behavior, const OpVertexSet& instructions,
+                                var_pp_functorConstRef variableFunctor)
 {
    /// compute the assignment introduced by the phi nodes destruction
    const BBGraphConstRef bb_domGraph = function_behavior->CGetBBGraph(FunctionBehavior::DOM_TREE);
@@ -1174,7 +1285,8 @@ void CWriter::compute_phi_nodes(const FunctionBehaviorConstRef function_behavior
       std::map<unsigned int, unsigned int> created_variables;
       std::map<unsigned int, std::string> symbol_table;
       std::map<unsigned int, std::deque<std::string>> array_of_stacks;
-      insert_copies(bb_domGraph->CGetBBGraphInfo()->entry_vertex, bb_domGraph, bb_fcfgGraph, variableFunctor, phi_instructions, created_variables, symbol_table, array_of_stacks);
+      insert_copies(bb_domGraph->CGetBBGraphInfo()->entry_vertex, bb_domGraph, bb_fcfgGraph, variableFunctor,
+                    phi_instructions, created_variables, symbol_table, array_of_stacks);
       /// in case we declare the variables introduced during the phi nodes destruction
       if(!created_variables.empty())
       {
@@ -1183,15 +1295,19 @@ void CWriter::compute_phi_nodes(const FunctionBehaviorConstRef function_behavior
          {
             THROW_ASSERT(symbol_table.find(cv_it->first) != symbol_table.end(), "variable not found in symbol_table");
             unsigned real_var = cv_it->second;
-            var_pp_functorRef phi_functor = var_pp_functorRef(new isolated_var_pp_functor(function_behavior->CGetBehavioralHelper(), real_var, symbol_table[cv_it->first]));
-            indented_output_stream->Append(tree_helper::print_type(TM, tree_helper::get_type_index(TM, real_var), false, false, false, real_var, phi_functor));
+            var_pp_functorRef phi_functor = var_pp_functorRef(new isolated_var_pp_functor(
+                function_behavior->CGetBehavioralHelper(), real_var, symbol_table[cv_it->first]));
+            indented_output_stream->Append(tree_helper::print_type(TM, tree_helper::get_type_index(TM, real_var), false,
+                                                                   false, false, real_var, phi_functor));
             indented_output_stream->Append(";\n");
          }
       }
    }
 }
 
-void CWriter::writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, var_pp_functorConstRef variableFunctor, vertex bb_start, CustomOrderedSet<vertex> bb_end)
+void CWriter::writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions,
+                                       var_pp_functorConstRef variableFunctor, vertex bb_start,
+                                       CustomOrderedSet<vertex> bb_end)
 {
    bb_label_counter++;
    const auto function_behavior = AppM->CGetFunctionBehavior(function_index);
@@ -1200,14 +1316,16 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CWriter::writeRoutineInstructions - Start");
    if(instructions.empty())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--CWriter::writeRoutineInstructions - instructions is an empty set");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "<--CWriter::writeRoutineInstructions - instructions is an empty set");
       return;
    }
    else if(instructions.size() == 1)
    {
       if(GET_TYPE(cfgGraph, (*instructions.begin())) & TYPE_ENTRY)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--CWriter::writeRoutineInstructions - instructions is a set with only entry");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "<--CWriter::writeRoutineInstructions - instructions is a set with only entry");
          return;
       }
    }
@@ -1243,13 +1361,19 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
       size_t delta = bb_exit.count(*vi) ? 1u : 0u;
       if(boost::in_degree(*vi, *bb_fcfgGraph) <= (1 + delta))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipped BB" + STR(bb_fcfgGraph->CGetBBNodeInfo(*vi)->block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Skipped BB" + STR(bb_fcfgGraph->CGetBBNodeInfo(*vi)->block->number));
          continue;
       }
       const auto bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(*vi);
       const unsigned int le = behavioral_helper->start_with_a_label(bb_node_info->block);
-      basic_blocks_labels[bb_node_info->block->number] = (le ? behavioral_helper->get_label_name(le) : ("BB_LABEL_" + STR(bb_node_info->block->number)) + (bb_label_counter == 1 ? "" : "_" + STR(bb_label_counter)));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Label of BB" + STR(bb_fcfgGraph->CGetBBNodeInfo(*vi)->block->number) + " is " + basic_blocks_labels[bb_node_info->block->number]);
+      basic_blocks_labels[bb_node_info->block->number] =
+          (le ? behavioral_helper->get_label_name(le) :
+                ("BB_LABEL_" + STR(bb_node_info->block->number)) +
+                    (bb_label_counter == 1 ? "" : "_" + STR(bb_label_counter)));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Label of BB" + STR(bb_fcfgGraph->CGetBBNodeInfo(*vi)->block->number) + " is " +
+                         basic_blocks_labels[bb_node_info->block->number]);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed labels");
    /// set of basic block already analyzed
@@ -1309,7 +1433,8 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--CWriter::writeRoutineInstructions - End");
 }
 
-void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelperConstRef& behavioral_helper, CustomSet<std::string>& locally_declared_types)
+void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelperConstRef& behavioral_helper,
+                          CustomSet<std::string>& locally_declared_types)
 {
 #ifndef NDEBUG
    const auto routine_name = behavioral_helper->get_function_name();
@@ -1320,7 +1445,9 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
    const auto type_name = tree_helper::GetTypeName(real_var_type);
 
    // Check that the variable really needs the declaration of a new type
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Declaration of type " + type_name + " (" + GET_CONST_NODE(varType)->ToString() + " - " + GET_CONST_NODE(real_var_type)->ToString() + ") in function " + routine_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Declaration of type " + type_name + " (" + GET_CONST_NODE(varType)->ToString() + " - " +
+                      GET_CONST_NODE(real_var_type)->ToString() + ") in function " + routine_name);
 
    if(!globally_declared_types.count(type_name) && !locally_declared_types.count(type_name))
    {
@@ -1334,10 +1461,12 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
 #endif
       )
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Type has not to be declared since it is declared in included " + decl);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Type has not to be declared since it is declared in included " + decl);
          return;
       }
-      const auto types_to_be_declared_before = tree_helper::GetTypesToBeDeclaredBefore(real_var_type, without_transformation);
+      const auto types_to_be_declared_before =
+          tree_helper::GetTypesToBeDeclaredBefore(real_var_type, without_transformation);
       for(const auto& type_to_be_declared : types_to_be_declared_before)
       {
          DeclareType(type_to_be_declared, behavioral_helper, locally_declared_types);
@@ -1350,7 +1479,8 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
          }
          indented_output_stream->Append(behavioral_helper->print_type_declaration(real_var_type->index) + ";\n");
       }
-      const auto types_to_be_declared_after = tree_helper::GetTypesToBeDeclaredAfter(real_var_type, without_transformation);
+      const auto types_to_be_declared_after =
+          tree_helper::GetTypesToBeDeclaredAfter(real_var_type, without_transformation);
       for(const auto& type_to_be_declared : types_to_be_declared_after)
       {
          DeclareType(type_to_be_declared, behavioral_helper, locally_declared_types);
@@ -1359,7 +1489,9 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared type " + GET_CONST_NODE(varType)->ToString());
 }
 
-void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& locally_declared_types, const BehavioralHelperConstRef& behavioral_helper, const var_pp_functorConstRef& varFunc)
+void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigned int>& already_declared_variables,
+                              CustomSet<std::string>& locally_declared_types,
+                              const BehavioralHelperConstRef& behavioral_helper, const var_pp_functorConstRef& varFunc)
 {
    if(already_declared_variables.count(curVar->index))
    {
@@ -1373,10 +1505,12 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
    {
       for(const auto initVar : initVars)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "For variable " + STR(curVar) + " recursing on " + STR(initVar));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "For variable " + STR(curVar) + " recursing on " + STR(initVar));
          if(!already_declared_variables.count(initVar) && !globallyDeclVars.count(initVar))
          {
-            DeclareVariable(TM->CGetTreeReindex(initVar), already_declared_variables, locally_declared_types, behavioral_helper, varFunc);
+            DeclareVariable(TM->CGetTreeReindex(initVar), already_declared_variables, locally_declared_types,
+                            behavioral_helper, varFunc);
          }
       }
    }
@@ -1391,7 +1525,8 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
    {
       if(verbose)
       {
-         indented_output_stream->Append("//declaring variable " + STR(curVar) + " - type: " + STR(variable_type) + "\n");
+         indented_output_stream->Append("//declaring variable " + STR(curVar) + " - type: " + STR(variable_type) +
+                                        "\n");
       }
       if(GetPointer<const function_decl>(GET_CONST_NODE(curVar)))
       {
@@ -1421,7 +1556,10 @@ void CWriter::writeInclude(const std::string& file_name)
    indented_output_stream->Append("#include \"" + file_name + "\"\n");
 }
 
-void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& already_declared_types, const BehavioralHelperConstRef behavioral_helper,
+void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared,
+                                    CustomSet<unsigned int>& already_declared_variables,
+                                    CustomSet<std::string>& already_declared_types,
+                                    const BehavioralHelperConstRef behavioral_helper,
                                     const var_pp_functorConstRef varFunc)
 {
    const auto p = behavioral_helper->get_parameters();
@@ -1437,7 +1575,8 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
          return false;
       }
       auto* sa = GetPointer<ssa_name>(node);
-      if(sa && (sa->volatile_flag || (GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K)) && sa->var && (GET_NODE(sa->var)->get_kind() == parm_decl_K))
+      if(sa && (sa->volatile_flag || (GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K)) && sa->var &&
+         (GET_NODE(sa->var)->get_kind() == parm_decl_K))
       {
          return false;
       }
@@ -1450,7 +1589,8 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
    {
       if(is_to_declare(var))
       {
-         DeclareVariable(TM->CGetTreeReindex(var), already_declared_variables, already_declared_types, behavioral_helper, varFunc);
+         DeclareVariable(TM->CGetTreeReindex(var), already_declared_variables, already_declared_types,
+                         behavioral_helper, varFunc);
       }
    }
    var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
@@ -1467,8 +1607,11 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Declaring local variables");
 }
 
-void CWriter::insert_copies(vertex b, const BBGraphConstRef bb_domGraph, const BBGraphConstRef bb_fcfgGraph, var_pp_functorConstRef variableFunctor, const CustomSet<unsigned int>& phi_instructions, std::map<unsigned int, unsigned int>& created_variables,
-                            std::map<unsigned int, std::string>& symbol_table, std::map<unsigned int, std::deque<std::string>>& array_of_stacks)
+void CWriter::insert_copies(vertex b, const BBGraphConstRef bb_domGraph, const BBGraphConstRef bb_fcfgGraph,
+                            var_pp_functorConstRef variableFunctor, const CustomSet<unsigned int>& phi_instructions,
+                            std::map<unsigned int, unsigned int>& created_variables,
+                            std::map<unsigned int, std::string>& symbol_table,
+                            std::map<unsigned int, std::deque<std::string>>& array_of_stacks)
 {
    std::list<unsigned int> pushed;
    /// fill the renaming table for basic block b
@@ -1480,18 +1623,23 @@ void CWriter::insert_copies(vertex b, const BBGraphConstRef bb_domGraph, const B
          symbol_table[aos.first] = aos.second.back();
       }
    }
-   schedule_copies(b, bb_domGraph, bb_fcfgGraph, variableFunctor, phi_instructions, created_variables, symbol_table, pushed, array_of_stacks);
+   schedule_copies(b, bb_domGraph, bb_fcfgGraph, variableFunctor, phi_instructions, created_variables, symbol_table,
+                   pushed, array_of_stacks);
    OutEdgeIterator oi, oend;
    for(boost::tie(oi, oend) = boost::out_edges(b, *bb_domGraph); oi != oend; ++oi)
    {
       vertex c = boost::target(*oi, *bb_domGraph);
-      insert_copies(c, bb_domGraph, bb_fcfgGraph, variableFunctor, phi_instructions, created_variables, symbol_table, array_of_stacks);
+      insert_copies(c, bb_domGraph, bb_fcfgGraph, variableFunctor, phi_instructions, created_variables, symbol_table,
+                    array_of_stacks);
    }
    pop_stack(pushed, array_of_stacks);
 }
 
-void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const BBGraphConstRef bb_fcfgGraph, var_pp_functorConstRef variableFunctor, const CustomSet<unsigned int>& phi_instructions, std::map<unsigned int, unsigned int>& created_variables,
-                              std::map<unsigned int, std::string>& symbol_table, std::list<unsigned int>& pushed, std::map<unsigned int, std::deque<std::string>>& array_of_stacks)
+void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const BBGraphConstRef bb_fcfgGraph,
+                              var_pp_functorConstRef variableFunctor, const CustomSet<unsigned int>& phi_instructions,
+                              std::map<unsigned int, unsigned int>& created_variables,
+                              std::map<unsigned int, std::string>& symbol_table, std::list<unsigned int>& pushed,
+                              std::map<unsigned int, std::deque<std::string>>& array_of_stacks)
 {
    /// Pass One: initialize the data structures
    const BBNodeInfoConstRef bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(b);
@@ -1560,7 +1708,8 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
             unsigned int src_i = GET_INDEX_NODE(wl.first);
             unsigned int dest_i = GET_INDEX_NODE(wl.second);
             /// if dest \belongs live\_out(b)
-            /// wrt the original algorithm an optimization has been added: in case b does not dominate any other node we can skip the creation of t
+            /// wrt the original algorithm an optimization has been added: in case b does not dominate any other node we
+            /// can skip the creation of t
             //            if(boost::out_degree(b, *bb_domGraph) > 0 &&
             //                  bb_node_info->block->live_out.find(dest_i) != bb_node_info->block->live_out.end()
             //                  )
@@ -1584,7 +1733,8 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
                // THROW_ERROR("check the source code @" + STR(dest_i));
                ///   insert a copy from dest to a new temp t at phi-node defining dest
                unsigned int t_i = create_new_identifier(symbol_table);
-               basic_block_prefix[bb_dest_definition[dest_i]] += symbol_table.find(t_i)->second + " = " + (*variableFunctor)(dest_i) + ";\n";
+               basic_block_prefix[bb_dest_definition[dest_i]] +=
+                   symbol_table.find(t_i)->second + " = " + (*variableFunctor)(dest_i) + ";\n";
                created_variables[t_i] = dest_i;
                map[t_i] = t_i;
                ///   push(t, Stack[dest])
@@ -1595,11 +1745,13 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
             std::string copy_statement;
             if(symbol_table.find(map.find(src_i)->second) != symbol_table.end())
             {
-               copy_statement += (*variableFunctor)(dest_i) + " = " + symbol_table.find(map.find(src_i)->second)->second + ";\n";
+               copy_statement +=
+                   (*variableFunctor)(dest_i) + " = " + symbol_table.find(map.find(src_i)->second)->second + ";\n";
             }
             else if(dest_i != map.find(src_i)->second)
             {
-               copy_statement += (*variableFunctor)(dest_i) + " = " + (*variableFunctor)(map.find(src_i)->second) + ";\n";
+               copy_statement +=
+                   (*variableFunctor)(dest_i) + " = " + (*variableFunctor)(map.find(src_i)->second) + ";\n";
             }
 
             basic_block_tail[bi_id] += copy_statement;
@@ -1671,14 +1823,16 @@ unsigned int CWriter::create_new_identifier(std::map<unsigned int, std::string>&
    return node_id_this;
 }
 
-void CWriter::push_stack(std::string symbol_name, unsigned int dest_i, std::list<unsigned int>& pushed, std::map<unsigned int, std::deque<std::string>>& array_of_stacks)
+void CWriter::push_stack(std::string symbol_name, unsigned int dest_i, std::list<unsigned int>& pushed,
+                         std::map<unsigned int, std::deque<std::string>>& array_of_stacks)
 {
    THROW_ASSERT(std::find(pushed.begin(), pushed.end(), dest_i) == pushed.end(), "multiple push is not allowed");
    array_of_stacks[dest_i].push_back(symbol_name);
    pushed.push_back(dest_i);
 }
 
-void CWriter::pop_stack(std::list<unsigned int>& pushed, std::map<unsigned int, std::deque<std::string>>& array_of_stacks)
+void CWriter::pop_stack(std::list<unsigned int>& pushed,
+                        std::map<unsigned int, std::deque<std::string>>& array_of_stacks)
 {
    for(auto var_id : pushed)
    {
@@ -1835,7 +1989,8 @@ void CWriter::WriteHashTableImplementation()
    indented_output_stream->Append("return gen;\n");
    indented_output_stream->Append("} /* st_init_gen */\n");
    indented_output_stream->Append("\n");
-   indented_output_stream->Append("int st_gen_int(st_generator *gen, unsigned long long * key_p, unsigned long long * value_p)\n");
+   indented_output_stream->Append(
+       "int st_gen_int(st_generator *gen, unsigned long long * key_p, unsigned long long * value_p)\n");
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("int i;\n");
    indented_output_stream->Append("if (gen->entry == NIL(st_table_entry))\n");
@@ -1869,7 +2024,8 @@ void CWriter::WriteHashTableImplementation()
    indented_output_stream->Append("FREE(gen);\n");
    indented_output_stream->Append("} /* st_free_gen */\n");
    indented_output_stream->Append("\n");
-   indented_output_stream->Append("int st_find_or_add(st_table *table, unsigned long long key, unsigned long long ** slot)\n");
+   indented_output_stream->Append(
+       "int st_find_or_add(st_table *table, unsigned long long key, unsigned long long ** slot)\n");
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("int hash_val;\n");
    indented_output_stream->Append("st_table_entry *newt, *ptr, **last;\n");
@@ -1918,7 +2074,8 @@ void CWriter::WriteHashTableImplementation()
    indented_output_stream->Append("return 1;\n");
    indented_output_stream->Append("}\n");
    indented_output_stream->Append("} /* st_find_or_add */\n");
-   indented_output_stream->Append("#define st_foreach_item_int(table, gen, key, value) for(gen=st_init_gen(table); st_gen_int(gen,key,value) || (st_free_gen(gen),0);)\n");
+   indented_output_stream->Append("#define st_foreach_item_int(table, gen, key, value) for(gen=st_init_gen(table); "
+                                  "st_gen_int(gen,key,value) || (st_free_gen(gen),0);)\n");
 }
 
 void CWriter::WriteFile(const std::string& file_name)
