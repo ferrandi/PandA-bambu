@@ -310,6 +310,7 @@ jobs:
       args: -c=--simulator=MODELSIM
     strategy:
       max-parallel: 2
+      fail-fast: false
       matrix:
         include:
           - outname: all_gcc_softfloat-tests
@@ -376,7 +377,7 @@ jobs:
           ]
     env:
       script: generic_libm-tests.sh
-      args: -c=--simulator=VERILATOR -c=-wH
+      args: -c=--simulator=MODELSIM -c=-wH
       basename: libm-vhdl
     steps:
       - name: Checkout repository
