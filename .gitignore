@@ -82,7 +82,6 @@ lconfig.h.in~
 
 build/
 build_release/
-.devcontainer/
 .vscode/
 obj/
 *swp

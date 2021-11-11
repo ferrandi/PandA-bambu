@@ -29,7 +29,7 @@ trap cleanup EXIT
 
 #Necessary for gcc-4.5
 export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
+ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 
 echo "::group::Initialize workspace"
 export PATH=/usr/lib/ccache:$PATH
