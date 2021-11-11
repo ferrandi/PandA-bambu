@@ -101,7 +101,8 @@ if test_required:
             t.write(test_line)
     t.close()
     test_runner = '''#!/bin/bash
-$(dirname $0)/../etc/scripts/test_panda.py --tool=bambu -lTEST_NAME_list -o output_TEST_NAME -b$(dirname $0) --name="TEST_NAME" --timeout=120m --junitdir=test-report_TEST_NAME $@
+script_dir="$(dirname $(readlink -e $0))"
+$script_dir/../etc/scripts/test_panda.py --tool=bambu -lTEST_NAME_list -o output_TEST_NAME -b$script_dir --name="TEST_NAME" --timeout=120m --junitdir=test-report_TEST_NAME $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
