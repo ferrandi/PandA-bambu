@@ -23,11 +23,11 @@ In order to install the PandA framework, you need to perform the following steps
 
 Currently accepted parameters are:
 
-  --enable-flopoco: add floating point support by leveraging FloPoCo Library 
-                   http://flopoco.gforge.inria.fr/
-  --enable-debug: add debugging symbols to the binaries 
-  --enable-opt: Compile the framework with GCC optimizations enabled
-  --enable-release: Remove further tests not useful in a production environment
+  --enable-flopoco:  add floating point support by leveraging FloPoCo Library 
+                     http://flopoco.gforge.inria.fr/
+  --enable-debug  :  add debugging symbols to the binaries 
+  --enable-opt    :  Compile the framework with GCC optimizations enabled
+  --enable-release:  Remove further tests not useful in a production environment
 
 Note that the scripts for synthesis and simulation are generated even if the 
 corresponding tools are not configured as described above. In this case, the 

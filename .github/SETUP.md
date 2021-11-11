@@ -29,3 +29,4 @@ Some environment variables are expected to be set by each runner host:
 - **J**: number of maximum parallel jobs handled by the runner
 - **LM_LICENSE_FILE**: license file path for simulation/synthesis tools
 - **NANOXPLORE_BYPASS**: NanoXplore bypass setting
+- **LIBRARY_PATH**: necessary to support older gcc compilers (set to: /usr/lib/x86_64-linux-gnu)
