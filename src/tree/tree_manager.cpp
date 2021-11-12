@@ -213,7 +213,19 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
             simple_name = in->strg;
          }
       }
-      const auto name = tree_helper::print_function_name(TM, fd);
+      const auto name = [&]() {
+         const auto fname = tree_helper::print_function_name(TM, fd);
+         if(TM->is_CPP())
+         {
+            auto demangled_name = string_demangle(fname);
+            demangled_name = demangled_name.substr(0, demangled_name.find('('));
+            if(!demangled_name.empty())
+            {
+               return demangled_name;
+            }
+         }
+         return fname;
+      }();
       if(name == function_name || function_name == std::string("-") ||
          (!simple_name.empty() && function_name == simple_name))
       {
