@@ -3634,13 +3634,13 @@ void BambuParameter::CheckParameters()
       {
          THROW_ERROR("Xilinx ISim was not detected by Bambu. Please check --xilinx-root option is correct.");
       }
-      else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
-      {
-         THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
-      }
       else if(getOption<std::string>(OPT_simulator) == "VERILATOR" && !isOption(OPT_verilator))
       {
          THROW_ERROR("Verilator was not detected by Bambu. Please make sure it is installed in the system.");
+      }
+      else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
+      {
+         THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
       }
    }
    else
@@ -3657,13 +3657,13 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
       }
-      else if(isOption(OPT_icarus))
-      {
-         setOption(OPT_simulator, "ICARUS");
-      }
       else if(isOption(OPT_verilator))
       {
          setOption(OPT_simulator, "VERILATOR");
+      }
+      else if(isOption(OPT_icarus))
+      {
+         setOption(OPT_simulator, "ICARUS");
       }
       else
       {
