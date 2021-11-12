@@ -576,7 +576,7 @@ jobs:
             IFS=' ' read -r -a args <<< "$args"
             config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
             config_out="$out_dir/$config_name"
-            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
+            ${{matrix.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
             echo "::endgroup::"
           done
       - name: Upload test reports
@@ -684,7 +684,7 @@ jobs:
             IFS=' ' read -r -a args <<< "$args"
             config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
             config_out="$out_dir/$config_name"
-            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
+            ${{matrix.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
             echo "::endgroup::"
           done
       - name: Upload test reports
@@ -765,7 +765,7 @@ jobs:
             IFS=' ' read -r -a args <<< "$args"
             config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
             config_out="$out_dir/$config_name"
-            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
+            ${{matrix.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
             echo "::endgroup::"
           done
       - name: Upload test reports
