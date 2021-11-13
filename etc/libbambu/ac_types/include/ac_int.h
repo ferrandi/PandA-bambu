@@ -504,10 +504,7 @@ typedef signed long long Slong;
             return v[x];
          }
 
-         __FORCE_INLINE constexpr iv_base()
-         {
-         }
-
+         iv_base() = default;
          template <int N2, bool C2>
          __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2>& b)
          {
@@ -622,9 +619,7 @@ typedef signed long long Slong;
          {
             return v;
          }
-         constexpr iv_base() : v()
-         {
-         }
+         iv_base() = default;
          template <int N2, bool C2>
          constexpr iv_base(const iv_base<N2, C2>& b) : v(b[0])
          {
@@ -672,9 +667,7 @@ typedef signed long long Slong;
          {
             return x ? (int)(v >> 32) : (int)v;
          }
-         constexpr iv_base() : v()
-         {
-         }
+         iv_base() = default;
          template <int N2, bool C2>
          constexpr iv_base(const iv_base<N2, C2>& b)
          {
@@ -722,9 +715,7 @@ typedef signed long long Slong;
          {
             return x ? 0 : v;
          }
-         constexpr iv_base() : v()
-         {
-         }
+         iv_base() = default;
          template <int N2, bool C2>
          constexpr iv_base(const iv_base<N2, C2>& b)
          {
@@ -783,9 +774,7 @@ typedef signed long long Slong;
             x = x & 3;
             return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : v2);
          }
-         constexpr iv_base() : va(), v2()
-         {
-         }
+         iv_base() = default;
          template <int N2, bool C2>
          constexpr iv_base(const iv_base<N2, C2>& b)
          {
@@ -844,9 +833,7 @@ typedef signed long long Slong;
             x = x & 3;
             return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : 0);
          }
-         constexpr iv_base() : va()
-         {
-         }
+         iv_base() = default;
          template <int N2, bool C2>
          iv_base(const iv_base<N2, C2>& b)
          {
@@ -912,10 +899,7 @@ typedef signed long long Slong;
             return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : (x == 2 ? (int)vb : (int)(vb >> 32)));
          }
 
-         constexpr iv_base() : va(), vb()
-         {
-         }
-
+         iv_base() = default;
          template <int N2, bool C2>
          constexpr iv_base(const iv_base<N2, C2>& b)
          {
@@ -991,9 +975,7 @@ typedef signed long long Slong;
             x = x & 3;
             return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : (x == 2 ? (int)vb : (x == 2 ? (int)(vb >> 32) : 0)));
          }
-         constexpr iv_base() : va(), vb()
-         {
-         }
+         iv_base() = default;
          template <int N2, bool C2>
          iv_base(const iv_base<N2, C2>& b)
          {
