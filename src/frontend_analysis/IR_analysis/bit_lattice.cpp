@@ -545,6 +545,10 @@ bool BitLatticeManipulator::update_current(std::deque<bit_lattice>& res, const t
    {
       const auto out_is_signed = IsSignedIntegerType(tn);
       sign_reduce_bitstring(res, out_is_signed);
+      if(out_is_signed && res.front() == bit_lattice::X)
+      {
+         res.front() = bit_lattice::ZERO;
+      }
 
       THROW_ASSERT(best.count(tn->index), "");
       const auto sup_lattice = bitstring_constant(res) ? res : sup(res, best.at(tn->index), tn);

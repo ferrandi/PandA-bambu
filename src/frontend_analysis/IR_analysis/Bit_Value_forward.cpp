@@ -497,16 +497,10 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          else if(rhs_kind == convert_expr_K || rhs_kind == nop_expr_K || rhs_kind == view_convert_expr_K)
          {
             res = op_bitstring;
-            const auto left_signed = lhs_signed;
-            const auto right_signed = op_signed;
-            bool do_not_extend = false;
-            if(left_signed && lhs_size == 1 && tree_helper::IsBooleanType(operation->op))
+            const auto do_not_extend = lhs_signed && lhs_size == 1 && tree_helper::IsBooleanType(operation->op);
+            if((lhs_signed != op_signed && !do_not_extend) && res.size() < lhs_size)
             {
-               do_not_extend = true;
-            }
-            if((left_signed != right_signed && !do_not_extend) && res.size() < lhs_size)
-            {
-               res = sign_extend_bitstring(res, right_signed, lhs_size);
+               res = sign_extend_bitstring(res, op_signed, lhs_size);
             }
             while(res.size() > lhs_size)
             {
