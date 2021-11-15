@@ -722,7 +722,7 @@ double AllocationInformation::GetStatementArea(const unsigned int statement_inde
          THROW_UNREACHABLE("Unhandled operation (" + GET_CONST_NODE(ga->op1)->get_kind_text() + ")" + STR(stmt));
       }
       const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu_name, LIBRARY_STD_FU);
-      THROW_ASSERT(new_stmt_temp, "Functional unit " + fu_name + " not found");
+      THROW_ASSERT(new_stmt_temp, "Functional unit '" + fu_name + "' not found");
       const auto new_stmt_fu = GetPointerS<const functional_unit>(new_stmt_temp);
       return new_stmt_fu->area_m->get_area_value();
    }
@@ -1888,7 +1888,7 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
             const auto fu_name = tree_node::GetString(right_kind) + "_FU_" + STR(in_prec) + "_" + STR(in_prec) + "_" +
                                  STR(fu_prec) + "_0";
             const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu_name, LIBRARY_STD_FU);
-            THROW_ASSERT(new_stmt_temp, "Functional unit " + fu_name + " not found");
+            THROW_ASSERT(new_stmt_temp, "Functional unit '" + fu_name + "' not found");
             const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
             const auto new_stmt_op_temp = new_stmt_fu->get_operation(tree_node::GetString(right_kind));
             const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
@@ -2117,7 +2117,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
             fu_name =
                 tree_node::GetString(op1_kind) + "_FU_" + STR(in_prec) + "_" + STR(in_prec) + "_" + STR(fu_prec) + "_0";
             const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu_name, LIBRARY_STD_FU);
-            THROW_ASSERT(new_stmt_temp, "Functional unit " + fu_name + " not found");
+            THROW_ASSERT(new_stmt_temp, "Functional unit '" + fu_name + "' not found");
             const auto new_stmt_fu = GetPointerS<const functional_unit>(new_stmt_temp);
             const auto new_stmt_op_temp = new_stmt_fu->get_operation(tree_node::GetString(op1_kind));
             const auto new_stmt_op = GetPointerS<operation>(new_stmt_op_temp);
@@ -2165,7 +2165,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
             THROW_UNREACHABLE("Latency of " + op_stmt->ToString() + " cannot be computed");
          }
          const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu_name, LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit " + fu_name + " not found");
+         THROW_ASSERT(new_stmt_temp, "Functional unit '" + fu_name + "' not found");
          const auto new_stmt_fu = GetPointerS<const functional_unit>(new_stmt_temp);
          const auto new_stmt_op_temp = new_stmt_fu->get_operation(tree_node::GetString(op1_kind));
          const auto new_stmt_op = GetPointerS<operation>(new_stmt_op_temp);

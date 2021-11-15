@@ -75,6 +75,8 @@
 #include <iostream>
 #include <utility>
 
+#include "config_HAVE_ASSERTS.hpp"
+
 /// forward declaration macro
 #define VISIT_TREE_NODE_MACRO(r, data, elem)          \
    void elem::visit(tree_node_visitor* const v) const \
@@ -84,13 +86,17 @@
       VISIT_SC(mask, data, visit(v));                 \
    }
 
-#define NAME_KIND(r, data, elem)          \
-   name = #elem;                          \
-   name = name.substr(19);                \
-   name = name.substr(0, name.find(')')); \
+#define NAME_KIND(r, data, elem)                                                    \
+   name = #elem;                                                                    \
+   name = name.substr(19);                                                          \
+   name = name.substr(name.front() == ' ', name.find(')') - (name.front() == ' ')); \
    string_to_kind[name] = BOOST_PP_CAT(elem, _K);
 
-#define KIND_NAME(r, data, elem) kind_to_string[BOOST_PP_CAT(elem, _K)] = #elem;
+#define KIND_NAME(r, data, elem)                                                    \
+   name = #elem;                                                                    \
+   name = name.substr(19);                                                          \
+   name = name.substr(name.front() == ' ', name.find(')') - (name.front() == ' ')); \
+   kind_to_string[BOOST_PP_CAT(elem, _K)] = name;
 
 std::map<std::string, enum kind> tree_node::string_to_kind;
 
@@ -114,6 +120,13 @@ enum kind tree_node::get_kind(const std::string& input_name)
       BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TERNARY_EXPRESSION_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TYPE_NODE_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, UNARY_EXPRESSION_TREE_NODES(last_tree));
+#if HAVE_ASSERTS
+      for(const auto& sk : string_to_kind)
+      {
+         THROW_ASSERT(sk.first.find(' ') == std::string::npos,
+                      "Kind name string should not contain spaces: '" + sk.first + "'");
+      }
+#endif
    }
    return string_to_kind[input_name];
 }
@@ -122,6 +135,7 @@ std::string tree_node::GetString(enum kind k)
 {
    if(kind_to_string.empty())
    {
+      std::string name;
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, BINARY_EXPRESSION_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, CONST_OBJ_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, CPP_STMT_NODES);
@@ -133,15 +147,14 @@ std::string tree_node::GetString(enum kind k)
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, QUATERNARY_EXPRESSION_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, TERNARY_EXPRESSION_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, TYPE_NODE_TREE_NODES);
-      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, UNARY_EXPRESSION_TREE_NODES(last_tree));
-
-      // This part has been added since boost macro does not expand correctly
-      std::map<enum kind, std::string>::iterator it, it_end = kind_to_string.end();
-      for(it = kind_to_string.begin(); it != it_end; ++it)
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, UNARY_EXPRESSION_TREE_NODES(last_tree))
+#if HAVE_ASSERTS
+      for(const auto& ks : kind_to_string)
       {
-         it->second = it->second.substr(19);
-         it->second = it->second.substr(0, it->second.find(')'));
+         THROW_ASSERT(ks.second.find(' ') == std::string::npos,
+                      "Kind name string should not contain spaces: '" + ks.second + "'");
       }
+#endif
    }
    return kind_to_string[k];
 }
