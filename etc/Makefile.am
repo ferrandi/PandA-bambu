@@ -1,5 +1,5 @@
-SUBDIRS = Appimage devices macros scripts
-DIST_SUBDIRS = Appimage devices macros scripts 
+SUBDIRS = Appimage containers devices macros scripts
+DIST_SUBDIRS = Appimage containers devices macros scripts 
 
 if BUILD_GCC_PLUGIN
    SUBDIRS += gcc_plugin clang_plugin

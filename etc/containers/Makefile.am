@@ -1,6 +1,6 @@
-EXTRA_DIST= \
+EXTRA_DIST = \
    Dockerfile \
-   Dokerfile.all \
+   Dockerfile.all \
    Dockerfile.all-dev \
    Dockerfile.appimage \
    Dockerfile.cppcheck \
