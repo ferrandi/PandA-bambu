@@ -3,6 +3,10 @@ name: Build AppImage
 on:
   workflow_dispatch:
     inputs:
+      branch:
+        description: "Repository branch to build from"
+        required: false
+        default: "main"
       version:
         description: "Bambu version identifier"
         required: true
@@ -40,6 +44,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.inputs.branch}}
       - name: Env setup
         id: host
         shell: bash
