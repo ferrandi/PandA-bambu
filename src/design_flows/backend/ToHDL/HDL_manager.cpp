@@ -422,7 +422,7 @@ struct find_eq_module
 
  private:
    const language_writer* lan;
-   const structural_objectRef& target;
+   const structural_objectRef target;
 };
 
 bool HDL_manager::is_fsm(const structural_objectRef& cir) const
@@ -486,7 +486,7 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
          {
             std::string ip_cores = NPF->get_NP_functionality(NP_functionality::IP_COMPONENT);
             std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
-            for(auto ip_core : ip_cores_list)
+            for(const auto& ip_core : ip_cores_list)
             {
                std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
                if(ip_core_vec.size() < 1 or ip_core_vec.size() > 2)
@@ -519,6 +519,7 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
                {
                   THROW_ERROR("Unexpected pattern");
                }
+               THROW_ASSERT(core_cir, "unexpected condition");
                get_post_order_structural_components(core_cir, list_of_com);
                auto fo = std::find_if(list_of_com.begin(), list_of_com.end(), find_eq_module(nullptr, core_cir));
                if(fo == list_of_com.end())

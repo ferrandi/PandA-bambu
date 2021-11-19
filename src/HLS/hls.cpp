@@ -52,6 +52,7 @@
 
 #include "hls_target.hpp"
 #include "technology_manager.hpp"
+#include "technology_node.hpp"
 
 #include "hls_constraints.hpp"
 
@@ -252,25 +253,69 @@ static void computeResources(const structural_objectRef circ, const technology_m
                              std::map<std::string, unsigned int>& resources)
 {
    const module* mod = GetPointer<module>(circ);
-   for(unsigned int l = 0; l < mod->get_internal_objects_size(); l++)
-   {
-      const structural_objectRef obj = mod->get_internal_object(l);
-      const structural_type_descriptorRef id_type = obj->get_typeRef();
-      if(obj->get_kind() != component_o_K)
+   auto processResources = [&](const structural_objectRef c) {
+      THROW_ASSERT(c, "unexpected condition");
+      const structural_type_descriptorRef id_type = c->get_typeRef();
+      if(c->get_kind() != component_o_K)
       {
-         continue;
+         return;
       }
-      computeResources(obj, TM, resources);
-      if(obj->get_id() == "Controller_i" || obj->get_id() == "Datapath_i")
+      computeResources(c, TM, resources);
+      if(c->get_id() == "Controller_i" || c->get_id() == "Datapath_i")
       {
-         continue;
+         return;
       }
       std::string library = TM->get_library(id_type->id_type);
       if(library == WORK_LIBRARY || library == PROXY_LIBRARY)
       {
-         continue;
+         return;
       }
       resources[id_type->id_type]++;
+   };
+   for(unsigned int l = 0; l < mod->get_internal_objects_size(); l++)
+   {
+      const structural_objectRef obj = mod->get_internal_object(l);
+      processResources(obj);
+   }
+   NP_functionalityRef NPF = mod->get_NP_functionality();
+   if(NPF and NPF->exist_NP_functionality(NP_functionality::IP_COMPONENT))
+   {
+      std::string ip_cores = NPF->get_NP_functionality(NP_functionality::IP_COMPONENT);
+      std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
+      for(const auto& ip_core : ip_cores_list)
+      {
+         std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
+         if(ip_core_vec.size() < 1 or ip_core_vec.size() > 2)
+         {
+            THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");
+         }
+         std::string library, component_name;
+         if(ip_core_vec.size() == 2)
+         {
+            library = ip_core_vec[0];
+            component_name = ip_core_vec[1];
+         }
+         else
+         {
+            component_name = ip_core_vec[0];
+            library = TM->get_library(component_name);
+         }
+         technology_nodeRef tn = TM->get_fu(component_name, library);
+         structural_objectRef core_cir;
+         if(tn->get_kind() == functional_unit_K)
+         {
+            core_cir = GetPointer<functional_unit>(tn)->CM->get_circ();
+         }
+         else if(tn->get_kind() == functional_unit_template_K && GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU))
+         {
+            core_cir = GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->CM->get_circ();
+         }
+         else
+         {
+            THROW_ERROR("Unexpected pattern");
+         }
+         processResources(core_cir);
+      }
    }
 }
 
