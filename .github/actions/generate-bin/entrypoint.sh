@@ -1,3 +1,4 @@
+#!/bin/bash
 ###
 #     AppImage builder script
 #
@@ -16,7 +17,6 @@
 #     if gcc-8 is not to be cosidered during PandA Bambu compilation).
 #
 ###
-#!/bin/bash
 set -e
 
 workspace_dir=$PWD
