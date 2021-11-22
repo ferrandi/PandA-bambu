@@ -2010,24 +2010,24 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
    {
       case pointer_type_K:
       {
-         return "*" + GetTypeName(GET_CONST_NODE((GetPointer<const pointer_type>(type))->ptd));
+         return "*" + GetTypeName(GET_CONST_NODE((GetPointerS<const pointer_type>(type))->ptd));
       }
       case reference_type_K:
       {
-         return "&" + GetTypeName(GET_CONST_NODE((GetPointer<const reference_type>(type))->refd));
+         return "&" + GetTypeName(GET_CONST_NODE((GetPointerS<const reference_type>(type))->refd));
       }
       case record_type_K:
       {
-         const auto rect = GetPointer<const record_type>(type);
+         const auto rect = GetPointerS<const record_type>(type);
          std::string nt;
          if(rect->name)
          {
             if(GET_CONST_NODE(rect->name)->get_kind() == type_decl_K)
             {
-               const auto td = GetPointer<const type_decl>(GET_CONST_NODE(rect->name));
+               const auto td = GetPointerS<const type_decl>(GET_CONST_NODE(rect->name));
                if(GET_CONST_NODE(td->name)->get_kind() == identifier_node_K)
                {
-                  const auto idn = GetPointer<const identifier_node>(GET_CONST_NODE(td->name));
+                  const auto idn = GetPointerS<const identifier_node>(GET_CONST_NODE(td->name));
                   nt = idn->strg;
                }
                else
@@ -2037,7 +2037,7 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
             }
             else if(GET_CONST_NODE(rect->name)->get_kind() == identifier_node_K)
             {
-               const auto idn = GetPointer<const identifier_node>(GET_CONST_NODE(rect->name));
+               const auto idn = GetPointerS<const identifier_node>(GET_CONST_NODE(rect->name));
                nt = "struct " + normalized_ID(idn->strg);
             }
             else
@@ -2055,7 +2055,7 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
          }
          else if(rect->tmpl_args) /*the class has template parameters*/
          {
-            const auto rtv = GetPointer<const tree_vec>(GET_CONST_NODE(rect->tmpl_args));
+            const auto rtv = GetPointerS<const tree_vec>(GET_CONST_NODE(rect->tmpl_args));
             THROW_ASSERT(rtv->lngt == 1 || nt == "sc_port", "Expected just one element");
             return GetTypeName(GET_CONST_NODE(rtv->list_of_op[0]));
          }
@@ -2067,16 +2067,16 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
       }
       case union_type_K:
       {
-         const auto unt = GetPointer<const union_type>(type);
+         const auto unt = GetPointerS<const union_type>(type);
          std::string nt;
          if(unt->name)
          {
             if(GET_CONST_NODE(unt->name)->get_kind() == type_decl_K)
             {
-               const auto td = GetPointer<const type_decl>(GET_CONST_NODE(unt->name));
+               const auto td = GetPointerS<const type_decl>(GET_CONST_NODE(unt->name));
                if(GET_CONST_NODE(td->name)->get_kind() == identifier_node_K)
                {
-                  const auto idn = GetPointer<const identifier_node>(GET_CONST_NODE(td->name));
+                  const auto idn = GetPointerS<const identifier_node>(GET_CONST_NODE(td->name));
                   nt = idn->strg;
                }
                else
@@ -2086,7 +2086,7 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
             }
             else if(GET_CONST_NODE(unt->name)->get_kind() == identifier_node_K)
             {
-               const auto idn = GetPointer<const identifier_node>(GET_CONST_NODE(unt->name));
+               const auto idn = GetPointerS<const identifier_node>(GET_CONST_NODE(unt->name));
                nt = "union " + idn->strg;
             }
             else
@@ -2110,7 +2110,7 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
       }
       case array_type_K:
       {
-         const auto at = GetPointer<const array_type>(type);
+         const auto at = GetPointerS<const array_type>(type);
          std::string vec_size_string;
          if(at->domn)
          {
@@ -2135,18 +2135,18 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
       }
       case enumeral_type_K:
       {
-         const auto et = GetPointer<const enumeral_type>(type);
+         const auto et = GetPointerS<const enumeral_type>(type);
          if(et->name)
          {
             if(GET_CONST_NODE(et->name)->get_kind() == type_decl_K)
             {
-               const auto td = GetPointer<const type_decl>(GET_CONST_NODE(et->name));
-               const auto in = GetPointer<const identifier_node>(GET_CONST_NODE(td->name));
+               const auto td = GetPointerS<const type_decl>(GET_CONST_NODE(et->name));
+               const auto in = GetPointerS<const identifier_node>(GET_CONST_NODE(td->name));
                return in->strg;
             }
             else if(GET_CONST_NODE(et->name)->get_kind() == identifier_node_K)
             {
-               const auto in = GetPointer<const identifier_node>(GET_CONST_NODE(et->name));
+               const auto in = GetPointerS<const identifier_node>(GET_CONST_NODE(et->name));
                return "enum " + in->strg;
             }
          }
@@ -2162,7 +2162,7 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
       case void_type_K:
       case vector_type_K:
       {
-         const auto tnode = GetPointer<const type_node>(type);
+         const auto tnode = GetPointerS<const type_node>(type);
          if(!tnode->name)
          {
             if(type->get_kind() == integer_type_K)
@@ -2173,14 +2173,14 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
          }
          if(GET_CONST_NODE(tnode->name)->get_kind() == type_decl_K)
          {
-            const auto tdecl = GetPointer<const type_decl>(GET_CONST_NODE(tnode->name));
+            const auto tdecl = GetPointerS<const type_decl>(GET_CONST_NODE(tnode->name));
             THROW_ASSERT(GET_CONST_NODE(tdecl->name)->get_kind() == identifier_node_K, "unexpected type name pattern");
-            const auto idn = GetPointer<const identifier_node>(GET_CONST_NODE(tdecl->name));
+            const auto idn = GetPointerS<const identifier_node>(GET_CONST_NODE(tdecl->name));
             return idn->strg;
          }
          else if(GET_CONST_NODE(tnode->name)->get_kind() == identifier_node_K)
          {
-            const auto idn = GetPointer<const identifier_node>(GET_CONST_NODE(tnode->name));
+            const auto idn = GetPointerS<const identifier_node>(GET_CONST_NODE(tnode->name));
             return idn->strg;
          }
          else
@@ -2192,26 +2192,26 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
       }
       case function_type_K:
       {
-         std::string retn = GetTypeName(GET_CONST_NODE(GetPointer<const function_type>(type)->retn));
+         std::string retn = GetTypeName(GET_CONST_NODE(GetPointerS<const function_type>(type)->retn));
          retn += "(*)(";
-         if(GetPointer<const function_type>(type)->prms)
+         if(GetPointerS<const function_type>(type)->prms)
          {
-            retn += GetTypeName(GET_CONST_NODE(GetPointer<const function_type>(type)->prms));
+            retn += GetTypeName(GET_CONST_NODE(GetPointerS<const function_type>(type)->prms));
          }
          retn += ")";
          return retn;
       }
       case method_type_K:
       {
-         std::string retn = GetTypeName(GET_CONST_NODE(GetPointer<const method_type>(type)->retn));
+         std::string retn = GetTypeName(GET_CONST_NODE(GetPointerS<const method_type>(type)->retn));
          retn += "(*)(";
-         retn += GetTypeName(GET_CONST_NODE(GetPointer<const method_type>(type)->prms));
+         retn += GetTypeName(GET_CONST_NODE(GetPointerS<const method_type>(type)->prms));
          retn += ")";
          return retn;
       }
       case tree_list_K:
       {
-         auto tl = GetPointer<const tree_list>(type);
+         auto tl = GetPointerS<const tree_list>(type);
          std::string retn;
          if(tl->valu)
          {
@@ -2220,7 +2220,7 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
          std::list<const tree_list*> tl_list;
          while(tl->chan)
          {
-            tl = GetPointer<const tree_list>(GET_CONST_NODE(tl->chan));
+            tl = GetPointerS<const tree_list>(GET_CONST_NODE(tl->chan));
             tl_list.push_back(tl);
          }
          for(const auto& valu : tl_list)

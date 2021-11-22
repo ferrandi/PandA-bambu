@@ -1920,12 +1920,12 @@ int BambuParameter::Exec()
              * objectives, not the mode, hence the mode set from other options
              * has precedence
              */
-            if(not isOption(OPT_evaluation_mode) or
+            if(!isOption(OPT_evaluation_mode) ||
                getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
             {
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
-            else if(isOption(OPT_evaluation_mode) and
+            else if(isOption(OPT_evaluation_mode) &&
                     getOption<Evaluation_Mode>(OPT_evaluation_mode) != Evaluation_Mode::EXACT)
             {
                THROW_ERROR("Simulation is only supported with EXACT evaluation mode");
@@ -2997,8 +2997,8 @@ int BambuParameter::Exec()
          setOption(OPT_input_file, input_file + filename);
          setOption(OPT_input_format, static_cast<int>(file_type));
       }
-      else if(file_type == Parameters_FileFormat::FF_RAW or
-              (isOption(OPT_input_format) and
+      else if(file_type == Parameters_FileFormat::FF_RAW ||
+              (isOption(OPT_input_format) &&
                getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW))
       {
          const auto input_file =

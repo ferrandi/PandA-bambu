@@ -70,11 +70,16 @@ typedef struct
 #define __float32_default_nan 0xFFC00000
 
 /*----------------------------------------------------------------------------
-| Returns 1 if the arbitrary-precision floating-point value `a' is a NaN;
+| The pattern for a default generated double-precision NaN.
+*----------------------------------------------------------------------------*/
+#define __float64_default_nan LIT64(0xFFF8000000000000)
+
+/*----------------------------------------------------------------------------
+| Returns 1 if the custom-precision floating-point value `a' is a NaN;
 | otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __float32_is_nan(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+static __FORCE_INLINE __flag __float_is_nan(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    if(__nan)
    {
@@ -87,43 +92,6 @@ static __FORCE_INLINE __flag __float32_is_nan(__float32 a, __bits8 __exp_bits, _
 }
 
 /*----------------------------------------------------------------------------
-| Returns 1 if the single-precision floating-point value `a' is a NaN;
-| otherwise returns 0.
-*----------------------------------------------------------------------------*/
-
-static __FORCE_INLINE __flag __float32_is_nan_ieee(__float32 a)
-{
-   return (0xFF000000 < (__bits32)(a << 1));
-}
-
-/*----------------------------------------------------------------------------
-| Returns 1 if the arbitrary-precision floating-point value `a' is a signaling
-| NaN; otherwise returns 0.
-*----------------------------------------------------------------------------*/
-
-__flag __float32_is_signaling_nan(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
-{
-   if(__nan)
-   {
-      return (((a >> (__frac_bits - 1)) & ((1 << (__exp_bits + 1)) - 1)) == ((1 << (__exp_bits + 1)) - 2)) && (a & ((1 << (__frac_bits - 1)) - 1));
-   }
-   else
-   {
-      return 0;
-   }
-}
-
-/*----------------------------------------------------------------------------
-| Returns 1 if the single-precision floating-point value `a' is a signaling
-| NaN; otherwise returns 0.
-*----------------------------------------------------------------------------*/
-
-__flag __float32_is_signaling_nan_ieee(__float32 a)
-{
-   return (((a >> 22) & 0x1FF) == 0x1FE) && (a & 0x003FFFFF);
-}
-
-/*----------------------------------------------------------------------------
 | Returns the result of converting the arbitrary-precision floating-point NaN
 | `a' to the canonical NaN format.  If `a' is a signaling NaN, the invalid
 | exception is raised.
@@ -133,7 +101,7 @@ static __FORCE_INLINE __commonNaNT __float32ToCommonNaN(__float32 a, __bits8 __e
 {
    __commonNaNT z;
 
-   if(__float32_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign))
+   if(__float_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign))
       __float_raise(float_flag_invalid);
    z.sign = __sign == -1 ? (a >> (__exp_bits + __frac_bits)) : __sign;
    z.low = 0;
@@ -151,7 +119,7 @@ static __FORCE_INLINE __commonNaNT __float32ToCommonNaN_ieee(__float32 a)
 {
    __commonNaNT z;
 
-   if(__float32_is_signaling_nan_ieee(a))
+   if(__float_is_signaling_nan(a, IEEE32_SPEC_ARGS))
       __float_raise(float_flag_invalid);
    z.sign = a >> 31;
    z.low = 0;
@@ -224,10 +192,10 @@ static __FORCE_INLINE __float32 __propagateFloat32NaN(__float32 a, __float32 b, 
 #else
    __flag aIsNaN, aIsSignalingNaN, bIsNaN, bIsSignalingNaN;
 
-   aIsNaN = __float32_is_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
-   aIsSignalingNaN = __float32_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
-   bIsNaN = __float32_is_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
-   bIsSignalingNaN = __float32_is_signaling_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+   aIsNaN = __float_is_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+   aIsSignalingNaN = __float_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+   bIsNaN = __float_is_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+   bIsSignalingNaN = __float_is_signaling_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
    a |= (1 << (__frac_bits - 1));
    b |= (1 << (__frac_bits - 1));
    if(aIsSignalingNaN | bIsSignalingNaN)
@@ -264,10 +232,10 @@ static __FORCE_INLINE __float32 __propagateFloat32NaN_ieee(__float32 a, __float3
 #else
    __flag aIsNaN, aIsSignalingNaN, bIsNaN, bIsSignalingNaN;
 
-   aIsNaN = __float32_is_nan_ieee(a);
-   aIsSignalingNaN = __float32_is_signaling_nan_ieee(a);
-   bIsNaN = __float32_is_nan_ieee(b);
-   bIsSignalingNaN = __float32_is_signaling_nan_ieee(b);
+   aIsNaN = __float_is_nan(a, IEEE32_SPEC_ARGS);
+   aIsSignalingNaN = __float_is_signaling_nan(a, IEEE32_SPEC_ARGS);
+   bIsNaN = __float_is_nan(b, IEEE32_SPEC_ARGS);
+   bIsSignalingNaN = __float_is_signaling_nan(b, IEEE32_SPEC_ARGS);
    a |= 0x00400000;
    b |= 0x00400000;
    if(aIsSignalingNaN | bIsSignalingNaN)
@@ -292,43 +260,11 @@ static __FORCE_INLINE __float32 __propagateFloat32NaN_ieee(__float32 a, __float3
 }
 
 /*----------------------------------------------------------------------------
-| The pattern for a default generated double-precision NaN.
-*----------------------------------------------------------------------------*/
-#define __float64_default_nan LIT64(0xFFF8000000000000)
-
-/*----------------------------------------------------------------------------
-| Returns 1 if the custom-precision floating-point value `a' is a NaN;
-| otherwise returns 0.
-*----------------------------------------------------------------------------*/
-
-static __FORCE_INLINE __flag __float64_is_nan(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
-{
-   if(__nan)
-   {
-      return (((a >> __frac_bits) & ((1ULL << __exp_bits) - 1)) == ((1ULL << __exp_bits) - 1)) && ((a & ((1ULL << __frac_bits) - 1)) != 0);
-   }
-   else
-   {
-      return 0;
-   }
-}
-
-/*----------------------------------------------------------------------------
-| Returns 1 if the double-precision floating-point value `a' is a NaN;
-| otherwise returns 0.
-*----------------------------------------------------------------------------*/
-
-static __FORCE_INLINE __flag __float64_is_nan_ieee(__float64 a)
-{
-   return (LIT64(0xFFE0000000000000) < (__bits64)(a << 1));
-}
-
-/*----------------------------------------------------------------------------
 | Returns 1 if the custom precision floating-point value `a' is a signaling
 | NaN; otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
-__flag __float64_is_signaling_nan(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__flag __float_is_signaling_nan(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    if(__nan)
    {
@@ -341,16 +277,6 @@ __flag __float64_is_signaling_nan(__float64 a, __bits8 __exp_bits, __bits8 __fra
 }
 
 /*----------------------------------------------------------------------------
-| Returns 1 if the double-precision floating-point value `a' is a signaling
-| NaN; otherwise returns 0.
-*----------------------------------------------------------------------------*/
-
-__flag __float64_is_signaling_nan_ieee(__float64 a)
-{
-   return (((a >> 51) & 0xFFF) == 0xFFE) && (a & LIT64(0x0007FFFFFFFFFFFF));
-}
-
-/*----------------------------------------------------------------------------
 | Returns the result of converting the arbitrary-precision floating-point NaN
 | `a' to the canonical NaN format.  If `a' is a signaling NaN, the invalid
 | exception is raised.
@@ -360,7 +286,7 @@ static __FORCE_INLINE __commonNaNT __float64ToCommonNaN(__float64 a, __bits8 __e
 {
    __commonNaNT z;
 
-   if(__float64_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign))
+   if(__float_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign))
       __float_raise(float_flag_invalid);
    z.sign = __sign == -1 ? (a >> (__exp_bits + __frac_bits)) : __sign;
    z.low = 0;
@@ -378,7 +304,7 @@ static __FORCE_INLINE __commonNaNT __float64ToCommonNaN_ieee(__float64 a)
 {
    __commonNaNT z;
 
-   if(__float64_is_signaling_nan_ieee(a))
+   if(__float_is_signaling_nan(a, IEEE64_SPEC_ARGS))
       __float_raise(float_flag_invalid);
    z.sign = a >> 63;
    z.low = 0;
@@ -451,10 +377,10 @@ static __FORCE_INLINE __float64 __propagateFloat64NaN(__float64 a, __float64 b, 
 #else
    __flag aIsNaN, aIsSignalingNaN, bIsNaN, bIsSignalingNaN;
 
-   aIsNaN = __float64_is_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
-   aIsSignalingNaN = __float64_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
-   bIsNaN = __float64_is_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
-   bIsSignalingNaN = __float64_is_signaling_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+   aIsNaN = __float_is_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+   aIsSignalingNaN = __float_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+   bIsNaN = __float_is_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+   bIsSignalingNaN = __float_is_signaling_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
    a |= (1ULL << (__frac_bits - 1));
    b |= (1ULL << (__frac_bits - 1));
    if(aIsSignalingNaN | bIsSignalingNaN)
@@ -491,10 +417,10 @@ static __FORCE_INLINE __float64 __propagateFloat64NaN_ieee(__float64 a, __float6
 #else
    __flag aIsNaN, aIsSignalingNaN, bIsNaN, bIsSignalingNaN;
 
-   aIsNaN = __float64_is_nan_ieee(a);
-   aIsSignalingNaN = __float64_is_signaling_nan_ieee(a);
-   bIsNaN = __float64_is_nan_ieee(b);
-   bIsSignalingNaN = __float64_is_signaling_nan_ieee(b);
+   aIsNaN = __float_is_nan(a, IEEE64_SPEC_ARGS);
+   aIsSignalingNaN = __float_is_signaling_nan(a, IEEE64_SPEC_ARGS);
+   bIsNaN = __float_is_nan(b, IEEE64_SPEC_ARGS);
+   bIsSignalingNaN = __float_is_signaling_nan(b, IEEE64_SPEC_ARGS);
    a |= LIT64(0x0008000000000000);
    b |= LIT64(0x0008000000000000);
    if(aIsSignalingNaN | bIsSignalingNaN)

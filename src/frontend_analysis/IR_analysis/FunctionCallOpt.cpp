@@ -338,7 +338,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       const auto omp_simd_enabled = parameters->getOption<int>(OPT_gcc_openmp_simd);
       has_simd &= omp_simd_enabled;
       const bool force_inline =
-          always_inline.count(function_id) || ((body_cost * call_count) < max_inline_cost) || call_count == 1;
+          always_inline.count(function_id) || ((body_cost * call_count) <= max_inline_cost) || call_count == 1;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function information:");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal loops : " + STR(loop_count));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call points    : " + STR(call_count));

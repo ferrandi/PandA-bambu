@@ -887,7 +887,7 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
 
 unsigned int Bit_Value::lsb_to_zero(const addr_expr* ae, bool safe) const
 {
-   auto vd = GetPointer<var_decl>(GET_NODE(ae->op));
+   const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(ae->op));
    if(!vd)
    {
       return 0;

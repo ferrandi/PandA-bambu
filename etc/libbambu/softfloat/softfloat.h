@@ -202,7 +202,7 @@ __flag __float_le(__float, __float, __bits8, __bits8, __int32, __flag, __flag, _
 __flag __float_lt(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 __flag __float_ge(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 __flag __float_gt(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float64_is_signaling_nan(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__flag __float_is_signaling_nan(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 __flag __float_ltgt_quiet(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 
 #ifdef FLOATX80

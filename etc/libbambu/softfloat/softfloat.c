@@ -2635,7 +2635,7 @@ __flag __float32_le_quiet_ieee(__float32 a, __float32 b)
 
    if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
-      if(__float32_is_signaling_nan(a, IEEE32_SPEC_ARGS) || __float32_is_signaling_nan(b, IEEE32_SPEC_ARGS))
+      if(__float_is_signaling_nan(a, IEEE32_SPEC_ARGS) || __float_is_signaling_nan(b, IEEE32_SPEC_ARGS))
       {
          __float_raise(float_flag_invalid);
       }
@@ -2661,7 +2661,7 @@ __flag __float32_lt_quiet_ieee(__float32 a, __float32 b)
 
    if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
-      if(__float32_is_signaling_nan(a, IEEE32_SPEC_ARGS) || __float32_is_signaling_nan(b, IEEE32_SPEC_ARGS))
+      if(__float_is_signaling_nan(a, IEEE32_SPEC_ARGS) || __float_is_signaling_nan(b, IEEE32_SPEC_ARGS))
       {
          __float_raise(float_flag_invalid);
       }
@@ -4065,7 +4065,7 @@ static __FORCE_INLINE __flag __FloatEQ(__float a, __float b, __bits8 __exp_bits,
    {
       if(((__extractFloatExp(a, __exp_bits, __frac_bits) == ((1ULL << __exp_bits) - 1)) && __extractFloatFrac(a, __frac_bits)) || ((__extractFloatExp(b, __exp_bits, __frac_bits) == ((1ULL << __exp_bits) - 1)) && __extractFloatFrac(b, __frac_bits)))
       {
-         if(__float64_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign) || __float64_is_signaling_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign))
+         if(__float_is_signaling_nan(a, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign) || __float_is_signaling_nan(b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign))
          {
             __float_raise(float_flag_invalid);
          }
@@ -4196,7 +4196,7 @@ __flag __float64_le_quiet_ieee(__float64 a, __float64 b)
 
    if(((__extractFloat64Exp(a, IEEE64_EXTRACT_EXP) == 0x7FF) && __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC)) || ((__extractFloat64Exp(b, IEEE64_EXTRACT_EXP) == 0x7FF) && __extractFloat64Frac(b, IEEE64_EXTRACT_FRAC)))
    {
-      if(__float64_is_signaling_nan(a, IEEE64_SPEC_ARGS) || __float64_is_signaling_nan(b, IEEE64_SPEC_ARGS))
+      if(__float_is_signaling_nan(a, IEEE64_SPEC_ARGS) || __float_is_signaling_nan(b, IEEE64_SPEC_ARGS))
       {
          __float_raise(float_flag_invalid);
       }
@@ -4222,7 +4222,7 @@ __flag __float64_lt_quiet_ieee(__float64 a, __float64 b)
 
    if(((__extractFloat64Exp(a, IEEE64_EXTRACT_EXP) == 0x7FF) && __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC)) || ((__extractFloat64Exp(b, IEEE64_EXTRACT_EXP) == 0x7FF) && __extractFloat64Frac(b, IEEE64_EXTRACT_FRAC)))
    {
-      if(__float64_is_signaling_nan(a, IEEE64_SPEC_ARGS) || __float64_is_signaling_nan(b, IEEE64_SPEC_ARGS))
+      if(__float_is_signaling_nan(a, IEEE64_SPEC_ARGS) || __float_is_signaling_nan(b, IEEE64_SPEC_ARGS))
       {
          __float_raise(float_flag_invalid);
       }
