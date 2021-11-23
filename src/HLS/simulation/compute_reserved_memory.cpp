@@ -51,7 +51,8 @@
 /// utility include
 #include "exceptions.hpp"
 
-ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn) : TM(_TM), tn(_tn), elements_number(1), depth_level(0)
+ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn)
+    : TM(_TM), tn(_tn), elements_number(1), depth_level(0)
 {
 }
 

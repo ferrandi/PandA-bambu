@@ -90,7 +90,9 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-BasicBlocksCfgComputation::BasicBlocksCfgComputation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+BasicBlocksCfgComputation::BasicBlocksCfgComputation(const ParameterConstRef _parameters,
+                                                     const application_managerRef _AppM, unsigned int _function_id,
+                                                     const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, BASIC_BLOCKS_CFG_COMPUTATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -98,7 +100,8 @@ BasicBlocksCfgComputation::BasicBlocksCfgComputation(const ParameterConstRef _pa
 
 BasicBlocksCfgComputation::~BasicBlocksCfgComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BasicBlocksCfgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+BasicBlocksCfgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -180,7 +183,8 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
          continue;
       }
       bbgc->add_vertex(it_bb->second);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
       if(it_bb->second->number == BB_EXIT)
       {
          const vertex exit = bbgc->Cget_vertex(BB_EXIT);
@@ -194,7 +198,8 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
          continue;
       }
       bbgc->add_vertex(it_bb->second);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
    }
    auto b_end = sl->list_of_bloc.end();
    for(auto b = sl->list_of_bloc.begin(); b != b_end; ++b)
@@ -203,17 +208,21 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       {
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering connections for BB" + boost::lexical_cast<std::string>(b->first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Considering connections for BB" + boost::lexical_cast<std::string>(b->first));
       const vertex current = bbgc->Cget_vertex(b->second->number);
-      if(b->second->list_of_pred.empty() or std::find(b->second->list_of_pred.begin(), b->second->list_of_pred.end(), bloc::ENTRY_BLOCK_ID) != b->second->list_of_pred.end())
+      if(b->second->list_of_pred.empty() or std::find(b->second->list_of_pred.begin(), b->second->list_of_pred.end(),
+                                                      bloc::ENTRY_BLOCK_ID) != b->second->list_of_pred.end())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connecting Basic block " + boost::lexical_cast<std::string>(b->second->number) + " to ENTRY");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Connecting Basic block " + boost::lexical_cast<std::string>(b->second->number) +
+                            " to ENTRY");
          bbgc->connect_to_entry(current);
       }
       if(b->second->list_of_succ.empty())
       {
-         // PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Connecting Basic block " + boost::lexical_cast<std::string>((*b)->number) + " to EXIT");
-         // bbgc->connect_to_exit(current);
+         // PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Connecting Basic block " +
+         // boost::lexical_cast<std::string>((*b)->number) + " to EXIT"); bbgc->connect_to_exit(current);
       }
       else
       {
@@ -222,12 +231,16 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
          {
             if((*su) == bloc::EXIT_BLOCK_ID)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connecting Basic block " + boost::lexical_cast<std::string>(b->second->number) + " to EXIT");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Connecting Basic block " + boost::lexical_cast<std::string>(b->second->number) +
+                                  " to EXIT");
                bbgc->connect_to_exit(current);
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connecting Basic block " + boost::lexical_cast<std::string>(b->second->number) + " to " + boost::lexical_cast<std::string>(*su));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Connecting Basic block " + boost::lexical_cast<std::string>(b->second->number) +
+                                  " to " + boost::lexical_cast<std::string>(*su));
                bbgc->AddEdge(current, bbgc->Cget_vertex(*su), CFG_SELECTOR);
                // Considering label
                if(*su == b->second->true_edge)
@@ -247,7 +260,8 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             /// switch statements
             if(GET_NODE(last)->get_kind() == gimple_switch_K)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->BB" + boost::lexical_cast<std::string>(b->first) + " ends with a switch");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "-->BB" + boost::lexical_cast<std::string>(b->first) + " ends with a switch");
                // Map between gimple_label and index of basic block
                std::map<tree_nodeRef, unsigned int> label_to_bb;
                su_end = b->second->list_of_succ.end();
@@ -255,10 +269,14 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                {
                   THROW_ASSERT(sl->list_of_bloc[*su]->CGetStmtList().size(), "Empty Basic Block");
                   const auto first = sl->list_of_bloc[*su]->CGetStmtList().front();
-                  THROW_ASSERT(GetPointer<gimple_label>(GET_NODE(first)), "First operation of BB" + STR(*su) + " is a " + GET_NODE(first)->get_kind_text() + ": " + GET_NODE(first)->ToString());
+                  THROW_ASSERT(GetPointer<gimple_label>(GET_NODE(first)),
+                               "First operation of BB" + STR(*su) + " is a " + GET_NODE(first)->get_kind_text() + ": " +
+                                   GET_NODE(first)->ToString());
                   auto* le = GetPointer<gimple_label>(GET_NODE(first));
                   label_to_bb[GET_NODE(le->op)] = *su;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Gimple label of BB" + boost::lexical_cast<std::string>(*su) + " is " + boost::lexical_cast<std::string>(GET_INDEX_NODE(le->op)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Gimple label of BB" + boost::lexical_cast<std::string>(*su) + " is " +
+                                     boost::lexical_cast<std::string>(GET_INDEX_NODE(le->op)));
                }
                auto* se = GetPointer<gimple_switch>(GET_NODE(last));
                THROW_ASSERT(se->op1, "case_label_exprs not found");
@@ -267,14 +285,18 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                for(auto it = tv->list_of_op.begin(); it != it_end; ++it)
                {
                   auto* cl = GetPointer<case_label_expr>(GET_NODE(*it));
-                  THROW_ASSERT(label_to_bb.find(GET_NODE(cl->got)) != label_to_bb.end(), "There is not corresponding case_label_exprs with index " + boost::lexical_cast<std::string>(GET_INDEX_NODE(cl->got)));
+                  THROW_ASSERT(label_to_bb.find(GET_NODE(cl->got)) != label_to_bb.end(),
+                               "There is not corresponding case_label_exprs with index " +
+                                   boost::lexical_cast<std::string>(GET_INDEX_NODE(cl->got)));
                   if(cl->default_flag)
                   {
-                     bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[GET_NODE(cl->got)]), CFG_SELECTOR, default_COND);
+                     bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[GET_NODE(cl->got)]), CFG_SELECTOR,
+                                            default_COND);
                   }
                   else
                   {
-                     bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[GET_NODE(cl->got)]), CFG_SELECTOR, GET_INDEX_NODE(*it));
+                     bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[GET_NODE(cl->got)]), CFG_SELECTOR,
+                                            GET_INDEX_NODE(*it));
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -295,12 +317,14 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                auto* gmwi = GetPointer<gimple_multi_way_if>(GET_NODE(last));
                for(const auto& cond : gmwi->list_of_cond)
                {
-                  bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(cond.second), CFG_SELECTOR, cond.first ? cond.first->index : default_COND);
+                  bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(cond.second), CFG_SELECTOR,
+                                         cond.first ? cond.first->index : default_COND);
                }
             }
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered connections for BB" + boost::lexical_cast<std::string>(b->first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Considered connections for BB" + boost::lexical_cast<std::string>(b->first));
    }
    const vertex exit = bbgc->Cget_vertex(BB_EXIT);
    const BBGraphRef fcfg = function_behavior->GetBBGraph(FunctionBehavior::FBB);

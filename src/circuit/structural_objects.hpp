@@ -176,7 +176,8 @@ struct structural_type_descriptor
    /**
     * Constructor
     */
-   structural_type_descriptor() : type(UNKNOWN), size(size_DEFAULT), vector_size(vector_size_DEFAULT), treenode(treenode_DEFAULT)
+   structural_type_descriptor()
+       : type(UNKNOWN), size(size_DEFAULT), vector_size(vector_size_DEFAULT), treenode(treenode_DEFAULT)
    {
    }
 
@@ -193,7 +194,12 @@ struct structural_type_descriptor
     * Object factory for module objects.
     * @param treenode is the treenode descriptor of the type.
     */
-   explicit structural_type_descriptor(const std::string& module_name) : type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(module_name), treenode(treenode_DEFAULT)
+   explicit structural_type_descriptor(const std::string& module_name)
+       : type(OTHER),
+         size(size_DEFAULT),
+         vector_size(vector_size_DEFAULT),
+         id_type(module_name),
+         treenode(treenode_DEFAULT)
    {
    }
 
@@ -220,7 +226,8 @@ struct structural_type_descriptor
    ~structural_type_descriptor() = default;
 
    /**
-    * Method that copies the contents of the current structural_type_descriptorRef into another structural_type_descriptor
+    * Method that copies the contents of the current structural_type_descriptorRef into another
+    * structural_type_descriptor
     * @param dest is the reference to the structural_type_descriptor where the contents have to be written
     */
    void copy(structural_type_descriptorRef dest);
@@ -299,12 +306,16 @@ struct structural_type_descriptor
 /**
  * Macro returning the size of the type of a structural object.
  */
-#define GET_TYPE_SIZE(structural_obj) ((structural_obj)->get_typeRef()->vector_size ? ((structural_obj)->get_typeRef()->vector_size * (structural_obj)->get_typeRef()->size) : (structural_obj)->get_typeRef()->size)
+#define GET_TYPE_SIZE(structural_obj)                                                            \
+   ((structural_obj)->get_typeRef()->vector_size ?                                               \
+        ((structural_obj)->get_typeRef()->vector_size * (structural_obj)->get_typeRef()->size) : \
+        (structural_obj)->get_typeRef()->size)
 
 /**
  * Macro returning the size of a type
  */
-#define STD_GET_SIZE(structural_obj) ((structural_obj)->vector_size ? ((structural_obj)->vector_size * (structural_obj)->size) : (structural_obj)->size)
+#define STD_GET_SIZE(structural_obj) \
+   ((structural_obj)->vector_size ? ((structural_obj)->vector_size * (structural_obj)->size) : (structural_obj)->size)
 
 /**
  * RefCount type definition of the structural_type_descriptor class structure
@@ -457,7 +468,9 @@ class structural_object
    /**
     * Return the equation associated with the output port of the component
     */
-   std::string get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM, CustomOrderedSet<structural_objectRef>& analyzed, const CustomOrderedSet<structural_objectRef>& input_ports,
+   std::string get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM,
+                            CustomOrderedSet<structural_objectRef>& analyzed,
+                            const CustomOrderedSet<structural_objectRef>& input_ports,
                             const CustomOrderedSet<structural_objectRef>& output_ports) const;
 #endif
 
@@ -542,7 +555,8 @@ class structural_object
    /**
     * Return a unique identifier of the structural object.
     * It is composed by the identifier of the current structural object
-    * and by its owners separated by the HIERARCHY_SEPARATOR. Structural objects are viewed as elements of a standard filesystem.
+    * and by its owners separated by the HIERARCHY_SEPARATOR. Structural objects are viewed as elements of a standard
+    * filesystem.
     */
    const std::string get_path() const;
 
@@ -558,7 +572,8 @@ class structural_object
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   virtual structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const = 0;
+   virtual structural_objectRef find_member(const std::string& id, so_kind type,
+                                            const structural_objectRef owner) const = 0;
 
    /**
     * Find key in this object.
@@ -1023,7 +1038,8 @@ struct port_o : public structural_object
     * Find the object bounded to the port. The object searched has the same owner of the port.
     * @return the object bounded to the port.
     */
-   structural_objectRef find_bounded_object(const structural_objectConstRef f_owner = structural_objectConstRef()) const;
+   structural_objectRef
+   find_bounded_object(const structural_objectConstRef f_owner = structural_objectConstRef()) const;
 
    /**
     * set the port as critical with respect to the timing path
@@ -1057,7 +1073,8 @@ struct port_o : public structural_object
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
+   structural_objectRef find_member(const std::string& id, so_kind type,
+                                    const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.
@@ -1123,7 +1140,8 @@ struct port_o : public structural_object
     * @param bus_tag_bitsize bitsize of tag
     * @param port is the port to be resized
     */
-   static void resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, unsigned int bus_tag_bitsize, structural_objectRef port);
+   static void resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize,
+                              unsigned int bus_data_bitsize, unsigned int bus_tag_bitsize, structural_objectRef port);
 
    /**
     * auxiliary function used to resize the standard ports
@@ -1132,7 +1150,8 @@ struct port_o : public structural_object
     * @param debug_level is the debug level
     * @param port is the port to be resized
     */
-   static void resize_std_port(unsigned int bitsize_variable, unsigned int n_elements, int debug_level, structural_objectRef port);
+   static void resize_std_port(unsigned int bitsize_variable, unsigned int n_elements, int debug_level,
+                               structural_objectRef port);
 
    /**
     * copy the port properties from port_i to cir_port
@@ -1298,7 +1317,8 @@ class event_o : public structural_object
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
+   structural_objectRef find_member(const std::string& id, so_kind type,
+                                    const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.
@@ -1364,7 +1384,8 @@ class data_o : public structural_object
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
+   structural_objectRef find_member(const std::string& id, so_kind type,
+                                    const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.
@@ -1532,7 +1553,8 @@ class action_o : public structural_object
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
+   structural_objectRef find_member(const std::string& id, so_kind type,
+                                    const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.
@@ -1642,7 +1664,8 @@ class constant_o : public structural_object
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
+   structural_objectRef find_member(const std::string& id, so_kind type,
+                                    const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.
@@ -1794,7 +1817,8 @@ class signal_o : public structural_object
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
+   structural_objectRef find_member(const std::string& id, so_kind type,
+                                    const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.
@@ -2145,7 +2169,8 @@ class module : public structural_object
     * This function is usually used by the backend.
     * @param owner is the refcount version of this.
     */
-   void get_NP_library_parameters(structural_objectRef owner, std::vector<std::pair<std::string, structural_objectRef>>& parameters) const;
+   void get_NP_library_parameters(structural_objectRef owner,
+                                  std::vector<std::pair<std::string, structural_objectRef>>& parameters) const;
 
    /**
     * Perform a copy of the module.
@@ -2159,7 +2184,8 @@ class module : public structural_object
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
+   structural_objectRef find_member(const std::string& id, so_kind type,
+                                    const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.
@@ -2327,7 +2353,8 @@ class module : public structural_object
     * @param name is the name of the parameter
     * @return the type of the parameter
     */
-   structural_type_descriptor::s_type get_parameter_type(const technology_managerConstRef TM, const std::string& name) const;
+   structural_type_descriptor::s_type get_parameter_type(const technology_managerConstRef TM,
+                                                         const std::string& name) const;
 
    /**
     * Return the generic type of a module instance
@@ -2372,7 +2399,8 @@ class component_o : public module
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
+   structural_objectRef find_member(const std::string& id, so_kind type,
+                                    const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.
@@ -2479,7 +2507,8 @@ class channel_o : public module
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
+   structural_objectRef find_member(const std::string& id, so_kind type,
+                                    const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.
@@ -2573,7 +2602,8 @@ class bus_connection_o : public structural_object
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
+   structural_objectRef find_member(const std::string& id, so_kind type,
+                                    const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.

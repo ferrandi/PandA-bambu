@@ -66,7 +66,8 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
     * @param fb_adg_selector is the selector to be used for ADG feedback dependence
     */
    template <typename type>
-   DesignFlowStep_Status Computedependencies(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector);
+   DesignFlowStep_Status Computedependencies(const int dfg_selector, const int fb_dfg_selector, const int adg_selector,
+                                             const int fb_adg_selector);
 
    /**
     * Return the variables accessed in a node
@@ -75,7 +76,8 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
     * @param variable_access_type is the type of accesses to be considered
     */
    template <typename type>
-   CustomSet<type> GetVariables(const vertex statement, const FunctionBehavior_VariableAccessType variable_access_type) const;
+   CustomSet<type> GetVariables(const vertex statement,
+                                const FunctionBehavior_VariableAccessType variable_access_type) const;
 
  public:
    /**
@@ -86,7 +88,9 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     * */
-   DataDependenceComputation(const application_managerRef _AppM, unsigned int function_id, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   DataDependenceComputation(const application_managerRef _AppM, unsigned int function_id,
+                             const FrontendFlowStepType frontend_flow_step_type,
+                             const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor

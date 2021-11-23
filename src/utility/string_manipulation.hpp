@@ -164,7 +164,8 @@ unsigned long long convert_fp_to_bits(std::string num, unsigned int precision);
  * @param real_type is true if the type of the number is real
  * @param unsigned_type is true if the type of the number is unsigned
  */
-std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type, const bool unsigned_type);
+std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type,
+                            const bool unsigned_type);
 
 std::string FixedPointReinterpret(const std::string& FP_vector, const std::string& fp_typename);
 

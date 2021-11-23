@@ -135,7 +135,8 @@ class BehavioralHelper
     * @param body specifies if function body is available
     * @param parameters is the set of input parameters
     */
-   BehavioralHelper(const application_managerRef AppM, unsigned int index, bool body, const ParameterConstRef parameters);
+   BehavioralHelper(const application_managerRef AppM, unsigned int index, bool body,
+                    const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -149,7 +150,8 @@ class BehavioralHelper
     * @return a pair composed by the filename and the line:column of the definition
     */
    /// FIXME: to be remove after substitution with tree_helper::GetSourcePath
-   virtual std::tuple<std::string, unsigned int, unsigned int> get_definition(unsigned int index, bool& is_system) const;
+   virtual std::tuple<std::string, unsigned int, unsigned int> get_definition(unsigned int index,
+                                                                              bool& is_system) const;
 
    /**
     * Print the operations corrisponding to the vertex
@@ -158,7 +160,8 @@ class BehavioralHelper
     * @param vppf is the functor used to dump the variable var.
     * @param dot tells if the output is a dot graph
     */
-   std::string print_vertex(const OpGraphConstRef g, const vertex v, const var_pp_functorConstRef vppf, const bool dot = false) const;
+   std::string print_vertex(const OpGraphConstRef g, const vertex v, const var_pp_functorConstRef vppf,
+                            const bool dot = false) const;
 
    /**
     * Print the initialization part
@@ -192,7 +195,8 @@ class BehavioralHelper
     * @param var is the constant tree node
     * @param vppf is the functor used to dump the variable var.
     */
-   virtual std::string PrintConstant(const tree_nodeConstRef& var, const var_pp_functorConstRef vppf = var_pp_functorConstRef()) const;
+   virtual std::string PrintConstant(const tree_nodeConstRef& var,
+                                     const var_pp_functorConstRef vppf = var_pp_functorConstRef()) const;
 
    /**
     * Print a type and its variable in case var is not zero.
@@ -205,8 +209,10 @@ class BehavioralHelper
     * @param prefix is the string to be appended at the begining of the printing
     * @return the printed string
     */
-   virtual std::string print_type(unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string& prefix = "",
-                                  const std::string& tail = "") const;
+   virtual std::string print_type(unsigned int type, bool global = false, bool print_qualifiers = false,
+                                  bool print_storage = false, unsigned int var = 0,
+                                  const var_pp_functorConstRef vppf = var_pp_functorConstRef(),
+                                  const std::string& prefix = "", const std::string& tail = "") const;
 
    /**
     * Print the declaration of a non built-in type.
@@ -596,7 +602,8 @@ class BehavioralHelper
     * @param left_part is the tree_node of the left part
     * @param right_part is tree_node of the right part
     */
-   virtual void create_gimple_modify_stmt(unsigned int function_decl_nid, blocRef& block, tree_nodeRef left_part, tree_nodeRef right_part);
+   virtual void create_gimple_modify_stmt(unsigned int function_decl_nid, blocRef& block, tree_nodeRef left_part,
+                                          tree_nodeRef right_part);
 
    /**
     * Print the declaration of a non built-in type.
@@ -650,7 +657,8 @@ class BehavioralHelper
     * @param vppf is the functor used to dump the variable var.
     * @param init_has_to_be_printed tells if the init has to be printed
     */
-   std::string PrintVarDeclaration(unsigned int var, const var_pp_functorConstRef vppf, bool init_has_to_be_printed) const;
+   std::string PrintVarDeclaration(unsigned int var, const var_pp_functorConstRef vppf,
+                                   bool init_has_to_be_printed) const;
 
    /**
     * Return the unqualified version of a type

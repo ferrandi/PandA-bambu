@@ -74,7 +74,8 @@ class TestVectorParser : public HLS_step
    /**
     * Constructor
     */
-   TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager);
+   TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                    const DesignFlowManagerConstRef _design_flow_manager);
 
    /**
     * Destructor
@@ -97,7 +98,8 @@ class TestVectorParser : public HLS_step
    /**
     * Compute the HLS relationships of this step
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Check if this step has actually to be executed

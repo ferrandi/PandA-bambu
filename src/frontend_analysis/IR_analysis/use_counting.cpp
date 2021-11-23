@@ -69,7 +69,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-use_counting::use_counting(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+use_counting::use_counting(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                           unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, USE_COUNTING, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -77,7 +78,8 @@ use_counting::use_counting(const ParameterConstRef _parameters, const applicatio
 
 use_counting::~use_counting() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> use_counting::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+use_counting::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)

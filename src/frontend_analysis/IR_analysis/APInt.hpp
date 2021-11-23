@@ -134,7 +134,8 @@ class APInt
       using U = typename std::make_unsigned<T>::type;
       if(_data < 0)
       {
-         return static_cast<T>(static_cast<U>(static_cast<U>(_data.convert_to<long long>()) & std::numeric_limits<U>::max()));
+         return static_cast<T>(
+             static_cast<U>(static_cast<U>(_data.convert_to<long long>()) & std::numeric_limits<U>::max()));
       }
       return static_cast<T>(static_cast<U>(_data.convert_to<unsigned long long>() & std::numeric_limits<U>::max()));
    }

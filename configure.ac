@@ -1487,7 +1487,6 @@ AC_CONFIG_FILES(
                  style/img/Makefile
                  style/img/panda.png
                  style/img/logoPoli.gif
-                 Appimage/Makefile
                )
 
 ################################################################################
@@ -2407,6 +2406,8 @@ AM_CONDITIONAL(BUILD_LIB_VCD, test "x$panda_USE_LIB_VCD" = xyes)
 ################################################################################
   AC_CONFIG_FILES(
                   etc/Makefile
+                  etc/Appimage/Makefile
+                  etc/containers/Makefile
                  )
 
 ################################################################################

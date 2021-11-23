@@ -84,7 +84,8 @@ class BambuParameter : public Parameter
 
    /**
     * add the following GCC options: -fwhole-program -fno-ipa-cp -fno-ipa-cp-clone and -D'printf(fmt, ...)='
-    * @param kill_printf when true the option -D'printf(fmt, ...)=' added otherwise only the "whole" program options are added
+    * @param kill_printf when true the option -D'printf(fmt, ...)=' added otherwise only the "whole" program options are
+    * added
     */
    void add_experimental_setup_compiler_options(bool kill_printf);
 

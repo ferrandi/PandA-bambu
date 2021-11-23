@@ -43,7 +43,8 @@
 /// design_flows include
 #include "design_flow_manager.hpp"
 
-ToDataFileStep::ToDataFileStep(const DesignFlowManagerConstRef _design_flow_manager, const ToDataFileStep_Type _to_data_file_step_type, const ParameterConstRef _parameters)
+ToDataFileStep::ToDataFileStep(const DesignFlowManagerConstRef _design_flow_manager,
+                               const ToDataFileStep_Type _to_data_file_step_type, const ParameterConstRef _parameters)
     : DesignFlowStep(_design_flow_manager, _parameters), to_data_file_step_type(_to_data_file_step_type)
 {
 }

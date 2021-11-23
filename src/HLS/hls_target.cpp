@@ -57,7 +57,9 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-HLS_target::HLS_target(const ParameterConstRef& _Param, const technology_managerRef& _TM, const target_deviceRef& _target) : target_manager(_Param, _TM, _target)
+HLS_target::HLS_target(const ParameterConstRef& _Param, const technology_managerRef& _TM,
+                       const target_deviceRef& _target)
+    : target_manager(_Param, _TM, _target)
 {
    if(Param->isOption(OPT_clock_period))
    {

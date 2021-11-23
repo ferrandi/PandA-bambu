@@ -48,7 +48,9 @@
 #include "hash_helper.hpp"         // for hash
 #include "string_manipulation.hpp" // for GET_CLASS
 
-CompleteBBGraph::CompleteBBGraph(const application_managerRef _AppM, const unsigned int _function_index, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+CompleteBBGraph::CompleteBBGraph(const application_managerRef _AppM, const unsigned int _function_index,
+                                 const DesignFlowManagerConstRef _design_flow_manager,
+                                 const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_index, COMPLETE_BB_GRAPH, _design_flow_manager, _parameters)
 {
    composed = true;
@@ -57,7 +59,8 @@ CompleteBBGraph::CompleteBBGraph(const application_managerRef _AppM, const unsig
 
 CompleteBBGraph::~CompleteBBGraph() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CompleteBBGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CompleteBBGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)

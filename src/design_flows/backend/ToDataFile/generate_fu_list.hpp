@@ -71,7 +71,8 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   GenerateFuList(const target_managerRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   GenerateFuList(const target_managerRef target, const DesignFlowManagerConstRef design_flow_manager,
+                  const ParameterConstRef parameters);
 
    /**
     * Execute the step
@@ -84,7 +85,8 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Check if this step has actually to be executed
@@ -119,7 +121,9 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
     * @param stage_index
     * @param constPort is the index of the constant port
     */
-   void AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index, const unsigned int constPort,
-                    const bool is_commutative, size_t max_lut_size) override;
+   void AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters,
+                    const size_t portsize_index, const std::vector<std::string>& pipe_parameters,
+                    const size_t stage_index, const unsigned int constPort, const bool is_commutative,
+                    size_t max_lut_size) override;
 };
 #endif

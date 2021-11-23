@@ -56,7 +56,8 @@
 #include "dbgPrintHelper.hpp"
 #include "utility.hpp"
 
-conn_binding_cs::conn_binding_cs(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters) : conn_binding(_BH, _parameters)
+conn_binding_cs::conn_binding_cs(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
+    : conn_binding(_BH, _parameters)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -115,7 +116,8 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    for(i = 0; i < n_elements; i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if(curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate) != nullptr and curr_gate->get_id() != "scheduler_kernel")
+      if(curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate) != nullptr and
+         curr_gate->get_id() != "scheduler_kernel")
       {
          ++num_suspension;
       }
@@ -130,7 +132,9 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       SM->add_connection(constantFalse, suspension_datapath);
       return;
    }
-   structural_objectRef suspensionOr = SM->add_module_from_technology_library("suspensionOr", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit, HLS->HLS_T->get_technology_manager());
+   structural_objectRef suspensionOr = SM->add_module_from_technology_library(
+       "suspensionOr", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit,
+       HLS->HLS_T->get_technology_manager());
    structural_objectRef port_in_or = suspensionOr->find_member("in", port_vector_o_K, suspensionOr);
    structural_objectRef port_out_or = suspensionOr->find_member("out1", port_o_K, suspensionOr);
    structural_objectRef out_or_sign = SM->add_sign("out_or_signal", circuit, bool_type);
@@ -163,7 +167,9 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added or_suspension local");
 
    structural_objectRef out_and_sign = SM->add_sign("out_and_signal", circuit, bool_type);
-   structural_objectRef andStartMemOp = SM->add_module_from_technology_library("andStartMemOp", AND_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit, HLS->HLS_T->get_technology_manager());
+   structural_objectRef andStartMemOp = SM->add_module_from_technology_library(
+       "andStartMemOp", AND_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit,
+       HLS->HLS_T->get_technology_manager());
    structural_objectRef port_in_and = andStartMemOp->find_member("in", port_vector_o_K, andStartMemOp);
    structural_objectRef port_out_and = andStartMemOp->find_member("out1", port_o_K, andStartMemOp);
    SM->add_connection(port_out_and, out_and_sign);
@@ -193,7 +199,9 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added and_suspension");
 
-   structural_objectRef suspensionOrGlo = SM->add_module_from_technology_library("suspensionOrGlobal", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit, HLS->HLS_T->get_technology_manager());
+   structural_objectRef suspensionOrGlo = SM->add_module_from_technology_library(
+       "suspensionOrGlobal", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit,
+       HLS->HLS_T->get_technology_manager());
    structural_objectRef port_in_or_glo = suspensionOrGlo->find_member("in", port_vector_o_K, suspensionOrGlo);
    structural_objectRef port_out_or_glo = suspensionOrGlo->find_member("out1", port_o_K, suspensionOrGlo);
 
@@ -217,7 +225,8 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
          structural_objectRef port_suspension_module = curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate);
          if(port_suspension_module != nullptr and curr_gate->get_id() != "scheduler_kernel")
          {
-            structural_objectRef suspension_sign = SM->add_sign(STR(SUSPENSION) + "_signal_" + STR(i), circuit, bool_type);
+            structural_objectRef suspension_sign =
+                SM->add_sign(STR(SUSPENSION) + "_signal_" + STR(i), circuit, bool_type);
             SM->add_connection(port_suspension_module, suspension_sign);
             SM->add_connection(suspension_sign, GetPointer<port_o>(port_in_or_glo)->get_port(num_signal_or + 1));
             ++num_signal_or;
@@ -237,7 +246,8 @@ void conn_binding_cs::connectOutOr(const HLS_managerRef HLSMgr, const hlsRef HLS
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connecting out or of kernel");
       structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
-      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+      structural_type_descriptorRef bool_type =
+          structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
       structural_objectRef suspension_scheduler = scheduler->find_member(STR(SUSPENSION), port_o_K, scheduler);
       structural_objectRef suspension_sign_out = SM->add_sign(STR(SUSPENSION) + "_signal", circuit, bool_type);
       SM->add_connection(port_out_or, suspension_sign_out);

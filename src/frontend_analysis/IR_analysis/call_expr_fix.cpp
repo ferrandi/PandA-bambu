@@ -65,7 +65,8 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-call_expr_fix::call_expr_fix(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+call_expr_fix::call_expr_fix(const application_managerRef _AppM, unsigned int _function_id,
+                             const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, CALL_EXPR_FIX, _design_flow_manager, _parameters)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -73,7 +74,8 @@ call_expr_fix::call_expr_fix(const application_managerRef _AppM, unsigned int _f
 
 call_expr_fix::~call_expr_fix() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> call_expr_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+call_expr_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -109,7 +111,8 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
    /// Checking if there are gimple_call or call_expr for which the fix apply
    for(auto block : sl->list_of_bloc)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->analyzing BB" + boost::lexical_cast<std::string>(block.first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->analyzing BB" + boost::lexical_cast<std::string>(block.first));
       for(auto statement : block.second->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + GET_NODE(statement)->ToString());

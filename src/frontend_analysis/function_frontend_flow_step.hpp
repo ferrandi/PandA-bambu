@@ -107,7 +107,9 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
     * Constructor
     * @param _Param is the set of the parameters
     */
-   FunctionFrontendFlowStep(const application_managerRef AppM, const unsigned int function_id, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   FunctionFrontendFlowStep(const application_managerRef AppM, const unsigned int function_id,
+                            const FrontendFlowStepType frontend_flow_step_type,
+                            const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -119,7 +121,8 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Return the signature of this step
@@ -148,7 +151,8 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
     * @param function_id is the index of the function
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const FrontendFlowStepType frontend_flow_step_type, const unsigned int function_id);
+   static const std::string ComputeSignature(const FrontendFlowStepType frontend_flow_step_type,
+                                             const unsigned int function_id);
 
    /**
     * Check if this step has actually to be executed

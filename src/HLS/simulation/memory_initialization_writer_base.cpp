@@ -65,9 +65,16 @@
 #include "exceptions.hpp"
 #include "utility.hpp"
 
-MemoryInitializationWriterBase::MemoryInitializationWriterBase(const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter,
-                                                               const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef)
-    : TM(_TM), behavioral_helper(_behavioral_helper), reserved_mem_bytes(_reserved_mem_bytes), written_bytes(0), function_parameter(_function_parameter), testbench_generation_memory_type(_testbench_generation_memory_type)
+MemoryInitializationWriterBase::MemoryInitializationWriterBase(
+    const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper,
+    const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter,
+    const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef)
+    : TM(_TM),
+      behavioral_helper(_behavioral_helper),
+      reserved_mem_bytes(_reserved_mem_bytes),
+      written_bytes(0),
+      function_parameter(_function_parameter),
+      testbench_generation_memory_type(_testbench_generation_memory_type)
 {
    const auto parameter_type = tree_helper::CGetType(function_parameter);
    status.push_back(std::make_pair(parameter_type, 0));
@@ -139,7 +146,8 @@ void MemoryInitializationWriterBase::GoUp()
       case type_pack_expansion_K:
       case vector_type_K:
       case void_type_K:
-         THROW_ERROR("Unexpected type in initializing parameter/variable: " + GET_CONST_NODE(status.back().first)->get_kind_text());
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " +
+                     GET_CONST_NODE(status.back().first)->get_kind_text());
          break;
       case aggr_init_expr_K:
       case binfo_K:
@@ -168,11 +176,14 @@ void MemoryInitializationWriterBase::GoUp()
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + GET_CONST_NODE(status.back().first)->get_kind_text());
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
+                          "Not supported node: " + GET_CONST_NODE(status.back().first)->get_kind_text());
    }
    if(expected_size != 0 && (expected_size != status.back().second))
    {
-      THROW_ERROR("Missing data in C initialization for node of type " + GET_CONST_NODE(status.back().first)->get_kind_text() + " " + STR(expected_size) + " vs. " + STR(status.back().second));
+      THROW_ERROR("Missing data in C initialization for node of type " +
+                  GET_CONST_NODE(status.back().first)->get_kind_text() + " " + STR(expected_size) + " vs. " +
+                  STR(status.back().second));
    }
 }
 
@@ -195,7 +206,8 @@ void MemoryInitializationWriterBase::GoDown()
       {
          return tree_helper::CGetPointedType(type_node);
       }
-      THROW_ERROR("Unexpected nested initialization " + type_node->get_kind_text() + " - Current status is " + PrintStatus());
+      THROW_ERROR("Unexpected nested initialization " + type_node->get_kind_text() + " - Current status is " +
+                  PrintStatus());
       return tree_nodeConstRef();
    }();
    status.push_back(std::make_pair(new_type, 0));
@@ -225,7 +237,8 @@ void MemoryInitializationWriterBase::GoNext()
    }
    else
    {
-      THROW_ASSERT(tree_helper::IsArrayType(upper_type) || tree_helper::IsPointerType(upper_type), GET_CONST_NODE(upper_type)->get_kind_text());
+      THROW_ASSERT(tree_helper::IsArrayType(upper_type) || tree_helper::IsPointerType(upper_type),
+                   GET_CONST_NODE(upper_type)->get_kind_text());
       status[status.size() - 2].second++;
       status[status.size() - 1].second = 0;
    }

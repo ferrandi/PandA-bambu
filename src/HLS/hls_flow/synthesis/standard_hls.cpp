@@ -71,7 +71,8 @@
 #include "custom_set.hpp"
 #include <tuple>
 
-standard_hls::standard_hls(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+standard_hls::standard_hls(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                           const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::STANDARD_HLS_FLOW)
 {
    composed = true;
@@ -79,7 +80,8 @@ standard_hls::standard_hls(const ParameterConstRef _parameters, const HLS_manage
 
 standard_hls::~standard_hls() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -97,11 +99,14 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
             synthesis_flow = HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW;
          }
 #endif
-         ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          if(HLSMgr->get_HLS(funId))
          {
-            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          HLSFlowStep_Type top_entity_type;
 
@@ -125,21 +130,31 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
             if(found) // use new top_entity
             {
                top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
-               ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+               ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
             }
          }
          if(!found) // use standard
          {
-            top_entity_type = HLSMgr->hasToBeInterfaced(funId) and (HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() or parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ?
-                                  HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
-                                  HLSFlowStep_Type::TOP_ENTITY_CREATION;
+            top_entity_type =
+                HLSMgr->hasToBeInterfaced(funId) and (HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() or
+                                                      parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+                                                          HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ?
+                    HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
+                    HLSFlowStep_Type::TOP_ENTITY_CREATION;
          }
-         ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(false)), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY,
+                                    HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(false)),
+                                    HLSFlowStep_Relationship::SAME_FUNCTION));
          if(HLSMgr->hasToBeInterfaced(funId))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY,
+                                       HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type),
+                                       HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          break;
       }

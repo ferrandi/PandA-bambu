@@ -78,7 +78,8 @@ class call_graph_computation : public ApplicationFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -87,7 +88,8 @@ class call_graph_computation : public ApplicationFrontendFlowStep
     * @param AppM is the application manager
     * @param design_flow_manager is the design flow manager
     */
-   call_graph_computation(const ParameterConstRef _parameters, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
+   call_graph_computation(const ParameterConstRef _parameters, const application_managerRef AppM,
+                          const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

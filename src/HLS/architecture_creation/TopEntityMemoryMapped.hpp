@@ -70,7 +70,8 @@ class TopEntityMemoryMapped : public top_entity
     * @param HLSMgr The HLS manager.
     * @param funId The tree index of the synthesized function.
     */
-   TopEntityMemoryMapped(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   TopEntityMemoryMapped(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                         const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

@@ -66,7 +66,8 @@ class modelsimWrapper : public SimulationTool
    /**
     * Generates the proper simulation script
     */
-   void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) override;
+   void GenerateScript(std::ostringstream& script, const std::string& top_filename,
+                       const std::list<std::string>& file_list) override;
 
  public:
    /**

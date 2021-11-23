@@ -70,7 +70,8 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   TechnologyFlowStepFactory(const technology_managerRef TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   TechnologyFlowStepFactory(const technology_managerRef TM, const target_deviceRef target,
+                             const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

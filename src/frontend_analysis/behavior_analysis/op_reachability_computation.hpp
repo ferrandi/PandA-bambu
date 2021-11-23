@@ -46,7 +46,8 @@
 /**
  * Computes reachability between operations according to the extended control flow graph
  * An operation inside a loop reaches all the operation after the loop
- * An operation inside a loop does not reach all the operation inside the loop but which are not reachable without crossing a feedback edge
+ * An operation inside a loop does not reach all the operation inside the loop but which are not reachable without
+ * crossing a feedback edge
  */
 class OpReachabilityComputation : public FunctionFrontendFlowStep
 {
@@ -55,7 +56,8 @@ class OpReachabilityComputation : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -65,7 +67,8 @@ class OpReachabilityComputation : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   OpReachabilityComputation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   OpReachabilityComputation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id,
+                             const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

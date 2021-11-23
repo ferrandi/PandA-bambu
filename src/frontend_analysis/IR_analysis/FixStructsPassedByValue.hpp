@@ -55,13 +55,15 @@ class FixStructsPassedByValue : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
     * Constructor
     */
-   FixStructsPassedByValue(const ParameterConstRef params, const application_managerRef AM, unsigned int fun_id, const DesignFlowManagerConstRef dfm);
+   FixStructsPassedByValue(const ParameterConstRef params, const application_managerRef AM, unsigned int fun_id,
+                           const DesignFlowManagerConstRef dfm);
 
    /**
     * Destructor

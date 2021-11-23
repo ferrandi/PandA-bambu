@@ -66,7 +66,8 @@ class multiplier_conn_obj : public generic_obj
    /**
     * Constructor
     */
-   multiplier_conn_obj(const std::string& _name) : generic_obj(MULTIPLIER_CONN_OBJ, _name), bitsize(0), multiply_by_constant_p(false), constant_value(0)
+   multiplier_conn_obj(const std::string& _name)
+       : generic_obj(MULTIPLIER_CONN_OBJ, _name), bitsize(0), multiply_by_constant_p(false), constant_value(0)
    {
    }
 

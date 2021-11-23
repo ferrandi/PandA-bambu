@@ -79,7 +79,11 @@ void DECODE_FU_LIB(std::string& fu_name, std::string& fu_library, const std::str
 }
 
 HLS_constraints::HLS_constraints(const ParameterConstRef& _Param, std::string _fun_name)
-    : clock_period(_Param->getOption<double>(OPT_clock_period)), clock_period_resource_fraction(clock_period_resource_fraction_DEFAULT), registers(INFINITE_UINT), fun_name(std::move(_fun_name)), parameters(_Param)
+    : clock_period(_Param->getOption<double>(OPT_clock_period)),
+      clock_period_resource_fraction(clock_period_resource_fraction_DEFAULT),
+      registers(INFINITE_UINT),
+      fun_name(std::move(_fun_name)),
+      parameters(_Param)
 {
    /// add the general builtin constraints
    add_builtin_constraints();
@@ -147,7 +151,8 @@ HLS_constraints::HLS_constraints(const ParameterConstRef& _Param, std::string _f
       {
          THROW_ERROR("Error during constraints file parsing");
       }
-      PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, " ==== XML configuration file parsed for constraints information ====");
+      PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                    " ==== XML configuration file parsed for constraints information ====");
       if(!fun_name.empty())
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, " Constraints of function: " + fun_name);
@@ -214,7 +219,8 @@ unsigned int HLS_constraints::get_number_fu(const std::string& combined) const
    return get_number_fu(fu_name, lib_name);
 }
 
-void HLS_constraints::bind_vertex_to_fu(const std::string& vertex_name, const std::string& fu_name, const std::string& fu_library, const unsigned int fu_index)
+void HLS_constraints::bind_vertex_to_fu(const std::string& vertex_name, const std::string& fu_name,
+                                        const std::string& fu_library, const unsigned int fu_index)
 {
    binding_constraints[vertex_name] = std::make_pair(fu_name, std::make_pair(fu_library, fu_index));
 }
@@ -291,7 +297,8 @@ void HLS_constraints::print(std::ostream& os) const
       auto i_end = binding_constraints.end();
       for(auto i = binding_constraints.begin(); i != i_end; ++i)
       {
-         os << i->first << " " << i->second.first << " " << i->second.second.first << " " << i->second.second.second << std::endl;
+         os << i->first << " " << i->second.first << " " << i->second.second.first << " " << i->second.second.second
+            << std::endl;
       }
    }
    if(!scheduling_constraints.empty())
@@ -367,7 +374,8 @@ void HLS_constraints::xload(const xml_element* Enode)
    }
 }
 
-void HLS_constraints::xwriteFUConstraints(xml_element* Enode, const std::string& fu_name, const std::string& fu_library, unsigned int n, bool forDump)
+void HLS_constraints::xwriteFUConstraints(xml_element* Enode, const std::string& fu_name, const std::string& fu_library,
+                                          unsigned int n, bool forDump)
 {
    if(n == INFINITE_UINT and !forDump)
    {
@@ -391,7 +399,9 @@ void HLS_constraints::xwriteHLSConstraints(xml_element* Enode, bool forDump)
    }
 }
 
-void HLS_constraints::xwriteBindingConstraints(xml_element* Enode, const std::string& vertex_name, const std::string& fu_name, const std::string& fu_library, unsigned int fu_index)
+void HLS_constraints::xwriteBindingConstraints(xml_element* Enode, const std::string& vertex_name,
+                                               const std::string& fu_name, const std::string& fu_library,
+                                               unsigned int fu_index)
 {
    xml_element* EnodeC = Enode->add_child_element("binding_constraints");
    WRITE_XVM(vertex_name, EnodeC);
@@ -466,7 +476,8 @@ void HLS_constraints::add_builtin_constraints()
    {
       XMLDomParser parser_noALUs("builtin_constraints_data", builtin_constraints_data);
       XMLDomParser parser_ALUs("builtin_constraints_data_ALUs", builtin_constraints_data_ALUs);
-      XMLDomParser& parser = parameters->isOption(OPT_use_ALUs) && parameters->getOption<bool>(OPT_use_ALUs) ? parser_ALUs : parser_noALUs;
+      XMLDomParser& parser =
+          parameters->isOption(OPT_use_ALUs) && parameters->getOption<bool>(OPT_use_ALUs) ? parser_ALUs : parser_noALUs;
       parser.Exec();
       if(parser)
       {

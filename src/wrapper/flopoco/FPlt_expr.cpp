@@ -105,7 +105,8 @@ namespace flopoco
 
       /*	VHDL code description	*/
       manageCriticalPath(_target->localWireDelay() + _target->lutDelay());
-      vhdl << tab << declare("nX", wE + wF + 3) << "  <= X" << range(wE + wF + 2, wE + wF + 1) << " & not(X" << of(wE + wF) << ") & X" << range(wE + wF - 1, 0) << ";" << endl;
+      vhdl << tab << declare("nX", wE + wF + 3) << "  <= X" << range(wE + wF + 2, wE + wF + 1) << " & not(X"
+           << of(wE + wF) << ") & X" << range(wE + wF - 1, 0) << ";" << endl;
       auto* value_difference = new FPAdderSinglePath(_target, wE, wF, wE, wF, wE, wF);
       value_difference->changeName(getName() + "value_difference");
       oplist.push_back(value_difference);
@@ -117,7 +118,8 @@ namespace flopoco
       setCriticalPath(value_difference->getOutputDelay("R"));
 
       manageCriticalPath(_target->localWireDelay() + _target->lutDelay());
-      vhdl << tab << "R(0) <= '1' when (valueDiff" << of(wE + wF) << "='0') and (valueDiff" << range(wE + wF + 2, wE + wF + 1) << " /= \"00\") else '0';" << endl;
+      vhdl << tab << "R(0) <= '1' when (valueDiff" << of(wE + wF) << "='0') and (valueDiff"
+           << range(wE + wF + 2, wE + wF + 1) << " /= \"00\") else '0';" << endl;
    }
 
    FPlt_expr::~FPlt_expr() = default;

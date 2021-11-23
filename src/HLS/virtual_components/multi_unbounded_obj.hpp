@@ -63,7 +63,8 @@ class multi_unbounded_obj : public generic_obj
     * This is the constructor of the multi_unbounded_obj class, with a given id
     * @param _name is the name of the multi_unbounded_obj
     */
-   explicit multi_unbounded_obj(vertex _fsm_state, const CustomOrderedSet<vertex>& _ops, const std::string& _name) : generic_obj(MULTI_UNBOUNDED_OBJ, _name), fsm_state(_fsm_state), ops(_ops)
+   explicit multi_unbounded_obj(vertex _fsm_state, const CustomOrderedSet<vertex>& _ops, const std::string& _name)
+       : generic_obj(MULTI_UNBOUNDED_OBJ, _name), fsm_state(_fsm_state), ops(_ops)
    {
    }
 

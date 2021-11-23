@@ -88,7 +88,8 @@ class ParserFlowStep : public DesignFlowStep
     * @param file_name is the name of the file
     * @param parameters is the set of input parameters
     */
-   ParserFlowStep(const DesignFlowManagerConstRef design_flow_manager, const ParserFlowStep_Type parser_step_type, const std::string& file_name, const ParameterConstRef parameters);
+   ParserFlowStep(const DesignFlowManagerConstRef design_flow_manager, const ParserFlowStep_Type parser_step_type,
+                  const std::string& file_name, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -125,7 +126,8 @@ class ParserFlowStep : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Return the factory to create this type of steps

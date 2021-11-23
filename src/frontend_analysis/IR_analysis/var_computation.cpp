@@ -79,15 +79,20 @@
 
 #define TOSTRING(id) boost::lexical_cast<std::string>(id)
 
-VarComputation::VarComputation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, VAR_ANALYSIS, _design_flow_manager, _parameters), ogc(function_behavior->ogc), cfg(function_behavior->CGetOpGraph(FunctionBehavior::CFG)), behavioral_helper(function_behavior->GetBehavioralHelper())
+VarComputation::VarComputation(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                               unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, VAR_ANALYSIS, _design_flow_manager, _parameters),
+      ogc(function_behavior->ogc),
+      cfg(function_behavior->CGetOpGraph(FunctionBehavior::CFG)),
+      behavioral_helper(function_behavior->GetBehavioralHelper())
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 VarComputation::~VarComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> VarComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+VarComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -179,11 +184,13 @@ DesignFlowStep_Status VarComputation::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef& _tree_node, const FunctionBehavior_VariableAccessType access_type) const
+void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef& _tree_node,
+                                        const FunctionBehavior_VariableAccessType access_type) const
 {
    const auto tree_node = GET_CONST_NODE(_tree_node);
    const auto node_kind = tree_node->get_kind();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + STR(tree_node) + "(" + tree_node::GetString(node_kind) + ")");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Analyzing node " + STR(tree_node) + "(" + tree_node::GetString(node_kind) + ")");
 
    const auto gn = GetPointer<const gimple_node>(tree_node);
 
@@ -264,12 +271,14 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       }
       case gimple_cond_K:
       {
-         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_cond>(tree_node)->op0, FunctionBehavior_VariableAccessType::USE);
+         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_cond>(tree_node)->op0,
+                            FunctionBehavior_VariableAccessType::USE);
          break;
       }
       case gimple_while_K:
       {
-         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_while>(tree_node)->op0, FunctionBehavior_VariableAccessType::USE);
+         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_while>(tree_node)->op0,
+                            FunctionBehavior_VariableAccessType::USE);
          break;
       }
       case gimple_for_K:
@@ -304,12 +313,14 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       }
       case gimple_label_K:
       {
-         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_label>(tree_node)->op, FunctionBehavior_VariableAccessType::USE);
+         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_label>(tree_node)->op,
+                            FunctionBehavior_VariableAccessType::USE);
          break;
       }
       case gimple_goto_K:
       {
-         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_goto>(tree_node)->op, FunctionBehavior_VariableAccessType::USE);
+         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_goto>(tree_node)->op,
+                            FunctionBehavior_VariableAccessType::USE);
          break;
       }
       case gimple_asm_K:
@@ -336,7 +347,8 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       case var_decl_K:
       {
 #if HAVE_I386_GCC45_COMPILER
-         if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC45)
+         if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+            CompilerWrapper_CompilerTarget::CT_I386_GCC45)
          {
             if(tree_helper::IsVolatile(_tree_node))
             {
@@ -354,7 +366,8 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       }
       case parm_decl_K:
       {
-         ogc->AddVariable(cfg->CGetOpGraphInfo()->entry_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR, access_type);
+         ogc->AddVariable(cfg->CGetOpGraphInfo()->entry_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR,
+                          access_type);
          ogc->AddSourceCodeVariable(op_vertex, tree_node->index);
          break;
       }
@@ -375,7 +388,8 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
                   ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::VIRTUAL, access_type);
                   break;
                case(FunctionBehavior_VariableAccessType::ARG):
-                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::VIRTUAL, FunctionBehavior_VariableAccessType::USE);
+                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::VIRTUAL,
+                                   FunctionBehavior_VariableAccessType::USE);
                   break;
                case(FunctionBehavior_VariableAccessType::ADDRESS):
                case(FunctionBehavior_VariableAccessType::OVER):
@@ -388,10 +402,14 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
          }
          else
          {
-            if((sn->volatile_flag || (sn->CGetDefStmts().size() == 1 && GET_CONST_NODE(sn->CGetDefStmt())->get_kind() == gimple_nop_K)) && sn->var)
+            if((sn->volatile_flag ||
+                (sn->CGetDefStmts().size() == 1 && GET_CONST_NODE(sn->CGetDefStmt())->get_kind() == gimple_nop_K)) &&
+               sn->var)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding " + sn->ToString() + " to defs of Entry");
-               ogc->AddVariable(cfg->CGetOpGraphInfo()->entry_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Adding " + sn->ToString() + " to defs of Entry");
+               ogc->AddVariable(cfg->CGetOpGraphInfo()->entry_vertex, tree_node->index,
+                                FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
             }
             ogc->AddSourceCodeVariable(op_vertex, tree_node->index);
             switch(access_type)
@@ -401,14 +419,17 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
                   ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR, access_type);
                   break;
                case(FunctionBehavior_VariableAccessType::ARG):
-                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
+                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR,
+                                   FunctionBehavior_VariableAccessType::USE);
                   break;
                case(FunctionBehavior_VariableAccessType::ADDRESS):
                   break;
                case(FunctionBehavior_VariableAccessType::OVER):
                {
-                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
-                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR,
+                                   FunctionBehavior_VariableAccessType::USE);
+                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR,
+                                   FunctionBehavior_VariableAccessType::DEFINITION);
                   break;
                }
                case(FunctionBehavior_VariableAccessType::UNKNOWN):
@@ -480,7 +501,8 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
          const auto* te = GetPointerS<const ternary_expr>(tree_node);
          /// GCC 4.5 plugin does not writer vuse for component ref of volatile variable
 #if HAVE_I386_GCC45_COMPILER
-         if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC45)
+         if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+            CompilerWrapper_CompilerTarget::CT_I386_GCC45)
          {
             if(te->get_kind() == component_ref_K)
             {
@@ -510,7 +532,8 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       case CASE_QUATERNARY_EXPRESSION:
       {
          const auto* qe = GetPointerS<const quaternary_expr>(tree_node);
-         if((qe->get_kind() == array_ref_K || qe->get_kind() == array_range_ref_K) && GET_CONST_NODE(tree_helper::CGetType(qe->op0))->get_kind() == array_type_K)
+         if((qe->get_kind() == array_ref_K || qe->get_kind() == array_range_ref_K) &&
+            GET_CONST_NODE(tree_helper::CGetType(qe->op0))->get_kind() == array_type_K)
          {
             RecursivelyAnalyze(op_vertex, qe->op0, access_type);
          }
@@ -678,7 +701,8 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
          THROW_UNREACHABLE("");
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed node " + STR(tree_node) + "(" + tree_node::GetString(node_kind) + ")");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--Analyzed node " + STR(tree_node) + "(" + tree_node::GetString(node_kind) + ")");
    return;
 }
 
@@ -686,14 +710,17 @@ void VarComputation::AnalyzeVops(const vertex op_vertex, const gimple_node* vop)
 {
    for(const auto& vuse : vop->vuses)
    {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vuse), FunctionBehavior_VariableType::VIRTUAL, FunctionBehavior_VariableAccessType::USE);
+      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vuse), FunctionBehavior_VariableType::VIRTUAL,
+                       FunctionBehavior_VariableAccessType::USE);
    }
    if(vop->vdef)
    {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vop->vdef), FunctionBehavior_VariableType::VIRTUAL, FunctionBehavior_VariableAccessType::DEFINITION);
+      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vop->vdef), FunctionBehavior_VariableType::VIRTUAL,
+                       FunctionBehavior_VariableAccessType::DEFINITION);
    }
    for(auto const& vover : vop->vovers)
    {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vover), FunctionBehavior_VariableType::VIRTUAL, FunctionBehavior_VariableAccessType::OVER);
+      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vover), FunctionBehavior_VariableType::VIRTUAL,
+                       FunctionBehavior_VariableAccessType::OVER);
    }
 }

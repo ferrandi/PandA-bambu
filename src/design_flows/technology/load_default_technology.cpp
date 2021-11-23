@@ -62,14 +62,18 @@
 /// utility include
 #include "fileIO.hpp"
 
-LoadDefaultTechnology::LoadDefaultTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY, _parameters)
+LoadDefaultTechnology::LoadDefaultTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+                                             const DesignFlowManagerConstRef _design_flow_manager,
+                                             const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY,
+                         _parameters)
 {
 }
 
 LoadDefaultTechnology::~LoadDefaultTechnology() = default;
 
-const CustomUnorderedSet<TechnologyFlowStep_Type> LoadDefaultTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
+const CustomUnorderedSet<TechnologyFlowStep_Type>
+LoadDefaultTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
 {
    return CustomUnorderedSet<TechnologyFlowStep_Type>();
 }
@@ -80,12 +84,16 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
    try
    {
       /// Load default resources
-      const char* builtin_resources_data[] = {"C_COMPLEX_IPs.data", "C_FP_IPs.data",   "C_HLS_IPs.data",  "C_IO_IPs.data",  "C_MEM_IPs.data", "C_PC_IPs.data",   "CS_COMPONENT.data", "C_PROFILING_IPs.data", "C_STD_IPs.data",
-                                              "C_VEC_IPs.data",     "NC_HLS_IPs.data", "NC_MEM_IPs.data", "NC_PC_IPs.data", "NC_SF_IPs.data", "NC_STD_IPs.data", "NC_VEC_IPs.data",   "NC_wishbone_IPs.data"};
+      const char* builtin_resources_data[] = {
+          "C_COMPLEX_IPs.data", "C_FP_IPs.data",       "C_HLS_IPs.data",       "C_IO_IPs.data",  "C_MEM_IPs.data",
+          "C_PC_IPs.data",      "CS_COMPONENT.data",   "C_PROFILING_IPs.data", "C_STD_IPs.data", "C_VEC_IPs.data",
+          "NC_HLS_IPs.data",    "NC_MEM_IPs.data",     "NC_PC_IPs.data",       "NC_SF_IPs.data", "NC_STD_IPs.data",
+          "NC_VEC_IPs.data",    "NC_wishbone_IPs.data"};
 
       for(i = 0; i < sizeof(builtin_resources_data) / sizeof(char*); ++i)
       {
-         XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/design_flows/technology/") + builtin_resources_data[i]);
+         XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/design_flows/technology/") +
+                             builtin_resources_data[i]);
          parser.Exec();
          if(parser)
          {

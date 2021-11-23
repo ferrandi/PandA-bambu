@@ -53,7 +53,8 @@
 /// In global_variables.hpp
 extern size_t indentation;
 
-IndentedOutputStream::IndentedOutputStream(char o, char c, unsigned int d) : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
+IndentedOutputStream::IndentedOutputStream(char o, char c, unsigned int d)
+    : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
 {
 }
 

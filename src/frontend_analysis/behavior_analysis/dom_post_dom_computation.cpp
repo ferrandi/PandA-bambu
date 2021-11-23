@@ -69,7 +69,9 @@
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _parameters,
+                                                   const application_managerRef _AppM, unsigned int _function_id,
+                                                   const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, DOM_POST_DOM_COMPUTATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -77,7 +79,8 @@ dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _para
 
 dom_post_dom_computation::~dom_post_dom_computation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> dom_post_dom_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+dom_post_dom_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -142,7 +145,8 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
          function_behavior->bbgc->AddEdge(it.second, it.first, PD_SELECTOR);
       }
    }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built post-dominators tree of " + helper->get_function_name());
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                 "Built post-dominators tree of " + helper->get_function_name());
 
    if(parameters->getOption<bool>(OPT_print_dot))
    {

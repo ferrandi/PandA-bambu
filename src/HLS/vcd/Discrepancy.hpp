@@ -207,7 +207,10 @@ struct Discrepancy
 
    unsigned long long n_checked_operations = 0;
 
-   Discrepancy() : call_sites_info(CallSitesInfoRef(new CallSitesInfo())), hw_discrepancy_info(HWDiscrepancyInfoRef(new HWDiscrepancyInfo())), DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())){};
+   Discrepancy()
+       : call_sites_info(CallSitesInfoRef(new CallSitesInfo())),
+         hw_discrepancy_info(HWDiscrepancyInfoRef(new HWDiscrepancyInfo())),
+         DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())){};
 
    void clear()
    {

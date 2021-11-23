@@ -79,8 +79,9 @@ using fileIO_ostreamRef = refcount<std::ostream>;
 
 /**
  * this function returns an istream compressed or not.
- * It first check for a compressed file, then search for the compressed version of the file and finally in case no compressed file is found it look for the plain text file.
- * this function is mainly based on the gzstream wrapper and on zlib library.
+ * It first check for a compressed file, then search for the compressed version of the file and finally in case no
+ * compressed file is found it look for the plain text file. this function is mainly based on the gzstream wrapper and
+ * on zlib library.
  * @param name is the file name.
  * @return the refcount to the istream
  */
@@ -337,16 +338,23 @@ inline std::string BuildPath(const std::string& first_part, const std::string se
  * @param Param is the set of input parameters
  * @param system_command is the  to be executed
  * @param output is the file where output has to be saved
- * @param type specifies which streams have to be saved; possible values are 0 (none), 1 (stdout), 2 (stderr), 3(stdout and stderr)
+ * @param type specifies which streams have to be saved; possible values are 0 (none), 1 (stdout), 2 (stderr), 3(stdout
+ * and stderr)
  * @param background specifies if the command has to be executed in background
  * @param timeout is the timeout for the command (in minutes)
  * @return the value returned by the shell
  */
-inline int PandaSystem(const ParameterConstRef Param, const std::string& system_command, const std::string& output = "", const unsigned int type = 3, const bool background = false, const size_t timeout = 0)
+inline int PandaSystem(const ParameterConstRef Param, const std::string& system_command, const std::string& output = "",
+                       const unsigned int type = 3, const bool background = false, const size_t timeout = 0)
 {
    static size_t counter = 0;
-   const std::string actual_output = output == "" ? Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file + "_" + boost::lexical_cast<std::string>(counter) : GetPath(output);
-   const std::string script_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_script + "_" + boost::lexical_cast<std::string>(counter++);
+   const std::string actual_output = output == "" ? Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                                        STR_CST_file_IO_shell_output_file + "_" +
+                                                        boost::lexical_cast<std::string>(counter) :
+                                                    GetPath(output);
+   const std::string script_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                        STR_CST_file_IO_shell_script + "_" +
+                                        boost::lexical_cast<std::string>(counter++);
    counter++;
    std::ofstream script_file(script_file_name.c_str());
    script_file << "#!/bin/bash" << std::endl;
@@ -430,11 +438,14 @@ inline int PandaSystem(const ParameterConstRef Param, const std::string& system_
    script_file.close();
    if(timeout != 0)
    {
-      const std::string timeout_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_script + "_" + boost::lexical_cast<std::string>(counter++);
+      const std::string timeout_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                            STR_CST_file_IO_shell_script + "_" +
+                                            boost::lexical_cast<std::string>(counter++);
       counter++;
       std::ofstream timeout_file(timeout_file_name.c_str());
       timeout_file << "#!/bin/bash" << std::endl;
-      timeout_file << "timeout --foreground " << boost::lexical_cast<std::string>(timeout) << "m bash -f " << script_file_name << std::endl;
+      timeout_file << "timeout --foreground " << boost::lexical_cast<std::string>(timeout) << "m bash -f "
+                   << script_file_name << std::endl;
       timeout_file.close();
       const std::string command = "bash -f " + timeout_file_name + "";
       return system(command.c_str());

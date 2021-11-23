@@ -58,7 +58,8 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_helper.hpp"
 
-DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                   const DesignFlowManagerConstRef _design_flow_manager)
     : EvaluationBaseStep(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::DRY_RUN_EVALUATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));

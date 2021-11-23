@@ -103,14 +103,17 @@
 
 #define PORT_VECTOR_N_PORTS 2
 
-RTLCharacterization::RTLCharacterization(const target_managerRef _target, const std::string& _cells, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+RTLCharacterization::RTLCharacterization(const target_managerRef _target, const std::string& _cells,
+                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                         const ParameterConstRef _parameters)
     : DesignFlowStep(_design_flow_manager, _parameters),
       FunctionalUnitStep(_target, _design_flow_manager, _parameters),
       component(ComputeComponent(_cells)),
       cells(ComputeCells(_cells))
 #ifndef NDEBUG
       ,
-      dummy_synthesis(_parameters->IsParameter("dummy_synthesis") and _parameters->GetParameter<std::string>("dummy_synthesis") == "yes")
+      dummy_synthesis(_parameters->IsParameter("dummy_synthesis") and
+                      _parameters->GetParameter<std::string>("dummy_synthesis") == "yes")
 #endif
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -154,8 +157,10 @@ void RTLCharacterization::fix_muxes()
    const auto b_it_end = bitsizes.end();
    for(auto b_it = bitsizes.begin(); b_it != b_it_end; ++b_it)
    {
-      std::string test_mul_mux_name =
-          std::string(TEST_MUL_MUX_8) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it);
+      std::string test_mul_mux_name = std::string(TEST_MUL_MUX_8) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" +
+                                      STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" +
+                                      STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" +
+                                      STR(*b_it);
       technology_nodeRef f_unit_test = TM->get_fu(test_mul_mux_name, LIBRARY_STD_FU);
       if(!f_unit_test)
       {
@@ -166,13 +171,15 @@ void RTLCharacterization::fix_muxes()
       auto* op_test = GetPointer<operation>(op_test_node);
       double test_exec_time = op_test->time_m->get_execution_time();
 
-      technology_nodeRef f_unit_mult = TM->get_fu(std::string(MULTIPLIER_STD) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_0", LIBRARY_STD_FU);
+      technology_nodeRef f_unit_mult = TM->get_fu(
+          std::string(MULTIPLIER_STD) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_0", LIBRARY_STD_FU);
       auto* fu_mult = GetPointer<functional_unit>(f_unit_mult);
       technology_nodeRef op_mult_node = fu_mult->get_operation("mult_expr");
       auto* op_mult = GetPointer<operation>(op_mult_node);
       double mult_exec_time = op_mult->time_m->get_execution_time();
 
-      technology_nodeRef f_unit_mux = TM->get_fu(std::string(MUX_GATE_STD) + "_1_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it), LIBRARY_STD_FU);
+      technology_nodeRef f_unit_mux = TM->get_fu(
+          std::string(MUX_GATE_STD) + "_1_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it), LIBRARY_STD_FU);
       auto* fu_mux = GetPointer<functional_unit>(f_unit_mux);
       const functional_unit::operation_vec& ops = fu_mux->get_operations();
       for(const auto& op : ops)
@@ -200,7 +207,8 @@ void RTLCharacterization::fix_execution_time_std()
    technology_nodeRef op_br_node = fu_br->get_operation(ASSIGN);
    auto* op_br_LOAD = GetPointer<operation>(op_br_node);
    double ASSIGN_exec_time = op_br_LOAD->time_m->get_execution_time();
-   if(LM->get_library_name() != LIBRARY_STD_FU && LM->get_library_name() != LIBRARY_PC && LM->get_library_name() != LIBRARY_STD)
+   if(LM->get_library_name() != LIBRARY_STD_FU && LM->get_library_name() != LIBRARY_PC &&
+      LM->get_library_name() != LIBRARY_STD)
    {
       return;
    }
@@ -208,7 +216,8 @@ void RTLCharacterization::fix_execution_time_std()
    auto* current_fu = GetPointer<functional_unit>(tn);
    if(current_fu)
    {
-      if((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) && completed.find(current_fu->functional_unit_name) == completed.end())
+      if((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) &&
+         completed.find(current_fu->functional_unit_name) == completed.end())
       {
          return;
       }
@@ -263,7 +272,8 @@ void RTLCharacterization::fix_proxies_execution_time_std()
       auto* op_br_nn_STORE_hl = GetPointer<operation>(op_br_nn_node_hl);
       double nn_STORE_exec_time_hl = op_br_nn_STORE_hl->time_m->get_execution_time();
 
-      if(LM->get_library_name() != LIBRARY_STD_FU && LM->get_library_name() != LIBRARY_PC && LM->get_library_name() != LIBRARY_STD)
+      if(LM->get_library_name() != LIBRARY_STD_FU && LM->get_library_name() != LIBRARY_PC &&
+         LM->get_library_name() != LIBRARY_STD)
       {
          return;
       }
@@ -276,9 +286,11 @@ void RTLCharacterization::fix_proxies_execution_time_std()
       std::string fu_name = current_fu->functional_unit_name;
       std::string memory_ctrl_type = current_fu->memory_ctrl_type;
       std::string bram_load_latency = current_fu->bram_load_latency;
-      if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || fu_name == BMEMORY_STD || fu_name == BMEMORY_STD + (bram_load_latency != "2" ? high_latency_postfix : ""))
+      if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY ||
+         fu_name == BMEMORY_STD || fu_name == BMEMORY_STD + (bram_load_latency != "2" ? high_latency_postfix : ""))
       {
-         if((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) && completed.find(fu_name) == completed.end())
+         if((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) &&
+            completed.find(fu_name) == completed.end())
          {
             return;
          }
@@ -315,9 +327,11 @@ void RTLCharacterization::fix_proxies_execution_time_std()
             }
          }
       }
-      if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN || fu_name == BMEMORY_STDN || fu_name == BMEMORY_STDN + (bram_load_latency != "2" ? high_latency_postfix : ""))
+      if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN ||
+         fu_name == BMEMORY_STDN || fu_name == BMEMORY_STDN + (bram_load_latency != "2" ? high_latency_postfix : ""))
       {
-         if((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) && completed.find(fu_name) == completed.end())
+         if((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) &&
+            completed.find(fu_name) == completed.end())
          {
             return;
          }
@@ -417,7 +431,8 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
       }
       else
       {
-         if((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) && completed.find(current_fu->functional_unit_name) == completed.end())
+         if((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) &&
+            completed.find(current_fu->functional_unit_name) == completed.end())
          {
             THROW_ERROR("");
          }
@@ -500,7 +515,8 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
             auto* current_op = GetPointer<operation>(op);
             current_op->xwrite(cell_el, op, parameters, device->get_type());
          }
-         if(current_fu->CM && current_fu->CM->get_circ() && GetPointer<module>(current_fu->CM->get_circ()) && GetPointer<module>(current_fu->CM->get_circ())->get_specialized() != "")
+         if(current_fu->CM && current_fu->CM->get_circ() && GetPointer<module>(current_fu->CM->get_circ()) &&
+            GetPointer<module>(current_fu->CM->get_circ())->get_specialized() != "")
          {
             if(current_fu->memory_type != "")
             {
@@ -536,7 +552,9 @@ void RTLCharacterization::resize_port(const structural_objectRef& port, unsigned
    }
    if(GetPointer<port_o>(port)->get_is_doubled())
    {
-      if(port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT || port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT || port->get_typeRef()->type == structural_type_descriptor::VECTOR_REAL)
+      if(port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT ||
+         port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT ||
+         port->get_typeRef()->type == structural_type_descriptor::VECTOR_REAL)
       {
          port_o::resize_std_port(2 * prec, 128 / (2 * prec), 0, port);
       }
@@ -547,7 +565,9 @@ void RTLCharacterization::resize_port(const structural_objectRef& port, unsigned
    }
    else if(GetPointer<port_o>(port)->get_is_halved())
    {
-      if(port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT || port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT || port->get_typeRef()->type == structural_type_descriptor::VECTOR_REAL)
+      if(port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT ||
+         port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT ||
+         port->get_typeRef()->type == structural_type_descriptor::VECTOR_REAL)
       {
          port_o::resize_std_port(prec / 2, 128 / (prec / 2), 0, port);
       }
@@ -556,7 +576,9 @@ void RTLCharacterization::resize_port(const structural_objectRef& port, unsigned
          port_o::resize_std_port(prec / 2, 0, 0, port);
       }
    }
-   else if(port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT || port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT || port->get_typeRef()->type == structural_type_descriptor::VECTOR_REAL)
+   else if(port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT ||
+           port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT ||
+           port->get_typeRef()->type == structural_type_descriptor::VECTOR_REAL)
    {
       port_o::resize_std_port(prec, 128 / prec, 0, port);
    }
@@ -566,7 +588,9 @@ void RTLCharacterization::resize_port(const structural_objectRef& port, unsigned
    }
 }
 
-void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, unsigned int bus_tag_bitsize, size_t portsize_value)
+void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize,
+                                        unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize,
+                                        unsigned int bus_tag_bitsize, size_t portsize_value)
 {
    for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
    {
@@ -577,7 +601,8 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
          {
             GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
          }
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
+            GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
          {
             port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
@@ -591,7 +616,8 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       }
       else
       {
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
+            GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
          {
             port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
@@ -610,7 +636,8 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
          {
             GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
          }
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
+            GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
          {
             port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
@@ -624,7 +651,8 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       }
       else
       {
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
+            GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
          {
             port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
@@ -636,26 +664,32 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
    }
 }
 
-void RTLCharacterization::add_input_register(structural_objectRef port_in, const std::string& register_library, const std::string& port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port,
+void RTLCharacterization::add_input_register(structural_objectRef port_in, const std::string& register_library,
+                                             const std::string& port_prefix, structural_objectRef reset_port,
+                                             structural_objectRef circuit, structural_objectRef clock_port,
                                              structural_objectRef e_port, structural_managerRef SM)
 {
    structural_objectRef r_signal;
    structural_objectRef reg_mod;
    if(port_in->get_typeRef()->type == structural_type_descriptor::INT)
    {
-      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_INT, register_library, circuit, TM);
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_INT, register_library,
+                                                       circuit, TM);
    }
    else if(port_in->get_typeRef()->type == structural_type_descriptor::UINT)
    {
-      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_UINT, register_library, circuit, TM);
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_UINT,
+                                                       register_library, circuit, TM);
    }
    else if(port_in->get_typeRef()->type == structural_type_descriptor::REAL)
    {
-      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_REAL, register_library, circuit, TM);
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_REAL,
+                                                       register_library, circuit, TM);
    }
    else
    {
-      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library, circuit, TM);
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library,
+                                                       circuit, TM);
    }
    GetPointer<module>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_in));
    GetPointer<module>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_in));
@@ -678,26 +712,32 @@ void RTLCharacterization::add_input_register(structural_objectRef port_in, const
    SM->add_connection(port_in, r_signal);
 }
 
-void RTLCharacterization::add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, const std::string& port_prefix,
+void RTLCharacterization::add_output_register(structural_managerRef SM, structural_objectRef e_port,
+                                              structural_objectRef circuit, structural_objectRef reset_port,
+                                              structural_objectRef port_out, const std::string& port_prefix,
                                               structural_objectRef clock_port, const std::string& register_library)
 {
    structural_objectRef r_signal;
    structural_objectRef reg_mod;
    if(port_out->get_typeRef()->type == structural_type_descriptor::INT)
    {
-      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_INT, register_library, circuit, TM);
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_INT, register_library,
+                                                       circuit, TM);
    }
    else if(port_out->get_typeRef()->type == structural_type_descriptor::UINT)
    {
-      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_UINT, register_library, circuit, TM);
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_UINT,
+                                                       register_library, circuit, TM);
    }
    else if(port_out->get_typeRef()->type == structural_type_descriptor::REAL)
    {
-      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_REAL, register_library, circuit, TM);
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_REAL,
+                                                       register_library, circuit, TM);
    }
    else
    {
-      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library, circuit, TM);
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library,
+                                                       circuit, TM);
    }
    GetPointer<module>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_out));
    GetPointer<module>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_out));
@@ -734,18 +774,23 @@ const std::string RTLCharacterization::GetName() const
    return "RTLCharacterization";
 }
 
-void RTLCharacterization::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+void RTLCharacterization::ComputeRelationships(DesignFlowStepSet& relationship,
+                                               const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
    {
       case DesignFlowStep::DEPENDENCE_RELATIONSHIP:
       {
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-         const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+         const std::string technology_flow_signature =
+             TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
          const DesignFlowStepRef technology_design_flow_step =
-             technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+             technology_flow_step ?
+                 design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                 technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
          break;
       }
@@ -767,7 +812,9 @@ const DesignFlowStepFactoryConstRef RTLCharacterization::CGetDesignFlowStepFacto
    return DesignFlowStepFactoryConstRef();
 }
 
-void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index,
+void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int prec,
+                                      const std::vector<std::string>& portsize_parameters, const size_t portsize_index,
+                                      const std::vector<std::string>& pipe_parameters, const size_t stage_index,
                                       const unsigned int constPort, const bool is_commutative, size_t max_lut_size)
 {
    const auto fu_name = fu->get_name();
@@ -798,19 +845,23 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 #if HAVE_FLOPOCO
                                       || NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED)
 #endif
-                                      || NPF->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) || NPF->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED);
-      THROW_ASSERT(assertion_argument, "Verilog, VHDL, SystemVerilog or Flopoco description not provided for functional unit " + fu_name);
+                                      || NPF->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) ||
+                                      NPF->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED);
+      THROW_ASSERT(assertion_argument,
+                   "Verilog, VHDL, SystemVerilog or Flopoco description not provided for functional unit " + fu_name);
 #endif
       structural_managerRef SM = structural_managerRef(new structural_manager(parameters));
       /// main circuit type
       auto top_wrapper_name = "top" + fu_name + "_wrapper";
       boost::replace_all(top_wrapper_name, "__", "");
-      structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(top_wrapper_name));
+      structural_type_descriptorRef module_type =
+          structural_type_descriptorRef(new structural_type_descriptor(top_wrapper_name));
       /// setting top circuit component
       SM->set_top_info(top_wrapper_name, module_type);
       structural_objectRef circuit = SM->get_circ();
       THROW_ASSERT(circuit, "Top circuit is missing");
-      structural_objectRef template_circuit = SM->add_module_from_technology_library(fu_base_name + "_inst0", fu_base_name, LM->get_library_name(), circuit, TM);
+      structural_objectRef template_circuit = SM->add_module_from_technology_library(
+          fu_base_name + "_inst0", fu_base_name, LM->get_library_name(), circuit, TM);
 
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " - Generating HDL of functional unit " + fu_name);
       auto* spec_module = GetPointer<module>(template_circuit);
@@ -833,7 +884,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       {
          NUMBER_OF_BYTES_ALLOCATED = NUMBER_OF_BYTES_ALLOCATED / 16;
       }
-      specialize_fu(spec_module, prec, BUS_DATA_BITSIZE, BUS_ADDR_BITSIZE, BUS_SIZE_BITSIZE, BUS_TAG_BITSIZE, n_portsize_parameters > 0 ? boost::lexical_cast<unsigned int>(portsize_parameters[portsize_index]) : PORT_VECTOR_N_PORTS);
+      specialize_fu(spec_module, prec, BUS_DATA_BITSIZE, BUS_ADDR_BITSIZE, BUS_SIZE_BITSIZE, BUS_TAG_BITSIZE,
+                    n_portsize_parameters > 0 ? boost::lexical_cast<unsigned int>(portsize_parameters[portsize_index]) :
+                                                PORT_VECTOR_N_PORTS);
 
       if(fu_base_name == "MC_FU") /// add further specializations for this module
       {
@@ -861,7 +914,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             nbyte_on_memory = elts_size / 8;
          }
          if(memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED &&
-            (channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos || (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos && channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
+            (channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos ||
+             (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos &&
+              channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
          {
             std::ofstream init_file_a(GetPath(("a_" + init_filename).c_str()));
             std::ofstream init_file_b(GetPath(("b_" + init_filename).c_str()));
@@ -921,7 +976,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          spec_module->SetParameter("address_space_rangesize", STR((elts_size / 8) * vec_size));
          spec_module->SetParameter("USE_SPARSE_MEMORY", "1");
          if(memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED &&
-            (channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos || (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos && channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
+            (channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos ||
+             (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos &&
+              channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
          {
             spec_module->SetParameter("MEMORY_INIT_file_a", "\"\"a_" + init_filename + "\"\"");
             spec_module->SetParameter("MEMORY_INIT_file_b", "\"\"b_" + init_filename + "\"\"");
@@ -932,7 +989,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
          spec_module->SetParameter("n_elements", STR(vec_size));
          spec_module->SetParameter("data_size", STR(elts_size));
-         if(memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS && memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS_BUS && memory_type != MEMORY_TYPE_ASYNCHRONOUS)
+         if(memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS && memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS_BUS &&
+            memory_type != MEMORY_TYPE_ASYNCHRONOUS)
             spec_module->SetParameter("BRAM_BITSIZE", STR(BRAM_BITSIZE));
          spec_module->SetParameter("BUS_PIPELINED", "1");
          spec_module->SetParameter("PRIVATE_MEMORY", "0");
@@ -972,12 +1030,16 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             {
                spec_module->SetParameter("LSB_PARAMETER", boost::lexical_cast<std::string>(0));
             }
-            THROW_ASSERT(template_circuit->find_member(param, port_o_K, template_circuit) || template_circuit->find_member(param, port_vector_o_K, template_circuit) || spec_module->ExistsParameter(param),
-                         "parameter not yet specialized: " + param + " for module " + spec_module->get_typeRef()->get_name());
+            THROW_ASSERT(template_circuit->find_member(param, port_o_K, template_circuit) ||
+                             template_circuit->find_member(param, port_vector_o_K, template_circuit) ||
+                             spec_module->ExistsParameter(param),
+                         "parameter not yet specialized: " + param + " for module " +
+                             spec_module->get_typeRef()->get_name());
          }
       }
 
-      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+      structural_type_descriptorRef bool_type =
+          structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
       one_port = SM->add_constant(fu_name + "_constant_" + STR(1), circuit, bool_type, STR(1));
       std::string register_library = TM->get_library(register_AR_NORETIME);
       structural_objectRef clock_port, reset_port;
@@ -988,12 +1050,14 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          const structural_objectRef port_in = spec_module->get_in_port(i);
          if(port_in->get_id() == CLOCK_PORT_NAME)
          {
-            clock_port = SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
+            clock_port =
+                SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
             SM->add_connection(port_in, clock_port);
          }
          if(port_in->get_id() == RESET_PORT_NAME)
          {
-            reset_port = SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
+            reset_port =
+                SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
             SM->add_connection(port_in, reset_port);
          }
          else if(port_in->get_id() == START_PORT_NAME)
@@ -1014,7 +1078,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       for(unsigned int i = 0; i < spec_module->get_in_port_size(); i++)
       {
          structural_objectRef port_in = spec_module->get_in_port(i);
-         if(port_in->get_id() == CLOCK_PORT_NAME || port_in->get_id() == RESET_PORT_NAME || port_in->get_id() == START_PORT_NAME)
+         if(port_in->get_id() == CLOCK_PORT_NAME || port_in->get_id() == RESET_PORT_NAME ||
+            port_in->get_id() == START_PORT_NAME)
          {
             continue;
          }
@@ -1032,7 +1097,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          else if(isTemplate && i == constPort)
          {
             THROW_ASSERT(fu->characterizing_constant_value != "", "expected a value");
-            e_port = SM->add_constant("constant_" + STR(constPort), circuit, port_in->get_typeRef(), fu->characterizing_constant_value);
+            e_port = SM->add_constant("constant_" + STR(constPort), circuit, port_in->get_typeRef(),
+                                      fu->characterizing_constant_value);
             SM->add_connection(port_in, e_port);
          }
          else if(false)
@@ -1041,7 +1107,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             {
                for(unsigned int p = 0; p < GetPointer<port_o>(port_in)->get_ports_size(); ++p)
                {
-                  e_port = SM->add_constant("constant_" + STR(i) + "_" + STR(p), circuit, port_in->get_typeRef(), STR(BUS_DATA_BITSIZE));
+                  e_port = SM->add_constant("constant_" + STR(i) + "_" + STR(p), circuit, port_in->get_typeRef(),
+                                            STR(BUS_DATA_BITSIZE));
                   SM->add_connection(GetPointer<port_o>(port_in)->get_port(p), e_port);
                }
             }
@@ -1055,11 +1122,14 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          {
             if(port_in->get_kind() == port_vector_o_K)
             {
-               e_port = SM->add_port_vector(GetPointer<port_o>(port_in)->get_id(), port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), circuit, GetPointer<port_o>(port_in)->get_port(0)->get_typeRef());
+               e_port = SM->add_port_vector(GetPointer<port_o>(port_in)->get_id(), port_o::IN,
+                                            GetPointer<port_o>(port_in)->get_ports_size(), circuit,
+                                            GetPointer<port_o>(port_in)->get_port(0)->get_typeRef());
             }
             else
             {
-               e_port = SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
+               e_port =
+                   SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
             }
             std::string port_prefix = GetPointer<port_o>(port_in)->get_id();
 
@@ -1068,7 +1138,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             {
                for(unsigned int p = 0; p < GetPointer<port_o>(port_in)->get_ports_size(); ++p)
                {
-                  add_input_register(GetPointer<port_o>(port_in)->get_port(p), register_library, port_prefix + GetPointer<port_o>(port_in)->get_port(p)->get_id(), reset_port, circuit, clock_port, GetPointer<port_o>(e_port)->get_port(p), SM);
+                  add_input_register(GetPointer<port_o>(port_in)->get_port(p), register_library,
+                                     port_prefix + GetPointer<port_o>(port_in)->get_port(p)->get_id(), reset_port,
+                                     circuit, clock_port, GetPointer<port_o>(e_port)->get_port(p), SM);
                }
             }
             else
@@ -1097,11 +1169,14 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 #endif
          if(port_out->get_kind() == port_vector_o_K)
          {
-            e_port = SM->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), circuit, GetPointer<port_o>(port_out)->get_port(0)->get_typeRef());
+            e_port = SM->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT,
+                                         GetPointer<port_o>(port_out)->get_ports_size(), circuit,
+                                         GetPointer<port_o>(port_out)->get_port(0)->get_typeRef());
          }
          else
          {
-            e_port = SM->add_port(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, circuit, port_out->get_typeRef());
+            e_port =
+                SM->add_port(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, circuit, port_out->get_typeRef());
          }
          std::string port_prefix = GetPointer<port_o>(port_out)->get_id();
 
@@ -1110,7 +1185,10 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          {
             for(unsigned int p = 0; p < GetPointer<port_o>(port_out)->get_ports_size(); ++p)
             {
-               add_output_register(SM, GetPointer<port_o>(e_port)->get_port(p), circuit, reset_port, GetPointer<port_o>(port_out)->get_port(p), port_prefix + GetPointer<port_o>(port_out)->get_port(p)->get_id(), clock_port, register_library);
+               add_output_register(SM, GetPointer<port_o>(e_port)->get_port(p), circuit, reset_port,
+                                   GetPointer<port_o>(port_out)->get_port(p),
+                                   port_prefix + GetPointer<port_o>(port_out)->get_port(p)->get_id(), clock_port,
+                                   register_library);
             }
          }
          else
@@ -1127,19 +1205,23 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       HDL->hdl_gen(fu_name, circuits, false, hdl_files, aux_files);
       int PipelineDepth = -1;
 #if HAVE_FLOPOCO
-      if(n_pipe_parameters > 0 && NPF && NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) && HDL->get_flopocowrapper())
+      if(n_pipe_parameters > 0 && NPF && NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) &&
+         HDL->get_flopocowrapper())
       {
          if(is_doubled_out)
          {
-            PipelineDepth = static_cast<int>(HDL->get_flopocowrapper()->get_FUPipelineDepth(fu_base_name, prec, 2 * prec, pipe_parameters[stage_index]));
+            PipelineDepth = static_cast<int>(HDL->get_flopocowrapper()->get_FUPipelineDepth(
+                fu_base_name, prec, 2 * prec, pipe_parameters[stage_index]));
          }
          else if(is_halved_out)
          {
-            PipelineDepth = static_cast<int>(HDL->get_flopocowrapper()->get_FUPipelineDepth(fu_base_name, prec, prec / 2, pipe_parameters[stage_index]));
+            PipelineDepth = static_cast<int>(HDL->get_flopocowrapper()->get_FUPipelineDepth(
+                fu_base_name, prec, prec / 2, pipe_parameters[stage_index]));
          }
          else
          {
-            PipelineDepth = static_cast<int>(HDL->get_flopocowrapper()->get_FUPipelineDepth(fu_base_name, prec, prec, pipe_parameters[stage_index]));
+            PipelineDepth = static_cast<int>(
+                HDL->get_flopocowrapper()->get_FUPipelineDepth(fu_base_name, prec, prec, pipe_parameters[stage_index]));
          }
       }
 #endif
@@ -1151,7 +1233,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       if(not dummy_synthesis)
 #endif
       {
-         if(constPort < n_ports && is_commutative && constPort > has_first_synthesis_id && prev_area_characterization && prev_timing_characterization)
+         if(constPort < n_ports && is_commutative && constPort > has_first_synthesis_id && prev_area_characterization &&
+            prev_timing_characterization)
          {
             fu->area_m = prev_area_characterization;
          }
@@ -1180,7 +1263,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          if(not dummy_synthesis)
 #endif
          {
-            if(constPort < n_ports && is_commutative && constPort > has_first_synthesis_id && prev_area_characterization && prev_timing_characterization)
+            if(constPort < n_ports && is_commutative && constPort > has_first_synthesis_id &&
+               prev_area_characterization && prev_timing_characterization)
             {
                synthesis_results = prev_timing_characterization;
             }
@@ -1255,7 +1339,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       if(not dummy_synthesis)
 #endif
       {
-         if(constPort < n_ports && is_commutative && constPort == has_first_synthesis_id && flow->get_used_resources() && flow->get_timing_results())
+         if(constPort < n_ports && is_commutative && constPort == has_first_synthesis_id &&
+            flow->get_used_resources() && flow->get_timing_results())
          {
             prev_area_characterization = flow->get_used_resources();
             prev_timing_characterization = flow->get_timing_results();

@@ -32,7 +32,8 @@
  */
 /**
  * @file raw_writer.cpp
- * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the raw format.
+ * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the raw
+ * format.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
@@ -184,7 +185,8 @@ void raw_writer::operator()(const WeightedNode* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
-   /// TODO: these fields should be printed by this method. At the moment it is not possible because of ordering of fields produced by gcc
+   /// TODO: these fields should be printed by this method. At the moment it is not possible because of ordering of
+   /// fields produced by gcc
    // WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT), obj->recursive_weight);
    // WRITE_NFIELD(os, STOK(TOK_SIZE_WEIGHT), obj->instruction_size);
 }
@@ -260,8 +262,10 @@ void raw_writer::operator()(const expr_node* obj, unsigned int& mask)
    obj->srcp::visit(this);
 #if HAVE_CODE_ESTIMATION_BUILT
    obj->weight_information->recursive_weight.find(driving_component);
-   if(obj->weight_information->recursive_weight.find(driving_component) != obj->weight_information->recursive_weight.end())
-      WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT), obj->weight_information->recursive_weight.find(driving_component)->second);
+   if(obj->weight_information->recursive_weight.find(driving_component) !=
+      obj->weight_information->recursive_weight.end())
+      WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT),
+                   obj->weight_information->recursive_weight.find(driving_component)->second);
    if(obj->weight_information->instruction_size)
       WRITE_NFIELD(os, STOK(TOK_SIZE_WEIGHT), obj->weight_information->instruction_size);
 #endif
@@ -292,8 +296,10 @@ void raw_writer::operator()(const gimple_node* obj, unsigned int& mask)
    }
    obj->srcp::visit(this);
 #if HAVE_CODE_ESTIMATION_BUILT
-   if(obj->weight_information->recursive_weight.find(driving_component) != obj->weight_information->recursive_weight.end())
-      WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT), obj->weight_information->recursive_weight.find(driving_component)->second);
+   if(obj->weight_information->recursive_weight.find(driving_component) !=
+      obj->weight_information->recursive_weight.end())
+      WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT),
+                   obj->weight_information->recursive_weight.find(driving_component)->second);
    if(obj->weight_information->instruction_size)
       WRITE_NFIELD(os, STOK(TOK_SIZE_WEIGHT), obj->weight_information->instruction_size);
 #endif

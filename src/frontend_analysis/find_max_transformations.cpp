@@ -32,7 +32,8 @@
  */
 /**
  * @file find_max_transformations.cpp
- * @brief Analysis step to find transformation which breaks synthesis flow by launching bambu with different values of --max-transformations
+ * @brief Analysis step to find transformation which breaks synthesis flow by launching bambu with different values of
+ * --max-transformations
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
@@ -46,15 +47,19 @@
 #include "string_manipulation.hpp"         // for STR GET_CLASS
 #include <boost/filesystem/operations.hpp> // for create_directory, exists
 
-FindMaxTransformations::FindMaxTransformations(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::FIND_MAX_TRANSFORMATIONS, _design_flow_manager, _parameters)
+FindMaxTransformations::FindMaxTransformations(const application_managerRef _AppM,
+                                               const DesignFlowManagerConstRef _design_flow_manager,
+                                               const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::FIND_MAX_TRANSFORMATIONS, _design_flow_manager,
+                                  _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 FindMaxTransformations::~FindMaxTransformations() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> FindMaxTransformations::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+FindMaxTransformations::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {
    return CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>();
 }
@@ -74,7 +79,8 @@ const std::string FindMaxTransformations::ComputeArgString(const size_t max_tran
       else
       {
          arg_string += " ";
-         if(arg.find("--max-transformations") == std::string::npos and arg.find("--find-max-transformations") == std::string::npos)
+         if(arg.find("--max-transformations") == std::string::npos and
+            arg.find("--find-max-transformations") == std::string::npos)
          {
             arg_string += arg;
          }
@@ -86,7 +92,8 @@ const std::string FindMaxTransformations::ComputeArgString(const size_t max_tran
 
 bool FindMaxTransformations::ExecuteBambu(const size_t max_transformations) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing with max transformations " + STR(max_transformations));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Executing with max transformations " + STR(max_transformations));
    const auto arg_string = ComputeArgString(max_transformations);
    const auto temp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
    const auto new_directory = temp_directory + "/" + STR(max_transformations);
@@ -95,7 +102,8 @@ bool FindMaxTransformations::ExecuteBambu(const size_t max_transformations) cons
       boost::filesystem::remove_all(new_directory);
    }
    boost::filesystem::create_directory(new_directory);
-   const auto ret = PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, new_directory + "/bambu_execution_output");
+   const auto ret =
+       PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, new_directory + "/bambu_execution_output");
    boost::filesystem::remove_all(new_directory);
    if(IsError(ret))
    {
@@ -143,7 +151,8 @@ DesignFlowStep_Status FindMaxTransformations::Exec()
    }
    while(wrong_cmt - correct_cmt > 1)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Current range is [" + STR(correct_cmt) + ":" + STR(wrong_cmt) + "]");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "---Current range is [" + STR(correct_cmt) + ":" + STR(wrong_cmt) + "]");
       size_t middle_cmt = (wrong_cmt + correct_cmt) / 2;
       const auto middle_execution = ExecuteBambu(middle_cmt);
       if(middle_execution)

@@ -71,15 +71,19 @@
 
 #include <set>
 
-BuildVirtualPhi::BuildVirtualPhi(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, BUILD_VIRTUAL_PHI, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager())
+BuildVirtualPhi::BuildVirtualPhi(const application_managerRef _AppM, unsigned int _function_id,
+                                 const DesignFlowManagerConstRef _design_flow_manager,
+                                 const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, BUILD_VIRTUAL_PHI, _design_flow_manager, _parameters),
+      TM(_AppM->get_tree_manager())
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 BuildVirtualPhi::~BuildVirtualPhi() = default;
 
-void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship,
+                                           const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
    {
@@ -93,9 +97,11 @@ void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship, cons
       }
       case INVALIDATION_RELATIONSHIP:
       {
-         if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS && AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline())
+         if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS &&
+            AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline())
          {
-            const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id);
+            const auto step_signature =
+                FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id);
             const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
             THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
             const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
@@ -110,7 +116,8 @@ void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship, cons
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -162,9 +169,11 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    /// Computing definitions and overwriting
    VertexIterator basic_block, basic_block_end;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing definitions");
-   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph); basic_block != basic_block_end; basic_block++)
+   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph); basic_block != basic_block_end;
+       basic_block++)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(basic_block_graph->CGetBBNodeInfo(*basic_block)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Analyzing BB" + STR(basic_block_graph->CGetBBNodeInfo(*basic_block)->block->number));
       const auto block_info = basic_block_graph->CGetBBNodeInfo(*basic_block)->block;
       for(const auto& stmt : block_info->CGetStmtList())
       {
@@ -172,7 +181,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
          if(gn->vdef)
          {
-            THROW_ASSERT(virtual_ssa_definitions.count(gn->vdef) == 0, gn->vdef->ToString() + " is defined also in " + STR(virtual_ssa_definitions.at(gn->vdef)));
+            THROW_ASSERT(virtual_ssa_definitions.count(gn->vdef) == 0,
+                         gn->vdef->ToString() + " is defined also in " + STR(virtual_ssa_definitions.at(gn->vdef)));
             virtual_ssa_definitions[gn->vdef] = stmt;
          }
          const auto& cur_bb = bb_index_map.at(gn->bb_index);
@@ -199,10 +209,12 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                /// here we may have a Use-Def or a Def-Use. They are both perfectly fine.
                ++vu_it;
             }
-            else if(!function_behavior->CheckBBReachability(use_bb, cur_bb) && !function_behavior->CheckBBReachability(cur_bb, use_bb))
+            else if(!function_behavior->CheckBBReachability(use_bb, cur_bb) &&
+                    !function_behavior->CheckBBReachability(cur_bb, use_bb))
             {
                sn->RemoveUse(stmt);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(*vu_it) + " from vuses of unreachable stmt: " + STR(sn));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Removing " + STR(*vu_it) + " from vuses of unreachable stmt: " + STR(sn));
                vu_it = gn->vuses.erase(vu_it);
             }
             else
@@ -212,7 +224,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed stmt " + STR(stmt));
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(basic_block_graph->CGetBBNodeInfo(*basic_block)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Analyzed BB" + STR(basic_block_graph->CGetBBNodeInfo(*basic_block)->block->number));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed definitions");
 
@@ -220,9 +233,11 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    /// Check uses
    for(const auto& virtual_ssa_definition : virtual_ssa_definitions)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering ssa " + virtual_ssa_definition.first->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Considering ssa " + virtual_ssa_definition.first->ToString());
       const auto sn = GetPointerS<ssa_name>(GET_NODE(virtual_ssa_definition.first));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Defined in " + virtual_ssa_definition.second->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Defined in " + virtual_ssa_definition.second->ToString());
       const auto definition = GetPointerS<const gimple_node>(GET_CONST_NODE(virtual_ssa_definition.second));
       THROW_ASSERT(definition, STR(sn->CGetDefStmt()));
       const auto definition_bb_index = definition->bb_index;
@@ -274,9 +289,13 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             {
                const auto other_use_bb_index = GetPointerS<const gimple_node>(GET_NODE(other_use_stmt.first))->bb_index;
                const auto other_use_bb = bb_index_map.at(other_use_bb_index);
-               if(other_use_stmt.first->index != use_stmt.first->index && function_behavior->CheckBBReachability(other_use_bb, use_bb) && other_use_stmt.first->index != virtual_ssa_definition.second->index)
+               if(other_use_stmt.first->index != use_stmt.first->index &&
+                  function_behavior->CheckBBReachability(other_use_bb, use_bb) &&
+                  other_use_stmt.first->index != virtual_ssa_definition.second->index)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considered other use: " + STR(other_use_stmt.first->index) + " " + STR(other_use_stmt.first));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Considered other use: " + STR(other_use_stmt.first->index) + " " +
+                                     STR(other_use_stmt.first));
                   const auto other_gn = GetPointerS<const gimple_node>(GET_NODE(other_use_stmt.first));
                   if(other_gn->vdef && gn->vuses.find(other_gn->vdef) != gn->vuses.end())
                   {
@@ -306,7 +325,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             continue;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition and use are in different loops");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current loop is " + STR(loop_id) + " (depth is " + STR(depth) + ") - Use loop is " + STR(use_loop_id) + " (depth " + STR(use_depth) + ")");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Current loop is " + STR(loop_id) + " (depth is " + STR(depth) + ") - Use loop is " +
+                            STR(use_loop_id) + " (depth " + STR(use_depth) + ")");
          /// Use is in a more nested loop
          while(use_depth > depth)
          {
@@ -329,7 +350,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       }
       for(const auto& transitive_use : transitive_uses)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(virtual_ssa_definition.first) + " from vuses of " + STR(transitive_use.first));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Removing " + STR(virtual_ssa_definition.first) + " from vuses of " +
+                            STR(transitive_use.first));
          const auto gn = GetPointerS<gimple_node>(GET_NODE(transitive_use.first));
          gn->vuses.erase(virtual_ssa_definition.first);
          sn->RemoveUse(transitive_use.first);
@@ -353,14 +376,16 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          {
             phi_headers.insert(cur_pair.second);
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
          current_loop = current_loop->Parent();
       }
       for(const auto& cur_pair : current_loop->get_sp_back_edges())
       {
          phi_headers.insert(cur_pair.second);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
 
       /// Build the gimple nop where volatile ssa is defined
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> nop_IR_schema;
@@ -369,7 +394,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       nop_IR_schema[TOK(TOK_SCPE)] = STR(function_id);
       TM->create_tree_node(nop_id, gimple_nop_K, nop_IR_schema);
 
-      const auto volatile_sn = tree_man->create_ssa_name(sn->var, tree_helper::CGetType(virtual_ssa_definition.first), nullptr, nullptr, true, true);
+      const auto volatile_sn = tree_man->create_ssa_name(sn->var, tree_helper::CGetType(virtual_ssa_definition.first),
+                                                         nullptr, nullptr, true, true);
       GetPointerS<ssa_name>(GET_NODE(volatile_sn))->SetDefStmt(TM->GetTreeReindex(nop_id));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created volatile ssa " + STR(volatile_sn));
 
@@ -386,7 +412,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       {
          reaching_defs[virtual_ssa_definition.first][basic_block_graph->CGetBBGraphInfo()->entry_vertex] = volatile_sn;
          OutEdgeIterator oe, oe_end;
-         for(boost::tie(oe, oe_end) = boost::out_edges(basic_block_graph->CGetBBGraphInfo()->entry_vertex, *basic_block_graph); oe != oe_end; oe++)
+         for(boost::tie(oe, oe_end) =
+                 boost::out_edges(basic_block_graph->CGetBBGraphInfo()->entry_vertex, *basic_block_graph);
+             oe != oe_end; oe++)
          {
             const auto target = boost::target(*oe, *basic_block_graph);
             if(basic_block_graph->CGetBBGraphInfo()->exit_vertex != target)
@@ -404,7 +432,10 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             {
                if(function_behavior->CheckBBFeedbackReachability(current, use_bb))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(basic_block_graph->CGetBBNodeInfo(use_bb)->block->number) + " can be reached from BB" + STR(basic_block_graph->CGetBBNodeInfo(current)->block->number));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---BB" + STR(basic_block_graph->CGetBBNodeInfo(use_bb)->block->number) +
+                                     " can be reached from BB" +
+                                     STR(basic_block_graph->CGetBBNodeInfo(current)->block->number));
                   reachable = true;
                   break;
                }
@@ -421,7 +452,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          }
          for(const auto removable : to_be_removed)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(basic_block_graph->CGetBBNodeInfo(removable)->block->number));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Removing BB" + STR(basic_block_graph->CGetBBNodeInfo(removable)->block->number));
             loop_basic_blocks.erase(removable);
          }
       }
@@ -451,7 +483,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       {
          const auto current = *(to_be_processed.begin());
          to_be_processed.erase(current);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking BB" + STR(basic_block_graph->CGetBBNodeInfo(current)->block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Checking BB" + STR(basic_block_graph->CGetBBNodeInfo(current)->block->number));
 
          InEdgeIterator ie, ie_end;
          if(boost::in_degree(current, *basic_block_graph) == 1)
@@ -460,7 +493,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             boost::tie(ie, ie_end) = boost::in_edges(current, *basic_block_graph);
             const auto source = boost::source(*ie, *basic_block_graph);
             THROW_ASSERT(reaching_defs.at(virtual_ssa_definition.first).count(source), "unexpected condition");
-            reaching_defs[virtual_ssa_definition.first][current] = reaching_defs.at(virtual_ssa_definition.first).at(source);
+            reaching_defs[virtual_ssa_definition.first][current] =
+                reaching_defs.at(virtual_ssa_definition.first).at(source);
          }
          else
          {
@@ -485,15 +519,19 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                      const auto current_loop_id = basic_block_graph->CGetBBNodeInfo(current)->loop_id;
                      if(!loops->CGetLoop(current_loop_id)->IsReducible())
                      {
-                        /// If loop is irreducible, than we have to consider the definition coming from sp_back_edge since it can be different: different definitions can enter in the loop in the different enter points
+                        /// If loop is irreducible, than we have to consider the definition coming from sp_back_edge
+                        /// since it can be different: different definitions can enter in the loop in the different
+                        /// enter points
                         build_phi = true;
                      }
                   }
                }
                else
                {
-                  THROW_ASSERT(reaching_defs.find(virtual_ssa_definition.first) != reaching_defs.end() && reaching_defs.find(virtual_ssa_definition.first)->second.count(source),
-                               "Definition coming from BB" + STR(basic_block_graph->CGetBBNodeInfo(source)->block->number));
+                  THROW_ASSERT(reaching_defs.find(virtual_ssa_definition.first) != reaching_defs.end() &&
+                                   reaching_defs.find(virtual_ssa_definition.first)->second.count(source),
+                               "Definition coming from BB" +
+                                   STR(basic_block_graph->CGetBBNodeInfo(source)->block->number));
                   local_reaching_defs.insert(reaching_defs.at(virtual_ssa_definition.first).at(source));
                }
             }
@@ -513,12 +551,16 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                   {
                      const auto source = boost::source(*ie, *basic_block_graph);
                      const auto& vssa = reaching_defs.at(virtual_ssa_definition.first).at(source);
-                     def_edges.push_back(gimple_phi::DefEdge(vssa, basic_block_graph->CGetBBNodeInfo(source)->block->number));
+                     def_edges.push_back(
+                         gimple_phi::DefEdge(vssa, basic_block_graph->CGetBBNodeInfo(source)->block->number));
                   }
                }
                tree_nodeRef phi_res;
-               const auto phi_stmt = tree_man->create_phi_node(phi_res, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
-               THROW_ASSERT(tree_helper::CGetType(phi_res)->index == tree_helper::CGetType(virtual_ssa_definition.first)->index, "");
+               const auto phi_stmt = tree_man->create_phi_node(
+                   phi_res, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
+               THROW_ASSERT(tree_helper::CGetType(phi_res)->index ==
+                                tree_helper::CGetType(virtual_ssa_definition.first)->index,
+                            "");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa " + phi_res->ToString());
                GetPointerS<gimple_phi>(GET_NODE(phi_stmt))->SetSSAUsesComputed();
                basic_block_graph->GetBBNodeInfo(current)->block->AddPhi(phi_stmt);
@@ -537,7 +579,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          /// If this is the basic block definition or contains a use
          if(definition_bb == current || use_bbs.count(current))
          {
-            bool before_definition = definition_bb == current || function_behavior->CheckBBReachability(current, definition_bb);
+            bool before_definition =
+                definition_bb == current || function_behavior->CheckBBReachability(current, definition_bb);
             for(const auto& stmt : basic_block_graph->CGetBBNodeInfo(current)->block->CGetStmtList())
             {
                const auto& reaching_def = reaching_defs.at(virtual_ssa_definition.first).at(current);
@@ -545,8 +588,11 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                {
                   if(before_definition)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding for anti dependence " + STR(reaching_def) + " in " + STR(stmt));
-                     THROW_ASSERT(!GetPointerS<ssa_name>(GET_NODE(reaching_def))->volatile_flag || !function_behavior->CheckBBFeedbackReachability(definition_bb, current), "");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Adding for anti dependence " + STR(reaching_def) + " in " + STR(stmt));
+                     THROW_ASSERT(!GetPointerS<ssa_name>(GET_NODE(reaching_def))->volatile_flag ||
+                                      !function_behavior->CheckBBFeedbackReachability(definition_bb, current),
+                                  "");
                      if(GetPointerS<gimple_node>(GET_NODE(stmt))->AddVuse(reaching_def))
                      {
                         GetPointerS<ssa_name>(GET_NODE(reaching_def))->AddUseStmt(stmt);
@@ -554,8 +600,12 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(virtual_ssa_definition.first) + " with " + STR(reaching_def) + " in " + STR(stmt));
-                     THROW_ASSERT(!GetPointerS<ssa_name>(GET_NODE(reaching_def))->volatile_flag || !function_behavior->CheckBBFeedbackReachability(definition_bb, current), "");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Replacing " + STR(virtual_ssa_definition.first) + " with " + STR(reaching_def) +
+                                        " in " + STR(stmt));
+                     THROW_ASSERT(!GetPointerS<ssa_name>(GET_NODE(reaching_def))->volatile_flag ||
+                                      !function_behavior->CheckBBFeedbackReachability(definition_bb, current),
+                                  "");
                      TM->ReplaceTreeNode(stmt, virtual_ssa_definition.first, reaching_def);
                   }
                }
@@ -577,7 +627,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reaching definition at the exit is " + STR(reaching_defs.at(virtual_ssa_definition.first).at(current)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Reaching definition at the exit is " +
+                            STR(reaching_defs.at(virtual_ssa_definition.first).at(current)));
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking successors");
          OutEdgeIterator oe, oe_end;
@@ -586,24 +638,35 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             const auto target = boost::target(*oe, *basic_block_graph);
             if(loop_basic_blocks.count(target))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering BB" + STR(basic_block_graph->CGetBBNodeInfo(target)->block->number));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Considering BB" + STR(basic_block_graph->CGetBBNodeInfo(target)->block->number));
                if((basic_block_graph->GetSelector(*oe) & FB_CFG_SELECTOR) != 0)
                {
                   if(phi_headers.count(target))
                   {
-                     THROW_ASSERT(added_phis.find(virtual_ssa_definition.first) != added_phis.end() && added_phis.find(virtual_ssa_definition.first)->second.count(target),
-                                  "Phi for " + STR(virtual_ssa_definition.first) + " was not created in BB" + STR(basic_block_graph->CGetBBNodeInfo(target)->block->number));
+                     THROW_ASSERT(added_phis.find(virtual_ssa_definition.first) != added_phis.end() &&
+                                      added_phis.find(virtual_ssa_definition.first)->second.count(target),
+                                  "Phi for " + STR(virtual_ssa_definition.first) + " was not created in BB" +
+                                      STR(basic_block_graph->CGetBBNodeInfo(target)->block->number));
                      GetPointerS<gimple_phi>(GET_NODE(added_phis.at(virtual_ssa_definition.first).at(target)))
-                         ->AddDefEdge(TM, gimple_phi::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(current), basic_block_graph->CGetBBNodeInfo(current)->block->number));
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updated phi " + STR(added_phis.at(virtual_ssa_definition.first).at(target)));
+                         ->AddDefEdge(TM,
+                                      gimple_phi::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(current),
+                                                          basic_block_graph->CGetBBNodeInfo(current)->block->number));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Updated phi " + STR(added_phis.at(virtual_ssa_definition.first).at(target)));
                   }
                   else if(!loops->CGetLoop(basic_block_graph->CGetBBNodeInfo(target)->loop_id)->IsReducible())
                   {
-                     THROW_ASSERT(added_phis.find(virtual_ssa_definition.first) != added_phis.end() && added_phis.find(virtual_ssa_definition.first)->second.count(target),
-                                  "Phi for " + STR(virtual_ssa_definition.first) + " was not created in BB" + STR(basic_block_graph->CGetBBNodeInfo(target)->block->number));
+                     THROW_ASSERT(added_phis.find(virtual_ssa_definition.first) != added_phis.end() &&
+                                      added_phis.find(virtual_ssa_definition.first)->second.count(target),
+                                  "Phi for " + STR(virtual_ssa_definition.first) + " was not created in BB" +
+                                      STR(basic_block_graph->CGetBBNodeInfo(target)->block->number));
                      GetPointerS<gimple_phi>(GET_NODE(added_phis.at(virtual_ssa_definition.first).at(target)))
-                         ->AddDefEdge(TM, gimple_phi::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(current), basic_block_graph->CGetBBNodeInfo(current)->block->number));
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updated phi " + STR(added_phis.at(virtual_ssa_definition.first).at(target)));
+                         ->AddDefEdge(TM,
+                                      gimple_phi::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(current),
+                                                          basic_block_graph->CGetBBNodeInfo(current)->block->number));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Updated phi " + STR(added_phis.at(virtual_ssa_definition.first).at(target)));
                   }
                   else
                   {
@@ -614,18 +677,25 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                         if((basic_block_graph->GetSelector(*ie) & FB_CFG_SELECTOR) == 0)
                         {
                            const auto source = boost::source(*ie, *basic_block_graph);
-                           THROW_ASSERT(reaching_defs.find(virtual_ssa_definition.first) != reaching_defs.end() && reaching_defs.find(virtual_ssa_definition.first)->second.count(source),
-                                        "Definition coming from BB" + STR(basic_block_graph->CGetBBNodeInfo(source)->block->number));
+                           THROW_ASSERT(reaching_defs.find(virtual_ssa_definition.first) != reaching_defs.end() &&
+                                            reaching_defs.find(virtual_ssa_definition.first)->second.count(source),
+                                        "Definition coming from BB" +
+                                            STR(basic_block_graph->CGetBBNodeInfo(source)->block->number));
                            local_reaching_defs.insert(reaching_defs.at(virtual_ssa_definition.first).at(source));
                         }
                      }
                      if(local_reaching_defs.size() > 1)
                      {
-                        THROW_ASSERT(added_phis.find(virtual_ssa_definition.first) != added_phis.end() && added_phis.find(virtual_ssa_definition.first)->second.count(target),
-                                     "Phi for " + STR(virtual_ssa_definition.first) + " was not created in BB" + STR(basic_block_graph->CGetBBNodeInfo(target)->block->number));
+                        THROW_ASSERT(added_phis.find(virtual_ssa_definition.first) != added_phis.end() &&
+                                         added_phis.find(virtual_ssa_definition.first)->second.count(target),
+                                     "Phi for " + STR(virtual_ssa_definition.first) + " was not created in BB" +
+                                         STR(basic_block_graph->CGetBBNodeInfo(target)->block->number));
                         GetPointerS<gimple_phi>(GET_NODE(added_phis.at(virtual_ssa_definition.first).at(target)))
-                            ->AddDefEdge(TM, gimple_phi::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(current), basic_block_graph->CGetBBNodeInfo(current)->block->number));
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updated phi " + STR(added_phis.at(virtual_ssa_definition.first).at(target)));
+                            ->AddDefEdge(
+                                TM, gimple_phi::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(current),
+                                                        basic_block_graph->CGetBBNodeInfo(current)->block->number));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Updated phi " + STR(added_phis.at(virtual_ssa_definition.first).at(target)));
                      }
                   }
                }
@@ -636,7 +706,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked successors");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked BB" + STR(basic_block_graph->CGetBBNodeInfo(current)->block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Checked BB" + STR(basic_block_graph->CGetBBNodeInfo(current)->block->number));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered ssa " + STR(virtual_ssa_definition.first));
    }
@@ -653,13 +724,13 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          const auto& bb = basic_block_graph->GetBBNodeInfo(bbv_phi.first)->block;
          const auto phi_stmt = GetPointerS<gimple_phi>(GET_NODE(bbv_phi.second));
          const auto vssa = GetPointerS<ssa_name>(GET_NODE(phi_stmt->res));
-         if(vssa->CGetNumberUses() == 0 || (vssa->CGetNumberUses() == 1 && GET_INDEX_NODE(vssa->CGetUseStmts().begin()->first) == phi_stmt->index))
+         if(vssa->CGetNumberUses() == 0 ||
+            (vssa->CGetNumberUses() == 1 && GET_INDEX_NODE(vssa->CGetUseStmts().begin()->first) == phi_stmt->index))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing just created dead phi from BB" + STR(bb->number) + " - (" + GetPointerS<ssa_name>(GET_NODE(ssa_bbv.first))->ToString() + ") " + phi_stmt->ToString());
-            if(vssa->CGetNumberUses() == 1)
-            {
-               vssa->RemoveUse(bbv_phi.second);
-            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Removing just created dead phi from BB" + STR(bb->number) + " - (" +
+                               GetPointerS<ssa_name>(GET_NODE(ssa_bbv.first))->ToString() + ") " +
+                               phi_stmt->ToString());
             bb->RemovePhi(bbv_phi.second);
          }
       }
@@ -667,7 +738,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 #ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
-      for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph); basic_block != basic_block_end; basic_block++)
+      for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph);
+          basic_block != basic_block_end; basic_block++)
       {
          const auto& block = basic_block_graph->CGetBBNodeInfo(*basic_block)->block;
          for(const auto& phi : block->CGetPhiList())
@@ -676,7 +748,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             if(gp->virtual_flag)
             {
                THROW_ASSERT(gp->CGetDefEdgesList().size() == boost::in_degree(*basic_block, *basic_block_graph),
-                            STR(phi) + " of BB" + STR(block->number) + " has wrong number of inputs: " + STR(gp->CGetDefEdgesList().size()) + " vs " + STR(boost::in_degree(*basic_block, *basic_block_graph)));
+                            STR(phi) + " of BB" + STR(block->number) +
+                                " has wrong number of inputs: " + STR(gp->CGetDefEdgesList().size()) + " vs " +
+                                STR(boost::in_degree(*basic_block, *basic_block_graph)));
             }
          }
       }

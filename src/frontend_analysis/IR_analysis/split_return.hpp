@@ -76,7 +76,8 @@ class SplitReturn : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -86,7 +87,8 @@ class SplitReturn : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   SplitReturn(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   SplitReturn(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id,
+               const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

@@ -70,27 +70,36 @@ class WB4_interface : public minimal_interface
 
    void build_WB4_bus_interface(structural_managerRef SM);
 
-   void connect_with_signal_name(structural_managerRef SM, structural_objectRef portA, structural_objectRef portB, std::string signalName);
+   void connect_with_signal_name(structural_managerRef SM, structural_objectRef portA, structural_objectRef portB,
+                                 std::string signalName);
 
-   void connect_with_signal_name(structural_managerRef SM, structural_objectRef APort, structural_objectRef B, std::string Bsignal, const std::string& signalName);
+   void connect_with_signal_name(structural_managerRef SM, structural_objectRef APort, structural_objectRef B,
+                                 std::string Bsignal, const std::string& signalName);
 
-   void connect_with_signal_name(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal, const std::string& signalName);
+   void connect_with_signal_name(structural_managerRef SM, structural_objectRef A, std::string Asignal,
+                                 structural_objectRef B, std::string Bsignal, const std::string& signalName);
 
    void connect_with_signal(structural_managerRef SM, structural_objectRef portA, structural_objectRef portB);
 
-   void connect_with_signal(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal);
+   void connect_with_signal(structural_managerRef SM, structural_objectRef A, std::string Asignal,
+                            structural_objectRef B, std::string Bsignal);
 
-   void connect_with_signal(structural_managerRef SM, structural_objectRef APort, structural_objectRef B, std::string Bsignal);
+   void connect_with_signal(structural_managerRef SM, structural_objectRef APort, structural_objectRef B,
+                            std::string Bsignal);
 
-   void connect_with_signal(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef portB);
+   void connect_with_signal(structural_managerRef SM, structural_objectRef A, std::string Asignal,
+                            structural_objectRef portB);
 
-   void build_WB4_complete_logic(structural_managerRef SM, structural_objectRef wrappedObj, structural_objectRef interfaceObj);
+   void build_WB4_complete_logic(structural_managerRef SM, structural_objectRef wrappedObj,
+                                 structural_objectRef interfaceObj);
 
  public:
    /**
     * Constructor
     */
-   WB4_interface(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::WB4_INTERFACE_GENERATION);
+   WB4_interface(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                 const DesignFlowManagerConstRef design_flow_manager,
+                 const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::WB4_INTERFACE_GENERATION);
 
    /**
     * Destructor

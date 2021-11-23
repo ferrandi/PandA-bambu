@@ -58,7 +58,8 @@ functions::~functions() = default;
 void functions::map_shared_function(unsigned int funID_scope, const std::string& fun)
 {
    shared_functions[funID_scope].insert(fun);
-   THROW_ASSERT(proxied_functions.find(fun) == proxied_functions.end(), "function already mapped in a different scope: " + fun + "->" + STR(proxied_functions.at(fun)));
+   THROW_ASSERT(proxied_functions.find(fun) == proxied_functions.end(),
+                "function already mapped in a different scope: " + fun + "->" + STR(proxied_functions.at(fun)));
    proxied_functions[fun] = funID_scope;
 }
 
@@ -74,7 +75,8 @@ bool functions::has_shared_functions(unsigned int funID_scope) const
 
 bool functions::is_a_shared_function(unsigned int funID_scope, const std::string& fun) const
 {
-   return (has_shared_functions(funID_scope) && shared_functions.at(funID_scope).find(fun) != shared_functions.at(funID_scope).end());
+   return (has_shared_functions(funID_scope) &&
+           shared_functions.at(funID_scope).find(fun) != shared_functions.at(funID_scope).end());
 }
 
 void functions::add_shared_function_proxy(unsigned int funID_scope, const std::string& fun)
@@ -95,7 +97,8 @@ bool functions::has_proxied_shared_functions(unsigned int funID_scope) const
 
 bool functions::is_a_proxied_shared_function(unsigned int funID_scope, const std::string& fun) const
 {
-   return (has_proxied_shared_functions(funID_scope) && shared_function_proxy.at(funID_scope).find(fun) != shared_function_proxy.at(funID_scope).end());
+   return (has_proxied_shared_functions(funID_scope) &&
+           shared_function_proxy.at(funID_scope).find(fun) != shared_function_proxy.at(funID_scope).end());
 }
 
 bool functions::is_a_proxied_function(const std::string& fun) const
@@ -111,9 +114,11 @@ unsigned int functions::get_proxy_mapping(const std::string& fun) const
 
 std::string functions::get_function_name_cleaned(const std::string& original_function_name)
 {
-   if(original_function_name.find(STR_CST_interface_parameter_keyword) != std::string::npos && boost::algorithm::ends_with(original_function_name, "_array"))
+   if(original_function_name.find(STR_CST_interface_parameter_keyword) != std::string::npos &&
+      boost::algorithm::ends_with(original_function_name, "_array"))
    {
-      return original_function_name.substr(0, original_function_name.find(STR_CST_interface_parameter_keyword) + std::string(STR_CST_interface_parameter_keyword).length());
+      return original_function_name.substr(0, original_function_name.find(STR_CST_interface_parameter_keyword) +
+                                                  std::string(STR_CST_interface_parameter_keyword).length());
    }
    else
    {

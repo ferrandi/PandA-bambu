@@ -65,7 +65,10 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_manager.hpp"
 
-op_feedback_edges_computation::op_feedback_edges_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+op_feedback_edges_computation::op_feedback_edges_computation(const ParameterConstRef _parameters,
+                                                             const application_managerRef _AppM,
+                                                             unsigned int _function_id,
+                                                             const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, OP_FEEDBACK_EDGES_IDENTIFICATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -73,7 +76,9 @@ op_feedback_edges_computation::op_feedback_edges_computation(const ParameterCons
 
 op_feedback_edges_computation::~op_feedback_edges_computation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> op_feedback_edges_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+op_feedback_edges_computation::ComputeFrontendRelationships(
+    const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -124,12 +129,15 @@ DesignFlowStep_Status op_feedback_edges_computation::InternalExec()
          const auto bb_node_info = fbb->CGetBBNodeInfo(to_bb);
          vertex label_vertex = bb_node_info->statements_list.front();
          const auto bb_node_info_from = fbb->CGetBBNodeInfo(from_bb);
-         THROW_ASSERT(bb_node_info_from->statements_list.size(), "Empty block " + boost::lexical_cast<std::string>(bb_node_info_from->block->number));
+         THROW_ASSERT(bb_node_info_from->statements_list.size(),
+                      "Empty block " + boost::lexical_cast<std::string>(bb_node_info_from->block->number));
          vertex goto_vertex = bb_node_info_from->statements_list.back();
          /// add the feedback control dependence and the feedback control flow graph edges
          function_behavior->ogc->RemoveEdge(goto_vertex, label_vertex, CFG_SELECTOR);
          function_behavior->ogc->AddEdge(goto_vertex, label_vertex, FB_CFG_SELECTOR);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Transforming " + STR(fbb->CGetBBNodeInfo(from_bb)->block->number) + "->" + STR(fbb->CGetBBNodeInfo(to_bb)->block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Transforming " + STR(fbb->CGetBBNodeInfo(from_bb)->block->number) + "->" +
+                            STR(fbb->CGetBBNodeInfo(to_bb)->block->number));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed loop " + STR((*loop)->GetId()));
    }

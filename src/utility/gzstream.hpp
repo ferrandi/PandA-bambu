@@ -145,7 +145,8 @@ class igzstream : public std::istream, public gzstreambase
    inline igzstream() : std::istream(&buf)
    {
    }
-   inline igzstream(const char* name, std::ios_base::openmode _open_mode = std::ios::in) : std::istream(&buf), gzstreambase(name, _open_mode)
+   inline igzstream(const char* name, std::ios_base::openmode _open_mode = std::ios::in)
+       : std::istream(&buf), gzstreambase(name, _open_mode)
    {
    }
    inline gzstreambuf* rdbuf()
@@ -164,7 +165,8 @@ class ogzstream : public std::ostream, public gzstreambase
    inline ogzstream() : std::ostream(&buf)
    {
    }
-   inline ogzstream(const char* name, std::ios_base::openmode mode = std::ios::out) : std::ostream(&buf), gzstreambase(name, mode)
+   inline ogzstream(const char* name, std::ios_base::openmode mode = std::ios::out)
+       : std::ostream(&buf), gzstreambase(name, mode)
    {
    }
    inline gzstreambuf* rdbuf()
@@ -241,7 +243,8 @@ inline int gzstreambuf::underflow()
    {
       n_putback = 4;
    }
-   memcpy(buffer + (4 - static_cast<size_t>(n_putback)), gptr() - static_cast<size_t>(n_putback), static_cast<size_t>(n_putback));
+   memcpy(buffer + (4 - static_cast<size_t>(n_putback)), gptr() - static_cast<size_t>(n_putback),
+          static_cast<size_t>(n_putback));
 
    int num = gzread(file, buffer + 4, bufferSize - 4);
    if(num <= 0)

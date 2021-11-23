@@ -53,7 +53,8 @@ class UnComparisonLowering : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -63,7 +64,8 @@ class UnComparisonLowering : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param Param is the set of the parameters
     */
-   UnComparisonLowering(const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   UnComparisonLowering(const application_managerRef AppM, unsigned int _function_id,
+                        const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

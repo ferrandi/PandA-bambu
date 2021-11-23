@@ -66,14 +66,18 @@
 /// STL include
 #include "custom_set.hpp"
 
-BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, BAMBU_FRONTEND_FLOW, _design_flow_manager, _parameters)
+BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM,
+                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                     const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, BAMBU_FRONTEND_FLOW, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 BambuFrontendFlow::~BambuFrontendFlow() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -108,7 +112,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::make_pair(FUNCTION_CALL_OPT, WHOLE_APPLICATION));
          }
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, WHOLE_APPLICATION));
-         if(static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VHDL)
+         if(static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) ==
+            HDLWriter_Language::VHDL)
          {
             relationships.insert(std::make_pair(HDL_FUNCTION_DECL_FIX, WHOLE_APPLICATION));
          }
@@ -142,7 +147,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             relationships.insert(std::make_pair(SPECULATION_EDGES_COMPUTATION, WHOLE_APPLICATION));
          }
-         if(parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR)
+         if(parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) ==
+            HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR)
          {
             // Silvia: this is the transformation to disable for testing
             // relationships.insert(std::make_pair(SPLIT_PHINODES, WHOLE_APPLICATION));
@@ -178,7 +184,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
 #endif
 #if HAVE_PRAGMA_BUILT
-         if((parameters->isOption(OPT_parse_pragma) && parameters->getOption<bool>(OPT_parse_pragma)) || parameters->getOption<int>(OPT_gcc_openmp_simd))
+         if((parameters->isOption(OPT_parse_pragma) && parameters->getOption<bool>(OPT_parse_pragma)) ||
+            parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             relationships.insert(std::make_pair(PRAGMA_ANALYSIS, WHOLE_APPLICATION));
             relationships.insert(std::make_pair(PRAGMA_SUBSTITUTION, WHOLE_APPLICATION));
@@ -230,13 +237,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-void BambuFrontendFlow::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+void BambuFrontendFlow::ComputeRelationships(DesignFlowStepSet& relationship,
+                                             const DesignFlowStep::RelationshipType relationship_type)
 {
    if(parameters->getOption<bool>(OPT_parse_pragma) and relationship_type == DesignFlowStep::DEPENDENCE_RELATIONSHIP)
    {
 #if HAVE_EXPERIMENTAL
       const auto TM = AppM->get_tree_manager();
-      const FrontendFlowStepFactory* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+      const FrontendFlowStepFactory* frontend_flow_step_factory =
+          GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
       CustomOrderedSet<FrontendFlowStepType> step_types;
       if(parameters->isOption(OPT_chaining) and parameters->getOption<bool>(OPT_chaining))
          step_types.insert(PARALLEL_REGIONS_GRAPH_COMPUTATION);
@@ -247,8 +256,14 @@ void BambuFrontendFlow::ComputeRelationships(DesignFlowStepSet& relationship, co
          {
             for(const auto step_type : step_types)
             {
-               const auto step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(step_type, body_function));
-               const auto design_flow_step = step ? design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(step)->design_flow_step : frontend_flow_step_factory->CreateFunctionFrontendFlowStep(step_type, body_function);
+               const auto step = design_flow_manager.lock()->GetDesignFlowStep(
+                   FunctionFrontendFlowStep::ComputeSignature(step_type, body_function));
+               const auto design_flow_step =
+                   step ? design_flow_manager.lock()
+                              ->CGetDesignFlowGraph()
+                              ->CGetDesignFlowStepInfo(step)
+                              ->design_flow_step :
+                          frontend_flow_step_factory->CreateFunctionFrontendFlowStep(step_type, body_function);
                relationship.insert(design_flow_step);
             }
          }

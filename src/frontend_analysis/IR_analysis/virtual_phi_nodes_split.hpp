@@ -83,13 +83,16 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
     * @param list_of_bloc is basic block of the current function
     * @param TM is the tree manager
     */
-   void virtual_split_phi(tree_nodeRef phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM, std::map<std::pair<unsigned int, unsigned int>, unsigned int>& replace);
+   void virtual_split_phi(tree_nodeRef phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc,
+                          const tree_managerRef TM,
+                          std::map<std::pair<unsigned int, unsigned int>, unsigned int>& replace);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -99,7 +102,8 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
     * @param function_id is the index of the function
     * @param design_flow_manager is the design flow manager
     */
-   virtual_phi_nodes_split(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   virtual_phi_nodes_split(const ParameterConstRef _parameters, const application_managerRef AppM,
+                           unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

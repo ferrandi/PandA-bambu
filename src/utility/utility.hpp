@@ -113,7 +113,8 @@ std::string convert_to_binary(G _value, unsigned int precision)
 }
 
 template <class G>
-std::string convert_vector_to_string(const std::vector<G>& vector_form, const std::string& separator, bool trim_empty_elements = true)
+std::string convert_vector_to_string(const std::vector<G>& vector_form, const std::string& separator,
+                                     bool trim_empty_elements = true)
 {
    std::string string_form;
    for(unsigned int i = 0; i < vector_form.size(); i++)
@@ -133,7 +134,8 @@ std::string convert_vector_to_string(const std::vector<G>& vector_form, const st
 }
 
 template <class G>
-std::vector<G> convert_string_to_vector(const std::string& string_form, const std::string& separator, bool trim_empty_elements = true)
+std::vector<G> convert_string_to_vector(const std::string& string_form, const std::string& separator,
+                                        bool trim_empty_elements = true)
 {
    std::vector<G> vector_form;
    std::vector<std::string> tmp_vector_form = SplitString(string_form, separator);
@@ -180,7 +182,8 @@ class string_separator
     * @param tok is the token found
     * @return true if a token has been found)
     */
-   bool operator()(std::string::const_iterator& next, std::string::const_iterator& end, std::basic_string<char, std::char_traits<char>, std::allocator<char>>& tok)
+   bool operator()(std::string::const_iterator& next, std::string::const_iterator& end,
+                   std::basic_string<char, std::char_traits<char>, std::allocator<char>>& tok)
    {
       if(next == end)
       {

@@ -101,13 +101,16 @@ class CSE : public FunctionFrontendFlowStep
    /// when true BIT_VALUE step has to restart
    bool restart_bit_value;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /// define the type of the unique table key
    using CSE_tuple_key_type = std::pair<enum kind, std::vector<unsigned int>>;
 
    /// check if the statement has an equivalent in the unique table
-   tree_nodeRef hash_check(const tree_nodeRef& tn, vertex bb, const statement_list* sl, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table) const;
+   tree_nodeRef
+   hash_check(const tree_nodeRef& tn, vertex bb, const statement_list* sl,
+              std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table) const;
 
    /// check if the gimple assignment is a load, store or a memcpy/memset
    bool has_memory_access(const gimple_assign* ga) const;
@@ -120,7 +123,8 @@ class CSE : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   CSE(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   CSE(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int function_id,
+       const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

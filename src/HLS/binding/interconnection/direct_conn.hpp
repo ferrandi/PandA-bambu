@@ -58,7 +58,8 @@ class direct_conn : public connection_obj
    /**
     * Costructor.
     */
-   explicit direct_conn(const CustomOrderedSet<data_transfer>& _live_variable) : connection_obj(DIRECT_CONN, _live_variable)
+   explicit direct_conn(const CustomOrderedSet<data_transfer>& _live_variable)
+       : connection_obj(DIRECT_CONN, _live_variable)
    {
    }
 

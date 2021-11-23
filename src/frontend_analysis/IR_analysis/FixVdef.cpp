@@ -58,12 +58,15 @@
 #include "tree_node.hpp"                    // for gimple_assign
 #include "tree_reindex.hpp"
 
-FixVdef::FixVdef(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) : FunctionFrontendFlowStep(_AppM, _function_id, FIX_VDEF, _design_flow_manager, Param)
+FixVdef::FixVdef(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id,
+                 const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, FIX_VDEF, _design_flow_manager, Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> FixVdef::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+FixVdef::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -95,7 +98,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 FixVdef::~FixVdef() = default;
 
-void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship,
+                                   const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
    {
@@ -106,10 +110,15 @@ void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship, const Design
       case DEPENDENCE_RELATIONSHIP:
       {
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto technology_flow_step_factory = GetPointerS<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-         const auto technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         const auto technology_flow_step_factory = GetPointerS<const TechnologyFlowStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+         const auto technology_flow_signature =
+             TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-         const auto technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         const auto technology_design_flow_step =
+             technology_flow_step ?
+                 design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                 technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
          break;
       }

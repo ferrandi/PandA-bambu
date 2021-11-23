@@ -65,7 +65,8 @@ class OmpAllocation : public allocation
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   OmpAllocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   OmpAllocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                 const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

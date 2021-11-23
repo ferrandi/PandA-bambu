@@ -156,7 +156,8 @@ class liveness
     * @param first is the first iterator of a set to be merged in the live in
     * @param last is the last iterator of a set to be merged in the live in
     */
-   void set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first, const CustomOrderedSet<unsigned int>::const_iterator last);
+   void set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
+                    const CustomOrderedSet<unsigned int>::const_iterator last);
 
    /**
     * erase a variable from the live in
@@ -185,7 +186,8 @@ class liveness
     * @param first is the first iterator of a set to be merged in the live out
     * @param last is the last iterator of a set to be merged in the live out
     */
-   void set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first, const CustomOrderedSet<unsigned int>::const_iterator last);
+   void set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
+                     const CustomOrderedSet<unsigned int>::const_iterator last);
 
    /**
     * erase a variable from the live out

@@ -69,15 +69,19 @@
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 
-SerializeMutualExclusions::SerializeMutualExclusions(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, FrontendFlowStepType::SERIALIZE_MUTUAL_EXCLUSIONS, _design_flow_manager, _parameters)
+SerializeMutualExclusions::SerializeMutualExclusions(const application_managerRef _AppM, unsigned int _function_id,
+                                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                                     const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, FrontendFlowStepType::SERIALIZE_MUTUAL_EXCLUSIONS,
+                               _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 SerializeMutualExclusions::~SerializeMutualExclusions() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> SerializeMutualExclusions::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+SerializeMutualExclusions::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -133,7 +137,8 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
    {
       if(boost::in_degree(basic_block, *cdg_bb_graph) > 1)
       {
-         THROW_ERROR("Basic block structure not supported: BB" + STR(cdg_bb_graph->CGetBBNodeInfo(basic_block)->block->number));
+         THROW_ERROR("Basic block structure not supported: BB" +
+                     STR(cdg_bb_graph->CGetBBNodeInfo(basic_block)->block->number));
       }
    }
 
@@ -144,20 +149,25 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
       {
          break;
       }
-      if(basic_block == cfg_bb_graph->CGetBBGraphInfo()->entry_vertex || basic_block == cfg_bb_graph->CGetBBGraphInfo()->exit_vertex)
+      if(basic_block == cfg_bb_graph->CGetBBGraphInfo()->entry_vertex ||
+         basic_block == cfg_bb_graph->CGetBBGraphInfo()->exit_vertex)
       {
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Analyzing BB" + STR(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->number));
       const auto bb_node_info = cfg_bb_graph->CGetBBNodeInfo(basic_block)->block;
       if(!bb_node_info->loop_id)
       {
-         // For the moment this pass is exploited only by vectorize; if we are outside loops, this is not necessary and does not work after split_return
+         // For the moment this pass is exploited only by vectorize; if we are outside loops, this is not necessary and
+         // does not work after split_return
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skip because in loop 0");
          continue;
       }
       /// NOTE: here cfg_bb_graph is correct
-      if(boost::out_degree(basic_block, *cfg_bb_graph) == 2 && GET_CONST_NODE(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back())->get_kind() == gimple_cond_K)
+      if(boost::out_degree(basic_block, *cfg_bb_graph) == 2 &&
+         GET_CONST_NODE(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back())->get_kind() ==
+             gimple_cond_K)
       {
          OutEdgeIterator oe, oe_end;
          vertex true_vertex = NULL_VERTEX, false_vertex = NULL_VERTEX;
@@ -176,7 +186,9 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                THROW_UNREACHABLE();
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "True-->BB" + STR(cfg_bb_graph->CGetBBNodeInfo(true_vertex)->block->number) + " - False-->BB" + STR(cfg_bb_graph->CGetBBNodeInfo(false_vertex)->block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "True-->BB" + STR(cfg_bb_graph->CGetBBNodeInfo(true_vertex)->block->number) + " - False-->BB" +
+                            STR(cfg_bb_graph->CGetBBNodeInfo(false_vertex)->block->number));
          if(function_behavior->CheckBBReachability(true_vertex, false_vertex))
          {
          }
@@ -188,7 +200,8 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             THROW_ASSERT(gc, "");
             const auto srcp = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
             const auto not_cond = tree_man->CreateNotExpr(gc->op0, bb_node_info, function_id);
-            const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr, not_cond, function_id, bb_node_info->number, srcp);
+            const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr,
+                                                              not_cond, function_id, bb_node_info->number, srcp);
             const auto new_cond = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cond))->op0;
             bb_node_info->PushBefore(ga_cond, last_stmt, AppM);
             TM->ReplaceTreeNode(last_stmt, gc->op0, new_cond);
@@ -197,7 +210,8 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
          else
          {
             const auto basic_block_id = bb_node_info->number;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Subgraph dominated by BB" + STR(basic_block_id) + " has to be restructured");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "-->Subgraph dominated by BB" + STR(basic_block_id) + " has to be restructured");
             const auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
             auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
             const blocRef new_block(new bloc(sl->list_of_bloc.rbegin()->first + 1));
@@ -228,13 +242,17 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                }
                if(source == true_bb || function_behavior->CheckBBReachability(true_bb, source))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inserting BB" + STR(cfg_bb_graph->CGetBBNodeInfo(source)->block->number) + " into then part");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Inserting BB" + STR(cfg_bb_graph->CGetBBNodeInfo(source)->block->number) +
+                                     " into then part");
                   true_bb_ends.insert(source);
                   continue;
                }
                if(source == false_bb or function_behavior->CheckBBReachability(false_bb, source))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inserting BB" + STR(cfg_bb_graph->CGetBBNodeInfo(source)->block->number) + " into else part");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Inserting BB" + STR(cfg_bb_graph->CGetBBNodeInfo(source)->block->number) +
+                                     " into else part");
                   false_bb_ends.insert(source);
                   continue;
                }
@@ -242,13 +260,15 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Classified BBs");
             new_block->list_of_pred.push_back(basic_block_id);
-            bb_node_info->list_of_succ.erase(std::find(bb_node_info->list_of_succ.begin(), bb_node_info->list_of_succ.end(), false_bb_id));
+            bb_node_info->list_of_succ.erase(
+                std::find(bb_node_info->list_of_succ.begin(), bb_node_info->list_of_succ.end(), false_bb_id));
             bb_node_info->list_of_succ.push_back(new_block->number);
             bb_node_info->false_edge = new_block->number;
             for(const auto& true_bb_end : true_bb_ends)
             {
                auto true_bb_block = cfg_bb_graph->CGetBBNodeInfo(true_bb_end)->block;
-               true_bb_block->list_of_succ.erase(std::find(true_bb_block->list_of_succ.begin(), true_bb_block->list_of_succ.end(), end_if_id));
+               true_bb_block->list_of_succ.erase(
+                   std::find(true_bb_block->list_of_succ.begin(), true_bb_block->list_of_succ.end(), end_if_id));
                true_bb_block->list_of_succ.push_back(new_block->number);
                if(true_bb_block->true_edge == end_if_id)
                {
@@ -259,13 +279,15 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                   true_bb_block->false_edge = new_block->number;
                }
                new_block->list_of_pred.push_back(true_bb_block->number);
-               end_if_block->list_of_pred.erase(std::find(end_if_block->list_of_pred.begin(), end_if_block->list_of_pred.end(), true_bb_block->number));
+               end_if_block->list_of_pred.erase(std::find(end_if_block->list_of_pred.begin(),
+                                                          end_if_block->list_of_pred.end(), true_bb_block->number));
             }
 
             auto false_bb_block = cfg_bb_graph->CGetBBNodeInfo(false_bb)->block;
             new_block->true_edge = false_bb_id;
             new_block->list_of_succ.push_back(false_bb_id);
-            false_bb_block->list_of_pred.erase(std::find(false_bb_block->list_of_pred.begin(), false_bb_block->list_of_pred.end(), basic_block_id));
+            false_bb_block->list_of_pred.erase(
+                std::find(false_bb_block->list_of_pred.begin(), false_bb_block->list_of_pred.end(), basic_block_id));
             false_bb_block->list_of_pred.push_back(new_block->number);
 
             new_block->false_edge = end_if_id;
@@ -277,7 +299,8 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             THROW_ASSERT(gc, "");
             const auto srcp = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
             const auto not_cond = tree_man->CreateNotExpr(gc->op0, new_block, function_id);
-            const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr, not_cond, function_id, bb_node_info->number, srcp);
+            const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr,
+                                                              not_cond, function_id, bb_node_info->number, srcp);
             new_block->PushBack(ga_cond, AppM);
             const auto new_cond = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cond))->op0;
             const auto new_tree_node = tree_man->create_gimple_cond(new_cond, function_id, srcp, new_block->number);
@@ -304,7 +327,8 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                   ssa_schema[TOK(TOK_VAR)] = STR(GetPointer<ssa_name>(GET_NODE(gp->res))->var->index);
                }
                TM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->CGetTreeNode(ssa_node_nid)));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Created " + STR(TM->CGetTreeNode(ssa_node_nid)));
 
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_phi_schema;
                const auto gimple_phi_id = TM->new_tree_node_id();
@@ -329,7 +353,8 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                end_if_new_def_edge_list.push_back(gimple_phi::DefEdge(new_gp->res, new_block->number));
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering source BB" + STR(def_edge.second));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Considering source BB" + STR(def_edge.second));
                   const auto source_bb = bb_index_map.find(def_edge.second)->second;
                   if(true_bb_ends.find(source_bb) != true_bb_ends.end())
                   {
@@ -341,7 +366,8 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                   }
                   else if(function_behavior->CheckBBReachability(basic_block, source_bb))
                   {
-                     THROW_UNREACHABLE("BB" + STR(cfg_bb_graph->CGetBBNodeInfo(source_bb)->block->number) + " not classified");
+                     THROW_UNREACHABLE("BB" + STR(cfg_bb_graph->CGetBBNodeInfo(source_bb)->block->number) +
+                                       " not classified");
                   }
                   else
                   {
@@ -350,7 +376,9 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                }
                new_block->AddPhi(TM->GetTreeReindex(gimple_phi_id));
                gp->SetDefEdgeList(TM, end_if_new_def_edge_list);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added phi " + STR(TM->CGetTreeNode(gimple_phi_id)) + " - Fixed phi " + gp->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "<--Added phi " + STR(TM->CGetTreeNode(gimple_phi_id)) + " - Fixed phi " +
+                                  gp->ToString());
             }
             bb_modified = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -367,11 +395,14 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
          {
             const auto current_basic_block_index = cond.second;
             const auto current_basic_block = bb_index_map.at(current_basic_block_index);
-            THROW_ASSERT(previous_basic_block == NULL_VERTEX or function_behavior->CheckBBReachability(previous_basic_block, current_basic_block), "");
+            THROW_ASSERT(previous_basic_block == NULL_VERTEX or
+                             function_behavior->CheckBBReachability(previous_basic_block, current_basic_block),
+                         "");
          }
 #endif
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Analyzed BB" + STR(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->number));
    }
 
    bb_modified ? function_behavior->UpdateBBVersion() : 0;

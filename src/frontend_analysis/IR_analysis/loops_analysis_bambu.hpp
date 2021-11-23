@@ -61,7 +61,8 @@ class LoopsAnalysisBambu : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -71,7 +72,8 @@ class LoopsAnalysisBambu : public FunctionFrontendFlowStep
     * @param function_id is the node id of the function analyzed.
     * @param design_flow_manager is the design flow manager
     */
-   LoopsAnalysisBambu(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   LoopsAnalysisBambu(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id,
+                      const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

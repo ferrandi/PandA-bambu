@@ -80,8 +80,11 @@
 #include <tuple>
 #include <vector>
 
-MemoryAllocationSpecialization::MemoryAllocationSpecialization(const MemoryAllocation_Policy _memory_allocation_policy, const MemoryAllocation_ChannelsType _memory_allocation_channels_type)
-    : memory_allocation_policy(_memory_allocation_policy), memory_allocation_channels_type(_memory_allocation_channels_type)
+MemoryAllocationSpecialization::MemoryAllocationSpecialization(
+    const MemoryAllocation_Policy _memory_allocation_policy,
+    const MemoryAllocation_ChannelsType _memory_allocation_channels_type)
+    : memory_allocation_policy(_memory_allocation_policy),
+      memory_allocation_channels_type(_memory_allocation_channels_type)
 {
 }
 
@@ -135,17 +138,24 @@ const std::string MemoryAllocationSpecialization::GetKindText() const
 
 const std::string MemoryAllocationSpecialization::GetSignature() const
 {
-   return STR(static_cast<unsigned int>(memory_allocation_policy)) + "::" + STR(static_cast<unsigned int>(memory_allocation_channels_type));
+   return STR(static_cast<unsigned int>(memory_allocation_policy)) +
+          "::" + STR(static_cast<unsigned int>(memory_allocation_channels_type));
 }
 
-memory_allocation::memory_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
+memory_allocation::memory_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                     const HLSFlowStep_Type _hls_flow_step_type,
                                      const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type,
-               _hls_flow_step_specialization and GetPointer<const MemoryAllocationSpecialization>(_hls_flow_step_specialization) ?
+               _hls_flow_step_specialization and
+                       GetPointer<const MemoryAllocationSpecialization>(_hls_flow_step_specialization) ?
                    _hls_flow_step_specialization :
-                   HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(_parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy), _parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)))),
+                   HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(
+                       _parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy),
+                       _parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)))),
       /// NOTE: hls_flow_step_specialization and not _hls_flow_step_specialization is correct
-      memory_allocation_policy(GetPointer<const MemoryAllocationSpecialization>(hls_flow_step_specialization)->memory_allocation_policy),
+      memory_allocation_policy(
+          GetPointer<const MemoryAllocationSpecialization>(hls_flow_step_specialization)->memory_allocation_policy),
       memory_version(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -153,14 +163,16 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
 
 memory_allocation::~memory_allocation() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> memory_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+memory_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -211,7 +223,8 @@ void memory_allocation::finalize_memory_allocation()
    THROW_ASSERT(func_list.size(), "Empty list of functions to be analyzed");
    bool use_unknown_address = false;
    bool has_unaligned_accesses = false;
-   bool assume_aligned_access_p = parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
+   bool assume_aligned_access_p =
+       parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    for(const auto It : func_list)
    {
@@ -221,14 +234,16 @@ void memory_allocation::finalize_memory_allocation()
 
       if(FB->get_dereference_unknown_addr())
       {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---This function uses unknown addresses deref: " + BH->get_function_name());
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                        "---This function uses unknown addresses deref: " + BH->get_function_name());
       }
 
       use_unknown_address |= FB->get_dereference_unknown_addr();
 
       if(FB->get_unaligned_accesses())
       {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---This function performs unaligned accesses: " + BH->get_function_name());
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                        "---This function performs unaligned accesses: " + BH->get_function_name());
          if(assume_aligned_access_p)
          {
             THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses");
@@ -264,8 +279,11 @@ void memory_allocation::finalize_memory_allocation()
       const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
       const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
       bool is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
-      bool is_inferred_interface = parameters->isOption(OPT_interface_type) && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
-      if(function_behavior->get_has_globals() && parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals))
+      bool is_inferred_interface =
+          parameters->isOption(OPT_interface_type) && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+                                                          HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
+      if(function_behavior->get_has_globals() && parameters->isOption(OPT_expose_globals) &&
+         parameters->getOption<bool>(OPT_expose_globals))
       {
          has_intern_shared_data = true;
       }
@@ -274,7 +292,8 @@ void memory_allocation::finalize_memory_allocation()
          const std::list<unsigned int>& function_parameters = behavioral_helper->get_parameters();
          for(const auto function_parameter : function_parameters)
          {
-            if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) && !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
+            if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) &&
+               !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
             {
                use_databus_width = true;
                maximum_bus_size = std::max(maximum_bus_size, 8u);
@@ -296,10 +315,12 @@ void memory_allocation::finalize_memory_allocation()
       const CustomOrderedSet<unsigned int>& parm_decl_stored = function_behavior->get_parm_decl_stored();
       for(unsigned int p : parm_decl_stored)
       {
-         maximum_bus_size = std::max(maximum_bus_size, tree_helper::Size(tree_helper::CGetType(TreeM->CGetTreeReindex(p))));
+         maximum_bus_size =
+             std::max(maximum_bus_size, tree_helper::Size(tree_helper::CGetType(TreeM->CGetTreeReindex(p))));
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "param with maximum_bus_size=" + STR(maximum_bus_size));
       }
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Analyzing function for bus size: " + behavioral_helper->get_function_name());
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                    "Analyzing function for bus size: " + behavioral_helper->get_function_name());
       const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
       graph::vertex_iterator v, v_end;
       const auto TM = HLSMgr->get_tree_manager();
@@ -318,7 +339,9 @@ void memory_allocation::finalize_memory_allocation()
                {
                   for(auto stmt : arg2stms.second)
                   {
-                     THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != g->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition: STMT=" + STR(stmt));
+                     THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
+                                      g->CGetOpGraphInfo()->tree_node_to_operation.end(),
+                                  "unexpected condition: STMT=" + STR(stmt));
                      RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
                   }
                }
@@ -335,7 +358,9 @@ void memory_allocation::finalize_memory_allocation()
                {
                   for(auto stmt : arg2stms.second)
                   {
-                     THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != g->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
+                     THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
+                                      g->CGetOpGraphInfo()->tree_node_to_operation.end(),
+                                  "unexpected condition");
                      RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
                   }
                }
@@ -379,13 +404,18 @@ void memory_allocation::finalize_memory_allocation()
             }
 
             /// check if a global variable may be accessed from an external component
-            if(!has_intern_shared_data && var && function_behavior->is_variable_mem(var) && !HLSMgr->Rmem->is_private_memory(var) && parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals))
+            if(!has_intern_shared_data && var && function_behavior->is_variable_mem(var) &&
+               !HLSMgr->Rmem->is_private_memory(var) && parameters->isOption(OPT_expose_globals) &&
+               parameters->getOption<bool>(OPT_expose_globals))
             {
                const tree_nodeRef var_tn = TreeM->get_tree_node_const(var);
                auto* vd = GetPointer<var_decl>(var_tn);
-               if(vd && (((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) || tree_helper::is_volatile(TreeM, var) || call_graph_manager->ExistsAddressedFunction()))
+               if(vd &&
+                  (((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
+                   tree_helper::is_volatile(TreeM, var) || call_graph_manager->ExistsAddressedFunction()))
                {
-                  has_intern_shared_data = true; /// an external component can access the var possibly (global and volatile vars)
+                  has_intern_shared_data =
+                      true; /// an external component can access the var possibly (global and volatile vars)
                }
             }
             unsigned int value_bitsize;
@@ -407,7 +437,8 @@ void memory_allocation::finalize_memory_allocation()
             {
                maximum_bus_size = std::max(maximum_bus_size, value_bitsize);
             }
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size) + " " + curr_tn->ToString());
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                          " with maximum_bus_size=" + STR(maximum_bus_size) + " " + curr_tn->ToString());
          }
          else
          {
@@ -444,15 +475,20 @@ void memory_allocation::finalize_memory_allocation()
                   }
                   const auto bitsize = tree_helper::AccessedMaximumBitsize(type_node_ptd, 1);
                   maximum_bus_size = std::max(maximum_bus_size, bitsize);
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size) + " " + g->CGetOpNodeInfo(*v)->node->ToString());
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                                " with maximum_bus_size=" + STR(maximum_bus_size) + " " +
+                                    g->CGetOpNodeInfo(*v)->node->ToString());
                }
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + GET_NAME(g, *v));
       }
       const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-      bool local_needMemoryMappedRegisters = (top_functions.find(fun_id) != top_functions.end() && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
-                                             (HLSMgr->hasToBeInterfaced(fun_id) && top_functions.find(fun_id) == top_functions.end()) || parameters->getOption<bool>(OPT_memory_mapped_top);
+      bool local_needMemoryMappedRegisters =
+          (top_functions.find(fun_id) != top_functions.end() &&
+           parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
+          (HLSMgr->hasToBeInterfaced(fun_id) && top_functions.find(fun_id) == top_functions.end()) ||
+          parameters->getOption<bool>(OPT_memory_mapped_top);
       needMemoryMappedRegisters = needMemoryMappedRegisters || local_needMemoryMappedRegisters;
       if(local_needMemoryMappedRegisters)
       {
@@ -468,7 +504,8 @@ void memory_allocation::finalize_memory_allocation()
          for(const auto& par : behavioral_helper->GetParameters())
          {
             const auto type = tree_helper::CGetType(par);
-            bool is_a_struct_union = tree_helper::IsStructType(type) || tree_helper::IsUnionType(type) || tree_helper::IsComplexType(type);
+            bool is_a_struct_union =
+                tree_helper::IsStructType(type) || tree_helper::IsUnionType(type) || tree_helper::IsComplexType(type);
             if(is_a_struct_union)
             {
                maximum_bus_size = std::max(addr_bus_bitsize, maximum_bus_size);
@@ -484,7 +521,8 @@ void memory_allocation::finalize_memory_allocation()
             maximum_bus_size = std::max(tree_helper::Size(function_return), maximum_bus_size);
          }
       }
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Analyzed function for bus size: " + behavioral_helper->get_function_name());
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                    "Analyzed function for bus size: " + behavioral_helper->get_function_name());
    }
 
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
@@ -499,7 +537,8 @@ void memory_allocation::finalize_memory_allocation()
    {
       if(maximum_bus_size > bram_bitsize_max)
       {
-         THROW_ERROR("Unsupported data bus size. In case, try a device supporting this BRAM BITSIZE: " + STR(maximum_bus_size) + " available maximum BRAM BITSIZE: " + STR(bram_bitsize_max));
+         THROW_ERROR("Unsupported data bus size. In case, try a device supporting this BRAM BITSIZE: " +
+                     STR(maximum_bus_size) + " available maximum BRAM BITSIZE: " + STR(bram_bitsize_max));
       }
       else
       {
@@ -508,7 +547,8 @@ void memory_allocation::finalize_memory_allocation()
    }
    else if(maximum_bus_size / 2 > bram_bitsize_max)
    {
-      THROW_ERROR("Unsupported data bus size. In case, try a device supporting this BRAM BITSIZE: " + STR(maximum_bus_size / 2) + " available maximum BRAM BITSIZE: " + STR(bram_bitsize_max));
+      THROW_ERROR("Unsupported data bus size. In case, try a device supporting this BRAM BITSIZE: " +
+                  STR(maximum_bus_size / 2) + " available maximum BRAM BITSIZE: " + STR(bram_bitsize_max));
    }
    else
    {
@@ -533,7 +573,8 @@ void memory_allocation::finalize_memory_allocation()
    {
       addr_bus_bitsize = 32;
    }
-   else if(has_intern_shared_data && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM)
+   else if(has_intern_shared_data && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
+                                         MemoryAllocation_Policy::ALL_BRAM)
    {
       addr_bus_bitsize = 32;
    }
@@ -546,7 +587,9 @@ void memory_allocation::finalize_memory_allocation()
       unsigned long long int addr_range = HLSMgr->Rmem->get_max_address();
       if(addr_range)
       {
-         addr_range = std::max(addr_range, ((2 * HLS_T->get_target_device()->get_parameter<unsigned long long int>("BRAM_bitsize_max")) / 8));
+         addr_range = std::max(
+             addr_range,
+             ((2 * HLS_T->get_target_device()->get_parameter<unsigned long long int>("BRAM_bitsize_max")) / 8));
          --addr_range;
       }
       unsigned int index;
@@ -581,9 +624,16 @@ void memory_allocation::finalize_memory_allocation()
 
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---BRAM bitsize: " + STR(bram_bitsize));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (use_databus_width ? std::string("Spec may exploit DATA bus width") : std::string("Spec may not exploit DATA bus width")));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (!use_unknown_address ? std::string("All the data have a known address") : std::string("Spec accesses data having an address unknown at compile time")));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (!has_intern_shared_data ? std::string("Internal data is not externally accessible") : std::string("Internal data may be accessed")));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---" + (use_databus_width ? std::string("Spec may exploit DATA bus width") :
+                                               std::string("Spec may not exploit DATA bus width")));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---" + (!use_unknown_address ?
+                               std::string("All the data have a known address") :
+                               std::string("Spec accesses data having an address unknown at compile time")));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---" + (!has_intern_shared_data ? std::string("Internal data is not externally accessible") :
+                                                     std::string("Internal data may be accessed")));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---DATA bus bitsize: " + STR(data_bus_bitsize));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---ADDRESS bus bitsize: " + STR(addr_bus_bitsize));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---SIZE bus bitsize: " + STR(size_bus_bitsize));
@@ -597,10 +647,15 @@ void memory_allocation::finalize_memory_allocation()
    }
    if(HLSMgr->Rmem->get_allocated_parameters_memory())
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Total amount of memory allocated for memory mapped parameters: " + STR(HLSMgr->Rmem->get_allocated_parameters_memory()));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "---Total amount of memory allocated for memory mapped parameters: " +
+                         STR(HLSMgr->Rmem->get_allocated_parameters_memory()));
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Internally allocated memory (no private memories): " + STR(HLSMgr->Rmem->get_allocated_intern_memory()));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Internally allocated memory: " + STR(HLSMgr->Rmem->get_allocated_space()));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---Internally allocated memory (no private memories): " +
+                      STR(HLSMgr->Rmem->get_allocated_intern_memory()));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---Internally allocated memory: " + STR(HLSMgr->Rmem->get_allocated_space()));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
 }
 
@@ -612,10 +667,12 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
 
    // Allocate memory for the start register.
    std::string functionName = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
-   HLSMgr->Rmem->add_parameter(functionId, functionId, functionName, behavioral_helper->get_parameters().empty() && !function_return);
+   HLSMgr->Rmem->add_parameter(functionId, functionId, functionName,
+                               behavioral_helper->get_parameters().empty() && !function_return);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Function: " + functionName);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Id: " + STR(functionId));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, functionId)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                  "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, functionId)));
 
    // Allocate every parameter on chip.
    const std::list<unsigned int>& topParams = behavioral_helper->get_parameters();
@@ -624,22 +681,29 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
       auto itr_next = itr;
       ++itr_next;
       auto par_name = behavioral_helper->PrintVariable(*itr);
-      HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), *itr, par_name, !function_return && itr_next == end);
+      HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), *itr, par_name,
+                                  !function_return && itr_next == end);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Parameter " + par_name + " of Function " + functionName);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Id: " + STR(*itr));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, *itr)));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Size: " + STR(tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(*itr)) / 8));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                     "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, *itr)));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                     "---Size: " + STR(tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(*itr)) / 8));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
    }
 
    // Allocate the return value on chip.
    if(function_return)
    {
-      HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), function_return, "@return_" + functionName, true);
+      HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), function_return, "@return_" + functionName,
+                                  true);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Return parameter for Function: " + functionName);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Id: " + STR(function_return));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, function_return)));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Size: " + STR(tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(function_return)) / 8));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                     "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, function_return)));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                     "---Size: " +
+                         STR(tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(function_return)) / 8));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
    }
 }

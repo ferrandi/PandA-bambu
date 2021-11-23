@@ -53,13 +53,17 @@
 #include "simple_indent.hpp" // for simple_indent
 #include "var_pp_functor.hpp"
 
-void prettyPrintVertex::get_internal_vars(const vertex& v, const OpGraphConstRef g, CustomUnorderedSet<unsigned int>& list_of_variables, const BehavioralHelperConstRef BH)
+void prettyPrintVertex::get_internal_vars(const vertex& v, const OpGraphConstRef g,
+                                          CustomUnorderedSet<unsigned int>& list_of_variables,
+                                          const BehavioralHelperConstRef BH)
 {
    const unsigned int node_id = g->CGetOpNodeInfo(v)->GetNodeId();
    if(node_id)
    {
       unsigned intermediate_var = BH->get_intermediate_var(node_id);
-      if(intermediate_var && !BH->is_an_indirect_ref(intermediate_var) && !BH->is_a_constant(intermediate_var) && !BH->is_a_component_ref(intermediate_var) && !BH->is_an_array_ref(intermediate_var) && !BH->is_an_addr_expr(intermediate_var))
+      if(intermediate_var && !BH->is_an_indirect_ref(intermediate_var) && !BH->is_a_constant(intermediate_var) &&
+         !BH->is_a_component_ref(intermediate_var) && !BH->is_an_array_ref(intermediate_var) &&
+         !BH->is_an_addr_expr(intermediate_var))
       {
          list_of_variables.insert(intermediate_var);
       }
@@ -93,7 +97,8 @@ void prettyPrintVertex::get_internal_vars(const vertex& v, const OpGraphConstRef
    }
 }
 
-void prettyPrintVertex::print_forward_declaration(std::ostream& os, unsigned int type, simple_indent& PP, const BehavioralHelperConstRef BH)
+void prettyPrintVertex::print_forward_declaration(std::ostream& os, unsigned int type, simple_indent& PP,
+                                                  const BehavioralHelperConstRef BH)
 {
    PP(os, BH->print_forward_declaration(type) + ";\n");
 }

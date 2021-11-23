@@ -57,9 +57,12 @@ class minimal_interface : public module_interface
    /**
     * Constructor
     */
-   minimal_interface(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION);
+   minimal_interface(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                     const DesignFlowManagerConstRef design_flow_manager,
+                     const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION);
 
-   void build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj, structural_managerRef SM_minimal_interface);
+   void build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj,
+                      structural_managerRef SM_minimal_interface);
    /**
     * Destructor
     */

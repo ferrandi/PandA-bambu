@@ -32,7 +32,8 @@
  */
 /**
  * @file storage_value_information.hpp
- * @brief This package is used to define the storage value scheme adopted when register replication for pipelining is required.
+ * @brief This package is used to define the storage value scheme adopted when register replication for pipelining is
+ * required.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *

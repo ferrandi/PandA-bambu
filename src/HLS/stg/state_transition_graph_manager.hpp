@@ -64,8 +64,8 @@ REF_FORWARD_DECL(structural_manager);
 
 /**
  * Class used to manage a graph into finite state machine representation; it contains methods to build the graph,
- * to add nodes, edges... and also to write the dotty representation of the graph. Two different graphs have been stored:
- * the finite state machine and the related acyclic version (without any feedback edges)
+ * to add nodes, edges... and also to write the dotty representation of the graph. Two different graphs have been
+ * stored: the finite state machine and the related acyclic version (without any feedback edges)
  */
 class StateTransitionGraphManager
 {

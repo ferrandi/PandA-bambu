@@ -141,7 +141,8 @@ class application_manager
     * @param allow_recursive_functions specifies if recursive functions are allowed
     * @param _Param is the reference to the class containing all the parameters
     */
-   application_manager(const FunctionExpanderConstRef function_expander, const bool single_root_function, const bool allow_recursive_functions, const ParameterConstRef _Param);
+   application_manager(const FunctionExpanderConstRef function_expander, const bool single_root_function,
+                       const bool allow_recursive_functions, const ParameterConstRef _Param);
 
    /**
     * Destructor
@@ -176,14 +177,16 @@ class application_manager
    bool hasToBeInterfaced(unsigned int funId) const;
 
    /**
-    * Returns the data structure associated with the given identifier. This method returns an error if the function does not exist.
+    * Returns the data structure associated with the given identifier. This method returns an error if the function does
+    * not exist.
     * @param index is the identified of the function to be returned
     * @return the FunctionBehavior associated with the given function
     */
    FunctionBehaviorRef GetFunctionBehavior(unsigned int index);
 
    /**
-    * Returns the datastructure associated with the given identifier. This method returns an error if the function does not exist.
+    * Returns the datastructure associated with the given identifier. This method returns an error if the function does
+    * not exist.
     * @param index is the identified of the function to be returned
     * @return the FunctionBehavior associated with the given function
     */
@@ -327,8 +330,8 @@ class application_manager
     */
    bool isParmUsed(unsigned int functionID, unsigned parm_index) const;
    /**
-    * \brief getSSAFromParm returns the ssa_name index associated with the parm_decl index, 0 in case there is not an associated index
-    * \param parm_index is the parm_decl index for which we look for the associated ssa_name index
+    * \brief getSSAFromParm returns the ssa_name index associated with the parm_decl index, 0 in case there is not an
+    * associated index \param parm_index is the parm_decl index for which we look for the associated ssa_name index
     */
    unsigned getSSAFromParm(unsigned int functionID, unsigned parm_index) const;
    /**

@@ -160,12 +160,14 @@
 bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const
 {
    auto b0 = tree_helper::CGetType(be->op0);
-   if(tree_helper::IsRealType(b0) || tree_helper::IsComplexType(b0) || tree_helper::IsVectorType(b0) || tree_helper::IsStructType(b0))
+   if(tree_helper::IsRealType(b0) || tree_helper::IsComplexType(b0) || tree_helper::IsVectorType(b0) ||
+      tree_helper::IsStructType(b0))
    {
       return false;
    }
    auto b1 = tree_helper::CGetType(be->op1);
-   if(tree_helper::IsRealType(b1) || tree_helper::IsComplexType(b1) || tree_helper::IsVectorType(b1) || tree_helper::IsStructType(b1))
+   if(tree_helper::IsRealType(b1) || tree_helper::IsComplexType(b1) || tree_helper::IsVectorType(b1) ||
+      tree_helper::IsStructType(b1))
    {
       return false;
    }
@@ -178,12 +180,14 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const
 bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const
 {
    auto b0 = tree_helper::CGetType(be->op0);
-   if(tree_helper::IsRealType(b0) || tree_helper::IsComplexType(b0) || tree_helper::IsVectorType(b0) || tree_helper::IsStructType(b0))
+   if(tree_helper::IsRealType(b0) || tree_helper::IsComplexType(b0) || tree_helper::IsVectorType(b0) ||
+      tree_helper::IsStructType(b0))
    {
       return false;
    }
    auto b1 = tree_helper::CGetType(be->op1);
-   if(tree_helper::IsRealType(b1) || tree_helper::IsComplexType(b1) || tree_helper::IsVectorType(b1) || tree_helper::IsStructType(b1))
+   if(tree_helper::IsRealType(b1) || tree_helper::IsComplexType(b1) || tree_helper::IsVectorType(b1) ||
+      tree_helper::IsStructType(b1))
    {
       return false;
    }
@@ -196,17 +200,20 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
       auto k = be->get_kind();
       return (k == lt_expr_K || k == gt_expr_K) && int_const->value == 0;
    }();
-   return (tree_helper::Size(be->op0) <= max && tree_helper::Size(be->op1) <= max) || (is_simple_case && !parameters->isOption(OPT_context_switch));
+   return (tree_helper::Size(be->op0) <= max && tree_helper::Size(be->op1) <= max) ||
+          (is_simple_case && !parameters->isOption(OPT_context_switch));
 }
 bool lut_transformation::CHECK_COND_EXPR_SIZE(cond_expr* ce) const
 {
    auto c0 = tree_helper::CGetType(ce->op1);
-   if(tree_helper::IsRealType(c0) || tree_helper::IsComplexType(c0) || tree_helper::IsVectorType(c0) || tree_helper::IsStructType(c0))
+   if(tree_helper::IsRealType(c0) || tree_helper::IsComplexType(c0) || tree_helper::IsVectorType(c0) ||
+      tree_helper::IsStructType(c0))
    {
       return false;
    }
    auto c1 = tree_helper::CGetType(ce->op2);
-   if(tree_helper::IsRealType(c1) || tree_helper::IsComplexType(c1) || tree_helper::IsVectorType(c1) || tree_helper::IsStructType(c1))
+   if(tree_helper::IsRealType(c1) || tree_helper::IsComplexType(c1) || tree_helper::IsVectorType(c1) ||
+      tree_helper::IsStructType(c1))
    {
       return false;
    }
@@ -219,7 +226,8 @@ bool lut_transformation::CHECK_COND_EXPR_SIZE(cond_expr* ce) const
 bool lut_transformation::CHECK_NOT_EXPR_SIZE(unary_expr* ne) const
 {
    auto c0 = tree_helper::CGetType(ne->op);
-   if(tree_helper::IsRealType(c0) || tree_helper::IsComplexType(c0) || tree_helper::IsVectorType(c0) || tree_helper::IsStructType(c0))
+   if(tree_helper::IsRealType(c0) || tree_helper::IsComplexType(c0) || tree_helper::IsVectorType(c0) ||
+      tree_helper::IsStructType(c0))
    {
       return false;
    }
@@ -237,10 +245,15 @@ bool lut_transformation::cannotBeLUT(tree_nodeRef op) const
    auto op_node = GET_NODE(op);
    auto code = op_node->get_kind();
 
-   return !(GetPointer<lut_expr>(op_node) || (GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) || (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
+   return !(GetPointer<lut_expr>(op_node) ||
+            (GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) ||
+            (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
             (GetPointer<cond_expr>(op_node) && CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(op_node))) ||
-            (VECT_CONTAINS(lutBooleanExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(op_node))) ||
-            (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE"))));
+            (VECT_CONTAINS(lutBooleanExpressibleOperations, code) && GetPointer<binary_expr>(op_node) &&
+             CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(op_node))) ||
+            (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) &&
+             CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node),
+                                     parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE"))));
 }
 
 #pragma endregion
@@ -394,7 +407,8 @@ class klut_network_ext : public mockturtle::klut_network
    }
 
    /**
-    * Creates a 'lut' operation from an `std::vector` of `mockturtle::klut_network::signal` with the associated constant.
+    * Creates a 'lut' operation from an `std::vector` of `mockturtle::klut_network::signal` with the associated
+    * constant.
     *
     * @param s an `std::vector` of `mockturtle::klut_network::signal` containing the inputs of the lut
     * @param f the constant associated to the lut
@@ -453,7 +467,8 @@ class klut_network_ext : public mockturtle::klut_network
 
       std::vector<signal> outputs;
       outputs.reserve(a_c.size());
-      std::transform(a_c.begin(), a_c.end(), b_c.begin(), std::back_inserter(outputs), [&](auto const& s1, auto const& s2) { return this->create_and(s1, s2); });
+      std::transform(a_c.begin(), a_c.end(), b_c.begin(), std::back_inserter(outputs),
+                     [&](auto const& s1, auto const& s2) { return this->create_and(s1, s2); });
 
       return outputs;
    }
@@ -465,7 +480,8 @@ class klut_network_ext : public mockturtle::klut_network
 
       std::vector<signal> outputs;
       outputs.reserve(a_c.size());
-      std::transform(a_c.begin(), a_c.end(), b_c.begin(), std::back_inserter(outputs), [&](auto const& s1, auto const& s2) { return this->create_or(s1, s2); });
+      std::transform(a_c.begin(), a_c.end(), b_c.begin(), std::back_inserter(outputs),
+                     [&](auto const& s1, auto const& s2) { return this->create_or(s1, s2); });
 
       return outputs;
    }
@@ -477,7 +493,8 @@ class klut_network_ext : public mockturtle::klut_network
 
       std::vector<signal> outputs;
       outputs.reserve(a_c.size());
-      std::transform(a_c.begin(), a_c.end(), b_c.begin(), std::back_inserter(outputs), [&](auto const& s1, auto const& s2) { return this->create_xor(s1, s2); });
+      std::transform(a_c.begin(), a_c.end(), b_c.begin(), std::back_inserter(outputs),
+                     [&](auto const& s1, auto const& s2) { return this->create_xor(s1, s2); });
 
       return outputs;
    }
@@ -528,7 +545,8 @@ class klut_network_ext : public mockturtle::klut_network
 
       std::vector<signal> outputs;
       outputs.reserve(a_c.size());
-      std::transform(a_c.begin(), a_c.end(), b_c.begin(), std::back_inserter(outputs), [&](auto const& s1, auto const& s2) { return this->create_eq(s1, s2); });
+      std::transform(a_c.begin(), a_c.end(), b_c.begin(), std::back_inserter(outputs),
+                     [&](auto const& s1, auto const& s2) { return this->create_eq(s1, s2); });
 
       return {this->create_nary_and(outputs)};
    }
@@ -563,23 +581,31 @@ struct klut_network_node
 
    /// true in case the node is a constant value
    bool is_constant;
-   explicit klut_network_node(uint64_t _index, long long _lut_constant, const std::vector<uint64_t>& _fan_in, bool _is_po, uint64_t _po_index, bool _is_constant)
-       : index(_index), lut_constant(_lut_constant), fan_in(_fan_in), is_po(_is_po), po_index(_po_index), is_constant(_is_constant)
+   explicit klut_network_node(uint64_t _index, long long _lut_constant, const std::vector<uint64_t>& _fan_in,
+                              bool _is_po, uint64_t _po_index, bool _is_constant)
+       : index(_index),
+         lut_constant(_lut_constant),
+         fan_in(_fan_in),
+         is_po(_is_po),
+         po_index(_po_index),
+         is_constant(_is_constant)
    {
    }
 };
 
 /**
- * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two `mockturtle::klut_network::signal`s
- * and returns a `mockturtle::klut_network::signal`.
+ * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two
+ * `mockturtle::klut_network::signal`s and returns a `mockturtle::klut_network::signal`.
  */
-using klut_network_fn = mockturtle::klut_network::signal (klut_network_ext::*)(const mockturtle::klut_network::signal, const mockturtle::klut_network::signal);
+using klut_network_fn = mockturtle::klut_network::signal (klut_network_ext::*)(const mockturtle::klut_network::signal,
+                                                                               const mockturtle::klut_network::signal);
 
 /**
- * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two `std::vector<mockturtle::klut_network::signal>`s
- * and returns a `std::vector<mockturtle::klut_network::signal>`.
+ * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two
+ * `std::vector<mockturtle::klut_network::signal>`s and returns a `std::vector<mockturtle::klut_network::signal>`.
  */
-using klut_network_fn_v = std::vector<mockturtle::klut_network::signal> (klut_network_ext::*)(const std::vector<mockturtle::klut_network::signal>&, const std::vector<mockturtle::klut_network::signal>&, bool);
+using klut_network_fn_v = std::vector<mockturtle::klut_network::signal> (klut_network_ext::*)(
+    const std::vector<mockturtle::klut_network::signal>&, const std::vector<mockturtle::klut_network::signal>&, bool);
 
 #pragma endregion
 
@@ -646,14 +672,16 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
             // if the node can be converted into an `integer_cst` then the lut as constant inputs
             if(GetPointer<integer_cst>(GET_NODE(node)))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: lut with a constant input returns true");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---CheckIfProcessable: lut with a constant input returns true");
                return true;
             }
          }
       }
       else if(not cannotBeLUT(gimpleAssign->op1))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: " + GET_NODE(gimpleAssign->op1)->get_kind_text() + " can be a LUT");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---CheckIfProcessable: " + GET_NODE(gimpleAssign->op1)->get_kind_text() + " can be a LUT");
          return true;
       }
    }
@@ -748,14 +776,18 @@ static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
    return bits;
 }
 
-tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index, std::vector<tree_nodeRef>& prev_stmts_to_add)
+tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index,
+                                                              unsigned int BB_index,
+                                                              std::vector<tree_nodeRef>& prev_stmts_to_add)
 {
    const auto indexType = tree_man->GetUnsignedLongLongType();
    tree_nodeRef bit_pos_constant = TM->CreateUniqueIntegerCst(index, indexType);
    const std::string srcp_default("built-in:0:0");
    tree_nodeRef eb_op = tree_man->create_extract_bit_expr(source, bit_pos_constant, srcp_default);
    auto boolType = tree_man->GetBooleanType();
-   tree_nodeRef eb_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType), eb_op, function_id, BB_index, srcp_default);
+   tree_nodeRef eb_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                                     TM->CreateUniqueIntegerCst(1, boolType), eb_op, function_id,
+                                                     BB_index, srcp_default);
    prev_stmts_to_add.push_back(eb_ga);
    return GetPointer<const gimple_assign>(GET_CONST_NODE(eb_ga))->op0;
 }
@@ -782,7 +814,8 @@ static klut_network_fn_v GetIntegerNodeCreationFunction(enum kind code)
 }
 
 #ifndef NDEBUG
-static std::string ConvertBitsToString(const std::vector<bool>& bits, const std::string& true_string = "vdd", const std::string& false_string = "gnd", const std::string& sep = ", ")
+static std::string ConvertBitsToString(const std::vector<bool>& bits, const std::string& true_string = "vdd",
+                                       const std::string& false_string = "gnd", const std::string& sep = ", ")
 {
    std::string s;
 
@@ -851,7 +884,9 @@ static void ParseKLutNetwork(const mockturtle::klut_network& klut, std::vector<k
       if(ntk_topo.is_constant(ntk_topo.get_node(s)))
       {
          std::vector<uint64_t> fanIns;
-         klut_network_node lut_node(s, static_cast<long long>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)), fanIns, true, i, true);
+         klut_network_node lut_node(
+             s, static_cast<long long>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)),
+             fanIns, true, i, true);
          luts.push_back(lut_node);
       }
       else
@@ -862,14 +897,17 @@ static void ParseKLutNetwork(const mockturtle::klut_network& klut, std::vector<k
          if(is_zero)
          {
             std::vector<uint64_t> fanIns;
-            klut_network_node lut_node(s, static_cast<long long>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)), fanIns, true, i, true);
+            klut_network_node lut_node(
+                s, static_cast<long long>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)),
+                fanIns, true, i, true);
             luts.push_back(lut_node);
          }
          else if(ntk_topo.is_pi(ntk_topo.get_node(s)))
          {
             std::vector<uint64_t> fanIns;
             fanIns.push_back(s);
-            klut_network_node lut_node(s, static_cast<long long>(ntk_topo.is_complemented(s) ? 1 : 2), fanIns, true, i, false);
+            klut_network_node lut_node(s, static_cast<long long>(ntk_topo.is_complemented(s) ? 1 : 2), fanIns, true, i,
+                                       false);
             luts.push_back(lut_node);
          }
       }
@@ -1179,7 +1217,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
       auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(statement));
       enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing code " + GET_NODE(gimpleAssign->op1)->get_kind_text());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Analyzing code " + GET_NODE(gimpleAssign->op1)->get_kind_text());
 
       if(code1 == lut_expr_K)
       {
@@ -1206,8 +1245,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
                   auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
-                  kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  kop = int_const->value == 0 ? klut_e.get_constant(false) :
+                                                klut_e.create_not(klut_e.get_constant(false));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 int_const->value == 0 ? "---used gnd" : "---used vdd");
                   modified = true;
                }
                else if(CheckIfPI(op, BB_index))
@@ -1227,7 +1268,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
          }
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---translating in klut " + STR(GetPointer<integer_cst>(GET_NODE(le->op0))->value));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---translating in klut " + STR(GetPointer<integer_cst>(GET_NODE(le->op0))->value));
          auto res = klut_e.create_lut(ops, GetPointer<integer_cst>(GET_NODE(le->op0))->value);
          nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
 
@@ -1271,8 +1313,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
                   auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
-                  kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  kop = int_const->value == 0 ? klut_e.get_constant(false) :
+                                                klut_e.create_not(klut_e.get_constant(false));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 int_const->value == 0 ? "---used gnd" : "---used vdd");
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1337,8 +1381,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
                   auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
-                  kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  kop = int_const->value == 0 ? klut_e.get_constant(false) :
+                                                klut_e.create_not(klut_e.get_constant(false));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 int_const->value == 0 ? "---used gnd" : "---used vdd");
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1406,7 +1452,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          // if the first operand has already been processed then the previous signal is used
          if(nodeRefToSignal.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignal.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
             op1 = nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)];
          }
          else
@@ -1415,11 +1462,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             {
                auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
                op1 = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              int_const->value == 0 ? "---used gnd" : "---used vdd");
             }
             else if(CheckIfPI(binaryExpression->op0, BB_index))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
                op1 = klut_e.create_pi();
                pis.push_back(binaryExpression->op0);
                pis_offset.push_back(0);
@@ -1434,7 +1483,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          // if the second operand has already been processed then the previous signal is used
          if(nodeRefToSignal.find(GET_INDEX_NODE(binaryExpression->op1)) != nodeRefToSignal.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
             op2 = nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)];
          }
          else
@@ -1443,11 +1493,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             {
                auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
                op2 = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              int_const->value == 0 ? "---used gnd" : "---used vdd");
             }
             else if(CheckIfPI(binaryExpression->op1, BB_index))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
                op2 = klut_e.create_pi();
                pis.push_back(binaryExpression->op1);
                pis_offset.push_back(0);
@@ -1477,7 +1529,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          modified = true;
          continue;
       }
-      if(VECT_CONTAINS(lutIntegerExpressibleOperations, code1) && CHECK_BIN_EXPR_INT_SIZE(binaryExpression, parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE")))
+      if(VECT_CONTAINS(lutIntegerExpressibleOperations, code1) &&
+         CHECK_BIN_EXPR_INT_SIZE(binaryExpression, parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE")))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Integer operands");
 
@@ -1498,7 +1551,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          // if the first operand has already been processed then the previous signal is used
          if(nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignalBus.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
             op1 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)];
          }
          else
@@ -1513,7 +1567,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             else if(CheckIfPI(binaryExpression->op0, BB_index))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op0)->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---used PIs " + GET_NODE(binaryExpression->op0)->ToString());
                op1 = klut_e.create_pi_v(tree_helper::Size(binaryExpression->op0));
 
                int index = 0;
@@ -1534,7 +1589,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          // if the second operand has already been processed then the previous signal is used
          if(nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op1)) != nodeRefToSignalBus.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
             op2 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)];
          }
          else
@@ -1549,7 +1605,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             else if(CheckIfPI(binaryExpression->op1, BB_index))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op1)->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---used PIs " + GET_NODE(binaryExpression->op1)->ToString());
                op2 = klut_e.create_pi_v(tree_helper::Size(binaryExpression->op1));
 
                int index = 0;
@@ -1638,7 +1695,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             /// add previous statements defining non-primary outputs just before the current statement
             for(auto stmt : prev_stmts_to_add)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(stmt)->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Adding statement " + GET_NODE(stmt)->ToString());
                block.second->PushBefore(stmt, po_stmpt, AppM);
             }
             prev_stmts_to_add.clear();
@@ -1719,14 +1777,17 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             /// add selection bit stmts
             for(auto stmt : prev_stmts_to_add)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(stmt)->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Adding statement " + GET_NODE(stmt)->ToString());
                block.second->PushBefore(stmt, po_stmpt, AppM);
             }
             prev_stmts_to_add.clear();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before statement " + GET_NODE(po_stmpt)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Before statement " + GET_NODE(po_stmpt)->ToString());
             auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(po_stmpt));
             THROW_ASSERT(gimpleAssign, "unexpected condition");
-            const std::string srcp_default = gimpleAssign->include_name + ":" + STR(gimpleAssign->line_number) + ":" + STR(gimpleAssign->column_number);
+            const std::string srcp_default = gimpleAssign->include_name + ":" + STR(gimpleAssign->line_number) + ":" +
+                                             STR(gimpleAssign->column_number);
             auto ga_op0 = GET_NODE(gimpleAssign->op0);
             auto* ssa_ga_op0 = GetPointer<ssa_name>(ga_op0);
             THROW_ASSERT(ssa_ga_op0, "unexpected condition");
@@ -1745,13 +1806,16 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                const auto op1_type_node = tree_helper::CGetType(op1);
                if(GET_INDEX_NODE(ssa_ga_op0->type) == op1_type_node->index)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
                   TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, op1);
                }
                else
                {
-                  const auto new_op1 = tree_man->create_unary_operation(ssa_ga_op0->type, op1, srcp_default, nop_expr_K);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(new_op1));
+                  const auto new_op1 =
+                      tree_man->create_unary_operation(ssa_ga_op0->type, op1, srcp_default, nop_expr_K);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(new_op1));
                   TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
                }
             }
@@ -1762,7 +1826,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                auto check_lut_compatibility = [&](tree_nodeRef& lut_operand) {
                   if(lut_operand && !tree_helper::IsBooleanType(lut_operand))
                   {
-                     tree_nodeRef ga_nop = tree_man->CreateNopExpr(lut_operand, boolType, tree_nodeRef(), tree_nodeRef(), function_id);
+                     tree_nodeRef ga_nop =
+                         tree_man->CreateNopExpr(lut_operand, boolType, tree_nodeRef(), tree_nodeRef(), function_id);
                      block.second->PushBefore(ga_nop, po_stmpt, AppM);
                      lut_operand = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                   }
@@ -1777,24 +1842,33 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                check_lut_compatibility(op8);
                if(tree_helper::IsBooleanType(gimpleAssign->op0))
                {
-                  tree_nodeRef new_op1 = tree_man->create_lut_expr(ssa_ga_op0->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
+                  tree_nodeRef new_op1 = tree_man->create_lut_expr(ssa_ga_op0->type, lut_constant_node, op1, op2, op3,
+                                                                   op4, op5, op6, op7, op8, srcp_default);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
                   TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
                }
                else
                {
-                  tree_nodeRef lut_node = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
-                  auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType), lut_node, function_id, BB_index, srcp_default);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(lut_ga)->ToString());
+                  tree_nodeRef lut_node = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4,
+                                                                    op5, op6, op7, op8, srcp_default);
+                  auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                                             TM->CreateUniqueIntegerCst(1, boolType), lut_node,
+                                                             function_id, BB_index, srcp_default);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Adding statement " + GET_NODE(lut_ga)->ToString());
                   block.second->PushBefore(lut_ga, po_stmpt, AppM);
                   auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
-                  tree_nodeRef new_op1 = tree_man->create_unary_operation(ssa_ga_op0->type, ssa_vd, srcp_default, nop_expr_K);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
+                  tree_nodeRef new_op1 =
+                      tree_man->create_unary_operation(ssa_ga_op0->type, ssa_vd, srcp_default, nop_expr_K);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
                   TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
                }
             }
             AppM->RegisterTransformation(GetName(), po_stmpt);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Modified statement " + GET_NODE(po_stmpt)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Modified statement " + GET_NODE(po_stmpt)->ToString());
          }
          else
          {
@@ -1803,7 +1877,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             auto check_lut_compatibility = [&](tree_nodeRef& lut_operand) {
                if(lut_operand && !tree_helper::IsBooleanType(lut_operand))
                {
-                  tree_nodeRef ga_nop = tree_man->CreateNopExpr(lut_operand, boolType, tree_nodeRef(), tree_nodeRef(), function_id);
+                  tree_nodeRef ga_nop =
+                      tree_man->CreateNopExpr(lut_operand, boolType, tree_nodeRef(), tree_nodeRef(), function_id);
                   prev_stmts_to_add.push_back(ga_nop);
                   lut_operand = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                }
@@ -1817,8 +1892,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             check_lut_compatibility(op7);
             check_lut_compatibility(op8);
             const std::string srcp_default("built-in:0:0");
-            tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
-            auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id, BB_index, srcp_default);
+            tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6,
+                                                             op7, op8, srcp_default);
+            auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                                       TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id,
+                                                       BB_index, srcp_default);
             auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
             prev_stmts_to_add.push_back(lut_ga);
             internal_nets[lut.index] = ssa_vd;
@@ -1846,15 +1924,18 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
 #endif
 
-lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param), max_lut_size(NUM_CST_allocation_default_max_lut_size)
+lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM,
+                                       unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param),
+      max_lut_size(NUM_CST_allocation_default_max_lut_size)
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 lut_transformation::~lut_transformation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -1892,7 +1973,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship,
+                                              const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
    {
@@ -1901,11 +1983,15 @@ void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship, c
       case DEPENDENCE_RELATIONSHIP:
       {
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-         const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+         const std::string technology_flow_signature =
+             TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
          const DesignFlowStepRef technology_design_flow_step =
-             technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+             technology_flow_step ?
+                 design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                 technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
 
          break;
@@ -1947,7 +2033,8 @@ void lut_transformation::Initialize()
 
 DesignFlowStep_Status lut_transformation::InternalExec()
 {
-   if(parameters->IsParameter("disable-lut-transformation") && parameters->GetParameter<unsigned int>("disable-lut-transformation") == 1)
+   if(parameters->IsParameter("disable-lut-transformation") &&
+      parameters->GetParameter<unsigned int>("disable-lut-transformation") == 1)
    {
       return DesignFlowStep_Status::UNCHANGED;
    }

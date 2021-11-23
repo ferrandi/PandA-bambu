@@ -219,7 +219,8 @@ class FunctionBehavior
    /// The basic block CFG.
    const BBGraphRef bb;
 
-   /// The basic block Control Flow Graph extended with edges that impose that basic block inside a loop are executed before what follows the loop
+   /// The basic block Control Flow Graph extended with edges that impose that basic block inside a loop are executed
+   /// before what follows the loop
    const BBGraphRef extended_bb;
 
    /// The control dependence graph among basic blocks
@@ -356,16 +357,20 @@ class FunctionBehavior
    const ProfilingInformationRef profiling_information;
 #endif
 
-   /// Map operation vertex to position in topological order in control flow graph; in the sorting then part vertices come before else part ones
+   /// Map operation vertex to position in topological order in control flow graph; in the sorting then part vertices
+   /// come before else part ones
    std::map<vertex, unsigned int> map_levels;
 
-   /// Map basic block vertex to position in topological order in control flow graph; in the sorting then part vertices come before else part ones
+   /// Map basic block vertex to position in topological order in control flow graph; in the sorting then part vertices
+   /// come before else part ones
    std::map<vertex, unsigned int> bb_map_levels;
 
-   /// list of operations vertices sorted by topological order in control flow graph; in the sorting then part vertices come before else part ones
+   /// list of operations vertices sorted by topological order in control flow graph; in the sorting then part vertices
+   /// come before else part ones
    std::deque<vertex> deque_levels;
 
-   /// list of operations vertices sorted by topological order in control flow graph; in the sorting then part vertices come before else part ones
+   /// list of operations vertices sorted by topological order in control flow graph; in the sorting then part vertices
+   /// come before else part ones
    std::deque<vertex> bb_deque_levels;
 
    /// Loops of the function
@@ -380,10 +385,12 @@ class FunctionBehavior
    /// this set represents the parameters that have to be copied from the caller
    CustomOrderedSet<unsigned int> parm_decl_copied;
 
-   /// this set represents the actual parameters that has to be loaded into the formal parameter from the actual parameter
+   /// this set represents the actual parameters that has to be loaded into the formal parameter from the actual
+   /// parameter
    CustomOrderedSet<unsigned int> parm_decl_loaded;
 
-   /// this set represents the formal parameters that has to be stored into the formal parameter from the actual parameter
+   /// this set represents the formal parameters that has to be stored into the formal parameter from the actual
+   /// parameter
    CustomOrderedSet<unsigned int> parm_decl_stored;
 
    /// The set of input parameters
@@ -425,7 +432,8 @@ class FunctionBehavior
     * @param _helper is the helper associated with the function
     * @param parameters is the set of input parameters
     */
-   FunctionBehavior(const application_managerConstRef AppM, const BehavioralHelperRef _helper, const ParameterConstRef parameters);
+   FunctionBehavior(const application_managerConstRef AppM, const BehavioralHelperRef _helper,
+                    const ParameterConstRef parameters);
    FunctionBehavior(const FunctionBehavior&) = delete;
 
    /**
@@ -473,10 +481,11 @@ class FunctionBehavior
     */
    enum bb_graph_type
    {
-      BB,            /**< Basic block control flow graph */
-      FBB,           /**< Basic block control flow graph with feedback*/
-      EBB,           /**< Basic block control flow graph with edges imposing that basic block inside a loop are executed before what follows the loop*/
-      CDG_BB,        /**< Basic block control dependence graph */
+      BB,     /**< Basic block control flow graph */
+      FBB,    /**< Basic block control flow graph with feedback*/
+      EBB,    /**< Basic block control flow graph with edges imposing that basic block inside a loop are executed before
+                 what follows the loop*/
+      CDG_BB, /**< Basic block control dependence graph */
       DOM_TREE,      /**< Basic block dominator tree */
       POST_DOM_TREE, /**< Basic block post-dominator tree */
       PPG,           /**< Support basic block for path profiling */
@@ -882,7 +891,8 @@ class FunctionBehavior
 
    int get_initiation_time() const
    {
-      THROW_ASSERT(pipeline_enabled && !simple_pipeline, "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");
+      THROW_ASSERT(pipeline_enabled && !simple_pipeline,
+                   "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");
       return initiation_time;
    }
 
@@ -895,7 +905,8 @@ class FunctionBehavior
    bool CheckReachability(const vertex first_operation, const vertex second_operation) const;
 
    /**
-    * Check if a path from the first basic block to the second basic block exists in control flow graph (without feedback)
+    * Check if a path from the first basic block to the second basic block exists in control flow graph (without
+    * feedback)
     * @param first_basic_block is the first basic block to be considered
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg

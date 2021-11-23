@@ -62,7 +62,8 @@
 #include "boost/filesystem.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-FPGA_device::FPGA_device(const ParameterConstRef& _Param, const technology_managerRef& _TM) : target_device(_Param, _TM, TargetDevice_Type::FPGA)
+FPGA_device::FPGA_device(const ParameterConstRef& _Param, const technology_managerRef& _TM)
+    : target_device(_Param, _TM, TargetDevice_Type::FPGA)
 {
    /// creating the datastructure representing the target technology
    target = target_technology::create_technology(target_technology::FPGA, Param);
@@ -135,7 +136,9 @@ void FPGA_device::load_devices(const target_deviceRef device)
             if(default_device_data.find(device_string) != default_device_data.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loading " + device_string);
-               ret.insert(XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/target_device/FPGA/") + default_device_data[device_string])));
+               ret.insert(XMLDomParserRef(new XMLDomParser(
+                   relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/target_device/FPGA/") +
+                   default_device_data[device_string])));
             }
             else
             {
@@ -207,7 +210,8 @@ void FPGA_device::xwrite(xml_element* nodeRoot)
 
    for(auto p = parameters.begin(); p != parameters.end(); ++p)
    {
-      if(p->first == "vendor" || p->first == "family" || p->first == "model" || p->first == "package" || p->first == "speed_grade" || p->first == "clock_period")
+      if(p->first == "vendor" || p->first == "family" || p->first == "model" || p->first == "package" ||
+         p->first == "speed_grade" || p->first == "clock_period")
       {
          continue;
       }

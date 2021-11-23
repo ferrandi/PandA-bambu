@@ -53,14 +53,18 @@ class top_entity_cs : public top_entity
     * @param reset_port is the port of the reset signal
     * @param e_port is the input parameter port of the top entity
     */
-   void add_input_register(structural_objectRef port_in, const std::string& port_prefix, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef e_port) override;
+   void add_input_register(structural_objectRef port_in, const std::string& port_prefix, structural_objectRef circuit,
+                           structural_objectRef clock_port, structural_objectRef reset_port,
+                           structural_objectRef e_port) override;
 
    void add_context_switch_port();
 
    void add_context_switch_port_kernel();
 
  public:
-   top_entity_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION);
+   top_entity_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                 const DesignFlowManagerConstRef design_flow_manager,
+                 const HLSFlowStep_Type _hls_flow_step_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION);
 
    /**
     * Destructor

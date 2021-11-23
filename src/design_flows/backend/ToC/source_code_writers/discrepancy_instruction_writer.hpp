@@ -61,7 +61,9 @@ class discrepancy_instruction_writer : public HLSInstructionWriter
     * @param indented_output_stream is the output stream on which source code has to be written
     * @param parameters is the set of input parameters
     */
-   discrepancy_instruction_writer(const application_managerConstRef app_man, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef parameters);
+   discrepancy_instruction_writer(const application_managerConstRef app_man,
+                                  const IndentedOutputStreamRef indented_output_stream,
+                                  const ParameterConstRef parameters);
 
    /**
     * Destructor

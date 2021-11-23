@@ -63,9 +63,11 @@
 #include "schedule.hpp"
 
 const double time_model::execution_time_DEFAULT = 0;
-const ControlStep time_model::initiation_time_DEFAULT = ControlStep(0u); /// zero means that the operation is not pipelined
-const unsigned int time_model::cycles_time_DEFAULT = 0;                  /// zero means that the operation last in ceil(execution_time/clock_period)
-const double time_model::stage_period_DEFAULT = 0;                       /// zero means a non-pipelined operation
+const ControlStep time_model::initiation_time_DEFAULT =
+    ControlStep(0u); /// zero means that the operation is not pipelined
+const unsigned int time_model::cycles_time_DEFAULT =
+    0; /// zero means that the operation last in ceil(execution_time/clock_period)
+const double time_model::stage_period_DEFAULT = 0; /// zero means a non-pipelined operation
 
 time_model::time_model(const ParameterConstRef _Param_)
     : statistical_delay(ComputeStatisticalDelay(execution_time_DEFAULT, 250)),

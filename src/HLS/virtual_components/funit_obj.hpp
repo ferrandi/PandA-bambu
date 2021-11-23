@@ -72,7 +72,8 @@ class funit_obj : public generic_obj
     * @param _index is the instance of the functional unit
     * @param _type is the functional unit type
     */
-   funit_obj(const std::string& _name, unsigned int _type, unsigned int _index) : generic_obj(FUNCTIONAL_UNIT, _name), index(_index), fu_type(_type)
+   funit_obj(const std::string& _name, unsigned int _type, unsigned int _index)
+       : generic_obj(FUNCTIONAL_UNIT, _name), index(_index), fu_type(_type)
    {
    }
 

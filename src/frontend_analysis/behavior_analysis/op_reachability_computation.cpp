@@ -46,7 +46,9 @@
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-OpReachabilityComputation::OpReachabilityComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+OpReachabilityComputation::OpReachabilityComputation(const ParameterConstRef _Param, const application_managerRef _AppM,
+                                                     unsigned int _function_id,
+                                                     const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, OP_REACHABILITY_COMPUTATION, _design_flow_manager, _Param)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -58,7 +60,8 @@ void OpReachabilityComputation::Initialize()
 {
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> OpReachabilityComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+OpReachabilityComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)

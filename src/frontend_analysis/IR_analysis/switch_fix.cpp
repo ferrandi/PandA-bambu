@@ -65,7 +65,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-SwitchFix::SwitchFix(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+SwitchFix::SwitchFix(const application_managerRef _AppM, unsigned int _function_id,
+                     const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, SWITCH_FIX, _design_flow_manager, _parameters)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -73,7 +74,8 @@ SwitchFix::SwitchFix(const application_managerRef _AppM, unsigned int _function_
 
 SwitchFix::~SwitchFix() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> SwitchFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+SwitchFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -118,9 +120,12 @@ DesignFlowStep_Status SwitchFix::InternalExec()
       if(!list_of_stmt.empty() && GET_NODE(*(list_of_stmt.rbegin()))->get_kind() == gimple_switch_K)
       {
          const auto gs = GetPointer<const gimple_switch>(GET_NODE(list_of_stmt.back()));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->BB" + STR(basic_block.first) + " ends with a switch");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if some successor has more than two gimple_label");
-         /// The set of basic blocks which contain more than a label; this fix has to be performed before multiple_pred_switch check
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->BB" + STR(basic_block.first) + " ends with a switch");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Checking if some successor has more than two gimple_label");
+         /// The set of basic blocks which contain more than a label; this fix has to be performed before
+         /// multiple_pred_switch check
          CustomUnorderedSet<unsigned int> multiple_labels_blocks;
          for(const auto succ : basic_block.second->list_of_succ)
          {
@@ -135,8 +140,10 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
-         CustomUnorderedSet<unsigned int>::iterator multiple_labels_block, multiple_labels_block_end = multiple_labels_blocks.end();
-         for(multiple_labels_block = multiple_labels_blocks.begin(); multiple_labels_block != multiple_labels_block_end; ++multiple_labels_block)
+         CustomUnorderedSet<unsigned int>::iterator multiple_labels_block,
+             multiple_labels_block_end = multiple_labels_blocks.end();
+         for(multiple_labels_block = multiple_labels_blocks.begin(); multiple_labels_block != multiple_labels_block_end;
+             ++multiple_labels_block)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Splitting BB" + STR(*multiple_labels_block));
             /// Compute the case labels of the switch
@@ -164,7 +171,8 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining operation " + STR(stmt_i));
                   current_tree_node = *stmt_index;
-                  THROW_ASSERT(GET_NODE(current_tree_node)->get_kind() == gimple_label_K, "An artificial label_decl has not been found at the beginning of the basic block");
+                  THROW_ASSERT(GET_NODE(current_tree_node)->get_kind() == gimple_label_K,
+                               "An artificial label_decl has not been found at the beginning of the basic block");
                   ld = GET_NODE(GetPointer<gimple_label>(GET_NODE(current_tree_node))->op);
                   if(cases.find(ld) != cases.end())
                   {
@@ -173,7 +181,8 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                   ++stmt_index;
                   ++stmt_i;
                }
-               THROW_ASSERT(stmt_i < current_list_of_stmt.size(), "An artificial label_decl has not been found at the beginning of the basic block");
+               THROW_ASSERT(stmt_i < current_list_of_stmt.size(),
+                            "An artificial label_decl has not been found at the beginning of the basic block");
                const auto temp_label = *stmt_index;
                list_of_block.find(*multiple_labels_block)->second->RemoveStmt(temp_label, AppM);
                list_of_block.find(*multiple_labels_block)->second->PushFront(temp_label, AppM);
@@ -183,8 +192,8 @@ DesignFlowStep_Status SwitchFix::InternalExec()
 
             current_tree_node = current_list_of_stmt.front();
             list_of_block.find(*multiple_labels_block)->second->RemoveStmt(*(current_list_of_stmt.begin()), AppM);
-            /// Each label has to be put into a different basic block; first label is treated in a different way since it can have multiple predecessor
-            /// Create new basic block
+            /// Each label has to be put into a different basic block; first label is treated in a different way since
+            /// it can have multiple predecessor Create new basic block
             blocRef new_bb = blocRef(new bloc(list_of_block.rbegin()->first + 1));
             new_bb->loop_id = current_block->loop_id;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created BB" + STR(new_bb->number));
@@ -234,7 +243,8 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             current_block->list_of_pred.push_back(previous_block->number);
             previous_block->list_of_succ.push_back(*multiple_labels_block);
 
-            /// Check if this is a case : and not a label : - if so remove  this from successor of switch, otherwise add switch to predecessor of this
+            /// Check if this is a case : and not a label : - if so remove  this from successor of switch, otherwise add
+            /// switch to predecessor of this
             current_tree_node = current_list_of_stmt.front();
 
             ld = GET_NODE(GetPointer<gimple_label>(GET_NODE(current_tree_node))->op);
@@ -242,9 +252,12 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             {
                std::vector<unsigned int>& switch_list_of_succ = basic_block.second->list_of_succ;
 
-               THROW_ASSERT(std::find(switch_list_of_succ.begin(), switch_list_of_succ.end(), current_block->number) != switch_list_of_succ.end(), "current block not found between successors of current one");
+               THROW_ASSERT(std::find(switch_list_of_succ.begin(), switch_list_of_succ.end(), current_block->number) !=
+                                switch_list_of_succ.end(),
+                            "current block not found between successors of current one");
 
-               switch_list_of_succ.erase(std::find(switch_list_of_succ.begin(), switch_list_of_succ.end(), current_block->number));
+               switch_list_of_succ.erase(
+                   std::find(switch_list_of_succ.begin(), switch_list_of_succ.end(), current_block->number));
             }
             else
             {
@@ -304,16 +317,21 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                      {
                         if(def_edge.second == basic_block.first)
                         {
-                           current_phi->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(def_edge.first, new_bb->number));
+                           current_phi->ReplaceDefEdge(TM, def_edge,
+                                                       gimple_phi::DefEdge(def_edge.first, new_bb->number));
                         }
                      }
                   }
                }
                else
                {
-                  if(list_of_block.find(list_of_block.find(*t)->second->list_of_pred[i])->second and list_of_block.find(list_of_block.find(*t)->second->list_of_pred[i])->second->CGetStmtList().size())
+                  if(list_of_block.find(list_of_block.find(*t)->second->list_of_pred[i])->second and
+                     list_of_block.find(list_of_block.find(*t)->second->list_of_pred[i])->second->CGetStmtList().size())
                   {
-                     if(GET_NODE(list_of_block.find(list_of_block.find(*t)->second->list_of_pred[i])->second->CGetStmtList().back())->get_kind() == gimple_switch_K)
+                     if(GET_NODE(list_of_block.find(list_of_block.find(*t)->second->list_of_pred[i])
+                                     ->second->CGetStmtList()
+                                     .back())
+                            ->get_kind() == gimple_switch_K)
                      {
                         multiple_pred_switch = true;
                      }
@@ -321,7 +339,9 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                }
             }
             // moving label expr
-            THROW_ASSERT(GET_NODE(list_of_block.find(*t)->second->CGetStmtList().front())->get_kind() == gimple_label_K, "BB" + STR(*t) + " follows switch " + STR(basic_block.first) + " but it does not start with a label");
+            THROW_ASSERT(GET_NODE(list_of_block.find(*t)->second->CGetStmtList().front())->get_kind() == gimple_label_K,
+                         "BB" + STR(*t) + " follows switch " + STR(basic_block.first) +
+                             " but it does not start with a label");
             if(multiple_pred_switch)
             {
                auto label_expr_node = list_of_block.find(*t)->second->CGetStmtList().front();
@@ -390,7 +410,8 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             {
                const auto cle = GetPointer<const case_label_expr>(GET_NODE(goto_));
                THROW_ASSERT(cle, STR(goto_));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Destination: " + STR(cle->got->index) + " CLE " + STR(cle->index));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Destination: " + STR(cle->got->index) + " CLE " + STR(cle->index));
                case_labels[cle->got->index].insert(goto_);
             }
 
@@ -419,11 +440,17 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                         const auto low_value = tree_helper::get_integer_cst_value(low_ic);
                         const auto high_value = tree_helper::get_integer_cst_value(high_ic);
                         const auto eq = tree_man->CreateEqExpr(gs->op0, cle->op0, basic_block.second, function_id);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Equality is " + GetPointer<const ssa_name>(GET_NODE(eq))->CGetDefStmt()->ToString());
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Equality is " +
+                                           GetPointer<const ssa_name>(GET_NODE(eq))->CGetDefStmt()->ToString());
                         cond = cond ? tree_man->CreateOrExpr(cond, eq, basic_block.second, function_id) : eq;
                         for(auto index = low_value + 1; index <= high_value; index++)
                         {
-                           cond = tree_man->CreateOrExpr(cond, tree_man->CreateEqExpr(gs->op0, TM->CreateUniqueIntegerCst(index, low_ic->type), basic_block.second, function_id), basic_block.second, function_id);
+                           cond = tree_man->CreateOrExpr(
+                               cond,
+                               tree_man->CreateEqExpr(gs->op0, TM->CreateUniqueIntegerCst(index, low_ic->type),
+                                                      basic_block.second, function_id),
+                               basic_block.second, function_id);
                         }
                      }
                      else
@@ -443,7 +470,8 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                {
                   new_gwi->add_cond(cond, succ);
                }
-               list_of_block.find(succ)->second->RemoveStmt(list_of_block.find(succ)->second->CGetStmtList().front(), AppM);
+               list_of_block.find(succ)->second->RemoveStmt(list_of_block.find(succ)->second->CGetStmtList().front(),
+                                                            AppM);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered successor BB" + STR(succ));
             }
             new_gwi->add_cond(tree_nodeRef(), default_bb);

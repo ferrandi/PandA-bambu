@@ -78,14 +78,17 @@
 #include <string>
 #include <utility>
 
-dead_code_eliminationIPA::dead_code_eliminationIPA(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par) : ApplicationFrontendFlowStep(AM, DEAD_CODE_ELIMINATION_IPA, dfm, par)
+dead_code_eliminationIPA::dead_code_eliminationIPA(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
+                                                   const ParameterConstRef par)
+    : ApplicationFrontendFlowStep(AM, DEAD_CODE_ELIMINATION_IPA, dfm, par)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 dead_code_eliminationIPA::~dead_code_eliminationIPA() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> dead_code_eliminationIPA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+dead_code_eliminationIPA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -116,7 +119,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-void dead_code_eliminationIPA::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
+void dead_code_eliminationIPA::ComputeRelationships(DesignFlowStepSet& relationships,
+                                                    const DesignFlowStep::RelationshipType relationship_type)
 {
    if(relationship_type == INVALIDATION_RELATIONSHIP)
    {
@@ -124,21 +128,25 @@ void dead_code_eliminationIPA::ComputeRelationships(DesignFlowStepSet& relations
       {
          for(const auto i : fun_id_to_restart)
          {
-            const std::string step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
+            const std::string step_signature =
+                FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
             vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
             THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+            const DesignFlowStepRef design_flow_step =
+                design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
             relationships.insert(design_flow_step);
          }
       }
       for(const auto i : fun_id_to_restartParm)
       {
-         const std::string step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::PARM2SSA, i);
+         const std::string step_signature =
+             FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::PARM2SSA, i);
          vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
          THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         const DesignFlowStepRef design_flow_step =
+             design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
       fun_id_to_restart.clear();
@@ -165,11 +173,13 @@ DesignFlowStep_Status dead_code_eliminationIPA::Exec()
    const auto reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
    for(const auto fu_id : reached_body_fun_ids)
    {
-      const auto is_root = AppM->CGetCallGraphManager()->GetRootFunctions().count(fu_id) || AppM->CGetCallGraphManager()->GetAddressedFunctions().count(fu_id);
+      const auto is_root = AppM->CGetCallGraphManager()->GetRootFunctions().count(fu_id) ||
+                           AppM->CGetCallGraphManager()->GetAddressedFunctions().count(fu_id);
       if(!is_root)
       {
          const auto fu_name = AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
          const auto fu_node = TM->GetTreeNode(fu_id);
          auto fd = GetPointerS<function_decl>(fu_node);
          THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
@@ -180,10 +190,12 @@ DesignFlowStep_Status dead_code_eliminationIPA::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed function ");
       }
    }
-   return fun_id_to_restart.empty() && fun_id_to_restartParm.empty() ? DesignFlowStep_Status::UNCHANGED : DesignFlowStep_Status::SUCCESS;
+   return fun_id_to_restart.empty() && fun_id_to_restartParm.empty() ? DesignFlowStep_Status::UNCHANGED :
+                                                                       DesignFlowStep_Status::SUCCESS;
 }
 
-bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function_decl* fd, unsigned int function_id, const CustomOrderedSet<unsigned int>& rFunctions)
+bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function_decl* fd, unsigned int function_id,
+                                             const CustomOrderedSet<unsigned int>& rFunctions)
 {
    const auto& args = fd->list_of_args;
    std::vector<tree_nodeConstRef> real_parm(args.size(), nullptr);
@@ -194,10 +206,14 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       for(const auto& use : ssa_uses)
       {
          const auto SSA = GetPointer<const ssa_name>(GET_CONST_NODE(use.first));
-         // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function parameter inside the function body
-         if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K && GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
+         // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function
+         // parameter inside the function body
+         if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K &&
+            GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
          {
-            auto argIt = std::find_if(args.begin(), args.end(), [&](const tree_nodeRef& arg) { return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var); });
+            auto argIt = std::find_if(args.begin(), args.end(), [&](const tree_nodeRef& arg) {
+               return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var);
+            });
             THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
             size_t arg_pos = static_cast<size_t>(argIt - args.begin());
             if(real_parm[arg_pos] != nullptr)
@@ -206,7 +222,9 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
                continue;
             }
             THROW_ASSERT(arg_pos < args.size(), "Computed parameter position outside actual parameters number");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter " + STR(arg_pos) + "(" + GET_CONST_NODE(*argIt)->ToString() + ") is binded to ssa variable " + SSA->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Parameter " + STR(arg_pos) + "(" + GET_CONST_NODE(*argIt)->ToString() +
+                               ") is binded to ssa variable " + SSA->ToString());
             real_parm[arg_pos] = use.first;
             binding_completed = std::find(real_parm.begin(), real_parm.end(), nullptr) == real_parm.end();
          }
@@ -258,7 +276,8 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       }
       return uai;
    }();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unused parameter indexes: " + convert_vector_to_string(unused_arg_index, ", ", false));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "Unused parameter indexes: " + convert_vector_to_string(unused_arg_index, ", ", false));
    const auto arg_eraser = [&](std::vector<tree_nodeRef>& arg_list, const tree_nodeRef& call_stmt) {
       for(const auto& uai : unused_arg_index)
       {
@@ -266,7 +285,8 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
          auto ssa = GetPointer<ssa_name>(GET_NODE(*arg_it));
          if(ssa)
          {
-            THROW_ASSERT(ssa->CGetUseStmts().count(call_stmt), "ssa " + ssa->ToString() + " not used in " + call_stmt->ToString());
+            THROW_ASSERT(ssa->CGetUseStmts().count(call_stmt),
+                         "ssa " + ssa->ToString() + " not used in " + call_stmt->ToString());
 
             if(ssa->virtual_flag)
             {
@@ -296,8 +316,11 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
    std::vector<tree_nodeRef> loa = fd->list_of_args, argsT;
    arg_eraser(loa, nullptr);
-   std::transform(loa.cbegin(), loa.cend(), std::back_inserter(argsT), [&](const tree_nodeRef& arg) { return TM->GetTreeReindex(tree_helper::get_type_index(TM, GET_INDEX_CONST_NODE(arg))); });
-   const auto ftype = tree_man->GetFunctionType(GetPointerS<const function_type>(GET_CONST_NODE(fd->type))->retn, argsT);
+   std::transform(loa.cbegin(), loa.cend(), std::back_inserter(argsT), [&](const tree_nodeRef& arg) {
+      return TM->GetTreeReindex(tree_helper::get_type_index(TM, GET_INDEX_CONST_NODE(arg)));
+   });
+   const auto ftype =
+       tree_man->GetFunctionType(GetPointerS<const function_type>(GET_CONST_NODE(fd->type))->retn, argsT);
    const auto ftype_ptr = tree_man->GetPointerType(ftype, ALGN_POINTER);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused arguments from call points");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
@@ -307,7 +330,10 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       if(rFunctions.find(caller_id) != rFunctions.end())
       {
          const auto fei = CG->CGetFunctionEdgeInfo(*ie);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing call points from " + tree_helper::print_function_name(TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+         INDENT_DBG_MEX(
+             DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+             "Analysing call points from " +
+                 tree_helper::print_function_name(TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
          for(const auto& call_id : fei->direct_call_points)
          {
             auto call_rdx = TM->GetTreeReindex(call_id);
@@ -351,11 +377,17 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing parameters from function signature");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "---Before erase: " + tree_helper::print_type(TM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
+                  "---Before erase: " +
+                      tree_helper::print_type(TM, function_id, false, true, false, 0U,
+                                              var_pp_functorConstRef(new std_var_pp_functor(
+                                                  AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
    fd->list_of_args = loa;
    fd->type = ftype;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "---After erase: " + tree_helper::print_type(TM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
+                  "---After erase: " +
+                      tree_helper::print_type(TM, function_id, false, true, false, 0U,
+                                              var_pp_functorConstRef(new std_var_pp_functor(
+                                                  AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Function signature optimization completed");
    return true;
 }

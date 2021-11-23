@@ -58,7 +58,9 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-UnComparisonLowering::UnComparisonLowering(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+UnComparisonLowering::UnComparisonLowering(const application_managerRef _AppM, unsigned int _function_id,
+                                           const DesignFlowManagerConstRef _design_flow_manager,
+                                           const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, UN_COMPARISON_LOWERING, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -66,7 +68,8 @@ UnComparisonLowering::UnComparisonLowering(const application_managerRef _AppM, u
 
 UnComparisonLowering::~UnComparisonLowering() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> UnComparisonLowering::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+UnComparisonLowering::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -115,7 +118,8 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
          }
          const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
          const auto rhs_kind = GET_CONST_NODE(ga->op1)->get_kind();
-         if(rhs_kind == unlt_expr_K || rhs_kind == unge_expr_K || rhs_kind == ungt_expr_K || rhs_kind == unle_expr_K || rhs_kind == ltgt_expr_K)
+         if(rhs_kind == unlt_expr_K || rhs_kind == unge_expr_K || rhs_kind == ungt_expr_K || rhs_kind == unle_expr_K ||
+            rhs_kind == ltgt_expr_K)
          {
             const auto be = GetPointerS<const binary_expr>(GET_CONST_NODE(ga->op1));
             const auto srcp_string = be->include_name + ":" + STR(be->line_number) + ":" + STR(be->column_number);
@@ -147,15 +151,23 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
 
             const auto booleanType = tree_man->GetBooleanType();
             const auto new_be = tree_man->create_binary_operation(booleanType, be->op0, be->op1, srcp_string, new_kind);
-            const auto new_ga = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType), TreeM->CreateUniqueIntegerCst(1, booleanType), new_be, function_id, 0, srcp_string);
+            const auto new_ga = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType),
+                                                             TreeM->CreateUniqueIntegerCst(1, booleanType), new_be,
+                                                             function_id, 0, srcp_string);
             block.second->PushBefore(new_ga, stmt, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(new_ga));
-            const auto new_not = tree_man->create_unary_operation(booleanType, GetPointerS<const gimple_assign>(GET_CONST_NODE(new_ga))->op0, srcp_string, truth_not_expr_K);
+            const auto new_not = tree_man->create_unary_operation(
+                booleanType, GetPointerS<const gimple_assign>(GET_CONST_NODE(new_ga))->op0, srcp_string,
+                truth_not_expr_K);
             if(GET_INDEX_CONST_NODE(be->type) != GET_INDEX_CONST_NODE(booleanType))
             {
-               const auto new_ga_not = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType), TreeM->CreateUniqueIntegerCst(1, booleanType), new_not, function_id, 0, srcp_string);
+               const auto new_ga_not = tree_man->CreateGimpleAssign(
+                   booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType),
+                   TreeM->CreateUniqueIntegerCst(1, booleanType), new_not, function_id, 0, srcp_string);
                block.second->PushBefore(new_ga_not, stmt, AppM);
-               const auto new_nop = tree_man->create_unary_operation(be->type, GetPointerS<const gimple_assign>(GET_CONST_NODE(new_ga_not))->op0, srcp_string, nop_expr_K);
+               const auto new_nop = tree_man->create_unary_operation(
+                   be->type, GetPointerS<const gimple_assign>(GET_CONST_NODE(new_ga_not))->op0, srcp_string,
+                   nop_expr_K);
                TreeM->ReplaceTreeNode(stmt, ga->op1, new_nop);
             }
             else

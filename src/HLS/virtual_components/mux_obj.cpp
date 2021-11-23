@@ -43,8 +43,14 @@
  */
 #include "mux_obj.hpp"
 
-mux_obj::mux_obj(const generic_objRef _first, const generic_objRef _second, unsigned int _level, const std::string& _name, const generic_objRef overall_target)
-    : generic_obj(CONNECTION_ELEMENT, _name), bitsize(0), first(_first), second(_second), tree_target(overall_target), level(_level)
+mux_obj::mux_obj(const generic_objRef _first, const generic_objRef _second, unsigned int _level,
+                 const std::string& _name, const generic_objRef overall_target)
+    : generic_obj(CONNECTION_ELEMENT, _name),
+      bitsize(0),
+      first(_first),
+      second(_second),
+      tree_target(overall_target),
+      level(_level)
 {
 }
 

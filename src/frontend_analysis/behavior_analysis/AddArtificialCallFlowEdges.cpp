@@ -59,7 +59,9 @@
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_managerRef _AppM, unsigned int _function_id,
+                                                       const DesignFlowManagerConstRef _design_flow_manager,
+                                                       const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, ADD_ARTIFICIAL_CALL_FLOW_EDGES, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -67,7 +69,8 @@ AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_manager
 
 AddArtificialCallFlowEdges::~AddArtificialCallFlowEdges() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddArtificialCallFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+AddArtificialCallFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -104,7 +107,8 @@ DesignFlowStep_Status AddArtificialCallFlowEdges::InternalExec()
    VertexIterator v, v_end;
    for(boost::tie(v, v_end) = boost::vertices(*bb_graph); v != v_end; ++v)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_graph->CGetBBNodeInfo(*v)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Analyzing BB" + STR(bb_graph->CGetBBNodeInfo(*v)->block->number));
       const auto& statements_list = bb_graph->CGetBBNodeInfo(*v)->statements_list;
       for(const auto stmt : statements_list)
       {
@@ -131,7 +135,8 @@ DesignFlowStep_Status AddArtificialCallFlowEdges::InternalExec()
             }
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(bb_graph->CGetBBNodeInfo(*v)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Analyzed BB" + STR(bb_graph->CGetBBNodeInfo(*v)->block->number));
    }
    if(parameters->getOption<bool>(OPT_print_dot))
    {

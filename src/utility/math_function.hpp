@@ -56,7 +56,9 @@
 /**
  * Return the distance between a point and a line (represented as a couple of points) in a n-dimensional space
  */
-long double get_point_line_distance(const AugmentedVector<long double>& point, const AugmentedVector<long double>& line_point1, const AugmentedVector<long double>& line_point2);
+long double get_point_line_distance(const AugmentedVector<long double>& point,
+                                    const AugmentedVector<long double>& line_point1,
+                                    const AugmentedVector<long double>& line_point2);
 
 /**
  * Return the greatest common divisor

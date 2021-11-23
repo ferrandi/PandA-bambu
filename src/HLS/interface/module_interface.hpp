@@ -56,7 +56,8 @@ class module_interface : public HLSFunctionStep
    /**
     * Connects two ports by adding a signal (i.e., wire)
     */
-   void add_sign(const structural_managerRef SM, const structural_objectRef sig1, const structural_objectRef sig2, const std::string& sig_name);
+   void add_sign(const structural_managerRef SM, const structural_objectRef sig1, const structural_objectRef sig2,
+                 const std::string& sig_name);
 
    /**
     * Connects two ports by adding a signal
@@ -67,7 +68,8 @@ class module_interface : public HLSFunctionStep
     * @param port2 is the name of the second port
     * @param sig_name is the name of the signal to be added
     */
-   void AddSignal(const structural_managerRef SM, const structural_objectRef component1, const std::string& port1, const structural_objectRef component2, const std::string& port2, const std::string& signal_name);
+   void AddSignal(const structural_managerRef SM, const structural_objectRef component1, const std::string& port1,
+                  const structural_objectRef component2, const std::string& port2, const std::string& signal_name);
 
    /**
     * Connects two ports by adding a signal
@@ -77,7 +79,8 @@ class module_interface : public HLSFunctionStep
     * @param component2 is the second component
     * @param port2 is the name of the second port
     */
-   void AddConnection(const structural_managerRef SM, const structural_objectRef component1, const std::string& port1, const structural_objectRef component2, const std::string& port2);
+   void AddConnection(const structural_managerRef SM, const structural_objectRef component1, const std::string& port1,
+                      const structural_objectRef component2, const std::string& port2);
 
    /**
     * Connects a constant to a port
@@ -87,24 +90,28 @@ class module_interface : public HLSFunctionStep
     * @param constant is the value of the constant
     * @param size is the size of the port
     */
-   void AddConstant(const structural_managerRef SM, const structural_objectRef component, const std::string& port, const std::string& constant, const unsigned int size);
+   void AddConstant(const structural_managerRef SM, const structural_objectRef component, const std::string& port,
+                    const std::string& constant, const unsigned int size);
 
    /**
     * Connects two ports by adding a vector signal (i.e., wire)
     */
-   void add_sign_vector(const structural_managerRef SM, const structural_objectRef sig1, const structural_objectRef sig2, const std::string& sig_name);
+   void add_sign_vector(const structural_managerRef SM, const structural_objectRef sig1,
+                        const structural_objectRef sig2, const std::string& sig_name);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
     * Constructor
     */
-   module_interface(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   module_interface(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                    const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor

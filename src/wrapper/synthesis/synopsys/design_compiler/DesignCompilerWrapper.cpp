@@ -108,8 +108,12 @@
 #define dc_output_dir "dc_output_dir"                           // output directory
 
 // constructor
-DesignCompilerWrapper::DesignCompilerWrapper(const ParameterConstRef _Param, const target_deviceRef _device, const std::string& _output_dir)
-    : SynopsysWrapper(_Param, DESIGN_COMPILER_TOOL_ID, _device, _output_dir, "DC"), max_area(0.0), max_delay(0.0), synthesis_result(false)
+DesignCompilerWrapper::DesignCompilerWrapper(const ParameterConstRef _Param, const target_deviceRef _device,
+                                             const std::string& _output_dir)
+    : SynopsysWrapper(_Param, DESIGN_COMPILER_TOOL_ID, _device, _output_dir, "DC"),
+      max_area(0.0),
+      max_delay(0.0),
+      synthesis_result(false)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating and configuring the Design Compiler wrapper...");
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
@@ -153,7 +157,8 @@ void DesignCompilerWrapper::EvaluateVariables(const DesignParametersRef dp)
 
    for(auto& xml_script_node : xml_script_nodes)
    {
-      if(xml_script_node->nodeType == NODE_COMMAND && *(GetPointer<xml_command_t>(xml_script_node)->name) == "report_area")
+      if(xml_script_node->nodeType == NODE_COMMAND &&
+         *(GetPointer<xml_command_t>(xml_script_node)->name) == "report_area")
       {
          if(!GetPointer<xml_command_t>(xml_script_node)->output)
          {
@@ -162,7 +167,8 @@ void DesignCompilerWrapper::EvaluateVariables(const DesignParametersRef dp)
          report_files[REPORT_AREA] = *(GetPointer<xml_command_t>(xml_script_node)->output);
          replace_parameters(dp, report_files[REPORT_AREA]);
       }
-      if(xml_script_node->nodeType == NODE_COMMAND && *(GetPointer<xml_command_t>(xml_script_node)->name) == "report_timing")
+      if(xml_script_node->nodeType == NODE_COMMAND &&
+         *(GetPointer<xml_command_t>(xml_script_node)->name) == "report_timing")
       {
          if(!GetPointer<xml_command_t>(xml_script_node)->output)
          {
@@ -294,7 +300,8 @@ void DesignCompilerWrapper::set_target_libraries(const DesignParametersRef)
    }
 }
 
-std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef dp, const std::vector<std::string>& file_list)
+std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef dp,
+                                                       const std::vector<std::string>& file_list)
 {
    std::string top = dp->component_name;
 
@@ -577,7 +584,8 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
          else if(line.size() and (is_path_element || line.find(" (in)") != std::string::npos))
          {
             is_path_element = true;
-            if(line.find(" (in)") != std::string::npos || line.find(" (ideal)") != std::string::npos || line.find(" (rise edge)") != std::string::npos)
+            if(line.find(" (in)") != std::string::npos || line.find(" (ideal)") != std::string::npos ||
+               line.find(" (rise edge)") != std::string::npos)
             {
                critical_cell.clear();
                timing_path.clear();
@@ -612,7 +620,8 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "** Time Report **");
       for(unsigned int a = 0; a < arrival_time.size(); a++)
       {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "* " << a << ". Arrival time          : " << arrival_time[a]);
+         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                       "* " << a << ". Arrival time          : " << arrival_time[a]);
          if(arrival_time[a] > max_arrival_time)
          {
             max_arrival_time = arrival_time[a];
@@ -648,14 +657,16 @@ void DesignCompilerWrapper::parse_synthesis_reports()
          std::string line;
          getline(output_file, line);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, line);
-         if(line.size() and line.find("microseconds per iteration") != std::string::npos and line.find("echo") == std::string::npos)
+         if(line.size() and line.find("microseconds per iteration") != std::string::npos and
+            line.find("echo") == std::string::npos)
          {
             std::string token("microseconds per iteration");
             std::string elapsed_time_string = line.substr(0, line.find(token));
             boost::trim(elapsed_time_string);
             synthesis_time = boost::lexical_cast<double>(elapsed_time_string) / 1000.0;
          }
-         if(line.size() and line.find("RESULT SYNTHESIS:") != std::string::npos and line.find("echo") == std::string::npos)
+         if(line.size() and line.find("RESULT SYNTHESIS:") != std::string::npos and
+            line.find("echo") == std::string::npos)
          {
             std::string token("RESULT SYNTHESIS:");
             std::string result_string = line.substr(line.find(token) + token.size() + 1, line.size());
@@ -668,7 +679,9 @@ void DesignCompilerWrapper::parse_synthesis_reports()
    if(synthesis_time > 0)
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "** Synthesis Report **");
-      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "* Elapsed synthesis time    : " << print_cpu_time(static_cast<long int>(synthesis_time)) << " seconds");
+      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                    "* Elapsed synthesis time    : " << print_cpu_time(static_cast<long int>(synthesis_time))
+                                                     << " seconds");
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*****************");
    }
 }
@@ -742,11 +755,13 @@ area_modelRef DesignCompilerWrapper::parse_area_reports()
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "** Area Report **");
       if(area.find(area_model::COMBINATIONAL_AREA) != area.end() and area[area_model::COMBINATIONAL_AREA] > 0)
       {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "* Combinational area    : " << area[area_model::COMBINATIONAL_AREA]);
+         PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level,
+                       "* Combinational area    : " << area[area_model::COMBINATIONAL_AREA]);
       }
       if(area.find(area_model::NONCOMBINATIONAL_AREA) != area.end() and area[area_model::NONCOMBINATIONAL_AREA] > 0)
       {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "* Noncombinational area : " << area[area_model::NONCOMBINATIONAL_AREA]);
+         PRINT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
+                       "* Noncombinational area : " << area[area_model::NONCOMBINATIONAL_AREA]);
       }
       if(area.find(area_model::CELL_AREA) != area.end() and area[area_model::CELL_AREA] > 0)
       {
@@ -754,11 +769,13 @@ area_modelRef DesignCompilerWrapper::parse_area_reports()
       }
       if(area.find(area_model::INTERCONNECT_AREA) != area.end() and area[area_model::INTERCONNECT_AREA] > 0)
       {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "* Net Interconnect area : " << area[area_model::INTERCONNECT_AREA]);
+         PRINT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
+                       "* Net Interconnect area : " << area[area_model::INTERCONNECT_AREA]);
       }
       if(area.find(area_model::TOTAL_AREA) != area.end() and area[area_model::TOTAL_AREA] > 0)
       {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "* Total area            : " << area[area_model::TOTAL_AREA]);
+         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                       "* Total area            : " << area[area_model::TOTAL_AREA]);
       }
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "*****************");
 
@@ -787,7 +804,8 @@ void DesignCompilerWrapper::parse_reports()
    }
 }
 
-std::string DesignCompilerWrapper::write_timing_paths(const std::string& design_name, const std::vector<std::string>& timing_path)
+std::string DesignCompilerWrapper::write_timing_paths(const std::string& design_name,
+                                                      const std::vector<std::string>& timing_path)
 {
    try
    {

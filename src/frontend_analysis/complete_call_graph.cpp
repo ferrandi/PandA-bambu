@@ -50,7 +50,10 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <string>                  // for string, operator!=, bas...
 
-CompleteCallGraph::CompleteCallGraph(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, COMPLETE_CALL_GRAPH, _design_flow_manager, _parameters)
+CompleteCallGraph::CompleteCallGraph(const application_managerRef _AppM,
+                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                     const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, COMPLETE_CALL_GRAPH, _design_flow_manager, _parameters)
 {
    composed = true;
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -58,7 +61,8 @@ CompleteCallGraph::CompleteCallGraph(const application_managerRef _AppM, const D
 
 CompleteCallGraph::~CompleteCallGraph() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)

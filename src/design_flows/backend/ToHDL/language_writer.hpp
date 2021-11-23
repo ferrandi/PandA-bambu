@@ -32,7 +32,8 @@
  */
 /**
  * @file language_writer.hpp
- * @brief This class writes different HDL based descriptions (VHDL, Verilog, SystemC) starting from a structural representation.
+ * @brief This class writes different HDL based descriptions (VHDL, Verilog, SystemC) starting from a structural
+ * representation.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
@@ -135,7 +136,8 @@ class language_writer
     * @param TM is the technology manager
     * @param parameters is the set of input parameters
     */
-   static language_writerRef create_writer(HDLWriter_Language language, const technology_managerConstRef TM, const ParameterConstRef parameters);
+   static language_writerRef create_writer(HDLWriter_Language language, const technology_managerConstRef TM,
+                                           const ParameterConstRef parameters);
 
    /**
     * Returns the name of the language writer.
@@ -214,9 +216,11 @@ class language_writer
    /**
     * Write the initial part of the instance of a module.
     * @param cir is the module to be instanced.
-    * @param component_name is the name of the module to be instanced. It has to be specified since VHDL and verilog can print in different ways
+    * @param component_name is the name of the module to be instanced. It has to be specified since VHDL and verilog can
+    * print in different ways
     */
-   virtual void write_module_instance_begin(const structural_objectRef& cir, const std::string& module_name, bool write_parametrization) = 0;
+   virtual void write_module_instance_begin(const structural_objectRef& cir, const std::string& module_name,
+                                            bool write_parametrization) = 0;
    /**
     * Write the ending part of the instance of a module.
     * @param cir is the module to be instanced.
@@ -227,7 +231,8 @@ class language_writer
     * @param port is the port to be bounded.
     * @param top is the component owner of the component that has the port to be bounded.
     */
-   virtual void write_port_binding(const structural_objectRef& port, const structural_objectRef& top, bool first_port_analyzed) = 0;
+   virtual void write_port_binding(const structural_objectRef& port, const structural_objectRef& top,
+                                   bool first_port_analyzed) = 0;
 
    virtual void write_vector_port_binding(const structural_objectRef& port, bool first_port_analyzed) = 0;
    /**
@@ -249,12 +254,12 @@ class language_writer
    virtual void write_io_signal_post_fix(const structural_objectRef& port, const structural_objectRef& sig) = 0;
    virtual void write_io_signal_post_fix_vector(const structural_objectRef& port, const structural_objectRef& sig) = 0;
    /**
-    * Module can be parametrized with respect different features. Port vectors are parametrized with the number of port associated,
-    * while ports are parametrized in case the type is a integer with the number of bits. The id of the module is modified
-    * by adding the parameters at its end. For example an AND_GATE with a port_vector of 2 will be declared as: AND_GATE_2.
-    * Moreover, a multiplier with the first input of four bits, the second input with eight bits and an output of twelve bits will be
-    * declared as: MULT_4_8_12.
-    * Note that parametrization has a meaning only in case the functionality come from the STD technology library.
+    * Module can be parametrized with respect different features. Port vectors are parametrized with the number of port
+    * associated, while ports are parametrized in case the type is a integer with the number of bits. The id of the
+    * module is modified by adding the parameters at its end. For example an AND_GATE with a port_vector of 2 will be
+    * declared as: AND_GATE_2. Moreover, a multiplier with the first input of four bits, the second input with eight
+    * bits and an output of twelve bits will be declared as: MULT_4_8_12. Note that parametrization has a meaning only
+    * in case the functionality come from the STD technology library.
     * @param cir is the component to be declared.
     */
    virtual void write_module_parametrization(const structural_objectRef& cir) = 0;
@@ -267,7 +272,9 @@ class language_writer
     * write the declaration of all the states of the finite state machine.
     * @param list_of_states is the list of all the states.
     */
-   virtual void write_state_declaration(const structural_objectRef& cir, const std::list<std::string>& list_of_states, const std::string& reset_port, const std::string& reset_state, bool one_hot) = 0;
+   virtual void write_state_declaration(const structural_objectRef& cir, const std::list<std::string>& list_of_states,
+                                        const std::string& reset_port, const std::string& reset_state,
+                                        bool one_hot) = 0;
    /**
     * write the present_state update process
     * @param reset_state is the reset state.
@@ -275,7 +282,9 @@ class language_writer
     * @param clock_port is the clock port.
     * @param synch_reset when true the FSM will have an synchronous reset
     */
-   virtual void write_present_state_update(const structural_objectRef cir, const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool connect_present_next_state_signals) = 0;
+   virtual void write_present_state_update(const structural_objectRef cir, const std::string& reset_state,
+                                           const std::string& reset_port, const std::string& clock_port,
+                                           const std::string& reset_type, bool connect_present_next_state_signals) = 0;
    /**
     * Write the transition and output functions.
     * @param cir is the component.
@@ -285,9 +294,11 @@ class language_writer
     * @param end if the end iterator of the state table.
     * @param is_yosys is true when the transition table is meant for YOSYS.
     */
-   virtual void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
-                                                  std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys,
-                                                  const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals) = 0;
+   virtual void write_transition_output_functions(
+       bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state,
+       const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
+       std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys,
+       const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals) = 0;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.

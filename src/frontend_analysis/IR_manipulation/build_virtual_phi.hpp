@@ -64,7 +64,8 @@ class BuildVirtualPhi : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -74,7 +75,8 @@ class BuildVirtualPhi : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   BuildVirtualPhi(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   BuildVirtualPhi(const application_managerRef AppM, unsigned int function_id,
+                   const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor
@@ -86,6 +88,7 @@ class BuildVirtualPhi : public FunctionFrontendFlowStep
     */
    DesignFlowStep_Status InternalExec() override;
 
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

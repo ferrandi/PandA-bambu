@@ -104,7 +104,9 @@ class tree_helper
     * @param without_transformation specifies if we are not restructuring the code
     * @param before is true/false if we are computing types which must be declared before/after type
     */
-   static void RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, TreeNodeConstSorter>& returned_types, const tree_nodeConstRef& type, const bool recursion, const bool without_transformation, const bool before);
+   static void RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, TreeNodeConstSorter>& returned_types,
+                                             const tree_nodeConstRef& type, const bool recursion,
+                                             const bool without_transformation, const bool before);
 
    /**
     * recursively compute the references to the ssa_name variables used in a statement
@@ -205,7 +207,8 @@ class tree_helper
     * @param is_system stores if function or type has been already recognized as a system one
     * @return include name, line number, and column number tuple
     */
-   static std::tuple<std::string, unsigned int, unsigned int> GetSourcePath(const tree_nodeConstRef& node, bool& is_system);
+   static std::tuple<std::string, unsigned int, unsigned int> GetSourcePath(const tree_nodeConstRef& node,
+                                                                            bool& is_system);
 
    /**
     * Return true if the function index returns a not void type, false otherwise
@@ -235,7 +238,8 @@ class tree_helper
     * @param t is a tree node (usually a function declaration).
     * @param list_of_variable list of used variables.
     */
-   static void get_used_variables(bool first_level_only, const tree_nodeConstRef& t, CustomUnorderedSet<unsigned int>& list_of_variable);
+   static void get_used_variables(bool first_level_only, const tree_nodeConstRef& t,
+                                  CustomUnorderedSet<unsigned int>& list_of_variable);
 
    /**
     * Look for inheritance of a class
@@ -258,7 +262,8 @@ class tree_helper
     * @param without_transformation specifies if we are not restructuring the code
     * @return the types to be declared
     */
-   static std::set<tree_nodeConstRef, TreeNodeConstSorter> GetTypesToBeDeclaredBefore(const tree_nodeConstRef& tn, const bool without_transformation);
+   static std::set<tree_nodeConstRef, TreeNodeConstSorter>
+   GetTypesToBeDeclaredBefore(const tree_nodeConstRef& tn, const bool without_transformation);
 
    /**
     * Return the types to be declared after declaring index type
@@ -266,7 +271,8 @@ class tree_helper
     * @param without_transformation specifies if we are not restructuring the code
     * @return the types to be declared
     */
-   static std::set<tree_nodeConstRef, TreeNodeConstSorter> GetTypesToBeDeclaredAfter(const tree_nodeConstRef& tn, const bool without_transformation);
+   static std::set<tree_nodeConstRef, TreeNodeConstSorter> GetTypesToBeDeclaredAfter(const tree_nodeConstRef& tn,
+                                                                                     const bool without_transformation);
 
    /**
     * Return the treenode index of the type of index
@@ -279,7 +285,8 @@ class tree_helper
    static
        /// FIXME: to be remove after substitution with GetType/CGetType and others to get the out variable checks
        unsigned int
-       get_type_index(const tree_managerConstRef& TM, const unsigned int index, long long int& vec_size, bool& is_a_pointer, bool& is_a_function);
+       get_type_index(const tree_managerConstRef& TM, const unsigned int index, long long int& vec_size,
+                      bool& is_a_pointer, bool& is_a_function);
 
    /**
     * Same as previous but with two parameters.
@@ -515,7 +522,8 @@ class tree_helper
    static bool IsComplexType(const tree_nodeConstRef& type);
 
    /**
-    * Return if treenode index is an array or it is equivalent to an array (record recursively having a single field ending into a single arrays)
+    * Return if treenode index is an array or it is equivalent to an array (record recursively having a single field
+    * ending into a single arrays)
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
@@ -525,7 +533,8 @@ class tree_helper
        is_an_array(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
-    * Return true if treenode is an array or it is equivalent to an array (record recursively having a single field ending into a single arrays)
+    * Return true if treenode is an array or it is equivalent to an array (record recursively having a single field
+    * ending into a single arrays)
     * @param type is the treenode
     * @return true if treenode is an array or it is equivalent to an array
     */
@@ -828,7 +837,8 @@ class tree_helper
    static
        /// FIXME: to be remove after substitution with IsPointerResolved
        bool
-       is_fully_resolved(const tree_managerConstRef& TM, const unsigned int index, CustomOrderedSet<unsigned int>& res_set);
+       is_fully_resolved(const tree_managerConstRef& TM, const unsigned int index,
+                         CustomOrderedSet<unsigned int>& res_set);
 
    static bool IsPointerResolved(const tree_nodeConstRef& ptr, CustomOrderedSet<unsigned int>& res_set);
 
@@ -994,7 +1004,8 @@ class tree_helper
     * @param is_written is true when the array is written false otherwise
     * @param two_dim_p becomes true when the array is two dimensional
     */
-   static unsigned int get_array_var(const tree_managerConstRef& TM, const unsigned int index, bool is_written, bool& two_dim_p);
+   static unsigned int get_array_var(const tree_managerConstRef& TM, const unsigned int index, bool is_written,
+                                     bool& two_dim_p);
 
    /**
     * Return the size (in bits) of the base element of the array
@@ -1041,7 +1052,8 @@ class tree_helper
    static
        /// FIXME: to be remove after substitution with GetArrayDimensions and GetArrayElementSize
        void
-       get_array_dim_and_bitsize(const tree_managerConstRef& TM, const unsigned int index, std::vector<unsigned int>& dims, unsigned int& elts_bitsize);
+       get_array_dim_and_bitsize(const tree_managerConstRef& TM, const unsigned int index,
+                                 std::vector<unsigned int>& dims, unsigned int& elts_bitsize);
 
    /**
     * Return the total number of elements of the the base type in the array
@@ -1068,7 +1080,9 @@ class tree_helper
     * @param size_indexes return the size of each index
     * @param base_object is the base referenced object
     */
-   static void extract_array_indexes(const tree_managerConstRef& TM, const unsigned int index, std::vector<unsigned int>& indexes, std::vector<unsigned int>& size_indexes, unsigned int& base_object);
+   static void extract_array_indexes(const tree_managerConstRef& TM, const unsigned int index,
+                                     std::vector<unsigned int>& indexes, std::vector<unsigned int>& size_indexes,
+                                     unsigned int& base_object);
 
    /**
     * check if a given tree node is a concatenation operation
@@ -1202,8 +1216,10 @@ class tree_helper
    static
        /// FIXME: to be remove after substitution with PrintType
        std::string
-       print_type(const tree_managerConstRef& TM, unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef& vppf = var_pp_functorConstRef(),
-                  const std::string& prefix = "", const std::string& tail = "");
+       print_type(const tree_managerConstRef& TM, unsigned int type, bool global = false, bool print_qualifiers = false,
+                  bool print_storage = false, unsigned int var = 0,
+                  const var_pp_functorConstRef& vppf = var_pp_functorConstRef(), const std::string& prefix = "",
+                  const std::string& tail = "");
 
    /**
     * Print a type and its variable in case var is not zero.
@@ -1216,8 +1232,11 @@ class tree_helper
     * @param prefix is the string to be appended at the begining of the printing
     * @return std::string the printed string
     */
-   static std::string PrintType(const tree_managerConstRef& TM, const tree_nodeConstRef& type, bool global = false, bool print_qualifiers = false, bool print_storage = false, const tree_nodeConstRef& var = nullptr,
-                                const var_pp_functorConstRef& vppf = var_pp_functorConstRef(), const std::string& prefix = "", const std::string& tail = "");
+   static std::string PrintType(const tree_managerConstRef& TM, const tree_nodeConstRef& type, bool global = false,
+                                bool print_qualifiers = false, bool print_storage = false,
+                                const tree_nodeConstRef& var = nullptr,
+                                const var_pp_functorConstRef& vppf = var_pp_functorConstRef(),
+                                const std::string& prefix = "", const std::string& tail = "");
 
    /**
     * return the type of the ith formal parameter in case index_obj is a call_expr
@@ -1299,7 +1318,8 @@ class tree_helper
 
    static bool is_a_nop_function_decl(const function_decl* fd);
 
-   static void get_required_values(std::vector<std::tuple<unsigned int, unsigned int>>& required, const tree_nodeRef& tn);
+   static void get_required_values(std::vector<std::tuple<unsigned int, unsigned int>>& required,
+                                   const tree_nodeRef& tn);
 
    /**
     * Return true if statement must be the last of a basic block

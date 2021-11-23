@@ -57,7 +57,8 @@
 #include <list>                   // for list
 #include <utility>                // for pair
 
-operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og) : og(std::move(_og)), op_graph(new OpGraph(og, -1))
+operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og)
+    : og(std::move(_og)), op_graph(new OpGraph(og, -1))
 {
 }
 
@@ -108,7 +109,8 @@ void operations_graph_constructor::CompressEdges()
    og->CompressEdges();
 }
 
-void operations_graph_constructor::add_edge_info(const vertex src, const vertex tgt, const int selector, unsigned int NodeID)
+void operations_graph_constructor::add_edge_info(const vertex src, const vertex tgt, const int selector,
+                                                 unsigned int NodeID)
 {
    EdgeDescriptor e;
    bool inserted;
@@ -130,8 +132,11 @@ void operations_graph_constructor::AddOperation(const tree_managerRef TM, const 
    THROW_ASSERT(operation_t != "", "Operation empty");
 #endif
    vertex current = getIndex(src);
-   THROW_ASSERT(not op_graph->CGetOpNodeInfo(current)->node or node_id == 0 or node_id == op_graph->CGetOpNodeInfo(current)->GetNodeId(),
-                "Trying to set node_id " + boost::lexical_cast<std::string>(node_id) + " to vertex " + src + " that has already node_id " + boost::lexical_cast<std::string>(op_graph->CGetOpNodeInfo(current)->GetNodeId()));
+   THROW_ASSERT(not op_graph->CGetOpNodeInfo(current)->node or node_id == 0 or
+                    node_id == op_graph->CGetOpNodeInfo(current)->GetNodeId(),
+                "Trying to set node_id " + boost::lexical_cast<std::string>(node_id) + " to vertex " + src +
+                    " that has already node_id " +
+                    boost::lexical_cast<std::string>(op_graph->CGetOpNodeInfo(current)->GetNodeId()));
    if(node_id > 0 and node_id != ENTRY_ID and node_id != EXIT_ID)
    {
       op_graph->GetOpNodeInfo(current)->node = TM->GetTreeReindex(node_id);
@@ -170,13 +175,16 @@ void operations_graph_constructor::add_type(const std::string& src, unsigned int
    }
 }
 
-void operations_graph_constructor::AddVariable(const vertex op_vertex, const unsigned int variable, const FunctionBehavior_VariableType variable_type, const FunctionBehavior_VariableAccessType access_type)
+void operations_graph_constructor::AddVariable(const vertex op_vertex, const unsigned int variable,
+                                               const FunctionBehavior_VariableType variable_type,
+                                               const FunctionBehavior_VariableAccessType access_type)
 {
    op_graph->GetOpNodeInfo(op_vertex)->variables[variable_type][access_type].insert(variable);
 }
 
 #if HAVE_EXPERIMENTAL
-void operations_graph_constructor::AddMemoryLocation(const vertex op_vertex, const MemoryAddress variable, const FunctionBehavior_VariableAccessType access_type)
+void operations_graph_constructor::AddMemoryLocation(const vertex op_vertex, const MemoryAddress variable,
+                                                     const FunctionBehavior_VariableAccessType access_type)
 {
    op_graph->GetOpNodeInfo(op_vertex)->dynamic_memory_locations[access_type].insert(variable);
 }

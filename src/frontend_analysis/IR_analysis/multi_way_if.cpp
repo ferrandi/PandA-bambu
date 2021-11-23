@@ -96,15 +96,19 @@
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 
-multi_way_if::multi_way_if(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, MULTI_WAY_IF, _design_flow_manager, _parameters), sl(nullptr), bb_modified(false)
+multi_way_if::multi_way_if(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                           unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, MULTI_WAY_IF, _design_flow_manager, _parameters),
+      sl(nullptr),
+      bb_modified(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 multi_way_if::~multi_way_if() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -132,16 +136,20 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          /// Not executed
          if(GetStatus() != DesignFlowStep_Status::SUCCESS)
          {
-            if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+            if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and
+               GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
                GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
             {
                /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
-               const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
+               const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
+                   FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
                if(update_schedule)
                {
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-                  const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
-                  if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != function_behavior->GetBBVersion())
+                  const DesignFlowStepRef design_flow_step =
+                      design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                  if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
+                     function_behavior->GetBBVersion())
                   {
                      relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
                      break;
@@ -175,7 +183,8 @@ void multi_way_if::Initialize()
    const auto fd = GetPointerS<const function_decl>(temp);
    sl = GetPointerS<statement_list>(GET_NODE(fd->body));
 #if HAVE_ILP_BUILT
-   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and
+      GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
       for(const auto& block : sl->list_of_bloc)
@@ -190,7 +199,8 @@ void multi_way_if::UpdateCfg(const blocRef& pred_bb, const blocRef& curr_bb)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating control flow graph");
    /// Remove curr_bb from successor of pred_bb
-   pred_bb->list_of_succ.erase(std::remove(pred_bb->list_of_succ.begin(), pred_bb->list_of_succ.end(), curr_bb->number), pred_bb->list_of_succ.end());
+   pred_bb->list_of_succ.erase(std::remove(pred_bb->list_of_succ.begin(), pred_bb->list_of_succ.end(), curr_bb->number),
+                               pred_bb->list_of_succ.end());
 
    /// For each successor succ of curr_bb
    for(const auto succ : curr_bb->list_of_succ)
@@ -198,10 +208,13 @@ void multi_way_if::UpdateCfg(const blocRef& pred_bb, const blocRef& curr_bb)
       THROW_ASSERT(sl->list_of_bloc.count(succ), "");
       const auto& succ_bb = sl->list_of_bloc.at(succ);
       /// Remove curr_bb from its predecessor
-      succ_bb->list_of_pred.erase(std::remove(succ_bb->list_of_pred.begin(), succ_bb->list_of_pred.end(), curr_bb->number), succ_bb->list_of_pred.end());
+      succ_bb->list_of_pred.erase(
+          std::remove(succ_bb->list_of_pred.begin(), succ_bb->list_of_pred.end(), curr_bb->number),
+          succ_bb->list_of_pred.end());
 
       /// Add pred_bb to its predecessor
-      if(std::find(succ_bb->list_of_pred.begin(), succ_bb->list_of_pred.end(), pred_bb->number) == succ_bb->list_of_pred.end())
+      if(std::find(succ_bb->list_of_pred.begin(), succ_bb->list_of_pred.end(), pred_bb->number) ==
+         succ_bb->list_of_pred.end())
       {
          succ_bb->list_of_pred.push_back(pred_bb->number);
       }
@@ -233,13 +246,15 @@ void multi_way_if::UpdateCfg(const blocRef& pred_bb, const blocRef& curr_bb)
 DesignFlowStep_Status multi_way_if::InternalExec()
 {
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
-   BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
+   BBGraphsCollectionRef GCC_bb_graphs_collection(
+       new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
 
    CustomOrderedSet<unsigned int> bb_to_be_removed;
    for(const auto& block : sl->list_of_bloc)
    {
-      inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
+      inverse_vertex_map[block.first] =
+          GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
    }
    /// add edges
    for(const auto& bb : sl->list_of_bloc)
@@ -259,11 +274,13 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       }
       if(curr_bb->list_of_succ.empty())
       {
-         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bbi], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
+         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bbi], inverse_vertex_map[bloc::EXIT_BLOCK_ID],
+                                           CFG_SELECTOR);
       }
    }
    /// add a connection between entry and exit thus avoiding problems with non terminating code
-   GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
+   GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID],
+                                     CFG_SELECTOR);
    /// sort basic block vertices from the entry till the exit
    std::list<vertex> bb_sorted_vertices;
    cyclic_topological_sort(*GCC_bb_graph, std::front_inserter(bb_sorted_vertices));
@@ -303,7 +320,8 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       const auto last_pred_stmt = GET_NODE(pred_bb->CGetStmtList().back());
       if(last_pred_stmt->get_kind() != gimple_cond_K && last_pred_stmt->get_kind() != gimple_multi_way_if_K)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because predecessor ends with " + last_pred_stmt->get_kind_text());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Skipped because predecessor ends with " + last_pred_stmt->get_kind_text());
          continue;
       }
       if(curr_bb->CGetStmtList().size() != 1)
@@ -321,7 +339,8 @@ DesignFlowStep_Status multi_way_if::InternalExec()
 #endif
       if(last_curr_stmt->get_kind() != gimple_cond_K && last_curr_stmt->get_kind() != gimple_multi_way_if_K)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because it ends with a " + last_curr_stmt->get_kind_text());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Skipped because it ends with a " + last_curr_stmt->get_kind_text());
          continue;
       }
       if(curr_bb->CGetPhiList().size() != 0)
@@ -348,7 +367,8 @@ DesignFlowStep_Status multi_way_if::InternalExec()
          {
             if(std::find(curr_list_of_succ.begin(), curr_list_of_succ.end(), succ_bbi) != curr_list_of_succ.end())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(succ_bbi) + " is a common sucessor");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---BB" + STR(succ_bbi) + " is a common sucessor");
                THROW_ASSERT(sl->list_of_bloc.count(succ_bbi), "");
                FixCfg(curr_bb, sl->list_of_bloc.at(succ_bbi));
                restart = true;
@@ -366,22 +386,30 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       /// now the merging starts
       if(last_pred_stmt->get_kind() == gimple_cond_K && last_curr_stmt->get_kind() == gimple_cond_K)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merging gimple_cond with gimple_cond (BB" + STR(curr_bbi) + " with BB" + STR(pred) + ")");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Merging gimple_cond with gimple_cond (BB" + STR(curr_bbi) + " with BB" + STR(pred) + ")");
          MergeCondCond(pred_bb, curr_bb);
       }
       else if(last_pred_stmt->get_kind() == gimple_cond_K && last_curr_stmt->get_kind() == gimple_multi_way_if_K)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merging gimple_cond with gimple_multi_way_if (BB" + STR(curr_bbi) + " with BB" + STR(pred) + ")");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Merging gimple_cond with gimple_multi_way_if (BB" + STR(curr_bbi) + " with BB" + STR(pred) +
+                            ")");
          MergeCondMulti(pred_bb, curr_bb);
       }
-      else if(last_pred_stmt->get_kind() == gimple_multi_way_if_K && last_curr_stmt->get_kind() == gimple_multi_way_if_K)
+      else if(last_pred_stmt->get_kind() == gimple_multi_way_if_K &&
+              last_curr_stmt->get_kind() == gimple_multi_way_if_K)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merging gimple_multi_way_if with gimple_multi_way_if (BB" + STR(curr_bbi) + " with BB" + STR(pred) + ")");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Merging gimple_multi_way_if with gimple_multi_way_if (BB" + STR(curr_bbi) + " with BB" +
+                            STR(pred) + ")");
          MergeMultiMulti(pred_bb, curr_bb);
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merging gimple_multi_way_if with gimple_cond (BB" + STR(curr_bbi) + " with BB" + STR(pred) + ")");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Merging gimple_multi_way_if with gimple_cond (BB" + STR(curr_bbi) + " with BB" + STR(pred) +
+                            ")");
          MergeMultiCond(pred_bb, curr_bb);
       }
       UpdateCfg(pred_bb, curr_bb);
@@ -456,7 +484,11 @@ void multi_way_if::MergeCondMulti(const blocRef& pred_bb, const blocRef& curr_bb
       for(const auto& old_cond : old_gwi->list_of_cond)
       {
          const auto not_second = tree_man->CreateNotExpr(ce_cond, pred_bb, function_id);
-         const tree_nodeRef new_cond = old_cond.first ? tree_man->CreateAndExpr(old_cond.first, tree_man->CreateNotExpr(ce_cond, pred_bb, function_id), pred_bb, function_id) : tree_nodeRef();
+         const tree_nodeRef new_cond =
+             old_cond.first ?
+                 tree_man->CreateAndExpr(old_cond.first, tree_man->CreateNotExpr(ce_cond, pred_bb, function_id),
+                                         pred_bb, function_id) :
+                 tree_nodeRef();
          new_gwi->add_cond(new_cond, old_cond.second);
       }
    }
@@ -493,11 +525,13 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
 
    for(const auto& old_cond1 : old_gwi1->list_of_cond)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering condition " + (old_cond1.first ? old_cond1.first->ToString() : " default"));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Considering condition " + (old_cond1.first ? old_cond1.first->ToString() : " default"));
       /// Non default and succ is on this edge
       if(old_cond1.first && old_cond1.second == curr_bb->number)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It is not default and nested gimple_multi_way_if is on this edge");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---It is not default and nested gimple_multi_way_if is on this edge");
          for(const auto& old_cond2 : old_gwi2->list_of_cond)
          {
             if(old_cond2.first)
@@ -514,7 +548,9 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
                   {
                      if(new_cond)
                      {
-                        new_cond = tree_man->CreateAndExpr(new_cond, tree_man->CreateNotExpr(other_old_cond2.first, pred_bb, function_id), pred_bb, function_id);
+                        new_cond = tree_man->CreateAndExpr(
+                            new_cond, tree_man->CreateNotExpr(other_old_cond2.first, pred_bb, function_id), pred_bb,
+                            function_id);
                      }
                      else
                      {
@@ -530,13 +566,15 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
       /// Non default and succ is not on this edge
       else if(old_cond1.first)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It is not default and nested gimple_multi_way_if is not on this edge");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---It is not default and nested gimple_multi_way_if is not on this edge");
          new_gwi->add_cond(old_cond1.first, old_cond1.second);
       }
       /// Default and succ is on this edge
       else if(old_cond1.second == curr_bb->number)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It is default and nested gimple_multi_way_if is on this edge");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---It is default and nested gimple_multi_way_if is on this edge");
          /// Building the and of the not of other conditions of cond1
          tree_nodeRef not_cond = tree_nodeRef();
          for(const auto& other_old_cond1 : old_gwi1->list_of_cond)
@@ -545,7 +583,9 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
             {
                if(not_cond)
                {
-                  not_cond = tree_man->CreateAndExpr(not_cond, tree_man->CreateNotExpr(other_old_cond1.first, pred_bb, function_id), pred_bb, function_id);
+                  not_cond = tree_man->CreateAndExpr(
+                      not_cond, tree_man->CreateNotExpr(other_old_cond1.first, pred_bb, function_id), pred_bb,
+                      function_id);
                }
                else
                {
@@ -569,10 +609,12 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
       /// Default and second is not on this edge
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It is default and nested gimple_multi_way_if is not on this edge");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---It is default and nested gimple_multi_way_if is not on this edge");
          new_gwi->add_cond(tree_nodeRef(), old_cond1.second);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered condition " + (old_cond1.first ? old_cond1.first->ToString() : " default"));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Considered condition " + (old_cond1.first ? old_cond1.first->ToString() : " default"));
    }
    pred_bb->PushBack(TM->GetTreeReindex(gimple_multi_way_if_id), AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + new_gwi->ToString());
@@ -612,7 +654,8 @@ void multi_way_if::MergeMultiCond(const blocRef& pred_bb, const blocRef& curr_bb
       {
          const auto true_cond = tree_man->CreateAndExpr(old_cond.first, ce_cond, pred_bb, function_id);
          new_gwi->add_cond(true_cond, curr_bb->true_edge);
-         const auto false_cond = tree_man->CreateAndExpr(old_cond.first, tree_man->CreateNotExpr(ce_cond, pred_bb, function_id), pred_bb, function_id);
+         const auto false_cond = tree_man->CreateAndExpr(
+             old_cond.first, tree_man->CreateNotExpr(ce_cond, pred_bb, function_id), pred_bb, function_id);
          new_gwi->add_cond(false_cond, curr_bb->false_edge);
       }
       /// Non default and succ is not on this edge
@@ -631,7 +674,9 @@ void multi_way_if::MergeMultiCond(const blocRef& pred_bb, const blocRef& curr_bb
             {
                if(not_cond)
                {
-                  not_cond = tree_man->CreateAndExpr(not_cond, tree_man->CreateNotExpr(other_old_cond.first, pred_bb, function_id), pred_bb, function_id);
+                  not_cond = tree_man->CreateAndExpr(
+                      not_cond, tree_man->CreateNotExpr(other_old_cond.first, pred_bb, function_id), pred_bb,
+                      function_id);
                }
                else
                {
@@ -682,7 +727,8 @@ void multi_way_if::MergeCondCond(const blocRef& pred_bb, const blocRef& curr_bb)
    if(pred_bb->false_edge == curr_bb->number)
    {
       gmwi->add_cond(ssa1_node, pred_bb->true_edge);
-      const auto res_and = tree_man->CreateAndExpr(ssa2_node, tree_man->CreateNotExpr(ssa1_node, pred_bb, function_id), pred_bb, function_id);
+      const auto res_and = tree_man->CreateAndExpr(ssa2_node, tree_man->CreateNotExpr(ssa1_node, pred_bb, function_id),
+                                                   pred_bb, function_id);
       gmwi->add_cond(res_and, curr_bb->true_edge);
       gmwi->add_cond(tree_nodeRef(), curr_bb->false_edge);
    }
@@ -717,8 +763,11 @@ void multi_way_if::FixCfg(const blocRef& pred_bb, const blocRef& succ_bb)
    new_block->schedule = pred_bb->schedule;
 
    /// Fix the predecessor
-   THROW_ASSERT(std::find(pred_bb->list_of_succ.begin(), pred_bb->list_of_succ.end(), succ_bb->number) != pred_bb->list_of_succ.end(), "");
-   pred_bb->list_of_succ.erase(std::remove(pred_bb->list_of_succ.begin(), pred_bb->list_of_succ.end(), succ_bb->number), pred_bb->list_of_succ.end());
+   THROW_ASSERT(std::find(pred_bb->list_of_succ.begin(), pred_bb->list_of_succ.end(), succ_bb->number) !=
+                    pred_bb->list_of_succ.end(),
+                "");
+   pred_bb->list_of_succ.erase(std::remove(pred_bb->list_of_succ.begin(), pred_bb->list_of_succ.end(), succ_bb->number),
+                               pred_bb->list_of_succ.end());
    pred_bb->list_of_succ.push_back(new_basic_block_index);
    if(pred_bb->true_edge == succ_bb->number)
    {
@@ -746,7 +795,8 @@ void multi_way_if::FixCfg(const blocRef& pred_bb, const blocRef& succ_bb)
    }
 
    /// Fix the successor
-   succ_bb->list_of_pred.erase(std::remove(succ_bb->list_of_pred.begin(), succ_bb->list_of_pred.end(), pred_bb->number), succ_bb->list_of_pred.end());
+   succ_bb->list_of_pred.erase(std::remove(succ_bb->list_of_pred.begin(), succ_bb->list_of_pred.end(), pred_bb->number),
+                               succ_bb->list_of_pred.end());
    succ_bb->list_of_pred.push_back(new_basic_block_index);
 
    /// Fix the phi
@@ -774,15 +824,19 @@ bool multi_way_if::HasToBeExecuted() const
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
    {
-      if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
+      if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+         GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
       {
          /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
-         const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
+         const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
+             FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
          if(update_schedule)
          {
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
-            if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != function_behavior->GetBBVersion())
+            const DesignFlowStepRef design_flow_step =
+                design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+            if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
+               function_behavior->GetBBVersion())
             {
                return false;
             }
@@ -806,12 +860,14 @@ bool multi_way_if::HasToBeExecuted() const
    /// Multi way if can be executed only after vectorization
    if(parameters->getOption<int>(OPT_gcc_openmp_simd))
    {
-      const auto vectorize_vertex = design_flow_manager.lock()->GetDesignFlowStep(ComputeSignature(FrontendFlowStepType::VECTORIZE, function_id));
+      const auto vectorize_vertex =
+          design_flow_manager.lock()->GetDesignFlowStep(ComputeSignature(FrontendFlowStepType::VECTORIZE, function_id));
       if(vectorize_vertex == NULL_VERTEX)
       {
          return false;
       }
-      const auto vectorize_step = design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(vectorize_vertex)->design_flow_step;
+      const auto vectorize_step =
+          design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(vectorize_vertex)->design_flow_step;
       if(GetPointer<const FunctionFrontendFlowStep>(vectorize_step)->CGetBBVersion() == 0)
       {
          return false;

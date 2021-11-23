@@ -62,7 +62,8 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/filesystem.hpp>
 
-IC_device::IC_device(const ParameterConstRef _Param, const technology_managerRef _TM) : target_device(_Param, _TM, TargetDevice_Type::IC)
+IC_device::IC_device(const ParameterConstRef _Param, const technology_managerRef _TM)
+    : target_device(_Param, _TM, TargetDevice_Type::IC)
 {
    if(has_parameter("core_height"))
    {
@@ -100,7 +101,8 @@ void IC_device::set_dimension(double area)
       area /= get_parameter<double>("utilization_factor");
       if(core_height == 0 and core_width == 0)
       {
-         double float_height = sqrt(area * get_parameter<double>("aspect_ratio") / pow(tech->get_parameter<double>("cell_height"), 2.0));
+         double float_height =
+             sqrt(area * get_parameter<double>("aspect_ratio") / pow(tech->get_parameter<double>("cell_height"), 2.0));
          std::cerr << "float height = " << float_height << std::endl;
 
          unsigned int rows = 1;
@@ -127,7 +129,8 @@ void IC_device::set_dimension(double area)
       }
    }
 
-   std::cerr << "die area = " << core_height * core_width << " [" << core_width << "," << core_height << "]" << std::endl;
+   std::cerr << "die area = " << core_height * core_width << " [" << core_width << "," << core_height << "]"
+             << std::endl;
 }
 
 void IC_device::initialize()
@@ -138,7 +141,9 @@ void IC_device::initialize()
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Utilization factor: " << parameters["utilization_factor"]);
    if(has_parameter("clock_period"))
    {
-      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Clock period: " << parameters["clock_period"] << " (" << 1.0 / get_parameter<double>("clock_period") << ")");
+      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                    "   Clock period: " << parameters["clock_period"] << " ("
+                                        << 1.0 / get_parameter<double>("clock_period") << ")");
    }
 }
 
@@ -154,7 +159,8 @@ void IC_device::load_devices(const target_deviceRef device)
 
    try
    {
-      XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/target_device/IC/") + builtin_technology[0]);
+      XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/target_device/IC/") +
+                          builtin_technology[0]);
       parser.Exec();
       if(parser)
       {
@@ -172,7 +178,8 @@ void IC_device::load_devices(const target_deviceRef device)
             THROW_ERROR("Device information file " + file_name + " does not exist!");
          }
 
-         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "(target device) Loading information about the target device from file \"" + file_name + "\"");
+         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                       "(target device) Loading information about the target device from file \"" + file_name + "\"");
          XMLDomParser parser1(file_name);
          parser1.Exec();
          if(parser1)

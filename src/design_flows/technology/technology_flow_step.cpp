@@ -90,7 +90,8 @@ const std::string TechnologyFlowStep::GetName() const
    return "Technology::" + EnumToName(technology_flow_step_type);
 }
 
-void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet& steps, const DesignFlowStep::RelationshipType relationship_type)
+void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet& steps,
+                                              const DesignFlowStep::RelationshipType relationship_type)
 {
    const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const auto step_factory = GetPointer<const TechnologyFlowStepFactory>(CGetDesignFlowStepFactory());
@@ -98,7 +99,9 @@ void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet& steps, const De
    for(const auto& step_type : step_types)
    {
       vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(ComputeSignature(step_type));
-      const DesignFlowStepRef design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : step_factory->CreateTechnologyFlowStep(step_type);
+      const DesignFlowStepRef design_flow_step =
+          technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                                 step_factory->CreateTechnologyFlowStep(step_type);
       steps.insert(design_flow_step);
    }
 }
@@ -108,8 +111,14 @@ const DesignFlowStepFactoryConstRef TechnologyFlowStep::CGetDesignFlowStepFactor
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology");
 }
 
-TechnologyFlowStep::TechnologyFlowStep(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const TechnologyFlowStep_Type _technology_flow_step_type, const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters), technology_flow_step_type(_technology_flow_step_type), TM(_TM), target(_target)
+TechnologyFlowStep::TechnologyFlowStep(const technology_managerRef _TM, const target_deviceRef _target,
+                                       const DesignFlowManagerConstRef _design_flow_manager,
+                                       const TechnologyFlowStep_Type _technology_flow_step_type,
+                                       const ParameterConstRef _parameters)
+    : DesignFlowStep(_design_flow_manager, _parameters),
+      technology_flow_step_type(_technology_flow_step_type),
+      TM(_TM),
+      target(_target)
 {
 }
 

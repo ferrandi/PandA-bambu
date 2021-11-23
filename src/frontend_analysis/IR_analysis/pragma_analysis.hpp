@@ -72,13 +72,15 @@ class PragmaAnalysis : public ApplicationFrontendFlowStep
 
    /**
     * Create a map pragma
-    * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the pragma
+    * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the
+    * pragma
     */
    void create_map_pragma(const unsigned int node_id) const;
 
    /**
     * Create an omp pragma
-    * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the pragma
+    * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the
+    * pragma
     */
    void create_omp_pragma(const unsigned int tree_node) const;
 
@@ -86,7 +88,8 @@ class PragmaAnalysis : public ApplicationFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -95,7 +98,8 @@ class PragmaAnalysis : public ApplicationFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   PragmaAnalysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   PragmaAnalysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager,
+                  const ParameterConstRef parameters);
 
    /**
     *  Destructor

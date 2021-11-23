@@ -43,7 +43,9 @@
 #include "exceptions.hpp"              // for THROW_UNREACHABLE, THROW_ASSERT
 #include "non_deterministic_flows.hpp" // for NonDeterministicFlows
 
-DesignFlowFactory::DesignFlowFactory(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : DesignFlowStepFactory(_design_flow_manager, _parameters)
+DesignFlowFactory::DesignFlowFactory(const DesignFlowManagerConstRef _design_flow_manager,
+                                     const ParameterConstRef _parameters)
+    : DesignFlowStepFactory(_design_flow_manager, _parameters)
 {
 }
 

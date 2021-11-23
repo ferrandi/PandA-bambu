@@ -154,10 +154,15 @@ struct edge_compatibility_selector
 };
 
 /// bulk compatibility graph
-using boost_cc_compatibility_graph = boost::adjacency_matrix<boost::undirectedS, boost::property<boost::vertex_index_t, std::size_t>, edge_compatibility_selector>;
+using boost_cc_compatibility_graph =
+    boost::adjacency_matrix<boost::undirectedS, boost::property<boost::vertex_index_t, std::size_t>,
+                            edge_compatibility_selector>;
 
 /// compatibility graph
-using cc_compatibility_graph = boost::filtered_graph<boost_cc_compatibility_graph, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>, cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>>;
+using cc_compatibility_graph =
+    boost::filtered_graph<boost_cc_compatibility_graph,
+                          cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>,
+                          cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>>;
 
 /// refcount version of cc_compatibility_graph
 using cc_compatibility_graphRef = refcount<cc_compatibility_graph>;

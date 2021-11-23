@@ -57,14 +57,18 @@
 /// utility include
 #include "fileIO.hpp"
 
-LoadDeviceTechnology::LoadDeviceTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY, _parameters)
+LoadDeviceTechnology::LoadDeviceTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+                                           const DesignFlowManagerConstRef _design_flow_manager,
+                                           const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY,
+                         _parameters)
 {
 }
 
 LoadDeviceTechnology::~LoadDeviceTechnology() = default;
 
-const CustomUnorderedSet<TechnologyFlowStep_Type> LoadDeviceTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<TechnologyFlowStep_Type>
+LoadDeviceTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
@@ -100,7 +104,8 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
    if(parameters->isOption(OPT_xml_input_configuration))
    {
       auto fn = parameters->getOption<std::string>(OPT_xml_input_configuration);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "checking for technology information in the configuration file...");
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                    "checking for technology information in the configuration file...");
       try
       {
          XMLDomParser parser(fn);
@@ -126,7 +131,8 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
       {
          THROW_ERROR("Error during technology file parsing");
       }
-      PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, " ==== XML configuration file parsed for technology information ====");
+      PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                    " ==== XML configuration file parsed for technology information ====");
    }
 
    /// load specific device information

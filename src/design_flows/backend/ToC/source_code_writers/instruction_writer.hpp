@@ -86,7 +86,8 @@ class InstructionWriter
     * @param indented_output_stream is the output stream for source code
     * @param parameters is the set of input parameters
     */
-   InstructionWriter(const application_managerConstRef AppM, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef parameters);
+   InstructionWriter(const application_managerConstRef AppM, const IndentedOutputStreamRef indented_output_stream,
+                     const ParameterConstRef parameters);
 
  public:
    /**
@@ -96,7 +97,10 @@ class InstructionWriter
     * @param indented_output_stream is the output stream
     * @param parameters is the set of input parameters
     */
-   static InstructionWriterRef CreateInstructionWriter(const ActorGraphBackend_Type actor_graph_backend_type, const application_managerConstRef AppM, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef parameters);
+   static InstructionWriterRef CreateInstructionWriter(const ActorGraphBackend_Type actor_graph_backend_type,
+                                                       const application_managerConstRef AppM,
+                                                       const IndentedOutputStreamRef indented_output_stream,
+                                                       const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -114,7 +118,8 @@ class InstructionWriter
     * @param statement is the statement to be printed
     * @param varFunctor is the variable functor
     */
-   virtual void write(const FunctionBehaviorConstRef function_behavior, const vertex statement, const var_pp_functorConstRef varFunctor);
+   virtual void write(const FunctionBehaviorConstRef function_behavior, const vertex statement,
+                      const var_pp_functorConstRef varFunctor);
 
    /**
     * Write the declaration of a function

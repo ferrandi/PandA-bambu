@@ -116,7 +116,9 @@ class AugmentedVector
    {
       /// Fixme this works only if exists conversion from 0 to T
       T return_value = 0;
-      THROW_ASSERT(internal_vector.size() == other.size(), "Different size in operands: " + boost::lexical_cast<std::string>(internal_vector.size()) + " vs " + boost::lexical_cast<std::string>(other.size()));
+      THROW_ASSERT(internal_vector.size() == other.size(),
+                   "Different size in operands: " + boost::lexical_cast<std::string>(internal_vector.size()) + " vs " +
+                       boost::lexical_cast<std::string>(other.size()));
       for(size_t i = 0; i < internal_vector.size(); i++)
       {
          return_value += internal_vector[i] * other[i];
@@ -132,7 +134,9 @@ class AugmentedVector
    AugmentedVector<T> operator-(const AugmentedVector<T>& other) const
    {
       AugmentedVector<T> return_value;
-      THROW_ASSERT(internal_vector.size() == other.size(), "Different size in operands: " + boost::lexical_cast<std::string>(internal_vector.size()) + " vs " + boost::lexical_cast<std::string>(other.size()));
+      THROW_ASSERT(internal_vector.size() == other.size(),
+                   "Different size in operands: " + boost::lexical_cast<std::string>(internal_vector.size()) + " vs " +
+                       boost::lexical_cast<std::string>(other.size()));
       for(size_t i = 0; i < internal_vector.size(); i++)
       {
          return_value.internal_vector[i] = internal_vector[i] - other.internal_vector[i];

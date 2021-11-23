@@ -52,7 +52,9 @@
 #include <ostream>                            // for operator<<, ostream
 #include <utility>                            // for pair
 
-DesignFlowStepInfo::DesignFlowStepInfo(const DesignFlowStepRef _design_flow_step, const bool _unnecessary) : design_flow_step(_design_flow_step), status(_unnecessary ? DesignFlowStep_Status::UNNECESSARY : DesignFlowStep_Status::UNEXECUTED)
+DesignFlowStepInfo::DesignFlowStepInfo(const DesignFlowStepRef _design_flow_step, const bool _unnecessary)
+    : design_flow_step(_design_flow_step),
+      status(_unnecessary ? DesignFlowStep_Status::UNNECESSARY : DesignFlowStep_Status::UNEXECUTED)
 {
 }
 
@@ -60,7 +62,8 @@ DesignFlowDependenceInfo::DesignFlowDependenceInfo() = default;
 
 DesignFlowDependenceInfo::~DesignFlowDependenceInfo() = default;
 
-DesignFlowGraphsCollection::DesignFlowGraphsCollection(const ParameterConstRef _parameters) : graphs_collection(GraphInfoRef(new DesignFlowGraphInfo()), _parameters)
+DesignFlowGraphsCollection::DesignFlowGraphsCollection(const ParameterConstRef _parameters)
+    : graphs_collection(GraphInfoRef(new DesignFlowGraphInfo()), _parameters)
 {
 }
 
@@ -94,7 +97,8 @@ const int DesignFlowGraph::AUX_SELECTOR = 4;
 
 const int DesignFlowGraph::DEPENDENCE_FEEDBACK_SELECTOR = 8;
 
-DesignFlowGraph::DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector) : graph(design_flow_graphs_collection.get(), _selector)
+DesignFlowGraph::DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector)
+    : graph(design_flow_graphs_collection.get(), _selector)
 {
 }
 
@@ -107,7 +111,8 @@ vertex DesignFlowGraph::GetDesignFlowStep(const std::string& signature) const
 
 void DesignFlowGraph::WriteDot(const std::string& file_name, const int) const
 {
-   const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
+   const std::string output_directory =
+       collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
    if(!boost::filesystem::exists(output_directory))
    {
       boost::filesystem::create_directories(output_directory);
@@ -115,24 +120,34 @@ void DesignFlowGraph::WriteDot(const std::string& file_name, const int) const
    const std::string full_name = output_directory + file_name + ".dot";
    VertexWriterConstRef design_flow_step_writer(new DesignFlowStepWriter(this));
    EdgeWriterConstRef design_flow_edge_writer(new DesignFlowEdgeWriter(this));
-   InternalWriteDot<const DesignFlowStepWriter, const DesignFlowEdgeWriter>(full_name, design_flow_step_writer, design_flow_edge_writer);
+   InternalWriteDot<const DesignFlowStepWriter, const DesignFlowEdgeWriter>(full_name, design_flow_step_writer,
+                                                                            design_flow_edge_writer);
 }
 
 #ifndef NDEBUG
-void DesignFlowGraph::WriteDot(const std::string& file_name, const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status>>& vertex_history, const CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>>& edge_history,
-                               const CustomMap<vertex, std::string>& vertex_names, const size_t writing_step_counter) const
+void DesignFlowGraph::WriteDot(const std::string& file_name,
+                               const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status>>& vertex_history,
+                               const CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>>& edge_history,
+                               const CustomMap<vertex, std::string>& vertex_names,
+                               const size_t writing_step_counter) const
 {
-   const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
+   const std::string output_directory =
+       collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
    if(!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
    const std::string full_name = output_directory + file_name + ".dot";
-   VertexWriterConstRef design_flow_step_writer(new DesignFlowStepWriter(this, vertex_history.find(writing_step_counter)->second, vertex_names));
-   EdgeWriterConstRef design_flow_edge_writer(new DesignFlowEdgeWriter(this, vertex_history.find(writing_step_counter)->second, edge_history.find(writing_step_counter)->second));
-   InternalWriteDot<const DesignFlowStepWriter, const DesignFlowEdgeWriter>(full_name, design_flow_step_writer, design_flow_edge_writer);
+   VertexWriterConstRef design_flow_step_writer(
+       new DesignFlowStepWriter(this, vertex_history.find(writing_step_counter)->second, vertex_names));
+   EdgeWriterConstRef design_flow_edge_writer(new DesignFlowEdgeWriter(
+       this, vertex_history.find(writing_step_counter)->second, edge_history.find(writing_step_counter)->second));
+   InternalWriteDot<const DesignFlowStepWriter, const DesignFlowEdgeWriter>(full_name, design_flow_step_writer,
+                                                                            design_flow_edge_writer);
 }
 #endif
 
-DesignFlowStepWriter::DesignFlowStepWriter(const DesignFlowGraph* design_flow_graph, const CustomMap<vertex, DesignFlowStep_Status>& _vertex_history, const CustomMap<vertex, std::string>& _actor_names, const int _detail_level)
+DesignFlowStepWriter::DesignFlowStepWriter(const DesignFlowGraph* design_flow_graph,
+                                           const CustomMap<vertex, DesignFlowStep_Status>& _vertex_history,
+                                           const CustomMap<vertex, std::string>& _actor_names, const int _detail_level)
     : VertexWriter(design_flow_graph, _detail_level), vertex_history(_vertex_history), actor_names(_actor_names)
 {
 }
@@ -142,7 +157,8 @@ DesignFlowStepWriter::~DesignFlowStepWriter() = default;
 void DesignFlowStepWriter::operator()(std::ostream& out, const vertex& v) const
 {
    out << "[";
-   const DesignFlowStepInfoConstRef design_flow_step_info = dynamic_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(v);
+   const DesignFlowStepInfoConstRef design_flow_step_info =
+       dynamic_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(v);
    if(vertex_history.size())
    {
       if(vertex_history.find(v) == vertex_history.end())
@@ -257,7 +273,10 @@ void DesignFlowStepWriter::operator()(std::ostream& out, const vertex& v) const
    out << "]";
 }
 
-DesignFlowEdgeWriter::DesignFlowEdgeWriter(const DesignFlowGraph* design_flow_graph, const CustomMap<vertex, DesignFlowStep_Status>& _vertex_history, const CustomUnorderedMapStable<EdgeDescriptor, int>& _edge_history, const int _detail_level)
+DesignFlowEdgeWriter::DesignFlowEdgeWriter(const DesignFlowGraph* design_flow_graph,
+                                           const CustomMap<vertex, DesignFlowStep_Status>& _vertex_history,
+                                           const CustomUnorderedMapStable<EdgeDescriptor, int>& _edge_history,
+                                           const int _detail_level)
     : EdgeWriter(design_flow_graph, _detail_level), vertex_history(_vertex_history), edge_history(_edge_history)
 {
 }
@@ -277,8 +296,12 @@ void DesignFlowEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e
       {
          const DesignFlowStep_Status source_status = vertex_history.find(source)->second;
          const DesignFlowStep_Status target_status = vertex_history.find(target)->second;
-         const bool source_executed = source_status == DesignFlowStep_Status::EMPTY or source_status == DesignFlowStep_Status::SKIPPED or source_status == DesignFlowStep_Status::SUCCESS or source_status == DesignFlowStep_Status::UNCHANGED;
-         const bool target_executed = target_status == DesignFlowStep_Status::EMPTY or target_status == DesignFlowStep_Status::SKIPPED or target_status == DesignFlowStep_Status::SUCCESS or target_status == DesignFlowStep_Status::UNCHANGED;
+         const bool source_executed =
+             source_status == DesignFlowStep_Status::EMPTY or source_status == DesignFlowStep_Status::SKIPPED or
+             source_status == DesignFlowStep_Status::SUCCESS or source_status == DesignFlowStep_Status::UNCHANGED;
+         const bool target_executed =
+             target_status == DesignFlowStep_Status::EMPTY or target_status == DesignFlowStep_Status::SKIPPED or
+             target_status == DesignFlowStep_Status::SUCCESS or target_status == DesignFlowStep_Status::UNCHANGED;
          const bool source_unnecessary = source_status == DesignFlowStep_Status::UNNECESSARY;
          const bool target_unnecessary = target_status == DesignFlowStep_Status::UNNECESSARY;
          const int edge_selector = edge_history.find(edge)->second;
@@ -290,7 +313,8 @@ void DesignFlowEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e
          {
             out << "color=darkgreen, ";
          }
-         if((DesignFlowGraph::PRECEDENCE_SELECTOR & selector & edge_selector) or target_unnecessary or source_unnecessary)
+         if((DesignFlowGraph::PRECEDENCE_SELECTOR & selector & edge_selector) or target_unnecessary or
+            source_unnecessary)
          {
             out << "style=dashed";
          }
@@ -298,12 +322,18 @@ void DesignFlowEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e
    }
    else
    {
-      const DesignFlowStepInfoConstRef source_info = dynamic_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(source);
-      const DesignFlowStepInfoConstRef target_info = dynamic_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(target);
-      const bool source_executed =
-          source_info->status == DesignFlowStep_Status::EMPTY or source_info->status == DesignFlowStep_Status::SKIPPED or source_info->status == DesignFlowStep_Status::SUCCESS or source_info->status == DesignFlowStep_Status::UNCHANGED;
-      const bool target_executed =
-          target_info->status == DesignFlowStep_Status::EMPTY or target_info->status == DesignFlowStep_Status::SKIPPED or target_info->status == DesignFlowStep_Status::SUCCESS or target_info->status == DesignFlowStep_Status::UNCHANGED;
+      const DesignFlowStepInfoConstRef source_info =
+          dynamic_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(source);
+      const DesignFlowStepInfoConstRef target_info =
+          dynamic_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(target);
+      const bool source_executed = source_info->status == DesignFlowStep_Status::EMPTY or
+                                   source_info->status == DesignFlowStep_Status::SKIPPED or
+                                   source_info->status == DesignFlowStep_Status::SUCCESS or
+                                   source_info->status == DesignFlowStep_Status::UNCHANGED;
+      const bool target_executed = target_info->status == DesignFlowStep_Status::EMPTY or
+                                   target_info->status == DesignFlowStep_Status::SKIPPED or
+                                   target_info->status == DesignFlowStep_Status::SUCCESS or
+                                   target_info->status == DesignFlowStep_Status::UNCHANGED;
       const bool source_unnecessary = source_info->status == DesignFlowStep_Status::UNNECESSARY;
       const bool target_unnecessary = target_info->status == DesignFlowStep_Status::UNNECESSARY;
       if(DesignFlowGraph::DEPENDENCE_FEEDBACK_SELECTOR & selector & printing_graph->GetSelector(edge))
@@ -314,7 +344,8 @@ void DesignFlowEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e
       {
          out << "color=darkgreen, ";
       }
-      if((DesignFlowGraph::PRECEDENCE_SELECTOR & selector & printing_graph->GetSelector(edge)) or target_unnecessary or source_unnecessary)
+      if((DesignFlowGraph::PRECEDENCE_SELECTOR & selector & printing_graph->GetSelector(edge)) or target_unnecessary or
+         source_unnecessary)
       {
          out << "style=dashed";
       }

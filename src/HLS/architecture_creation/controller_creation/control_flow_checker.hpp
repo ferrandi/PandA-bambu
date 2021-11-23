@@ -57,7 +57,9 @@ class ControlFlowChecker : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void add_clock_reset(structural_objectRef circuit);
 
@@ -75,7 +77,8 @@ class ControlFlowChecker : public HLSFunctionStep
    /**
     * Constructor
     */
-   ControlFlowChecker(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   ControlFlowChecker(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                      const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

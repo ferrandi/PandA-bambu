@@ -56,7 +56,8 @@
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 
-BitValueRange::BitValueRange(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+BitValueRange::BitValueRange(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                             unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, BITVALUE_RANGE, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -64,7 +65,8 @@ BitValueRange::BitValueRange(const ParameterConstRef _parameters, const applicat
 
 BitValueRange::~BitValueRange() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BitValueRange::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+BitValueRange::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -103,7 +105,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status BitValueRange::InternalExec()
 {
-   const auto design_flow_step = GetPointerS<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, function_id);
+   const auto design_flow_step =
+       GetPointerS<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))
+           ->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, function_id);
    design_flow_step->Initialize();
    const auto return_status = design_flow_step->Exec();
    return_status == DesignFlowStep_Status::SUCCESS ? function_behavior->UpdateBBVersion() : 0;

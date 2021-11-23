@@ -67,7 +67,8 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-call_graph_computation::call_graph_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager)
+call_graph_computation::call_graph_computation(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                                               const DesignFlowManagerConstRef _design_flow_manager)
     : ApplicationFrontendFlowStep(_AppM, FUNCTION_ANALYSIS, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -75,7 +76,8 @@ call_graph_computation::call_graph_computation(const ParameterConstRef _paramete
 
 call_graph_computation::~call_graph_computation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> call_graph_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+call_graph_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -139,7 +141,8 @@ DesignFlowStep_Status call_graph_computation::Exec()
    for(const auto f_id : functions)
    {
       const auto fu_name = tree_helper::name_function(TM, f_id);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Adding function " + STR(f_id) + " " + fu_name + " to call graph");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "---Adding function " + STR(f_id) + " " + fu_name + " to call graph");
       if(fu_name == "__start_pragma__" || fu_name == "__close_pragma__" || fu_name.find("__pragma__") == 0)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipped...");
@@ -161,11 +164,13 @@ DesignFlowStep_Status call_graph_computation::Exec()
          const auto FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
          AppM->GetCallGraphManager()->AddFunction(f_id, FB);
          CallGraphManager::expandCallGraphFromFunction(already_visited, AppM, f_id, debug_level);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Added function " + STR(f_id) + " " + fu_name + " to call graph");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---Added function " + STR(f_id) + " " + fu_name + " to call graph");
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Function " + STR(f_id) + " " + fu_name + " was already in call graph");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---Function " + STR(f_id) + " " + fu_name + " was already in call graph");
       }
    }
 

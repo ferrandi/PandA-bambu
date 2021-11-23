@@ -166,7 +166,8 @@ struct cg_edge_info : public EdgeInfo
  * @param data is the graph.
  * @param edge_index is the index of the cdfg edge.
  */
-#define EDGE_SET_CRITICAL(data, edge_index, critical) get_edge_info<cg_edge_info>(edge_index, *(data))->is_critical = critical
+#define EDGE_SET_CRITICAL(data, edge_index, critical) \
+   get_edge_info<cg_edge_info>(edge_index, *(data))->is_critical = critical
 
 /**
  * Information associated with the whole graph of a circuit.
@@ -195,7 +196,8 @@ struct cg_graph_info : public GraphInfo
    /**
     * Constructor
     */
-   cg_graph_info(vertex en, const std::string& en_name, vertex ex, const std::string& ex_name) : Entry(en), Exit(ex), Entry_name(en_name), Exit_name(ex_name)
+   cg_graph_info(vertex en, const std::string& en_name, vertex ex, const std::string& ex_name)
+       : Entry(en), Exit(ex), Entry_name(en_name), Exit_name(ex_name)
    {
    }
 

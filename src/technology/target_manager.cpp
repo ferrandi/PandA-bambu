@@ -45,7 +45,9 @@
 
 #include "target_device.hpp"
 
-target_manager::target_manager(const ParameterConstRef& _Param, const technology_managerRef& _TM, const target_deviceRef& _device) : Param(_Param), TM(_TM), device(_device)
+target_manager::target_manager(const ParameterConstRef& _Param, const technology_managerRef& _TM,
+                               const target_deviceRef& _device)
+    : Param(_Param), TM(_TM), device(_device)
 {
    // Technology library manager
    set_technology_manager(_TM);

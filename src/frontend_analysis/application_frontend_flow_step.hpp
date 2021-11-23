@@ -60,7 +60,8 @@ class ApplicationFrontendFlowStep : public FrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param _Param is the set of the parameters
     */
-   ApplicationFrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   ApplicationFrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType frontend_flow_step_type,
+                               const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

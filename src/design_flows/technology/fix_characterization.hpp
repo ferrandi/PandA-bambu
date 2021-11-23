@@ -70,7 +70,8 @@ class FixCharacterization : public TechnologyFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<TechnologyFlowStep_Type>
+   ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -79,7 +80,8 @@ class FixCharacterization : public TechnologyFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   FixCharacterization(const technology_managerRef TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   FixCharacterization(const technology_managerRef TM, const target_deviceRef target,
+                       const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

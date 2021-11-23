@@ -1,4 +1,22 @@
 #!/bin/bash
+###
+#     AppImage builder script
+#
+#     The following script needs to be exectued from PandA Bambu repository root and 
+#     take as arguments the configure options for the PandA Bambu build.
+#     An appimage executable will be generated as an output.
+#     Consider that the script will share the whole repository with the container.
+#     
+#     The script will look for frontend compilers in into the ./dist and ./compiler 
+#     directories. All compiler binaries and librares found inside the aforementioned 
+#     directories will be copied into the root filesystem of the container, while only 
+#     the ones from ./dist directory will be included into the generated AppImage.
+#     When a compiler is added to the ./compiler directory only, it will not be available 
+#     inside the final AppImage, thus it is important to exclude it during PandA Bambu
+#     configuration, passing the correct configuration option (e.g. --with-gcc8=/bin/false
+#     if gcc-8 is not to be cosidered during PandA Bambu compilation).
+#
+###
 set -e
 
 workspace_dir=$PWD
@@ -11,7 +29,7 @@ trap cleanup EXIT
 
 #Necessary for gcc-4.5
 export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
+ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 
 echo "::group::Initialize workspace"
 export PATH=/usr/lib/ccache:$PATH

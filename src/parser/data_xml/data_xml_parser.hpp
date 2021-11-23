@@ -82,7 +82,8 @@ class DataXmlParser
     * @param output is where data will be saved: first key is the benchmark name (sorted by name thanks to map),
     * second key is the characteristic, value is the actual value
     */
-   void Parse(const CustomSet<std::string>& file_names, std::map<std::string, CustomMap<std::string, std::string>>& output) const;
+   void Parse(const CustomSet<std::string>& file_names,
+              std::map<std::string, CustomMap<std::string, std::string>>& output) const;
 };
 /// Refcount definition for the class ParseProfilingAnalysis
 using DataXmlParserConstRef = refcount<const DataXmlParser>;

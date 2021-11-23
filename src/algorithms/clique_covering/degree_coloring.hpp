@@ -32,7 +32,8 @@
  */
 /**
  * @file degree_coloring.hpp
- * @brief Boost-based implementation of a heuristic sequential coloring algorithm based on the descandant degree ordering of vertices.
+ * @brief Boost-based implementation of a heuristic sequential coloring algorithm based on the descandant degree
+ * ordering of vertices.
  *
  * Simple sequential coloring heuristic based on descandant degree coloring.
  *

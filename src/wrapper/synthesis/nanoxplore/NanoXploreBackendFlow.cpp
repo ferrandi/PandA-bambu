@@ -69,25 +69,31 @@
 #define NANOXPLORE_MEM "NANOXPLORE_MEM"
 #define NANOXPLORE_POWER "NANOXPLORE_POWER"
 
-#define NANOXPLORE_BYPASS_SET(NANOXPLORE_BYPASS) (std::string("export NANOXPLORE_BYPASS=") + STR(NANOXPLORE_BYPASS) + std::string(";"))
+#define NANOXPLORE_BYPASS_SET(NANOXPLORE_BYPASS) \
+   (std::string("export NANOXPLORE_BYPASS=") + STR(NANOXPLORE_BYPASS) + std::string(";"))
 
-NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
+NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
+                                             const target_managerRef _target)
+    : BackendFlow(_Param, _flow_name, _target)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating NanoXplore Backend Flow ::.");
    if(!Param->isOption(OPT_nanoxplore_settings))
    {
-      THROW_WARNING("NanoXplore install directory was not specified, fallback on path. Specifying NanoXplore root through --nanoxplore-root option is preferred.");
+      THROW_WARNING("NanoXplore install directory was not specified, fallback on path. Specifying NanoXplore root "
+                    "through --nanoxplore-root option is preferred.");
    }
    const auto lic_path = std::getenv("LM_LICENSE_FILE");
    if(!lic_path || std::string(lic_path) == "")
    {
-      THROW_WARNING("NanoXplore license file has not been specified. User must set LM_LICENSE_FILE variable to point to the license file location.");
+      THROW_WARNING("NanoXplore license file has not been specified. User must set LM_LICENSE_FILE variable to point "
+                    "to the license file location.");
    }
    const auto bypass_name = std::getenv("NANOXPLORE_BYPASS");
    if((!bypass_name || std::string(bypass_name) == "") && !Param->isOption(OPT_nanoxplore_bypass))
    {
-      THROW_WARNING("NanoXplore bypass was not specified. User may set NANOXPLORE_BYPASS variable or use --nanoxplore-bypass option.");
+      THROW_WARNING("NanoXplore bypass was not specified. User may set NANOXPLORE_BYPASS variable or use "
+                    "--nanoxplore-bypass option.");
    }
 
    default_data["NG-medium"] = "NG-medium.data";
@@ -120,8 +126,11 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
       {
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/nanoxplore/") + default_data[device_string]));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                     "---Importing default scripts for target device family: " + device_string);
+      parser = XMLDomParserRef(
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/nanoxplore/") +
+                           default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -251,8 +260,11 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
    {
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
    }
-   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC || (Param->IsParameter("DumpingTimingReport") && Param->GetParameter<int>("DumpingTimingReport"))) &&
-      ((actual_parameters->parameter_values.find(PARAM_nxpython_timing_report) != actual_parameters->parameter_values.end() && ExistFile(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report))))))
+   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC ||
+       (Param->IsParameter("DumpingTimingReport") && Param->GetParameter<int>("DumpingTimingReport"))) &&
+      ((actual_parameters->parameter_values.find(PARAM_nxpython_timing_report) !=
+            actual_parameters->parameter_values.end() &&
+        ExistFile(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report))))))
    {
       CopyStdout(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report)));
    }

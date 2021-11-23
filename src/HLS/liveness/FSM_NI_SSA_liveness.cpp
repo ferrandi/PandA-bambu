@@ -81,7 +81,8 @@
 #include <boost/foreach.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
-FSM_NI_SSA_liveness::FSM_NI_SSA_liveness(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+FSM_NI_SSA_liveness::FSM_NI_SSA_liveness(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                         unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
     : liveness_computer(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::FSM_NI_SSA_LIVENESS)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -114,12 +115,14 @@ static inline unsigned int get_bb_index_from_state_info(const OpGraphConstRef da
    }
 }
 
-static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, const StateTransitionGraphConstRef stg, const OpGraphConstRef data, vertex current_state, vertex prev_state)
+static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, const StateTransitionGraphConstRef stg,
+                                     const OpGraphConstRef data, vertex current_state, vertex prev_state)
 {
    const auto state_info = stg->CGetStateInfo(prev_state);
    for(const auto& exec_op : state_info->executing_operations)
    {
-      const CustomSet<unsigned int>& scalar_uses = data->CGetOpNodeInfo(exec_op)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
+      const CustomSet<unsigned int>& scalar_uses = data->CGetOpNodeInfo(exec_op)->GetVariables(
+          FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
 
       for(const auto scalar_use : scalar_uses)
       {
@@ -132,7 +135,8 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
 
    for(const auto& end_op : state_info->ending_operations)
    {
-      const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(end_op)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+      const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(end_op)->GetVariables(
+          FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
 
       for(const auto scalar_def : scalar_defs)
       {
@@ -198,7 +202,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       const StateInfoConstRef state_info = astg->CGetStateInfo(rosl);
       for(const auto& eoc : state_info->ending_operations) // these also include the moved ending operations
       {
-         const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eoc)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+         const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eoc)->GetVariables(
+             FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
 
          for(const auto scalar_def : scalar_defs)
          {
@@ -242,7 +247,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
           * if rosl contains a moved operation, then the use set of the moved
           * operation must be in the live in of the state
           */
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding to the live in of state:" + HLS->STG->get_state_name(rosl));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "Adding to the live in of state:" + HLS->STG->get_state_name(rosl));
          HLS->Rliv->set_live_in(rosl, state_info->moved_op_use_set);
          /*
           * if rosl contains a moved operation, we have to add the used set to
@@ -251,7 +257,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          BOOST_FOREACH(EdgeDescriptor e, boost::in_edges(rosl, *stg))
          {
             vertex src_state = boost::source(e, *stg);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding to the live out of predecessor state:" + HLS->STG->get_state_name(src_state));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "Adding to the live out of predecessor state:" + HLS->STG->get_state_name(src_state));
             HLS->Rliv->set_live_out(src_state, state_info->moved_op_use_set);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
@@ -265,10 +272,12 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
    const vertex bb_exit = fbb->CGetBBGraphInfo()->exit_vertex;
    unsigned int prev_bb_index = fbb->CGetBBNodeInfo(bb_exit)->get_bb_index();
    vertex prev_state = exit_state;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---prev_state: " + stg->CGetStateInfo(prev_state)->name + " prev_bb_index: " + STR(prev_bb_index));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---prev_state: " + stg->CGetStateInfo(prev_state)->name + " prev_bb_index: " + STR(prev_bb_index));
    for(const auto& rosl : reverse_order_state_list)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Computing live out for state " + HLS->STG->get_state_name(rosl));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "-->Computing live out for state " + HLS->STG->get_state_name(rosl));
       // skip exit state
       if(rosl == exit_state)
       {
@@ -295,7 +304,9 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             unsigned int cloned_bb_index = *cloned_state_info->BB_ids.begin();
             prev_state = rosl;
             prev_bb_index = cloned_bb_index;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---update prev_state: " + stg->CGetStateInfo(prev_state)->name + " prev_bb_index: " + STR(prev_bb_index));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---update prev_state: " + stg->CGetStateInfo(prev_state)->name +
+                               " prev_bb_index: " + STR(prev_bb_index));
          }
          else
          {
@@ -305,7 +316,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             unsigned int cloned_bb_index = *cloned_state_info->BB_ids.begin();
             bool found = false;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---cloned_bb_index: " + STR(cloned_bb_index));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering successors of: " + cloned_state_info->name);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "-->Considering successors of: " + cloned_state_info->name);
             BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(state_info->clonedState, *astg))
             {
                vertex target_state = boost::target(oe, *astg);
@@ -315,8 +327,10 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "target_bb_index: " + STR(target_bb_index));
                if(cloned_bb_index == target_bb_index and target_state != rosl)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---updating live out of : " + state_info->name + ", " + cloned_state_info->name);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding live out of : " + target_state_info->name);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---updating live out of : " + state_info->name + ", " + cloned_state_info->name);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---adding live out of : " + target_state_info->name);
                   HLS->Rliv->set_live_out(rosl, HLS->Rliv->get_live_out(target_state));
                   HLS->Rliv->set_live_out(state_info->clonedState, HLS->Rliv->get_live_out(target_state));
                   update_liveout_with_prev(HLSMgr, HLS, stg, data, state_info->clonedState, target_state);
@@ -324,7 +338,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                   found = true;
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered successors of: " + cloned_state_info->name);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--Considered successors of: " + cloned_state_info->name);
 
             if(not found)
             {
@@ -335,8 +350,11 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                   {
 #ifndef NDEBUG
                      const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding to live out of " + state_info->name + " var " + BH->PrintVariable(lo));
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding to live out of " + cloned_state_info->name + " var " + BH->PrintVariable(lo));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---adding to live out of " + state_info->name + " var " + BH->PrintVariable(lo));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---adding to live out of " + cloned_state_info->name + " var " +
+                                        BH->PrintVariable(lo));
 #endif
                      HLS->Rliv->set_live_out(rosl, lo);
                      HLS->Rliv->set_live_out(state_info->clonedState, lo);
@@ -345,7 +363,9 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             }
             prev_state = rosl;
             prev_bb_index = cloned_bb_index;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---update prev_state: " + stg->CGetStateInfo(prev_state)->name + " prev_bb_index: " + STR(prev_bb_index));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---update prev_state: " + stg->CGetStateInfo(prev_state)->name +
+                               " prev_bb_index: " + STR(prev_bb_index));
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
          continue;
@@ -356,8 +376,10 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
 
       if(prev_bb_index != bb_index)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---prev_bb_index " + STR(prev_bb_index) + " != bb_index " + STR(bb_index));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding live out of BB " + STR(bb_index) + " to live out of state " + state_info->name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---prev_bb_index " + STR(prev_bb_index) + " != bb_index " + STR(bb_index));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---adding live out of BB " + STR(bb_index) + " to live out of state " + state_info->name);
          for(const auto lo : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_out())
          {
             if(HLSMgr->is_register_compatible(lo))
@@ -368,14 +390,19 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding live out of " + stg->CGetStateInfo(prev_state)->name + " to live out of state " + state_info->name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---adding live out of " + stg->CGetStateInfo(prev_state)->name + " to live out of state " +
+                            state_info->name);
          HLS->Rliv->set_live_out(rosl, HLS->Rliv->get_live_out(prev_state));
          update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, prev_state);
       }
       prev_state = rosl;
       prev_bb_index = bb_index;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---update prev_state: " + stg->CGetStateInfo(prev_state)->name + " prev_bb_index: " + STR(prev_bb_index));
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Computed live out for state " + HLS->STG->get_state_name(rosl));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---update prev_state: " + stg->CGetStateInfo(prev_state)->name +
+                         " prev_bb_index: " + STR(prev_bb_index));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "<--Computed live out for state " + HLS->STG->get_state_name(rosl));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Computed live out");
 
@@ -459,7 +486,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          /// add all the uses of ds to src_state
          for(const auto& eo : state_info->executing_operations)
          {
-            const CustomSet<unsigned int>& scalar_uses = data->CGetOpNodeInfo(eo)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
+            const CustomSet<unsigned int>& scalar_uses = data->CGetOpNodeInfo(eo)->GetVariables(
+                FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
             for(const auto scalar_use : scalar_uses)
             {
                if(HLSMgr->is_register_compatible(scalar_use))
@@ -492,12 +520,14 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          HLS->Rliv->add_state_for_running_op(roc, rosl);
          if((GET_TYPE(data, roc) & TYPE_NOP) != 0)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed running operation of type NOP" + GET_NAME(data, roc));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "<--Analyzed running operation of type NOP" + GET_NAME(data, roc));
             continue;
          }
          if((GET_TYPE(data, roc) & TYPE_PHI) != 0)
          {
-            const auto phi_node = HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(roc)->GetNodeId());
+            const auto phi_node =
+                HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(roc)->GetNodeId());
             for(const auto& def_edge : GetPointer<const gimple_phi>(phi_node)->CGetDefEdgesList())
             {
                unsigned int tree_var = def_edge.first->index;
@@ -513,7 +543,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                      continue;
                   }
                   unsigned int written_phi = HLSMgr->get_produced_value(HLS->functionId, roc);
-                  if(state_info->moved_op_def_set.find(tree_var) != state_info->moved_op_def_set.end() or state_info->moved_op_use_set.find(written_phi) != state_info->moved_op_use_set.end())
+                  if(state_info->moved_op_def_set.find(tree_var) != state_info->moved_op_def_set.end() or
+                     state_info->moved_op_use_set.find(written_phi) != state_info->moved_op_use_set.end())
                   {
                      HLS->Rliv->set_live_out(rosl, HLS->Rliv->get_live_out(stg->CGetStateInfo(rosl)->clonedState));
 
@@ -545,16 +576,22 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                   const CustomOrderedSet<unsigned int>& BB_ids = source_state_info->BB_ids;
                   if(BB_ids.find(bb_index) != BB_ids.end())
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Adding state in " + source_state_info->name + " " + FB->CGetBehavioralHelper()->PrintVariable(tree_var) + " in state " + state_info->name);
-                     // THROW_ASSERT((HLS->Rliv->get_live_out(src_state).find(tree_var) != HLS->Rliv->get_live_out(src_state).end()), "unexpected live out condition");
-                     THROW_ASSERT(src_state != entry_state, "Source state for phi " + STR(data->CGetOpNodeInfo(roc)->GetNodeId()) + " not found");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "---Adding state in " + source_state_info->name + " " +
+                                        FB->CGetBehavioralHelper()->PrintVariable(tree_var) + " in state " +
+                                        state_info->name);
+                     // THROW_ASSERT((HLS->Rliv->get_live_out(src_state).find(tree_var) !=
+                     // HLS->Rliv->get_live_out(src_state).end()), "unexpected live out condition");
+                     THROW_ASSERT(src_state != entry_state,
+                                  "Source state for phi " + STR(data->CGetOpNodeInfo(roc)->GetNodeId()) + " not found");
                      HLS->Rliv->add_state_in_for_var(def_edge.first->index, roc, rosl, src_state);
 #if HAVE_ASSERTS
                      found_state = true;
 #endif
                   }
                }
-               THROW_ASSERT(found_state, "Not found source for phi " + GET_NAME(data, roc) + " in state " + state_info->name + " coming from BB" + STR(bb_index));
+               THROW_ASSERT(found_state, "Not found source for phi " + GET_NAME(data, roc) + " in state " +
+                                             state_info->name + " coming from BB" + STR(bb_index));
             }
          }
          else
@@ -562,7 +599,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(rosl, *stg))
             {
                vertex tgt_state = boost::target(oe, *stg);
-               const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(roc)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+               const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(roc)->GetVariables(
+                   FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
                const CustomSet<unsigned int>& cited_variables = data->CGetOpNodeInfo(roc)->cited_variables;
                const CustomSet<unsigned int> all_but_scalar_defs = cited_variables - scalar_defs;
                for(const auto all_but_scalar_def : all_but_scalar_defs)
@@ -571,11 +609,13 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                   {
                      HLS->Rliv->add_state_in_for_var(all_but_scalar_def, roc, rosl, tgt_state);
                   }
-                  else if(HLSMgr->Rmem->has_base_address(all_but_scalar_def) or tree_helper::is_parameter(HLSMgr->get_tree_manager(), all_but_scalar_def))
+                  else if(HLSMgr->Rmem->has_base_address(all_but_scalar_def) or
+                          tree_helper::is_parameter(HLSMgr->get_tree_manager(), all_but_scalar_def))
                   {
                      HLS->Rliv->add_state_in_for_var(all_but_scalar_def, roc, rosl, tgt_state);
                   }
-                  else if(tree_helper::is_ssa_name(HLSMgr->get_tree_manager(), all_but_scalar_def) and tree_helper::is_virtual(HLSMgr->get_tree_manager(), all_but_scalar_def))
+                  else if(tree_helper::is_ssa_name(HLSMgr->get_tree_manager(), all_but_scalar_def) and
+                          tree_helper::is_virtual(HLSMgr->get_tree_manager(), all_but_scalar_def))
                   {
                      ;
                   }
@@ -596,7 +636,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             {
                unsigned int written_phi = HLSMgr->get_produced_value(HLS->functionId, eoc);
                bool postponed_phi = false;
-               const auto phi_node = HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(eoc)->GetNodeId());
+               const auto phi_node =
+                   HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(eoc)->GetNodeId());
                for(const auto& def_edge : GetPointer<const gimple_phi>(phi_node)->CGetDefEdgesList())
                {
                   unsigned int tree_temp = def_edge.first->index;
@@ -626,7 +667,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             }
          }
 
-         const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eoc)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+         const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eoc)->GetVariables(
+             FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
          for(const auto scalar_def : scalar_defs)
          {
             if(HLSMgr->is_register_compatible(scalar_def))
@@ -660,7 +702,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          }
          PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
 
-         PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Live Out for state " + HLS->STG->get_state_name(v) + ": ");
+         PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level,
+                          "Live Out for state " + HLS->STG->get_state_name(v) + ": ");
          for(const auto lo : HLS->Rliv->get_live_out(v))
          {
             PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, BH->PrintVariable(lo) + " ");

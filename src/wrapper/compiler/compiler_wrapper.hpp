@@ -199,8 +199,8 @@ enum class CompilerWrapper_CompilerMode
 
 /**
  * @class CompilerWrapper
- * Main class for wrapping the frontend compiler. It allows an XML configuration file to be specified where the parameters
- * and the related values are stored.
+ * Main class for wrapping the frontend compiler. It allows an XML configuration file to be specified where the
+ * parameters and the related values are stored.
  */
 class CompilerWrapper
 {
@@ -298,13 +298,16 @@ class CompilerWrapper
 
    /**
     * Invoke the frontend compiler to compile file(s)
-    * @param original_file_name is the original file passed through command line; this information is necessary to retrieve include directory
-    * @param real_rile_name stores the source code file which is actually compiled; the function can modified it in case of empty file
+    * @param original_file_name is the original file passed through command line; this information is necessary to
+    * retrieve include directory
+    * @param real_rile_name stores the source code file which is actually compiled; the function can modified it in case
+    * of empty file
     * @param parameters_line are the parameters to be passed to the frontend compiler
     * @param multiple_files is the true in case multiple files are considered.
     * @param cm is the mode in which we compile
     */
-   void CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm);
+   void CompileFile(const std::string& original_file_name, std::string& real_file_name,
+                    const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm);
 
    /**
     * Return the compiler for a given target
@@ -366,8 +369,12 @@ class CompilerWrapper
     */
    static size_t ConvertVersion(const std::string& version);
 
-   std::string clang_recipes(const CompilerWrapper_OptimizationSet optimization_level, const CompilerWrapper_CompilerTarget compiler_target, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name,
-                             const std::string& GepiCanon_plugin_obj, const std::string& GepiCanon_plugin_name, const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name, const std::string& fname);
+   std::string clang_recipes(const CompilerWrapper_OptimizationSet optimization_level,
+                             const CompilerWrapper_CompilerTarget compiler_target,
+                             const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name,
+                             const std::string& GepiCanon_plugin_obj, const std::string& GepiCanon_plugin_name,
+                             const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name,
+                             const std::string& fname);
 
  public:
    /// The version of the frontend compiler
@@ -382,7 +389,8 @@ class CompilerWrapper
     * @param compiler is the compiler to be used
     * @param OS is the optimization set
     */
-   CompilerWrapper(const ParameterConstRef Param, const CompilerWrapper_CompilerTarget _compiler_target, const CompilerWrapper_OptimizationSet OS);
+   CompilerWrapper(const ParameterConstRef Param, const CompilerWrapper_CompilerTarget _compiler_target,
+                   const CompilerWrapper_OptimizationSet OS);
 
    /**
     * Destructor
@@ -392,7 +400,8 @@ class CompilerWrapper
    /**
     * This function fills the tree manager with the nodes created from a set of source files
     * @param TM is where tree_manager will be stored
-    * @param source_files are the source files to be compiled; key is the original source code file, value is the transformed source code file
+    * @param source_files are the source files to be compiled; key is the original source code file, value is the
+    * transformed source code file
     */
    void FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files);
 
@@ -425,7 +434,8 @@ class CompilerWrapper
     * @param executable_name is the name of the executable
     * @param extra_compiler_options is extra options to be used only for this compilation
     */
-   void CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_compiler_options, bool no_frontend_compiler_parameters = false) const;
+   void CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name,
+                         const std::string& extra_compiler_options, bool no_frontend_compiler_parameters = false) const;
 
    /**
     * Create an executable starting from source code
@@ -433,7 +443,8 @@ class CompilerWrapper
     * @param executable_name is the name of the executable
     * @param extra_compiler_options is extra options to be used only for this compilation
     */
-   void CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_compiler_options, bool no_frontend_compiler_parameters = false) const;
+   void CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name,
+                         const std::string& extra_compiler_options, bool no_frontend_compiler_parameters = false) const;
 
    /**
     * Read the frontend compiler configuration from file

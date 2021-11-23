@@ -49,7 +49,8 @@ class WB4Intercon_interface : public WB4_interface
    /**
     * Constructor.
     */
-   WB4Intercon_interface(const ParameterConstRef Param, const HLS_managerRef HLSManager, unsigned int functionId, const DesignFlowManagerConstRef design_flow_manager);
+   WB4Intercon_interface(const ParameterConstRef Param, const HLS_managerRef HLSManager, unsigned int functionId,
+                         const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

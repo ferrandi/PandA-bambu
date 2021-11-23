@@ -68,7 +68,8 @@ extern "C"
 #endif
 }
 
-glpk_solver::glpk_solver() : meilp_solver(), lp(nullptr), scp(nullptr), iocp(nullptr), bfcp(nullptr), mip_solution(false)
+glpk_solver::glpk_solver()
+    : meilp_solver(), lp(nullptr), scp(nullptr), iocp(nullptr), bfcp(nullptr), mip_solution(false)
 {
 }
 
@@ -84,7 +85,8 @@ glpk_solver::~glpk_solver()
 }
 
 /*
- * Will be passed as a callback pointer to the GLPK library. The info pointer is used to point to the verbosity field of the current glpk_solver instance.
+ * Will be passed as a callback pointer to the GLPK library. The info pointer is used to point to the verbosity field of
+ * the current glpk_solver instance.
  */
 int glpk_print_hook(void* DEBUG_PARAMETER(info), const char* DEBUG_PARAMETER(msg))
 {
@@ -171,9 +173,10 @@ int glpk_solver::solve()
    scp->obj_ul = DBL_MAX;        // Upper limit of the objective function
    scp->it_lim = INT_MAX;        // Simplex iteration limit
    scp->tm_lim = INT_MAX;        // Searching time limit, in milliseconds
-   scp->out_frq = 200;           // Output frequency, in iterations. This parameter specifies how frequently the solver sends information about the solution process to the terminal
-   scp->out_dly = 0;             // Output delay, in milliseconds
-   scp->presolve = GLP_OFF;      // Enable the built-in presolver
+   scp->out_frq = 200;      // Output frequency, in iterations. This parameter specifies how frequently the solver sends
+                            // information about the solution process to the terminal
+   scp->out_dly = 0;        // Output delay, in milliseconds
+   scp->presolve = GLP_OFF; // Enable the built-in presolver
 
    int simplex_res = glp_simplex(lp, scp);
 
@@ -793,7 +796,8 @@ void glpk_solver::set_all_bounds()
             }
             else
             {
-               THROW_ERROR("Fixed bounded variable, but either upper or lower bound can't be found in vectors or bounds are different");
+               THROW_ERROR("Fixed bounded variable, but either upper or lower bound can't be found in vectors or "
+                           "bounds are different");
             }
             break;
          }
@@ -814,7 +818,9 @@ void glpk_solver::set_all_bounds()
             if((lower_bounds.find(i) != lower_bounds.end()) && (upper_bounds.find(i) != upper_bounds.end()))
             {
                THROW_ASSERT(lower_bounds[i] <= upper_bounds[i],
-                            "Error in bound of variable " + boost::lexical_cast<std::string>(i) + " : " + boost::lexical_cast<std::string>(lower_bounds[i]) + " " + boost::lexical_cast<std::string>(glp_get_col_ub(lp, var)));
+                            "Error in bound of variable " + boost::lexical_cast<std::string>(i) + " : " +
+                                boost::lexical_cast<std::string>(lower_bounds[i]) + " " +
+                                boost::lexical_cast<std::string>(glp_get_col_ub(lp, var)));
                glp_set_col_bnds(lp, var, GLP_DB, lower_bounds[i], upper_bounds[i]);
             }
             else

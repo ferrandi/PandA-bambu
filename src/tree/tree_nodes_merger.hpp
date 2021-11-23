@@ -63,7 +63,9 @@ REF_FORWARD_DECL(bloc);
 struct tree_node_reached : public tree_node_mask
 {
    /// default constructor
-   tree_node_reached(CustomUnorderedMapUnstable<unsigned int, unsigned int>& _remap, OrderedSetStd<unsigned int>& _not_yet_remapped, const tree_managerRef _TM) : remap(_remap), TM(_TM), not_yet_remapped(_not_yet_remapped)
+   tree_node_reached(CustomUnorderedMapUnstable<unsigned int, unsigned int>& _remap,
+                     OrderedSetStd<unsigned int>& _not_yet_remapped, const tree_managerRef _TM)
+       : remap(_remap), TM(_TM), not_yet_remapped(_not_yet_remapped)
    {
    }
    /// tree_node visitors
@@ -82,7 +84,8 @@ struct tree_node_reached : public tree_node_mask
 struct tree_node_index_factory : public tree_node_mask
 {
    /// default constructor
-   tree_node_index_factory(CustomUnorderedMapUnstable<unsigned int, unsigned int>& _remap, const tree_managerRef _TM) : remap(_remap), TM(_TM), curr_tree_node_ptr(nullptr), curr_bloc(nullptr)
+   tree_node_index_factory(CustomUnorderedMapUnstable<unsigned int, unsigned int>& _remap, const tree_managerRef _TM)
+       : remap(_remap), TM(_TM), curr_tree_node_ptr(nullptr), curr_bloc(nullptr)
    {
    }
    /// tree_node visitors
@@ -91,7 +94,8 @@ struct tree_node_index_factory : public tree_node_mask
 
    /**
     * Factory method.
-    * It creates a tree_node of type equal to the type of tn where all the fields are remapped according the remap relation passed to the constructor
+    * It creates a tree_node of type equal to the type of tn where all the fields are remapped according the remap
+    * relation passed to the constructor
     * @param node_id is the node id of the created object.
     * @param tn is the starting tree node
     */

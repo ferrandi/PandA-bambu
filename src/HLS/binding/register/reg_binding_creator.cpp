@@ -68,15 +68,20 @@
 #include <boost/version.hpp>
 #include <iosfwd>
 
-reg_binding_creator::reg_binding_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
+reg_binding_creator::reg_binding_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                         unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
+                                         const HLSFlowStep_Type _hls_flow_step_type,
                                          const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization), register_lower_bound(0)
+    : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type,
+                      _hls_flow_step_specialization),
+      register_lower_bound(0)
 {
 }
 
 reg_binding_creator::~reg_binding_creator() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> reg_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+reg_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -86,37 +91,48 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #if HAVE_FROM_PRAGMA_BUILT
          if(parameters->getOption<bool>(OPT_parse_pragma))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          else
 #endif
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          else
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::EASY_MODULE_BINDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::EASY_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_stg_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_stg_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          if(HLSMgr->get_HLS(funId))
          {
-            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->chaining_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->liveness_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->chaining_algorithm, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->liveness_algorithm, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_storage_value_insertion_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_storage_value_insertion_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          if(HLSMgr->get_HLS(funId))
          {
             if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
             {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+               ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
             }
             else
             {
-               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
+                                          HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
             }
             break;
          }

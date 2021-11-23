@@ -121,12 +121,15 @@ class mux_connection_binding : public conn_binding_creator
     * @param port_index is the i-th port index of the given target port.
     * @return number of multiplexer allocated
     */
-   unsigned int input_logic(const conn_binding::ConnectionSources& src, const generic_objRef tgt, unsigned int op, unsigned int port_index, unsigned int iteration);
+   unsigned int input_logic(const conn_binding::ConnectionSources& src, const generic_objRef tgt, unsigned int op,
+                            unsigned int port_index, unsigned int iteration);
 
    /**
     * Determine the actual interconnection
     */
-   void determine_connection(const vertex& op, const HLS_manager::io_binding_type& var, generic_objRef fu_obj, unsigned int port_num, unsigned int port_index, const OpGraphConstRef data, unsigned int precision, unsigned int alignment = 0);
+   void determine_connection(const vertex& op, const HLS_manager::io_binding_type& var, generic_objRef fu_obj,
+                             unsigned int port_num, unsigned int port_index, const OpGraphConstRef data,
+                             unsigned int precision, unsigned int alignment = 0);
 
    /**
     * Compute the bitsize given a io_binding type
@@ -136,31 +139,44 @@ class mux_connection_binding : public conn_binding_creator
    /**
     * Recursive function which returns the offset of a dynamic multidimensional array call
     */
-   generic_objRef dynamic_multidimensional_array_handler(array_ref* ar, const vertex& op, const OpGraphConstRef data, unsigned int& base_address_index_pointer, std::vector<unsigned int>& recursive_indexes_values, std::vector<unsigned int>& dims,
-                                                         generic_objRef& global_adder, const bool is_not_a_phi);
+   generic_objRef dynamic_multidimensional_array_handler(array_ref* ar, const vertex& op, const OpGraphConstRef data,
+                                                         unsigned int& base_address_index_pointer,
+                                                         std::vector<unsigned int>& recursive_indexes_values,
+                                                         std::vector<unsigned int>& dims, generic_objRef& global_adder,
+                                                         const bool is_not_a_phi);
 
    /**
-    * @brief connect_array_index: connect the index port of an array_ref and convert it in case the source is of int type
+    * @brief connect_array_index: connect the index port of an array_ref and convert it in case the source is of int
+    * type
     */
-   void connect_array_index(unsigned int tree_index, generic_objRef fu_obj, unsigned int port_num, unsigned int port_index, unsigned int bus_addr_bitsize, const OpGraphConstRef data, const vertex& op);
+   void connect_array_index(unsigned int tree_index, generic_objRef fu_obj, unsigned int port_num,
+                            unsigned int port_index, unsigned int bus_addr_bitsize, const OpGraphConstRef data,
+                            const vertex& op);
 
  private:
    /**
     *  create the connection object and update the unique table
     */
-   void create_single_conn(const OpGraphConstRef data, const vertex& op, generic_objRef fu_obj_src, generic_objRef fu_obj, unsigned int port_num, unsigned int port_index, unsigned int tree_var, unsigned int precision, const bool is_not_a_phi);
+   void create_single_conn(const OpGraphConstRef data, const vertex& op, generic_objRef fu_obj_src,
+                           generic_objRef fu_obj, unsigned int port_num, unsigned int port_index, unsigned int tree_var,
+                           unsigned int precision, const bool is_not_a_phi);
 
    /**
     * connect the fu_obj with the associated registers.
     */
-   void connect_to_registers(vertex op, const OpGraphConstRef data, generic_objRef fu_obj, unsigned int port_num, unsigned int port_index, unsigned int tree_var, unsigned int precision, const bool is_not_a_phi);
+   void connect_to_registers(vertex op, const OpGraphConstRef data, generic_objRef fu_obj, unsigned int port_num,
+                             unsigned int port_index, unsigned int tree_var, unsigned int precision,
+                             const bool is_not_a_phi);
 
    unsigned int extract_parm_decl(unsigned int tree_var, const tree_managerRef TreeM);
 
-   void add_conversion(unsigned int num, unsigned int size_tree_var, VertexIterator op, unsigned int form_par_type, unsigned int port_index, const generic_objRef fu_obj, const OpGraphConstRef data, const tree_managerRef TreeM, unsigned int tree_var,
+   void add_conversion(unsigned int num, unsigned int size_tree_var, VertexIterator op, unsigned int form_par_type,
+                       unsigned int port_index, const generic_objRef fu_obj, const OpGraphConstRef data,
+                       const tree_managerRef TreeM, unsigned int tree_var,
                        const std::vector<HLS_manager::io_binding_type>& var_read, unsigned int size_form_par);
 
-   unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data, const tree_managerRef TreeM);
+   unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data,
+                                  const tree_managerRef TreeM);
 
    bool isZeroObj(unsigned int tree_index, const tree_managerRef TreeM);
    bool isConstantObj(unsigned int tree_index, const tree_managerRef TreeM);
@@ -170,7 +186,8 @@ class mux_connection_binding : public conn_binding_creator
     * Main constructor
     * @param design_flow_manager is the design flow manager
     */
-   mux_connection_binding(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   mux_connection_binding(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                          const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -196,6 +213,8 @@ class mux_connection_binding : public conn_binding_creator
    /**
     * check if the port has to be swapped
     */
-   unsigned int swap_p(const OpGraphConstRef data, vertex op, unsigned int num, std::vector<HLS_manager::io_binding_type>& vars_read, const BehavioralHelperConstRef behavioral_helper, const tree_managerRef TreeM);
+   unsigned int swap_p(const OpGraphConstRef data, vertex op, unsigned int num,
+                       std::vector<HLS_manager::io_binding_type>& vars_read,
+                       const BehavioralHelperConstRef behavioral_helper, const tree_managerRef TreeM);
 };
 #endif

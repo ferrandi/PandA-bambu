@@ -52,7 +52,9 @@
 #include "refcount.hpp"
 #include "utility.hpp"
 
-STG_creator::STG_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+STG_creator::STG_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned _funId,
+                         const DesignFlowManagerConstRef _design_flow_manager,
+                         const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
 }

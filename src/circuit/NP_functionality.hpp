@@ -168,7 +168,8 @@ class NP_functionality
     */
    void get_library_parameters(std::vector<std::string>& parameters) const;
 
-   void get_port_list(std::map<unsigned int, std::map<std::string, std::string>>& InPortMap, std::map<unsigned int, std::map<std::string, std::string>>& OutPortMap) const;
+   void get_port_list(std::map<unsigned int, std::map<std::string, std::string>>& InPortMap,
+                      std::map<unsigned int, std::map<std::string, std::string>>& OutPortMap) const;
 
    /**
     * Load a NP_functionality starting from an xml file.

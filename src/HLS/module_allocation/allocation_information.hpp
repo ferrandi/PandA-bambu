@@ -199,8 +199,9 @@ class AllocationInformation : public HLSFunctionIR
    CustomUnorderedMap<unsigned int, CustomOrderedSet<unsigned int>> fus_to_node_id;
 
    /// Puts into relation operation with type and functional units.
-   /// A pair(node_id, operation_type-fu) means that the fu is used to implement the operation associated with the tree node node_id of type operation_type
-   /// If the operation_type of the operation is different from the current one, the binding refers to an old version of the operation
+   /// A pair(node_id, operation_type-fu) means that the fu is used to implement the operation associated with the tree
+   /// node node_id of type operation_type If the operation_type of the operation is different from the current one, the
+   /// binding refers to an old version of the operation
    CustomUnorderedMap<unsigned int, std::pair<std::string, unsigned int>> binding;
 
    /// size of each memory unit in bytes
@@ -284,7 +285,8 @@ class AllocationInformation : public HLSFunctionIR
     * @param info is where the information retrieved for the node get stored.
     * @param constant_id is a tree node id (i.e., different from zero) when one of the operands is constant
     */
-   void GetNodeTypePrec(const vertex node, const OpGraphConstRef g, node_kind_prec_infoRef info, HLS_manager::io_binding_type& constant_id, bool is_constrained) const;
+   void GetNodeTypePrec(const vertex node, const OpGraphConstRef g, node_kind_prec_infoRef info,
+                        HLS_manager::io_binding_type& constant_id, bool is_constrained) const;
 
    /**
     * Returns the technology_node associated with the given operation
@@ -327,14 +329,16 @@ class AllocationInformation : public HLSFunctionIR
     * @param allocation_information is a reference to an instance of this class
     * @return the pair mux_timing_db, mux_area_db
     */
-   static const std::pair<const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&, const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&>
+   static const std::pair<const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&,
+                          const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&>
    InitializeMuxDB(const AllocationInformationConstRef allocation_information);
 
    /**
     * Compute the values for the initialization of the DSP characteristics database
     * @param allocation_information is a reference to an instance of this class
     */
-   static const std::tuple<const std::vector<unsigned int>&, const std::vector<unsigned int>&> InitializeDSPDB(const AllocationInformationConstRef allocation_information);
+   static const std::tuple<const std::vector<unsigned int>&, const std::vector<unsigned int>&>
+   InitializeDSPDB(const AllocationInformationConstRef allocation_information);
 
    /**
     * Add the delay to reach a DSP register if necessary
@@ -354,11 +358,13 @@ class AllocationInformation : public HLSFunctionIR
    /**
     * Constructor
     * @param HLS_mgr is the HLS manager
-    * NOTE: hls cannot be got from HLS_mgr since when allocation information constructor is called we are still in the hls constructor
+    * NOTE: hls cannot be got from HLS_mgr since when allocation information constructor is called we are still in the
+    * hls constructor
     * @param function_id is the index of the function
     * @param parameters is the set of input parameters
     */
-   AllocationInformation(const HLS_managerRef _hls_manager, const unsigned int _function_index, const ParameterConstRef parameters);
+   AllocationInformation(const HLS_managerRef _hls_manager, const unsigned int _function_index,
+                         const ParameterConstRef parameters);
 
    /**
     * Initialize all the data structure
@@ -398,7 +404,8 @@ class AllocationInformation : public HLSFunctionIR
    bool CanImplementSetNotEmpty(const unsigned int v) const;
 
    /**
-    * Returns the name of the functional unit, associated with the name of the library, given the corresponding identifier
+    * Returns the name of the functional unit, associated with the name of the library, given the corresponding
+    * identifier
     */
    std::pair<std::string, std::string> get_fu_name(unsigned int id) const;
 
@@ -468,7 +475,10 @@ class AllocationInformation : public HLSFunctionIR
     * @param CF is the functor used to retrive information
     * @return the max or min value.
     */
-   double get_attribute_of_fu_per_op(const vertex v, const OpGraphConstRef g, const Allocation_MinMax allocation_min_max, op_target target, unsigned int& fu_name, bool& flag, const updatecopy_HLS_constraints_functor* CF = nullptr) const;
+   double get_attribute_of_fu_per_op(const vertex v, const OpGraphConstRef g,
+                                     const Allocation_MinMax allocation_min_max, op_target target,
+                                     unsigned int& fu_name, bool& flag,
+                                     const updatecopy_HLS_constraints_functor* CF = nullptr) const;
 
    /**
     * This method returns the min or the max value of the execution
@@ -484,7 +494,8 @@ class AllocationInformation : public HLSFunctionIR
     *        needed value is the execution time.
     * @return the max or min value.
     */
-   double get_attribute_of_fu_per_op(const vertex v, const OpGraphConstRef g, const Allocation_MinMax allocation_min_max, op_target target) const;
+   double get_attribute_of_fu_per_op(const vertex v, const OpGraphConstRef g,
+                                     const Allocation_MinMax allocation_min_max, op_target target) const;
 
    /**
     * Computes the minum number of resources implementing
@@ -853,7 +864,9 @@ class AllocationInformation : public HLSFunctionIR
    //@}
 #endif
 
-   static std::string extract_bambu_provided_name(unsigned int prec_in, unsigned int prec_out, const HLS_managerConstRef hls_manager, technology_nodeRef& current_fu);
+   static std::string extract_bambu_provided_name(unsigned int prec_in, unsigned int prec_out,
+                                                  const HLS_managerConstRef hls_manager,
+                                                  technology_nodeRef& current_fu);
 
    void print(std::ostream& os) const;
 
@@ -880,8 +893,10 @@ class AllocationInformation : public HLSFunctionIR
     * @param stage is the stage to be considered for pipelined operation
     * @param ignore_connection specifies if connection delays have to be ignored
     */
-   std::pair<double, double> GetTimeLatency(const unsigned int operation, const unsigned int functional_unit, const unsigned int stage = 0) const;
-   std::pair<double, double> GetTimeLatency(const vertex operation, const unsigned int functional_unit, const unsigned int stage = 0) const;
+   std::pair<double, double> GetTimeLatency(const unsigned int operation, const unsigned int functional_unit,
+                                            const unsigned int stage = 0) const;
+   std::pair<double, double> GetTimeLatency(const vertex operation, const unsigned int functional_unit,
+                                            const unsigned int stage = 0) const;
 
    /**
     * Return the connection time for a couple of operations or the phi overhead for a single operation
@@ -890,7 +905,8 @@ class AllocationInformation : public HLSFunctionIR
     * @param cs is the control step in which second operation would be scheduled
     * @return the connection time
     */
-   double GetConnectionTime(const unsigned int first_operation, const unsigned int second_operation, const AbsControlStep cs) const;
+   double GetConnectionTime(const unsigned int first_operation, const unsigned int second_operation,
+                            const AbsControlStep cs) const;
    double GetConnectionTime(const vertex first_operation, const vertex second_operation, const AbsControlStep cs) const;
 
    /**
@@ -946,7 +962,8 @@ class AllocationInformation : public HLSFunctionIR
     * return an estimation of the interconnection time
     * @return an estimation of the interconnection time based on setup/hold time
     */
-   double get_connection_time(unsigned fu_type, bool add_delay1, bool add_delay2, size_t n_complex_ops, size_t n_mem_ops) const;
+   double get_connection_time(unsigned fu_type, bool add_delay1, bool add_delay2, size_t n_complex_ops,
+                              size_t n_mem_ops) const;
 
    double mux_area_unit_raw(unsigned int fu_prec) const;
 
@@ -999,7 +1016,8 @@ class AllocationInformation : public HLSFunctionIR
     */
    bool is_simple_pointer_plus_expr(const unsigned int fu_name) const;
 
-   static bool can_be_asynchronous_ram(tree_managerConstRef TM, unsigned int var, unsigned int threshold, bool is_read_only_variable);
+   static bool can_be_asynchronous_ram(tree_managerConstRef TM, unsigned int var, unsigned int threshold,
+                                       bool is_read_only_variable);
 
    /**
     * Check if two statements can be chained
@@ -1069,7 +1087,8 @@ struct node_kind_prec_info
    std::string node_kind;
    ///  Vector of input precision.
    std::vector<unsigned int> input_prec;
-   /// vector storing the number of elements in case the input is a vector, 0 otherwise (used for mapping with library fus - it can be different from the real one)
+   /// vector storing the number of elements in case the input is a vector, 0 otherwise (used for mapping with library
+   /// fus - it can be different from the real one)
    std::vector<unsigned int> base128_input_nelem;
 
    /// vector storing the number of elements in case the input is a vector, 0 otherwise (real value)
@@ -1078,7 +1097,8 @@ struct node_kind_prec_info
    ///  Precision of the output.
    unsigned int output_prec;
 
-   /// number of output elemnts in case the output is a a vector, 0 otherwise (used for mapping with library fus - it can be different from the real one)
+   /// number of output elemnts in case the output is a a vector, 0 otherwise (used for mapping with library fus - it
+   /// can be different from the real one)
    unsigned int base128_output_nelem;
 
    /// number of output elemnts in case the output is a a vector, 0 otherwise (real_value)
@@ -1090,7 +1110,12 @@ struct node_kind_prec_info
    /// true when the functional unit is a plointer plus expr with two constant operands
    bool is_simple_pointer_plus_expr;
 
-   node_kind_prec_info() : output_prec(0), base128_output_nelem(0), real_output_nelem(0), is_single_bool_test_cond_expr(false), is_simple_pointer_plus_expr(false)
+   node_kind_prec_info()
+       : output_prec(0),
+         base128_output_nelem(0),
+         real_output_nelem(0),
+         is_single_bool_test_cond_expr(false),
+         is_simple_pointer_plus_expr(false)
    {
    }
    void print(std::ostream& os) const;

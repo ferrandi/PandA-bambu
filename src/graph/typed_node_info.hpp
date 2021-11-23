@@ -57,12 +57,14 @@
 #include "refcount.hpp"
 
 /**
- * constant string identifying an operation node of type entry. Used during the behavioral_manager building starting from the tree(GCC) data structure.
+ * constant string identifying an operation node of type entry. Used during the behavioral_manager building starting
+ * from the tree(GCC) data structure.
  */
 #define ENTRY "ENTRY"
 
 /**
- * constant string identifying an operation node of type exit. Used during the behavioral_manager building starting from the tree(GCC) data structure.
+ * constant string identifying an operation node of type exit. Used during the behavioral_manager building starting from
+ * the tree(GCC) data structure.
  */
 #define EXIT "EXIT"
 
@@ -126,7 +128,8 @@ struct TypedNodeInfo : public NodeInfo
 
    /**
     * Custom vertex property: node_type.
-    * This property defines which type of node is: read and write a port, read a constant, if, case, wait and notify or generic operation.
+    * This property defines which type of node is: read and write a port, read a constant, if, case, wait and notify or
+    * generic operation.
     */
    unsigned int node_type;
 
@@ -159,21 +162,24 @@ struct TypedNodeInfo : public NodeInfo
 };
 
 /**
- * Helper macro returning the operation associated with a node. This function should be carefully used. For example it can only be used by cdfg based graphs and not by basic_block based graphs.
+ * Helper macro returning the operation associated with a node. This function should be carefully used. For example it
+ * can only be used by cdfg based graphs and not by basic_block based graphs.
  * @param data is the graph.
  * @param vertex_index is the index of the node.
  */
 #define GET_OPERATION(data, vertex_index) Cget_node_info<TypedNodeInfo>(vertex_index, *(data))->node_operation
 
 /**
- * Helper macro returning the name associated with a node. This function should be carefully used. For example it can only be used by cdfg based graphs and not by basic_block based graphs.
+ * Helper macro returning the name associated with a node. This function should be carefully used. For example it can
+ * only be used by cdfg based graphs and not by basic_block based graphs.
  * @param data is the graph.
  * @param vertex_index is the index of the node.
  */
 #define GET_NAME(data, vertex_index) Cget_node_info<TypedNodeInfo>(vertex_index, *(data))->vertex_name
 
 /**
- * Helper macro returning the type associated with a node. This function should be carefully used. For example it can only be used by cdfg based graphs and not by basic_block based graphs.
+ * Helper macro returning the type associated with a node. This function should be carefully used. For example it can
+ * only be used by cdfg based graphs and not by basic_block based graphs.
  * @param data is the graph.
  * @param vertex_index is the index of the node.
  */

@@ -85,7 +85,8 @@ class conn_binding_creator : public HLSFunctionStep
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -93,7 +94,8 @@ class conn_binding_creator : public HLSFunctionStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of connection binding algorithm
     */
-   conn_binding_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   conn_binding_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                        const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor.

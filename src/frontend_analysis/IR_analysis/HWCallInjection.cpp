@@ -57,14 +57,17 @@
 
 unsigned int HWCallInjection::builtinWaitCallDeclIdx = 0;
 
-HWCallInjection::HWCallInjection(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int funId, const DesignFlowManagerConstRef DFM) : FunctionFrontendFlowStep(_AppM, funId, HWCALL_INJECTION, DFM, Param)
+HWCallInjection::HWCallInjection(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int funId,
+                                 const DesignFlowManagerConstRef DFM)
+    : FunctionFrontendFlowStep(_AppM, funId, HWCALL_INJECTION, DFM, Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 HWCallInjection::~HWCallInjection() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(RT)
@@ -108,15 +111,20 @@ DesignFlowStep_Status HWCallInjection::InternalExec()
       if(expr->get_kind() == gimple_call_K)
       {
          const auto GC = GetPointerS<gimple_call>(expr);
-         FD = GetPointer<const addr_expr>(GET_CONST_NODE(GC->fn)) ? GetPointerS<const addr_expr>(GET_CONST_NODE(GC->fn))->op : GC->fn;
+         FD = GetPointer<const addr_expr>(GET_CONST_NODE(GC->fn)) ?
+                  GetPointerS<const addr_expr>(GET_CONST_NODE(GC->fn))->op :
+                  GC->fn;
       }
       else if(expr->get_kind() == gimple_assign_K)
       {
          const auto GA = GetPointerS<const gimple_assign>(expr);
-         if(GET_CONST_NODE(GA->op1)->get_kind() == call_expr_K || GET_CONST_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
+         if(GET_CONST_NODE(GA->op1)->get_kind() == call_expr_K ||
+            GET_CONST_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
          {
             const auto CE = GetPointerS<const call_expr>(GET_CONST_NODE(GA->op1));
-            FD = GetPointer<const addr_expr>(GET_CONST_NODE(CE->fn)) ? GetPointerS<const addr_expr>(GET_CONST_NODE(CE->fn))->op : CE->fn;
+            FD = GetPointer<const addr_expr>(GET_CONST_NODE(CE->fn)) ?
+                     GetPointerS<const addr_expr>(GET_CONST_NODE(CE->fn))->op :
+                     CE->fn;
          }
       }
 
@@ -292,7 +300,10 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
                ret_var_size = GetPointerS<const type_node>(GET_CONST_NODE(vd->type))->size;
                ret_var_algn = GetPointerS<const type_node>(GET_CONST_NODE(vd->type))->algn;
             }
-            retVar = IRman->create_var_decl(IRman->create_identifier_node("__return_value"), ret_var_type, GA->scpe, ret_var_size, nullptr, nullptr, STR(GA->include_name + ":" + STR(GA->line_number) + ":" + STR(GA->column_number)), ret_var_algn, 1, true);
+            retVar = IRman->create_var_decl(
+                IRman->create_identifier_node("__return_value"), ret_var_type, GA->scpe, ret_var_size, nullptr, nullptr,
+                STR(GA->include_name + ":" + STR(GA->line_number) + ":" + STR(GA->column_number)), ret_var_algn, 1,
+                true);
 
             GA->op1 = retVar;
          }
@@ -306,7 +317,8 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
          {
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;
             const auto typeRetVar = tree_helper::CGetType(retVar);
-            addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->GetPointerType(typeRetVar, ALGN_POINTER)));
+            addrExprReturnValueMap[TOK(TOK_TYPE)] =
+                STR(GET_INDEX_NODE(IRman->GetPointerType(typeRetVar, ALGN_POINTER)));
             addrExprReturnValueMap[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(retVar));
             addrExprReturnValueMap[TOK(TOK_SRCP)] = srcp_str;
             TM->create_tree_node(addrExprReturnValue, addr_expr_K, addrExprReturnValueMap);
@@ -346,11 +358,13 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
       THROW_UNREACHABLE("Error not a gimple call or assign statement!");
    }
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to BB" + STR(block->number) + " " + STR(builtin_stmt));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Added to BB" + STR(block->number) + " " + STR(builtin_stmt));
    block->PushBefore(builtin_stmt, stmt, AppM);
    if(!retVar)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed from BB" + STR(block->number) + " " + STR(stmt));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Removed from BB" + STR(block->number) + " " + STR(stmt));
       block->RemoveStmt(stmt, AppM);
    }
    else

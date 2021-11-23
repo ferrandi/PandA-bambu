@@ -68,7 +68,10 @@
 /// Parameter include
 #include "Parameter.hpp"
 
-HLSInstructionWriter::HLSInstructionWriter(const application_managerConstRef _app_man, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _parameters) : InstructionWriter(_app_man, _indented_output_stream, _parameters)
+HLSInstructionWriter::HLSInstructionWriter(const application_managerConstRef _app_man,
+                                           const IndentedOutputStreamRef _indented_output_stream,
+                                           const ParameterConstRef _parameters)
+    : InstructionWriter(_app_man, _indented_output_stream, _parameters)
 {
 }
 
@@ -76,10 +79,14 @@ HLSInstructionWriter::~HLSInstructionWriter() = default;
 
 void HLSInstructionWriter::declareFunction(const unsigned int function_id)
 {
-   bool flag_pp = parameters->isOption(OPT_pretty_print) || (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
+   bool flag_pp = parameters->isOption(OPT_pretty_print) ||
+                  (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
    // All I have to do is to change main in _main
    const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   std::string stringTemp = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->print_type(function_id, false, true, false, 0, var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper)));
+   std::string stringTemp = AppM->CGetFunctionBehavior(function_id)
+                                ->CGetBehavioralHelper()
+                                ->print_type(function_id, false, true, false, 0,
+                                             var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper)));
    std::string name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name();
 
    if(!flag_pp)
@@ -89,7 +96,8 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
       std::string fname;
       tree_helper::get_mangled_fname(fd, fname);
       auto HLSMgr = GetPointer<const HLS_manager>(AppM);
-      if(HLSMgr && HLSMgr->design_interface_typename_orig_signature.find(fname) != HLSMgr->design_interface_typename_orig_signature.end())
+      if(HLSMgr && HLSMgr->design_interface_typename_orig_signature.find(fname) !=
+                       HLSMgr->design_interface_typename_orig_signature.end())
       {
          auto searchString = " " + name + "(";
          stringTemp = stringTemp.substr(0, stringTemp.find(searchString) + searchString.size());
@@ -113,7 +121,8 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
    // boost::replace_all(stringTemp, "/*&*/*", "&");
    if(name == "main")
    {
-      boost::replace_all(stringTemp, " main(", " _main("); /// the assumption is strong but the code that prints the name of the function is under our control ;-)
+      boost::replace_all(stringTemp, " main(", " _main("); /// the assumption is strong but the code that prints the
+                                                           /// name of the function is under our control ;-)
    }
 
    indented_output_stream->Append(stringTemp);

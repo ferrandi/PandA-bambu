@@ -49,14 +49,17 @@ class OmpBodyLoopSynthesisFlow : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   OmpBodyLoopSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   OmpBodyLoopSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                            const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

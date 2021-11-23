@@ -64,7 +64,9 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 
-DataDependenceComputation::DataDependenceComputation(const application_managerRef _AppM, unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager,
+DataDependenceComputation::DataDependenceComputation(const application_managerRef _AppM, unsigned int _function_id,
+                                                     const FrontendFlowStepType _frontend_flow_step_type,
+                                                     const DesignFlowManagerConstRef _design_flow_manager,
                                                      const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters)
 {
@@ -76,7 +78,8 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
 {
    if(frontend_flow_step_type == SCALAR_SSA_DATA_FLOW_ANALYSIS)
    {
-      return Computedependencies<unsigned int>(DFG_SCA_SELECTOR, FB_DFG_SCA_SELECTOR, ADG_SCA_SELECTOR, FB_ADG_SCA_SELECTOR);
+      return Computedependencies<unsigned int>(DFG_SCA_SELECTOR, FB_DFG_SCA_SELECTOR, ADG_SCA_SELECTOR,
+                                               FB_ADG_SCA_SELECTOR);
    }
    else if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
@@ -84,14 +87,16 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
 #endif
    )
    {
-      auto res = Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
+      auto res = Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR,
+                                                   FB_ADG_AGG_SELECTOR);
       do_dependence_reduction();
       return res;
    }
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
    else if(frontend_flow_step_type == DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS)
    {
-      return Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
+      return Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR,
+                                               FB_ADG_AGG_SELECTOR);
    }
 #endif
    else
@@ -101,7 +106,9 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
    return DesignFlowStep_Status::ABORTED;
 }
 
-static void ordered_dfs(unsigned u, const OpGraphConstRef avg, CustomUnorderedMap<vertex, unsigned>& pos, std::vector<vertex>& rev_pos, std::vector<bool>& vis, CustomUnorderedSet<std::pair<unsigned, unsigned>>& keep)
+static void ordered_dfs(unsigned u, const OpGraphConstRef avg, CustomUnorderedMap<vertex, unsigned>& pos,
+                        std::vector<vertex>& rev_pos, std::vector<bool>& vis,
+                        CustomUnorderedSet<std::pair<unsigned, unsigned>>& keep)
 {
    vis[u] = true;
    CustomOrderedSet<unsigned> to;
@@ -137,7 +144,8 @@ void DataDependenceComputation::do_dependence_reduction()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---do_dependence_reduction");
    VertexIterator basic_block, basic_block_end;
-   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*bb_fcfg); basic_block != basic_block_end; basic_block++)
+   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*bb_fcfg); basic_block != basic_block_end;
+       basic_block++)
    {
       const auto bb_node_info = bb_fcfg->CGetBBNodeInfo(*basic_block);
       CustomUnorderedMap<vertex, unsigned> pos;
@@ -205,7 +213,8 @@ void DataDependenceComputation::do_dependence_reduction()
 }
 
 template <typename type>
-DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector)
+DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int dfg_selector, const int fb_dfg_selector,
+                                                                     const int adg_selector, const int fb_adg_selector)
 {
    const auto TM = AppM->get_tree_manager();
    const OpGraphConstRef cfg = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
@@ -236,7 +245,8 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
       const auto& local_overs = GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::OVER);
       for(auto local_over : local_overs)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TM->get_tree_node_const(local_over)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---" + TM->get_tree_node_const(local_over)->ToString());
          overs[local_over].insert(*vi);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -245,20 +255,25 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing dependencies");
    for(boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing anti and data dependencies of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Computing anti and data dependencies of vertex " + GET_NAME(cfg, *vi));
       for(auto local_use : GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::USE))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use of " + TM->get_tree_node_const(local_use)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Considering use of " + TM->get_tree_node_const(local_use)->ToString());
          if(defs.find(local_use) != defs.end())
          {
             for(const auto this_def : defs.find(local_use)->second)
             {
                const bool forward_dependence = function_behavior->CheckReachability(this_def, *vi);
                const bool feedback_dependence = function_behavior->CheckReachability(*vi, this_def);
-               THROW_ASSERT(!(forward_dependence and feedback_dependence), "Dependence between operation " + GET_NAME(cfg, this_def) + " and " + GET_NAME(cfg, *vi) + " is in both the direction");
+               THROW_ASSERT(!(forward_dependence and feedback_dependence),
+                            "Dependence between operation " + GET_NAME(cfg, this_def) + " and " + GET_NAME(cfg, *vi) +
+                                " is in both the direction");
                if(forward_dependence)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding data dependence " + GET_NAME(cfg, this_def) + "-->" + GET_NAME(cfg, *vi));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Adding data dependence " + GET_NAME(cfg, this_def) + "-->" + GET_NAME(cfg, *vi));
                   function_behavior->ogc->AddEdge(this_def, *vi, dfg_selector);
                   function_behavior->ogc->add_edge_info(this_def, *vi, DFG_SELECTOR, local_use);
                   if(function_behavior->CheckFeedbackReachability(*vi, this_def))
@@ -271,7 +286,9 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
 
                if(feedback_dependence)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking for feedback data dependence " + GET_NAME(cfg, this_def) + "-->" + GET_NAME(cfg, *vi));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Checking for feedback data dependence " + GET_NAME(cfg, this_def) + "-->" +
+                                     GET_NAME(cfg, *vi));
                   if(*vi != this_def)
                   {
                      function_behavior->ogc->AddEdge(*vi, this_def, adg_selector);
@@ -299,7 +316,8 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                const bool dependence = function_behavior->CheckReachability(*vi, this_over);
                if(dependence)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding anti dependence " + GET_NAME(cfg, *vi) + "-->" + GET_NAME(cfg, this_over));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Adding anti dependence " + GET_NAME(cfg, *vi) + "-->" + GET_NAME(cfg, this_over));
                   function_behavior->ogc->AddEdge(*vi, this_over, adg_selector);
                   function_behavior->ogc->add_edge_info(*vi, this_over, ADG_SELECTOR, local_use);
                }
@@ -307,8 +325,10 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed anti and data dependencies of vertex " + GET_NAME(cfg, *vi));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing output dependencies of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Computed anti and data dependencies of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Computing output dependencies of vertex " + GET_NAME(cfg, *vi));
       for(auto local_def : GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::OVER))
       {
          if(defs.find(local_def) != defs.end())
@@ -330,7 +350,8 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
             }
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed output dependencies of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Computed output dependencies of vertex " + GET_NAME(cfg, *vi));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed dependencies");
    if(parameters->getOption<bool>(OPT_print_dot))
@@ -379,7 +400,9 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
 }
 
 template <>
-CustomSet<unsigned int> DataDependenceComputation::GetVariables(const vertex statement, const FunctionBehavior_VariableAccessType variable_access_type) const
+CustomSet<unsigned int>
+DataDependenceComputation::GetVariables(const vertex statement,
+                                        const FunctionBehavior_VariableAccessType variable_access_type) const
 {
    FunctionBehavior_VariableType variable_type = FunctionBehavior_VariableType::UNKNOWN;
    if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS)
@@ -404,14 +427,20 @@ CustomSet<unsigned int> DataDependenceComputation::GetVariables(const vertex sta
    {
       THROW_UNREACHABLE("Unexpected data flow analysis type");
    }
-   return function_behavior->CGetOpGraph(FunctionBehavior::CFG)->CGetOpNodeInfo(statement)->GetVariables(variable_type, variable_access_type);
+   return function_behavior->CGetOpGraph(FunctionBehavior::CFG)
+       ->CGetOpNodeInfo(statement)
+       ->GetVariables(variable_type, variable_access_type);
 }
 
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
 template <>
-CustomSet<MemoryAddress> DataDependenceComputation::GetVariables(const vertex statement, const FunctionBehavior_VariableAccessType variable_access_type) const
+CustomSet<MemoryAddress>
+DataDependenceComputation::GetVariables(const vertex statement,
+                                        const FunctionBehavior_VariableAccessType variable_access_type) const
 {
    THROW_ASSERT(frontend_flow_step_type == DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS, "Unexpected data flow analysis type");
-   return function_behavior->CGetOpGraph(FunctionBehavior::CFG)->CGetOpNodeInfo(statement)->GetDynamicMemoryLocations(variable_access_type);
+   return function_behavior->CGetOpGraph(FunctionBehavior::CFG)
+       ->CGetOpNodeInfo(statement)
+       ->GetDynamicMemoryLocations(variable_access_type);
 }
 #endif

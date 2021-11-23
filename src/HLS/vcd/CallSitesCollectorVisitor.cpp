@@ -44,7 +44,8 @@
 #include "hls_manager.hpp"
 #include "string_manipulation.hpp" // for STR
 
-CallSitesCollectorVisitor::CallSitesCollectorVisitor(const HLS_managerRef& _HLSMgr) : HLSMgr(_HLSMgr), CGMan(_HLSMgr->CGetCallGraphManager())
+CallSitesCollectorVisitor::CallSitesCollectorVisitor(const HLS_managerRef& _HLSMgr)
+    : HLSMgr(_HLSMgr), CGMan(_HLSMgr->CGetCallGraphManager())
 {
 }
 
@@ -73,7 +74,8 @@ void CallSitesCollectorVisitor::examine_edge(const EdgeDescriptor& e, const Call
    for(const unsigned int callid : g.CGetFunctionEdgeInfo(e)->direct_call_points)
    {
       HLSMgr->RDiscr->call_sites_info->fu_id_to_call_ids[caller_id].insert(callid);
-      THROW_ASSERT(HLSMgr->RDiscr->call_sites_info->call_id_to_called_id[callid].empty() or callid == 0, "direct call " + STR(callid) + " calls more than one function");
+      THROW_ASSERT(HLSMgr->RDiscr->call_sites_info->call_id_to_called_id[callid].empty() or callid == 0,
+                   "direct call " + STR(callid) + " calls more than one function");
       HLSMgr->RDiscr->call_sites_info->call_id_to_called_id[callid].insert(called_id);
    }
    for(const unsigned int callid : g.CGetFunctionEdgeInfo(e)->indirect_call_points)

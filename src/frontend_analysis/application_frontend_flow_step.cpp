@@ -58,7 +58,10 @@
 #include <boost/lexical_cast.hpp>                      // for lexical_cast
 #include <iostream>                                    // for ios_base::fai...
 
-ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_managerRef _AppM,
+                                                         const FrontendFlowStepType _frontend_flow_step_type,
+                                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                                         const ParameterConstRef _parameters)
     : FrontendFlowStep(_AppM, _frontend_flow_step_type, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));

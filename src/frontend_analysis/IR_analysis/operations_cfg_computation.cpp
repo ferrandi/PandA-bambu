@@ -81,7 +81,9 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-operations_cfg_computation::operations_cfg_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+operations_cfg_computation::operations_cfg_computation(const ParameterConstRef _parameters,
+                                                       const application_managerRef _AppM, unsigned int _function_id,
+                                                       const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, OPERATIONS_CFG_COMPUTATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -89,7 +91,8 @@ operations_cfg_computation::operations_cfg_computation(const ParameterConstRef _
 
 operations_cfg_computation::~operations_cfg_computation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> operations_cfg_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+operations_cfg_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -147,7 +150,8 @@ void operations_cfg_computation::Initialize()
       if(boost::num_vertices(*basic_block_graph) != 0)
       {
          VertexIterator basic_block, basic_block_end;
-         for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph); basic_block != basic_block_end; basic_block++)
+         for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph);
+             basic_block != basic_block_end; basic_block++)
          {
             basic_block_graph->GetBBNodeInfo(*basic_block)->statements_list.clear();
          }
@@ -191,7 +195,8 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*v_iter);
       const auto block = bb_node_info->block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining BB" + STR(block->number));
-      if(block->CGetStmtList().empty() and *v_iter != fbb->CGetBBGraphInfo()->entry_vertex and *v_iter != fbb->CGetBBGraphInfo()->exit_vertex)
+      if(block->CGetStmtList().empty() and *v_iter != fbb->CGetBBGraphInfo()->entry_vertex and
+         *v_iter != fbb->CGetBBGraphInfo()->exit_vertex)
       {
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
          const auto new_tree_node_id = TM->new_tree_node_id();
@@ -200,7 +205,8 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
          TM->create_tree_node(new_tree_node_id, gimple_nop_K, gimple_nop_schema);
          auto gn = GetPointer<gimple_nop>(TM->GetTreeNode(new_tree_node_id));
          gn->bb_index = block->number;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created gimple_nop " + TM->get_tree_node_const(new_tree_node_id)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Created gimple_nop " + TM->get_tree_node_const(new_tree_node_id)->ToString());
          block->PushBack(TM->GetTreeReindex(new_tree_node_id), AppM);
       }
       if(block->CGetStmtList().size())
@@ -249,7 +255,8 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       }
       const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*v_iter);
       const auto block = bb_node_info->block;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Building operation of basic block BB" + STR(block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Building operation of basic block BB" + STR(block->number));
       bool skip_first_stmt = false;
       if(block->CGetStmtList().size())
       {
@@ -257,7 +264,8 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
          if(GET_NODE(front)->get_kind() == gimple_label_K)
          {
             actual_name = get_first_node(front, f_name);
-            THROW_ASSERT(actual_name == first_statement[block->number], "the name of the first vertice has to be the same of the label expression vertex");
+            THROW_ASSERT(actual_name == first_statement[block->number],
+                         "the name of the first vertice has to be the same of the label expression vertex");
             if(!empty_start_nodes())
             {
                connect_start_nodes(ogc, actual_name);
@@ -281,7 +289,8 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
          bbgc->add_operation_to_bb(ogc->getIndex(actual_name), block->number);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed phi " + actual_name);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---List of operations size " + STR(block->CGetStmtList().size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---List of operations size " + STR(block->CGetStmtList().size()));
       auto s_end = block->CGetStmtList().end();
       auto s = block->CGetStmtList().begin();
       if(skip_first_stmt)
@@ -371,10 +380,12 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
                else if(successor == block->false_edge)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Successor is on the false edge");
-                  THROW_ASSERT(first_statement.find(successor) != first_statement.end(), "First statement of successor BB" + STR(successor) + " not found");
+                  THROW_ASSERT(first_statement.find(successor) != first_statement.end(),
+                               "First statement of successor BB" + STR(successor) + " not found");
                   connect_start_nodes(ogc, first_statement[successor], false, true);
                }
-               else if(last_instruction && GetPointer<gimple_goto>(GET_NODE(last_instruction)) && block->list_of_succ.size() > 1)
+               else if(last_instruction && GetPointer<gimple_goto>(GET_NODE(last_instruction)) &&
+                       block->list_of_succ.size() > 1)
                {
                   connect_start_nodes(ogc, first_statement[successor], true, true, successor);
                }
@@ -452,7 +463,8 @@ std::string operations_cfg_computation::get_first_node(const tree_nodeRef& tn, c
       case CASE_UNARY_EXPRESSION:
       case lut_expr_K:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, std::string("Node not supported (") + STR(ind) + std::string("): ") + curr_tn->get_kind_text());
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, std::string("Node not supported (") + STR(ind) +
+                                                         std::string("): ") + curr_tn->get_kind_text());
    }
    return "";
 }
@@ -478,7 +490,8 @@ void operations_cfg_computation::init_start_nodes(const std::string& start_node)
    start_nodes.push_back(start_node);
 }
 
-void operations_cfg_computation::connect_start_nodes(const operations_graph_constructorRef ogc, const std::string& next, bool true_edge, bool false_edge, unsigned int nodeid)
+void operations_cfg_computation::connect_start_nodes(const operations_graph_constructorRef ogc, const std::string& next,
+                                                     bool true_edge, bool false_edge, unsigned int nodeid)
 {
    const auto root_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
    for(const auto& Start_node : start_nodes)
@@ -506,11 +519,15 @@ void operations_cfg_computation::connect_start_nodes(const operations_graph_cons
    }
 }
 
-void operations_cfg_computation::build_operation_recursive(const tree_managerRef TM, const operations_graph_constructorRef ogc, const tree_nodeRef tn, const std::string& f_name, unsigned int bb_index)
+void operations_cfg_computation::build_operation_recursive(const tree_managerRef TM,
+                                                           const operations_graph_constructorRef ogc,
+                                                           const tree_nodeRef tn, const std::string& f_name,
+                                                           unsigned int bb_index)
 {
    const auto curr_tn = GET_NODE(tn);
    const auto ind = GET_INDEX_NODE(tn);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Building CFG of node " + STR(ind) + " of type " + curr_tn->get_kind_text());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Building CFG of node " + STR(ind) + " of type " + curr_tn->get_kind_text());
    switch(curr_tn->get_kind())
    {
       case gimple_return_K:
@@ -531,9 +548,14 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          const auto load_candidate = tree_helper::IsLoad(tn, fun_mem_data);
          const auto store_candidate = tree_helper::IsStore(tn, fun_mem_data);
 
-         if(!me->clobber && !tree_helper::IsVectorType(me->op0) && ((((tree_helper::IsArrayType(me->op0) && !tree_helper::IsPointerType(me->op0))) || op1_kind == constructor_K)))
+         if(!me->clobber && !tree_helper::IsVectorType(me->op0) &&
+            ((((tree_helper::IsArrayType(me->op0) && !tree_helper::IsPointerType(me->op0))) ||
+              op1_kind == constructor_K)))
          {
-            if(!tree_helper::IsArrayType(me->op0) || (((op1_kind == constructor_K || (op1_kind == var_decl_K && GetPointerS<const var_decl>(me->op1)->init) || op1_kind == string_cst_K)) && (GetPointer<const decl_node>(me->op0) || op0_kind == ssa_name_K)))
+            if(!tree_helper::IsArrayType(me->op0) ||
+               (((op1_kind == constructor_K || (op1_kind == var_decl_K && GetPointerS<const var_decl>(me->op1)->init) ||
+                  op1_kind == string_cst_K)) &&
+                (GetPointer<const decl_node>(me->op0) || op0_kind == ssa_name_K)))
             {
                function_behavior->GetBehavioralHelper()->add_initialization(me->op0->index, me->op1->index);
                ogc->add_type(actual_name, TYPE_INIT);
@@ -559,7 +581,8 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             {
                size_from = 64;
             }
-            ogc->AddOperation(TM, actual_name, FLOAT_EXPR + STR("_") + STR(size_from) + "_to_" + STR(size_dest), bb_index, me->index);
+            ogc->AddOperation(TM, actual_name, FLOAT_EXPR + STR("_") + STR(size_from) + "_to_" + STR(size_dest),
+                              bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
          else if(op1_kind == fix_trunc_expr_K)
@@ -577,7 +600,10 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             {
                size_dest = 64;
             }
-            ogc->AddOperation(TM, actual_name, FIX_TRUNC_EXPR + STR("_") + STR(size_from) + "_to_" + (is_unsigned ? "u" : "") + STR(size_dest), bb_index, me->index);
+            ogc->AddOperation(TM, actual_name,
+                              FIX_TRUNC_EXPR + STR("_") + STR(size_from) + "_to_" + (is_unsigned ? "u" : "") +
+                                  STR(size_dest),
+                              bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
          else if(tree_helper::IsVectorType(me->op0) && op1_kind == constructor_K)
@@ -586,7 +612,9 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             const auto co = GetPointerS<const constructor>(GET_CONST_NODE(me->op1));
             const auto size_obj = tree_helper::Size(co->type);
             const auto n_byte = size_obj / 8;
-            ogc->AddOperation(TM, actual_name, VECT_CONCATENATION + STR("_") + STR(n_byte) + "_" + STR(co->list_of_idx_valu.size()), bb_index, me->index);
+            ogc->AddOperation(TM, actual_name,
+                              VECT_CONCATENATION + STR("_") + STR(n_byte) + "_" + STR(co->list_of_idx_valu.size()),
+                              bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
          else if(op1_kind == complex_expr_K)
@@ -600,11 +628,17 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
          else if(op0_type && op1_type &&
-                 ((GET_CONST_NODE(op0_type)->get_kind() == record_type_K && GET_CONST_NODE(op1_type)->get_kind() == record_type_K && op1_kind != view_convert_expr_K) ||
-                  (GET_CONST_NODE(op0_type)->get_kind() == union_type_K && GET_CONST_NODE(op1_type)->get_kind() == union_type_K && op1_kind != view_convert_expr_K) || (GET_CONST_NODE(op0_type)->get_kind() == array_type_K) ||
-                  (fun_mem_data.count(GET_INDEX_NODE(me->op0)) && fun_mem_data.count(GET_INDEX_NODE(me->op1))) || (fun_mem_data.count(GET_INDEX_NODE(me->op0)) && load_candidate) || (store_candidate && fun_mem_data.count(GET_INDEX_NODE(me->op1)))))
+                 ((GET_CONST_NODE(op0_type)->get_kind() == record_type_K &&
+                   GET_CONST_NODE(op1_type)->get_kind() == record_type_K && op1_kind != view_convert_expr_K) ||
+                  (GET_CONST_NODE(op0_type)->get_kind() == union_type_K &&
+                   GET_CONST_NODE(op1_type)->get_kind() == union_type_K && op1_kind != view_convert_expr_K) ||
+                  (GET_CONST_NODE(op0_type)->get_kind() == array_type_K) ||
+                  (fun_mem_data.count(GET_INDEX_NODE(me->op0)) && fun_mem_data.count(GET_INDEX_NODE(me->op1))) ||
+                  (fun_mem_data.count(GET_INDEX_NODE(me->op0)) && load_candidate) ||
+                  (store_candidate && fun_mem_data.count(GET_INDEX_NODE(me->op1)))))
          {
-            if(op1_kind == constructor_K && GetPointer<const constructor>(GET_CONST_NODE(me->op1)) && GetPointer<const constructor>(GET_CONST_NODE(me->op1))->list_of_idx_valu.empty())
+            if(op1_kind == constructor_K && GetPointer<const constructor>(GET_CONST_NODE(me->op1)) &&
+               GetPointer<const constructor>(GET_CONST_NODE(me->op1))->list_of_idx_valu.empty())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---set as MEMSET operation");
                ogc->AddOperation(TM, actual_name, MEMSET, bb_index, me->index);
@@ -681,7 +715,8 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             }
             ogc->add_type(actual_name, type_external);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---set as TYPE_EXTERNAL operation");
-            if(fun_name == "exit" || fun_name == "abort" || fun_name == "__builtin_exit" || fun_name == "__builtin_abort")
+            if(fun_name == "exit" || fun_name == "abort" || fun_name == "__builtin_exit" ||
+               fun_name == "__builtin_abort")
             {
                ogc->add_type(actual_name, TYPE_LAST_OP);
             }
@@ -740,7 +775,8 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                   type_external = type_external | TYPE_RW;
                }
                ogc->add_type(actual_name, type_external);
-               if(fun_name == "exit" || fun_name == "abort" || fun_name == "__builtin_exit" || fun_name == "__builtin_abort")
+               if(fun_name == "exit" || fun_name == "abort" || fun_name == "__builtin_exit" ||
+                  fun_name == "__builtin_abort")
                {
                   ogc->add_type(actual_name, TYPE_LAST_OP);
                }
@@ -827,7 +863,8 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          }
          else
          {
-            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, std::string("op2 in gimple_switch not yet supported (") + STR(ind) + std::string(")"));
+            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
+                             std::string("op2 in gimple_switch not yet supported (") + STR(ind) + std::string(")"));
          }
          if(case_label_exprs->get_kind() == tree_vec_K)
          {

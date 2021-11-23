@@ -156,7 +156,8 @@ class network_flow
 
    using edge_nf_pseudo_flow_property = boost::property<nf_pseudo_flow_t, double, edge_nf_description_property>;
 
-   using edge_nf_residual_capacity_property = boost::property<nf_residual_capacity_t, double, edge_nf_pseudo_flow_property>;
+   using edge_nf_residual_capacity_property =
+       boost::property<nf_residual_capacity_t, double, edge_nf_pseudo_flow_property>;
 
    using edge_nf_reduced_cost_property = boost::property<nf_reduced_cost_t, double, edge_nf_residual_capacity_property>;
 
@@ -168,7 +169,8 @@ class network_flow
 
  public:
    /**definition of the Network Flow Graph*/
-   using network_flow_graph_type = boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, vertex_nf_property, edge_nf_property>;
+   using network_flow_graph_type =
+       boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, vertex_nf_property, edge_nf_property>;
 
  private:
    /**vertex maps*/
@@ -269,7 +271,8 @@ class network_flow
    bool print_graph(const char* file_name = "network_flow.dot");
 
  private:
-   using vertex_pair = std::pair<network_flow_graph_type::vertex_descriptor, network_flow_graph_type::vertex_descriptor>;
+   using vertex_pair =
+       std::pair<network_flow_graph_type::vertex_descriptor, network_flow_graph_type::vertex_descriptor>;
    CustomOrderedSet<vertex_pair> inserted_edges; // used to remember the edges added to represent the residual network
 
    int debug_level; // the debug level
@@ -304,7 +307,9 @@ class network_flow
     * @param target is the target vertex
     * @param P is the shortest path from source to target
     */
-   void generic_label_correcting_algorithm(network_flow_graph_type::vertex_descriptor source, network_flow_graph_type::vertex_descriptor target, std::vector<network_flow_graph_type::edge_descriptor>* P);
+   void generic_label_correcting_algorithm(network_flow_graph_type::vertex_descriptor source,
+                                           network_flow_graph_type::vertex_descriptor target,
+                                           std::vector<network_flow_graph_type::edge_descriptor>* P);
 };
 
 /// refcount definition of the class

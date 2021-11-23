@@ -64,14 +64,18 @@
 /// utility include
 #include "cpu_time.hpp"
 
-chordal_coloring_register::chordal_coloring_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
-    : conflict_based_register(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::CHORDAL_COLORING_REGISTER_BINDING)
+chordal_coloring_register::chordal_coloring_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                                     unsigned int _funId,
+                                                     const DesignFlowManagerConstRef _design_flow_manager)
+    : conflict_based_register(_Param, _HLSMgr, _funId, _design_flow_manager,
+                              HLSFlowStep_Type::CHORDAL_COLORING_REGISTER_BINDING)
 {
 }
 
 chordal_coloring_register::~chordal_coloring_register() = default;
 
-bool chordal_coloring_register::lex_compare_gt(const std::vector<unsigned int>& v1, const std::vector<unsigned int>& v2) const
+bool chordal_coloring_register::lex_compare_gt(const std::vector<unsigned int>& v1,
+                                               const std::vector<unsigned int>& v2) const
 {
    /*
    std::cout << "v1 ";
@@ -186,7 +190,11 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
    }
 
    /// sequential vertex coloring based on left edge sorting
-   cg_vertices_size_type num_colors = boost::sequential_vertex_coloring(*cg, boost::make_iterator_property_map(vertex_order.begin(), boost::identity_property_map(), boost::graph_traits<conflict_graph>::null_vertex()), color);
+   cg_vertices_size_type num_colors = boost::sequential_vertex_coloring(
+       *cg,
+       boost::make_iterator_property_map(vertex_order.begin(), boost::identity_property_map(),
+                                         boost::graph_traits<conflict_graph>::null_vertex()),
+       color);
 
    /// finalize
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
@@ -200,7 +208,8 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
       for(auto k = live.begin(); k != k_end; ++k)
       {
          unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
-         HLS->Rreg->bind(storage_value_index, static_cast<unsigned int>(color[boost::vertex(storage_value_index, *cg)]));
+         HLS->Rreg->bind(storage_value_index,
+                         static_cast<unsigned int>(color[boost::vertex(storage_value_index, *cg)]));
       }
    }
    delete cg;
@@ -213,9 +222,13 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  std::string("---Register allocation algorithm obtains ") + (num_colors == register_lower_bound ? "an optimal" : "a sub-optimal") + " result: " + STR(num_colors) + " registers" +
+                  "-->Register binding information for function " +
+                      HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  std::string("---Register allocation algorithm obtains ") +
+                      (num_colors == register_lower_bound ? "an optimal" : "a sub-optimal") +
+                      " result: " + STR(num_colors) + " registers" +
                       (num_colors == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
    {
@@ -223,7 +236,8 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
    }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)

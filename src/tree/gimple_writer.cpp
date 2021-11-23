@@ -32,7 +32,8 @@
  */
 /**
  * @file GimpleWriter.cpp
- * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the gimple format (i.e. the format used by gcc in plain text dump of gimple)
+ * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the gimple
+ * format (i.e. the format used by gcc in plain text dump of gimple)
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Revision$
@@ -720,7 +721,8 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
          }
          else
          {
-            THROW_ERROR(std::string("Node not yet supported: ") + obj->get_kind_text() + " with alignment " + STR(obj->algn));
+            THROW_ERROR(std::string("Node not yet supported: ") + obj->get_kind_text() + " with alignment " +
+                        STR(obj->algn));
          }
       }
       else if(obj_type == boolean_type_K)
@@ -787,7 +789,8 @@ void GimpleWriter::operator()(const array_type* obj, unsigned int& mask)
       auto* arr_ic = GetPointer<integer_cst>(array_length);
       auto* tn = GetPointer<type_node>(array_element);
       auto* eln_ic = GetPointer<integer_cst>(GET_NODE(tn->size));
-      os << boost::lexical_cast<std::string>(tree_helper::get_integer_cst_value(arr_ic) / tree_helper::get_integer_cst_value(eln_ic));
+      os << boost::lexical_cast<std::string>(tree_helper::get_integer_cst_value(arr_ic) /
+                                             tree_helper::get_integer_cst_value(eln_ic));
    }
 
    os << "]";
@@ -1305,7 +1308,8 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
       {
          continue;
       }
-      if(block.second->CGetStmtList().empty() || GET_CONST_NODE(block.second->CGetStmtList().front())->get_kind() != gimple_label_K)
+      if(block.second->CGetStmtList().empty() ||
+         GET_CONST_NODE(block.second->CGetStmtList().front())->get_kind() != gimple_label_K)
       {
          os << "<bb " << block.first << ">:" << std::endl;
       }
@@ -1329,7 +1333,8 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
             GetPointer<const gimple_node>(statement)->memdef->visit(this);
          }
          stmt->visit(this);
-         if(statement->get_kind() != gimple_cond_K && statement->get_kind() != gimple_label_K && statement->get_kind() != gimple_switch_K && statement->get_kind() != gimple_pragma_K)
+         if(statement->get_kind() != gimple_cond_K && statement->get_kind() != gimple_label_K &&
+            statement->get_kind() != gimple_switch_K && statement->get_kind() != gimple_pragma_K)
          {
             os << ";";
          }
@@ -1338,9 +1343,11 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
       if(block.second->true_edge && block.second->false_edge)
       {
          os << "    goto <bb " << block.second->true_edge << ">";
-         THROW_ASSERT(obj->list_of_bloc.count(block.second->true_edge), "Could not find BB" + STR(block.second->true_edge));
+         THROW_ASSERT(obj->list_of_bloc.count(block.second->true_edge),
+                      "Could not find BB" + STR(block.second->true_edge));
          const auto& next_true = obj->list_of_bloc.at(block.second->true_edge);
-         if(next_true->CGetStmtList().size() && GET_CONST_NODE(next_true->CGetStmtList().front())->get_kind() == gimple_label_K)
+         if(next_true->CGetStmtList().size() &&
+            GET_CONST_NODE(next_true->CGetStmtList().front())->get_kind() == gimple_label_K)
          {
             const auto le = GetPointer<const gimple_label>(GET_CONST_NODE(next_true->CGetStmtList().front()));
             os << " (";
@@ -1350,9 +1357,11 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
          os << ";" << std::endl;
          os << "  else" << std::endl;
          os << "    goto <bb " << block.second->false_edge << ">";
-         THROW_ASSERT(obj->list_of_bloc.count(block.second->false_edge), "Could not find BB" + STR(block.second->false_edge));
+         THROW_ASSERT(obj->list_of_bloc.count(block.second->false_edge),
+                      "Could not find BB" + STR(block.second->false_edge));
          const auto& next_false = obj->list_of_bloc.at(block.second->false_edge);
-         if(next_false->CGetStmtList().size() && GET_CONST_NODE(next_false->CGetStmtList().back())->get_kind() == gimple_label_K)
+         if(next_false->CGetStmtList().size() &&
+            GET_CONST_NODE(next_false->CGetStmtList().back())->get_kind() == gimple_label_K)
          {
             const auto le = GetPointer<const gimple_label>(GET_CONST_NODE(next_false->CGetStmtList().front()));
             os << " (";

@@ -146,7 +146,8 @@ class operations_graph_constructor
     * @param bb_index is the basic block index associated with the operation.
     * @param node_id is the index of the tree node
     */
-   void AddOperation(const tree_managerRef TM, const std::string& src, const std::string& oper, unsigned int bb_index, const unsigned int node_id);
+   void AddOperation(const tree_managerRef TM, const std::string& src, const std::string& oper, unsigned int bb_index,
+                     const unsigned int node_id);
 
    /**
     * Add the type associated with a vertex.
@@ -173,7 +174,9 @@ class operations_graph_constructor
     * @param type is the type of the variable
     * @param access_type is the type of the access
     */
-   void AddVariable(const vertex op_vertex, const unsigned int variable, const FunctionBehavior_VariableType variable_type, const FunctionBehavior_VariableAccessType access_type);
+   void AddVariable(const vertex op_vertex, const unsigned int variable,
+                    const FunctionBehavior_VariableType variable_type,
+                    const FunctionBehavior_VariableAccessType access_type);
 
 #if HAVE_EXPERIMENTAL
    /**
@@ -182,7 +185,8 @@ class operations_graph_constructor
     * @param variable is the index of the variable
     * @param access_type is the type of the access
     */
-   void AddMemoryLocation(const vertex op_vertex, const MemoryAddress variable, const FunctionBehavior_VariableAccessType access_type);
+   void AddMemoryLocation(const vertex op_vertex, const MemoryAddress variable,
+                          const FunctionBehavior_VariableAccessType access_type);
 #endif
 
    /**

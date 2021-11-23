@@ -59,7 +59,8 @@ class dead_code_eliminationIPA : public ApplicationFrontendFlowStep
 {
  protected:
    /**
-    * stores the function ids of the functions whose Bit_Value intra procedural steps have to be invalidated by this step
+    * stores the function ids of the functions whose Bit_Value intra procedural steps have to be invalidated by this
+    * step
     */
    CustomOrderedSet<unsigned int> fun_id_to_restart;
    /**
@@ -67,14 +68,18 @@ class dead_code_eliminationIPA : public ApplicationFrontendFlowStep
     */
    CustomOrderedSet<unsigned int> fun_id_to_restartParm;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   void ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationships,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
-   bool signature_opt(const tree_managerRef& TM, function_decl* fd, unsigned int function_id, const CustomOrderedSet<unsigned int>& rFunctions);
+   bool signature_opt(const tree_managerRef& TM, function_decl* fd, unsigned int function_id,
+                      const CustomOrderedSet<unsigned int>& rFunctions);
 
  public:
-   dead_code_eliminationIPA(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef parameters);
+   dead_code_eliminationIPA(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
+                            const ParameterConstRef parameters);
 
    ~dead_code_eliminationIPA() override;
 

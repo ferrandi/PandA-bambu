@@ -60,7 +60,8 @@ class fsm_controller : public ControllerCreatorBaseStep
     * Returns the value of the guard value of a case_label_expr
     * default is not managed
     */
-   std::string get_guard_value(const tree_managerRef TM, const unsigned int index, vertex op, const OpGraphConstRef data);
+   std::string get_guard_value(const tree_managerRef TM, const unsigned int index, vertex op,
+                               const OpGraphConstRef data);
 
    /**
     * Execute the step
@@ -80,7 +81,9 @@ class fsm_controller : public ControllerCreatorBaseStep
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   fsm_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::FSM_CONTROLLER_CREATOR);
+   fsm_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                  const DesignFlowManagerConstRef design_flow_manager,
+                  const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::FSM_CONTROLLER_CREATOR);
 
    /**
     * Destructor.

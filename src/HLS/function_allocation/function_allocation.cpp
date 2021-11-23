@@ -51,7 +51,9 @@
 /// HLS/function_allocation include
 #include "functions.hpp"
 
-function_allocation::function_allocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+function_allocation::function_allocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                         const HLSFlowStep_Type _hls_flow_step_type)
     : HLS_step(_Param, _HLSMgr, _design_flow_manager, _hls_flow_step_type)
 {
 }

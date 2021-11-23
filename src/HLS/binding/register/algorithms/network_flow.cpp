@@ -115,7 +115,8 @@ bool network_flow::successive_shortest_path_algorithm()
       p_nf_reduced_cost[*ei] = p_nf_cost[*ei];
       p_nf_residual_capacity[*ei] = p_nf_capacity[*ei];
 
-      inserted_edges.insert(std::make_pair(boost::target(*ei, network_flow_graph), boost::source(*ei, network_flow_graph)));
+      inserted_edges.insert(
+          std::make_pair(boost::target(*ei, network_flow_graph), boost::source(*ei, network_flow_graph)));
    }
 
    if(debug_level >= DEBUG_LEVEL_VERBOSE)
@@ -124,7 +125,8 @@ bool network_flow::successive_shortest_path_algorithm()
    }
 
    // from (i,j) adding (j,i), cji = -cij, ruji = 0, flow_ji = 0, pseudo_flow_ji = 0, rcji = cji, uji = 0
-   for(inserted_edges_iterator = inserted_edges.begin(); inserted_edges_iterator != inserted_edges.end(); ++inserted_edges_iterator)
+   for(inserted_edges_iterator = inserted_edges.begin(); inserted_edges_iterator != inserted_edges.end();
+       ++inserted_edges_iterator)
    {
       network_flow_graph_type::edge_descriptor original, reverse;
       vertex_pair vertices;
@@ -180,7 +182,8 @@ bool network_flow::successive_shortest_path_algorithm()
       }
       /*---------------------------------------------------------------------------*/
 
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "network_flow: shortest path distances computed and shortest path identificated");
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                    "network_flow: shortest path distances computed and shortest path identificated");
 
       /*update node potentials*/
       for(boost::tie(vi, vi_end) = boost::vertices(network_flow_graph); vi != vi_end; vi++)
@@ -194,7 +197,8 @@ bool network_flow::successive_shortest_path_algorithm()
       /*update reduced costs*/
       for(boost::tie(ei, ei_end) = boost::edges(network_flow_graph); ei != ei_end; ei++)
       {
-         p_nf_reduced_cost[*ei] = p_nf_cost[*ei] - p_nf_potential[boost::source(*ei, network_flow_graph)] + p_nf_potential[boost::target(*ei, network_flow_graph)];
+         p_nf_reduced_cost[*ei] = p_nf_cost[*ei] - p_nf_potential[boost::source(*ei, network_flow_graph)] +
+                                  p_nf_potential[boost::target(*ei, network_flow_graph)];
       }
       /*---------------------------------------------------------------------------*/
 
@@ -243,9 +247,10 @@ bool network_flow::successive_shortest_path_algorithm()
          if(inserted_edges.find(std::make_pair(source, target)) == inserted_edges.end())
          {
             // original edge
-            p_nf_flow[*P_iterator] = p_nf_pseudo_flow[*P_iterator] - p_nf_pseudo_flow[ed];             // flow update
-            p_nf_residual_capacity[*P_iterator] = p_nf_capacity[*P_iterator] - p_nf_flow[*P_iterator]; // residual capacity update
-            p_nf_residual_capacity[ed] = p_nf_flow[*P_iterator];                                       // residual capacity update
+            p_nf_flow[*P_iterator] = p_nf_pseudo_flow[*P_iterator] - p_nf_pseudo_flow[ed]; // flow update
+            p_nf_residual_capacity[*P_iterator] =
+                p_nf_capacity[*P_iterator] - p_nf_flow[*P_iterator]; // residual capacity update
+            p_nf_residual_capacity[ed] = p_nf_flow[*P_iterator];     // residual capacity update
          }
          else
          {
@@ -262,7 +267,8 @@ bool network_flow::successive_shortest_path_algorithm()
       }
       /*---------------------------------------------------------------------------*/
 
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "network_flow: updated path P, updated flows, residual capacity and imbalance");
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                    "network_flow: updated path P, updated flows, residual capacity and imbalance");
 
       /*Update E and D sets*/
       E.clear();
@@ -310,7 +316,9 @@ bool network_flow::successive_shortest_path_algorithm()
    return true;
 }
 
-void network_flow::generic_label_correcting_algorithm(network_flow_graph_type::vertex_descriptor source, network_flow_graph_type::vertex_descriptor target, std::vector<network_flow_graph_type::edge_descriptor>* P)
+void network_flow::generic_label_correcting_algorithm(network_flow_graph_type::vertex_descriptor source,
+                                                      network_flow_graph_type::vertex_descriptor target,
+                                                      std::vector<network_flow_graph_type::edge_descriptor>* P)
 {
    /*initialization step*/
    size_t n = boost::num_vertices(network_flow_graph);
@@ -338,7 +346,8 @@ void network_flow::generic_label_correcting_algorithm(network_flow_graph_type::v
          target_ = boost::target(*ei, network_flow_graph);
          if(p_nf_distance[source_] != initial_value)
          {
-            if((p_nf_distance[target_] > p_nf_distance[source_] + p_nf_reduced_cost[*ei]) && p_nf_residual_capacity[*ei] > 0)
+            if((p_nf_distance[target_] > p_nf_distance[source_] + p_nf_reduced_cost[*ei]) &&
+               p_nf_residual_capacity[*ei] > 0)
             {
                p_nf_distance[target_] = p_nf_distance[source_] + p_nf_reduced_cost[*ei];
                predecessors[target_] = source_;
@@ -463,7 +472,8 @@ bool network_flow::print_graph(const char* file_name)
    {
       return false;
    }
-   boost::write_graphviz(dot_file, network_flow_graph, make_label_writer(p_nf_vertex_description), make_label_writer(p_nf_edge_description));
+   boost::write_graphviz(dot_file, network_flow_graph, make_label_writer(p_nf_vertex_description),
+                         make_label_writer(p_nf_edge_description));
    dot_file.close();
    return true;
 }
@@ -472,7 +482,9 @@ std::string network_flow::get_vertex_description(network_flow_graph_type::vertex
 {
    std::string description;
 
-   description = "name: " + p_nf_name[vd] + "\\nindex: " + I2S(p_nf_index[vd]) + "\\ndistance: " + I2S(p_nf_distance[vd]) + "\\npotential: " + I2S(p_nf_potential[vd]) + "\\nimbalance: " + I2S(p_nf_imbalance[vd]) + "\\nbalance: " + I2S(p_nf_balance[vd]);
+   description = "name: " + p_nf_name[vd] + "\\nindex: " + I2S(p_nf_index[vd]) +
+                 "\\ndistance: " + I2S(p_nf_distance[vd]) + "\\npotential: " + I2S(p_nf_potential[vd]) +
+                 "\\nimbalance: " + I2S(p_nf_imbalance[vd]) + "\\nbalance: " + I2S(p_nf_balance[vd]);
 
    return description;
 }
@@ -481,7 +493,9 @@ std::string network_flow::get_edge_description(network_flow_graph_type::edge_des
 {
    std::string description;
 
-   description = "cost: " + I2S(p_nf_cost[ed]) + "\\ncapacity: " + I2S(p_nf_capacity[ed]) + "\\nflow: " + I2S(p_nf_flow[ed]) + "\\nreduced cost: " + I2S(p_nf_reduced_cost[ed]) + "\\nresidual capacity: " + I2S(p_nf_residual_capacity[ed]) +
+   description = "cost: " + I2S(p_nf_cost[ed]) + "\\ncapacity: " + I2S(p_nf_capacity[ed]) +
+                 "\\nflow: " + I2S(p_nf_flow[ed]) + "\\nreduced cost: " + I2S(p_nf_reduced_cost[ed]) +
+                 "\\nresidual capacity: " + I2S(p_nf_residual_capacity[ed]) +
                  "\\npseudo flow: " + I2S(p_nf_pseudo_flow[ed]);
 
    return description;

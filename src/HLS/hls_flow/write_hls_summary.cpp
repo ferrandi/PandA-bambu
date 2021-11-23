@@ -57,20 +57,24 @@
 
 #include <boost/filesystem/operations.hpp>
 
-WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::WRITE_HLS_SUMMARY)
+WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr,
+                                 const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::WRITE_HLS_SUMMARY)
 {
 }
 
 WriteHLSSummary::~WriteHLSSummary() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> WriteHLSSummary::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+WriteHLSSummary::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::ALL_FUNCTIONS));
          break;
       }
       case INVALIDATION_RELATIONSHIP:

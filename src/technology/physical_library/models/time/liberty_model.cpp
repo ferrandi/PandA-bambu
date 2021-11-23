@@ -63,7 +63,8 @@ void liberty_model::xwrite(xml_element* pin_node, const std::string& output_pin)
    }
 }
 
-void liberty_model::add_timing_group(const std::string& output, const CustomOrderedSet<std::string>& inputs, const timing_groupRef& tg)
+void liberty_model::add_timing_group(const std::string& output, const CustomOrderedSet<std::string>& inputs,
+                                     const timing_groupRef& tg)
 {
    timing_groups[output][inputs] = tg;
 }
@@ -88,7 +89,8 @@ double liberty_model::get_skew_value() const
    return skew;
 }
 
-void liberty_model::set_timing_groups(const std::map<std::string, std::map<CustomOrderedSet<std::string>, timing_groupRef>>& timing_groups_)
+void liberty_model::set_timing_groups(
+    const std::map<std::string, std::map<CustomOrderedSet<std::string>, timing_groupRef>>& timing_groups_)
 {
    timing_groups = timing_groups_;
 }

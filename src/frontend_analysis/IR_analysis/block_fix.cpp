@@ -66,7 +66,8 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-BlockFix::BlockFix(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+BlockFix::BlockFix(const application_managerRef _AppM, unsigned int _function_id,
+                   const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, BLOCK_FIX, _design_flow_manager, _parameters)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -74,7 +75,8 @@ BlockFix::BlockFix(const application_managerRef _AppM, unsigned int _function_id
 
 BlockFix::~BlockFix() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> BlockFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+BlockFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -145,7 +147,8 @@ DesignFlowStep_Status BlockFix::InternalExec()
          const auto* gg = GetPointer<const gimple_goto>(GET_NODE(statement));
          if(gg)
          {
-            THROW_ASSERT(gg->op and GetPointer<const label_decl>(GET_NODE(gg->op)), "Unexpexted condition :" + gg->ToString());
+            THROW_ASSERT(gg->op and GetPointer<const label_decl>(GET_NODE(gg->op)),
+                         "Unexpexted condition :" + gg->ToString());
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found a reachable label " + gg->op->ToString());
             reachable_labels.insert(GET_INDEX_NODE(gg->op));
          }
@@ -158,7 +161,8 @@ DesignFlowStep_Status BlockFix::InternalExec()
                if(cle->got and GetPointer<const label_decl>(GET_NODE(cle->got)))
                {
                   reachable_labels.insert(cle->got->index);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found a reachable label " + cle->got->ToString());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Found a reachable label " + cle->got->ToString());
                }
             }
          }
@@ -175,7 +179,8 @@ DesignFlowStep_Status BlockFix::InternalExec()
             const auto* ld = GetPointer<const label_decl>(GET_NODE(gl->op));
             if(ld and reachable_labels.find(ld->index) == reachable_labels.end())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found a removable label " + statement->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Found a removable label " + statement->ToString());
                to_be_removed.push_back(std::pair<tree_nodeRef, unsigned int>(statement, block.first));
             }
          }

@@ -95,8 +95,19 @@
       break;                                           \
    }
 
-tree_node_dup::tree_node_dup(CustomUnorderedMapStable<unsigned int, unsigned int>& _remap, const application_managerRef _AppM, unsigned int _remap_bbi, unsigned int _remap_loop_id, bool _use_counting)
-    : remap(_remap), use_counting(_use_counting), remap_bbi(_remap_bbi), remap_bb(), remap_loop_id(_remap_loop_id), remap_lid(), AppM(_AppM), TM(_AppM->get_tree_manager()), curr_tree_node_ptr(nullptr), curr_bloc(nullptr)
+tree_node_dup::tree_node_dup(CustomUnorderedMapStable<unsigned int, unsigned int>& _remap,
+                             const application_managerRef _AppM, unsigned int _remap_bbi, unsigned int _remap_loop_id,
+                             bool _use_counting)
+    : remap(_remap),
+      use_counting(_use_counting),
+      remap_bbi(_remap_bbi),
+      remap_bb(),
+      remap_loop_id(_remap_loop_id),
+      remap_lid(),
+      AppM(_AppM),
+      TM(_AppM->get_tree_manager()),
+      curr_tree_node_ptr(nullptr),
+      curr_bloc(nullptr)
 {
    if(remap_bbi)
    {
@@ -714,12 +725,19 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
    // cppcheck-suppress unusedVariable
    bool attr_p;
 
-#define ATTR_SEQ                                                                                                                                                                                                                                              \
-   (TOK_NEW)(TOK_DELETE)(TOK_ASSIGN)(TOK_MEMBER)(TOK_PUBLIC)(TOK_PROTECTED)(TOK_PRIVATE)(TOK_NORETURN)(TOK_VOLATILE)(TOK_NOINLINE)(TOK_ALWAYS_INLINE)(TOK_USED)(TOK_UNUSED)(TOK_CONST)(TOK_TRANSPARENT_UNION)(TOK_CONSTRUCTOR)(TOK_DESTRUCTOR)(TOK_MODE)(     \
-       TOK_SECTION)(TOK_ALIGNED)(TOK_WEAK)(TOK_ALIAS)(TOK_NO_INSTRUMENT_FUNCTION)(TOK_MALLOC)(TOK_NO_STACK_LIMIT)(TOK_PURE)(TOK_DEPRECATED)(TOK_VECTOR_SIZE)(TOK_VISIBILITY)(TOK_TLS_MODEL)(TOK_NONNULL)(TOK_NOTHROW)(TOK_MAY_ALIAS)(TOK_WARN_UNUSED_RESULT)( \
-       TOK_FORMAT)(TOK_FORMAT_ARG)(TOK_NULL)(TOK_GLOBAL_INIT)(TOK_GLOBAL_FINI)(TOK_CONVERSION)(TOK_VIRTUAL)(TOK_LSHIFT)(TOK_MUTABLE)(TOK_PSEUDO_TMPL)(TOK_VECNEW)(TOK_VECDELETE)(TOK_POS)(TOK_NEG)(TOK_ADDR)(TOK_DEREF)(TOK_LNOT)(TOK_NOT)(TOK_PREINC)(       \
-       TOK_PREDEC)(TOK_PLUSASSIGN)(TOK_PLUS)(TOK_MINUSASSIGN)(TOK_MINUS)(TOK_MULTASSIGN)(TOK_MULT)(TOK_DIVASSIGN)(TOK_DIV)(TOK_MODASSIGN)(TOK_MOD)(TOK_ANDASSIGN)(TOK_AND)(TOK_ORASSIGN)(TOK_OR)(TOK_XORASSIGN)(TOK_XOR)(TOK_LSHIFTASSIGN)(TOK_RSHIFTASSIGN)( \
-       TOK_RSHIFT)(TOK_EQ)(TOK_NE)(TOK_LT)(TOK_GT)(TOK_LE)(TOK_GE)(TOK_LAND)(TOK_LOR)(TOK_COMPOUND)(TOK_MEMREF)(TOK_REF)(TOK_SUBS)(TOK_POSTINC)(TOK_POSTDEC)(TOK_CALL)(TOK_THUNK)(TOK_THIS_ADJUSTING)(TOK_RESULT_ADJUSTING)(TOK_BITFIELD)
+#define ATTR_SEQ                                                                                                      \
+   (TOK_NEW)(TOK_DELETE)(TOK_ASSIGN)(TOK_MEMBER)(TOK_PUBLIC)(TOK_PROTECTED)(TOK_PRIVATE)(TOK_NORETURN)(TOK_VOLATILE)( \
+       TOK_NOINLINE)(TOK_ALWAYS_INLINE)(TOK_USED)(TOK_UNUSED)(TOK_CONST)(TOK_TRANSPARENT_UNION)(TOK_CONSTRUCTOR)(     \
+       TOK_DESTRUCTOR)(TOK_MODE)(TOK_SECTION)(TOK_ALIGNED)(TOK_WEAK)(TOK_ALIAS)(TOK_NO_INSTRUMENT_FUNCTION)(          \
+       TOK_MALLOC)(TOK_NO_STACK_LIMIT)(TOK_PURE)(TOK_DEPRECATED)(TOK_VECTOR_SIZE)(TOK_VISIBILITY)(TOK_TLS_MODEL)(     \
+       TOK_NONNULL)(TOK_NOTHROW)(TOK_MAY_ALIAS)(TOK_WARN_UNUSED_RESULT)(TOK_FORMAT)(TOK_FORMAT_ARG)(TOK_NULL)(        \
+       TOK_GLOBAL_INIT)(TOK_GLOBAL_FINI)(TOK_CONVERSION)(TOK_VIRTUAL)(TOK_LSHIFT)(TOK_MUTABLE)(TOK_PSEUDO_TMPL)(      \
+       TOK_VECNEW)(TOK_VECDELETE)(TOK_POS)(TOK_NEG)(TOK_ADDR)(TOK_DEREF)(TOK_LNOT)(TOK_NOT)(TOK_PREINC)(TOK_PREDEC)(  \
+       TOK_PLUSASSIGN)(TOK_PLUS)(TOK_MINUSASSIGN)(TOK_MINUS)(TOK_MULTASSIGN)(TOK_MULT)(TOK_DIVASSIGN)(TOK_DIV)(       \
+       TOK_MODASSIGN)(TOK_MOD)(TOK_ANDASSIGN)(TOK_AND)(TOK_ORASSIGN)(TOK_OR)(TOK_XORASSIGN)(TOK_XOR)(                 \
+       TOK_LSHIFTASSIGN)(TOK_RSHIFTASSIGN)(TOK_RSHIFT)(TOK_EQ)(TOK_NE)(TOK_LT)(TOK_GT)(TOK_LE)(TOK_GE)(TOK_LAND)(     \
+       TOK_LOR)(TOK_COMPOUND)(TOK_MEMREF)(TOK_REF)(TOK_SUBS)(TOK_POSTINC)(TOK_POSTDEC)(TOK_CALL)(TOK_THUNK)(          \
+       TOK_THIS_ADJUSTING)(TOK_RESULT_ADJUSTING)(TOK_BITFIELD)
 #define ATTR_MACRO(r, data, elem)                                                                                   \
    attr_p = GetPointer<attr>(source_tn)->list_attr.find(TOK(elem)) != GetPointer<attr>(source_tn)->list_attr.end(); \
    if(attr_p)                                                                                                       \
@@ -830,7 +848,8 @@ void tree_node_dup::operator()(const WeightedNode* obj, unsigned int& mask)
    SET_VALUE(weight_information->instruction_size, WeightedNode);
 #if HAVE_RTL_BUILT
    SET_VALUE(weight_information->rtl_instruction_size, WeightedNode);
-   dynamic_cast<WeightedNode*>(curr_tree_node_ptr)->weight_information->rtl_nodes = GetPointer<WeightedNode>(source_tn)->weight_information->rtl_nodes;
+   dynamic_cast<WeightedNode*>(curr_tree_node_ptr)->weight_information->rtl_nodes =
+       GetPointer<WeightedNode>(source_tn)->weight_information->rtl_nodes;
 #endif
 #endif
 }
@@ -1139,7 +1158,8 @@ void tree_node_dup::operator()(const constructor* obj, unsigned int& mask)
          }
          if(node_id1)
          {
-            dynamic_cast<constructor*>(curr_tree_node_ptr)->add_idx_valu(TM->GetTreeReindex(node_id1), TM->GetTreeReindex(node_id2));
+            dynamic_cast<constructor*>(curr_tree_node_ptr)
+                ->add_idx_valu(TM->GetTreeReindex(node_id1), TM->GetTreeReindex(node_id2));
          }
          else
          {
@@ -1381,7 +1401,8 @@ void tree_node_dup::operator()(const gimple_phi* obj, unsigned int& mask)
          }
       }
 
-      dynamic_cast<gimple_phi*>(curr_tree_node_ptr)->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(node_id), get_bbi(def_edge.second)));
+      dynamic_cast<gimple_phi*>(curr_tree_node_ptr)
+          ->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(node_id), get_bbi(def_edge.second)));
    }
    SET_VALUE(virtual_flag, gimple_phi);
    if(use_counting)
@@ -1576,12 +1597,15 @@ void tree_node_dup::operator()(const statement_list* obj, unsigned int& mask)
       curr_bloc = new bloc(get_bbi(i->first));
       source_bloc = i->second;
       curr_bloc->visit(this);
-      THROW_ASSERT(!static_cast<statement_list*>(curr_tree_node_ptr)->list_of_bloc.count(get_bbi(i->first)), "Block already present " + STR(get_bbi(i->first)));
+      THROW_ASSERT(!static_cast<statement_list*>(curr_tree_node_ptr)->list_of_bloc.count(get_bbi(i->first)),
+                   "Block already present " + STR(get_bbi(i->first)));
       static_cast<statement_list*>(curr_tree_node_ptr)->add_bloc(blocRef(curr_bloc));
       curr_bloc = nullptr;
       source_bloc = blocRef();
    }
-   THROW_ASSERT(static_cast<statement_list*>(curr_tree_node_ptr)->list_of_bloc.size() == GetPointerS<const statement_list>(source_tn)->list_of_bloc.size(), "");
+   THROW_ASSERT(static_cast<statement_list*>(curr_tree_node_ptr)->list_of_bloc.size() ==
+                    GetPointerS<const statement_list>(source_tn)->list_of_bloc.size(),
+                "");
 }
 
 void tree_node_dup::operator()(const string_cst* obj, unsigned int& mask)
@@ -1799,8 +1823,10 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
 
    curr_bloc->hpl = source_bloc->hpl;
    curr_bloc->loop_id = get_loop_id(source_bloc->loop_id);
-   std::transform(source_bloc->list_of_pred.cbegin(), source_bloc->list_of_pred.cend(), std::back_inserter(curr_bloc->list_of_pred), [&](const unsigned int& bbi) { return get_bbi(bbi); });
-   std::transform(source_bloc->list_of_succ.cbegin(), source_bloc->list_of_succ.cend(), std::back_inserter(curr_bloc->list_of_succ), [&](const unsigned int& bbi) { return get_bbi(bbi); });
+   std::transform(source_bloc->list_of_pred.cbegin(), source_bloc->list_of_pred.cend(),
+                  std::back_inserter(curr_bloc->list_of_pred), [&](const unsigned int& bbi) { return get_bbi(bbi); });
+   std::transform(source_bloc->list_of_succ.cbegin(), source_bloc->list_of_succ.cend(),
+                  std::back_inserter(curr_bloc->list_of_succ), [&](const unsigned int& bbi) { return get_bbi(bbi); });
    curr_bloc->true_edge = get_bbi(source_bloc->true_edge);
    curr_bloc->false_edge = get_bbi(source_bloc->false_edge);
 
@@ -1915,7 +1941,8 @@ void tree_node_dup::operator()(const gimple_multi_way_if* obj, unsigned int& mas
                node_id = remap.find(node_id)->second;
                THROW_ASSERT(node_id, "");
             }
-            dynamic_cast<gimple_multi_way_if*>(curr_tree_node_ptr)->add_cond(TM->GetTreeReindex(node_id), get_bbi(cond.second));
+            dynamic_cast<gimple_multi_way_if*>(curr_tree_node_ptr)
+                ->add_cond(TM->GetTreeReindex(node_id), get_bbi(cond.second));
          }
          else
          {

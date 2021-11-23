@@ -67,7 +67,8 @@
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 
-extract_patterns::extract_patterns(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+extract_patterns::extract_patterns(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                                   unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_PATTERNS, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -75,7 +76,8 @@ extract_patterns::extract_patterns(const ParameterConstRef _parameters, const ap
 
 extract_patterns::~extract_patterns() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> extract_patterns::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+extract_patterns::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -170,7 +172,8 @@ DesignFlowStep_Status extract_patterns::InternalExec()
          {
             break;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_CONST_NODE(*it_los)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Examining statement " + GET_CONST_NODE(*it_los)->ToString());
          if(GET_CONST_NODE(*it_los)->get_kind() == gimple_assign_K)
          {
             const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(*it_los));
@@ -178,12 +181,15 @@ DesignFlowStep_Status extract_patterns::InternalExec()
             const auto code1 = GET_CONST_NODE(ga->op1)->get_kind();
             if(code0 == ssa_name_K && (code1 == plus_expr_K || code1 == minus_expr_K))
             {
-               if(!(tree_helper::IsRealType(ga->op0) || tree_helper::IsComplexType(ga->op0) || tree_helper::IsVectorType(ga->op0)))
+               if(!(tree_helper::IsRealType(ga->op0) || tree_helper::IsComplexType(ga->op0) ||
+                    tree_helper::IsVectorType(ga->op0)))
                {
                   const auto ssa_defined = GetPointerS<const ssa_name>(GET_CONST_NODE(ga->op0));
                   const auto ssa_defined_size = tree_helper::Size(tree_helper::CGetType(ga->op0));
                   const auto binop0 = GetPointerS<const binary_expr>(GET_CONST_NODE(ga->op1));
-                  if((ssa_defined->CGetNumberUses() == 1) && (ssa_defined_size == tree_helper::Size(tree_helper::CGetType(binop0->op0))) && (ssa_defined_size == tree_helper::Size(tree_helper::CGetType(binop0->op1))))
+                  if((ssa_defined->CGetNumberUses() == 1) &&
+                     (ssa_defined_size == tree_helper::Size(tree_helper::CGetType(binop0->op0))) &&
+                     (ssa_defined_size == tree_helper::Size(tree_helper::CGetType(binop0->op1))))
                   {
                      const auto statement_node = ssa_defined->CGetUseStmts().begin()->first;
                      if(GET_CONST_NODE(statement_node)->get_kind() == gimple_assign_K)
@@ -192,24 +198,32 @@ DesignFlowStep_Status extract_patterns::InternalExec()
                         const auto code_dest0 = GET_CONST_NODE(ga_dest->op0)->get_kind();
                         const auto code_dest1 = GET_CONST_NODE(ga_dest->op1)->get_kind();
                         const auto ssa_dest0_size = tree_helper::Size(tree_helper::CGetType(ga_dest->op0));
-                        if(code_dest0 == ssa_name_K && (code_dest1 == plus_expr_K || code_dest1 == minus_expr_K) && ga_dest->bb_index == B_id && ssa_dest0_size == ssa_defined_size)
+                        if(code_dest0 == ssa_name_K && (code_dest1 == plus_expr_K || code_dest1 == minus_expr_K) &&
+                           ga_dest->bb_index == B_id && ssa_dest0_size == ssa_defined_size)
                         {
                            tree_manipulationRef IRman(new tree_manipulation(TM, parameters, AppM));
                            /// matched
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ternary plus expr statement found ");
-                           const auto srcp_default = ga_dest->include_name + ":" + STR(ga_dest->line_number) + ":" + STR(ga_dest->column_number);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---Ternary plus expr statement found ");
+                           const auto srcp_default = ga_dest->include_name + ":" + STR(ga_dest->line_number) + ":" +
+                                                     STR(ga_dest->column_number);
                            const auto binop_dest = GetPointerS<const binary_expr>(GET_CONST_NODE(ga_dest->op1));
                            if(GET_INDEX_CONST_NODE(ga->op0) == GET_INDEX_CONST_NODE(binop_dest->op0))
                            {
-                              const auto ternary_op = IRman->create_ternary_operation(binop_dest->type, binop0->op0, binop0->op1, binop_dest->op1, srcp_default, ternary_operation_type0(code1, code_dest1));
+                              const auto ternary_op = IRman->create_ternary_operation(
+                                  binop_dest->type, binop0->op0, binop0->op1, binop_dest->op1, srcp_default,
+                                  ternary_operation_type0(code1, code_dest1));
                               TM->ReplaceTreeNode(statement_node, ga_dest->op1, ternary_op);
                            }
                            else
                            {
-                              const auto ternary_op = IRman->create_ternary_operation(binop_dest->type, binop_dest->op0, binop0->op0, binop0->op1, srcp_default, ternary_operation_type1(code1, code_dest1));
+                              const auto ternary_op = IRman->create_ternary_operation(
+                                  binop_dest->type, binop_dest->op0, binop0->op0, binop0->op1, srcp_default,
+                                  ternary_operation_type1(code1, code_dest1));
                               TM->ReplaceTreeNode(statement_node, ga_dest->op1, ternary_op);
                            }
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement removed " + GET_NODE(*it_los)->ToString());
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "<--Statement removed " + GET_NODE(*it_los)->ToString());
                            B->RemoveStmt(*it_los, AppM);
                            it_los = list_of_stmt.begin();
                            it_los_end = list_of_stmt.end();
@@ -222,7 +236,8 @@ DesignFlowStep_Status extract_patterns::InternalExec()
                }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement analyzed " + GET_CONST_NODE(*it_los)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Statement analyzed " + GET_CONST_NODE(*it_los)->ToString());
          ++it_los;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(B_id));

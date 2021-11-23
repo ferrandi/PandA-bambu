@@ -55,7 +55,9 @@
 #include "chaining_information.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-sched_based_chaining_computation::sched_based_chaining_computation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+sched_based_chaining_computation::sched_based_chaining_computation(const ParameterConstRef _Param,
+                                                                   const HLS_managerRef _HLSMgr, unsigned int _funId,
+                                                                   const DesignFlowManagerConstRef _design_flow_manager)
     : chaining(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::SCHED_CHAINING)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -82,7 +84,9 @@ DesignFlowStep_Status sched_based_chaining_computation::InternalExec()
       const auto current_ending_cycle = HLS->Rsch->get_cstep_end(*op);
       if(current_starting_cycle == current_ending_cycle)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operations " + GET_NAME(flow_graph, *op) + " and " + GET_NAME(flow_graph, *op) + " are chained in");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Operations " + GET_NAME(flow_graph, *op) + " and " + GET_NAME(flow_graph, *op) +
+                            " are chained in");
          HLS->chaining_information->add_chained_vertices_in(*op, *op);
       }
       InEdgeIterator ei, ei_end;
@@ -92,14 +96,17 @@ DesignFlowStep_Status sched_based_chaining_computation::InternalExec()
          vertex src = boost::source(*ei, *flow_graph);
          if(HLS->Rsch->get_cstep_end(src) == current_starting_cycle)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, std::string("Operations ") + GET_NAME(flow_graph, src) + " and " + GET_NAME(flow_graph, *op) + " are chained in");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           std::string("Operations ") + GET_NAME(flow_graph, src) + " and " +
+                               GET_NAME(flow_graph, *op) + " are chained in");
             HLS->chaining_information->add_chained_vertices_in(*op, src);
             is_chained_test = true;
          }
       }
       if(is_chained_test)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, std::string("Operations ") + GET_NAME(flow_graph, *op) + " is chained with something");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        std::string("Operations ") + GET_NAME(flow_graph, *op) + " is chained with something");
          HLS->chaining_information->is_chained_with.insert(*op);
       }
       OutEdgeIterator eo, eo_end;
@@ -108,7 +115,9 @@ DesignFlowStep_Status sched_based_chaining_computation::InternalExec()
          vertex tgt = boost::target(*eo, *flow_graph);
          if(HLS->Rsch->get_cstep(tgt) == current_ending_cycle)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, std::string("Operations ") + GET_NAME(flow_graph, tgt) + " and " + GET_NAME(flow_graph, *op) + " are chained out");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           std::string("Operations ") + GET_NAME(flow_graph, tgt) + " and " +
+                               GET_NAME(flow_graph, *op) + " are chained out");
             HLS->chaining_information->add_chained_vertices_out(*op, tgt);
          }
       }

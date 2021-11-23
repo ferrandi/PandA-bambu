@@ -51,8 +51,10 @@ CONSTREF_FORWARD_DECL(tree_manager);
 struct vcd_trace_head
 {
  public:
-   vcd_trace_head(const DiscrepancyOpInfo& op_info, std::string signame, const std::list<sig_variation>& fv, const std::list<sig_variation>& ov, const std::list<sig_variation>& sv, unsigned int init_state_id, unsigned long long clock_period,
-                  const HLS_managerConstRef _HLSMgr, const tree_managerConstRef _TM, const bool one_hot_fsm_encoding);
+   vcd_trace_head(const DiscrepancyOpInfo& op_info, std::string signame, const std::list<sig_variation>& fv,
+                  const std::list<sig_variation>& ov, const std::list<sig_variation>& sv, unsigned int init_state_id,
+                  unsigned long long clock_period, const HLS_managerConstRef _HLSMgr, const tree_managerConstRef _TM,
+                  const bool one_hot_fsm_encoding);
 
    ~vcd_trace_head() = default;
 

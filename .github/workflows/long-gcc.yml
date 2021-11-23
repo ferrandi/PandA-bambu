@@ -159,7 +159,7 @@ jobs:
       matrix:
         compiler:
           [
-            I386_GCC45,
+            I386_GCC45 --skip_list 20071202-1,
             I386_GCC46,
             I386_GCC47,
             I386_GCC48,
@@ -208,7 +208,9 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}_${{matrix.script}}' | sed -r 's/(I386_|\.sh|generic_gcc_)//g' | tr '[:upper:]' '[:lower:]' | cut -d' ' -f1)"
+          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          SCRIPT="$(echo '${{matrix.script}}' | cut -d' ' -f1 | sed -r 's/(\.sh|generic_gcc_)//g')"
+          OUTNAME="${COMPILER}_${SCRIPT}"
           if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
             OUTNAME+="_sdc"
           fi
@@ -242,7 +244,7 @@ jobs:
       matrix:
         compiler:
           [
-            I386_GCC45,
+            I386_GCC45 --skip_list 20071202-1,
             I386_GCC46,
             I386_GCC47,
             I386_GCC48,
@@ -284,7 +286,9 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}_${{matrix.script}}' | sed -r 's/(I386_|\.sh|generic_gcc_)//g' | tr '[:upper:]' '[:lower:]' | cut -d' ' -f1)_vhdl"
+          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          SCRIPT="$(echo '${{matrix.script}}' | cut -d' ' -f1 | sed -r 's/(\.sh|generic_gcc_)//g')"
+          OUTNAME="${COMPILER}_${SCRIPT}_vhdl"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test suite
         id: suite
@@ -401,7 +405,8 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_${{env.basename}}"
+          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          OUTNAME="${COMPILER}_${{env.basename}}"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test suite
         id: suite
@@ -465,7 +470,8 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          OUTNAME="${COMPILER}"
           if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
             OUTNAME+="_sdc"
           fi
@@ -555,7 +561,8 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//' | tr '[:upper:]' '[:lower:]')_${{matrix.basename}}_${{env.basename}}"
+          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test batch
         id: batch
@@ -576,7 +583,7 @@ jobs:
             IFS=' ' read -r -a args <<< "$args"
             config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
             config_out="$out_dir/$config_name"
-            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
+            ${{matrix.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
             echo "::endgroup::"
           done
       - name: Upload test reports
@@ -663,7 +670,8 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//' | tr '[:upper:]' '[:lower:]')_${{matrix.basename}}_${{env.basename}}"
+          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test batch
         id: batch
@@ -684,7 +692,7 @@ jobs:
             IFS=' ' read -r -a args <<< "$args"
             config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
             config_out="$out_dir/$config_name"
-            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
+            ${{matrix.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
             echo "::endgroup::"
           done
       - name: Upload test reports
@@ -744,7 +752,8 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//' | tr '[:upper:]' '[:lower:]')_${{matrix.basename}}_${{env.basename}}"
+          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
           echo "::set-output name=outname::$OUTNAME"
       - name: Launch test batch
         id: batch
@@ -765,7 +774,7 @@ jobs:
             IFS=' ' read -r -a args <<< "$args"
             config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
             config_out="$out_dir/$config_name"
-            ${{env.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
+            ${{matrix.script}} --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
             echo "::endgroup::"
           done
       - name: Upload test reports

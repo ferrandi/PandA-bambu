@@ -41,7 +41,9 @@
 /// Header include
 #include "evaluation_base_step.hpp"
 
-EvaluationBaseStep::EvaluationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+EvaluationBaseStep::EvaluationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                       const DesignFlowManagerConstRef _design_flow_manager,
+                                       const HLSFlowStep_Type _hls_flow_step_type)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type)
 {
 }

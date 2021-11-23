@@ -97,23 +97,21 @@ REF_FORWARD_DECL(pointer_var_pp_functor);
   }
  \enddot
  The expression is splitted in four vertexes each one performing an addition or a result storage.
- In particular, the first vertex, simple_add_1_31, compute the first addition a+b but the statements stored in the vertex
- are actually two: the first one compute the addition (stored in the PandA artificial variable with nodeid 31) and the second one store the result in the var
- written (GCC artificial variable with nodeid 30) associated with the vertex. The considered vertex has
- \verbatim
-   VAR_READ(simple_add_1_31) = 4(a) 5(b)
-   VAR_WRITTEN(simple_add_1_31) = 30(Internal_0)
- \endverbatim
- but to correctly dump a C description before write the two statements with the print_statement
- member function we need to declare the two variables used by the vertex.
- To obtain these two variables the macro VAR_READ and VAR_WRITTEN are not enough since the variable 31(Internal) is missing.
- To obtain all the referenced variables in the vertex simple_add_1_31 we have to use the get_referenced_vars member function.
- Given the list of variables referenced by the vertex of the graph we need to print the possible type declarations for
- the variables based on user defined types.
- In the example the parameter a and res are of type MYINT, therefore, before print the declarations of the variables we have to print
- the declaration of the user type MYINT. To do that we have first to detect the set of user type declarations and then we can print the declaration with
- print_type_declaration. To check if a type is a user defined type we can use behavior_helper::is_built_in_type while to get the type from a variable we can use behavior_helper::get_type.
- After the type definition we can print the declarations of the variables with print_var_declaration.
+ In particular, the first vertex, simple_add_1_31, compute the first addition a+b but the statements stored in the
+ vertex are actually two: the first one compute the addition (stored in the PandA artificial variable with nodeid 31)
+ and the second one store the result in the var written (GCC artificial variable with nodeid 30) associated with the
+ vertex. The considered vertex has \verbatim VAR_READ(simple_add_1_31) = 4(a) 5(b) VAR_WRITTEN(simple_add_1_31) =
+ 30(Internal_0) \endverbatim but to correctly dump a C description before write the two statements with the
+ print_statement member function we need to declare the two variables used by the vertex. To obtain these two variables
+ the macro VAR_READ and VAR_WRITTEN are not enough since the variable 31(Internal) is missing. To obtain all the
+ referenced variables in the vertex simple_add_1_31 we have to use the get_referenced_vars member function. Given the
+ list of variables referenced by the vertex of the graph we need to print the possible type declarations for the
+ variables based on user defined types. In the example the parameter a and res are of type MYINT, therefore, before
+ print the declarations of the variables we have to print the declaration of the user type MYINT. To do that we have
+ first to detect the set of user type declarations and then we can print the declaration with print_type_declaration. To
+ check if a type is a user defined type we can use behavior_helper::is_built_in_type while to get the type from a
+ variable we can use behavior_helper::get_type. After the type definition we can print the declarations of the variables
+ with print_var_declaration.
 */
 struct prettyPrintVertex
 {
@@ -124,18 +122,23 @@ struct prettyPrintVertex
     * @param PP is the pretty print functor object used to indent the generated code.
     * @param BH is the behavioral helper.
     */
-   static void print_forward_declaration(std::ostream& os, unsigned int type, simple_indent& PP, const BehavioralHelperConstRef BH);
+   static void print_forward_declaration(std::ostream& os, unsigned int type, simple_indent& PP,
+                                         const BehavioralHelperConstRef BH);
 
-   static void get_internal_vars(const vertex& v, const OpGraphConstRef g, CustomUnorderedSet<unsigned int>& list_of_variables, const BehavioralHelperConstRef BH);
+   static void get_internal_vars(const vertex& v, const OpGraphConstRef g,
+                                 CustomUnorderedSet<unsigned int>& list_of_variables,
+                                 const BehavioralHelperConstRef BH);
 
  private:
    /**
-    * return a string for the passed statement. The referenced variables are printed with the indenter and variable functor.
+    * return a string for the passed statement. The referenced variables are printed with the indenter and variable
+    * functor.
     * @param vppf is the functor used to dump the variable var.
     * @param PP is the pretty print functor object used to indent the generated code.
     * @param BH is the behavioral helper.
     */
-   static std::string statement2string(unsigned int stm, var_pp_functor& vppf, simple_indent& PP, const BehavioralHelperConstRef BH);
+   static std::string statement2string(unsigned int stm, var_pp_functor& vppf, simple_indent& PP,
+                                       const BehavioralHelperConstRef BH);
 };
 
 #endif

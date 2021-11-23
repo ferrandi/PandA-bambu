@@ -76,15 +76,18 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-SDCCodeMotion::SDCCodeMotion(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, SDC_CODE_MOTION, _design_flow_manager, _parameters), restart_ifmwi_opt(false)
+SDCCodeMotion::SDCCodeMotion(const application_managerRef _AppM, unsigned int _function_id,
+                             const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, SDC_CODE_MOTION, _design_flow_manager, _parameters),
+      restart_ifmwi_opt(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 SDCCodeMotion::~SDCCodeMotion() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> SDCCodeMotion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+SDCCodeMotion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -130,8 +133,10 @@ bool SDCCodeMotion::HasToBeExecuted() const
    {
       return false;
    }
-   return parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
-          GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch && FunctionFrontendFlowStep::HasToBeExecuted();
+   return parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and
+          GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+          GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch &&
+          FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 DesignFlowStep_Status SDCCodeMotion::InternalExec()
@@ -145,9 +150,11 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
 
    /// Retrieve result of sdc scheduling
-   const auto sdc_scheduling_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::SDC_SCHEDULING, HLSFlowStepSpecializationConstRef(), function_id));
+   const auto sdc_scheduling_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
+       HLSFlowStep_Type::SDC_SCHEDULING, HLSFlowStepSpecializationConstRef(), function_id));
    THROW_ASSERT(sdc_scheduling_step, "SDC scheduling hls step not found");
-   const auto sdc_scheduling = GetPointer<const SDCScheduling>(design_flow_graph->CGetDesignFlowStepInfo(sdc_scheduling_step)->design_flow_step);
+   const auto sdc_scheduling = GetPointer<const SDCScheduling>(
+       design_flow_graph->CGetDesignFlowStepInfo(sdc_scheduling_step)->design_flow_step);
    const auto& movements_list = sdc_scheduling->movements_list;
    if(movements_list.empty())
    {
@@ -158,15 +165,21 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
       const auto statement_index = movement[0];
       const auto old_basic_block = movement[1];
       const auto new_basic_block = movement[2];
-      THROW_ASSERT(list_of_bloc.find(old_basic_block) != list_of_bloc.end() && list_of_bloc.find(new_basic_block) != list_of_bloc.end(), "unexpected condition: BB are missing");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Moving " + STR(TM->GetTreeReindex(statement_index)) + " from BB" + STR(old_basic_block) + " to BB" + STR(new_basic_block));
+      THROW_ASSERT(list_of_bloc.find(old_basic_block) != list_of_bloc.end() &&
+                       list_of_bloc.find(new_basic_block) != list_of_bloc.end(),
+                   "unexpected condition: BB are missing");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Moving " + STR(TM->GetTreeReindex(statement_index)) + " from BB" + STR(old_basic_block) +
+                         " to BB" + STR(new_basic_block));
       if(not AppM->ApplyNewTransformation())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of cfg transformations");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Skipped because reached limit of cfg transformations");
          continue;
       }
       list_of_bloc.at(old_basic_block)->RemoveStmt(TM->GetTreeReindex(statement_index), AppM);
-      if(list_of_bloc.at(old_basic_block)->CGetStmtList().empty() && list_of_bloc.at(old_basic_block)->CGetPhiList().empty())
+      if(list_of_bloc.at(old_basic_block)->CGetStmtList().empty() &&
+         list_of_bloc.at(old_basic_block)->CGetPhiList().empty())
       {
          restart_ifmwi_opt = true;
       }

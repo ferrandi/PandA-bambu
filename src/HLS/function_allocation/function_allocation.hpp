@@ -56,7 +56,8 @@ class function_allocation : public HLS_step
    /**
     * Constructor
     */
-   function_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   function_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr,
+                       const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor

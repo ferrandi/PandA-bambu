@@ -76,7 +76,8 @@ class vcd_sig_info
     */
    CustomUnorderedMap<std::string, size_t> vcd_id_to_bit;
 
-   vcd_sig_info(const std::string& _type, const bool _is_vec, const size_t _msb, const size_t _lsb) : type(_type), is_vec(_is_vec), msb(_msb), lsb(_lsb)
+   vcd_sig_info(const std::string& _type, const bool _is_vec, const size_t _msb, const size_t _lsb)
+       : type(_type), is_vec(_is_vec), msb(_msb), lsb(_lsb)
    {
    }
 };
@@ -208,7 +209,8 @@ class vcd_parser
     * @param [in] msb: most significant bit of the signal
     * @param [in] lsb: less significant bit of the signal
     */
-   void vcd_add_signal(const std::string& scope, const std::string& name, const std::string& vcd_id, const std::string& type, const bool isvect, const unsigned int msb, const unsigned int lsb);
+   void vcd_add_signal(const std::string& scope, const std::string& name, const std::string& vcd_id,
+                       const std::string& type, const bool isvect, const unsigned int msb, const unsigned int lsb);
 
    /**
     * check if the port vectors declarations are consistent

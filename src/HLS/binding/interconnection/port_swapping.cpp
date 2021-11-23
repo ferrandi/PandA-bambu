@@ -33,7 +33,8 @@
 /**
  * @file port_swapping.cpp
  * @brief Implementation of the port swapping algorithm described in the following paper:
- *   Hao Cong, Song Chen and T. Yoshimura, "Port assignment for interconnect reduction in high-level synthesis," Proceedings of Technical Program of 2012 VLSI Design, Automation and Test, Hsinchu, 2012, pp. 1-4.
+ *   Hao Cong, Song Chen and T. Yoshimura, "Port assignment for interconnect reduction in high-level synthesis,"
+ * Proceedings of Technical Program of 2012 VLSI Design, Automation and Test, Hsinchu, 2012, pp. 1-4.
  *
  * @author Alessandro Comodi <alessandro.comodi@mail.polimi.it>
  * @author Davide Conficconi <davide.conficconi@mail.polimi.it>
@@ -74,7 +75,8 @@
 #define SET_B 1
 #define SET_AB 2
 
-port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                             const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::PORT_SWAPPING)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
@@ -82,7 +84,8 @@ port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRe
 
 port_swapping::~port_swapping() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -93,20 +96,25 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          {
             if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
             {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+               ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
             }
             else
             {
-               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
+                                          HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
             }
          }
          if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_REGISTER_BINDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_REGISTER_BINDING, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          else
          {
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+                                       HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          break;
       }
@@ -127,7 +135,8 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 //
 //  This function calculates the levels of all the vertices in a spanning tree
 //
-void port_swapping::vertex_levels(const std::vector<PSE>& spt_edges, PSVertex root, size_t num_vertices_g, std::vector<PSVSet>& vset)
+void port_swapping::vertex_levels(const std::vector<PSE>& spt_edges, PSVertex root, size_t num_vertices_g,
+                                  std::vector<PSVSet>& vset)
 {
    PSVSet set;
    set.v = root;
@@ -177,7 +186,8 @@ void port_swapping::vertex_levels(const std::vector<PSE>& spt_edges, PSVertex ro
 //
 //  This function calculates the distances between two vertices in a spanning tree
 //
-int port_swapping::vertex_distance(const std::vector<PSE>& spt_edges, PSVertex root, PSVertex dest, std::vector<PSVSet>& vset)
+int port_swapping::vertex_distance(const std::vector<PSE>& spt_edges, PSVertex root, PSVertex dest,
+                                   std::vector<PSVSet>& vset)
 {
    PSVSet set;
    set.v = root;
@@ -277,7 +287,8 @@ port_swapping::PSVertex port_swapping::get_co_tree_vertex(PSVertex v, const std:
    return v;
 }
 
-void port_swapping::port_swapping_algorithm(PSGraph& g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g, PSVertex root)
+void port_swapping::port_swapping_algorithm(PSGraph& g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g,
+                                            PSVertex root)
 {
    //
    // Generating the Spanning Tree starting from Graph g
@@ -304,7 +315,9 @@ void port_swapping::port_swapping_algorithm(PSGraph& g, std::vector<PSMultiStart
       }
    }
 
-   boost::random_spanning_tree(g, generator, boost::root_vertex(root).predecessor_map(boost::make_iterator_property_map(p.begin(), boost::get(boost::vertex_index, g))));
+   boost::random_spanning_tree(g, generator,
+                               boost::root_vertex(root).predecessor_map(
+                                   boost::make_iterator_property_map(p.begin(), boost::get(boost::vertex_index, g))));
 
    //
    // Generating a list of edges following the predecessor map created
@@ -343,7 +356,8 @@ void port_swapping::port_swapping_algorithm(PSGraph& g, std::vector<PSMultiStart
    std::vector<PSE> co_tree_edges;
    for(auto e : g_edges)
    {
-      if(find(spt_edges.begin(), spt_edges.end(), PSE(source(e, g), target(e, g))) != spt_edges.end() || find(spt_edges.begin(), spt_edges.end(), PSE(target(e, g), source(e, g))) != spt_edges.end())
+      if(find(spt_edges.begin(), spt_edges.end(), PSE(source(e, g), target(e, g))) != spt_edges.end() ||
+         find(spt_edges.begin(), spt_edges.end(), PSE(target(e, g), source(e, g))) != spt_edges.end())
       {
          continue;
       }
@@ -466,8 +480,11 @@ std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_s
 
 bool port_swapping::is_commutative_op(const std::string& operation)
 {
-   return operation == STOK(TOK_PLUS_EXPR) || operation == STOK(TOK_POINTER_PLUS_EXPR) || operation == STOK(TOK_MULT_EXPR) || operation == STOK(TOK_BIT_IOR_EXPR) || operation == STOK(TOK_BIT_XOR_EXPR) || operation == STOK(TOK_BIT_AND_EXPR) ||
-          operation == STOK(TOK_EQ_EXPR) || operation == STOK(TOK_NE_EXPR) || operation == STOK(TOK_WIDEN_SUM_EXPR) || operation == STOK(TOK_WIDEN_MULT_EXPR);
+   return operation == STOK(TOK_PLUS_EXPR) || operation == STOK(TOK_POINTER_PLUS_EXPR) ||
+          operation == STOK(TOK_MULT_EXPR) || operation == STOK(TOK_BIT_IOR_EXPR) ||
+          operation == STOK(TOK_BIT_XOR_EXPR) || operation == STOK(TOK_BIT_AND_EXPR) ||
+          operation == STOK(TOK_EQ_EXPR) || operation == STOK(TOK_NE_EXPR) || operation == STOK(TOK_WIDEN_SUM_EXPR) ||
+          operation == STOK(TOK_WIDEN_MULT_EXPR);
 }
 
 unsigned int port_swapping::get_results(PSVertex operand, const std::vector<std::pair<PSVertex, unsigned int>>& results)
@@ -524,12 +541,16 @@ DesignFlowStep_Status port_swapping::InternalExec()
 
    for(const auto& fu : fu_map)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Functional Unit ID: " + HLS->allocation_information->get_string_name(fu.first.first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Functional Unit ID: " + HLS->allocation_information->get_string_name(fu.first.first));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Functional Unit INDEX: " + STR(fu.first.second));
       for(const auto& fu_operation : fu.second)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation: " + GET_NAME(data, fu_operation) + " (" + data->CGetOpNodeInfo(fu_operation)->GetOperation() + ")");
-         std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, fu_operation);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Operation: " + GET_NAME(data, fu_operation) + " (" +
+                            data->CGetOpNodeInfo(fu_operation)->GetOperation() + ")");
+         std::vector<HLS_manager::io_binding_type> var_read =
+             HLSMgr->get_required_values(HLS->functionId, fu_operation);
          THROW_ASSERT(var_read.size() == 2, STR(var_read.size()) + " Vertices in op has wrong size!");
          for(unsigned int var_num = 0; var_num < var_read.size(); var_num++)
          {
@@ -537,12 +558,14 @@ DesignFlowStep_Status port_swapping::InternalExec()
             unsigned int tree_var = std::get<0>(var_read[var_num]);
             if(tree_var == 0)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Constant: " + STR(std::get<1>(var_read[var_num])));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Constant: " + STR(std::get<1>(var_read[var_num])));
                key_value = std::make_tuple(0, 0, std::get<1>(var_read[var_num]));
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Read: " + behavioral_helper->PrintVariable(tree_var));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "-->Read: " + behavioral_helper->PrintVariable(tree_var));
                const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(fu_operation);
                for(const auto state : running_states)
                {
@@ -571,7 +594,8 @@ DesignFlowStep_Status port_swapping::InternalExec()
                         }
                         else if(HLS->storage_value_information->is_a_storage_value(state, tree_var))
                         {
-                           unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(state, tree_var);
+                           unsigned int storage_value =
+                               HLS->storage_value_information->get_storage_value_index(state, tree_var);
                            unsigned int r_index = HLS->Rreg->get_register(storage_value);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Register: " + STR(r_index));
                            key_value = std::make_tuple(3, 0, r_index);
@@ -583,7 +607,8 @@ DesignFlowStep_Status port_swapping::InternalExec()
                      }
                      else
                      {
-                        unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(state, tree_var);
+                        unsigned int storage_value =
+                            HLS->storage_value_information->get_storage_value_index(state, tree_var);
                         unsigned int r_index = HLS->Rreg->get_register(storage_value);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Register: " + STR(r_index));
                         key_value = std::make_tuple(3, 0, r_index);
@@ -619,7 +644,8 @@ DesignFlowStep_Status port_swapping::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "PORT_SWAPPING STARTING");
       if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
       {
-         std::ofstream file(GetPath("starting-graph_" + HLS->allocation_information->get_string_name(fu.first.first) + "_" + STR(fu.first.second) + ".dot"));
+         std::ofstream file(GetPath("starting-graph_" + HLS->allocation_information->get_string_name(fu.first.first) +
+                                    "_" + STR(fu.first.second) + ".dot"));
          boost::write_graphviz(file, g);
          file.close();
       }
@@ -629,7 +655,8 @@ DesignFlowStep_Status port_swapping::InternalExec()
 #ifndef NDEBUG
       for(auto res : results)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Vertex: " + STR(res.first) + " Belongs To: " + STR(res.second));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Vertex: " + STR(res.first) + " Belongs To: " + STR(res.second));
       }
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -644,15 +671,18 @@ DesignFlowStep_Status port_swapping::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Error in the algorithm");
          }
-         else if((op1 == SET_A && op2 == SET_B) || (op1 == SET_AB && op2 == SET_B) || (op1 == SET_A && op2 == SET_AB) || (op1 == SET_AB && op2 == SET_AB))
+         else if((op1 == SET_A && op2 == SET_B) || (op1 == SET_AB && op2 == SET_B) || (op1 == SET_A && op2 == SET_AB) ||
+                 (op1 == SET_AB && op2 == SET_AB))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- No swap to do");
             HLS->Rfu->set_ports_are_swapped(opt.op, false);
          }
          else if((op1 == SET_AB && op2 == SET_A) || (op1 == SET_B && op2 == SET_AB))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--> Swap ports in operation: " + GET_NAME(data, opt.op));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Vertices swapped: " + STR(opt.first_op) + " and " + STR(opt.second_op));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "--> Swap ports in operation: " + GET_NAME(data, opt.op));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "--- Vertices swapped: " + STR(opt.first_op) + " and " + STR(opt.second_op));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             HLS->Rfu->set_ports_are_swapped(opt.op, true);
             changed = true;
@@ -667,7 +697,8 @@ DesignFlowStep_Status port_swapping::InternalExec()
 
    if(n_swaps)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Port swapping: number of operations swapped= " + STR(n_swaps));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                     "-->Port swapping: number of operations swapped= " + STR(n_swaps));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
    }
    if(changed)

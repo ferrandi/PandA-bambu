@@ -74,17 +74,21 @@ FunctionInfo::FunctionInfo() : nodeID(0)
 
 FunctionEdgeInfo::FunctionEdgeInfo() = default;
 
-CallGraphsCollection::CallGraphsCollection(const CallGraphInfoRef call_graph_info, const ParameterConstRef _parameters) : graphs_collection(call_graph_info, _parameters)
+CallGraphsCollection::CallGraphsCollection(const CallGraphInfoRef call_graph_info, const ParameterConstRef _parameters)
+    : graphs_collection(call_graph_info, _parameters)
 {
 }
 
 CallGraphsCollection::~CallGraphsCollection() = default;
 
-CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int _selector) : graph(call_graphs_collection.get(), _selector)
+CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int _selector)
+    : graph(call_graphs_collection.get(), _selector)
 {
 }
 
-CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int _selector, const CustomUnorderedSet<vertex>& _vertices) : graph(call_graphs_collection.get(), _selector, _vertices)
+CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int _selector,
+                     const CustomUnorderedSet<vertex>& _vertices)
+    : graph(call_graphs_collection.get(), _selector, _vertices)
 {
 }
 
@@ -103,14 +107,19 @@ void CallGraph::WriteDot(const std::string& file_name) const
    InternalWriteDot<const FunctionWriter, const FunctionEdgeWriter>(full_name, function_writer, function_edge_writer);
 }
 
-FunctionWriter::FunctionWriter(const CallGraph* call_graph) : VertexWriter(call_graph, 0), behaviors(call_graph->CGetCallGraphInfo()->behaviors)
+FunctionWriter::FunctionWriter(const CallGraph* call_graph)
+    : VertexWriter(call_graph, 0), behaviors(call_graph->CGetCallGraphInfo()->behaviors)
 {
 }
 
 void FunctionWriter::operator()(std::ostream& out, const vertex& v) const
 {
-   THROW_ASSERT(behaviors.find(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) != behaviors.end(), "Function " + boost::lexical_cast<std::string>(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) + " not found");
-   const FunctionBehaviorRef FB = behaviors.find(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID)->second;
+   THROW_ASSERT(behaviors.find(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) != behaviors.end(),
+                "Function " +
+                    boost::lexical_cast<std::string>(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) +
+                    " not found");
+   const FunctionBehaviorRef FB =
+       behaviors.find(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID)->second;
    out << "[shape=box, label=\"" << FB->CGetBehavioralHelper()->get_function_name();
    const CustomOrderedSet<unsigned int>& mem_nodeID = FB->get_function_mem();
    if(mem_nodeID.size())
@@ -127,7 +136,8 @@ void FunctionWriter::operator()(std::ostream& out, const vertex& v) const
    out << "\"]";
 }
 
-FunctionEdgeWriter::FunctionEdgeWriter(const CallGraph* call_graph) : EdgeWriter(call_graph, 0), behaviors(call_graph->CGetCallGraphInfo()->behaviors)
+FunctionEdgeWriter::FunctionEdgeWriter(const CallGraph* call_graph)
+    : EdgeWriter(call_graph, 0), behaviors(call_graph->CGetCallGraphInfo()->behaviors)
 {
 }
 
@@ -135,9 +145,12 @@ FunctionEdgeWriter::~FunctionEdgeWriter() = default;
 
 void FunctionEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {
-   const CustomOrderedSet<unsigned int>& direct_call_points = Cget_edge_info<FunctionEdgeInfo, graph>(e, *printing_graph)->direct_call_points;
-   const CustomOrderedSet<unsigned int>& indirect_call_points = Cget_edge_info<FunctionEdgeInfo, graph>(e, *printing_graph)->indirect_call_points;
-   const CustomOrderedSet<unsigned int>& function_addresses = Cget_edge_info<FunctionEdgeInfo, graph>(e, *printing_graph)->function_addresses;
+   const CustomOrderedSet<unsigned int>& direct_call_points =
+       Cget_edge_info<FunctionEdgeInfo, graph>(e, *printing_graph)->direct_call_points;
+   const CustomOrderedSet<unsigned int>& indirect_call_points =
+       Cget_edge_info<FunctionEdgeInfo, graph>(e, *printing_graph)->indirect_call_points;
+   const CustomOrderedSet<unsigned int>& function_addresses =
+       Cget_edge_info<FunctionEdgeInfo, graph>(e, *printing_graph)->function_addresses;
    std::string color;
    if(STD_SELECTOR & printing_graph->GetSelector(e))
    {

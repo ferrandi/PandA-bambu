@@ -357,7 +357,8 @@ struct BBGraph : public graph
     * @param detail_level is the detail level of the printed graph
     * @param annotated is the set of the vertices to be annotated
     */
-   void WriteDot(const std::string& file_name, const CustomUnorderedSet<vertex>& annotated, const int detail_level = 0) const;
+   void WriteDot(const std::string& file_name, const CustomUnorderedSet<vertex>& annotated,
+                 const int detail_level = 0) const;
 
    /**
     * Returns the number of basic blocks contained into the graph

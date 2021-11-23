@@ -82,11 +82,17 @@
 // in case asap and alap are computed with/without constraints on the resources available
 #define WITH_CONSTRAINT 0
 
-ASLAP::ASLAP(const HLS_managerConstRef _hls_manager, const hlsRef HLS, const bool _speculation, const CustomUnorderedSet<vertex>& _operations, const ParameterConstRef _parameters, unsigned int _ctrl_step_multiplier)
-    : ASAP(
-          ScheduleRef(new Schedule(_hls_manager, _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->get_function_index(), _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetOpGraph(FunctionBehavior::FLSAODG), _parameters))),
-      ALAP(
-          ScheduleRef(new Schedule(_hls_manager, _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->get_function_index(), _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetOpGraph(FunctionBehavior::FLSAODG), _parameters))),
+ASLAP::ASLAP(const HLS_managerConstRef _hls_manager, const hlsRef HLS, const bool _speculation,
+             const CustomUnorderedSet<vertex>& _operations, const ParameterConstRef _parameters,
+             unsigned int _ctrl_step_multiplier)
+    : ASAP(ScheduleRef(new Schedule(
+          _hls_manager,
+          _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->get_function_index(),
+          _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetOpGraph(FunctionBehavior::FLSAODG), _parameters))),
+      ALAP(ScheduleRef(new Schedule(
+          _hls_manager,
+          _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->get_function_index(),
+          _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetOpGraph(FunctionBehavior::FLSAODG), _parameters))),
       min_tot_csteps(0u),
       max_tot_csteps(0u),
       has_branching_blocks(false),
@@ -163,7 +169,8 @@ struct p_update_check : public boost::dfs_visitor<>
    /**
     * Constructor
     */
-   p_update_check(vertex v, const std::string& name, vertex2int& A_p, const OpGraphConstRef g) : s(v), op_name(name), ASAP_p(A_p), beh_graph(g)
+   p_update_check(vertex v, const std::string& name, vertex2int& A_p, const OpGraphConstRef g)
+       : s(v), op_name(name), ASAP_p(A_p), beh_graph(g)
    {
    }
 
@@ -200,7 +207,10 @@ void ASLAP::add_constraints_to_ASAP()
       // Updating ASAP_p information
       p_update_check vis(level, beh_graph->CGetOpNodeInfo(level)->GetOperation(), ASAP_p, beh_graph);
       std::vector<boost::default_color_type> color_vec(boost::num_vertices(*beh_graph));
-      boost::depth_first_visit(*beh_graph, level, vis, boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index_t(), *beh_graph), boost::white_color));
+      boost::depth_first_visit(*beh_graph, level, vis,
+                               boost::make_iterator_property_map(color_vec.begin(),
+                                                                 boost::get(boost::vertex_index_t(), *beh_graph),
+                                                                 boost::white_color));
       ASAP_nip[level] = ASAP_p[level];
       for(boost::tie(ei, ei_end) = boost::in_edges(level, *beh_graph); ei != ei_end; ei++)
       {
@@ -225,8 +235,11 @@ void ASLAP::add_constraints_to_ASAP()
          continue;
       }
       m_k = allocation_information->max_number_of_resources(v);
-      cur_et = ControlStep(static_cast<unsigned int>(ceil(from_strongtype_cast<double>(GetCycleLatency(v, Allocation_MinMax::MIN)) / static_cast<double>(ctrl_step_multiplier))) *
-                           std::max(static_cast<unsigned int>(ceil(static_cast<double>(ASAP_p[v]) / m_k)), (1 + static_cast<unsigned int>(ceil(static_cast<double>(ASAP_nip[v]) / m_k)))));
+      cur_et = ControlStep(
+          static_cast<unsigned int>(ceil(from_strongtype_cast<double>(GetCycleLatency(v, Allocation_MinMax::MIN)) /
+                                         static_cast<double>(ctrl_step_multiplier))) *
+          std::max(static_cast<unsigned int>(ceil(static_cast<double>(ASAP_p[v]) / m_k)),
+                   (1 + static_cast<unsigned int>(ceil(static_cast<double>(ASAP_nip[v]) / m_k)))));
       if(cur_et > 0u)
       {
          --cur_et;
@@ -241,7 +254,8 @@ void ASLAP::add_constraints_to_ASAP()
       vertex2int::const_iterator i_end = ASAP_p.end();
       for(vertex2int::const_iterator i = ASAP_p.begin(); i != i_end; ++i)
       {
-         PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, i->first) + " - " + boost::lexical_cast<std::string>(i->second));
+         PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                          GET_NAME(beh_graph, i->first) + " - " + boost::lexical_cast<std::string>(i->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
@@ -249,7 +263,8 @@ void ASLAP::add_constraints_to_ASAP()
       vertex2int::const_iterator ai_end = ASAP_nip.end();
       for(vertex2int::const_iterator ai = ASAP_nip.begin(); ai != ai_end; ++ai)
       {
-         PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, ai->first) + " - " + boost::lexical_cast<std::string>(ai->second));
+         PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                          GET_NAME(beh_graph, ai->first) + " - " + boost::lexical_cast<std::string>(ai->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
    }
@@ -293,16 +308,22 @@ void ASLAP::compute_ASAP(const ScheduleConstRef partial_schedule)
       {
          vi = boost::source(*ei, *beh_graph);
          cur_start = finish_time.at(vi) < cur_start ? cur_start : finish_time.at(vi);
-         //       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, GET_NAME(beh_graph, vi) + " -> " +GET_NAME(beh_graph, level) + " cur_start " + boost::lexical_cast<std::string>(cur_start));
+         //       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, GET_NAME(beh_graph, vi) + " -> " +GET_NAME(beh_graph,
+         //       level) + " cur_start " + boost::lexical_cast<std::string>(cur_start));
       }
 
       finish_time.at(level) = cur_start + from_strongtype_cast<double>(op_cycles);
       ControlStep curr_asap = ASAP->is_scheduled(level) ? ASAP->get_cstep(level).second : ControlStep(0u);
-      curr_asap = ControlStep(static_cast<unsigned int>(cur_start / ctrl_step_multiplier)) > curr_asap ? ControlStep(static_cast<unsigned int>(cur_start / ctrl_step_multiplier)) : curr_asap;
+      curr_asap = ControlStep(static_cast<unsigned int>(cur_start / ctrl_step_multiplier)) > curr_asap ?
+                      ControlStep(static_cast<unsigned int>(cur_start / ctrl_step_multiplier)) :
+                      curr_asap;
       ASAP->set_execution(level, curr_asap);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, GET_NAME(beh_graph, level) + " cur_start " + boost::lexical_cast<std::string>(cur_start) + " finish_time[level] " + boost::lexical_cast<std::string>(finish_time[level]));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                    GET_NAME(beh_graph, level) + " cur_start " + boost::lexical_cast<std::string>(cur_start) +
+                        " finish_time[level] " + boost::lexical_cast<std::string>(finish_time[level]));
       min_tot_csteps = min_tot_csteps < curr_asap ? curr_asap : min_tot_csteps;
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, GET_NAME(beh_graph, level) + " - " + STR(ASAP->get_cstep(level).second));
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                    GET_NAME(beh_graph, level) + " - " + STR(ASAP->get_cstep(level).second));
    }
    ASAP->set_csteps(min_tot_csteps + 1u);
 }
@@ -310,7 +331,8 @@ void ASLAP::compute_ASAP(const ScheduleConstRef partial_schedule)
 void ASLAP::add_constraints_to_ALAP()
 {
    //
-   // ALAP is computed as ASAP: 0 is the last step and at this point of the implementation ALAP[*i] is the distance from last step
+   // ALAP is computed as ASAP: 0 is the last step and at this point of the implementation ALAP[*i] is the distance from
+   // last step
    OutEdgeIterator ei, ei_end;
    unsigned int m_k;
 
@@ -327,7 +349,9 @@ void ASLAP::add_constraints_to_ALAP()
    {
       p_update_check vis(*i, beh_graph->CGetOpNodeInfo(*i)->GetOperation(), ALAP_p, beh_graph);
       std::vector<boost::default_color_type> color_vec(boost::num_vertices(R));
-      boost::depth_first_visit(R, *i, vis, boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index_t(), R), boost::white_color));
+      boost::depth_first_visit(R, *i, vis,
+                               boost::make_iterator_property_map(
+                                   color_vec.begin(), boost::get(boost::vertex_index_t(), R), boost::white_color));
       ALAP_nip[*i] = ALAP_p[*i];
       for(boost::tie(ei, ei_end) = boost::out_edges(*i, *beh_graph); ei != ei_end; ei++)
       {
@@ -351,8 +375,11 @@ void ASLAP::add_constraints_to_ALAP()
          continue;
       }
       m_k = allocation_information->min_number_of_resources(v);
-      cur_et = ControlStep(static_cast<unsigned int>((ceil(from_strongtype_cast<double>(GetCycleLatency(v, Allocation_MinMax::MIN)) / static_cast<double>(ctrl_step_multiplier))) *
-                                                     std::max(static_cast<unsigned int>(ceil(static_cast<double>(ALAP_p[v]) / m_k)), (1 + static_cast<unsigned int>(ceil(static_cast<double>(ALAP_nip[v]) / m_k))))));
+      cur_et = ControlStep(static_cast<unsigned int>(
+          (ceil(from_strongtype_cast<double>(GetCycleLatency(v, Allocation_MinMax::MIN)) /
+                static_cast<double>(ctrl_step_multiplier))) *
+          std::max(static_cast<unsigned int>(ceil(static_cast<double>(ALAP_p[v]) / m_k)),
+                   (1 + static_cast<unsigned int>(ceil(static_cast<double>(ALAP_nip[v]) / m_k))))));
       max_tot_csteps = max_tot_csteps < cur_et ? cur_et : max_tot_csteps;
 
       const auto schedule = ALAP->get_cstep(v).second < cur_et ? cur_et : ALAP->get_cstep(v).second;
@@ -364,7 +391,8 @@ void ASLAP::add_constraints_to_ALAP()
       vertex2int::const_iterator i_end = ALAP_p.end();
       for(vertex2int::const_iterator i = ALAP_p.begin(); i != i_end; ++i)
       {
-         PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, i->first) + " - " + boost::lexical_cast<std::string>(i->second));
+         PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                          GET_NAME(beh_graph, i->first) + " - " + boost::lexical_cast<std::string>(i->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
@@ -372,7 +400,8 @@ void ASLAP::add_constraints_to_ALAP()
       vertex2int::const_iterator ai_end = ALAP_nip.end();
       for(vertex2int::const_iterator ai = ALAP_nip.begin(); ai != ai_end; ++ai)
       {
-         PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, ai->first) + " - " + boost::lexical_cast<std::string>(ai->second));
+         PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                          GET_NAME(beh_graph, ai->first) + " - " + boost::lexical_cast<std::string>(ai->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
@@ -380,14 +409,16 @@ void ASLAP::add_constraints_to_ALAP()
 #ifndef NDEBUG
       for(auto level : levels)
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, level) + " - " + STR(ALAP->get_cstep(level).second));
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                       GET_NAME(beh_graph, level) + " - " + STR(ALAP->get_cstep(level).second));
       }
 #endif
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "end");
    }
 }
 
-void ASLAP::compute_ALAP(ALAP_method met, const ScheduleConstRef partial_schedule, bool* feasible, const ControlStep est_upper_bound)
+void ASLAP::compute_ALAP(ALAP_method met, const ScheduleConstRef partial_schedule, bool* feasible,
+                         const ControlStep est_upper_bound)
 {
    switch(met)
    {
@@ -491,7 +522,8 @@ void ASLAP::compute_ALAP_fast(bool* feasible)
       Rev_finish_time.at(*i) = cur_rev_start + from_strongtype_cast<double>(op_cycles);
 
       ControlStep rev_curr_alap = ALAP->is_scheduled(*i) ? ALAP->get_cstep(*i).second : ControlStep(0u);
-      const auto rev_finish_time = ControlStep(static_cast<unsigned int>((Rev_finish_time.at(*i) - 1) / ctrl_step_multiplier));
+      const auto rev_finish_time =
+          ControlStep(static_cast<unsigned int>((Rev_finish_time.at(*i) - 1) / ctrl_step_multiplier));
       rev_curr_alap = rev_finish_time > rev_curr_alap ? rev_finish_time : rev_curr_alap;
       ALAP->set_execution(*i, rev_curr_alap);
       max_tot_csteps = max_tot_csteps < rev_curr_alap ? rev_curr_alap : max_tot_csteps;
@@ -505,7 +537,8 @@ void ASLAP::compute_ALAP_fast(bool* feasible)
       {
          *feasible = ALAP->get_cstep(level) >= ASAP->get_cstep(level);
       }
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, GET_NAME(beh_graph, level) + " - " + STR(ALAP->get_cstep(level).second));
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                    GET_NAME(beh_graph, level) + " - " + STR(ALAP->get_cstep(level).second));
    }
 }
 
@@ -539,20 +572,28 @@ void ASLAP::compute_ALAP_worst_case()
          rev_levels_to_cycles.insert(std::pair<ControlStep, ControlStep>(ALAP->get_cstep(*i).second, ControlStep(0u)));
          max_et.insert(std::pair<ControlStep, ControlStep>(ALAP->get_cstep(*i).second, ControlStep(0u)));
       }
-      rev_levels_to_cycles.find(ALAP->get_cstep(*i).second)->second += static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(*i, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time));
-      max_et.insert(
-          std::pair<ControlStep, ControlStep>(ALAP->get_cstep(*i).second, std::max(max_et.find(ALAP->get_cstep(*i).second)->second,
-                                                                                   ControlStep(static_cast<unsigned int>(ceil(from_strongtype_cast<double>(GetCycleLatency(*i, Allocation_MinMax::MAX)) / static_cast<double>(ctrl_step_multiplier)))))));
+      rev_levels_to_cycles.find(ALAP->get_cstep(*i).second)->second +=
+          static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(
+              *i, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time));
+      max_et.insert(std::pair<ControlStep, ControlStep>(
+          ALAP->get_cstep(*i).second,
+          std::max(max_et.find(ALAP->get_cstep(*i).second)->second,
+                   ControlStep(static_cast<unsigned int>(
+                       ceil(from_strongtype_cast<double>(GetCycleLatency(*i, Allocation_MinMax::MAX)) /
+                            static_cast<double>(ctrl_step_multiplier)))))));
    }
    auto levelr = max_rev_level - 1u;
    do
    {
-      rev_levels_to_cycles.find(levelr)->second += std::max(rev_levels_to_cycles.find(levelr + 1u)->second, max_et.find(levelr + 1u)->second);
+      rev_levels_to_cycles.find(levelr)->second +=
+          std::max(rev_levels_to_cycles.find(levelr + 1u)->second, max_et.find(levelr + 1u)->second);
    } while(levelr != 0u);
    for(auto level : levels)
    {
-      ALAP->set_execution(level, rev_levels_to_cycles.find(ALAP->get_cstep(level).second)->second -
-                                     ControlStep(static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(level, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time))));
+      ALAP->set_execution(level,
+                          rev_levels_to_cycles.find(ALAP->get_cstep(level).second)->second -
+                              ControlStep(static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(
+                                  level, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time))));
       max_tot_csteps = std::max(max_tot_csteps, ALAP->get_cstep(level).second);
    }
 }
@@ -560,7 +601,8 @@ void ASLAP::compute_ALAP_worst_case()
 ControlStep ASLAP::GetCycleLatency(const vertex operation, Allocation_MinMax minmax) const
 {
    const CustomOrderedSet<unsigned int>& fu_set = allocation_information->can_implement_set(operation);
-   double execution_time = allocation_information->get_attribute_of_fu_per_op(operation, beh_graph, minmax, AllocationInformation::execution_time);
+   double execution_time = allocation_information->get_attribute_of_fu_per_op(operation, beh_graph, minmax,
+                                                                              AllocationInformation::execution_time);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, GET_NAME(beh_graph, operation) + " - ex=" + STR(execution_time));
    if(execution_time > 0.0)
    {
@@ -572,7 +614,8 @@ ControlStep ASLAP::GetCycleLatency(const vertex operation, Allocation_MinMax min
       {
          if(allocation_information->get_stage_period(fu_type, operation, beh_graph) != 0.0)
          {
-            return ControlStep(ctrl_step_multiplier) * allocation_information->get_cycles(fu_type, operation, beh_graph);
+            return ControlStep(ctrl_step_multiplier) *
+                   allocation_information->get_cycles(fu_type, operation, beh_graph);
          }
          if(not allocation_information->is_operation_bounded(beh_graph, operation, fu_type))
          {

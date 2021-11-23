@@ -53,9 +53,11 @@
 #include <boost/lexical_cast.hpp>          // for lexical_cast
 #include <iostream>                        // for ios_base::failure
 
-SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _represented_frontend_flow_step, const DesignFlowManagerConstRef _design_flow_manager,
-                                                                         const ParameterConstRef _parameters)
-    : ApplicationFrontendFlowStep(_AppM, SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP, _design_flow_manager, _parameters), represented_frontend_flow_step_type(_represented_frontend_flow_step)
+SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(
+    const application_managerRef _AppM, const FrontendFlowStepType _represented_frontend_flow_step,
+    const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP, _design_flow_manager, _parameters),
+      represented_frontend_flow_step_type(_represented_frontend_flow_step)
 {
    composed = true;
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -63,7 +65,9 @@ SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(const a
 
 SymbolicApplicationFrontendFlowStep::~SymbolicApplicationFrontendFlowStep() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> SymbolicApplicationFrontendFlowStep::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+SymbolicApplicationFrontendFlowStep::ComputeFrontendRelationships(
+    const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -102,9 +106,11 @@ const std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
    return "SymbolicApplicationFrontendFlowStep(" + EnumToKindText(represented_frontend_flow_step_type) + ")";
 }
 
-const std::string SymbolicApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType represented_frontend_flow_step_type)
+const std::string
+SymbolicApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType represented_frontend_flow_step_type)
 {
-   return "Frontend::" + boost::lexical_cast<std::string>(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" + boost::lexical_cast<std::string>(represented_frontend_flow_step_type) + ")";
+   return "Frontend::" + boost::lexical_cast<std::string>(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" +
+          boost::lexical_cast<std::string>(represented_frontend_flow_step_type) + ")";
 }
 
 const std::string SymbolicApplicationFrontendFlowStep::GetSignature() const

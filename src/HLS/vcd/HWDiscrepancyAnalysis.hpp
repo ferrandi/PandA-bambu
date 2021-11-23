@@ -51,7 +51,8 @@ class HWDiscrepancyAnalysis : public HLS_step
    /**
     * Constructor
     */
-   HWDiscrepancyAnalysis(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   HWDiscrepancyAnalysis(const ParameterConstRef parameters, const HLS_managerRef HLSMgr,
+                         const DesignFlowManagerConstRef design_flow_manager);
 
    DesignFlowStep_Status Exec();
 
@@ -62,7 +63,8 @@ class HWDiscrepancyAnalysis : public HLS_step
 
    const std::string present_state_name;
 
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 };
 
 #endif

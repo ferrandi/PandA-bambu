@@ -51,7 +51,8 @@
 /// Header include
 #include "simple_indent.hpp"
 
-simple_indent::simple_indent(char o, char c, unsigned int d) : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
+simple_indent::simple_indent(char o, char c, unsigned int d)
+    : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
 {
 }
 

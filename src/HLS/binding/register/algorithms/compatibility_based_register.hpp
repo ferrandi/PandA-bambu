@@ -69,7 +69,8 @@ class compatibility_based_register : public reg_binding_creator
       }
    };
 
-   using compatibility_graph = boost::adjacency_matrix<boost::undirectedS, boost::no_property, edge_compatibility_property>;
+   using compatibility_graph =
+       boost::adjacency_matrix<boost::undirectedS, boost::no_property, edge_compatibility_property>;
    using CG_vertex_descriptor = boost::graph_traits<compatibility_graph>::vertex_descriptor;
    using CG_vertices_size_type = boost::graph_traits<compatibility_graph>::vertices_size_type;
 
@@ -84,8 +85,10 @@ class compatibility_based_register : public reg_binding_creator
     * Constructor
     * @param design_flow_manager is the design flow manager
     */
-   compatibility_based_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
-                                const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+   compatibility_based_register(
+       const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+       const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**
     * Destructor

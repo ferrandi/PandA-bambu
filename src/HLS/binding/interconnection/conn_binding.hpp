@@ -67,7 +67,8 @@ class GenericObjUnsignedIntSorter;
 #include "generic_obj.hpp"
 #include "graph.hpp"
 
-/// definition of the data transfer (tree_node, precision, from, to, data_transferred, current_op). Note that from/to can represent either chained vertices or STG states
+/// definition of the data transfer (tree_node, precision, from, to, data_transferred, current_op). Note that from/to
+/// can represent either chained vertices or STG states
 using data_transfer = std::tuple<unsigned int, unsigned int, vertex, vertex, vertex>;
 
 /**
@@ -188,7 +189,8 @@ class conn_binding
 #endif
 
    /// map between the input of the unit and the corresponding incoming connections.
-   /// The key <tgt, tgt_port, tgt_port_index> is the target of the connection, while the value is a set of pairs <src, variable>
+   /// The key <tgt, tgt_port, tgt_port_index> is the target of the connection, while the value is a set of pairs <src,
+   /// variable>
    std::map<ConnectionTarget, ConnectionSources> conn_variables;
 
    /// map between the connection <src, tgt, tgt_port, tgt_port_index> and the corresponding object
@@ -221,12 +223,15 @@ class conn_binding
    /**
     * Add multiplexers to the structural representation of the datapath
     */
-   virtual void mux_allocation(const hlsRef HLS, const structural_managerRef SM, structural_objectRef src, structural_objectRef tgt, connection_objRef conn);
+   virtual void mux_allocation(const hlsRef HLS, const structural_managerRef SM, structural_objectRef src,
+                               structural_objectRef tgt, connection_objRef conn);
 
    /**
     * Add a data converter, if needed, between two objects of the structural representation of the datapath
     */
-   void add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM, const structural_objectRef src, const structural_objectRef port_tgt, unsigned int conn_type);
+   void add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM,
+                                const structural_objectRef src, const structural_objectRef port_tgt,
+                                unsigned int conn_type);
 
    /**
     * check if a port vector has its port bounded to something
@@ -262,7 +267,8 @@ class conn_binding
     */
    generic_objRef bind_command_port(const vertex& ver, direction_type dir, unsigned int mode, const OpGraphConstRef g);
 
-   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const vertex& cond, const OpGraphConstRef data);
+   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const vertex& cond,
+                                     const OpGraphConstRef data);
 
    generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const generic_objRef elem, unsigned int op);
 
@@ -284,20 +290,24 @@ class conn_binding
     * @param op1 is reference to first object
     * @param op2 is reference to second object
     * @param operand is i-th operand for second object, where first one is connected
-    * @param port_index is i-th port associated with the operand (different from 0 when multi-channels components are considered)
+    * @param port_index is i-th port associated with the operand (different from 0 when multi-channels components are
+    * considered)
     * @param data is the data to be transferred
     */
-   void add_data_transfer(const generic_objRef op1, const generic_objRef op2, unsigned int operand, unsigned int port_index, data_transfer data);
+   void add_data_transfer(const generic_objRef op1, const generic_objRef op2, unsigned int operand,
+                          unsigned int port_index, data_transfer data);
 
    /**
     * Creates a connection between two objects
     * @param op1 is reference to first object
     * @param op2 is reference to second object
     * @param operand is i-th operand for second object, where first one is connected
-    * @param port_index is i-th port associated with the operand (different from 0 when multi-channels components are considered)
+    * @param port_index is i-th port associated with the operand (different from 0 when multi-channels components are
+    * considered)
     * @param conn is the reference to the implemented connection
     */
-   void AddConnectionCB(const generic_objRef op1, const generic_objRef op2, unsigned int operand, unsigned int port_index, connection_objRef conn);
+   void AddConnectionCB(const generic_objRef op1, const generic_objRef op2, unsigned int operand,
+                        unsigned int port_index, connection_objRef conn);
 
    /**
     * Returns the map containing all the data transfers
@@ -336,7 +346,8 @@ class conn_binding
     * @param _parameters
     * @return
     */
-   static conn_bindingRef create_conn_binding(const HLS_managerRef _HLSMgr, const hlsRef _HLS, const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters);
+   static conn_bindingRef create_conn_binding(const HLS_managerRef _HLSMgr, const hlsRef _HLS,
+                                              const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters);
 
    void cleanInternals();
 };
