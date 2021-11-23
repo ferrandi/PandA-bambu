@@ -132,6 +132,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
       script << " --x-assign fast --x-initial fast --noassert";
    }
 #endif
+   script << " -LDFLAGS -static";
    unsigned int nThreads = Param->getOption<bool>(OPT_verilator_parallel) ? std::thread::hardware_concurrency() : 1;
    if(nThreads > 1)
    {
