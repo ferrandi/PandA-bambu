@@ -87,9 +87,6 @@ class CallGraphManager
    /// put into relation function F_i and the vertex in the call graph representing it
    std::map<unsigned int, vertex> functionID_vertex_map;
 
-   /// True if only
-   const bool single_root_function;
-
    /// True if recursive calls are allowed
    const bool allow_recursive_functions;
 
@@ -155,12 +152,11 @@ class CallGraphManager
     * Constructor. The data structure is initialized.
     * @param function_expander is the functor used to determine if a function has to be considered during construction
     * of call graph
-    * @param single_root_function specifies if only one root function has to be considered
     * @param allow_recursive_functions specifies if recursive functions are allowed
     * @param tree_manager is the tree manager
     * @param Param is the set of input parameters
     */
-   CallGraphManager(const FunctionExpanderConstRef function_expander, const bool single_root_function,
+   CallGraphManager(const FunctionExpanderConstRef function_expander,
                     const bool allow_recursive_functions, const tree_managerConstRef tree_manager,
                     const ParameterConstRef Param);
 
