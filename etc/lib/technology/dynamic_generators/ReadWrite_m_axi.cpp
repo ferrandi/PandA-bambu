@@ -31,145 +31,85 @@
  *
  */
 /**
- * @file ReadWrite_array.cpp
- * @brief Snippet for the ReadWrite_array dynamic generator.
+ * @file ReadWrite_m_axi.cpp
+ * @brief Snippet for the ReadWrite_m_axi dynamic generator.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 
-bool isAlignedPowerOfTwo = _ports_out[1].alignment == RUPNP2(_ports_out[1].alignment);
+/*
+// IN
+  input clock;
+  input reset;
+  input [0:0] start_port;
+  input [(PORTSIZE_in1*BITSIZE_in1)+(-1):0] in1;
+  input [(PORTSIZE_in2*BITSIZE_in2)+(-1):0] in2;
+  input [(PORTSIZE_in3*BITSIZE_in3)+(-1):0] in3;
+  input [31:0] in4;
+  input _m_axi_common_AWREADY;
+  input _m_axi_common_WREADY;
+  input _m_axi_common_BID;
+  input [1:0] _m_axi_common_BRESP;
+  input _m_axi_common_BUSER;
+  input _m_axi_common_BVALID;
+  input _m_axi_common_ARREADY;
+  input _m_axi_common_RID;
+  input [15:0] _m_axi_common_RDATA;
+  input [1:0] _m_axi_common_RRESP;
+  input _m_axi_common_RLAST;
+  input _m_axi_common_RUSER;
+  input _m_axi_common_RVALID;
+  input [31:0] _a;
+  input [31:0] _n_ptr;
+  // OUT
+  output [0:0] done_port;
+  output [(PORTSIZE_out1*BITSIZE_out1)+(-1):0] out1;
+  output _m_axi_common_AWID;
+  output [31:0] _m_axi_common_AWADDR;
+  output [7:0] _m_axi_common_AWLEN;
+  output [2:0] _m_axi_common_AWSIZE;
+  output [1:0] _m_axi_common_AWBURST;
+  output [1:0] _m_axi_common_AWLOCK;
+  output [3:0] _m_axi_common_AWCACHE;
+  output [2:0] _m_axi_common_AWPROT;
+  output [3:0] _m_axi_common_AWQOS;
+  output [3:0] _m_axi_common_AWREGION;
+  output _m_axi_common_AWUSER;
+  output _m_axi_common_AWVALID;
+  output _m_axi_common_WID;
+  output [15:0] _m_axi_common_WDATA;
+  output [1:0] _m_axi_common_WSTRB;
+  output _m_axi_common_WLAST;
+  output _m_axi_common_WUSER;
+  output _m_axi_common_WVALID;
+  output _m_axi_common_BREADY;
+  output _m_axi_common_ARID;
+  output [31:0] _m_axi_common_ARADDR;
+  output [7:0] _m_axi_common_ARLEN;
+  output [2:0] _m_axi_common_ARSIZE;
+  output [1:0] _m_axi_common_ARBURST;
+  output [1:0] _m_axi_common_ARLOCK;
+  output [3:0] _m_axi_common_ARCACHE;
+  output [2:0] _m_axi_common_ARPROT;
+  output [3:0] _m_axi_common_ARQOS;
+  output [3:0] _m_axi_common_ARREGION;
+  output _m_axi_common_ARUSER;
+  output _m_axi_common_ARVALID;
+  output _m_axi_common_RREADY;
+*/
+
+const bool isAlignedPowerOfTwo = _ports_out[3].alignment == RUPNP2(_ports_out[3].alignment);
 std::cout << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
 std::cout << "integer ii=0;\n";
-std::cout << "reg [" << _ports_out[1].type_size << "-1:0] " << _ports_out[1].name << ";\n";
-if(_np_out == 5)
-   std::cout << "reg [" << _ports_out[4].type_size << "-1:0] " << _ports_out[4].name << ";\n";
-if(_np_in == 8)
-   std::cout << "reg [(PORTSIZE_" << _ports_out[0].name << "*BITSIZE_" << _ports_out[0].name << ")+(-1):0] "
-             << _ports_out[0].name << ";\n";
+std::cout << "reg [BITSIZE_" << _ports_out[1].name << "-1:0] " << _ports_out[1].name << ";\n";
 
-unsigned int log2nbyte =
-    _ports_out[1].alignment == 1 ? 0 : (32u - static_cast<unsigned>(__builtin_clz(_ports_out[1].alignment - 1)));
+const unsigned int log2nbyte =
+    _ports_out[3].alignment == 1 ? 0 : (32u - static_cast<unsigned>(__builtin_clz(_ports_out[3].alignment - 1)));
 
-unsigned addressMaxValue = _ports_out[1].alignment * static_cast<unsigned>(atoi(_specializing_string.data())) - 1;
-unsigned int nbitAddress = addressMaxValue == 1 ? 1 : (32u - static_cast<unsigned>(__builtin_clz(addressMaxValue)));
+const unsigned int addressMaxValue =
+    _ports_out[3].alignment * static_cast<unsigned>(atoi(_specializing_string.data())) - 1;
+const unsigned int nbitAddress =
+    addressMaxValue == 1 ? 1 : (32u - static_cast<unsigned>(__builtin_clz(addressMaxValue)));
 
-if(log2nbyte > 0)
-{
-   std::cout << "reg [(PORTSIZE_" << _ports_in[3].name << "*" << log2nbyte << ")+(-1):0] " << _ports_in[6].name
-             << "_0;\n";
-   std::cout << "always @(*)\n";
-   std::cout << "begin\n";
-   std::cout << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-   if(isAlignedPowerOfTwo)
-      std::cout << "    " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte
-                << "] = " << _ports_in[6].name << "[(BITSIZE_" << _ports_in[6].name << ")*ii+:" << log2nbyte << "];\n";
-   else
-      std::cout << "    " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte
-                << "] = " << _ports_in[6].name << "[2+(BITSIZE_" << _ports_in[6].name << ")*ii+:" << nbitAddress - 2
-                << "] % " << log2nbyte - 2 << "'d" << _ports_out[1].alignment / 4 << ";\n";
-   std::cout << "end\n";
-}
-if(log2nbyte > 0 && _np_in == 8)
-{
-   std::cout << "reg [(PORTSIZE_" << _ports_in[3].name << "*" << log2nbyte << ")+(-1):0] " << _ports_in[6].name
-             << "_reg;\n";
-   std::cout << "always @(posedge clock 1RESET_EDGE)\n";
-   std::cout << "  if (1RESET_VALUE)\n";
-   std::cout << "    " << _ports_in[6].name << "_reg <= 0;\n";
-   std::cout << "  else\n";
-   std::cout << "    for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-   std::cout << "      " << _ports_in[6].name << "_reg[" << log2nbyte << "*ii+:" << log2nbyte
-             << "] <= " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "];\n";
-}
-std::cout << "always @(*)\n";
-std::cout << "begin\n";
-std::cout << "  " << _ports_out[1].name << " = {" << _ports_out[1].type_size << "{1'b1}};\n";
-std::cout << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-std::cout << "  begin\n";
-std::cout << "    if(" << _ports_in[2].name << "[ii])\n";
-std::cout << "    begin\n";
-if(isAlignedPowerOfTwo)
-   std::cout << "      " << _ports_out[1].name << " = " << _ports_out[1].name << " & (" << _ports_in[6].name
-             << "[(BITSIZE_" << _ports_in[6].name << ")*ii+:" << nbitAddress << "] / " << _ports_out[1].alignment
-             << ");\n";
-else
-   std::cout << "      " << _ports_out[1].name << " = " << _ports_out[1].name << " & (" << _ports_in[6].name
-             << "[2+(BITSIZE_" << _ports_in[6].name << ")*ii+:" << nbitAddress - 2 << "] / "
-             << _ports_out[1].alignment / 4 << ");\n";
-std::cout << "    end\n";
-std::cout << "  end\n";
-std::cout << "end\n";
-
-std::cout << "assign " << _ports_out[2].name << " = |" << _ports_in[2].name << ";\n";
-
-if(_np_in == 8)
-{
-   std::cout << "always @(*)\n";
-   std::cout << "begin\n";
-   std::cout << "  for(ii=0; ii<PORTSIZE_" << _ports_out[0].name << "; ii=ii+1)\n";
-   if(log2nbyte > 0)
-      std::cout << "    " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*ii+:BITSIZE_"
-                << _ports_out[0].name << "] = " << _ports_in[7].name << " >> {" << _ports_in[6].name << "_reg["
-                << log2nbyte << "*ii+:" << log2nbyte << "],3'b0};" << std::endl;
-   else
-      std::cout << "    " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*ii+:BITSIZE_"
-                << _ports_out[0].name << "] = " << _ports_in[7].name << ";" << std::endl;
-
-   std::cout << "end\n";
-}
-
-if(_np_out == 5)
-   std::cout << "assign " << _ports_out[3].name << " = (|" << _ports_in[2].name << ") & (|" << _ports_in[3].name
-             << ");\n";
-
-if(_np_out == 5)
-{
-   std::cout << "always @(*)\n";
-   std::cout << "begin\n";
-   std::cout << "  " << _ports_out[4].name << " = 0;\n";
-   std::cout << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-   std::cout << "  begin\n";
-   std::cout << "    if(ii==0 || " << _ports_in[2].name << "[ii])\n";
-   if(log2nbyte > 0)
-      std::cout << "      " << _ports_out[4].name << " = (" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "]>=" << _ports_out[4].type_size << ")?"
-                << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-                << "]:(" << _ports_out[4].name << "^((((BITSIZE_" << _ports_in[5].name << ">" << _ports_out[4].type_size
-                << "?" << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_"
-                << _ports_in[5].name << "]:{{(" << _ports_out[4].type_size << "< BITSIZE_" << _ports_in[5].name
-                << " ? 1 : " << _ports_out[4].type_size << "-BITSIZE_" << _ports_in[5].name << "){1'b0}},"
-                << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-                << "]})<<{" << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0})^"
-                << _ports_out[4].name << ") & (((" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "]+{" << _ports_in[6].name << "_0[" << log2nbyte
-                << "*ii+:" << log2nbyte << "],3'b0})>" << _ports_out[4].type_size << ") ? ((({("
-                << _ports_out[4].type_size << "){1'b1}})>>({" << _ports_in[6].name << "_0[" << log2nbyte
-                << "*ii+:" << log2nbyte << "],3'b0}))<<({" << _ports_in[6].name << "_0[" << log2nbyte
-                << "*ii+:" << log2nbyte << "],3'b0})) : ((((({(" << _ports_out[4].type_size << "){1'b1}})>>({"
-                << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0}))<<({"
-                << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0}))<<("
-                << _ports_out[4].type_size << "-" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "]-{" << _ports_in[6].name << "_0[" << log2nbyte
-                << "*ii+:" << log2nbyte << "],3'b0}))>>(" << _ports_out[4].type_size << "-" << _ports_in[4].name
-                << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name << "]-{"
-                << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0})))));\n";
-   else
-      std::cout << "      " << _ports_out[4].name << " = (" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "]>=" << _ports_out[4].type_size << ")?"
-                << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-                << "]:(" << _ports_out[4].name << "^((((BITSIZE_" << _ports_in[5].name << ">" << _ports_out[4].type_size
-                << "?" << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_"
-                << _ports_in[5].name << "]:{{(" << _ports_out[4].type_size << "< BITSIZE_" << _ports_in[5].name
-                << " ? 1 : " << _ports_out[4].type_size << "-BITSIZE_" << _ports_in[5].name << "){1'b0}},"
-                << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-                << "]}))^" << _ports_out[4].name << ") & (((" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "])>" << _ports_out[4].type_size << ") ? ((({("
-                << _ports_out[4].type_size << "){1'b1}}))) : ((((({(" << _ports_out[4].type_size << "){1'b1}})))<<("
-                << _ports_out[4].type_size << "-" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "]))>>(" << _ports_out[4].type_size << "-"
-                << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name
-                << "])))));\n";
-   std::cout << "  end\n";
-   std::cout << "end\n";
-}
+std::cout << "// TODO: add BRAM to AXI4 bridge implementation here\n";
