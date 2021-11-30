@@ -11,7 +11,8 @@ ARG USER_GID=$USER_UID
 ARG COMPILERS=gcc-4.9,clang-4
 # Install needed packages and setup non-root user. Use a separate RUN statement to add your own dependencies.
 COPY library-scripts/*.sh library-scripts/*.env /tmp/library-scripts/
+WORKDIR /
 RUN bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
     && bash /tmp/library-scripts/compiler-setup.sh "${COMPILERS}" \
-    && apt-get install --no-install-recommends clang-format python3-defusedxml \
+    && apt-get install --no-install-recommends -y clang-format python3-defusedxml \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
