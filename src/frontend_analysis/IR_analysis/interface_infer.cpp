@@ -1246,16 +1246,6 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
           CM->add_port("_m_axi_" + portNameSpecializer + "_RVALID", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(Port_rvalid)->set_port_interface(port_o::port_interface::M_AXI_RVALID);
 
-      const auto inPort_m_axi = CM->add_port("_" + argName_string, port_o::IN, interface_top, address_interface_type);
-      if(mat == m_axi_type::none || mat == m_axi_type::axi_slave)
-      {
-         GetPointerS<port_o>(inPort_m_axi)->set_port_interface(port_o::port_interface::PI_M_AXI_OFF);
-      }
-      else
-      {
-         GetPointerS<port_o>(inPort_m_axi)->set_port_interface(port_o::port_interface::PI_M_AXI_DIRECT);
-      }
-
       CM->add_port_vector(DONE_PORT_NAME, port_o::OUT, n_resources, interface_top, bool_type);
       CM->add_port_vector("out1", port_o::OUT, n_resources, interface_top, rwtype);
 
@@ -1636,7 +1626,8 @@ DesignFlowStep_Status interface_infer::InternalExec()
       bool is_top = top_functions.find(function_id) != top_functions.end();
       if(is_top)
       {
-         auto parseInterfaceXML = [&](const std::string& XMLfilename) {
+         auto parseInterfaceXML = [&](const std::string& XMLfilename)
+         {
             if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);

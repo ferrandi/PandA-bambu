@@ -101,8 +101,6 @@
 
 const bool isAlignedPowerOfTwo = _ports_out[3].alignment == RUPNP2(_ports_out[3].alignment);
 std::cout << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
-std::cout << "integer ii=0;\n";
-std::cout << "reg [BITSIZE_" << _ports_out[1].name << "-1:0] " << _ports_out[1].name << ";\n";
 
 const unsigned int log2nbyte =
     _ports_out[3].alignment == 1 ? 0 : (32u - static_cast<unsigned>(__builtin_clz(_ports_out[3].alignment - 1)));
@@ -112,4 +110,4 @@ const unsigned int addressMaxValue =
 const unsigned int nbitAddress =
     addressMaxValue == 1 ? 1 : (32u - static_cast<unsigned>(__builtin_clz(addressMaxValue)));
 
-std::cout << "// TODO: add BRAM to AXI4 bridge implementation here\n";
+std::cout << "\n// TODO: add BRAM to AXI4 bridge implementation here\n";
