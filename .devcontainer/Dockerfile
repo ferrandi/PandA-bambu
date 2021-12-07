@@ -14,5 +14,5 @@ COPY library-scripts/*.sh library-scripts/*.env /tmp/library-scripts/
 WORKDIR /
 RUN bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
     && bash /tmp/library-scripts/compiler-setup.sh "${COMPILERS}" \
-    && apt-get install --no-install-recommends -y clang-format python3-defusedxml \
+    && apt-get install --no-install-recommends -y clang-format iverilog python3-defusedxml verilator \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
