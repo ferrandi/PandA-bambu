@@ -717,24 +717,39 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    {
       function_behavior->GetBBGraph(FunctionBehavior::FBB)->WriteDot("BB_FCFG.dot");
    }
-   for(const auto& ssa_bbv : added_phis)
+   bool restart;
+   std::set<tree_nodeRef> removedPhis;
+   do
    {
-      for(const auto& bbv_phi : ssa_bbv.second)
+      restart = false;
+      for(const auto& ssa_bbv : added_phis)
       {
-         const auto& bb = basic_block_graph->GetBBNodeInfo(bbv_phi.first)->block;
-         const auto phi_stmt = GetPointerS<gimple_phi>(GET_NODE(bbv_phi.second));
-         const auto vssa = GetPointerS<ssa_name>(GET_NODE(phi_stmt->res));
-         if(vssa->CGetNumberUses() == 0 ||
-            (vssa->CGetNumberUses() == 1 && GET_INDEX_NODE(vssa->CGetUseStmts().begin()->first) == phi_stmt->index))
+         for(const auto& bbv_phi : ssa_bbv.second)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Removing just created dead phi from BB" + STR(bb->number) + " - (" +
-                               GetPointerS<ssa_name>(GET_NODE(ssa_bbv.first))->ToString() + ") " +
-                               phi_stmt->ToString());
-            bb->RemovePhi(bbv_phi.second);
+            if(removedPhis.find(bbv_phi.second) == removedPhis.end())
+            {
+               const auto& bb = basic_block_graph->GetBBNodeInfo(bbv_phi.first)->block;
+               const auto phi_stmt = GetPointerS<gimple_phi>(GET_NODE(bbv_phi.second));
+               const auto vssa = GetPointerS<ssa_name>(GET_NODE(phi_stmt->res));
+               if(vssa->CGetNumberUses() == 0 ||
+                  (vssa->CGetNumberUses() == 1 && GET_INDEX_NODE(vssa->CGetUseStmts().begin()->first) == phi_stmt->index))
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Removing just created dead phi from BB" + STR(bb->number) + " - (" +
+                                     GetPointerS<ssa_name>(GET_NODE(ssa_bbv.first))->ToString() + ") " +
+                                     phi_stmt->ToString());
+                  bb->RemovePhi(bbv_phi.second);
+                  restart = true;
+                  removedPhis.insert(bbv_phi.second);
+               }
+            }
          }
       }
-   }
+      if(restart)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi dead removal restarted");
+      }
+   } while (restart);
 #ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
