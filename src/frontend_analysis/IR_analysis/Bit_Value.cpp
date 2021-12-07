@@ -1123,7 +1123,7 @@ bool Bit_Value::update_IR()
             {
                break;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, 10,
                            "Variable: " + ssa->ToString() + " bitstring: " + ssa->bit_values + " -> " +
                                bitstring_to_string(b.second));
             ssa->bit_values = bitstring_to_string(b.second);
@@ -1551,34 +1551,42 @@ void Bit_Value::initialize()
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
             signed_var.insert(node_id);
          }
-         const auto def = ssa->CGetDefStmt();
-         if(!def || (ssa->var != nullptr && ((GET_CONST_NODE(def)->get_kind() == gimple_nop_K) || ssa->volatile_flag) &&
-                     !arguments.count(node_id) && GET_CONST_NODE(ssa->var)->get_kind() == var_decl_K))
+         if(ssa->volatile_flag)
          {
             ssa->bit_values.clear();
-            best[node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed);
-            if(ssa->var)
+            best[node_id] = create_u_bitstring(BitLatticeManipulator::Size(use_node));
+         }
+         else
+         {
+            const auto def = ssa->CGetDefStmt();
+            if(!def || (ssa->var != nullptr && ((GET_CONST_NODE(def)->get_kind() == gimple_nop_K)) &&
+                        GET_CONST_NODE(ssa->var)->get_kind() == var_decl_K))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                              "---first version of uninitialized var " + STR(GET_CONST_NODE(ssa->var)));
-            }
-            else
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---uninitialized ssa");
-            }
-            if(AppM->ApplyNewTransformation())
-            {
-               const auto tree_man = AppM->get_tree_manager();
-               const auto ssa_node = tree_man->GetTreeReindex(node_id);
-               const auto cst_value = tree_man->CreateUniqueIntegerCst(0, ssa->type);
-               const auto uses = ssa->CGetUseStmts();
-               for(const auto& stmt_use : uses)
+               ssa->bit_values.clear();
+               best[node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed);
+               if(ssa->var)
                {
-                  tree_man->ReplaceTreeNode(stmt_use.first, ssa_node, cst_value);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---first version of uninitialized var " + STR(GET_CONST_NODE(ssa->var)));
                }
-               AppM->RegisterTransformation(GetName(), ssa_node);
-               use_node = GET_NODE(cst_value);
-               node_id = GET_INDEX_NODE(cst_value);
+               else
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---uninitialized ssa");
+               }
+               if(AppM->ApplyNewTransformation())
+               {
+                  const auto tree_man = AppM->get_tree_manager();
+                  const auto ssa_node = tree_man->GetTreeReindex(node_id);
+                  const auto cst_value = tree_man->CreateUniqueIntegerCst(0, ssa->type);
+                  const auto uses = ssa->CGetUseStmts();
+                  for(const auto& stmt_use : uses)
+                  {
+                     tree_man->ReplaceTreeNode(stmt_use.first, ssa_node, cst_value);
+                  }
+                  AppM->RegisterTransformation(GetName(), ssa_node);
+                  use_node = GET_NODE(cst_value);
+                  node_id = GET_INDEX_NODE(cst_value);
+               }
             }
          }
       }
