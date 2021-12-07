@@ -64,6 +64,9 @@
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
 #include "llvm-c/Transforms/Scalar.h"
+#if __clang_major__ >= 7
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#endif
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -213,7 +216,10 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(llvm::createLowerAtomicPass());
    PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(llvm::createGlobalOptimizerPass());
+   PM.add(llvm::createArgumentPromotionPass(256));
+   PM.add(llvm::createInstructionCombiningPass(true));
    PM.add(llvm::createBreakCriticalEdgesPass());
+
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false > ());
 }
 
