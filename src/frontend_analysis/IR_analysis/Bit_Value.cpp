@@ -1123,7 +1123,7 @@ bool Bit_Value::update_IR()
             {
                break;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, 10,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                            "Variable: " + ssa->ToString() + " bitstring: " + ssa->bit_values + " -> " +
                                bitstring_to_string(b.second));
             ssa->bit_values = bitstring_to_string(b.second);
