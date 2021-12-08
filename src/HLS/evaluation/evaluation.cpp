@@ -408,10 +408,6 @@ DesignFlowStep_Status Evaluation::Exec()
          {
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Registers                : " + STR(reg));
          }
-         else
-         {
-            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---(no registers)");
-         }
       }
    }
 
