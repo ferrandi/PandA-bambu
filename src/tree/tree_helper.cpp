@@ -2475,14 +2475,7 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& _node)
       case ssa_name_K:
       {
          const auto sa = GetPointerS<const ssa_name>(node);
-         if(sa->var)
-         {
-            return CGetType(sa->var);
-         }
-         else
-         {
-            return sa->type;
-         }
+         return sa->type;
       }
       case target_mem_ref_K:
       {
