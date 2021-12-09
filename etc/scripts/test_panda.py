@@ -833,24 +833,24 @@ if not args.restart:
     # Check if file lists exist
     abs_lists = []
     if args.benchmarks_list != None:
-        for relative_list in args.benchmarks_list:
+        for list_name in args.benchmarks_list[-1]:
             # First look in the current directory
-            if os.path.exists(os.path.abspath("../" + relative_list[0])):
-                abs_lists.append(os.path.abspath("../" + relative_list[0]))
+            if os.path.exists(os.path.abspath("../" + list_name)):
+                abs_lists.append(os.path.abspath("../" + list_name))
             # Then look in script directory
-            elif os.path.exists(os.path.join(os.path.dirname(abs_script), relative_list[0])):
+            elif os.path.exists(os.path.join(os.path.dirname(abs_script), list_name)):
                 abs_lists.append(os.path.join(
-                    os.path.dirname(abs_script), relative_list[0]))
+                    os.path.dirname(abs_script), list_name))
             # Then look in configuration directory
-            elif os.path.exists(os.path.join(abs_configuration_dir, relative_list[0])):
+            elif os.path.exists(os.path.join(abs_configuration_dir, list_name)):
                 abs_lists.append(os.path.join(
-                    abs_configuration_dir, relative_list[0]))
+                    abs_configuration_dir, list_name))
             # Then look in benchmarks root
-            elif os.path.exists(os.path.join(abs_benchmarks_root, relative_list[0])):
+            elif os.path.exists(os.path.join(abs_benchmarks_root, list_name)):
                 abs_lists.append(os.path.join(
-                    abs_benchmarks_root, relative_list[0]))
+                    abs_benchmarks_root, list_name))
             else:
-                logging.error(relative_list[0] + " does not exist")
+                logging.error(list_name + " does not exist")
                 sys.exit(1)
     files_list = []
     # Create temp list with arg
