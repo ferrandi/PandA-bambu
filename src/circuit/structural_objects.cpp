@@ -480,7 +480,7 @@ structural_type_descriptor::structural_type_descriptor(unsigned int _treenode, t
 structural_type_descriptor::structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper)
 {
    unsigned int type_index = helper->get_type(index);
-   /// first set defaults5
+   /// first set defaults
    type = UNKNOWN;
    size = size_DEFAULT;
    vector_size = vector_size_DEFAULT;
@@ -562,9 +562,7 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
    {
       if(helper->is_bool(index))
       {
-         type = VECTOR_BOOL;
-         size = 1;
-         vector_size = 1;
+         type = BOOL;
       }
       else if(helper->is_int(index))
       {
