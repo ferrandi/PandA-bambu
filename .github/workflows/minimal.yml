@@ -121,7 +121,7 @@ jobs:
   ACMath-tests:
     runs-on: [self-hosted]
     container:
-      image: bambuhls/appimage:xenial
+      image: bambuhls/appimage:focal
       env:
         J: ${{env.host_jobs}}
     strategy:
@@ -133,7 +133,9 @@ jobs:
       - name: Install clang
         if: ${{ startsWith(matrix.compiler, 'clang') }}
         shell: bash
-        run: DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends clang
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends clang
       - name: Launch ACMath tests for ${{matrix.compiler}}
         working-directory: ./etc/libbambu/ac_math
         shell: bash
@@ -380,11 +382,11 @@ jobs:
 
   discrepancy-test:
     needs: [build, specific-test]
-    runs-on: [self-hosted, mentor]
+    runs-on: [self-hosted]
     env:
       setup: gcc-7
       script: generic_discrepancy_eg_bambu.sh
-      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM
+      args: -c=--compiler=I386_GCC7
       outname: gcc-7_discrepancy
     steps:
       - name: Checkout repository
@@ -394,15 +396,6 @@ jobs:
         with:
           name: ${{env.dist-pkg}}
           storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Download gcc 7
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-7-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Setup binaries
@@ -430,16 +423,20 @@ jobs:
 
   softfloat-preliminary:
     runs-on: [self-hosted]
-    container:
-      image: bambuhls/appimage:xenial
-      env:
-        J: ${{env.host_jobs}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Verify SoftFloat implementation
+      - name: Env setup
+        id: host
         shell: bash
-        run: ./panda_regressions/hls/test_softfloat.sh
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
+      - name: Verify SoftFloat implementation
+        uses: ./.github/actions/docker-runner
+        with:
+          script: ./panda_regressions/hls/test_softfloat.sh
+          jobs: ${{steps.host.outputs.jobs}}
 
   softfloat-tests:
     needs: [build, softfloat-preliminary]
@@ -497,19 +494,23 @@ jobs:
 
   libm-preliminary:
     runs-on: [self-hosted]
-    container:
-      image: bambuhls/appimage:xenial
-      env:
-        J: ${{env.host_jobs}}
     strategy:
       matrix:
         func: [expf, logf, powf, sinecosine, sqrt, sqrtf]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Verify ${{matrix.func}} implementation
+      - name: Env setup
+        id: host
         shell: bash
-        run: ./panda_regressions/hls/test_libm_${{matrix.func}}.sh
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
+      - name: Verify ${{matrix.func}} implementation
+        uses: ./.github/actions/docker-runner
+        with:
+          script: ./panda_regressions/hls/test_libm_${{matrix.func}}.sh
+          jobs: ${{steps.host.outputs.jobs}}
 
   libm-tests:
     needs: [build, libm-preliminary, softfloat-tests]
@@ -640,11 +641,9 @@ jobs:
   CHStone-yosys:
     needs: [build]
     runs-on: [self-hosted]
-    container:
-      image: bambuhls/yosys:focal
     env:
       script: ./examples/CHStone/generic_CHStone.sh
-      args: -c=--device-name=nangate45 -c=--evaluation
+      args: -c=--device-name=nangate45 -c=--compiler=I386_GCC49 -c=--clock-period=5 -c=--evaluation
       outname: CHStone-yosys
     steps:
       - name: Checkout repository
@@ -656,26 +655,30 @@ jobs:
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
-      - name: Setup binaries
+      - name: Setup exec script
         id: setup
         shell: bash
         run: |
+          cat > docker_exec.sh << EOF
           mkdir bin
-          ./*.AppImage --appimage-extract
+          ./*.AppImage --appimage-extract > /dev/null
           rm ./*.AppImage
-          ln -s $PWD/squashfs-root/usr/bin/bambu bin/bambu
-          ln -s $PWD/squashfs-root/usr/bin/spider bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
-          echo "::set-output name=appdir::$PWD/squashfs-root"
-      - name: Launch test suite
-        id: suite
-        shell: bash
-        run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          export APPDIR=${{steps.setup.outputs.appdir}}
+          ln -s \$PWD/squashfs-root/usr/bin/bambu bin/bambu
+          ln -s \$PWD/squashfs-root/usr/bin/spider bin/spider
+          echo "::set-output name=local-bin::\$PWD/bin"
+          echo "::set-output name=appdir::\$PWD/squashfs-root"
+          export PATH=\$PWD/bin:\$PATH
+          export APPDIR=\$PWD/squashfs-root
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" -j8 ${{env.args}}
+          EOF
+          chmod +x docker_exec.sh
+      - name: Launch test suite
+        id: suite
+        uses: ./.github/actions/yosys-runner
+        with:
+          script: ./docker_exec.sh
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v2

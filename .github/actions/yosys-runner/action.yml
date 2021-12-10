@@ -1,0 +1,27 @@
+name: "YOSYS runner"
+description: "Launch a given script in YOSYS container"
+inputs:
+  script:
+    description: "Script to launch"
+    required: true
+  args:
+    description: "Script arguments"
+    required: false
+    default: ""
+  working-directory:
+    description: "Working directory from where the script is executed"
+    required: false
+    default: .
+  jobs:
+    description: "Parallel jobs"
+    required: false
+    default: "1"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  env:
+    J: ${{inputs.jobs}}
+  args:
+    - ${{inputs.working-directory}}
+    - ${{inputs.script}}
+    - ${{inputs.args}}
