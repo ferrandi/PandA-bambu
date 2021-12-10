@@ -1,5 +1,9 @@
 ARG VARIANT=xenial
-FROM bambuhls/panda:appimage-${VARIANT}
+
+FROM bambuhls/iverilog:${VARIANT} as iverilog
+FROM bambuhls/verilator:${VARIANT} as verilator
+
+FROM bambuhls/appimage:${VARIANT} as base
 
 ### From https://github.com/microsoft/vscode-dev-containers/blob/main/containers/ubuntu/.devcontainer/base.Dockerfile
 # Options for setup script
@@ -14,5 +18,9 @@ COPY library-scripts/*.sh library-scripts/*.env /tmp/library-scripts/
 WORKDIR /
 RUN bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
     && bash /tmp/library-scripts/compiler-setup.sh "${COMPILERS}" \
-    && apt-get install --no-install-recommends -y clang-format iverilog python3-defusedxml verilator \
+    && apt-get install --no-install-recommends -y clang-format python3-defusedxml \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
+
+COPY --from=iverilog /opt/iverilog /opt/iverilog
+COPY --from=verilator /opt/verilator /opt/verilator
+ENV PATH /opt/verilator/bin:/opt/iverilog/bin:$PATH

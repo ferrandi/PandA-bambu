@@ -109,12 +109,6 @@
       return func(a);       \
    }
 
-#define B_MULTITEST_F(func)   \
-   _Bool func##_test(FLOAT a) \
-   {                          \
-      return func(a);         \
-   }
-
 F_TEST_F(acos)
 F_TEST_F(acosh)
 F_TEST_F(asin)
@@ -194,7 +188,7 @@ F_TEST_FF(remainder)
 F_TEST_F(rint)
 F_TEST_FF(scalb)
 F_TEST_FI(scalbn)
-B_MULTITEST_F(signbit)
+I_MULTITEST_F(signbit)
 F_TEST_F(significand)
 F_TEST_F(sin)
 
