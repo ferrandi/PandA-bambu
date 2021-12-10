@@ -16,8 +16,8 @@ env:
   bcompiler-dir: compiler
   report-dir: test-reports
   storage-url: ${{secrets.CI_STORAGE_URL}}
-  storage-user: '${{secrets.CI_STORAGE_USER}}'
-  storage-token: '${{secrets.CI_STORAGE_TOKEN}}'
+  storage-user: "${{secrets.CI_STORAGE_USER}}"
+  storage-token: "${{secrets.CI_STORAGE_TOKEN}}"
   host_jobs: $J
 
 jobs:
@@ -62,46 +62,46 @@ jobs:
         with:
           name: gcc-4.9-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 5
         uses: ./.github/actions/storage-download
         with:
           name: gcc-5-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 6
         uses: ./.github/actions/storage-download
         with:
           name: gcc-6-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 7
         uses: ./.github/actions/storage-download
         with:
           name: gcc-7-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 8
         uses: ./.github/actions/storage-download
         with:
           name: gcc-8-bambu-Ubuntu_16.04
           path: ./${{env.bcompiler-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Build Bambu application
         id: build
         uses: ./.github/actions/generate-bin
@@ -113,31 +113,31 @@ jobs:
         with:
           name: ${{env.dist-pkg}}
           path: ${{steps.build.outputs.appimage}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
           storage-compression: false
 
   ACMath-tests:
     runs-on: [self-hosted]
+    container:
+      image: bambuhls/panda:appimage-xenial
+      env:
+        J: ${{env.host_jobs}}
     strategy:
       matrix:
-        compiler: [gcc, clang]
+        compiler: [gcc, gcc_c++17, clang, clang_c++17]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Env setup
-        id: host
+      - name: Install clang
+        if: ${{ startsWith(matrix.compiler, 'clang') }}
         shell: bash
-        run: |
-          echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
+        run: DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends clang
       - name: Launch ACMath tests for ${{matrix.compiler}}
-        uses: ./.github/actions/docker-runner
-        with:
-          working-directory: ./etc/libbambu/ac_math
-          script: ./ac_math_test_${{matrix.compiler}}.sh
-          jobs: ${{steps.host.outputs.jobs}}
+        working-directory: ./etc/libbambu/ac_math
+        shell: bash
+        run: ./ac_math_test_${{matrix.compiler}}.sh
 
   specific-test:
     needs: [build, ACMath-tests]
@@ -145,7 +145,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        id: ['', '2', '3', '4', '5', '6']
+        id: ["", "2", "3", "4", "5", "6"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -153,9 +153,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -176,9 +176,9 @@ jobs:
         with:
           test-id: bambu_specific_test${{matrix.id}}
           new-results: ${{env.report-dir}}/perf.csv
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.is-better == 0 }}
         shell: bash
@@ -228,9 +228,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -253,9 +253,9 @@ jobs:
         with:
           test-id: ${{env.outname}}
           new-results: ${{env.report-dir}}/perf.csv
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.is-better == 0 }}
         shell: bash
@@ -283,9 +283,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -308,9 +308,9 @@ jobs:
         with:
           test-id: ${{env.outname}}
           new-results: ${{env.report-dir}}/perf.csv
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.is-better == 0 }}
         shell: bash
@@ -338,9 +338,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -363,9 +363,9 @@ jobs:
         with:
           test-id: ${{env.outname}}
           new-results: ${{env.report-dir}}/perf.csv
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.is-better == 0 }}
         shell: bash
@@ -393,18 +393,18 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 7
         uses: ./.github/actions/storage-download
         with:
           name: gcc-7-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -430,20 +430,16 @@ jobs:
 
   softfloat-preliminary:
     runs-on: [self-hosted]
+    container:
+      image: bambuhls/panda:appimage-xenial
+      env:
+        J: ${{env.host_jobs}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Env setup
-        id: host
-        shell: bash
-        run: |
-          echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
       - name: Verify SoftFloat implementation
-        uses: ./.github/actions/docker-runner
-        with:
-          script: ./panda_regressions/hls/test_softfloat.sh
-          jobs: ${{steps.host.outputs.jobs}}
+        shell: bash
+        run: ./panda_regressions/hls/test_softfloat.sh
 
   softfloat-tests:
     needs: [build, softfloat-preliminary]
@@ -459,9 +455,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -484,9 +480,9 @@ jobs:
         with:
           test-id: ${{env.outname}}
           new-results: ${{env.report-dir}}/perf.csv
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.is-better == 0 }}
         shell: bash
@@ -501,23 +497,19 @@ jobs:
 
   libm-preliminary:
     runs-on: [self-hosted]
+    container:
+      image: bambuhls/panda:appimage-xenial
+      env:
+        J: ${{env.host_jobs}}
     strategy:
       matrix:
         func: [expf, logf, powf, sinecosine, sqrt, sqrtf]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Env setup
-        id: host
-        shell: bash
-        run: |
-          echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
       - name: Verify ${{matrix.func}} implementation
-        uses: ./.github/actions/docker-runner
-        with:
-          script: ./panda_regressions/hls/test_libm_${{matrix.func}}.sh
-          jobs: ${{steps.host.outputs.jobs}}
+        shell: bash
+        run: ./panda_regressions/hls/test_libm_${{matrix.func}}.sh
 
   libm-tests:
     needs: [build, libm-preliminary, softfloat-tests]
@@ -551,9 +543,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -576,9 +568,9 @@ jobs:
         with:
           test-id: ${{env.outname}}
           new-results: ${{env.report-dir}}/perf.csv
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.is-better == 0 }}
         shell: bash
@@ -605,9 +597,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -630,9 +622,9 @@ jobs:
         with:
           test-id: ${{env.outname}}
           new-results: ${{env.report-dir}}/perf.csv
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.is-better == 0 }}
         shell: bash
@@ -652,12 +644,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - compiler: 'I386_GCC7'
-            args: ''
-          - compiler: 'I386_GCC7'
-            args: '-c=-wH'
-          - compiler: 'I386_CLANG11'
-            args: '-c=--speculative-sdc-scheduling'
+          - compiler: "I386_GCC7"
+            args: ""
+          - compiler: "I386_GCC7"
+            args: "-c=-wH"
+          - compiler: "I386_CLANG11"
+            args: "-c=--speculative-sdc-scheduling"
     env:
       script: generic_CHStone-memarch.sh
       args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}
@@ -668,9 +660,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -729,9 +721,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -752,9 +744,9 @@ jobs:
         with:
           test-id: ${{env.outname}}
           new-results: ${{env.report-dir}}/perf.csv
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.is-better == 0 }}
         shell: bash
@@ -796,9 +788,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -822,9 +814,9 @@ jobs:
           test-id: ${{env.outname}}
           new-results: ${{env.report-dir}}/perf.csv
           datapoints: ${{matrix.datapoints}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.is-better == 0 }}
         shell: bash
@@ -847,9 +839,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.dist-pkg}}
-          storage-url: '${{env.storage-url}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Setup binaries
         id: setup
         shell: bash
