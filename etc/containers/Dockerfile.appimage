@@ -14,6 +14,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
    libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev \
    locales \
    && rm -rf /var/lib/apt/lists/* \
+   && update-ca-certificates \
    && locale-gen en_US.UTF-8 \
    # Install AppImage tools
    && wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \

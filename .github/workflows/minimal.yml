@@ -121,7 +121,7 @@ jobs:
   ACMath-tests:
     runs-on: [self-hosted]
     container:
-      image: bambuhls/panda:appimage-xenial
+      image: bambuhls/appimage:xenial
       env:
         J: ${{env.host_jobs}}
     strategy:
@@ -431,7 +431,7 @@ jobs:
   softfloat-preliminary:
     runs-on: [self-hosted]
     container:
-      image: bambuhls/panda:appimage-xenial
+      image: bambuhls/appimage:xenial
       env:
         J: ${{env.host_jobs}}
     steps:
@@ -498,7 +498,7 @@ jobs:
   libm-preliminary:
     runs-on: [self-hosted]
     container:
-      image: bambuhls/panda:appimage-xenial
+      image: bambuhls/appimage:xenial
       env:
         J: ${{env.host_jobs}}
     strategy:
