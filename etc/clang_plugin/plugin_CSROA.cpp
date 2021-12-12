@@ -241,10 +241,10 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
 
 #if(CLANG_CSROA_STEP & 16)
    printf("Added Disaggregation\n");
-   //PM.add(createRemoveIntrinsicPass());
-   //PM.add(createGepiExplicitation());
-   //PM.add(createGepiCanonicalIdxsPass());
-   //PM.add(llvm::createVerifierPass());
+   PM.add(createRemoveIntrinsicPass());
+   PM.add(createGepiExplicitation());
+   PM.add(createGepiCanonicalIdxsPass());
+   PM.add(llvm::createVerifierPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disaggregation >);
    PM.add(llvm::createVerifierPass());
 #endif
