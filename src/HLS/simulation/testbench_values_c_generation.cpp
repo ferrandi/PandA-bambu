@@ -210,7 +210,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    if((parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy)) ||
       (parameters->isOption(OPT_discrepancy_hw) && parameters->getOption<bool>(OPT_discrepancy_hw)))
    {
-      if(false
+      if(CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))
 #if HAVE_I386_GCC48_COMPILER
          || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
                 CompilerWrapper_CompilerTarget::CT_I386_GCC48
@@ -230,46 +230,6 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 #if HAVE_I386_GCC7_COMPILER
          || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
                 CompilerWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-#if HAVE_I386_CLANG4_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG4
-#endif
-#if HAVE_I386_CLANG5_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG5
-#endif
-#if HAVE_I386_CLANG6_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG6
-#endif
-#if HAVE_I386_CLANG7_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG7
-#endif
-#if HAVE_I386_CLANG8_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG8
-#endif
-#if HAVE_I386_CLANG9_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG9
-#endif
-#if HAVE_I386_CLANG10_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG10
-#endif
-#if HAVE_I386_CLANG11_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG11
-#endif
-#if HAVE_I386_CLANG12_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG12
-#endif
-#if HAVE_I386_CLANGVVD_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
       {
@@ -304,7 +264,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       {
          compiler_flags += " -static-libasan ";
       }
-      if(false
+      if(CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))
 #if HAVE_I386_GCC5_COMPILER
          || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
                 CompilerWrapper_CompilerTarget::CT_I386_GCC5
@@ -316,46 +276,6 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 #if HAVE_I386_GCC7_COMPILER
          || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
                 CompilerWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-#if HAVE_I386_CLANG4_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG4
-#endif
-#if HAVE_I386_CLANG5_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG5
-#endif
-#if HAVE_I386_CLANG6_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG6
-#endif
-#if HAVE_I386_CLANG7_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG7
-#endif
-#if HAVE_I386_CLANG8_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG8
-#endif
-#if HAVE_I386_CLANG9_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG9
-#endif
-#if HAVE_I386_CLANG10_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG10
-#endif
-#if HAVE_I386_CLANG11_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG11
-#endif
-#if HAVE_I386_CLANG12_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANG12
-#endif
-#if HAVE_I386_CLANGVVD_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
       {
@@ -443,48 +363,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       {
          main_sources.insert(parameters->getOption<std::string>(OPT_pretty_print));
 
-         if(false
-#if HAVE_I386_CLANG4_COMPILER
-            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                   CompilerWrapper_CompilerTarget::CT_I386_CLANG4
-#endif
-#if HAVE_I386_CLANG5_COMPILER
-            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                   CompilerWrapper_CompilerTarget::CT_I386_CLANG5
-#endif
-#if HAVE_I386_CLANG6_COMPILER
-            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                   CompilerWrapper_CompilerTarget::CT_I386_CLANG6
-#endif
-#if HAVE_I386_CLANG7_COMPILER
-            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                   CompilerWrapper_CompilerTarget::CT_I386_CLANG7
-#endif
-#if HAVE_I386_CLANG8_COMPILER
-            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                   CompilerWrapper_CompilerTarget::CT_I386_CLANG8
-#endif
-#if HAVE_I386_CLANG9_COMPILER
-            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                   CompilerWrapper_CompilerTarget::CT_I386_CLANG9
-#endif
-#if HAVE_I386_CLANG10_COMPILER
-            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                   CompilerWrapper_CompilerTarget::CT_I386_CLANG10
-#endif
-#if HAVE_I386_CLANG11_COMPILER
-            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                   CompilerWrapper_CompilerTarget::CT_I386_CLANG11
-#endif
-#if HAVE_I386_CLANG12_COMPILER
-            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                   CompilerWrapper_CompilerTarget::CT_I386_CLANG12
-#endif
-#if HAVE_I386_CLANGVVD_COMPILER
-            || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                   CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
-#endif
-         )
+         if(CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
          {
             compiler_flags += " -fbracket-depth=1024 ";
          }

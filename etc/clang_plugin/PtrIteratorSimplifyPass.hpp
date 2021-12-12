@@ -242,16 +242,16 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                /// phi_candidates.push_back(phi_node);
 
                bool has_arg_operand = false;
-               for(auto& op : phi_node->incoming_values())
+               for(auto& opi : phi_node->incoming_values())
                {
-                  if(llvm::Argument* arg = llvm::dyn_cast<llvm::Argument>(&op))
+                  if(llvm::Argument* arg = llvm::dyn_cast<llvm::Argument>(&opi))
                   {
                      for(llvm::User* user : arg->getParent()->users())
                      {
                         if(llvm::CallInst* call_inst = llvm::dyn_cast<llvm::CallInst>(user))
                         {
-                           llvm::Value* op = call_inst->getOperandUse(arg->getArgNo());
-                           if(llvm::GEPOperator* gep_op = llvm::dyn_cast<llvm::GEPOperator>(op))
+                           llvm::Value* opu = call_inst->getOperandUse(arg->getArgNo());
+                           if(llvm::GEPOperator* gep_op = llvm::dyn_cast<llvm::GEPOperator>(opu))
                            {
                               if(llvm::GlobalVariable* g_var = llvm::dyn_cast<llvm::GlobalVariable>(gep_op->getPointerOperand()))
                               {
@@ -390,19 +390,19 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                   }
                }
 
-               llvm::dbgs() << "INFO: Canonicalizing " << get_val_string(candidate_phi) << "\n";
-               llvm::dbgs() << "      With reachable uses: \n";
+               llvm::errs() << "INFO: Canonicalizing " << get_val_string(candidate_phi) << "\n";
+               llvm::errs() << "      With reachable uses: \n";
                for(llvm::Use* reachable_use : reachable_uses)
                {
-                  llvm::dbgs() << "          #" << reachable_use->getOperandNo() << " in " << get_val_string(reachable_use->getUser()) << "\n";
+                  llvm::errs() << "          #" << reachable_use->getOperandNo() << " in " << get_val_string(reachable_use->getUser()) << "\n";
                }
-               llvm::dbgs() << "      With external uses: \n";
+               llvm::errs() << "      With external uses: \n";
                for(llvm::Use* external_use : external_uses)
                {
-                  llvm::dbgs() << "          #" << external_use->getOperandNo() << " in " << get_val_string(external_use->getUser()) << " (with offset " << get_val_string(external_offset_map.at(external_use)) << ")\n";
+                  llvm::errs() << "          #" << external_use->getOperandNo() << " in " << get_val_string(external_use->getUser()) << " (with offset " << get_val_string(external_offset_map.at(external_use)) << ")\n";
                }
-               llvm::dbgs() << "      With common external: \n";
-               llvm::dbgs() << "          " << get_val_string(common_external) << "\n";
+               llvm::errs() << "      With common external: \n";
+               llvm::errs() << "          " << get_val_string(common_external) << "\n";
 
                /// Transform all phi nodes and then the gepi uses
                std::map<llvm::PHINode*, llvm::PHINode*> phi_map; /// Phi map containing the transformated nodes
@@ -437,8 +437,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         uses_to_set.insert(&phi_incoming);
                      }
                   }
-                  llvm::dbgs() << "      Transforming PHI " << get_val_string(phi_iter) << "\n";
-                  llvm::dbgs() << "            in new PHI " << get_val_string(phi_index) << "\n";
+                  llvm::errs() << "      Transforming PHI " << get_val_string(phi_iter) << "\n";
+                  llvm::errs() << "            in new PHI " << get_val_string(phi_index) << "\n";
                }
 
                /// Transform all the gepis out of the phi nodes
@@ -452,7 +452,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                   idxs.push_back(phi_index);
                   llvm::GetElementPtrInst* first_gepi = llvm::GetElementPtrInst::CreateInBounds(common_external, idxs, phi_iter->getName().str() + ".firstgepi", &*phi_iter->getParent()->getFirstInsertionPt());
 
-                  llvm::dbgs() << "      Assigning first gepi " << get_val_string(first_gepi) << " to phi " << get_val_string(phi_index) << "\n";
+                  llvm::errs() << "      Assigning first gepi " << get_val_string(first_gepi) << " to phi " << get_val_string(phi_index) << "\n";
 
                   phi_iter->replaceAllUsesWith(first_gepi);
                   for(llvm::Use& gepi_use : first_gepi->uses())
@@ -465,7 +465,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                {
                   llvm::Use* use_to_process = uses_to_process.at(i);
 
-                  llvm::dbgs() << "      Transforming use #" << use_to_process->getOperandNo() << " of " << get_val_string(use_to_process->getUser()) << "\n";
+                  llvm::errs() << "      Transforming use #" << use_to_process->getOperandNo() << " of " << get_val_string(use_to_process->getUser()) << "\n";
                   if(llvm::GetElementPtrInst* use_as_gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->get()))
                   {
                      if(llvm::PHINode* user_as_phi = llvm::dyn_cast<llvm::PHINode>(use_to_process->getUser()))
@@ -476,11 +476,11 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                            llvm::PHINode* phi_index = phi_map.at(user_as_phi);
                            int incoming_value_idx = user_as_phi->getBasicBlockIndex(user_as_phi->getIncomingBlock(*use_to_process));
                            phi_index->setIncomingValue(incoming_value_idx, use_as_gepi->getOperand(1));
-                           llvm::dbgs() << "            as " << get_val_string(phi_index) << "\n";
+                           llvm::errs() << "            as " << get_val_string(phi_index) << "\n";
                         }
                         else
                         {
-                           llvm::dbgs() << "            as " << get_val_string(user_as_phi) << "\n";
+                           llvm::errs() << "            as " << get_val_string(user_as_phi) << "\n";
                         }
                         uses_to_set.erase(use_to_process);
                      }
@@ -492,12 +492,12 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         idxs.push_back(new_idx);
                         llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::CreateInBounds(common_external, idxs, user_as_gepi->getName().str() + ".gepi", user_as_gepi);
 
-                        llvm::dbgs() << "            as " << get_val_string(new_gepi) << "\n";
+                        llvm::errs() << "            as " << get_val_string(new_gepi) << "\n";
 
                         user_as_gepi->replaceAllUsesWith(new_gepi);
                         for(llvm::Use& gepi_use : new_gepi->uses())
                         {
-                           unsigned long operand_no = gepi_use.getOperandNo();
+                           //unsigned long operand_no = gepi_use.getOperandNo();
                            uses_to_set.erase(&gepi_use);
                            uses_to_process.push_back(&gepi_use);
                         }
@@ -516,21 +516,21 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         }
                         else
                         {
-                           while(llvm::GetElementPtrInst* use_as_gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->get()))
+                           while(llvm::GetElementPtrInst* use_as_gepi_rec = llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->get()))
                            {
-                              if(use_as_gepi == common_external)
+                              if(use_as_gepi_rec == common_external)
                               {
                                  break;
                               }
-                              llvm::Use& single_idx = *use_as_gepi->idx_begin();
-                              use_rec = &use_as_gepi->getOperandUse(use_as_gepi->getPointerOperandIndex());
-                              offset = operate_on_index(llvm::BinaryOperator::BinaryOps::Add, offset, single_idx, use_as_gepi, idx_ty);
+                              llvm::Use& single_idx = *use_as_gepi_rec->idx_begin();
+                              use_rec = &use_as_gepi_rec->getOperandUse(use_as_gepi->getPointerOperandIndex());
+                              offset = operate_on_index(llvm::BinaryOperator::BinaryOps::Add, offset, single_idx, use_as_gepi_rec, idx_ty);
                            }
                         }
 
                         llvm::CmpInst* new_cmp = llvm::CmpInst::Create(llvm::CmpInst::ICmp, user_as_cmp->getPredicate(), use_as_gepi->getOperand(1), offset, user_as_cmp->getName() + ".idx", user_as_cmp);
 
-                        llvm::dbgs() << "            as " << get_val_string(new_cmp) << "\n";
+                        llvm::errs() << "            as " << get_val_string(new_cmp) << "\n";
 
                         user_as_cmp->replaceAllUsesWith(new_cmp);
                         inst_to_remove.insert(user_as_cmp);
@@ -584,12 +584,12 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
             }
             else
             {
-               llvm::dbgs() << "INFO: Cannot canonicalize (no common)" << get_val_string(candidate_phi) << "\n";
+               llvm::errs() << "INFO: Cannot canonicalize (no common)" << get_val_string(candidate_phi) << "\n";
             }
          }
          else
          {
-            llvm::dbgs() << "INFO: Cannot canonicalize (unfeasible)" << get_val_string(candidate_phi) << "\n";
+            llvm::errs() << "INFO: Cannot canonicalize (unfeasible)" << get_val_string(candidate_phi) << "\n";
          }
       }
 

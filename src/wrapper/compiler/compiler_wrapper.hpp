@@ -478,6 +478,17 @@ class CompilerWrapper
     * @return the size of pointers in bit
     */
    static size_t CGetPointerSize(const ParameterConstRef parameters);
+
+   static bool isClangCheck(CompilerWrapper_CompilerTarget ct);
+   static bool isGccCheck(CompilerWrapper_CompilerTarget ct);
+   static int getCompatibleCompilers();
+   static int getDefaultCompiler();
+   static std::string getCompilerSuffix(int pc);
+   static bool hasCompilerM64(CompilerWrapper_CompilerTarget ct);
+   static bool hasCompilerMX32(CompilerWrapper_CompilerTarget ct);
+   static bool hasCompilerGCCM32(CompilerWrapper_CompilerTarget ct);
+   static bool hasCompilerCLANGM32(CompilerWrapper_CompilerTarget ct);
+   static std::string getCompilerVersion(int ct);
 };
 
 /// Refcount definition for the CompilerWrapper class

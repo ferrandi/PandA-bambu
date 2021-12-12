@@ -106,11 +106,11 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapp
 namespace llvm
 {
    template <int OPT_SELECTION>
-   struct CLANG_VERSION_SYMBOL(_plugin_RemLifetime) : public GepiCanonicalizationPass
+   struct CLANG_VERSION_SYMBOL(_plugin_RemIntrisic) : public GepiCanonicalizationPass
    {
     public:
       static char ID;
-      CLANG_VERSION_SYMBOL(_plugin_RemLifetime)() : GepiCanonicalizationPass(ID, OPT_SELECTION)
+      CLANG_VERSION_SYMBOL(_plugin_RemIntrisic)() : GepiCanonicalizationPass(ID, OPT_SELECTION)
       {
          initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
@@ -123,13 +123,13 @@ namespace llvm
 
       StringRef getPassName() const override
       {
-         if(OPT_SELECTION == SROA_removeLifetime)
-            return CLANG_VERSION_STRING(_plugin_RemLifetime) "SLTR";
+         if(OPT_SELECTION == SROA_intrinsic)
+            return CLANG_VERSION_STRING(_plugin_RemIntrisic) "SIR";
       }
    };
 
    template <int OPT_SELECTION>
-   char CLANG_VERSION_SYMBOL(_plugin_RemLifetime)<OPT_SELECTION>::ID = 0;
+   char CLANG_VERSION_SYMBOL(_plugin_RemIntrisic)<OPT_SELECTION>::ID = 0;
 
 } // namespace llvm
 
@@ -157,7 +157,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    //   PM.add(llvm::createArgumentPromotionPass());
    //   PM.add(llvm::createSimpleLoopUnrollPass());
    PM.add(llvm::createVerifierPass());
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_RemLifetime) < SROA_removeLifetime >);
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_RemIntrisic) < SROA_intrinsic >);
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disaggregation >);
    PM.add(llvm::createVerifierPass());
 }
@@ -199,6 +199,7 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(llvm::createPromoteMemoryToRegisterPass());
    */
 
+   PM.add(llvm::createVerifierPass());
    PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(new llvm::ScalarEvolutionWrapperPass());
    PM.add(new llvm::LoopInfoWrapperPass());
@@ -210,17 +211,17 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
 
 #define CLANG_CSROA_STEP 31
 
-#if(CLANG_CSROA_STEP & 1) == 1
+#if(CLANG_CSROA_STEP & 1)
    printf("Added Loop rotate\n");
    PM.add(llvm::createLoopRotatePass());
 #endif
-#if(CLANG_CSROA_STEP & 2) == 2
+#if(CLANG_CSROA_STEP & 2)
    printf("Added Loop unroll\n");
    PM.add(llvm::createLoopUnrollPass());
 #endif
-   PM.add(createRemoveMetaPass());
+   PM.add(llvm::createVerifierPass());
 
-#if(CLANG_CSROA_STEP & 4) == 4
+#if(CLANG_CSROA_STEP & 4)
    printf("Added Canonicalization\n");
    PM.add(createRemoveIntrinsicPass());
    PM.add(createGepiExplicitation());
@@ -230,24 +231,24 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(createChunkOperationsLoweringPass());
    PM.add(createBitcastVectorRemovalPass());
    PM.add(createSelectLoweringPass());
+   PM.add(llvm::createVerifierPass());
 #endif
-#if(CLANG_CSROA_STEP & 8) == 8
+#if(CLANG_CSROA_STEP & 8)
    printf("Added Versioning\n");
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_functionVersioning >);
    PM.add(llvm::createVerifierPass());
 #endif
 
-#if(CLANG_CSROA_STEP & 16) == 16
+#if(CLANG_CSROA_STEP & 16)
    printf("Added Disaggregation\n");
-   PM.add(createRemoveIntrinsicPass());
-   PM.add(createGepiExplicitation());
-   PM.add(createGepiCanonicalIdxsPass());
-   PM.add(llvm::createVerifierPass());
+   //PM.add(createRemoveIntrinsicPass());
+   //PM.add(createGepiExplicitation());
+   //PM.add(createGepiCanonicalIdxsPass());
+   //PM.add(llvm::createVerifierPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disaggregation >);
    PM.add(llvm::createVerifierPass());
 #endif
-   return;
-#if(CLANG_CSROA_STEP & 32) == 32
+#if(CLANG_CSROA_STEP & 32)
    printf("Added Mid Optimization\n");
    // Insert -O3 in chain
    {
@@ -261,13 +262,13 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    }
 #endif
 
-#if(CLANG_CSROA_STEP & 64) == 64
+#if(CLANG_CSROA_STEP & 64)
    printf("Added Wrapper inlining\n");
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining >);
    PM.add(llvm::createVerifierPass());
 #endif
 
-#if(CLANG_CSROA_STEP & 128) == 128
+#if(CLANG_CSROA_STEP & 128)
    printf("Added Final Optimization\n");
    // Insert -O3 in chain
    {

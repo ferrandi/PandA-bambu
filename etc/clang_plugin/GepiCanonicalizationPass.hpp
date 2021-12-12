@@ -51,10 +51,9 @@ enum SROA_optimizations
    SROA_ptrIteratorSimplification,
    SROA_chunkOperationsLowering,
    SROA_bitcastVectorRemoval,
-   SROA_removeLifetime,
+   SROA_intrinsic,
    SROA_selectLowering,
-   SROA_canonicalIdxs,
-   SROA_removeMeta
+   SROA_canonicalIdxs
 };
 
 static const char* optimization_names[] = {"LCSSA cleanup",
@@ -63,7 +62,7 @@ static const char* optimization_names[] = {"LCSSA cleanup",
                                            "Pointer Iterator Simplification"
                                            "Chunk operations lowering",
                                            "Bitcast vector removal",
-                                           "Remove lifetime intrinsic",
+                                           "Remove intrinsic",
                                            "Select lowering",
                                            "Canonical indexes",
                                            "Remove metadata"};
@@ -112,6 +111,5 @@ GepiCanonicalizationPass* createSelectLoweringPass();
 
 GepiCanonicalizationPass* createGepiCanonicalIdxsPass();
 
-GepiCanonicalizationPass* createRemoveMetaPass();
 
 #endif // SCALAR_REPLACEMENT_OF_AGGREGATES_GEPICANONICALIZATIONPASS_HPP

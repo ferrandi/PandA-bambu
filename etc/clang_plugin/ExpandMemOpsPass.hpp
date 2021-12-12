@@ -370,7 +370,9 @@ namespace llvm
          while(currFuncIterator != M.getFunctionList().end())
          {
             auto& F = *currFuncIterator;
+#if __clang_major__ != 4
             const llvm::TargetTransformInfo& TTI = getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+#endif
             auto fname = std::string(currFuncIterator->getName());
             llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
             for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
