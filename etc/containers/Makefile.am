@@ -1,5 +1,6 @@
 EXTRA_DIST = \
    Dockerfile.appimage \
+   Dockerfile.appimage-yosys \
    Dockerfile.cppcheck \
    Dockerfile.iverilog \
    Dockerfile.verilator \

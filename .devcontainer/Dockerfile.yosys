@@ -1,9 +1,6 @@
 ARG VARIANT=focal
 
-FROM bambuhls/yosys:${VARIANT} as yosys
-FROM bambuhls/iverilog:${VARIANT} as iverilog
-
-FROM bambuhls/appimage:${VARIANT} as base
+FROM bambuhls/appimage-yosys:${VARIANT} as base
 
 ### From https://github.com/microsoft/vscode-dev-containers/blob/main/containers/ubuntu/.devcontainer/base.Dockerfile
 # Options for setup script
@@ -18,13 +15,5 @@ COPY library-scripts/*.sh library-scripts/*.env /tmp/library-scripts/
 WORKDIR /
 RUN bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
     && bash /tmp/library-scripts/compiler-setup.sh "${COMPILERS}" \
-    && apt-get install --no-install-recommends -y \
-    binutils clang-format curl graphviz libffi-dev libgomp1 libpython3.8 libreadline-dev libtcl python3 \
-    python3-defusedxml python3-distutils qt5-default qt5-image-formats-plugins tcl-dev tcl-tclreadline tzdata xdot \
-    && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts \
-    && strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
-
-COPY --from=yosys /opt/yosys /opt/yosys
-COPY --from=yosys /opt/openroad /opt/openroad
-COPY --from=iverilog /opt/iverilog /opt/iverilog
-ENV PATH /opt/openroad/bin:/opt/yosys/bin:/opt/iverilog/bin:$PATH
+    && apt-get install --no-install-recommends -y clang-format python3-defusedxml python3-distutils \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
