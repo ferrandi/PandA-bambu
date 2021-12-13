@@ -2005,22 +2005,6 @@ void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship,
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-bool lut_transformation::HasToBeExecuted() const
-{
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
-   auto max_lut_size0 = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
-   if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd))
-   {
-      return FunctionFrontendFlowStep::HasToBeExecuted();
-   }
-   else
-   {
-      return false;
-   }
-}
-
 void lut_transformation::Initialize()
 {
    TM = AppM->get_tree_manager();
@@ -2033,8 +2017,8 @@ void lut_transformation::Initialize()
 
 DesignFlowStep_Status lut_transformation::InternalExec()
 {
-   if(parameters->IsParameter("disable-lut-transformation") &&
-      parameters->GetParameter<unsigned int>("disable-lut-transformation") == 1)
+   if(max_lut_size == 0 || (parameters->IsParameter("disable-lut-transformation") &&
+                            parameters->GetParameter<unsigned int>("disable-lut-transformation") == 1))
    {
       return DesignFlowStep_Status::UNCHANGED;
    }

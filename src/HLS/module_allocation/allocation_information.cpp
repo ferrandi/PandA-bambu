@@ -2746,7 +2746,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    else if(operation_name == "lut_expr")
    {
       // std::cerr << "get_correction_time " << operation_name << " - " << n_ins << "\n";
-      if(HLS_T->get_target_device()->has_parameter("max_lut_size"))
+      if(HLS_T->get_target_device()->has_parameter("max_lut_size") && HLS_T->get_target_device()->get_parameter<size_t>("max_lut_size") != 0)
       {
          const technology_managerRef TM = HLS_T->get_technology_manager();
          technology_nodeRef f_unit_lut = TM->get_fu(LUT_EXPR_STD, LIBRARY_STD_FU);
