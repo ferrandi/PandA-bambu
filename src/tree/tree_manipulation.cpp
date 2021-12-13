@@ -82,6 +82,7 @@ tree_manipulation::tree_manipulation(const tree_managerRef& _TreeM, const Parame
       debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
 {
 }
+
 tree_manipulation::tree_manipulation(const tree_managerRef& _TreeM, const ParameterConstRef& _parameters, bool _reuse,
                                      const application_managerRef _AppM)
     : TreeM(_TreeM),
