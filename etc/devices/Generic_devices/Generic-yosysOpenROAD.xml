@@ -7,39 +7,72 @@
       <step id="bash_flow" config="bash_flowC"/>
    </flow>
    <bash config="bash_flowC">
-      <cmd name="export OBJECTS_DIR=${CURR_WORKDIR}/OpenROAD_objects"/>
+      <cmd name=": ${NPROC:=1}"/>
+      <cmd name="export NPROC"/>
+      <cmd name=": ${NUM_CORES:=${NPROC}}"/>
+      <cmd name="export NUM_CORES"/>
+      <cmd name="export SCRIPTS_DIR=${PANDA_DATA_INSTALLDIR}/scripts/"/>
+      <cmd name="export UTILS_DIR=${PANDA_DATA_INSTALLDIR}/util/"/>
+      <cmd name="export PLATFORM_DIR=${PANDA_DATA_INSTALLDIR}/${PLATFORM}/"/>
+
+      <cmd name="export DESIGN_NAME=&quot;${__top_id__}&quot;"/>
+      <cmd name=": ${DESIGN_NICKNAME:=${DESIGN_NAME}}"/>
+      <cmd name="export DESIGN_NICKNAME"/>
+      <cmd name="export SDC_FILE=${__sdc_file__}"/>
+      <cmd name="export VERILOG_FILES=&quot;${__generic_sources_macro_list__}&quot;"/>
+      <cmd name=": ${FLOW_VARIANT:=base}"/>
+      <cmd name="export FLOW_VARIANT"/>
+
+      <cmd name="# Setup working directories"/>
+      <cmd name="export DESIGN_DIR=${CURR_WORKDIR}"/>
+      <cmd name="export LOG_DIR=${CURR_WORKDIR}/OpenROAD_logs/${PLATFORM}/${DESIGN_NICKNAME}/${FLOW_VARIANT}"/>
+      <cmd name="export OBJECTS_DIR=${CURR_WORKDIR}/OpenROAD_objects/${PLATFORM}/${DESIGN_NICKNAME}/${FLOW_VARIANT}"/>
+      <cmd name="export REPORTS_DIR=${CURR_WORKDIR}/OpenROAD_reports/${PLATFORM}/${DESIGN_NICKNAME}/${FLOW_VARIANT}"/>
+      <cmd name="export RESULTS_DIR=${CURR_WORKDIR}/OpenROAD_results/${PLATFORM}/${DESIGN_NICKNAME}/${FLOW_VARIANT}"/>
+
+      <cmd name="# Enables hierarchical yosys"/>
+      <cmd name=": {SYNTH_HIERARCHICAL:=0}"/>
+      <cmd name="export SYNTH_HIERARCHICAL"/>
+      <cmd name="export SYNTH_STOP_MODULE_SCRIPT=${OBJECTS_DIR}/mark_hier_stop_modules.tcl"/>
+      <cmd name="if [[ $SYNTH_HIERARCHICAL -eq 10 ]]"/>
+      <cmd name="then"/>
+      <cmd name="  export HIER_REPORT_SCRIPT=${SCRIPTS_DIR}/synth_hier_report.tcl"/>
+      <cmd name="  : ${MAX_UNGROUP_SIZE:=0}"/>
+      <cmd name="  export MAX_UNGROUP_SIZE"/>
+      <cmd name="fi"/>
+
+      <cmd name="# Enables Re-synthesis for area reclaim"/>
+      <cmd name=": ${RESYNTH_AREA_RECOVER:=0}"/>
+      <cmd name="export RESYNTH_AREA_RECOVER"/>
+      <cmd name=": ${RESYNTH_TIMING_RECOVER:=0}"/>
+      <cmd name="export RESYNTH_TIMING_RECOVER"/>
+      <cmd name=": ${ABC_AREA:=0}"/>
+      <cmd name="export ABC_AREA"/>
+      <cmd name="# Global setting for Synthesis"/>
+      <cmd name=": ${SYNTH_ARGS:=-flatten}"/>
+      <cmd name="export SYNTH_ARGS"/>
+      <cmd name="# Global setting for Floorplan"/>
+      <cmd name="export PLACE_PINS_ARGS=&quot;&quot;"/>
+      <cmd name=": ${STREAM_SYSTEM_EXT:=gds}"/>
+      <cmd name="export STREAM_SYSTEM_EXT"/>
+      <cmd name=": {ABC_CLOCK_PERIOD_IN_PS:=${__clk_period_ps__}}"/>
+      <cmd name="export ABC_CLOCK_PERIOD_IN_PS"/>
+
+      <cmd name="rm -rf ${LOG_DIR}"/>
+      <cmd name="mkdir -p ${LOG_DIR}"/>
       <cmd name="rm -rf ${OBJECTS_DIR}"/>
       <cmd name="mkdir -p ${OBJECTS_DIR}"/>
-       <!--Create the design setup -->
-      <!-- YOSYS -->
-      <cmd name="yosys &lt;&lt; EOT "/>
-      <cmd name="read_verilog -defer -sv ${__generic_sources_macro_list__}"/>
-      <cmd name="read_verilog ${BLACKBOX_V_FILE}"/>
-      <cmd name="read_verilog ${CLKGATE_MAP_FILE}"/>
-      <cmd name="tcl ${BLACKBOX_MAP_TCL}"/>
-      <cmd name="synth -top ${__top_id__} -flatten"/>
-      <cmd name="opt_clean -purge"/>
-      <cmd name="opt -undriven -mux_undef -mux_bool"/>
-      <cmd name="opt_clean -purge"/>
-      <cmd name="stat"/>
-      <cmd name="techmap -map ${LATCH_MAP_FILE}"/>
-      <cmd name="dfflibmap -liberty ${LIBERTY_FILE}"/>
-      <cmd name="opt -undriven -mux_undef -mux_bool"/>
-      <cmd name="opt_clean -purge"/>
-      <cmd name="abc -D ${__clk_period_ps__} -liberty ${LIBERTY_FILE} -constr &quot;${__sdc_file__}&quot; -script &quot;+read_constr,${__sdc_file__};strash;ifraig;retime,-D,{D},-M,6;strash;dch,-f;map,-p,-M,1,{D},-f;topo;dnsize;buffer,-p;upsize;&quot;"/>
-      <!--
-      <cmd name="abc -D ${__clk_period_ps__} -liberty ${OBJECTS_DIR}/merged.lib -constr &quot;${__sdc_file__}&quot;"/>
-      -->
-      <cmd name="hilomap -singleton -hicell ${TIEHI_CELL_AND_PORT} -locell ${TIELO_CELL_AND_PORT}"/>
-      <cmd name="setundef -zero"/>
-      <cmd name="splitnets"/>
-      <cmd name="insbuf -buf ${MIN_BUF_CELL_AND_PORTS}"/>
-      <cmd name="opt_clean -purge"/>
-      <cmd name="stat -liberty ${LIBERTY_FILE}"/>
-      <cmd name="write_verilog -noattr -noexpr -nohex -nodec ${__top_id__}_mapped.v"/>
-      <cmd name="exit"/>
-      <cmd name="EOT"/>
-      <!-- OPENROAD -->
+      <cmd name="rm -rf ${REPORTS_DIR}"/>
+      <cmd name="mkdir -p ${REPORTS_DIR}"/>
+      <cmd name="rm -rf ${RESULTS_DIR}"/>
+      <cmd name="mkdir -p ${RESULTS_DIR}"/>
+
+      <cmd name="mkdir -p ${OBJECTS_DIR}/lib"/>
+      <cmd name="export DONT_USE_LIBS=${OBJECTS_DIR}/lib/donotuse.lib"/>
+      <cmd name="${UTILS_DIR}/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${LIB_FILES} -o ${DONT_USE_LIBS}"/>
+      <cmd name=": ${DONT_USE_SC_LIB:=${OBJECTS_DIR}/lib/donotuse.lib}"/>
+      <cmd name="export DONT_USE_SC_LIB"/>
+
       <cmd name="openroad &lt;&lt; EOT "/>
       <cmd name="proc dump_statistics {  } {"/>
       <cmd name="  set DesignArea [sta::format_area [rsz::design_area] 0]"/>
@@ -61,108 +94,125 @@
       <cmd name="  puts \$ofile_report &quot;&lt;/document&gt;&quot;"/>
       <cmd name="  close \$ofile_report"/>
       <cmd name="}; #END PROC"/>
-
-      <cmd name="set outputDir ${__bash_outdir__}"/>
-      <cmd name="file mkdir \$outputDir"/>
-
-      <cmd name="set platform ${PLATFORM}"/>
-      <cmd name="set tech_lef ${TECH_LEF}"/>
-      <cmd name="set std_cell_lef ${STD_CELL_LEF}"/>
-      <cmd name="set extra_lef {}"/>
-      <cmd name="set liberty_file ${LIBERTY_FILE}"/>
-      <cmd name="set extra_liberty ${EXTRA_LIBERTY}"/>
-      <cmd name="set site ${SITE}"/>
-      <cmd name="set pdn_cfg ${PDN_CFG}"/>
-      <cmd name="set tracks_file ${TRACKS_FILE}"/>
-      <cmd name="set io_placer_hor_layer ${IO_PLACER_HOR_LAYER}"/>
-      <cmd name="set io_placer_ver_layer ${IO_PLACER_VER_LAYER}"/>
-      <cmd name="set tapcell_args &quot;${TAPCELL_ARGS}&quot;"/>
-      <cmd name="set global_place_density ${GLOBAL_PLACE_DENSITY}"/>
-      <cmd name="# default value"/>
-      <cmd name="set global_place_density_penalty ${GLOBAL_PLACE_DENSITY_PENALTY}"/>
-      <cmd name="# placement padding in SITE widths applied to both sides"/>
-      <cmd name="set global_place_pad ${GLOBAL_PLACE_PAD}"/>
-      <cmd name="set detail_place_pad ${DETAIL_PLACE_PAD}"/>
-      <cmd name="set macro_place_halo ${MACRO_PLACE_HALO}"/>
-      <cmd name="set macro_place_channel ${MACRO_PLACE_CHANNEL}"/>
-      <cmd name="set layer_rc_file ${LAYER_RC_FILE}"/>
-      <cmd name="# equiv -resistance .0035 -capacitance .052"/>
-      <cmd name="set wire_rc_layer ${WIRE_RC_LAYER}"/>
-      <cmd name="set wire_rc_layer_clk ${WIRE_RC_LAYER_CLK}"/>
-      <cmd name="set tielo_port &quot;${TIELO_PORT}&quot;"/>
-      <cmd name="set tiehi_port &quot;${TIEHI_PORT}&quot;"/>
-      <cmd name="set dont_use ${DONT_USE}"/>
-      <cmd name="# tie hi/low instance to load separation (microns)"/>
-      <cmd name="set tie_separation ${TIE_SEPARATION}"/>
-      <cmd name="set cts_buffer &quot;${CTS_BUFFER}&quot;"/>
-      <cmd name="set filler_cells &quot;${FILLER_CELLS}&quot;"/>
-      <cmd name="# fastroute"/>
-      <cmd name="set global_routing_layers ${GLOBAL_ROUTING_LAYERS}"/>
-      <cmd name="set global_routing_clock_layers ${GLOBAL_ROUTING_CLOCK_LAYERS}"/>
-      <cmd name="set global_routing_layer_adjustments ${GLOBAL_ROUTING_LAYER_ADJUSTMENTS}"/>
-      <cmd name="set rcx_rules_file ${RCX_RULES_FILE}"/>
-      <cmd name="set powergridstrategy ${POWERGRIDSTRATEGY}"/>
-
-      <cmd name="source ${PANDA_DATA_INSTALLDIR}/Scripts/helpers.tcl"/>
-      <cmd name="source ${PANDA_DATA_INSTALLDIR}/Scripts/flow_helpers.tcl"/>
-
-      <cmd name="set die_area ${DIE_AREA}"/>
-      <cmd name="set core_area ${CORE_AREA}"/>
-      <cmd name="set cap_margin &quot;${CAP_MARGIN}&quot;"/>
-
-      <cmd name="set design &quot;${__top_id__}&quot;"/>
-      <cmd name="set top_module &quot;${__top_id__}&quot;"/>
-      <cmd name="set synth_verilog &quot;${__top_id__}_mapped.v&quot;"/>
-      <cmd name="set sdc_file &quot;${__sdc_file__}&quot;"/>
-
-      <cmd name="read_lef $tech_lef"/>
+      <cmd name="set standalone 0"/>
+      <cmd name="# Synthesis"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/yosys.tcl"/>
+      <cmd name="# Read process / design"/>
+      <cmd name="# Read lef"/>
+      <cmd name="read_lef $::env(TECH_LEF)"/>
+      <cmd name="read_lef $::env(SC_LEF)"/>
+      <cmd name="if {[info exist ::env(ADDITIONAL_LEFS)]} {"/>
+      <cmd name="    foreach lef $::env(ADDITIONAL_LEFS) {"/>
+      <cmd name="      read_lef $lef"/>
+      <cmd name="    }"/>
+      <cmd name="}"/>
       <cmd name="# Read liberty files"/>
-      <cmd name="read_liberty $liberty_file"/>
-      <cmd name="read_verilog $synth_verilog"/>
-      <cmd name="link_design $top_module"/>
-      <cmd name="read_sdc $sdc_file"/>
+      <cmd name="source $::env(SCRIPTS_DIR)/read_liberty.tcl"/>
+      <cmd name="read_verilog $::env(RESULTS_DIR)/1_1_yosys.v"/>
+      <cmd name="link_design $::env(DESIGN_NAME)"/>
+      <cmd name="read_sdc $::env(SDC_FILE)"/>
+      <cmd name="if [file exists $::env(PLATFORM_DIR)/derate.tcl] {"/>
+      <cmd name="  source $::env(PLATFORM_DIR)/derate.tcl"/>
+      <cmd name="}"/>
+      <cmd name="if [file exists $::env(PLATFORM_DIR)/setRC.tcl] {"/>
+      <cmd name="  source $::env(PLATFORM_DIR)/setRC.tcl"/>
+      <cmd name="}"/>
+      <cmd name="# Floorplan"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/floorplan.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/io_placement_random.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/tdms_place.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/macro_place.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/tapcell.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/pdn.tcl"/>
+      <cmd name="# Place"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/global_place.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/io_placement.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/resize.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/detail_place.tcl"/>
+      <cmd name="# CTS"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/cts.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/fillcell.tcl"/>
+      <cmd name="# Route"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/global_route.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/detail_route.tcl"/>
+      <cmd name="# Finishing"/>
+      <cmd name="if {[info exists ::env(USE_FILL)]} {"/>
+      <cmd name="  source -verbose $::env(SCRIPTS_DIR)/density_fill.tcl"/>
+      <cmd name="}"/>
       <cmd name="dump_statistics"/>
+      <cmd name="# Finishing"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/final_report.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/klayout.tcl"/>
       <cmd name="exit"/>
       <cmd name="EOT"/>
    </bash>
    <bash config="bash_flow">
       <cmd name=": ${NPROC:=1}"/>
       <cmd name="export NPROC"/>
-      <cmd name="export RESULTS_DIR=${CURR_WORKDIR}/OpenROAD_results"/>
-      <cmd name="export OBJECTS_DIR=${CURR_WORKDIR}/OpenROAD_objects"/>
-      <cmd name="rm -rf ${RESULTS_DIR}"/>
-      <cmd name="mkdir -p ${RESULTS_DIR}"/>
+      <cmd name=": ${NUM_CORES:=${NPROC}}"/>
+      <cmd name="export NUM_CORES"/>
+      <cmd name="export SCRIPTS_DIR=${PANDA_DATA_INSTALLDIR}/scripts/"/>
+      <cmd name="export UTILS_DIR=${PANDA_DATA_INSTALLDIR}/util/"/>
+      <cmd name="export PLATFORM_DIR=${PANDA_DATA_INSTALLDIR}/${PLATFORM}/"/>
+
+      <cmd name="export DESIGN_NAME=&quot;${__top_id__}&quot;"/>
+      <cmd name=": ${DESIGN_NICKNAME:=${DESIGN_NAME}}"/>
+      <cmd name="export DESIGN_NICKNAME"/>
+      <cmd name="export SDC_FILE=${__sdc_file__}"/>
+      <cmd name="export VERILOG_FILES=&quot;${__generic_sources_macro_list__}&quot;"/>
+      <cmd name=": ${FLOW_VARIANT:=base}"/>
+      <cmd name="export FLOW_VARIANT"/>
+
+      <cmd name="# Setup working directories"/>
+      <cmd name="export DESIGN_DIR=${CURR_WORKDIR}"/>
+      <cmd name="export LOG_DIR=${CURR_WORKDIR}/OpenROAD_logs/${PLATFORM}/${DESIGN_NICKNAME}/${FLOW_VARIANT}"/>
+      <cmd name="export OBJECTS_DIR=${CURR_WORKDIR}/OpenROAD_objects/${PLATFORM}/${DESIGN_NICKNAME}/${FLOW_VARIANT}"/>
+      <cmd name="export REPORTS_DIR=${CURR_WORKDIR}/OpenROAD_reports/${PLATFORM}/${DESIGN_NICKNAME}/${FLOW_VARIANT}"/>
+      <cmd name="export RESULTS_DIR=${CURR_WORKDIR}/OpenROAD_results/${PLATFORM}/${DESIGN_NICKNAME}/${FLOW_VARIANT}"/>
+
+      <cmd name="# Enables hierarchical yosys"/>
+      <cmd name=": {SYNTH_HIERARCHICAL:=0}"/>
+      <cmd name="export SYNTH_HIERARCHICAL"/>
+      <cmd name="export SYNTH_STOP_MODULE_SCRIPT=${OBJECTS_DIR}/mark_hier_stop_modules.tcl"/>
+      <cmd name="if [[ $SYNTH_HIERARCHICAL -eq 10 ]]"/>
+      <cmd name="then"/>
+      <cmd name="  export HIER_REPORT_SCRIPT=${SCRIPTS_DIR}/synth_hier_report.tcl"/>
+      <cmd name="  : ${MAX_UNGROUP_SIZE:=0}"/>
+      <cmd name="  export MAX_UNGROUP_SIZE"/>
+      <cmd name="fi"/>
+
+      <cmd name="# Enables Re-synthesis for area reclaim"/>
+      <cmd name=": ${RESYNTH_AREA_RECOVER:=0}"/>
+      <cmd name="export RESYNTH_AREA_RECOVER"/>
+      <cmd name=": ${RESYNTH_TIMING_RECOVER:=0}"/>
+      <cmd name="export RESYNTH_TIMING_RECOVER"/>
+      <cmd name=": ${ABC_AREA:=0}"/>
+      <cmd name="export ABC_AREA"/>
+      <cmd name="# Global setting for Synthesis"/>
+      <cmd name=": ${SYNTH_ARGS:=-flatten}"/>
+      <cmd name="export SYNTH_ARGS"/>
+      <cmd name="# Global setting for Floorplan"/>
+      <cmd name="export PLACE_PINS_ARGS=&quot;&quot;"/>
+      <cmd name=": ${STREAM_SYSTEM_EXT:=gds}"/>
+      <cmd name="export STREAM_SYSTEM_EXT"/>
+      <cmd name=": {ABC_CLOCK_PERIOD_IN_PS:=${__clk_period_ps__}}"/>
+      <cmd name="export ABC_CLOCK_PERIOD_IN_PS"/>
+
+      <cmd name="rm -rf ${LOG_DIR}"/>
+      <cmd name="mkdir -p ${LOG_DIR}"/>
       <cmd name="rm -rf ${OBJECTS_DIR}"/>
       <cmd name="mkdir -p ${OBJECTS_DIR}"/>
-      <!-- YOSYS -->
-      <cmd name="yosys &lt;&lt; EOT "/>
-      <cmd name="read_verilog -defer -sv ${__generic_sources_macro_list__}"/>
-      <cmd name="read_verilog ${BLACKBOX_V_FILE}"/>
-      <cmd name="read_verilog ${CLKGATE_MAP_FILE}"/>
-      <cmd name="tcl ${BLACKBOX_MAP_TCL}"/>
-      <cmd name="synth -top ${__top_id__} -flatten"/>
-      <cmd name="opt_clean -purge"/>
-      <cmd name="opt -undriven -mux_undef -mux_bool"/>
-      <cmd name="opt_clean -purge"/>
-      <cmd name="stat"/>
-      <cmd name="techmap -map ${LATCH_MAP_FILE}"/>
-      <cmd name="dfflibmap -liberty ${LIBERTY_FILE}"/>
-      <cmd name="opt -undriven -mux_undef -mux_bool"/>
-      <cmd name="opt_clean -purge"/>
-      <cmd name="abc -D ${__clk_period_ps__} -liberty ${LIBERTY_FILE} -constr &quot;${__sdc_file__}&quot; -script &quot;+read_constr,${__sdc_file__};strash;ifraig;retime,-D,{D},-M,6;strash;dch,-f;map,-p,-M,1,{D},-f;topo;dnsize;buffer,-p;upsize;&quot;"/>
-      <!--
-      <cmd name="abc -D ${__clk_period_ps__} -liberty ${OBJECTS_DIR}/merged.lib -constr &quot;${__sdc_file__}&quot;"/>
-      -->
-      <cmd name="hilomap -singleton -hicell ${TIEHI_CELL_AND_PORT} -locell ${TIELO_CELL_AND_PORT}"/>
-      <cmd name="setundef -zero"/>
-      <cmd name="splitnets"/>
-      <cmd name="insbuf -buf ${MIN_BUF_CELL_AND_PORTS}"/>
-      <cmd name="opt_clean -purge"/>
-      <cmd name="stat -liberty ${LIBERTY_FILE}"/>
-      <cmd name="write_verilog -noattr -noexpr -nohex -nodec ${__top_id__}_mapped.v"/>
-      <cmd name="exit"/>
-      <cmd name="EOT"/>
-      <!-- OPENROAD -->
+      <cmd name="rm -rf ${REPORTS_DIR}"/>
+      <cmd name="mkdir -p ${REPORTS_DIR}"/>
+      <cmd name="rm -rf ${RESULTS_DIR}"/>
+      <cmd name="mkdir -p ${RESULTS_DIR}"/>
+
+      <cmd name="mkdir -p ${OBJECTS_DIR}/lib"/>
+      <cmd name="export DONT_USE_LIBS=${OBJECTS_DIR}/lib/donotuse.lib"/>
+      <cmd name="${UTILS_DIR}/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${LIB_FILES} -o ${DONT_USE_LIBS}"/>
+      <cmd name=": ${DONT_USE_SC_LIB:=${OBJECTS_DIR}/lib/donotuse.lib}"/>
+      <cmd name="export DONT_USE_SC_LIB"/>
+
       <cmd name="openroad &lt;&lt; EOT "/>
       <cmd name="proc dump_statistics {  } {"/>
       <cmd name="  set DesignArea [sta::format_area [rsz::design_area] 0]"/>
@@ -184,72 +234,55 @@
       <cmd name="  puts \$ofile_report &quot;&lt;/document&gt;&quot;"/>
       <cmd name="  close \$ofile_report"/>
       <cmd name="}; #END PROC"/>
-
-      <cmd name="set outputDir ${__bash_outdir__}"/>
-      <cmd name="file mkdir \$outputDir"/>
-
-      <cmd name="set platform ${PLATFORM}"/>
-      <cmd name="set tech_lef ${TECH_LEF}"/>
-      <cmd name="set std_cell_lef ${STD_CELL_LEF}"/>
-      <cmd name="set extra_lef {}"/>
-      <cmd name="set liberty_file ${LIBERTY_FILE}"/>
-      <cmd name="set extra_liberty ${EXTRA_LIBERTY}"/>
-      <cmd name="set site ${SITE}"/>
-      <cmd name="set pdn_cfg ${PDN_CFG}"/>
-      <cmd name="set tracks_file ${TRACKS_FILE}"/>
-      <cmd name="set io_placer_hor_layer ${IO_PLACER_HOR_LAYER}"/>
-      <cmd name="set io_placer_ver_layer ${IO_PLACER_VER_LAYER}"/>
-      <cmd name="set tapcell_args &quot;${TAPCELL_ARGS}&quot;"/>
-      <cmd name="set global_place_density ${GLOBAL_PLACE_DENSITY}"/>
-      <cmd name="# default value"/>
-      <cmd name="set global_place_density_penalty ${GLOBAL_PLACE_DENSITY_PENALTY}"/>
-      <cmd name="# placement padding in SITE widths applied to both sides"/>
-      <cmd name="set global_place_pad ${GLOBAL_PLACE_PAD}"/>
-      <cmd name="set detail_place_pad ${DETAIL_PLACE_PAD}"/>
-      <cmd name="set macro_place_halo ${MACRO_PLACE_HALO}"/>
-      <cmd name="set macro_place_channel ${MACRO_PLACE_CHANNEL}"/>
-      <cmd name="set layer_rc_file ${LAYER_RC_FILE}"/>
-      <cmd name="# equiv -resistance .0035 -capacitance .052"/>
-      <cmd name="set wire_rc_layer ${WIRE_RC_LAYER}"/>
-      <cmd name="set wire_rc_layer_clk ${WIRE_RC_LAYER_CLK}"/>
-      <cmd name="set tielo_port &quot;${TIELO_PORT}&quot;"/>
-      <cmd name="set tiehi_port &quot;${TIEHI_PORT}&quot;"/>
-      <cmd name="set dont_use ${DONT_USE}"/>
-      <cmd name="# tie hi/low instance to load separation (microns)"/>
-      <cmd name="set tie_separation ${TIE_SEPARATION}"/>
-      <cmd name="set cts_buffer &quot;${CTS_BUFFER}&quot;"/>
-      <cmd name="set filler_cells &quot;${FILLER_CELLS}&quot;"/>
-      <cmd name="# fastroute"/>
-      <cmd name="set global_routing_layers ${GLOBAL_ROUTING_LAYERS}"/>
-      <cmd name="set global_routing_clock_layers ${GLOBAL_ROUTING_CLOCK_LAYERS}"/>
-      <cmd name="set global_routing_layer_adjustments ${GLOBAL_ROUTING_LAYER_ADJUSTMENTS}"/>
-      <cmd name="set rcx_rules_file ${RCX_RULES_FILE}"/>
-      <cmd name="set powergridstrategy ${POWERGRIDSTRATEGY}"/>
-
-      <cmd name="source ${PANDA_DATA_INSTALLDIR}/Scripts/helpers.tcl"/>
-      <cmd name="source ${PANDA_DATA_INSTALLDIR}/Scripts/flow_helpers.tcl"/>
-
-      <cmd name="set die_area ${DIE_AREA}"/>
-      <cmd name="set core_area ${CORE_AREA}"/>
-      <cmd name="set cap_margin &quot;${CAP_MARGIN}&quot;"/>
-
-      <cmd name="set design &quot;${__top_id__}&quot;"/>
-      <cmd name="set top_module &quot;${__top_id__}&quot;"/>
-      <cmd name="set synth_verilog &quot;${__top_id__}_mapped.v&quot;"/>
-      <cmd name="set sdc_file &quot;${__sdc_file__}&quot;"/>
-
-      <cmd name="source -echo ${PANDA_DATA_INSTALLDIR}/Scripts/flow.tcl"/>
-
-      <cmd name="report_checks -path_delay min"/>
-      <cmd name="report_checks -path_delay max"/>
-      <cmd name="report_checks -unconstrained"/>
-      <cmd name="report_tns"/>
-      <cmd name="report_wns"/>
-      <cmd name="report_check_types -max_transition -all_violators"/>
-      <cmd name="report_power"/>
-      <cmd name="report_design_area"/>
-      <cmd name="report_slack clock"/>
+      <cmd name="set standalone 0"/>
+      <cmd name="# Synthesis"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/yosys.tcl"/>
+      <cmd name="# Read process / design"/>
+      <cmd name="# Read lef"/>
+      <cmd name="read_lef $::env(TECH_LEF)"/>
+      <cmd name="read_lef $::env(SC_LEF)"/>
+      <cmd name="if {[info exist ::env(ADDITIONAL_LEFS)]} {"/>
+      <cmd name="    foreach lef $::env(ADDITIONAL_LEFS) {"/>
+      <cmd name="      read_lef $lef"/>
+      <cmd name="    }"/>
+      <cmd name="}"/>
+      <cmd name="# Read liberty files"/>
+      <cmd name="source $::env(SCRIPTS_DIR)/read_liberty.tcl"/>
+      <cmd name="read_verilog $::env(RESULTS_DIR)/1_1_yosys.v"/>
+      <cmd name="link_design $::env(DESIGN_NAME)"/>
+      <cmd name="read_sdc $::env(SDC_FILE)"/>
+      <cmd name="if [file exists $::env(PLATFORM_DIR)/derate.tcl] {"/>
+      <cmd name="  source $::env(PLATFORM_DIR)/derate.tcl"/>
+      <cmd name="}"/>
+      <cmd name="if [file exists $::env(PLATFORM_DIR)/setRC.tcl] {"/>
+      <cmd name="  source $::env(PLATFORM_DIR)/setRC.tcl"/>
+      <cmd name="}"/>
+      <cmd name="# Floorplan"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/floorplan.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/io_placement_random.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/tdms_place.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/macro_place.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/tapcell.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/pdn.tcl"/>
+      <cmd name="# Place"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/global_place.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/io_placement.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/resize.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/detail_place.tcl"/>
+      <cmd name="# CTS"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/cts.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/fillcell.tcl"/>
+      <cmd name="# Route"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/global_route.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/detail_route.tcl"/>
+      <cmd name="# Finishing"/>
+      <cmd name="if {[info exists ::env(USE_FILL)]} {"/>
+      <cmd name="  source -verbose $::env(SCRIPTS_DIR)/density_fill.tcl"/>
+      <cmd name="}"/>
       <cmd name="dump_statistics"/>
+      <cmd name="# Finishing"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/final_report.tcl"/>
+      <cmd name="source -verbose $::env(SCRIPTS_DIR)/klayout.tcl"/>
       <cmd name="exit"/>
       <cmd name="EOT"/>
    </bash>
