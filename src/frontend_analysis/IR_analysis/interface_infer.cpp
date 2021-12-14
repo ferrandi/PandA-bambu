@@ -300,7 +300,7 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, co
                   break;
                }
             }
-            else
+            else if(par_node)
             {
                THROW_ERROR("unexpected pattern: " + par_node->ToString());
             }
