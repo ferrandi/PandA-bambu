@@ -276,7 +276,8 @@ void BashBackendFlow::CheckSynthesisResults()
    auto* lut_m = GetPointer<LUT_model>(time_m);
    if(design_values[BASHBACKEND_DESIGN_DELAY] != 0.0)
    {
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[BASHBACKEND_DESIGN_DELAY]);
+      auto is_time_unit_PS = target->get_target_device()->has_parameter("USE_TIME_UNIT_PS") && target->get_target_device()->get_parameter<int>("USE_TIME_UNIT_PS") == 1;
+      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[BASHBACKEND_DESIGN_DELAY]/(is_time_unit_PS?1000:1));
    }
    else
    {
@@ -298,7 +299,7 @@ void BashBackendFlow::WriteFlowConfiguration(std::ostream& script)
           << "\n";
    script << "export CURR_WORKDIR=" << GetCurrentPath() << "\n";
 
-   for(auto pair : target->get_target_device()->get_bash_vars())
+   for(const auto& pair : target->get_target_device()->get_bash_vars())
    {
       script << ": ${" << pair.first << ":=" << pair.second << "}"
              << "\n";
