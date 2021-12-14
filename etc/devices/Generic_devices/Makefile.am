@@ -5,9 +5,16 @@ EXTRA_DIST = \
     Generic-yosysOpenROAD.xml \
     nangate45-seed.xml \
     nangate45.xml \
+    asap7-BC-seed.xml \
+    asap7-BC.xml \
+    asap7-TC-seed.xml \
+    asap7-TC.xml \
+    asap7-WC-seed.xml \
+    asap7-WC.xml \
     PandA2OpenROAD.md \
     nangate45/FreePDK45.lyp\
     nangate45/README.md\
+    nangate45/OpenCellLibraryLicenseSi2.txt \
     nangate45/FreePDK45.lyt\
     nangate45/rcx_patterns.rules\
     nangate45/template_pga.cfg\
@@ -72,7 +79,55 @@ EXTRA_DIST = \
     script/detail_route.tcl \
     script/add_routing_blk.tcl \
     script/placement_blockages.tcl\
-    util/markDontUse.py
+    util/markDontUse.py\
+    util/mergeLib.pl\
+    util/def2stream.py\
+    asap7/KLayout/asap7.lyp\
+    asap7/KLayout/asap7.lyt\
+    asap7/config.mk\
+    asap7/gds/asap7sc7p5t_27_R_1x_201211.gds\
+    asap7/gds/asap7sc7p5t_27_R_201211.gds\
+    asap7/gds/asap7sc7p5t_27_R_4x_201211.gds\
+    asap7/lef/asap7_tech_1x_201209.lef\
+    asap7/lef/asap7_tech_4x_201209.lef\
+    asap7/lef/asap7sc7p5t_27_L_1x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_L_4x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_R_1x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_R_4x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_SL_1x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_SL_4x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_SRAM_1x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_SRAM_4x_201211.lef\
+    asap7/lib/asap7sc7p5t_AO_RVT_FF_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_AO_RVT_SS_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_AO_RVT_TT_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_INVBUF_RVT_FF_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_INVBUF_RVT_SS_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_INVBUF_RVT_TT_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_OA_RVT_FF_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_OA_RVT_SS_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_OA_RVT_TT_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SEQ_RVT_FF_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SEQ_RVT_SS_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SEQ_RVT_TT_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SIMPLE_RVT_FF_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SIMPLE_RVT_SS_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SIMPLE_RVT_TT_nldm_201020.lib\
+    asap7/openRoad/make_tracks.tcl\
+    asap7/openRoad/pdn/grid_strategy-M2-M5-M7.cfg\
+    asap7/openRoad/pdn/pdn.cfg\
+    asap7/openRoad/post_mergeLib.py\
+    asap7/openRoad/tapcell.tcl\
+    asap7/rcx_patterns.rules\
+    asap7/setRC.tcl\
+    asap7/yoSys/asap7sc7p5t.blackbox.v\
+    asap7/yoSys/asap7sc7p5t_27_R_4x.blackbox.v\
+    asap7/yoSys/blackbox_map.tcl\
+    asap7/yoSys/cells_adders.v\
+    asap7/yoSys/cells_clkgate.v\
+    asap7/yoSys/cells_latch.v\
+    asap7/yoSys/merged_blackbox.v
+
 
 scripts_dir = $(pkgdatadir)/scripts
 nangate45_dir = $(pkgdatadir)/nangate45
@@ -81,6 +136,14 @@ nangate45_lef_dir = $(nangate45_dir)/lef
 nangate45_lib_dir = $(nangate45_dir)/lib
 nangate45_drc_dir = $(nangate45_dir)/drc
 nangate45_cdl_dir = $(nangate45_dir)/cdl
+asap7_dir = $(pkgdatadir)/asap7
+asap7_KLayout_dir = $(asap7_dir)/KLayout
+asap7_gds_dir = $(asap7_dir)/gds
+asap7_lef_dir = $(asap7_dir)/lef
+asap7_lib_dir = $(asap7_dir)/lib
+asap7_openRoad_dir = $(asap7_dir)/openRoad
+asap7_openRoad_pdn_dir = $(asap7_dir)/openRoad/pdn
+asap7_yoSys_dir = $(asap7_dir)/yoSys
 util_dir = $(pkgdatadir)/util
 
 scripts__SCRIPTS = \
@@ -127,7 +190,7 @@ scripts__SCRIPTS = \
 nangate45__DATA = \
     nangate45/FreePDK45.lyp\
     nangate45/README.md\
-    Nangate45/OpenCellLibraryLicenseSi2.txt \
+    nangate45/OpenCellLibraryLicenseSi2.txt \
     nangate45/FreePDK45.lyt\
     nangate45/rcx_patterns.rules\
     nangate45/template_pga.cfg\
@@ -164,6 +227,69 @@ nangate45_drc__DATA = \
 nangate45_cdl__DATA = \
     nangate45/cdl/NangateOpenCellLibrary.cdl
 
+asap7__DATA = \
+    asap7/config.mk\
+    asap7/rcx_patterns.rules\
+    asap7/setRC.tcl
+
+asap7_KLayout__DATA = \
+    asap7/KLayout/asap7.lyp\
+    asap7/KLayout/asap7.lyt
+
+asap7_gds__DATA = \
+    asap7/gds/asap7sc7p5t_27_R_1x_201211.gds\
+    asap7/gds/asap7sc7p5t_27_R_201211.gds\
+    asap7/gds/asap7sc7p5t_27_R_4x_201211.gds
+
+asap7_lef__DATA = \
+    asap7/lef/asap7_tech_1x_201209.lef\
+    asap7/lef/asap7_tech_4x_201209.lef\
+    asap7/lef/asap7sc7p5t_27_L_1x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_L_4x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_R_1x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_R_4x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_SL_1x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_SL_4x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_SRAM_1x_201211.lef\
+    asap7/lef/asap7sc7p5t_27_SRAM_4x_201211.lef
+
+asap7_lib__DATA = \
+    asap7/lib/asap7sc7p5t_AO_RVT_FF_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_AO_RVT_SS_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_AO_RVT_TT_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_INVBUF_RVT_FF_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_INVBUF_RVT_SS_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_INVBUF_RVT_TT_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_OA_RVT_FF_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_OA_RVT_SS_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_OA_RVT_TT_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SEQ_RVT_FF_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SEQ_RVT_SS_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SEQ_RVT_TT_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SIMPLE_RVT_FF_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SIMPLE_RVT_SS_nldm_201020.lib\
+    asap7/lib/asap7sc7p5t_SIMPLE_RVT_TT_nldm_201020.lib
+
+asap7_openRoad__DATA = \
+    asap7/openRoad/make_tracks.tcl\
+    asap7/openRoad/post_mergeLib.py\
+    asap7/openRoad/tapcell.tcl
+
+asap7_openRoad_pdn__DATA = \
+    asap7/openRoad/pdn/grid_strategy-M2-M5-M7.cfg\
+    asap7/openRoad/pdn/pdn.cfg
+
+asap7_yoSys__DATA = \
+    asap7/yoSys/asap7sc7p5t.blackbox.v\
+    asap7/yoSys/asap7sc7p5t_27_R_4x.blackbox.v\
+    asap7/yoSys/blackbox_map.tcl\
+    asap7/yoSys/cells_adders.v\
+    asap7/yoSys/cells_clkgate.v\
+    asap7/yoSys/cells_latch.v\
+    asap7/yoSys/merged_blackbox.v
+
 util__SCRIPTS = \
-    util/markDontUse.py
+    util/markDontUse.py\
+    util/mergeLib.pl\
+    util/def2stream.py
 

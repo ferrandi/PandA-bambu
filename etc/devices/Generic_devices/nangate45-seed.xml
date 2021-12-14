@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <target>
-   <device>
+  <device>
     <vendor value="Generic"/>
     <family value="Generic-yosysOpenROAD"/>
     <model value="nangate45"/>
@@ -13,9 +13,9 @@
     <DSPs_x_sizes value="16"/>
     <DSPs_y_sizes value="16"/>
     <max_lut_size value="0"/>
-    <PLATFORM is_bash_var="1" value="nangate45"/>
 
     <PLATFORM is_bash_var="1" value="nangate45"/>
+    <PROCESS is_bash_var="1" value="45"/>
 
     <!-- YOSYS -->
 
@@ -47,7 +47,7 @@
     <TECH_LEF is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/lef/NangateOpenCellLibrary.tech.lef"/>
     <SC_LEF is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/lef/NangateOpenCellLibrary.macro.mod.lef"/>
     <LIB_FILES is_bash_var="1" value="&quot;${PANDA_DATA_INSTALLDIR}/nangate45/lib/NangateOpenCellLibrary_typical.lib ${ADDITIONAL_LIBS}&quot;"/>
-    <GDS_FILES is_bash_var="1" value="&apos;$(sort $(ls -1 ${PANDA_DATA_INSTALLDIR}/nangate45/gds/*.gds)) ${ADDITIONAL_GDS}&apos;"/>
+    <GDS_FILES is_bash_var="1" value="&quot;$(ls -1 ${PANDA_DATA_INSTALLDIR}/nangate45/gds/*.gds) ${ADDITIONAL_GDS}&quot;"/>
 
     <DONT_USE_CELLS is_bash_var="1" value="&quot;TAPCELL_X1 FILLCELL_X1 AOI211_X1 OAI211_X1&quot;"/>
     <FILL_CELLS is_bash_var="1" value="&quot;FILLCELL_X1 FILLCELL_X2 FILLCELL_X4 FILLCELL_X8 FILLCELL_X16 FILLCELL_X32&quot;"/>

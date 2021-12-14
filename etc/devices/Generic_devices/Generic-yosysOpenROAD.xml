@@ -34,7 +34,7 @@
       <cmd name=": {SYNTH_HIERARCHICAL:=0}"/>
       <cmd name="export SYNTH_HIERARCHICAL"/>
       <cmd name="export SYNTH_STOP_MODULE_SCRIPT=${OBJECTS_DIR}/mark_hier_stop_modules.tcl"/>
-      <cmd name="if [[ $SYNTH_HIERARCHICAL -eq 10 ]]"/>
+      <cmd name="if [[ $SYNTH_HIERARCHICAL -eq 1 ]]"/>
       <cmd name="then"/>
       <cmd name="  export HIER_REPORT_SCRIPT=${SCRIPTS_DIR}/synth_hier_report.tcl"/>
       <cmd name="  : ${MAX_UNGROUP_SIZE:=0}"/>
@@ -53,8 +53,9 @@
       <cmd name="export SYNTH_ARGS"/>
       <cmd name="# Global setting for Floorplan"/>
       <cmd name="export PLACE_PINS_ARGS=&quot;&quot;"/>
-      <cmd name=": ${STREAM_SYSTEM_EXT:=gds}"/>
-      <cmd name="export STREAM_SYSTEM_EXT"/>
+      <cmd name=": ${STREAM_SYSTEM:=GDS}"/>
+      <cmd name="export STREAM_SYSTEM"/>
+
       <cmd name=": {ABC_CLOCK_PERIOD_IN_PS:=${__clk_period_ps__}}"/>
       <cmd name="export ABC_CLOCK_PERIOD_IN_PS"/>
 
@@ -68,16 +69,57 @@
       <cmd name="mkdir -p ${RESULTS_DIR}"/>
 
       <cmd name="mkdir -p ${OBJECTS_DIR}/lib"/>
-      <cmd name="export DONT_USE_LIBS=${OBJECTS_DIR}/lib/donotuse.lib"/>
-      <cmd name="${UTILS_DIR}/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${LIB_FILES} -o ${DONT_USE_LIBS}"/>
-      <cmd name=": ${DONT_USE_SC_LIB:=${OBJECTS_DIR}/lib/donotuse.lib}"/>
+      <cmd name="DONT_USE_LIBS=&quot;&quot;"/>
+      <cmd name="COUNTER=1"/>
+      <cmd name="for lib in ${LIB_FILES} "/>
+      <cmd name="do"/>
+      <cmd name="  ${UTILS_DIR}/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${lib} -o ${OBJECTS_DIR}/lib/tobemerged${COUNTER}.lib"/>
+      <cmd name="  DONT_USE_LIBS+=&quot; ${OBJECTS_DIR}/lib/tobemerged${COUNTER}.lib&quot;"/>
+      <cmd name="  COUNTER=$[$COUNTER +1]"/>
+      <cmd name="done"/>
+      <cmd name="export DONT_USE_LIBS"/>
+      <cmd name="${UTILS_DIR}/mergeLib.pl ${PLATFORM}_merged ${DONT_USE_LIBS} > ${OBJECTS_DIR}/lib/merged.lib"/>
+
+      <cmd name=": ${DONT_USE_SC_LIB:=${OBJECTS_DIR}/lib/merged.lib}"/>
       <cmd name="export DONT_USE_SC_LIB"/>
+
+      <cmd name=": ${WRAP_LEFS:=&quot;&quot;}"/>
+      <cmd name=": ${WRAPPED_LEFS:=&quot;&quot;}"/>
+      <cmd name=": ${WRAPPED_GDSOAS:=&quot;&quot;}"/>
+      <cmd name="export WRAPPED_GDSOAS"/>
+      <!-- <cmd name="export ADDITIONAL_LEFS+=&quot;${WRAPPED_LEFS} ${WRAP_LEFS}&quot;"/> -->
+      <!-- # Pre-process KLayout tech -->
+      <cmd name="sed '/OR_DEFAULT/d' ${TECH_LEF} > ${OBJECTS_DIR}/klayout_tech.lef"/>
+      <cmd name="LEF_FILES_PATTERN=&quot;&quot;"/>
+      <cmd name="COUNTER=1"/>
+      <cmd name="for lef_file in ${OBJECTS_DIR}/klayout_tech.lef ${SC_LEF} ${ADDITIONAL_LEFS} "/>
+      <cmd name="do"/>
+      <cmd name="  LEF_FILES_PATTERN+=&quot; <lef-files>${lef_file}</lef-files>&quot;"/>
+      <cmd name="done"/>
+      <cmd name="sed &quot;s;<lef-files>.*</lef-files>;${LEF_FILES_PATTERN};g&quot; ${KLAYOUT_TECH_FILE} > ${OBJECTS_DIR}/klayout.lyt"/>
+
+      <cmd name="if [[ ${STREAM_SYSTEM} == *&quot;GDS&quot;* ]];"/>
+      <cmd name="then"/>
+      <cmd name="  STREAM_SYSTEM_EXT=gds"/>
+      <cmd name="  GDSOAS_FILES=${GDS_FILES}"/>
+      <cmd name="  ADDITIONAL_GDSOAS=${ADDITIONAL_GDS}"/>
+      <cmd name="  SEAL_GDSOAS=${SEAL_GDS}"/>
+      <cmd name="else"/>
+      <cmd name="  STREAM_SYSTEM_EXT=oas"/>
+      <cmd name="  GDSOAS_FILES=${OAS_FILES}"/>
+      <cmd name="  ADDITIONAL_GDSOAS=${ADDITIONAL_OAS}"/>
+      <cmd name="  SEAL_GDSOAS=${SEAL_OAS}"/>
+      <cmd name="fi"/>
+      <cmd name="export STREAM_SYSTEM_EXT"/>
+      <cmd name="export GDSOAS_FILES"/>
+      <cmd name="export ADDITIONAL_GDSOAS"/>
+      <cmd name="export SEAL_GDSOAS"/>
 
       <cmd name="openroad &lt;&lt; EOT "/>
       <cmd name="proc dump_statistics {  } {"/>
       <cmd name="  set DesignArea [sta::format_area [rsz::design_area] 0]"/>
       <cmd name="  set TotPower [lindex [sta::design_power [sta::find_corner &quot;default&quot;]] 3] "/>
-      <cmd name="  set design_req ${__clk_period__}"/>
+      <cmd name="  set design_req [get_property [lindex [all_clocks] 0] period]"/>
       <cmd name="  set design_slack [sta::worst_slack -max]"/>
       <cmd name="  set design_delay [expr {\$design_req - \$design_slack}]"/>
       <cmd name="  file delete -force ${__bash_backend_report__} "/>
@@ -139,9 +181,9 @@
       <cmd name="if {[info exists ::env(USE_FILL)]} {"/>
       <cmd name="  source -verbose $::env(SCRIPTS_DIR)/density_fill.tcl"/>
       <cmd name="}"/>
-      <cmd name="dump_statistics"/>
       <cmd name="# Finishing"/>
       <cmd name="source -verbose $::env(SCRIPTS_DIR)/final_report.tcl"/>
+      <cmd name="dump_statistics"/>
       <cmd name="source -verbose $::env(SCRIPTS_DIR)/klayout.tcl"/>
       <cmd name="exit"/>
       <cmd name="EOT"/>
@@ -174,7 +216,7 @@
       <cmd name=": {SYNTH_HIERARCHICAL:=0}"/>
       <cmd name="export SYNTH_HIERARCHICAL"/>
       <cmd name="export SYNTH_STOP_MODULE_SCRIPT=${OBJECTS_DIR}/mark_hier_stop_modules.tcl"/>
-      <cmd name="if [[ $SYNTH_HIERARCHICAL -eq 10 ]]"/>
+      <cmd name="if [[ $SYNTH_HIERARCHICAL -eq 1 ]]"/>
       <cmd name="then"/>
       <cmd name="  export HIER_REPORT_SCRIPT=${SCRIPTS_DIR}/synth_hier_report.tcl"/>
       <cmd name="  : ${MAX_UNGROUP_SIZE:=0}"/>
@@ -193,8 +235,9 @@
       <cmd name="export SYNTH_ARGS"/>
       <cmd name="# Global setting for Floorplan"/>
       <cmd name="export PLACE_PINS_ARGS=&quot;&quot;"/>
-      <cmd name=": ${STREAM_SYSTEM_EXT:=gds}"/>
-      <cmd name="export STREAM_SYSTEM_EXT"/>
+      <cmd name=": ${STREAM_SYSTEM:=GDS}"/>
+      <cmd name="export STREAM_SYSTEM"/>
+
       <cmd name=": {ABC_CLOCK_PERIOD_IN_PS:=${__clk_period_ps__}}"/>
       <cmd name="export ABC_CLOCK_PERIOD_IN_PS"/>
 
@@ -208,16 +251,57 @@
       <cmd name="mkdir -p ${RESULTS_DIR}"/>
 
       <cmd name="mkdir -p ${OBJECTS_DIR}/lib"/>
-      <cmd name="export DONT_USE_LIBS=${OBJECTS_DIR}/lib/donotuse.lib"/>
-      <cmd name="${UTILS_DIR}/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${LIB_FILES} -o ${DONT_USE_LIBS}"/>
-      <cmd name=": ${DONT_USE_SC_LIB:=${OBJECTS_DIR}/lib/donotuse.lib}"/>
+      <cmd name="DONT_USE_LIBS=&quot;&quot;"/>
+      <cmd name="COUNTER=1"/>
+      <cmd name="for lib in ${LIB_FILES} "/>
+      <cmd name="do"/>
+      <cmd name="  ${UTILS_DIR}/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${lib} -o ${OBJECTS_DIR}/lib/tobemerged${COUNTER}.lib"/>
+      <cmd name="  DONT_USE_LIBS+=&quot; ${OBJECTS_DIR}/lib/tobemerged${COUNTER}.lib&quot;"/>
+      <cmd name="  COUNTER=$[$COUNTER +1]"/>
+      <cmd name="done"/>
+      <cmd name="export DONT_USE_LIBS"/>
+      <cmd name="${UTILS_DIR}/mergeLib.pl ${PLATFORM}_merged ${DONT_USE_LIBS} > ${OBJECTS_DIR}/lib/merged.lib"/>
+
+      <cmd name=": ${DONT_USE_SC_LIB:=${OBJECTS_DIR}/lib/merged.lib}"/>
       <cmd name="export DONT_USE_SC_LIB"/>
+
+      <cmd name=": ${WRAP_LEFS:=&quot;&quot;}"/>
+      <cmd name=": ${WRAPPED_LEFS:=&quot;&quot;}"/>
+      <cmd name=": ${WRAPPED_GDSOAS:=&quot;&quot;}"/>
+      <cmd name="export WRAPPED_GDSOAS"/>
+      <!-- <cmd name="export ADDITIONAL_LEFS+=&quot;${WRAPPED_LEFS} ${WRAP_LEFS}&quot;"/> -->
+      <!-- # Pre-process KLayout tech -->
+      <cmd name="sed '/OR_DEFAULT/d' ${TECH_LEF} > ${OBJECTS_DIR}/klayout_tech.lef"/>
+      <cmd name="LEF_FILES_PATTERN=&quot;&quot;"/>
+      <cmd name="COUNTER=1"/>
+      <cmd name="for lef_file in ${OBJECTS_DIR}/klayout_tech.lef ${SC_LEF} ${ADDITIONAL_LEFS} "/>
+      <cmd name="do"/>
+      <cmd name="  LEF_FILES_PATTERN+=&quot; <lef-files>${lef_file}</lef-files>&quot;"/>
+      <cmd name="done"/>
+      <cmd name="sed &quot;s;<lef-files>.*</lef-files>;${LEF_FILES_PATTERN};g&quot; ${KLAYOUT_TECH_FILE} > ${OBJECTS_DIR}/klayout.lyt"/>
+
+      <cmd name="if [[ ${STREAM_SYSTEM} == *&quot;GDS&quot;* ]];"/>
+      <cmd name="then"/>
+      <cmd name="  STREAM_SYSTEM_EXT=gds"/>
+      <cmd name="  GDSOAS_FILES=${GDS_FILES}"/>
+      <cmd name="  ADDITIONAL_GDSOAS=${ADDITIONAL_GDS}"/>
+      <cmd name="  SEAL_GDSOAS=${SEAL_GDS}"/>
+      <cmd name="else"/>
+      <cmd name="  STREAM_SYSTEM_EXT=oas"/>
+      <cmd name="  GDSOAS_FILES=${OAS_FILES}"/>
+      <cmd name="  ADDITIONAL_GDSOAS=${ADDITIONAL_OAS}"/>
+      <cmd name="  SEAL_GDSOAS=${SEAL_OAS}"/>
+      <cmd name="fi"/>
+      <cmd name="export STREAM_SYSTEM_EXT"/>
+      <cmd name="export GDSOAS_FILES"/>
+      <cmd name="export ADDITIONAL_GDSOAS"/>
+      <cmd name="export SEAL_GDSOAS"/>
 
       <cmd name="openroad &lt;&lt; EOT "/>
       <cmd name="proc dump_statistics {  } {"/>
       <cmd name="  set DesignArea [sta::format_area [rsz::design_area] 0]"/>
       <cmd name="  set TotPower [lindex [sta::design_power [sta::find_corner &quot;default&quot;]] 3] "/>
-      <cmd name="  set design_req ${__clk_period__}"/>
+      <cmd name="  set design_req [get_property [lindex [all_clocks] 0] period]"/>
       <cmd name="  set design_slack [sta::worst_slack -max]"/>
       <cmd name="  set design_delay [expr {\$design_req - \$design_slack}]"/>
       <cmd name="  file delete -force ${__bash_backend_report__} "/>
@@ -279,9 +363,9 @@
       <cmd name="if {[info exists ::env(USE_FILL)]} {"/>
       <cmd name="  source -verbose $::env(SCRIPTS_DIR)/density_fill.tcl"/>
       <cmd name="}"/>
-      <cmd name="dump_statistics"/>
       <cmd name="# Finishing"/>
       <cmd name="source -verbose $::env(SCRIPTS_DIR)/final_report.tcl"/>
+      <cmd name="dump_statistics"/>
       <cmd name="source -verbose $::env(SCRIPTS_DIR)/klayout.tcl"/>
       <cmd name="exit"/>
       <cmd name="EOT"/>
