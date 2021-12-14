@@ -22,7 +22,6 @@ EXTRA_DIST = \
     nangate45/setRC.tcl\
     nangate45/drc/FreePDK45.lydrc\
     nangate45/gds/NangateOpenCellLibrary.gds\
-    nangate45/gds/NangateOpenCellLibrary.gds.orig\
     nangate45/tapcell.tcl\
     nangate45/cdl/NangateOpenCellLibrary.cdl\
     nangate45/cells_adders.v\
@@ -209,8 +208,7 @@ nangate45__DATA = \
     nangate45/fastroute.tcl
 
 nangate45_gds__DATA = \
-    nangate45/gds/NangateOpenCellLibrary.gds\
-    nangate45/gds/NangateOpenCellLibrary.gds.orig
+    nangate45/gds/NangateOpenCellLibrary.gds
 
 nangate45_lef__DATA = \
     nangate45/lef/NangateOpenCellLibrary.macro.rect.lef\
