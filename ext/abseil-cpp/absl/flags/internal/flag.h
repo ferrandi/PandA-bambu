@@ -29,6 +29,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/call_once.h"
+#include "absl/base/casts.h"
 #include "absl/base/config.h"
 #include "absl/base/optimization.h"
 #include "absl/base/thread_annotations.h"
@@ -36,6 +37,7 @@
 #include "absl/flags/config.h"
 #include "absl/flags/internal/commandlineflag.h"
 #include "absl/flags/internal/registry.h"
+#include "absl/flags/internal/sequence_lock.h"
 #include "absl/flags/marshalling.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
@@ -161,7 +163,7 @@ inline ptrdiff_t ValueOffset(FlagOpFn op) {
 // Returns an address of RTTI's typeid(T).
 template <typename T>
 inline const std::type_info* GenRuntimeTypeId() {
-#if defined(ABSL_FLAGS_INTERNAL_HAS_RTTI)
+#ifdef ABSL_INTERNAL_HAS_RTTI
   return &typeid(T);
 #else
   return nullptr;
@@ -288,7 +290,7 @@ constexpr T InitDefaultValue(EmptyBraces) {
 
 template <typename ValueT, typename GenT,
           typename std::enable_if<std::is_integral<ValueT>::value, int>::type =
-              (GenT{}, 0)>
+              ((void)GenT{}, 0)>
 constexpr FlagDefaultArg DefaultArg(int) {
   return {FlagDefaultSrc(GenT{}.value), FlagDefaultKind::kOneWord};
 }
@@ -304,76 +306,49 @@ constexpr FlagDefaultArg DefaultArg(char) {
 constexpr int64_t UninitializedFlagValue() { return 0xababababababababll; }
 
 template <typename T>
+using FlagUseValueAndInitBitStorage = std::integral_constant<
+    bool, absl::type_traits_internal::is_trivially_copyable<T>::value &&
+              std::is_default_constructible<T>::value && (sizeof(T) < 8)>;
+
+template <typename T>
 using FlagUseOneWordStorage = std::integral_constant<
     bool, absl::type_traits_internal::is_trivially_copyable<T>::value &&
               (sizeof(T) <= 8)>;
 
-#if defined(ABSL_FLAGS_INTERNAL_ATOMIC_DOUBLE_WORD)
-// Clang does not always produce cmpxchg16b instruction when alignment of a 16
-// bytes type is not 16.
-struct alignas(16) AlignedTwoWords {
-  int64_t first;
-  int64_t second;
-
-  bool IsInitialized() const {
-    return first != flags_internal::UninitializedFlagValue();
-  }
-};
-
-template <typename T>
-using FlagUseTwoWordsStorage = std::integral_constant<
+template <class T>
+using FlagUseSequenceLockStorage = std::integral_constant<
     bool, absl::type_traits_internal::is_trivially_copyable<T>::value &&
-              (sizeof(T) > 8) && (sizeof(T) <= 16)>;
-#else
-// This is actually unused and only here to avoid ifdefs in other palces.
-struct AlignedTwoWords {
-  constexpr AlignedTwoWords() noexcept : dummy() {}
-  constexpr AlignedTwoWords(int64_t, int64_t) noexcept : dummy() {}
-  char dummy;
-
-  bool IsInitialized() const {
-    std::abort();
-    return true;
-  }
-};
-
-// This trait should be type dependent, otherwise SFINAE below will fail
-template <typename T>
-using FlagUseTwoWordsStorage =
-    std::integral_constant<bool, sizeof(T) != sizeof(T)>;
-#endif
-
-template <typename T>
-using FlagUseBufferStorage =
-    std::integral_constant<bool, !FlagUseOneWordStorage<T>::value &&
-                                     !FlagUseTwoWordsStorage<T>::value>;
+              (sizeof(T) > 8)>;
 
 enum class FlagValueStorageKind : uint8_t {
-  kAlignedBuffer = 0,
+  kValueAndInitBit = 0,
   kOneWordAtomic = 1,
-  kTwoWordsAtomic = 2
+  kSequenceLocked = 2,
+  kAlignedBuffer = 3,
 };
 
 template <typename T>
 static constexpr FlagValueStorageKind StorageKind() {
-  return FlagUseBufferStorage<T>::value
-             ? FlagValueStorageKind::kAlignedBuffer
-             : FlagUseOneWordStorage<T>::value
-                   ? FlagValueStorageKind::kOneWordAtomic
-                   : FlagValueStorageKind::kTwoWordsAtomic;
+  return FlagUseValueAndInitBitStorage<T>::value
+             ? FlagValueStorageKind::kValueAndInitBit
+         : FlagUseOneWordStorage<T>::value
+             ? FlagValueStorageKind::kOneWordAtomic
+         : FlagUseSequenceLockStorage<T>::value
+             ? FlagValueStorageKind::kSequenceLocked
+             : FlagValueStorageKind::kAlignedBuffer;
 }
 
 struct FlagOneWordValue {
-  constexpr FlagOneWordValue() : value(UninitializedFlagValue()) {}
-
+  constexpr explicit FlagOneWordValue(int64_t v) : value(v) {}
   std::atomic<int64_t> value;
 };
 
-struct FlagTwoWordsValue {
-  constexpr FlagTwoWordsValue()
-      : value(AlignedTwoWords{UninitializedFlagValue(), 0}) {}
-
-  std::atomic<AlignedTwoWords> value;
+template <typename T>
+struct alignas(8) FlagValueAndInitBit {
+  T value;
+  // Use an int instead of a bool to guarantee that a non-zero value has
+  // a bit set.
+  uint8_t init;
 };
 
 template <typename T,
@@ -381,15 +356,22 @@ template <typename T,
 struct FlagValue;
 
 template <typename T>
-struct FlagValue<T, FlagValueStorageKind::kAlignedBuffer> {
-  bool Get(T&) const { return false; }
-
-  alignas(T) char value[sizeof(T)];
+struct FlagValue<T, FlagValueStorageKind::kValueAndInitBit> : FlagOneWordValue {
+  constexpr FlagValue() : FlagOneWordValue(0) {}
+  bool Get(const SequenceLock&, T& dst) const {
+    int64_t storage = value.load(std::memory_order_acquire);
+    if (ABSL_PREDICT_FALSE(storage == 0)) {
+      return false;
+    }
+    dst = absl::bit_cast<FlagValueAndInitBit<T>>(storage).value;
+    return true;
+  }
 };
 
 template <typename T>
 struct FlagValue<T, FlagValueStorageKind::kOneWordAtomic> : FlagOneWordValue {
-  bool Get(T& dst) const {
+  constexpr FlagValue() : FlagOneWordValue(UninitializedFlagValue()) {}
+  bool Get(const SequenceLock&, T& dst) const {
     int64_t one_word_val = value.load(std::memory_order_acquire);
     if (ABSL_PREDICT_FALSE(one_word_val == UninitializedFlagValue())) {
       return false;
@@ -400,15 +382,23 @@ struct FlagValue<T, FlagValueStorageKind::kOneWordAtomic> : FlagOneWordValue {
 };
 
 template <typename T>
-struct FlagValue<T, FlagValueStorageKind::kTwoWordsAtomic> : FlagTwoWordsValue {
-  bool Get(T& dst) const {
-    AlignedTwoWords two_words_val = value.load(std::memory_order_acquire);
-    if (ABSL_PREDICT_FALSE(!two_words_val.IsInitialized())) {
-      return false;
-    }
-    std::memcpy(&dst, static_cast<const void*>(&two_words_val), sizeof(T));
-    return true;
+struct FlagValue<T, FlagValueStorageKind::kSequenceLocked> {
+  bool Get(const SequenceLock& lock, T& dst) const {
+    return lock.TryRead(&dst, value_words, sizeof(T));
   }
+
+  static constexpr int kNumWords =
+      flags_internal::AlignUp(sizeof(T), sizeof(uint64_t)) / sizeof(uint64_t);
+
+  alignas(T) alignas(
+      std::atomic<uint64_t>) std::atomic<uint64_t> value_words[kNumWords];
+};
+
+template <typename T>
+struct FlagValue<T, FlagValueStorageKind::kAlignedBuffer> {
+  bool Get(const SequenceLock&, T&) const { return false; }
+
+  alignas(T) char value[sizeof(T)];
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -451,13 +441,32 @@ class FlagImpl final : public CommandLineFlag {
         def_kind_(static_cast<uint8_t>(default_arg.kind)),
         modified_(false),
         on_command_line_(false),
-        counter_(0),
         callback_(nullptr),
         default_value_(default_arg.source),
         data_guard_{} {}
 
   // Constant access methods
+  int64_t ReadOneWord() const ABSL_LOCKS_EXCLUDED(*DataGuard());
+  bool ReadOneBool() const ABSL_LOCKS_EXCLUDED(*DataGuard());
   void Read(void* dst) const override ABSL_LOCKS_EXCLUDED(*DataGuard());
+  void Read(bool* value) const ABSL_LOCKS_EXCLUDED(*DataGuard()) {
+    *value = ReadOneBool();
+  }
+  template <typename T,
+            absl::enable_if_t<flags_internal::StorageKind<T>() ==
+                                  FlagValueStorageKind::kOneWordAtomic,
+                              int> = 0>
+  void Read(T* value) const ABSL_LOCKS_EXCLUDED(*DataGuard()) {
+    int64_t v = ReadOneWord();
+    std::memcpy(value, static_cast<const void*>(&v), sizeof(T));
+  }
+  template <typename T,
+            typename std::enable_if<flags_internal::StorageKind<T>() ==
+                                        FlagValueStorageKind::kValueAndInitBit,
+                                    int>::type = 0>
+  void Read(T* value) const ABSL_LOCKS_EXCLUDED(*DataGuard()) {
+    *value = absl::bit_cast<FlagValueAndInitBit<T>>(ReadOneWord()).value;
+  }
 
   // Mutating access methods
   void Write(const void* src) ABSL_LOCKS_EXCLUDED(*DataGuard());
@@ -482,7 +491,8 @@ class FlagImpl final : public CommandLineFlag {
   friend class FlagState;
 
   // Ensures that `data_guard_` is initialized and returns it.
-  absl::Mutex* DataGuard() const ABSL_LOCK_RETURNED((absl::Mutex*)&data_guard_);
+  absl::Mutex* DataGuard() const
+      ABSL_LOCK_RETURNED(reinterpret_cast<absl::Mutex*>(data_guard_));
   // Returns heap allocated value of type T initialized with default value.
   std::unique_ptr<void, DynValueDeleter> MakeInitValue() const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*DataGuard());
@@ -497,15 +507,17 @@ class FlagImpl final : public CommandLineFlag {
   // flag.cc, we can define it in that file as well.
   template <typename StorageT>
   StorageT* OffsetValue() const;
-  // This is an accessor for a value stored in an aligned buffer storage.
+  // This is an accessor for a value stored in an aligned buffer storage
+  // used for non-trivially-copyable data types.
   // Returns a mutable pointer to the start of a buffer.
   void* AlignedBufferValue() const;
+
+  // The same as above, but used for sequencelock-protected storage.
+  std::atomic<uint64_t>* AtomicBufferValue() const;
+
   // This is an accessor for a value stored as one word atomic. Returns a
   // mutable reference to an atomic value.
   std::atomic<int64_t>& OneWordValue() const;
-  // This is an accessor for a value stored as two words atomic. Returns a
-  // mutable reference to an atomic value.
-  std::atomic<AlignedTwoWords>& TwoWordsValue() const;
 
   // Attempts to parse supplied `value` string. If parsing is successful,
   // returns new value. Otherwise returns nullptr.
@@ -514,6 +526,12 @@ class FlagImpl final : public CommandLineFlag {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*DataGuard());
   // Stores the flag value based on the pointer to the source.
   void StoreValue(const void* src) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*DataGuard());
+
+  // Copy the flag data, protected by `seq_lock_` into `dst`.
+  //
+  // REQUIRES: ValueStorageKind() == kSequenceLocked.
+  void ReadSequenceLockedData(void* dst) const
+      ABSL_LOCKS_EXCLUDED(*DataGuard());
 
   FlagHelpKind HelpSourceKind() const {
     return static_cast<FlagHelpKind>(help_source_kind_);
@@ -539,6 +557,8 @@ class FlagImpl final : public CommandLineFlag {
       ABSL_LOCKS_EXCLUDED(*DataGuard());
   void CheckDefaultValueParsingRoundtrip() const override
       ABSL_LOCKS_EXCLUDED(*DataGuard());
+
+  int64_t ModificationCount() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(*DataGuard());
 
   // Interfaces to save and restore flags to/from persistent state.
   // Returns current flag state or nullptr if flag does not support
@@ -586,8 +606,9 @@ class FlagImpl final : public CommandLineFlag {
   // Unique tag for absl::call_once call to initialize this flag.
   absl::once_flag init_control_;
 
-  // Mutation counter
-  int64_t counter_ ABSL_GUARDED_BY(*DataGuard());
+  // Sequence lock / mutation counter.
+  flags_internal::SequenceLock seq_lock_;
+
   // Optional flag's callback and absl::Mutex to guard the invocations.
   FlagCallback* callback_ ABSL_GUARDED_BY(*DataGuard());
   // Either a pointer to the function generating the default value based on the
@@ -631,20 +652,9 @@ class Flag {
   std::string CurrentValue() const { return impl_.CurrentValue(); }
 
  private:
-  template <typename U, bool do_register>
+  template <typename, bool>
   friend class FlagRegistrar;
-
-#if !defined(_MSC_VER) || defined(__clang__)
-  template <typename U>
-  friend U absl::GetFlag(const flags_internal::Flag<U>& flag);
-  template <typename U>
-  friend void absl::SetFlag(flags_internal::Flag<U>* flag, const U& v);
-  template <typename U, typename V>
-  friend void absl::SetFlag(flags_internal::Flag<U>* flag, const V& v);
-#else
-  template <typename U>
-  friend class absl::Flag;
-#endif
+  friend class FlagImplPeer;
 
   T Get() const {
     // See implementation notes in CommandLineFlag::Get().
@@ -659,17 +669,15 @@ class Flag {
     impl_.AssertValidType(base_internal::FastTypeId<T>(), &GenRuntimeTypeId<T>);
 #endif
 
-    if (!value_.Get(u.value)) impl_.Read(&u.value);
+    if (ABSL_PREDICT_FALSE(!value_.Get(impl_.seq_lock_, u.value))) {
+      impl_.Read(&u.value);
+    }
     return std::move(u.value);
   }
   void Set(const T& v) {
     impl_.AssertValidType(base_internal::FastTypeId<T>(), &GenRuntimeTypeId<T>);
     impl_.Write(&v);
   }
-
-  template <typename U>
-  friend const CommandLineFlag& absl::GetFlagReflectionHandle(
-      const absl::Flag<U>& f);
 
   // Access to the reflection.
   const CommandLineFlag& Reflect() const { return impl_; }
@@ -680,6 +688,25 @@ class Flag {
   // access it.
   FlagImpl impl_;
   FlagValue<T> value_;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// Trampoline for friend access
+
+class FlagImplPeer {
+ public:
+  template <typename T, typename FlagType>
+  static T InvokeGet(const FlagType& flag) {
+    return flag.Get();
+  }
+  template <typename FlagType, typename T>
+  static void InvokeSet(FlagType& flag, const T& v) {
+    flag.Set(v);
+  }
+  template <typename FlagType>
+  static const CommandLineFlag& InvokeReflect(const FlagType& f) {
+    return f.Reflect();
+  }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -745,8 +772,9 @@ struct FlagRegistrarEmpty {};
 template <typename T, bool do_register>
 class FlagRegistrar {
  public:
-  explicit FlagRegistrar(Flag<T>& flag) : flag_(flag) {
-    if (do_register) flags_internal::RegisterCommandLineFlag(flag_.impl_);
+  explicit FlagRegistrar(Flag<T>& flag, const char* filename) : flag_(flag) {
+    if (do_register)
+      flags_internal::RegisterCommandLineFlag(flag_.impl_, filename);
   }
 
   FlagRegistrar OnUpdate(FlagCallbackFunc cb) && {

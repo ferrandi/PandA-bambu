@@ -17,7 +17,6 @@
 # It will expand later to have utilities around `Status` like `StatusOr`,
 # `StatusBuilder` and macros.
 
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load(
     "//absl:copts/configure_copts.bzl",
     "ABSL_DEFAULT_COPTS",
@@ -26,11 +25,12 @@ load(
 
 package(default_visibility = ["//visibility:public"])
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 cc_library(
     name = "status",
     srcs = [
+        "internal/status_internal.h",
         "status.cc",
         "status_payload_printer.cc",
     ],
@@ -47,6 +47,7 @@ cc_library(
         "//absl/container:inlined_vector",
         "//absl/debugging:stacktrace",
         "//absl/debugging:symbolize",
+        "//absl/functional:function_ref",
         "//absl/strings",
         "//absl/strings:cord",
         "//absl/strings:str_format",
@@ -61,6 +62,44 @@ cc_test(
     deps = [
         ":status",
         "//absl/strings",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "statusor",
+    srcs = [
+        "internal/statusor_internal.h",
+        "statusor.cc",
+    ],
+    hdrs = [
+        "statusor.h",
+    ],
+    copts = ABSL_DEFAULT_COPTS,
+    deps = [
+        ":status",
+        "//absl/base",
+        "//absl/base:core_headers",
+        "//absl/base:raw_logging_internal",
+        "//absl/meta:type_traits",
+        "//absl/strings",
+        "//absl/types:variant",
+        "//absl/utility",
+    ],
+)
+
+cc_test(
+    name = "statusor_test",
+    size = "small",
+    srcs = ["statusor_test.cc"],
+    deps = [
+        ":status",
+        ":statusor",
+        "//absl/base",
+        "//absl/memory",
+        "//absl/strings",
+        "//absl/types:any",
+        "//absl/utility",
         "@com_google_googletest//:gtest_main",
     ],
 )
