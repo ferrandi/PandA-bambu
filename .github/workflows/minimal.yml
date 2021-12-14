@@ -643,7 +643,7 @@ jobs:
     runs-on: [self-hosted]
     env:
       script: ./examples/CHStone/generic_CHStone.sh
-      args: -c=--device-name=nangate45 -c=--compiler=I386_GCC49 -c=--clock-period=5 -c=--simulator=ICARUS -c=--evaluation
+      args: -c=--device-name=nangate45 -c=--compiler=I386_CLANG12 -c=--memory-allocation-policy=NO_BRAM -c=--clock-period=5 -c=--simulator=ICARUS -c=--evaluation
       outname: CHStone-yosys
     steps:
       - name: Checkout repository
