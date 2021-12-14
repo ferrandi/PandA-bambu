@@ -1092,7 +1092,7 @@ port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _d
 
 void port_o::add_connection(structural_objectRef s)
 {
-   THROW_ASSERT(s, get_path() + ": NULL object received: " + s->get_path());
+   THROW_ASSERT(s, get_path() + ": NULL object received: ");
    THROW_ASSERT(
        (get_kind() == port_o_K &&
         (s->get_kind() == port_o_K || s->get_kind() == signal_o_K || s->get_kind() == constant_o_K)) ||
