@@ -2001,6 +2001,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             if(disabling_slack_cond0)
             {
                clique_covering_algorithm = CliqueCovering_Algorithm::BIPARTITE_MATCHING;
+               PRINT_DBG_MEX(
+                   DEBUG_LEVEL_VERBOSE, debug_level,
+                   "DISABLING STD clique covering algorithm. Forced to BIPARTITE_MATCHING");
             }
 
             const CliqueCovering_Algorithm clique_covering_method_used = clique_covering_algorithm;
@@ -2097,6 +2100,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                {
                   module_clique->add_edge(src, tgt, _w);
                }
+               else
+               {
+                  THROW_ASSERT(!disabling_slack_based_binding, "unexpected condition");
+               }
             }
             if(parameters->getOption<bool>(OPT_print_dot))
             {
@@ -2172,9 +2179,16 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   (allocation_information->get_number_channels(partition.first) >= 1 &&
                    module_clique->num_vertices() > allocation_information->get_number_channels(partition.first)))
                {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Restarting with BIPARTITE_MATCHING: " + res_name);
+                  if(disabling_slack_cond0)
+                  {
+                     PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Restarting with WEIGHTED_COLORING: " + res_name);
+                  }
+                  else
+                  {
+                     PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Restarting with BIPARTITE_MATCHING: " + res_name);
+                  }
                   module_clique = clique_covering<vertex>::create_solver(
-                      CliqueCovering_Algorithm::BIPARTITE_MATCHING, static_cast<unsigned>(partition.second.size()));
+                      (disabling_slack_cond0? CliqueCovering_Algorithm::WEIGHTED_COLORING: CliqueCovering_Algorithm::BIPARTITE_MATCHING), static_cast<unsigned>(partition.second.size()));
                   for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
                      std::string el1_name =
@@ -2230,6 +2244,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      if(_w > 0)
                      {
                         module_clique->add_edge(src, tgt, _w);
+                     }
+                     else
+                     {
+                        THROW_ERROR("unexpected condition");
                      }
                   }
                   if(allocation_information->get_number_fu(partition.first) != INFINITE_UINT)
