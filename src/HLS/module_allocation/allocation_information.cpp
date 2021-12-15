@@ -125,7 +125,7 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
          THROW_ASSERT(temp_portsize_parameters != "",
                       "expected some portsize0_parameters for the the template operation");
          std::vector<std::string> portsize_parameters = SplitString(temp_portsize_parameters, ",");
-         for(auto n_inputs : portsize_parameters)
+         for(const auto& n_inputs : portsize_parameters)
          {
             const technology_nodeRef fu_cur_obj =
                 allocation_information->hls_manager->get_HLS_target()->get_technology_manager()->get_fu(
@@ -204,8 +204,12 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
             }
          }
       }
-      mux_area_db[128] = mux_area_db.find(64)->second;
-      mux_timing_db[128] = mux_timing_db.find(64)->second;
+      THROW_ASSERT(mux_area_db.find(64) != mux_area_db.end(), "unexpected condition");
+      THROW_ASSERT(!mux_area_db.at(64).empty(), "unexpected condition");
+      THROW_ASSERT(mux_timing_db.find(64) != mux_timing_db.end(), "unexpected condition");
+      THROW_ASSERT(!mux_timing_db.at(64).empty(), "unexpected condition");
+      mux_area_db[128].insert(mux_area_db.at(64).begin(), mux_area_db.at(64).end());
+      mux_timing_db[128].insert(mux_timing_db.at(64).begin(), mux_timing_db.at(64).end());
       // THROW_WARNING(STR(mux_timing_db.size()));
       // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized mux databases");
    }
@@ -1081,7 +1085,11 @@ double AllocationInformation::estimate_muxNto1_delay(unsigned int fu_prec, unsig
    }
    THROW_ASSERT(mux_timing_db.find(fu_prec) != mux_timing_db.end(),
                 STR(fu_prec) + " not found in mux database of " + STR(mux_timing_db.size()) + " elements");
-   THROW_ASSERT(mux_timing_db.find(fu_prec)->second.find(mux_ins) != mux_timing_db.find(fu_prec)->second.end(), "");
+   while(mux_timing_db.find(fu_prec)->second.find(mux_ins) == mux_timing_db.find(fu_prec)->second.end() && mux_ins <= MAX_MUX_N_INPUTS)
+   {
+      ++mux_ins;
+   }
+   THROW_ASSERT(mux_timing_db.find(fu_prec)->second.find(mux_ins) != mux_timing_db.find(fu_prec)->second.end(), "fu_prec:" +STR(fu_prec) + " mux_ins: " + STR(mux_ins));
    double ret = mux_timing_db.at(fu_prec).at(mux_ins) - get_setup_hold_time();
    // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---delay of MUX with " + STR(mux_ins) + " inputs and with
    // " + STR(fu_prec) + " bits: " + STR(ret));
@@ -1098,6 +1106,10 @@ double AllocationInformation::estimate_muxNto1_area(unsigned int fu_prec, unsign
    if(mux_ins > MAX_MUX_N_INPUTS)
    {
       mux_ins = MAX_MUX_N_INPUTS;
+   }
+   while(mux_area_db.find(fu_prec)->second.find(mux_ins) == mux_area_db.find(fu_prec)->second.end() && mux_ins <= MAX_MUX_N_INPUTS)
+   {
+      ++mux_ins;
    }
    double ret = mux_area_db.at(fu_prec).at(mux_ins);
    // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---area of MUX with " + STR(mux_ins) + " inputs and with "
