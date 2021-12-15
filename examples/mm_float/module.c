@@ -1,4 +1,4 @@
-void mm(float * restrict in_a, float * restrict in_b, float * restrict out_c, unsigned int A_ROWS, unsigned int A_COLS, unsigned int B_COLS)
+void mm(float * __restrict__ in_a, float * __restrict__ in_b, float * __restrict__ out_c, unsigned int A_ROWS, unsigned int A_COLS, unsigned int B_COLS)
 {
     int i,j,k;
     for (i = 0; i < A_ROWS; i++)

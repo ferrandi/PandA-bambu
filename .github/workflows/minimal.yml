@@ -643,8 +643,18 @@ jobs:
     runs-on: [self-hosted]
     env:
       script: ./examples/CHStone/generic_CHStone.sh
-      args: -c=--device-name=nangate45 -c=--compiler=I386_CLANG12 -c=--memory-allocation-policy=NO_BRAM -c=--clock-period=5 -c=--simulator=ICARUS -c=--evaluation
+      args: -c=--device-name=${{matrix.setup}} -c=--compiler=I386_CLANG12 -c=--memory-allocation-policy=NO_BRAM -c=--clock-period=5 -c=--simulator=ICARUS -c=--evaluation
       outname: CHStone-yosys
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - setup: nangate45
+            die_area: "0 0 2020 1980"
+            core_area: "10 12 2010 1971"
+          - setup: asap7-BC
+            die_area: "0 0 190 190"
+            core_area: "5.08 5.08 180 180"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -669,6 +679,8 @@ jobs:
           echo "::set-output name=appdir::\$PWD/squashfs-root"
           export PATH=\$PWD/bin:\$PATH
           export APPDIR=\$PWD/squashfs-root
+          export DIE_AREA="${{matrix.die_area}}"
+          export CORE_AREA="${{matrix.core_area}}"
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" -j8 ${{env.args}}
