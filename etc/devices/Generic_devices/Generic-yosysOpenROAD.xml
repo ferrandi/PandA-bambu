@@ -184,7 +184,6 @@
       <cmd name="# Finishing"/>
       <cmd name="source -verbose $::env(SCRIPTS_DIR)/final_report.tcl"/>
       <cmd name="dump_statistics"/>
-      <cmd name="source -verbose $::env(SCRIPTS_DIR)/klayout.tcl"/>
       <cmd name="exit"/>
       <cmd name="EOT"/>
    </bash>
