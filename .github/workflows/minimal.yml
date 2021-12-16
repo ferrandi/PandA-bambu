@@ -382,7 +382,7 @@ jobs:
 
   discrepancy-test:
     needs: [build, specific-test]
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, classA]
     env:
       setup: gcc-7
       script: generic_discrepancy_eg_bambu.sh
@@ -443,7 +443,7 @@ jobs:
     runs-on: [self-hosted, mentor]
     env:
       script: multi_softfloat-tests.sh
-      args: -c=--simulator=MODELSIM
+      args: -c=--simulator=VERILATOR
       outname: multi_softfloat-tests
     steps:
       - name: Checkout repository
@@ -638,23 +638,12 @@ jobs:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
-  CHStone-yosys:
+  Panda-bench-yosys:
     needs: [build]
     runs-on: [self-hosted]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - setup: nangate45
-            die_area: "0 0 2020 1980"
-            core_area: "10 12 2010 1971"
-          - setup: asap7-BC
-            die_area: "0 0 190 190"
-            core_area: "5.08 5.08 180 180"
     env:
-      outname: CHStone-yosys-${{matrix.setup}}
-      script: ./examples/CHStone/generic_CHStone.sh
-      args: -c=--device-name=${{matrix.setup}} -c=--compiler=I386_CLANG12 -c=--memory-allocation-policy=NO_BRAM -c=--clock-period=5 -c=--simulator=ICARUS -c=--evaluation
+      outname: panda_bench_yosys
+      script: ./examples/panda_bench_yosys.sh
       nproc: 4
       parallel: 6
     steps:
