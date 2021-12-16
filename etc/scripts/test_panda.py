@@ -72,6 +72,8 @@ def execute_tests(named_list, thread_index):
     global children
     global failure
     lines = open(named_list).readlines()
+    env_regex = re.compile(
+        r"BENCHMARK_ENV=(\w+=\'[^\']*\'|\w+=|\w+)(,\w+=\'[^\']*\'|,\w+=|,\w+)*")
     with lock:
         local_index = line_index
         line_index += 1
@@ -108,6 +110,13 @@ def execute_tests(named_list, thread_index):
         local_args = lines[local_index]
         if local_args[0] == "\"":
             local_args = local_args[1:-1]
+        env_export = ""
+        env_vars = env_regex.search(local_args)
+        if env_vars:
+            local_args = env_regex.sub("", local_args)
+            for env_var in env_vars.groups():
+                env_export += "export " + env_var.strip(',') + "; "
+
         if args.tool != "bambu" and args.tool != "zebu":
             tokens = shlex.split(lines[local_index])
             args_without_benchmark_name = ""
@@ -116,7 +125,7 @@ def execute_tests(named_list, thread_index):
                     args_without_benchmark_name += token + " "
             local_args = args_without_benchmark_name
         local_command = "ulimit " + args.ulimit + \
-            "; exec timeout " + args.timeout + " " + tool_exe
+            "; " + env_export + "exec timeout " + args.timeout + " " + tool_exe
         local_command = local_command + " " + local_args
         output_file.write("#" * 80 + "\n")
         output_file.write("cd " + cwd + "; ")
@@ -897,13 +906,14 @@ if not args.restart:
                 continue
             tokens = shlex.split(line)
             parameters = list()
-            escape_pattern = "(-|_|\{|\}|=|!|\$|#|&|\"|\'|\(|\)|\||<|>|`|\\\|;|\.|,)"
+            escape_regex = re.compile(
+                r"(-|_|\{|\}|=|!|\$|#|&|\"|\'|\(|\)|\||<|>|`|\\\|;|\.|,)")
             # Flag used to ad-hoc manage --param arg
             follow_param = False
             for token in tokens:
                 if token[0] == '-':
                     parameters.append(
-                        re.sub(escape_pattern, r"\\\1", token))
+                        escape_regex.sub(r"\\\1", token))
                     if token.find("--param") != -1:
                         follow_param = True
                     else:
@@ -911,13 +921,25 @@ if not args.restart:
                 else:
                     if follow_param == True:
                         parameters.append(
-                            re.sub(escape_pattern, r"\\\1", token))
+                            escape_regex.sub(r"\\\1", token))
+                    elif token.find("BENCHMARK_ENV") == 0:
+                        vars = token[14:-1].split(',')
+                        escaped_vars = []
+                        for var in vars:
+                            if var.find("=") != -1:
+                                escaped_var = re.sub("=", "=\\\'", var)
+                                escaped_var += "\\\'"
+                                escaped_vars.append(escaped_var)
+                            else:
+                                escaped_vars.append(var)
+                        reordered_list.write(
+                            "BENCHMARK_ENV=" + ','.join(escaped_vars) + " ")
                     else:
                         reordered_list.write(token + " ")
                     follow_param = False
             for parameter in parameters:
                 reordered_list.write(
-                    re.sub(escape_pattern, r"\\\1", parameter) + " ")
+                    escape_regex.sub(r"\\\1", parameter) + " ")
             reordered_list.write("\n")
     reordered_list.close()
 
