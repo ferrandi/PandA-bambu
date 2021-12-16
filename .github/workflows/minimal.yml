@@ -652,7 +652,7 @@ jobs:
             die_area: "0 0 190 190"
             core_area: "5.08 5.08 180 180"
     env:
-      outname: CHStone-yosys
+      outname: CHStone-yosys-${{matrix.setup}}
       script: ./examples/CHStone/generic_CHStone.sh
       args: -c=--device-name=${{matrix.setup}} -c=--compiler=I386_CLANG12 -c=--memory-allocation-policy=NO_BRAM -c=--clock-period=5 -c=--simulator=ICARUS -c=--evaluation
       nproc: 4
