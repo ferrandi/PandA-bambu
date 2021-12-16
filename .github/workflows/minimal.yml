@@ -641,10 +641,6 @@ jobs:
   CHStone-yosys:
     needs: [build]
     runs-on: [self-hosted]
-    env:
-      script: ./examples/CHStone/generic_CHStone.sh
-      args: -c=--device-name=${{matrix.setup}} -c=--compiler=I386_CLANG12 -c=--memory-allocation-policy=NO_BRAM -c=--clock-period=5 -c=--simulator=ICARUS -c=--evaluation
-      outname: CHStone-yosys
     strategy:
       fail-fast: false
       matrix:
@@ -655,6 +651,12 @@ jobs:
           - setup: asap7-BC
             die_area: "0 0 190 190"
             core_area: "5.08 5.08 180 180"
+    env:
+      outname: CHStone-yosys
+      script: ./examples/CHStone/generic_CHStone.sh
+      args: -c=--device-name=${{matrix.setup}} -c=--compiler=I386_CLANG12 -c=--memory-allocation-policy=NO_BRAM -c=--clock-period=5 -c=--simulator=ICARUS -c=--evaluation
+      nproc: 4
+      parallel: 6
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -681,9 +683,11 @@ jobs:
           export APPDIR=\$PWD/squashfs-root
           export DIE_AREA="${{matrix.die_area}}"
           export CORE_AREA="${{matrix.core_area}}"
+          export NPROC=${{matrix.nproc}}
+          export J=${{matrix.parallel}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
-          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" -j8 ${{env.args}}
+          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
           EOF
           chmod +x docker_exec.sh
       - name: Launch test suite
@@ -767,14 +771,14 @@ jobs:
   omp-simd:
     needs: [build]
     runs-on: [self-hosted, altera, intelFPGA, mentor, xilinx]
-    env:
-      outname: omp_simd_${{matrix.device}}
-      script: generic_omp_simd.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10
     strategy:
       fail-fast: false
       matrix:
         device: [5SGXEA7N2F45C1, xc7vx690t-3ffg1930-VVD]
+    env:
+      outname: omp_simd_${{matrix.device}}
+      script: generic_omp_simd.sh
+      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -798,7 +802,7 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          ./examples/omp_simd/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" -c=--device-name=${{matrix.device}} ${{env.args}}
+          ./examples/omp_simd/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
