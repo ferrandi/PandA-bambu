@@ -670,10 +670,8 @@ jobs:
           echo "::set-output name=appdir::\$PWD/squashfs-root"
           export PATH=\$PWD/bin:\$PATH
           export APPDIR=\$PWD/squashfs-root
-          export DIE_AREA="${{matrix.die_area}}"
-          export CORE_AREA="${{matrix.core_area}}"
-          export NPROC=${{matrix.nproc}}
-          export J=${{matrix.parallel}}
+          export NPROC=${{env.nproc}}
+          export J=${{env.parallel}}
           mkdir ${{env.report-dir}}
           echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
           ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}

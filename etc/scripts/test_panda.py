@@ -907,7 +907,7 @@ if not args.restart:
             tokens = shlex.split(line)
             parameters = list()
             escape_regex = re.compile(
-                r"(-|_|\{|\}|=|!|\$|#|&|\"|\'|\(|\)|\||<|>|`|\\\|;|\.|,)")
+                "(-|_|\{|\}|=|!|\$|#|&|\"|\'|\(|\)|\||<|>|`|\\\|;|\.|,)")
             # Flag used to ad-hoc manage --param arg
             follow_param = False
             for token in tokens:
