@@ -1,0 +1,2 @@
+fft_float.c --top-fname=main --benchmark-name=main --generate-tb=BENCHMARKS_ROOT/test.xml
+fft_float.c --top-fname=FFT --benchmark-name=fft-wb4 --generate-tb=BENCHMARKS_ROOT/test_no_main.xml --generate-interface=WB4

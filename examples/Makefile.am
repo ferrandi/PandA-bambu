@@ -1,5 +1,21 @@
 AUTOMAKE_OPTIONS = subdir-objects
-EXTRA_DIST = example.sh
+EXTRA_DIST = \
+    panda_bench_altera_list \
+    panda_bench_altera.sh \
+    panda_bench_hw_list \
+    panda_bench_hw.sh \
+    panda_bench_lattice_list \
+    panda_bench_lattice.sh \
+    panda_bench_nanoxplore_list \
+    panda_bench_nanoxplore.sh \
+    panda_bench_sim_list \
+    panda_bench_sim.sh \
+    panda_bench_xilinx_ise_list \
+    panda_bench_xilinx_ise.sh \
+    panda_bench_xilinx_vvd_list \
+    panda_bench_xilinx_vvd.sh \
+    panda_bench_yosys_list \
+    panda_bench_yosys.sh
 TESTS =
 include $(top_srcdir)/examples/add_device_simple/add_device_simple.am
 include $(top_srcdir)/examples/arf/arf.am
@@ -8,7 +24,6 @@ include $(top_srcdir)/examples/breakout/breakout.am
 include $(top_srcdir)/examples/CHStone/CHStone.am
 include $(top_srcdir)/examples/cpp_examples/cpp_examples.am
 include $(top_srcdir)/examples/crc/crc.am
-include $(top_srcdir)/examples/crc_yosys/crc_yosys.am
 include $(top_srcdir)/examples/crypto_designs/crypto_designs.am
 include $(top_srcdir)/examples/discrepancy-parallel/discrepancy-parallel.am
 include $(top_srcdir)/examples/fft_example/fft_example.am
