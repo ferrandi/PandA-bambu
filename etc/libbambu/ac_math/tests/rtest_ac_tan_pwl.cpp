@@ -50,7 +50,8 @@ using namespace ac_math;
 //   ac_fixed inputs.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-void test_ac_tan_pwl(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in, ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& tan_out)
+void test_ac_tan_pwl(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in,
+                     ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& tan_out)
 {
    tan_out = ac_tan_pwl<ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>>(in);
 }
@@ -82,7 +83,8 @@ using namespace std;
 //   in variables defined in the calling function.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-int test_driver(double& cumulative_max_error_tan, const double allowed_error, const double threshold, const double upper_limit_degrees, bool details = false)
+int test_driver(double& cumulative_max_error_tan, const double allowed_error, const double threshold,
+                const double upper_limit_degrees, bool details = false)
 {
    ac_fixed<Wfi + 2, Ifi + 1, false, AC_TRN, AC_WRAP> i; // make loop variable slightly larger
    ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> input;
@@ -165,17 +167,20 @@ int test_driver(double& cumulative_max_error_tan, const double allowed_error, co
 
       if(check_monotonic)
       {
-         // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with current value. Since the tangent function we
-         // are testing is an increasing function, and our testbench value keeps incrementing or remains the same (in case of saturation), we expect the
-         // old value to be lesser than or equal to the current one.
+         // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with
+         // current value. Since the tangent function we are testing is an increasing function, and our testbench value
+         // keeps incrementing or remains the same (in case of saturation), we expect the old value to be lesser than or
+         // equal to the current one.
 
          // This comparison is only carried out once there is an old value to compare with
          if(compare_tan)
          {
-            // Figuring out what the normalized value was for the input is a good way to figure out where the discontinuity occured w.r.t. the PWL segments.
+            // Figuring out what the normalized value was for the input is a good way to figure out where the
+            // discontinuity occured w.r.t. the PWL segments.
             ac_fixed<Wfi, 0, false, AC_TRN, AC_WRAP> norm_input;
             ac_normalize(input, norm_input);
-            // if by any chance the function output has dropped in value, print out at what point the problem has occured and throw a runtime assertion.
+            // if by any chance the function output has dropped in value, print out at what point the problem has
+            // occured and throw a runtime assertion.
             if(old_output_tan > actual_tan)
             {
                cout << endl;                                            // LCOV_EXCL_LINE

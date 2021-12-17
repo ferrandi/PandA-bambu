@@ -68,7 +68,8 @@ unsigned long get_num_elements(llvm::Type* ty, unsigned long decayed_dim_if_any 
    return non_aggregate_types;
 }
 
-Expandability compute_alloca_expandability_profit(const llvm::AllocaInst* alloca_inst, const llvm::DataLayout& DL, std::string& msg)
+Expandability compute_alloca_expandability_profit(const llvm::AllocaInst* alloca_inst, const llvm::DataLayout& DL,
+                                                  std::string& msg)
 {
    llvm::Type* allocated_type = alloca_inst->getAllocatedType();
 
@@ -78,7 +79,8 @@ Expandability compute_alloca_expandability_profit(const llvm::AllocaInst* alloca
 
    if(!expandable_size)
    {
-      msg = "# aggregate types is " + std::to_string(num_elements) + " (allowed " + std::to_string(MaxNumScalarTypes) + ") and allocates size is " + std::to_string(size) + "(allowed " + std::to_string(MaxTypeByteSize) + ")";
+      msg = "# aggregate types is " + std::to_string(num_elements) + " (allowed " + std::to_string(MaxNumScalarTypes) +
+            ") and allocates size is " + std::to_string(size) + "(allowed " + std::to_string(MaxTypeByteSize) + ")";
    }
 
    double area_revenue = (double)size * 8.0;
@@ -92,7 +94,8 @@ Expandability compute_alloca_expandability_profit(const llvm::AllocaInst* alloca
    return Expandability(expandable_size, area_profit, latency_profit);
 }
 
-Expandability compute_global_expandability_profit(llvm::GlobalVariable* g_var, const llvm::DataLayout& DL, std::string& msg)
+Expandability compute_global_expandability_profit(llvm::GlobalVariable* g_var, const llvm::DataLayout& DL,
+                                                  std::string& msg)
 {
    llvm::Type* allocated_type = g_var->getValueType();
 
@@ -102,7 +105,8 @@ Expandability compute_global_expandability_profit(llvm::GlobalVariable* g_var, c
 
    if(!expandable_size)
    {
-      msg = "# aggregate types is " + std::to_string(num_elements) + " (allowed " + std::to_string(MaxNumScalarTypes) + ") and allocates size is " + std::to_string(size) + "(allowed " + std::to_string(MaxTypeByteSize) + ")";
+      msg = "# aggregate types is " + std::to_string(num_elements) + " (allowed " + std::to_string(MaxNumScalarTypes) +
+            ") and allocates size is " + std::to_string(size) + "(allowed " + std::to_string(MaxTypeByteSize) + ")";
    }
 
    double area_revenue = (double)size * 8.0;
@@ -115,7 +119,8 @@ Expandability compute_global_expandability_profit(llvm::GlobalVariable* g_var, c
    return Expandability(expandable_size, area_profit, latency_profit);
 }
 
-Expandability compute_operand_expandability_profit(llvm::Use* op_use, const llvm::DataLayout& DL, unsigned long long decayed_dim, std::string& msg)
+Expandability compute_operand_expandability_profit(llvm::Use* op_use, const llvm::DataLayout& DL,
+                                                   unsigned long long decayed_dim, std::string& msg)
 {
    llvm::Type* allocated_type = op_use->get()->getType()->getPointerElementType();
 
@@ -125,7 +130,8 @@ Expandability compute_operand_expandability_profit(llvm::Use* op_use, const llvm
 
    if(!expandable_size)
    {
-      msg = "# aggregate types is " + std::to_string(num_elements) + " (allowed " + std::to_string(MaxNumScalarTypes) + ") and allocates size is " + std::to_string(size) + "(allowed " + std::to_string(MaxTypeByteSize) + ")";
+      msg = "# aggregate types is " + std::to_string(num_elements) + " (allowed " + std::to_string(MaxNumScalarTypes) +
+            ") and allocates size is " + std::to_string(size) + "(allowed " + std::to_string(MaxTypeByteSize) + ")";
    }
 
    double area_revenue = (double)size * 8.0; // TODO sure about that?

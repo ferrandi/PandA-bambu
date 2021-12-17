@@ -30,16 +30,15 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace flags_internal {
 
-// Executes specified visitor for each non-retired flag in the registry.
-// Requires the caller hold the registry lock.
-void ForEachFlagUnlocked(std::function<void(CommandLineFlag&)> visitor);
 // Executes specified visitor for each non-retired flag in the registry. While
 // callback are executed, the registry is locked and can't be changed.
 void ForEachFlag(std::function<void(CommandLineFlag&)> visitor);
 
 //-----------------------------------------------------------------------------
 
-bool RegisterCommandLineFlag(CommandLineFlag&);
+bool RegisterCommandLineFlag(CommandLineFlag&, const char* filename);
+
+void FinalizeRegistry();
 
 //-----------------------------------------------------------------------------
 // Retired registrations:
@@ -74,13 +73,22 @@ bool RegisterCommandLineFlag(CommandLineFlag&);
 //
 
 // Retire flag with name "name" and type indicated by ops.
-bool Retire(const char* name, FlagFastTypeId type_id);
+void Retire(const char* name, FlagFastTypeId type_id, char* buf);
+
+constexpr size_t kRetiredFlagObjSize = 3 * sizeof(void*);
+constexpr size_t kRetiredFlagObjAlignment = alignof(void*);
 
 // Registered a retired flag with name 'flag_name' and type 'T'.
 template <typename T>
-inline bool RetiredFlag(const char* flag_name) {
-  return flags_internal::Retire(flag_name, base_internal::FastTypeId<T>());
-}
+class RetiredFlag {
+ public:
+  void Retire(const char* flag_name) {
+    flags_internal::Retire(flag_name, base_internal::FastTypeId<T>(), buf_);
+  }
+
+ private:
+  alignas(kRetiredFlagObjAlignment) char buf_[kRetiredFlagObjSize];
+};
 
 }  // namespace flags_internal
 ABSL_NAMESPACE_END

@@ -372,7 +372,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                                        "fu_id: " + STR(fu_id) + " bitstring: " + bitstring_to_string(res));
                         auto res_sup = sup(best.at(fu_id), res_fanout, fu_node);
                         auto res_sup_string = bitstring_to_string(res_sup);
-                        if(res_sup_string != s->bit_values)
+                        if(BitLatticeManipulator::isBetter(res_sup_string, s->bit_values))
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "" + STR(fu_id) + " " + bitstring_to_string(best.at(fu_id)) +

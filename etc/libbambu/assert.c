@@ -1,6 +1,6 @@
 /**
- *  __assert and __assert_fail primitives adapted to the PandA infrastructure by Fabrizio Ferrandi from Politecnico di Milano.
- * June, 4 2015.
+ *  __assert and __assert_fail primitives adapted to the PandA infrastructure by Fabrizio Ferrandi from Politecnico di
+ * Milano. June, 4 2015.
  *
  */
 void __assert(const char* __assertion, const char* __file, int __line)

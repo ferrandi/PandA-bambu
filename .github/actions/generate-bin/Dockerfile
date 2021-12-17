@@ -1,4 +1,4 @@
-FROM bambuhls/panda:appimage-xenial
+FROM bambuhls/appimage:xenial
 
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/entrypoint.sh" ]

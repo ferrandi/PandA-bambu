@@ -55,6 +55,7 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
+#include "hls_target.hpp"
 
 /// HLS/binding/module
 #include "fu_binding.hpp"
@@ -80,6 +81,16 @@
 
 #define EPSILON 0.0001
 
+CondExprRestructuring::CondExprRestructuring(const application_managerRef _AppM, unsigned int _function_id,
+                                             const DesignFlowManagerConstRef _design_flow_manager,
+                                             const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, COND_EXPR_RESTRUCTURING, _design_flow_manager, _parameters)
+{
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+}
+
+CondExprRestructuring::~CondExprRestructuring() = default;
+
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 CondExprRestructuring::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -96,18 +107,18 @@ CondExprRestructuring::ComputeFrontendRelationships(const DesignFlowStep::Relati
          if(GetStatus() != DesignFlowStep_Status::SUCCESS)
          {
             if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING &&
-               GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
-               GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
+               GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) and
+               GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
             {
                /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
                const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
                    FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
                if(update_schedule)
                {
-                  const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-                  const DesignFlowStepRef design_flow_step =
+                  const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+                  const auto design_flow_step =
                       design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
-                  if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
+                  if(GetPointerS<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
                      function_behavior->GetBBVersion())
                   {
                      relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
@@ -135,68 +146,54 @@ CondExprRestructuring::ComputeFrontendRelationships(const DesignFlowStep::Relati
    return relationships;
 }
 
-CondExprRestructuring::CondExprRestructuring(const application_managerRef _AppM, unsigned int _function_id,
-                                             const DesignFlowManagerConstRef _design_flow_manager,
-                                             const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, COND_EXPR_RESTRUCTURING, _design_flow_manager, _parameters)
+bool CondExprRestructuring::HasToBeExecuted() const
 {
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-}
-
-CondExprRestructuring::~CondExprRestructuring() = default;
-
-bool CondExprRestructuring::IsCondExprGimple(const tree_nodeConstRef tn) const
-{
-   const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
-   if(!ga)
+   if(!FunctionFrontendFlowStep::HasToBeExecuted())
    {
       return false;
    }
-   return GET_NODE(ga->op1)->get_kind() == cond_expr_K;
-}
-
-tree_nodeRef CondExprRestructuring::IsCondExprChain(const tree_nodeConstRef tn, const bool first,
-                                                    bool is_third_node) const
-{
-   const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
-   const auto ce = GetPointer<const cond_expr>(GET_NODE(ga->op1));
-   const auto operand = first ? GET_NODE(ce->op1) : GET_NODE(ce->op2);
-   const auto other_operand = first ? GET_NODE(ce->op2) : GET_NODE(ce->op1);
-   const auto sn = GetPointer<const ssa_name>(operand);
-   if(tree_helper::is_constant(TM, other_operand->index))
+#if HAVE_ILP_BUILT
+   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING &&
+      GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) and
+      GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
-      return tree_nodeRef();
-   }
-   if(!sn)
-   {
-      return tree_nodeRef();
-   }
-   if(!is_third_node && sn->CGetNumberUses() > 1)
-   {
-      return tree_nodeRef();
-   }
-   const auto def = GetPointer<const gimple_assign>(GET_NODE(sn->CGetDefStmt()));
-   if(!def)
-   {
-      return tree_nodeRef();
-   }
-   if(def->bb_index != ga->bb_index)
-   {
-      return tree_nodeRef();
-   }
-   const auto chain_ce = GetPointer<const cond_expr>(GET_NODE(def->op1));
-   if(!chain_ce)
-   {
-      return tree_nodeRef();
-   }
-   if(schedule->GetStartingTime(ga->index) == schedule->GetEndingTime(def->index) or
-      (schedule->get_cstep_end(def->index).second + 1) == schedule->get_cstep(ga->index).second)
-   {
-      return sn->CGetDefStmt();
+      /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
+      const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
+          FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
+      if(update_schedule)
+      {
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+         if(GetPointerS<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
+            function_behavior->GetBBVersion())
+         {
+            return false;
+         }
+         else
+         {
+            return true;
+         }
+      }
+      else
+      {
+         return false;
+      }
    }
    else
+#endif
    {
-      return tree_nodeRef();
+      return false;
+   }
+}
+
+void CondExprRestructuring::Initialize()
+{
+   FunctionFrontendFlowStep::Initialize();
+   TM = AppM->get_tree_manager();
+   if(GetPointer<HLS_manager>(AppM) && GetPointer<HLS_manager>(AppM)->get_HLS(function_id))
+   {
+      schedule = GetPointer<HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
+      allocation_information = GetPointer<HLS_manager>(AppM)->get_HLS(function_id)->allocation_information;
    }
 }
 
@@ -205,9 +202,14 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
    bool modified = false;
    static size_t counter = 0;
 
-   const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
-   auto* fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
+   const auto hls_target = GetPointerS<const HLS_manager>(AppM)->get_HLS_target();
+   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
+   const auto max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+
+   const tree_manipulationConstRef tree_man(new tree_manipulation(TM, parameters, AppM));
+   const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
@@ -361,10 +363,10 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          }
          const auto first_ga_op0 = GetPointer<const ssa_name>(GET_CONST_NODE(first_ga->op0));
          const auto ssa_node = tree_man->create_ssa_name(var, type_node, first_ga_op0->min, first_ga_op0->max);
-         GetPointer<ssa_name>(GET_NODE(ssa_node))->bit_values = first_ga_op0->bit_values;
+         GetPointerS<ssa_name>(GET_NODE(ssa_node))->bit_values = first_ga_op0->bit_values;
 
          /// Create the assign
-         auto curr_stmt =
+         const auto curr_stmt =
              tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP, block.first);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + GET_CONST_NODE(curr_stmt)->ToString());
          /// Set the bit value for the intermediate ssa to correctly update execution time
@@ -377,21 +379,32 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             /// simplified version
             if(!first_operand_of_first && !first_operand_of_second)
             {
-               tree_nodeRef lut_constant_node;
-               auto DefaultUnsignedLongLongInt = tree_man->GetUnsignedLongLongType();
-               lut_constant_node = TM->CreateUniqueIntegerCst(1, DefaultUnsignedLongLongInt);
-               auto boolType = tree_man->GetBooleanType();
-               tree_nodeRef op2, op3, op4, op5, op6, op7, op8;
-               const std::string srcp_default = BUILTIN_SRCP;
-               tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, first_ce->op0, op2, op3,
-                                                                op4, op5, op6, op7, op8, srcp_default);
-               auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
-                                                          TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id,
-                                                          block.first, srcp_default);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT NOT " + STR(lut_ga));
-               block.second->PushBefore(lut_ga, *stmt, AppM);
-               new_tree_nodes.push_back(lut_ga);
-               and_first_cond = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
+               const auto boolType = tree_man->GetBooleanType();
+               tree_nodeRef ga;
+               if(max_lut_size > 0)
+               {
+                  const auto DefaultUnsignedLongLongInt = tree_man->GetUnsignedLongLongType();
+                  const auto lut_constant_node = TM->CreateUniqueIntegerCst(1, DefaultUnsignedLongLongInt);
+                  const auto new_op1 =
+                      tree_man->create_lut_expr(boolType, lut_constant_node, first_ce->op0, nullptr, nullptr, nullptr,
+                                                nullptr, nullptr, nullptr, nullptr, BUILTIN_SRCP);
+                  ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                                    TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id,
+                                                    block.first, BUILTIN_SRCP);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT NOT " + STR(ga));
+               }
+               else
+               {
+                  const auto not_expr =
+                      tree_man->create_unary_operation(boolType, first_ce->op0, BUILTIN_SRCP, truth_not_expr_K);
+                  ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                                    TM->CreateUniqueIntegerCst(1, boolType), not_expr, function_id,
+                                                    block.first, BUILTIN_SRCP);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created NOT " + STR(ga));
+               }
+               block.second->PushBefore(ga, *stmt, AppM);
+               new_tree_nodes.push_back(ga);
+               and_first_cond = GetPointerS<gimple_assign>(GET_NODE(ga))->op0;
             }
             else if(first_operand_of_first && first_operand_of_second)
             {
@@ -400,46 +413,115 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             }
             else
             {
-               auto boolType = tree_man->GetBooleanType();
+               const auto boolType = tree_man->GetBooleanType();
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Simplified to 0");
                and_first_cond = TM->CreateUniqueIntegerCst(0, boolType);
             }
          }
          else
          {
-            /// we are going to create a LUT
-            tree_nodeRef lut_constant_node;
-            auto DefaultUnsignedLongLongInt = tree_man->GetUnsignedLongLongType();
-            long long int lut_val;
-            if(!first_operand_of_first && !first_operand_of_second)
+            const auto boolType = tree_man->GetBooleanType();
+            tree_nodeRef ga;
+            if(max_lut_size > 0)
             {
-               lut_val = 1;
-            }
-            else if(!first_operand_of_first && first_operand_of_second)
-            {
-               lut_val = 2;
-            }
-            else if(first_operand_of_first && !first_operand_of_second)
-            {
-               lut_val = 4;
+               /// we are going to create a LUT
+               const auto DefaultUnsignedLongLongInt = tree_man->GetUnsignedLongLongType();
+               long long int lut_val;
+               if(!first_operand_of_first && !first_operand_of_second)
+               {
+                  lut_val = 1;
+               }
+               else if(!first_operand_of_first && first_operand_of_second)
+               {
+                  lut_val = 2;
+               }
+               else if(first_operand_of_first && !first_operand_of_second)
+               {
+                  lut_val = 4;
+               }
+               else
+               {
+                  lut_val = 8;
+               }
+               const auto lut_constant_node = TM->CreateUniqueIntegerCst(lut_val, DefaultUnsignedLongLongInt);
+               const auto new_op1 =
+                   tree_man->create_lut_expr(boolType, lut_constant_node, second_ce->op0, first_ce->op0, nullptr,
+                                             nullptr, nullptr, nullptr, nullptr, nullptr, BUILTIN_SRCP);
+               ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                                 TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id,
+                                                 block.first, BUILTIN_SRCP);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT STD " + STR(ga));
             }
             else
             {
-               lut_val = 8;
+               if(!first_operand_of_first && !first_operand_of_second)
+               {
+                  const auto not_expr0 =
+                      tree_man->create_unary_operation(boolType, second_ce->op0, BUILTIN_SRCP, truth_not_expr_K);
+                  const auto op0_not_expr = tree_man->CreateGimpleAssign(
+                      boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType),
+                      not_expr0, function_id, block.first, BUILTIN_SRCP);
+                  block.second->PushBefore(op0_not_expr, *stmt, AppM);
+                  new_tree_nodes.push_back(op0_not_expr);
+                  const auto not_expr1 =
+                      tree_man->create_unary_operation(boolType, first_ce->op0, BUILTIN_SRCP, truth_not_expr_K);
+                  const auto op1_not_expr = tree_man->CreateGimpleAssign(
+                      boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType),
+                      not_expr1, function_id, block.first, BUILTIN_SRCP);
+                  block.second->PushBefore(op1_not_expr, *stmt, AppM);
+                  new_tree_nodes.push_back(op1_not_expr);
+                  const auto and_expr = tree_man->create_binary_operation(
+                      boolType, GetPointerS<gimple_assign>(GET_NODE(op0_not_expr))->op0,
+                      GetPointerS<gimple_assign>(GET_NODE(op1_not_expr))->op0, BUILTIN_SRCP, truth_and_expr_K);
+                  ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                                    TM->CreateUniqueIntegerCst(1, boolType), and_expr, function_id,
+                                                    block.first, BUILTIN_SRCP);
+               }
+               else if(!first_operand_of_first && first_operand_of_second)
+               {
+                  const auto not_expr1 =
+                      tree_man->create_unary_operation(boolType, first_ce->op0, BUILTIN_SRCP, truth_not_expr_K);
+                  const auto op1_not_expr = tree_man->CreateGimpleAssign(
+                      boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType),
+                      not_expr1, function_id, block.first, BUILTIN_SRCP);
+                  block.second->PushBefore(op1_not_expr, *stmt, AppM);
+                  new_tree_nodes.push_back(op1_not_expr);
+                  const auto and_expr = tree_man->create_binary_operation(
+                      boolType, second_ce->op0, GetPointerS<gimple_assign>(GET_NODE(op1_not_expr))->op0, BUILTIN_SRCP,
+                      truth_and_expr_K);
+                  ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                                    TM->CreateUniqueIntegerCst(1, boolType), and_expr, function_id,
+                                                    block.first, BUILTIN_SRCP);
+               }
+               else if(first_operand_of_first && !first_operand_of_second)
+               {
+                  const auto not_expr0 =
+                      tree_man->create_unary_operation(boolType, second_ce->op0, BUILTIN_SRCP, truth_not_expr_K);
+                  const auto op0_not_expr = tree_man->CreateGimpleAssign(
+                      boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType),
+                      not_expr0, function_id, block.first, BUILTIN_SRCP);
+                  block.second->PushBefore(op0_not_expr, *stmt, AppM);
+                  new_tree_nodes.push_back(op0_not_expr);
+                  const auto and_expr = tree_man->create_binary_operation(
+                      boolType, GetPointerS<gimple_assign>(GET_NODE(op0_not_expr))->op0, first_ce->op0, BUILTIN_SRCP,
+                      truth_and_expr_K);
+                  ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                                    TM->CreateUniqueIntegerCst(1, boolType), and_expr, function_id,
+                                                    block.first, BUILTIN_SRCP);
+               }
+               else
+               {
+                  const auto and_expr = tree_man->create_binary_operation(boolType, second_ce->op0, first_ce->op0,
+                                                                          BUILTIN_SRCP, truth_and_expr_K);
+                  ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                                    TM->CreateUniqueIntegerCst(1, boolType), and_expr, function_id,
+                                                    block.first, BUILTIN_SRCP);
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created AND " + STR(ga));
             }
-            lut_constant_node = TM->CreateUniqueIntegerCst(lut_val, DefaultUnsignedLongLongInt);
-            auto boolType = tree_man->GetBooleanType();
-            tree_nodeRef op3, op4, op5, op6, op7, op8;
-            const std::string srcp_default = BUILTIN_SRCP;
-            tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, second_ce->op0, first_ce->op0,
-                                                             op3, op4, op5, op6, op7, op8, srcp_default);
-            auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
-                                                       TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id,
-                                                       block.first, srcp_default);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT STD " + STR(lut_ga));
-            block.second->PushBefore(lut_ga, *stmt, AppM);
-            new_tree_nodes.push_back(lut_ga);
-            and_first_cond = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
+            block.second->PushBefore(ga, *stmt, AppM);
+            new_tree_nodes.push_back(ga);
+            and_first_cond = GetPointerS<gimple_assign>(GET_NODE(ga))->op0;
          }
 
          /// Inserting last cond expr
@@ -517,54 +599,57 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-void CondExprRestructuring::Initialize()
+bool CondExprRestructuring::IsCondExprGimple(const tree_nodeConstRef tn) const
 {
-   FunctionFrontendFlowStep::Initialize();
-   TM = AppM->get_tree_manager();
-   if(GetPointer<HLS_manager>(AppM) && GetPointer<HLS_manager>(AppM)->get_HLS(function_id))
+   const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
+   if(!ga)
    {
-      schedule = GetPointer<HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
-      allocation_information = GetPointer<HLS_manager>(AppM)->get_HLS(function_id)->allocation_information;
+      return false;
    }
+   return GET_NODE(ga->op1)->get_kind() == cond_expr_K;
 }
 
-bool CondExprRestructuring::HasToBeExecuted() const
+tree_nodeRef CondExprRestructuring::IsCondExprChain(const tree_nodeConstRef tn, const bool first,
+                                                    bool is_third_node) const
 {
-   if(!FunctionFrontendFlowStep::HasToBeExecuted())
+   const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
+   const auto ce = GetPointer<const cond_expr>(GET_NODE(ga->op1));
+   const auto operand = first ? GET_NODE(ce->op1) : GET_NODE(ce->op2);
+   const auto other_operand = first ? GET_NODE(ce->op2) : GET_NODE(ce->op1);
+   const auto sn = GetPointer<const ssa_name>(operand);
+   if(tree_helper::is_constant(TM, other_operand->index))
    {
-      return false;
+      return tree_nodeRef();
    }
-#if HAVE_ILP_BUILT
-   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING &&
-      GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
-      GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
+   if(!sn)
    {
-      /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
-      const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
-          FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-      if(update_schedule)
-      {
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const DesignFlowStepRef design_flow_step =
-             design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
-         if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
-            function_behavior->GetBBVersion())
-         {
-            return false;
-         }
-         else
-         {
-            return true;
-         }
-      }
-      else
-      {
-         return false;
-      }
+      return tree_nodeRef();
+   }
+   if(!is_third_node && sn->CGetNumberUses() > 1)
+   {
+      return tree_nodeRef();
+   }
+   const auto def = GetPointer<const gimple_assign>(GET_NODE(sn->CGetDefStmt()));
+   if(!def)
+   {
+      return tree_nodeRef();
+   }
+   if(def->bb_index != ga->bb_index)
+   {
+      return tree_nodeRef();
+   }
+   const auto chain_ce = GetPointer<const cond_expr>(GET_NODE(def->op1));
+   if(!chain_ce)
+   {
+      return tree_nodeRef();
+   }
+   if(schedule->GetStartingTime(ga->index) == schedule->GetEndingTime(def->index) or
+      (schedule->get_cstep_end(def->index).second + 1) == schedule->get_cstep(ga->index).second)
+   {
+      return sn->CGetDefStmt();
    }
    else
-#endif
    {
-      return false;
+      return tree_nodeRef();
    }
 }

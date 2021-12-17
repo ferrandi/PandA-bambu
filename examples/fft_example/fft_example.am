@@ -1,1 +1,7 @@
-EXTRA_DIST += %D%/bambu_altera.sh  %D%/bambu_lattice.sh  %D%/bambu_xilinx.sh  %D%/fft_float.c %D%/test_no_main.xml  %D%/test.xml %D%/README.txt
+EXTRA_DIST += \
+    %D%/fft_float.c \
+    %D%/fft_list \
+    %D%/generic_fft.sh \
+    %D%/README.txt \
+    %D%/test_no_main.xml \
+    %D%/test.xml

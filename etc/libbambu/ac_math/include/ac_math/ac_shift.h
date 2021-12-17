@@ -132,7 +132,8 @@ namespace ac_math
       const int R_BIT = (OQ == AC_TRN || OQ == AC_TRN_ZERO) ? 0 : 1;
       const int R_HALF = (R_BIT == 0 || OQ == AC_RND || OQ == AC_RND_INF) ? 0 : 1;
       const int TF = AC_MAX(XW - XI, OW - OI + R_BIT);
-      // Since this is a unidirectional shift in the right direction, the intermediate type only needs the same number of integer bits as in the input.
+      // Since this is a unidirectional shift in the right direction, the intermediate type only needs the same number
+      // of integer bits as in the input.
       const int TI = XI;
       const int TW = TI + TF;
       unsigned un = 0x7FFFFFFF & n;
@@ -212,7 +213,8 @@ namespace ac_math
       const int R_BIT = (OQ == AC_TRN) ? 0 : 1;
       const int R_HALF = (R_BIT == 0 || OQ == AC_RND) ? 0 : 1;
       const int TF = AC_MAX(XW - XI, OW - OI + R_BIT);
-      // Since this is a unidirectional shift in the right direction, the intermediate type only needs the same number of integer bits as in the input.
+      // Since this is a unidirectional shift in the right direction, the intermediate type only needs the same number
+      // of integer bits as in the input.
       const int TI = XI;
       const int TW = TI + TF;
       ac_fixed<TW, TI, true> t = ((ac_fixed<TW, TI, true>)x) >> n;
@@ -291,7 +293,8 @@ namespace ac_math
    void ac_shift_left(ac_fixed<XW, XI, false, XQ, XO> x, unsigned int n, ac_fixed<OW, OI, false, OQ, OO>& sl)
    {
       const int S_OVER = (OO == AC_WRAP) ? 0 : 1;
-      // Since this is a unidirectional shift in the left direction, the intermediate type only needs the same number of fractional bits as in the input.
+      // Since this is a unidirectional shift in the left direction, the intermediate type only needs the same number of
+      // fractional bits as in the input.
       const int TF = XW - XI;
       const int TI = AC_MAX(XI, OI);
       const int TW = TI + TF;
@@ -369,7 +372,8 @@ namespace ac_math
    void ac_shift_left(ac_fixed<XW, XI, true, XQ, XO> x, unsigned int n, ac_fixed<OW, OI, true, OQ, OO>& sl)
    {
       const int S_OVER = (OO == AC_WRAP) ? 1 : 2;
-      // Since this is a unidirectional shift in the left direction, the intermediate type only needs the same number of fractional bits as in the input.
+      // Since this is a unidirectional shift in the left direction, the intermediate type only needs the same number of
+      // fractional bits as in the input.
       const int TF = XW - XI;
       const int TI = AC_MAX(XI, OI);
       const int TW = TI + TF;

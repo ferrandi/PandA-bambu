@@ -427,7 +427,8 @@ namespace RangeAnalysis
       unsigned ObjectBW(const llvm::Value* varValue)
       {
          assert(varValue);
-         assert(varValue->getValueID() == llvm::Value::InstructionVal + llvm::Instruction::Alloca || varValue->getValueID() == llvm::Value::GlobalVariableVal);
+         assert(varValue->getValueID() == llvm::Value::InstructionVal + llvm::Instruction::Alloca ||
+                varValue->getValueID() == llvm::Value::GlobalVariableVal);
          unsigned int elmtSize = 0;
          if(auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue))
          {
@@ -439,7 +440,8 @@ namespace RangeAnalysis
                }
                else
                {
-                  elmtSize = cast<llvm::ArrayType>(AI->getAllocatedType())->getArrayElementType()->getPrimitiveSizeInBits();
+                  elmtSize =
+                      cast<llvm::ArrayType>(AI->getAllocatedType())->getArrayElementType()->getPrimitiveSizeInBits();
                }
             }
             else if(AI->getAllocatedType()->isPointerTy())
@@ -492,7 +494,9 @@ namespace RangeAnalysis
       {
          if(auto ST = dyn_cast<StoreInst>(V))
          {
-            return ST->getValueOperand()->getType()->isPointerTy() ? POINTER_BITSIZE : ST->getValueOperand()->getType()->getPrimitiveSizeInBits();
+            return ST->getValueOperand()->getType()->isPointerTy() ?
+                       POINTER_BITSIZE :
+                       ST->getValueOperand()->getType()->getPrimitiveSizeInBits();
          }
          if(dyn_cast<LoadInst>(V))
          {
@@ -512,7 +516,9 @@ namespace RangeAnalysis
          }
          if(auto IV = dyn_cast<InsertValueInst>(V))
          {
-            return IV->getInsertedValueOperand()->getType()->isPointerTy() ? POINTER_BITSIZE : IV->getInsertedValueOperand()->getType()->getPrimitiveSizeInBits();
+            return IV->getInsertedValueOperand()->getType()->isPointerTy() ?
+                       POINTER_BITSIZE :
+                       IV->getInsertedValueOperand()->getType()->getPrimitiveSizeInBits();
          }
          if(V->getType()->isSized())
          {
@@ -782,7 +788,8 @@ namespace RangeAnalysis
       return std::max(a.getActiveBits(), b.getActiveBits());
    }
 
-   Range_base::Range_base(RangeType rType, unsigned rbw, const APInt& lb, const APInt& ub) : l(lb), u(ub), bw(rbw), type(rType)
+   Range_base::Range_base(RangeType rType, unsigned rbw, const APInt& lb, const APInt& ub)
+       : l(lb), u(ub), bw(rbw), type(rType)
    {
       assert(rbw);
       normalizeRange(lb, ub, rType);
@@ -986,15 +993,19 @@ namespace RangeAnalysis
       auto this_max = getSignedMax();
       auto other_min = other.getSignedMin();
       auto other_max = other.getSignedMax();
-      ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(this_min, this_max + 1);
-      ConstantRange otherR = (other_min == other_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(other_min, other_max + 1);
+      ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                         ConstantRange(this_min, this_max + 1);
+      ConstantRange otherR = (other_min == other_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                            ConstantRange(other_min, other_max + 1);
 
       auto thisU_min = getUnsignedMin();
       auto thisU_max = getUnsignedMax();
       auto otherU_min = other.getUnsignedMin();
       auto otherU_max = other.getUnsignedMax();
-      ConstantRange thisUR = (thisU_min == thisU_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(thisU_min, thisU_max + 1);
-      ConstantRange otherUR = (otherU_min == otherU_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(otherU_min, otherU_max + 1);
+      ConstantRange thisUR = (thisU_min == thisU_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                            ConstantRange(thisU_min, thisU_max + 1);
+      ConstantRange otherUR = (otherU_min == otherU_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                               ConstantRange(otherU_min, otherU_max + 1);
 
       auto AddU = thisUR.add(otherUR);
       auto AddS = thisR.add(otherR);
@@ -1088,15 +1099,19 @@ namespace RangeAnalysis
       auto this_max = getSignedMax();
       auto other_min = other.getSignedMin();
       auto other_max = other.getSignedMax();
-      ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(this_min, this_max + 1);
-      ConstantRange otherR = (other_min == other_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(other_min, other_max + 1);
+      ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                         ConstantRange(this_min, this_max + 1);
+      ConstantRange otherR = (other_min == other_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                            ConstantRange(other_min, other_max + 1);
 
       auto thisU_min = getUnsignedMin();
       auto thisU_max = getUnsignedMax();
       auto otherU_min = other.getUnsignedMin();
       auto otherU_max = other.getUnsignedMax();
-      ConstantRange thisUR = (thisU_min == thisU_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(thisU_min, thisU_max + 1);
-      ConstantRange otherUR = (otherU_min == otherU_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(otherU_min, otherU_max + 1);
+      ConstantRange thisUR = (thisU_min == thisU_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                            ConstantRange(thisU_min, thisU_max + 1);
+      ConstantRange otherUR = (otherU_min == otherU_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                               ConstantRange(otherU_min, otherU_max + 1);
 
       auto SubU = thisUR.sub(otherUR);
       auto SubS = thisR.sub(otherR);
@@ -1164,7 +1179,11 @@ namespace RangeAnalysis
       return BestRange(UR, SR, getBitWidth());
    }
 
-#define DIV_HELPER(OP, x, y) (x).eq(Max) ? ((y).slt(Zero) ? Min : ((y).eq(Zero) ? Zero : Max)) : ((y).eq(Max) ? Zero : ((x).eq(Min) ? ((y).slt(Zero) ? Max : ((y).eq(Zero) ? Zero : Min)) : ((y).eq(Min) ? Zero : ((x).OP((y))))))
+#define DIV_HELPER(OP, x, y)                                                                         \
+   (x).eq(Max) ? ((y).slt(Zero) ? Min : ((y).eq(Zero) ? Zero : Max)) :                               \
+                 ((y).eq(Max) ? Zero :                                                               \
+                                ((x).eq(Min) ? ((y).slt(Zero) ? Max : ((y).eq(Zero) ? Zero : Min)) : \
+                                               ((y).eq(Min) ? Zero : ((x).OP((y))))))
 
    Range Range::udiv(const Range& other) const
    {
@@ -1440,10 +1459,13 @@ namespace RangeAnalysis
       const APInt abs_min = a.abs().slt(b.abs()) ? b.abs() : a.abs();
       const APInt abs_max = a.abs().slt(b.abs()) ? a.abs() : b.abs();
 
-      auto res = Range(Regular, getBitWidth(), a.slt(0) ? -(dmax - APInt(getBitWidth(), 1)) : APInt(getBitWidth(), 0), b.sgt(0) ? (dmax - APInt(getBitWidth(), 1)) : APInt(getBitWidth(), 0));
+      auto res = Range(Regular, getBitWidth(), a.slt(0) ? -(dmax - APInt(getBitWidth(), 1)) : APInt(getBitWidth(), 0),
+                       b.sgt(0) ? (dmax - APInt(getBitWidth(), 1)) : APInt(getBitWidth(), 0));
       if((abs_min.slt(dmin) && dmin.slt(abs_max)) || (abs_min.slt(dmax) && dmax.slt(abs_max)))
       {
-         res = Range(Regular, getBitWidth(), a.sge(0) ? APInt(getBitWidth(), 0) : (a.abs().slt(dmax) ? a : -(dmax - APInt(getBitWidth(), 1))), b.sle(0) ? APInt(getBitWidth(), 0) : (b.abs().slt(dmax) ? b : (dmax - APInt(getBitWidth(), 1))));
+         res = Range(Regular, getBitWidth(),
+                     a.sge(0) ? APInt(getBitWidth(), 0) : (a.abs().slt(dmax) ? a : -(dmax - APInt(getBitWidth(), 1))),
+                     b.sle(0) ? APInt(getBitWidth(), 0) : (b.abs().slt(dmax) ? b : (dmax - APInt(getBitWidth(), 1))));
       }
       else if(abs_max.slt(dmin))
       {
@@ -1554,8 +1576,10 @@ namespace RangeAnalysis
       APInt this_max = getUnsignedMax();
       APInt other_min = other.getUnsignedMin();
       APInt other_max = other.getUnsignedMax();
-      const ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(this_min, this_max + 1);
-      const ConstantRange otherR = (other_min == other_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(other_min, other_max + 1);
+      const ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                               ConstantRange(this_min, this_max + 1);
+      const ConstantRange otherR = (other_min == other_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                                  ConstantRange(other_min, other_max + 1);
       auto lshrU = thisR.lshr(otherR);
       if(lshrU.isFullSet())
       {
@@ -1646,8 +1670,10 @@ namespace RangeAnalysis
       auto this_max = getSignedMax();
       auto other_min = other.getUnsignedMin();
       auto other_max = other.getUnsignedMax();
-      const ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(this_min, this_max + 1);
-      const ConstantRange otherR = (other_min == other_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(other_min, other_max + 1);
+      const ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                               ConstantRange(this_min, this_max + 1);
+      const ConstantRange otherR = (other_min == other_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                                  ConstantRange(other_min, other_max + 1);
 #if __clang_major__ < 6
       auto AshrU = local_ashr(thisR, otherR);
 #else
@@ -2336,14 +2362,17 @@ namespace RangeAnalysis
       auto from_bw = getBitWidth();
       auto this_min = from_bw == 1 ? getUnsignedMin() : getSignedMin();
       auto this_max = from_bw == 1 ? getUnsignedMax() : getSignedMax();
-      const ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(this_min, this_max + 1);
+      const ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                               ConstantRange(this_min, this_max + 1);
       auto sextRes = thisR.sextOrTrunc(bitwidth);
       if(sextRes.isFullSet())
       {
          return Range(Regular, bitwidth);
       }
 
-      return CR2R(sextRes, bitwidth); // Range(Regular,bitwidth,sextRes.getSignedMin().sext(MAX_BIT_INT),sextRes.getSignedMax().sext(MAX_BIT_INT));
+      return CR2R(
+          sextRes,
+          bitwidth); // Range(Regular,bitwidth,sextRes.getSignedMin().sext(MAX_BIT_INT),sextRes.getSignedMax().sext(MAX_BIT_INT));
    }
 
    Range Range::zextOrTrunc(unsigned bitwidth) const
@@ -2354,14 +2383,17 @@ namespace RangeAnalysis
       }
       auto this_min = getUnsignedMin();
       auto this_max = getUnsignedMax();
-      const ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(this_min, this_max + 1);
+      const ConstantRange thisR = (this_min == this_max + 1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) :
+                                                               ConstantRange(this_min, this_max + 1);
       auto zextRes = thisR.zextOrTrunc(bitwidth);
       if(zextRes.isFullSet())
       {
          return Range(Regular, bitwidth);
       }
 
-      return CR2R(zextRes, bitwidth); // Range(Regular,bitwidth,zextRes.getUnsignedMin().zext(MAX_BIT_INT),zextRes.getUnsignedMax().zext(MAX_BIT_INT));
+      return CR2R(
+          zextRes,
+          bitwidth); // Range(Regular,bitwidth,zextRes.getUnsignedMin().zext(MAX_BIT_INT),zextRes.getUnsignedMax().zext(MAX_BIT_INT));
    }
 
    Range Range::intersectWith(const Range& other) const
@@ -2617,12 +2649,14 @@ namespace RangeAnalysis
 
    bool Range::operator==(const Range& other) const
    {
-      return getBitWidth() == other.getBitWidth() && Range::isSameType(*this, other) && Range::isSameRange(*this, other);
+      return getBitWidth() == other.getBitWidth() && Range::isSameType(*this, other) &&
+             Range::isSameRange(*this, other);
    }
 
    bool Range::operator!=(const Range& other) const
    {
-      return getBitWidth() != other.getBitWidth() || !Range::isSameType(*this, other) || !Range::isSameRange(*this, other);
+      return getBitWidth() != other.getBitWidth() || !Range::isSameType(*this, other) ||
+             !Range::isSameRange(*this, other);
    }
 
    void Range::print(raw_ostream& OS) const
@@ -2711,7 +2745,8 @@ namespace RangeAnalysis
    // SymbInterval
    // ========================================================================== //
 
-   SymbInterval::SymbInterval(const Range& range, const Value* bound, CmpInst::Predicate pred) : BasicInterval(range), bound(bound), pred(pred)
+   SymbInterval::SymbInterval(const Range& range, const Value* bound, CmpInst::Predicate pred)
+       : BasicInterval(range), bound(bound), pred(pred)
    {
    }
 
@@ -2727,12 +2762,16 @@ namespace RangeAnalysis
       assert(!sinkRange.isEmpty());
 
       auto IsAnti = bound->getRange().isAnti() || sinkRange.isAnti();
-      APInt l = IsAnti ? (boundRange.isUnknown() ? Min : boundRange.getUnsignedMin().zext(MAX_BIT_INT)) : boundRange.getLower();
-      APInt u = IsAnti ? (boundRange.isUnknown() ? Max : boundRange.getUnsignedMax().zext(MAX_BIT_INT)) : boundRange.getUpper();
+      APInt l = IsAnti ? (boundRange.isUnknown() ? Min : boundRange.getUnsignedMin().zext(MAX_BIT_INT)) :
+                         boundRange.getLower();
+      APInt u = IsAnti ? (boundRange.isUnknown() ? Max : boundRange.getUnsignedMax().zext(MAX_BIT_INT)) :
+                         boundRange.getUpper();
 
       // Get the lower and upper bound of the interval of this operation
-      APInt lower = IsAnti ? (sinkRange.isUnknown() ? Min : sinkRange.getUnsignedMin().zext(MAX_BIT_INT)) : sinkRange.getLower();
-      APInt upper = IsAnti ? (sinkRange.isUnknown() ? Max : sinkRange.getUnsignedMax().zext(MAX_BIT_INT)) : sinkRange.getUpper();
+      APInt lower =
+          IsAnti ? (sinkRange.isUnknown() ? Min : sinkRange.getUnsignedMin().zext(MAX_BIT_INT)) : sinkRange.getLower();
+      APInt upper =
+          IsAnti ? (sinkRange.isUnknown() ? Max : sinkRange.getUnsignedMax().zext(MAX_BIT_INT)) : sinkRange.getUpper();
 
       auto bw = getRange().getBitWidth();
       switch(this->getOperation())
@@ -2886,17 +2925,20 @@ namespace RangeAnalysis
    // ========================================================================== //
 
    /// The ctor.
-   VarNode::VarNode(const Value* _V, const Value* _GV, const llvm::DataLayout* DL) : V(_V), GV(_GV), interval(Unknown, LoadStoreOperationBW(_V, _GV, DL), Min, Max), abstractState(0)
+   VarNode::VarNode(const Value* _V, const Value* _GV, const llvm::DataLayout* DL)
+       : V(_V), GV(_GV), interval(Unknown, LoadStoreOperationBW(_V, _GV, DL), Min, Max), abstractState(0)
    {
       if(dyn_cast<FPToSIInst>(_V))
       {
          auto bw = _V->getType()->getPrimitiveSizeInBits();
-         interval = Range(Regular, bw, APInt::getSignedMinValue(bw).sext(MAX_BIT_INT), APInt::getSignedMaxValue(bw).sext(MAX_BIT_INT));
+         interval = Range(Regular, bw, APInt::getSignedMinValue(bw).sext(MAX_BIT_INT),
+                          APInt::getSignedMaxValue(bw).sext(MAX_BIT_INT));
       }
       else if(dyn_cast<FPToUIInst>(_V))
       {
          auto bw = _V->getType()->getPrimitiveSizeInBits();
-         interval = Range(Regular, bw, APInt::getMinValue(bw).sext(MAX_BIT_INT), APInt::getMaxValue(bw).sext(MAX_BIT_INT));
+         interval =
+             Range(Regular, bw, APInt::getMinValue(bw).sext(MAX_BIT_INT), APInt::getMaxValue(bw).sext(MAX_BIT_INT));
       }
    }
 
@@ -2989,7 +3031,8 @@ namespace RangeAnalysis
 
    /// We can not want people creating objects of this class,
    /// but we want to inherit of it.
-   BasicOp::BasicOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst) : intersect(std::move(intersect)), sink(sink), inst(inst)
+   BasicOp::BasicOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst)
+       : intersect(std::move(intersect)), sink(sink), inst(inst)
    {
    }
 
@@ -3010,7 +3053,8 @@ namespace RangeAnalysis
    // ControlDep
    // ========================================================================== //
 
-   ControlDep::ControlDep(VarNode* sink, VarNode* source) : BasicOp(std::make_shared<BasicInterval>(), sink, nullptr), source(source)
+   ControlDep::ControlDep(VarNode* sink, VarNode* source)
+       : BasicOp(std::make_shared<BasicInterval>(), sink, nullptr), source(source)
    {
    }
 
@@ -3029,7 +3073,8 @@ namespace RangeAnalysis
    // LoadOp
    // ========================================================================== //
 
-   LoadOp::LoadOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst) : BasicOp(std::move(intersect), sink, inst)
+   LoadOp::LoadOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst)
+       : BasicOp(std::move(intersect), sink, inst)
    {
    }
 
@@ -3121,7 +3166,8 @@ namespace RangeAnalysis
    // StoreOp
    // ========================================================================== //
 
-   StoreOp::StoreOp(VarNode* sink, const Instruction* inst, Range _init) : BasicOp(std::make_shared<BasicInterval>(), sink, inst), init(std::move(_init))
+   StoreOp::StoreOp(VarNode* sink, const Instruction* inst, Range _init)
+       : BasicOp(std::make_shared<BasicInterval>(), sink, inst), init(std::move(_init))
    {
    }
 
@@ -3185,7 +3231,9 @@ namespace RangeAnalysis
    // UnaryOp
    // ========================================================================== //
 
-   UnaryOp::UnaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst, VarNode* source, unsigned int opcode) : BasicOp(std::move(intersect), sink, inst), source(source), opcode(opcode)
+   UnaryOp::UnaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst, VarNode* source,
+                    unsigned int opcode)
+       : BasicOp(std::move(intersect), sink, inst), source(source), opcode(opcode)
    {
    }
 
@@ -3331,7 +3379,8 @@ namespace RangeAnalysis
    // SigmaOp
    // ========================================================================== //
 
-   SigmaOp::SigmaOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst, VarNode* source, VarNode* _SymbolicSource, unsigned int opcode)
+   SigmaOp::SigmaOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst, VarNode* source,
+                    VarNode* _SymbolicSource, unsigned int opcode)
        : UnaryOp(std::move(intersect), sink, inst, source, opcode), SymbolicSource(_SymbolicSource), unresolved(false)
    {
    }
@@ -3439,7 +3488,9 @@ namespace RangeAnalysis
    // ========================================================================== //
 
    // The ctor.
-   BinaryOp::BinaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst, VarNode* source1, VarNode* source2, unsigned int opcode) : BasicOp(std::move(intersect), sink, inst), source1(source1), source2(source2), opcode(opcode)
+   BinaryOp::BinaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst,
+                      VarNode* source1, VarNode* source2, unsigned int opcode)
+       : BasicOp(std::move(intersect), sink, inst), source1(source1), source2(source2), opcode(opcode)
    {
    }
 
@@ -3654,7 +3705,8 @@ namespace RangeAnalysis
    // ========================================================================== //
 
    // The ctor.
-   TernaryOp::TernaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst, VarNode* source1, VarNode* source2, VarNode* source3, unsigned int opcode)
+   TernaryOp::TernaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst,
+                        VarNode* source1, VarNode* source2, VarNode* source3, unsigned int opcode)
        : BasicOp(std::move(intersect), sink, inst), source1(source1), source2(source2), source3(source3), opcode(opcode)
    {
    }
@@ -3707,7 +3759,8 @@ namespace RangeAnalysis
                      if(isa<ConstantInt>(CondOp0) || isa<ConstantInt>(CondOp1))
                      {
                         auto variable = isa<ConstantInt>(CondOp0) ? CondOp1 : CondOp0;
-                        auto constant = isa<ConstantInt>(CondOp0) ? cast<ConstantInt>(CondOp0) : cast<ConstantInt>(CondOp1);
+                        auto constant =
+                            isa<ConstantInt>(CondOp0) ? cast<ConstantInt>(CondOp0) : cast<ConstantInt>(CondOp1);
                         auto opV1 = I->getOperand(1);
                         auto opV2 = I->getOperand(2);
                         if(variable == opV1 || variable == opV2)
@@ -3716,7 +3769,9 @@ namespace RangeAnalysis
                            CmpInst::Predicate pred = cast<ICmpInst>(opV0)->getPredicate();
                            CmpInst::Predicate swappred = cast<ICmpInst>(opV0)->getSwappedPredicate();
 
-                           ConstantRange tmpT = (variable == CondOp0) ? ConstantRange::makeSatisfyingICmpRegion(pred, CR) : ConstantRange::makeSatisfyingICmpRegion(swappred, CR);
+                           ConstantRange tmpT = (variable == CondOp0) ?
+                                                    ConstantRange::makeSatisfyingICmpRegion(pred, CR) :
+                                                    ConstantRange::makeSatisfyingICmpRegion(swappred, CR);
                            assert(!tmpT.isFullSet());
                            auto bw = op2.getBitWidth();
                            assert(bw == op3.getBitWidth());
@@ -3852,7 +3907,8 @@ namespace RangeAnalysis
    // ========================================================================== //
 
    // The ctor.
-   PhiOp::PhiOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst) : BasicOp(std::move(intersect), sink, inst)
+   PhiOp::PhiOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const Instruction* inst)
+       : BasicOp(std::move(intersect), sink, inst)
    {
    }
 
@@ -4035,7 +4091,8 @@ namespace RangeAnalysis
             return;
       }
       UnaryOp* UOp = nullptr;
-      UOp = new UnaryOp(std::make_shared<BasicInterval>(getLLVM_range(I, modulePass, DL)), sink, I, source, I->getOpcode());
+      UOp = new UnaryOp(std::make_shared<BasicInterval>(getLLVM_range(I, modulePass, DL)), sink, I, source,
+                        I->getOpcode());
       this->oprs.insert(UOp);
       // Insert this definition in defmap
       this->defMap[sink->getValue()] = UOp;
@@ -4123,7 +4180,8 @@ namespace RangeAnalysis
       }
    }
 
-   void ConstraintGraph::addSigmaOp(const PHINode* Sigma, ModulePass* modulePass, const llvm::DataLayout* DL, bool* changed)
+   void ConstraintGraph::addSigmaOp(const PHINode* Sigma, ModulePass* modulePass, const llvm::DataLayout* DL,
+                                    bool* changed)
    {
       assert(Sigma->getNumOperands() == 1U);
       // Create the sink.
@@ -4180,7 +4238,8 @@ namespace RangeAnalysis
 
          if(BItv == nullptr)
          {
-            sigmaOp = new SigmaOp(std::make_shared<BasicInterval>(getLLVM_range(Sigma, modulePass, DL)), sink, Sigma, source, nullptr, Sigma->getOpcode());
+            sigmaOp = new SigmaOp(std::make_shared<BasicInterval>(getLLVM_range(Sigma, modulePass, DL)), sink, Sigma,
+                                  source, nullptr, Sigma->getOpcode());
          }
          else
          {
@@ -4213,8 +4272,11 @@ namespace RangeAnalysis
       }
    }
 
-   void ConstraintGraph::addLoadOp(const llvm::LoadInst* LI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass, const llvm::DataLayout* DL,
-                                   llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store, bool* changed)
+   void ConstraintGraph::addLoadOp(
+       const llvm::LoadInst* LI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass,
+       const llvm::DataLayout* DL,
+       llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
+       bool* changed)
    {
       auto bw = LI->getType()->getPrimitiveSizeInBits();
       Range intersection(Regular, bw, Min, Max);
@@ -4237,10 +4299,18 @@ namespace RangeAnalysis
                      pointToConstant = false;
                      break;
                   }
-                  if(!isa<llvm::GlobalVariable>(varValue) || !cast<llvm::GlobalVariable>(varValue)->isConstant() || cast<llvm::GlobalVariable>(varValue)->getValueType()->isStructTy() ||
-                     (cast<llvm::GlobalVariable>(varValue)->getValueType()->isArrayTy() && !cast<llvm::ArrayType>(cast<llvm::GlobalVariable>(varValue)->getValueType())->getElementType()->isIntegerTy()) ||
-                     (cast<llvm::GlobalVariable>(varValue)->getValueType()->isArrayTy() && cast<llvm::ArrayType>(cast<llvm::GlobalVariable>(varValue)->getValueType())->getElementType()->getPrimitiveSizeInBits() != bw) ||
-                     (cast<llvm::GlobalVariable>(varValue)->getValueType()->isSingleValueType() && cast<llvm::GlobalVariable>(varValue)->getValueType()->getPrimitiveSizeInBits() != bw))
+                  if(!isa<llvm::GlobalVariable>(varValue) || !cast<llvm::GlobalVariable>(varValue)->isConstant() ||
+                     cast<llvm::GlobalVariable>(varValue)->getValueType()->isStructTy() ||
+                     (cast<llvm::GlobalVariable>(varValue)->getValueType()->isArrayTy() &&
+                      !cast<llvm::ArrayType>(cast<llvm::GlobalVariable>(varValue)->getValueType())
+                           ->getElementType()
+                           ->isIntegerTy()) ||
+                     (cast<llvm::GlobalVariable>(varValue)->getValueType()->isArrayTy() &&
+                      cast<llvm::ArrayType>(cast<llvm::GlobalVariable>(varValue)->getValueType())
+                              ->getElementType()
+                              ->getPrimitiveSizeInBits() != bw) ||
+                     (cast<llvm::GlobalVariable>(varValue)->getValueType()->isSingleValueType() &&
+                      cast<llvm::GlobalVariable>(varValue)->getValueType()->getPrimitiveSizeInBits() != bw))
                   {
                      pointToConstant = false;
                      break;
@@ -4261,7 +4331,9 @@ namespace RangeAnalysis
                auto ROM = cast<llvm::GlobalVariable>(varValue);
                auto init_value = ROM->getInitializer();
                auto ivid = init_value->getValueID();
-               if(ivid == llvm::Value::ConstantArrayVal || ivid == llvm::Value::ConstantDataArrayVal || ivid == llvm::Value::ConstantDataVectorVal || ivid == llvm::Value::ConstantAggregateZeroVal || ivid == llvm::Value::ConstantIntVal)
+               if(ivid == llvm::Value::ConstantArrayVal || ivid == llvm::Value::ConstantDataArrayVal ||
+                  ivid == llvm::Value::ConstantDataVectorVal || ivid == llvm::Value::ConstantAggregateZeroVal ||
+                  ivid == llvm::Value::ConstantIntVal)
                {
                   res = res.unionWith(getLLVM_range(init_value));
                }
@@ -4304,7 +4376,8 @@ namespace RangeAnalysis
                //               varValue->print(llvm::errs());
                //               llvm::errs() << "\n";
 
-               for(const Value* operand : ComputeConflictingStores(nullptr, varValue, LI, PtoSets_AA, Function2Store, modulePass, changed))
+               for(const Value* operand :
+                   ComputeConflictingStores(nullptr, varValue, LI, PtoSets_AA, Function2Store, modulePass, changed))
                {
                   //                  llvm::errs() << "  source: ";
                   //                  operand->print(llvm::errs());
@@ -4319,8 +4392,10 @@ namespace RangeAnalysis
 #endif
    }
 
-   static bool recurseComputeConflictingStores(llvm::SmallPtrSet<const llvm::Value*, 6>& visited, const Instruction* mInstr, const llvm::Value* GV, llvm::SmallPtrSet<const llvm::Value*, 6>& res, Andersen_AA* PtoSets_AA,
-                                               llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, bool* changed)
+   static bool recurseComputeConflictingStores(
+       llvm::SmallPtrSet<const llvm::Value*, 6>& visited, const Instruction* mInstr, const llvm::Value* GV,
+       llvm::SmallPtrSet<const llvm::Value*, 6>& res, Andersen_AA* PtoSets_AA,
+       llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, bool* changed)
    {
       assert(mInstr);
       bool GVfound = false;
@@ -4380,7 +4455,8 @@ namespace RangeAnalysis
                bool morethanoneBB = false;
                for(auto si : Function2Store.find(CF)->second)
                {
-                  auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store, changed);
+                  auto gvFOUND =
+                      recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store, changed);
                   GVfound = (!morethanoneBB) && (GVfound || gvFOUND);
                   unsigned bbGT1 = 0;
                   for(auto& BB : *CF)
@@ -4416,7 +4492,8 @@ namespace RangeAnalysis
                bool morethanoneBB = false;
                for(auto si : Function2Store.find(CF)->second)
                {
-                  auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store, changed);
+                  auto gvFOUND =
+                      recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store, changed);
                   GVfound = (!morethanoneBB) && (GVfound || gvFOUND);
                   if(CF->size() > 1)
                   {
@@ -4434,7 +4511,9 @@ namespace RangeAnalysis
       }
       return GVfound;
    }
-   static void addAllClobberingStmts(llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>>& toBeAnalyzed, const llvm::MemorySSA& MSSA, llvm::MemoryAccess* ma)
+   static void
+   addAllClobberingStmts(llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>>& toBeAnalyzed,
+                         const llvm::MemorySSA& MSSA, llvm::MemoryAccess* ma)
    {
       llvm::SmallPtrSet<llvm::MemoryAccess*, 6> Analyzed;
       llvm::SmallPtrSet<llvm::MemoryAccess*, 6> MAtoBeAnalyzed;
@@ -4453,14 +4532,16 @@ namespace RangeAnalysis
                for(auto index = 0u; index < mp->getNumIncomingValues(); ++index)
                {
                   auto val = mp->getIncomingValue(index);
-                  assert(val->getValueID() == llvm::Value::MemoryDefVal || val->getValueID() == llvm::Value::MemoryPhiVal);
+                  assert(val->getValueID() == llvm::Value::MemoryDefVal ||
+                         val->getValueID() == llvm::Value::MemoryPhiVal);
                   if(!MSSA.isLiveOnEntryDef(val))
                   {
                      MAtoBeAnalyzed.insert(val);
                   }
                   else
                   {
-                     //                     llvm::errs() << "    addAllClobberingStmts-function: " << mp->getBlock()->getParent()->getName() << "\n";
+                     //                     llvm::errs() << "    addAllClobberingStmts-function: " <<
+                     //                     mp->getBlock()->getParent()->getName() << "\n";
                      auto el = std::pair<llvm::Instruction*, llvm::Function*>(nullptr, mp->getBlock()->getParent());
                      toBeAnalyzed.insert(el);
                   }
@@ -4476,7 +4557,10 @@ namespace RangeAnalysis
          }
       }
    }
-   static void recurseUpMemoryAccess(const llvm::Function* fun, llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>>& toBeAnalyzedInstr, llvm::ModulePass* modulePass, bool* changed)
+   static void
+   recurseUpMemoryAccess(const llvm::Function* fun,
+                         llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>>& toBeAnalyzedInstr,
+                         llvm::ModulePass* modulePass, bool* changed)
    {
       for(auto fuse : fun->users())
       {
@@ -4486,9 +4570,14 @@ namespace RangeAnalysis
             //            instr->print(llvm::errs());
             //            llvm::errs() << "\n";
 #if __clang_major__ >= 11
-            const auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(instr->getFunction()), changed).getMSSA();
+            const auto& MSSA = modulePass
+                                   ->getAnalysis<llvm::MemorySSAWrapperPass>(
+                                       *const_cast<llvm::Function*>(instr->getFunction()), changed)
+                                   .getMSSA();
 #else
-            const auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(instr->getFunction())).getMSSA();
+            const auto& MSSA =
+                modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(instr->getFunction()))
+                    .getMSSA();
 #endif
             auto funMA = MSSA.getMemoryAccess(instr);
             if(!funMA)
@@ -4501,7 +4590,8 @@ namespace RangeAnalysis
                //               llvm::errs() << "    add stmts\n";
                if(auto mud = dyn_cast<llvm::MemoryUseOrDef>(funImmDefAcc))
                {
-                  toBeAnalyzedInstr.insert(std::pair<const llvm::Instruction*, const llvm::Function*>(mud->getMemoryInst(), nullptr));
+                  toBeAnalyzedInstr.insert(
+                      std::pair<const llvm::Instruction*, const llvm::Function*>(mud->getMemoryInst(), nullptr));
                }
                else
                {
@@ -4518,16 +4608,23 @@ namespace RangeAnalysis
       }
    }
 
-   llvm::SmallPtrSet<const llvm::Value*, 6> ConstraintGraph::ComputeConflictingStores(const llvm::StoreInst* SI, const llvm::Value* GV, const llvm::Instruction* instr0, Andersen_AA* PtoSets_AA,
-                                                                                      llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, llvm::ModulePass* modulePass, bool* changed)
+   llvm::SmallPtrSet<const llvm::Value*, 6> ConstraintGraph::ComputeConflictingStores(
+       const llvm::StoreInst* SI, const llvm::Value* GV, const llvm::Instruction* instr0, Andersen_AA* PtoSets_AA,
+       llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
+       llvm::ModulePass* modulePass, bool* changed)
    {
       llvm::SmallPtrSet<const llvm::Value*, 6> res;
       llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>> toBeAnalyzed;
       llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>> Analyzed;
 #if __clang_major__ >= 11
-      const auto& MSSA0 = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(instr0->getFunction()), changed).getMSSA();
+      const auto& MSSA0 =
+          modulePass
+              ->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(instr0->getFunction()), changed)
+              .getMSSA();
 #else
-      const auto& MSSA0 = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(instr0->getFunction())).getMSSA();
+      const auto& MSSA0 =
+          modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(instr0->getFunction()))
+              .getMSSA();
 #endif
       const llvm::MemoryUseOrDef* ma0 = MSSA0.getMemoryAccess(instr0);
       auto immDefAcc0 = ma0->getDefiningAccess();
@@ -4563,17 +4660,22 @@ namespace RangeAnalysis
                if(mInstr != SI) /// self loop could be removed
                {
                   llvm::SmallPtrSet<const llvm::Value*, 6> visited;
-                  bool GVfound = recurseComputeConflictingStores(visited, mInstr, GV, res, PtoSets_AA, Function2Store, changed);
+                  bool GVfound =
+                      recurseComputeConflictingStores(visited, mInstr, GV, res, PtoSets_AA, Function2Store, changed);
                   if(!GVfound)
                   {
-                     const auto& MSSAm = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(mInstr->getFunction())).getMSSA();
+                     const auto& MSSAm = modulePass
+                                             ->getAnalysis<llvm::MemorySSAWrapperPass>(
+                                                 *const_cast<llvm::Function*>(mInstr->getFunction()))
+                                             .getMSSA();
                      const llvm::MemoryUseOrDef* mam = MSSAm.getMemoryAccess(mInstr);
                      auto immDefAccm = mam->getDefiningAccess();
                      if(!MSSAm.isLiveOnEntryDef(immDefAccm))
                      {
                         if(auto mud = dyn_cast<llvm::MemoryUseOrDef>(immDefAccm))
                         {
-                           toBeAnalyzed.insert(std::pair<llvm::Instruction*, llvm::Function*>(mud->getMemoryInst(), nullptr));
+                           toBeAnalyzed.insert(
+                               std::pair<llvm::Instruction*, llvm::Function*>(mud->getMemoryInst(), nullptr));
                         }
                         else
                         {
@@ -4624,8 +4726,10 @@ namespace RangeAnalysis
       varValue->print(llvm::errs());
       llvm_unreachable("unexpected condition");
    }
-   void ConstraintGraph::addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, const llvm::DataLayout* DL,
-                                    bool* changed)
+   void ConstraintGraph::addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved,
+                                    llvm::ModulePass* modulePass,
+                                    llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
+                                    const llvm::DataLayout* DL, bool* changed)
    {
 #if HAVE_LIBBDD
       if(arePointersResolved)
@@ -4644,7 +4748,8 @@ namespace RangeAnalysis
             StoreOp* storeOp;
             if(dyn_cast<llvm::GlobalVariable>(varValue) && dyn_cast<llvm::GlobalVariable>(varValue)->hasInitializer())
             {
-               storeOp = new StoreOp(sink, SI, getLLVM_range(dyn_cast<llvm::GlobalVariable>(varValue)->getInitializer()));
+               storeOp =
+                   new StoreOp(sink, SI, getLLVM_range(dyn_cast<llvm::GlobalVariable>(varValue)->getInitializer()));
             }
             else
             {
@@ -4664,7 +4769,8 @@ namespace RangeAnalysis
                //               llvm::errs() << "    isAggregateValue: ";
                //               varValue->print(llvm::errs());
                //               llvm::errs() << "\n";
-               for(const Value* operand : ComputeConflictingStores(SI, varValue, SI, PtoSets_AA, Function2Store, modulePass, changed))
+               for(const Value* operand :
+                   ComputeConflictingStores(SI, varValue, SI, PtoSets_AA, Function2Store, modulePass, changed))
                {
                   //                  llvm::errs() << "  source: ";
                   //                  operand->print(llvm::errs());
@@ -4688,8 +4794,11 @@ namespace RangeAnalysis
       }
    } // namespace
 
-   void ConstraintGraph::buildOperations(const Instruction* I, ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
-                                         bool* changed)
+   void
+   ConstraintGraph::buildOperations(const Instruction* I, ModulePass* modulePass, const llvm::DataLayout* DL,
+                                    Andersen_AA* PtoSets_AA, bool arePointersResolved,
+                                    llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
+                                    bool* changed)
    {
       if(auto LI = dyn_cast<LoadInst>(I))
       {
@@ -4874,7 +4983,8 @@ namespace RangeAnalysis
          // If the comparison is in the form (var pred const), we use the actual
          // predicate to build the constant range. Otherwise, (const pred var),
          // we use the swapped predicate
-         ConstantRange tmpT = (variable == Op0) ? ConstantRange::makeSatisfyingICmpRegion(pred, CR) : ConstantRange::makeSatisfyingICmpRegion(swappred, CR);
+         ConstantRange tmpT = (variable == Op0) ? ConstantRange::makeSatisfyingICmpRegion(pred, CR) :
+                                                  ConstantRange::makeSatisfyingICmpRegion(swappred, CR);
 
          auto bw = variable->getType()->getPrimitiveSizeInBits();
          Range TValues = tmpT.isFullSet() ? Range(Regular, bw) : CR2R(tmpT, bw);
@@ -4944,8 +5054,10 @@ namespace RangeAnalysis
          {
             const Value* Op1_1 = castinst->getOperand(0);
 
-            std::shared_ptr<BasicInterval> STOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op0, swapPred));
-            std::shared_ptr<BasicInterval> SFOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op0, invSwapPred));
+            std::shared_ptr<BasicInterval> STOp1_1 =
+                std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op0, swapPred));
+            std::shared_ptr<BasicInterval> SFOp1_1 =
+                std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op0, invSwapPred));
 
             ValueBranchMap VBMOp1_1(Op1_1, TBlock, FBlock, STOp1_1, SFOp1_1);
             valuesBranchMap.insert(std::make_pair(Op1_1, VBMOp1_1));
@@ -5221,7 +5333,8 @@ namespace RangeAnalysis
       }
 
       // Sort vector in ascending order and remove duplicates
-      std::sort(constantvector.begin(), constantvector.end(), [](const APInt& i1, const APInt& i2) { return i1.slt(i2); });
+      std::sort(constantvector.begin(), constantvector.end(),
+                [](const APInt& i1, const APInt& i2) { return i1.slt(i2); });
 
       // std::unique doesn't remove duplicate elements, only
       // move them to the end
@@ -5233,7 +5346,9 @@ namespace RangeAnalysis
    }
 
    /// Iterates through all instructions in the function and builds the graph.
-   void ConstraintGraph::buildGraph(const Function& F, ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
+   void ConstraintGraph::buildGraph(const Function& F, ModulePass* modulePass, const llvm::DataLayout* DL,
+                                    Andersen_AA* PtoSets_AA, bool arePointersResolved,
+                                    llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
                                     bool* changed)
    {
       this->func = &F;
@@ -5241,7 +5356,9 @@ namespace RangeAnalysis
       for(auto& I : instructions(F))
       {
          // Only integers are dealt with
-         if((!dyn_cast<llvm::StoreInst>(&I) && !I.getType()->isIntegerTy()) || (dyn_cast<llvm::StoreInst>(&I) && !dyn_cast<llvm::StoreInst>(&I)->getValueOperand()->getType()->isIntegerTy()))
+         if((!dyn_cast<llvm::StoreInst>(&I) && !I.getType()->isIntegerTy()) ||
+            (dyn_cast<llvm::StoreInst>(&I) &&
+             !dyn_cast<llvm::StoreInst>(&I)->getValueOperand()->getType()->isIntegerTy()))
          {
             continue;
          }
@@ -5308,7 +5425,8 @@ namespace RangeAnalysis
       Range newInterval = op->eval();
 
       unsigned bw = oldInterval.getBitWidth();
-      if(oldInterval.isUnknown() || oldInterval.isEmpty() || oldInterval.isAnti() || newInterval.isEmpty() || newInterval.isAnti())
+      if(oldInterval.isUnknown() || oldInterval.isEmpty() || oldInterval.isAnti() || newInterval.isEmpty() ||
+         newInterval.isAnti())
       {
          if(oldInterval.isAnti() && newInterval.isAnti() && newInterval != oldInterval)
          {
@@ -5375,8 +5493,10 @@ namespace RangeAnalysis
          llvm::ModuleSlotTracker MST(op->getInstruction()->getFunction()->getParent());
          MST.incorporateFunction(*op->getInstruction()->getFunction());
          auto instID = MST.getLocalSlot(op->getInstruction());
-         LOG_TRANSACTION("WIDEN::%" << instID << ": " << oldInterval << " -> " << newInterval << " -> " << sinkInterval);
-         llvm::errs() << "WIDEN::%" << instID << ": " << oldInterval << " -> " << newInterval << " -> " << sinkInterval << "\n";
+         LOG_TRANSACTION("WIDEN::%" << instID << ": " << oldInterval << " -> " << newInterval << " -> "
+                                    << sinkInterval);
+         llvm::errs() << "WIDEN::%" << instID << ": " << oldInterval << " -> " << newInterval << " -> " << sinkInterval
+                      << "\n";
       }
       else
       {
@@ -5396,7 +5516,8 @@ namespace RangeAnalysis
    {
       const auto oldInterval = op->getSink()->getRange();
       Range newInterval = op->eval();
-      if(oldInterval.isUnknown() || oldInterval.isEmpty() || oldInterval.isAnti() || newInterval.isEmpty() || newInterval.isAnti())
+      if(oldInterval.isUnknown() || oldInterval.isEmpty() || oldInterval.isAnti() || newInterval.isEmpty() ||
+         newInterval.isAnti())
       {
          op->getSink()->setRange(newInterval);
       }
@@ -5592,7 +5713,8 @@ namespace RangeAnalysis
       update(compUseMap, entryPoints, Meet::widen);
    }
 
-   void Cousot::posUpdate(const UseMap& compUseMap, DenseSet<eValue>& entryPoints, const llvm::SmallPtrSet<VarNode*, 32>* /*component*/)
+   void Cousot::posUpdate(const UseMap& compUseMap, DenseSet<eValue>& entryPoints,
+                          const llvm::SmallPtrSet<VarNode*, 32>* /*component*/)
    {
       update(compUseMap, entryPoints, Meet::narrow);
    }
@@ -5602,7 +5724,8 @@ namespace RangeAnalysis
       update(compUseMap, entryPoints, Meet::growth);
    }
 
-   void CropDFS::posUpdate(const UseMap& compUseMap, DenseSet<eValue>&, const llvm::SmallPtrSet<VarNode*, 32>* component)
+   void CropDFS::posUpdate(const UseMap& compUseMap, DenseSet<eValue>&,
+                           const llvm::SmallPtrSet<VarNode*, 32>* component)
    {
       storeAbstractStates(*component);
       auto obgn = oprs.begin(), oend = oprs.end();
@@ -5648,7 +5771,8 @@ namespace RangeAnalysis
       }
    }
 
-   void ConstraintGraph::update(const UseMap& compUseMap, DenseSet<eValue>& actv, bool (*meet)(BasicOp* op, const SmallVector<APInt, 2>* constantvector))
+   void ConstraintGraph::update(const UseMap& compUseMap, DenseSet<eValue>& actv,
+                                bool (*meet)(BasicOp* op, const SmallVector<APInt, 2>* constantvector))
    {
       while(!actv.empty())
       {
@@ -5868,7 +5992,8 @@ namespace RangeAnalysis
 #endif
    }
 
-   void ConstraintGraph::generateEntryPoints(const llvm::SmallPtrSet<VarNode*, 32>& component, DenseSet<eValue>& entryPoints)
+   void ConstraintGraph::generateEntryPoints(const llvm::SmallPtrSet<VarNode*, 32>& component,
+                                             DenseSet<eValue>& entryPoints)
    {
       // Iterate over the varnodes in the component
       for(VarNode* varNode : component)
@@ -5928,7 +6053,8 @@ namespace RangeAnalysis
       }
    }
 
-   void ConstraintGraph::generateActivesVars(const llvm::SmallPtrSet<VarNode*, 32>& component, DenseSet<eValue>& activeVars)
+   void ConstraintGraph::generateActivesVars(const llvm::SmallPtrSet<VarNode*, 32>& component,
+                                             DenseSet<eValue>& activeVars)
    {
       for(VarNode* varNode : component)
       {
@@ -6023,14 +6149,19 @@ namespace RangeAnalysis
          }
 
          // Variables that are not IntegerTy are ignored
-         if(!(!pair.first.second && pair.first.first->getType()->isIntegerTy()) && !(pair.first.second && dyn_cast<StoreInst>(pair.first.first) && dyn_cast<StoreInst>(pair.first.first)->getValueOperand()->getType()->isIntegerTy()))
+         if(!(!pair.first.second && pair.first.first->getType()->isIntegerTy()) &&
+            !(pair.first.second && dyn_cast<StoreInst>(pair.first.first) &&
+              dyn_cast<StoreInst>(pair.first.first)->getValueOperand()->getType()->isIntegerTy()))
          {
             ++numNotInt;
             continue;
          }
 
          // Count original (used) bits
-         unsigned total = dyn_cast<StoreInst>(pair.first.first) ? dyn_cast<StoreInst>(pair.first.first)->getValueOperand()->getType()->getPrimitiveSizeInBits() : pair.first.first->getType()->getPrimitiveSizeInBits();
+         unsigned total =
+             dyn_cast<StoreInst>(pair.first.first) ?
+                 dyn_cast<StoreInst>(pair.first.first)->getValueOperand()->getType()->getPrimitiveSizeInBits() :
+                 pair.first.first->getType()->getPrimitiveSizeInBits();
          usedBits += total;
          Range CR = pair.second->getRange();
 
@@ -6199,7 +6330,8 @@ namespace RangeAnalysis
          auto p = this->useMap.find(V);
          for(BasicOp* op : p->second)
          {
-            /// VarNodes belonging to the current SCC must not be evaluated otherwise we break the fixed point previously computed
+            /// VarNodes belonging to the current SCC must not be evaluated otherwise we break the fixed point
+            /// previously computed
             if(component.find(op->getSink()) != component.end())
             {
                continue;
@@ -6437,7 +6569,8 @@ namespace RangeAnalysis
    /**
     * Check if a component has an edge to another component
     */
-   bool Nuutila::hasEdge(llvm::SmallPtrSet<VarNode*, 32>* componentFrom, llvm::SmallPtrSet<VarNode*, 32>* componentTo, UseMap* useMap)
+   bool Nuutila::hasEdge(llvm::SmallPtrSet<VarNode*, 32>* componentFrom, llvm::SmallPtrSet<VarNode*, 32>* componentTo,
+                         UseMap* useMap)
    {
       for(auto vit = componentFrom->begin(), vend = componentFrom->end(); vit != vend; ++vit)
       {
@@ -6519,7 +6652,8 @@ namespace RangeAnalysis
 #endif
    }
 
-   static bool checkStores(const Module& M, Andersen_AA* PtoSets_AA, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store)
+   static bool checkStores(const Module& M, Andersen_AA* PtoSets_AA,
+                           llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store)
    {
       if(!PtoSets_AA)
       {
@@ -6560,7 +6694,8 @@ namespace RangeAnalysis
                      break;
                   }
                   auto vid = varValue->getValueID();
-                  if(vid != llvm::Value::InstructionVal + llvm::Instruction::Alloca && vid != llvm::Value::GlobalVariableVal)
+                  if(vid != llvm::Value::InstructionVal + llvm::Instruction::Alloca &&
+                     vid != llvm::Value::GlobalVariableVal)
                   {
                      res = false;
                      break;
@@ -6688,7 +6823,8 @@ namespace RangeAnalysis
 #ifndef NDEBUG
                auto vid = varValue->getValueID();
 #endif
-               assert(vid == llvm::Value::InstructionVal + llvm::Instruction::Alloca || vid == llvm::Value::GlobalVariableVal);
+               assert(vid == llvm::Value::InstructionVal + llvm::Instruction::Alloca ||
+                      vid == llvm::Value::GlobalVariableVal);
                unsigned int elmtSize = ObjectBW(varValue);
                if(elmtSize == 0)
                {
@@ -6800,7 +6936,8 @@ namespace RangeAnalysis
       return max + 1;
    }
 
-   void InterProceduralRACropDFSHelper::MatchParametersAndReturnValues(const Function& F, ConstraintGraph& G, const llvm::DataLayout* DL)
+   void InterProceduralRACropDFSHelper::MatchParametersAndReturnValues(const Function& F, ConstraintGraph& G,
+                                                                       const llvm::DataLayout* DL)
    {
       // Only do the matching if F has any use
       unsigned int countUses = 0;

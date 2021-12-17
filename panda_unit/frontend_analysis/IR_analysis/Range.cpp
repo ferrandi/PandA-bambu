@@ -254,7 +254,8 @@ BOOST_AUTO_TEST_CASE(range_bitvalues)
    BOOST_REQUIRE_EQUAL("UUUUUUUU", bitstring_to_string(test5.getBitValues(false)));
    BOOST_REQUIRE_EQUAL("UUUUUUUU", bitstring_to_string(test5.getBitValues(true)));
 
-   RealRange test3(Range(Regular, 1, 0, 0), Range(Regular, 8, 0b01101110, 0b01111111), Range(Regular, 23, 0b0, 0b11111111111110000000110));
+   RealRange test3(Range(Regular, 1, 0, 0), Range(Regular, 8, 0b01101110, 0b01111111),
+                   Range(Regular, 23, 0b0, 0b11111111111110000000110));
 
    BOOST_REQUIRE_EQUAL(bitstring_to_string(test3.getBitValues(true)), bitstring_to_string(test3.getBitValues(false)));
    BOOST_REQUIRE_EQUAL("0011UUUUUUUUUUUUUUUUUUUUUUUUUUUU", bitstring_to_string(test3.getBitValues(true)));
@@ -970,9 +971,14 @@ BOOST_AUTO_TEST_CASE(real_range)
 {
    RangeRef stdFullRange(new Range(Regular, 32));
    RangeRef stdFullRange64(new Range(Regular, 64));
-   RealRange constFloat64(Range(Regular, 1, 0, 0), Range(Regular, 11, 0b10000000001, 0b10000000001), Range(Regular, 52, 0b1110000000000000000000000000000000000000000000000000, 0b1110000000000000000000000000000000000000000000000000));
-   RealRange constDouble(Range(Regular, 1, 0, 0), Range(Regular, 11, 0b10100000001, 0b10100000001), Range(Regular, 52, 0b1110000000000000000000000000000000000000000000000000, 0b1110000000000000000000000000000000000000000000000000));
-   RealRange constFloat32(Range(Regular, 1, 0, 0), Range(Regular, 8, 0b10000001, 0b10000001), Range(Regular, 23, 0b11100000000000000000000, 0b11100000000000000000000));
+   RealRange constFloat64(Range(Regular, 1, 0, 0), Range(Regular, 11, 0b10000000001, 0b10000000001),
+                          Range(Regular, 52, 0b1110000000000000000000000000000000000000000000000000,
+                                0b1110000000000000000000000000000000000000000000000000));
+   RealRange constDouble(Range(Regular, 1, 0, 0), Range(Regular, 11, 0b10100000001, 0b10100000001),
+                         Range(Regular, 52, 0b1110000000000000000000000000000000000000000000000000,
+                               0b1110000000000000000000000000000000000000000000000000));
+   RealRange constFloat32(Range(Regular, 1, 0, 0), Range(Regular, 8, 0b10000001, 0b10000001),
+                          Range(Regular, 23, 0b11100000000000000000000, 0b11100000000000000000000));
 
    RealRange float64(stdFullRange64);
    BOOST_REQUIRE(float64.getSign()->isFullSet());
@@ -1019,7 +1025,8 @@ BOOST_AUTO_TEST_CASE(real_range)
 
    auto constFloat64VC = constFloat64.getRange();
    BOOST_REQUIRE(constFloat64VC->isConstant());
-   BOOST_REQUIRE_EQUAL(0b0100000000011110000000000000000000000000000000000000000000000000, constFloat64VC->getUnsignedMin());
+   BOOST_REQUIRE_EQUAL(0b0100000000011110000000000000000000000000000000000000000000000000,
+                       constFloat64VC->getUnsignedMin());
 
    auto floatNegOne = RealRange(RangeRef(new Range(Regular, 64, 13830554455654793216ULL, 13830554455654793216ULL)));
    BOOST_REQUIRE(floatNegOne.isConstant());

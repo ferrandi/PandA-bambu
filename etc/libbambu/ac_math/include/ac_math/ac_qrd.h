@@ -36,14 +36,11 @@
 //
 //  Author: Sachchidanand Deo
 //
-//  Description: This function computes Q and R matrices which are decompositions of an input matrix (given by A), such that:
-//  A is an input square matrix with dimension MxM
-//  Q matrix is an orthogonal matrix (such that, Q = inverse (Q)
+//  Description: This function computes Q and R matrices which are decompositions of an input matrix (given by A), such
+//  that: A is an input square matrix with dimension MxM Q matrix is an orthogonal matrix (such that, Q = inverse (Q)
 //  and R is an upper triangular matrix such that all elemets below diagonal are zero.
-//  This function uses Given's rotation algorithm, which takes input matrix of size MxM and in every iteration computes a 2x2 matrix
-//  given by,
-//  [ c -s]
-//  [ s  c]
+//  This function uses Given's rotation algorithm, which takes input matrix of size MxM and in every iteration computes
+//  a 2x2 matrix given by, [ c -s] [ s  c]
 // where, c = x/sqrt(x^2+y^2) and s = -y/sqrt(x^2+y^2)
 // c is cosine element where as s is sine element (See diagonal processing element function for further explaination).
 // In above equation, y is element in matrix to be made zero and x being element in same column and row above x.
@@ -54,17 +51,22 @@
 //  [0  0 0 1 0]
 //  [0  0 0 0 1]
 
-// Then Givens rotation matrix is multiplied to the original matrix and process is repeated until the result is obtained which is R matrix.
-// In this way each iteration performs one rotation, so as to zero one element of matrix. In this file we start with zeroing, first column, last row element and then
-// proceed towards up direction columnwise, upon reaching element below diagonal in every column, we proceed to next column on right.
+// Then Givens rotation matrix is multiplied to the original matrix and process is repeated until the result is obtained
+// which is R matrix. In this way each iteration performs one rotation, so as to zero one element of matrix. In this
+// file we start with zeroing, first column, last row element and then proceed towards up direction columnwise, upon
+// reaching element below diagonal in every column, we proceed to next column on right.
 //
-// Systolic Array approach : This algorithm uses Systolic array approach to replace the matrix multiplication. This saves a lot of hardware and makes algorithm
-// fully parallelizable. Systolic array approach takes advantage of the fact that only two rows change in one iteration and rather than doing matrix muliplication optimizes
-// off-diagonal processing element to perform operation on two rows at a time, in a stateful manner (See off-diagonal processing element for further explaination).
+// Systolic Array approach : This algorithm uses Systolic array approach to replace the matrix multiplication. This
+// saves a lot of hardware and makes algorithm fully parallelizable. Systolic array approach takes advantage of the fact
+// that only two rows change in one iteration and rather than doing matrix muliplication optimizes off-diagonal
+// processing element to perform operation on two rows at a time, in a stateful manner (See off-diagonal processing
+// element for further explaination).
 //
-// Computation of Q : To avoid matrix multiplication involved in computation of Q alongside storage of previous Q in every iteration, Q is computed in systolic manner, similar to R.
-// First input matrix is concatenated with a identity matrix, to get a higher order matrix, which is then modified using givens rotation in a systolic manner. The larger matrix is then subdivided into
-// R and output of Givens rotation on identity matrix which is Q (as Final_Q = Q1. Q2. Q3....is nothing but performing Givens rotation successively in identity matrix).
+// Computation of Q : To avoid matrix multiplication involved in computation of Q alongside storage of previous Q in
+// every iteration, Q is computed in systolic manner, similar to R. First input matrix is concatenated with a identity
+// matrix, to get a higher order matrix, which is then modified using givens rotation in a systolic manner. The larger
+// matrix is then subdivided into R and output of Givens rotation on identity matrix which is Q (as Final_Q = Q1. Q2.
+// Q3....is nothing but performing Givens rotation successively in identity matrix).
 //----------------------------------------------------------------------------------------------------------------
 
 #ifndef _INCLUDED_AC_QRD_H_
@@ -130,12 +132,11 @@ namespace ac_math
    //=========================================================================
    // Diagonal Processing Elements:
    // Description: Diagonal processing elements are used to compute sine (s) and cosine (c) parameters. These parameters
-   // are then passed down to the parent function which then broadcasts them to off-diagonal processing elements. The computation
-   // of c and s is carried out using:
-   // c = x/sqrt(x^2+y^2) and s = -y/sqrt(x^2+y^2)
-   // where x and y are taken from parent function.
-   // To reduce the area, piece wise linear implementation of reciprocal can be used to replace
-   // dividers and piecewise linear implementation of square root can be used to replace accurate square root computation.
+   // are then passed down to the parent function which then broadcasts them to off-diagonal processing elements. The
+   // computation of c and s is carried out using: c = x/sqrt(x^2+y^2) and s = -y/sqrt(x^2+y^2) where x and y are taken
+   // from parent function. To reduce the area, piece wise linear implementation of reciprocal can be used to replace
+   // dividers and piecewise linear implementation of square root can be used to replace accurate square root
+   // computation.
    // ----------------------------------------------------------------------------------------------------------------
    // Helper struct (types_params_qrd) for defining internal variable:
    // Description: types_params_qrd is a helper structure that is used for defining
@@ -196,15 +197,13 @@ namespace ac_math
    //=========================================================================
    // Off-Diagonal Processing Elements:
    // Description: Off-diagonal processing elements take the broadcasted cosine and sine parameters from the diagonal
-   // processing elements, larger matrix on which Givens rotation is to be performed and then systolically update two rows
-   // of the matrices involved in one rotation.
-   // The formula for the rows modification is given by:
-   // row'(0,0) = c*row(0,0) - s*row(1,0)
-   // row'(1,0) = c*row(1,0) + s*row(0,0)
-   // where initial value of row(0,0) and row(1,0) are obtained from the two rows of input matrix, that are part of systolic
-   // implementation of that perticular iteration(this requires initial storage, which is used to break dependancy and make
-   // algorithm fully parallelized).
-   // After the processing is done, new values of row for that perticular iteration are assigned back to the input matrix.
+   // processing elements, larger matrix on which Givens rotation is to be performed and then systolically update two
+   // rows of the matrices involved in one rotation. The formula for the rows modification is given by: row'(0,0) =
+   // c*row(0,0) - s*row(1,0) row'(1,0) = c*row(1,0) + s*row(0,0) where initial value of row(0,0) and row(1,0) are
+   // obtained from the two rows of input matrix, that are part of systolic implementation of that perticular
+   // iteration(this requires initial storage, which is used to break dependancy and make algorithm fully parallelized).
+   // After the processing is done, new values of row for that perticular iteration are assigned back to the input
+   // matrix.
    //----------------------------------------------------------------------------------------------------------------
 
    //#pragma map_to_operator [CCORE]
@@ -249,8 +248,10 @@ namespace ac_math
    // two matrices which are final output matrices Q and R.
    //----------------------------------------------------------------------------------------------------------------
 
-   template <bool ispwl = true, unsigned M, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2, ac_o_mode o2>
-   void ac_qrd(ac_matrix<ac_fixed<W1, I1, true, q1, o1>, M, M>& A, ac_matrix<ac_fixed<W2, I2, true, q2, o2>, M, M>& Q, ac_matrix<ac_fixed<W2, I2, true, q2, o2>, M, M>& R)
+   template <bool ispwl = true, unsigned M, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2,
+             ac_o_mode o2>
+   void ac_qrd(ac_matrix<ac_fixed<W1, I1, true, q1, o1>, M, M>& A, ac_matrix<ac_fixed<W2, I2, true, q2, o2>, M, M>& Q,
+               ac_matrix<ac_fixed<W2, I2, true, q2, o2>, M, M>& R)
    {
       // Defining all typedefs
       typedef ac_fixed<4 * W1, 4 * I1, true, AC_RND, AC_SAT> intermediate_type;
@@ -273,15 +274,19 @@ namespace ac_math
             {
                break;
             }
-            diagonal_PE<input_type, intermediate_type, sin_cosine_type, ispwl>(A1(row, column), A1(row - 1, column), c, s);
+            diagonal_PE<input_type, intermediate_type, sin_cosine_type, ispwl>(A1(row, column), A1(row - 1, column), c,
+                                                                               s);
             offdiagonal_PE<M, intermediate_type, sin_cosine_type>(A1, row, c, s, column);
          }
       }
       qr_separate<M, intermediate_type, output_type>(A1, Q, R);
    }
 
-   template <bool ispwl = true, unsigned M, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2, ac_o_mode o2>
-   void ac_qrd(ac_matrix<ac_complex<ac_fixed<W1, I1, true, q1, o1>>, M, M>& A, ac_matrix<ac_complex<ac_fixed<W2, I2, true, q2, o2>>, M, M>& Q, ac_matrix<ac_complex<ac_fixed<W2, I2, true, q2, o2>>, M, M>& R)
+   template <bool ispwl = true, unsigned M, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2,
+             ac_o_mode o2>
+   void ac_qrd(ac_matrix<ac_complex<ac_fixed<W1, I1, true, q1, o1>>, M, M>& A,
+               ac_matrix<ac_complex<ac_fixed<W2, I2, true, q2, o2>>, M, M>& Q,
+               ac_matrix<ac_complex<ac_fixed<W2, I2, true, q2, o2>>, M, M>& R)
    {
       // Defining all typedefs
       typedef ac_complex<ac_fixed<4 * W1, 4 * I1, true, AC_RND, AC_SAT>> intermediate_type;
@@ -300,15 +305,18 @@ namespace ac_math
       ROW:
          for(unsigned row = M - 1; row > column; row--)
          {
-            diagonal_PE<input_type, intermediate_type, sin_cosine_type, ispwl>(A1(row, column), A1(row - 1, column), c, s);
+            diagonal_PE<input_type, intermediate_type, sin_cosine_type, ispwl>(A1(row, column), A1(row - 1, column), c,
+                                                                               s);
             offdiagonal_PE<M, intermediate_type, sin_cosine_type>(A1, row, c, s, column);
          }
       }
       qr_separate<M, intermediate_type, output_type>(A1, Q, R);
    }
 
-   template <bool ispwl = true, unsigned M, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2, ac_o_mode o2>
-   void ac_qrd(ac_fixed<W1, I1, true, q1, o1> A[M][M], ac_fixed<W2, I2, true, q2, o2> Q[M][M], ac_fixed<W2, I2, true, q2, o2> R[M][M])
+   template <bool ispwl = true, unsigned M, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2,
+             ac_o_mode o2>
+   void ac_qrd(ac_fixed<W1, I1, true, q1, o1> A[M][M], ac_fixed<W2, I2, true, q2, o2> Q[M][M],
+               ac_fixed<W2, I2, true, q2, o2> R[M][M])
    {
       ac_matrix<ac_fixed<W1, I1, true, q1, o1>, M, M> input_mat;
       ac_matrix<ac_fixed<W2, I2, true, q2, o2>, M, M> Q_mat;
@@ -334,8 +342,10 @@ namespace ac_math
       }
    }
 
-   template <bool ispwl = true, unsigned M, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2, ac_o_mode o2>
-   void ac_qrd(ac_complex<ac_fixed<W1, I1, true, q1, o1>> A[M][M], ac_complex<ac_fixed<W2, I2, true, q2, o2>> Q[M][M], ac_complex<ac_fixed<W2, I2, true, q2, o2>> R[M][M])
+   template <bool ispwl = true, unsigned M, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2,
+             ac_o_mode o2>
+   void ac_qrd(ac_complex<ac_fixed<W1, I1, true, q1, o1>> A[M][M], ac_complex<ac_fixed<W2, I2, true, q2, o2>> Q[M][M],
+               ac_complex<ac_fixed<W2, I2, true, q2, o2>> R[M][M])
    {
       ac_matrix<ac_complex<ac_fixed<W1, I1, true, q1, o1>>, M, M> input_mat;
       ac_matrix<ac_complex<ac_fixed<W2, I2, true, q2, o2>>, M, M> Q_mat;

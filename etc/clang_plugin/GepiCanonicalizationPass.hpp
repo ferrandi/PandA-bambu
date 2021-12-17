@@ -51,10 +51,9 @@ enum SROA_optimizations
    SROA_ptrIteratorSimplification,
    SROA_chunkOperationsLowering,
    SROA_bitcastVectorRemoval,
-   SROA_removeLifetime,
+   SROA_intrinsic,
    SROA_selectLowering,
-   SROA_canonicalIdxs,
-   SROA_removeMeta
+   SROA_canonicalIdxs
 };
 
 static const char* optimization_names[] = {"LCSSA cleanup",
@@ -63,7 +62,7 @@ static const char* optimization_names[] = {"LCSSA cleanup",
                                            "Pointer Iterator Simplification"
                                            "Chunk operations lowering",
                                            "Bitcast vector removal",
-                                           "Remove lifetime intrinsic",
+                                           "Remove intrinsic",
                                            "Select lowering",
                                            "Canonical indexes",
                                            "Remove metadata"};
@@ -77,10 +76,12 @@ class GepiCanonicalizationPass : public llvm::FunctionPass
    unsigned short optimization_selection = 0;
 
  public:
-   explicit GepiCanonicalizationPass(char& _ID, unsigned short optimization_selection) : llvm::FunctionPass(_ID), optimization_selection(optimization_selection)
+   explicit GepiCanonicalizationPass(char& _ID, unsigned short optimization_selection)
+       : llvm::FunctionPass(_ID), optimization_selection(optimization_selection)
    {
    }
-   explicit GepiCanonicalizationPass(unsigned short optimization_selection) : llvm::FunctionPass(ID), optimization_selection(optimization_selection)
+   explicit GepiCanonicalizationPass(unsigned short optimization_selection)
+       : llvm::FunctionPass(ID), optimization_selection(optimization_selection)
    {
    }
 
@@ -111,7 +112,5 @@ GepiCanonicalizationPass* createRemoveIntrinsicPass();
 GepiCanonicalizationPass* createSelectLoweringPass();
 
 GepiCanonicalizationPass* createGepiCanonicalIdxsPass();
-
-GepiCanonicalizationPass* createRemoveMetaPass();
 
 #endif // SCALAR_REPLACEMENT_OF_AGGREGATES_GEPICANONICALIZATIONPASS_HPP

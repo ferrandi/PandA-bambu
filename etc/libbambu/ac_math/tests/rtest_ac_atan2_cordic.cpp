@@ -48,7 +48,9 @@ using namespace ac_math;
 //   Template parameters are used to configure the bit-widths of the types.
 
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
-void test_ac_atan2_cordic(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& y, const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& x, ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& out_atan2)
+void test_ac_atan2_cordic(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& y,
+                          const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& x,
+                          ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& out_atan2)
 {
    ac_atan2_cordic(y, x, out_atan2);
 }

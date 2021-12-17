@@ -65,11 +65,19 @@ namespace llvm
 
 namespace llvm
 {
-   static cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
-   static cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(false), cl::desc("Specify if the global variables has to be internalized"));
-   static cl::opt<std::string> ExternSymbolsList("panda-ESL", cl::desc("Specify the list of symbols not to be internalized"), cl::value_desc("comma separated list of external symbols"));
-   static cl::opt<std::string> outdir_name("internalize-outputdir", cl::desc("Specify the directory where the external symbols file will be written"), cl::value_desc("directory path"));
-   static cl::opt<bool> add_noalias("add-noalias", cl::init(false), cl::desc("Force noalias to pointer parameters"), cl::value_desc("specify if pointer parameters are noalias"));
+   static cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the name of the top function"),
+                                                   cl::value_desc("name of the top function"));
+   static cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(false),
+                                        cl::desc("Specify if the global variables has to be internalized"));
+   static cl::opt<std::string> ExternSymbolsList("panda-ESL",
+                                                 cl::desc("Specify the list of symbols not to be internalized"),
+                                                 cl::value_desc("comma separated list of external symbols"));
+   static cl::opt<std::string>
+       outdir_name("internalize-outputdir",
+                   cl::desc("Specify the directory where the external symbols file will be written"),
+                   cl::value_desc("directory path"));
+   static cl::opt<bool> add_noalias("add-noalias", cl::init(false), cl::desc("Force noalias to pointer parameters"),
+                                    cl::value_desc("specify if pointer parameters are noalias"));
 
    // Helper to load an API list to preserve and expose it as a functor for internalization.
    class PreserveSymbolList
@@ -130,7 +138,8 @@ namespace llvm
       }
       bool is_builtin_fn(const std::string& declname) const
       {
-         return builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() || builtinsNames.find(declname) != builtinsNames.end();
+         return builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() ||
+                builtinsNames.find(declname) != builtinsNames.end();
       }
 
       bool runOnModule(Module& M) override
@@ -231,7 +240,9 @@ namespace llvm
 } // namespace llvm
 
 #ifndef _WIN32
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)> XPass(CLANG_VERSION_STRING(_plugin_topfname), "Make all private/static but the top function", false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)>
+    XPass(CLANG_VERSION_STRING(_plugin_topfname), "Make all private/static but the top function",
+          false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
 #if ADD_RSP
@@ -243,14 +254,17 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 }
 
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+static llvm::RegisterStandardPasses
+    CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
 #endif
 
 #ifdef _WIN32
 using namespace llvm;
 
-INITIALIZE_PASS_BEGIN(clang7_plugin_topfname, "clang7_plugin_topfname", "Make all private/static but the top function", false, false)
-INITIALIZE_PASS_END(clang7_plugin_topfname, "clang7_plugin_topfname", "Make all private/static but the top function", false, false)
+INITIALIZE_PASS_BEGIN(clang7_plugin_topfname, "clang7_plugin_topfname", "Make all private/static but the top function",
+                      false, false)
+INITIALIZE_PASS_END(clang7_plugin_topfname, "clang7_plugin_topfname", "Make all private/static but the top function",
+                    false, false)
 namespace llvm
 {
    void clang7_plugin_topfname_init()

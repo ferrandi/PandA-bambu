@@ -210,7 +210,8 @@ namespace ac_math
    //-------------------------------------------------------------------------------
 
    template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-   int ac_normalize(const ac_complex<ac_fixed<W, I, S, Q, O>>& input, ac_complex<ac_fixed<W, int(S), S, Q, O>>& normalized_complex)
+   int ac_normalize(const ac_complex<ac_fixed<W, I, S, Q, O>>& input,
+                    ac_complex<ac_fixed<W, int(S), S, Q, O>>& normalized_complex)
    {
       ac_complex<ac_fixed<W, int(S), S>> normalized_complex_temp;
       typedef ac_fixed<W, I, S> ac_fixed_type;

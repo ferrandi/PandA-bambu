@@ -60,7 +60,9 @@ void test_ac_abs_int(const ac_int<Wint, true>& in1, ac_int<outWint, false>& out1
 
 // Test for signed and unsigned ac_fixed outputs.
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-void test_ac_abs_fixed(const ac_fixed<Wfi, Ifi, true, AC_TRN, AC_WRAP>& in2, ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out3, ac_fixed<outWfi + 1, outIfi + 1, true, AC_TRN, AC_WRAP>& out4)
+void test_ac_abs_fixed(const ac_fixed<Wfi, Ifi, true, AC_TRN, AC_WRAP>& in2,
+                       ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out3,
+                       ac_fixed<outWfi + 1, outIfi + 1, true, AC_TRN, AC_WRAP>& out4)
 {
    ac_abs(in2, out3);
    ac_abs(in2, out4);
@@ -157,7 +159,8 @@ int test_driver_int(bool& all_tests_pass, bool details = false)
       input_s_int = i;
       test_ac_abs_int(input_s_int, output_us_int, output_s_int);
       bool correct_iteration = output_check(input_s_int, output_us_int) && output_check(input_s_int, output_s_int);
-      // If any iteration does not produce the correct value for the output, then the "correct" variable will be set to false.
+      // If any iteration does not produce the correct value for the output, then the "correct" variable will be set to
+      // false.
       correct = correct && correct_iteration;
    }
 
@@ -221,8 +224,10 @@ int test_driver_fixed(bool& all_tests_pass, bool details = false)
    {
       input_s_fixed = i;
       test_ac_abs_fixed(input_s_fixed, output_us_fixed, output_s_fixed);
-      bool correct_iteration = output_check(input_s_fixed, output_us_fixed) && output_check(input_s_fixed, output_s_fixed);
-      // If any iteration does not produce the correct value for the output, then the "correct" variable will be set to false.
+      bool correct_iteration =
+          output_check(input_s_fixed, output_us_fixed) && output_check(input_s_fixed, output_s_fixed);
+      // If any iteration does not produce the correct value for the output, then the "correct" variable will be set to
+      // false.
       correct = correct && correct_iteration;
    }
 
@@ -317,7 +322,8 @@ int test_driver_float(bool& all_tests_pass, bool details = false)
       {
          input_float.m = mant_i;
          test_ac_abs_float(input_float, output_float);
-         // If any iteration does not produce the correct value for the output, then the "correct" variable will be set to false.
+         // If any iteration does not produce the correct value for the output, then the "correct" variable will be set
+         // to false.
          bool correct_iteration = output_check(input_float, output_float);
          correct = correct && correct_iteration;
       }

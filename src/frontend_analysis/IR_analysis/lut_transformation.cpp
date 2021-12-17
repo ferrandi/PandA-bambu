@@ -1982,18 +1982,17 @@ void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship,
          break;
       case DEPENDENCE_RELATIONSHIP:
       {
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto technology_flow_step_factory = GetPointerS<const TechnologyFlowStepFactory>(
              design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-         const std::string technology_flow_signature =
+         const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-         const DesignFlowStepRef technology_design_flow_step =
+         const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+         const auto technology_design_flow_step =
              technology_flow_step ?
                  design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
                  technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
-
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -2005,44 +2004,27 @@ void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship,
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-bool lut_transformation::HasToBeExecuted() const
-{
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
-   auto max_lut_size0 = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
-   if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd))
-   {
-      return FunctionFrontendFlowStep::HasToBeExecuted();
-   }
-   else
-   {
-      return false;
-   }
-}
-
 void lut_transformation::Initialize()
 {
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
+   const auto hls_target = GetPointerS<const HLS_manager>(AppM)->get_HLS_target();
    THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
    max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
 }
 
 DesignFlowStep_Status lut_transformation::InternalExec()
 {
-   if(parameters->IsParameter("disable-lut-transformation") &&
-      parameters->GetParameter<unsigned int>("disable-lut-transformation") == 1)
+   if(max_lut_size == 0 || (parameters->IsParameter("disable-lut-transformation") &&
+                            parameters->GetParameter<unsigned int>("disable-lut-transformation") == 1))
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
 #if HAVE_STDCXX_17
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   auto* fd = GetPointer<function_decl>(temp);
+   const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
    THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement list");
 
    bool modified = false;

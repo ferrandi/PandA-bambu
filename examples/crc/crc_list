@@ -1,0 +1,2 @@
+spec.c --top-fname=main --benchmark-name=crc_main --generate-tb=BENCHMARKS_ROOT/test.xml
+spec.c --top-fname=icrc --benchmark-name=icrc --generate-tb=BENCHMARKS_ROOT/test_icrc.xml

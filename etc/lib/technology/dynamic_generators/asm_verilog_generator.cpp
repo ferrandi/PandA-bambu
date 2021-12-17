@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                 URL: http://trac.ws.dei.polimi.it/panda
  *                      Microarchitectures Laboratory
  *                       Politecnico di Milano - DEIB
@@ -25,11 +25,11 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the 
+ *   along with this program; if not, write to the
  *   Free Software Foundation, Inc.,
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA.
  *
-*/
+ */
 /**
  * @file asm_verilog_generator.cpp
  * @brief Snippet for the asm dynamimc generator.
@@ -39,37 +39,37 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-//void fun()
+ */
+// void fun()
 //{
-   __replaceStringInPlace(_specializing_string, "%%", "&percent;");
-   __replaceStringInPlace(_specializing_string, "&percent;", "%");
-   __replaceStringInPlace(_specializing_string, "\n", "\\n");
-   ///remove possible dialects
-   std::string res_asm;
-   bool open_curl = false;
-   unsigned int count_pipes= 0;
-   char prec_char=0;
-   for(unsigned int i=0; i < _specializing_string.size(); ++i)
+__replaceStringInPlace(_specializing_string, "%%", "&percent;");
+__replaceStringInPlace(_specializing_string, "&percent;", "%");
+__replaceStringInPlace(_specializing_string, "\n", "\\n");
+/// remove possible dialects
+std::string res_asm;
+bool open_curl = false;
+unsigned int count_pipes = 0;
+char prec_char = 0;
+for(unsigned int i = 0; i < _specializing_string.size(); ++i)
+{
+   char current_char = _specializing_string[i];
+   if(current_char == '{' && prec_char != '%')
+      open_curl = true;
+   else if(current_char == '}' && prec_char != '%')
    {
-      char current_char = _specializing_string[i];
-      if(current_char == '{' && prec_char != '%')
-         open_curl = true;
-      else if(current_char == '}' && prec_char != '%')
-      {
-         open_curl = false;
-         count_pipes = 0;
-      }
-      else if(open_curl && current_char == '|' && prec_char != '%')
-         ++count_pipes;
-      else if(open_curl && count_pipes!=2)
-         ;
-      else if(open_curl && count_pipes==2)
-         res_asm = res_asm + current_char;
-      else
-         res_asm = res_asm + current_char;
-      prec_char = current_char;
+      open_curl = false;
+      count_pipes = 0;
    }
-   if(_specializing_string.size()==0)
-      res_asm = "assign done_port = start_port;";
-   std::cout << res_asm;
+   else if(open_curl && current_char == '|' && prec_char != '%')
+      ++count_pipes;
+   else if(open_curl && count_pipes != 2)
+      ;
+   else if(open_curl && count_pipes == 2)
+      res_asm = res_asm + current_char;
+   else
+      res_asm = res_asm + current_char;
+   prec_char = current_char;
+}
+if(_specializing_string.size() == 0)
+   res_asm = "assign done_port = start_port;";
+std::cout << res_asm;

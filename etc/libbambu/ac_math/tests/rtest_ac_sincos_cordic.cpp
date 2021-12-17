@@ -48,7 +48,9 @@ using namespace ac_math;
 //   Template parameters are used to configure the bit-widths of the types.
 
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
-void test_ac_sincos_cordic(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in, ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& out_sin, ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& out_cos)
+void test_ac_sincos_cordic(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in,
+                           ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& out_sin,
+                           ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& out_cos)
 {
    ac_sin_cordic(in, out_sin);
    ac_cos_cordic(in, out_cos);
@@ -72,7 +74,8 @@ using namespace std;
 //   in variables defined in the calling function.
 
 template <int Wfi, int Ifi, int Sfi, int outWfi, int outIfi, bool outSfi>
-int test_driver(double& cummulative_max_error_sine, double& cummulative_max_error_cosine, const double allowed_error, bool details = false)
+int test_driver(double& cummulative_max_error_sine, double& cummulative_max_error_cosine, const double allowed_error,
+                bool details = false)
 {
    bool passed = true;
    double max_error_sine = 0.0;   // reset for this run

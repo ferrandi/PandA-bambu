@@ -16,7 +16,6 @@
 
 # ABSL random-number generation libraries.
 
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load(
     "//absl:copts/configure_copts.bzl",
     "ABSL_DEFAULT_COPTS",
@@ -69,6 +68,7 @@ cc_library(
         "//absl/base:config",
         "//absl/base:core_headers",
         "//absl/meta:type_traits",
+        "//absl/numeric:bits",
         "//absl/random/internal:distribution_caller",
         "//absl/random/internal:fast_uniform_bits",
         "//absl/random/internal:fastmath",
@@ -187,6 +187,7 @@ cc_test(
         ":distributions",
         ":random",
         "//absl/base:raw_logging_internal",
+        "//absl/numeric:representation",
         "//absl/random/internal:distribution_test_util",
         "//absl/random/internal:pcg_engine",
         "//absl/random/internal:sequence_urbg",
@@ -199,6 +200,7 @@ cc_test(
 cc_test(
     name = "distributions_test",
     size = "small",
+    timeout = "moderate",
     srcs = [
         "distributions_test.cc",
     ],
@@ -306,6 +308,7 @@ cc_test(
         ":random",
         "//absl/base:core_headers",
         "//absl/base:raw_logging_internal",
+        "//absl/numeric:representation",
         "//absl/random/internal:distribution_test_util",
         "//absl/random/internal:pcg_engine",
         "//absl/random/internal:sequence_urbg",
@@ -329,6 +332,7 @@ cc_test(
         ":random",
         "//absl/base:core_headers",
         "//absl/base:raw_logging_internal",
+        "//absl/numeric:representation",
         "//absl/random/internal:distribution_test_util",
         "//absl/random/internal:sequence_urbg",
         "//absl/strings",
@@ -375,6 +379,7 @@ cc_test(
         ":distributions",
         ":random",
         "//absl/base:raw_logging_internal",
+        "//absl/numeric:representation",
         "//absl/random/internal:distribution_test_util",
         "//absl/random/internal:pcg_engine",
         "//absl/random/internal:sequence_urbg",

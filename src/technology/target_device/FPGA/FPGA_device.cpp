@@ -107,6 +107,9 @@ void FPGA_device::load_devices(const target_deviceRef device)
    default_device_data["nx1h140tsp"] = "nx1h140tsp.data";
 
    default_device_data["nangate45"] = "nangate45.data";
+   default_device_data["asap7-BC"] = "asap7-BC.data";
+   default_device_data["asap7-TC"] = "asap7-TC.data";
+   default_device_data["asap7-WC"] = "asap7-WC.data";
 
    auto output_level = Param->getOption<unsigned int>(OPT_output_level);
 

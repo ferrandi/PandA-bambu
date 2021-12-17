@@ -58,8 +58,6 @@
 
 #if defined(__clang__) && !defined(SWIG)
 #define ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED 1
-#else
-#define ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED 0
 #endif
 
 #if DYNAMIC_ANNOTATIONS_ENABLED != 0
@@ -84,18 +82,15 @@
 
 // ANNOTALYSIS_ENABLED == 1 when IGNORE_READ_ATTRIBUTE_ENABLED == 1
 #define ABSL_INTERNAL_ANNOTALYSIS_ENABLED \
-  ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED
+  defined(ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED)
 // Read/write annotations are enabled in Annotalysis mode; disabled otherwise.
 #define ABSL_INTERNAL_READS_WRITES_ANNOTATIONS_ENABLED \
   ABSL_INTERNAL_ANNOTALYSIS_ENABLED
 #endif
 
 // Memory annotations are also made available to LLVM's Memory Sanitizer
-#if defined(MEMORY_SANITIZER) && defined(__has_feature) && \
-    !defined(__native_client__)
-#if __has_feature(memory_sanitizer)
+#if defined(ABSL_HAVE_MEMORY_SANITIZER) && !defined(__native_client__)
 #define ABSL_INTERNAL_MEMORY_ANNOTATIONS_ENABLED 1
-#endif
 #endif
 
 #ifndef ABSL_INTERNAL_MEMORY_ANNOTATIONS_ENABLED
@@ -162,7 +157,7 @@
   ABSL_INTERNAL_GLOBAL_SCOPED(AnnotateRWLockCreate)(__FILE__, __LINE__, lock)
 
 // Report that a linker initialized lock has been created at address `lock`.
-#ifdef THREAD_SANITIZER
+#ifdef ABSL_HAVE_THREAD_SANITIZER
 #define ANNOTATE_RWLOCK_CREATE_STATIC(lock)               \
   ABSL_INTERNAL_GLOBAL_SCOPED(AnnotateRWLockCreateStatic) \
   (__FILE__, __LINE__, lock)
@@ -250,19 +245,19 @@
 // -------------------------------------------------------------------------
 // Define IGNORE_READS_BEGIN/_END attributes.
 
-#if ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED == 1
+#if defined(ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED)
 
 #define ABSL_INTERNAL_IGNORE_READS_BEGIN_ATTRIBUTE \
   __attribute((exclusive_lock_function("*")))
 #define ABSL_INTERNAL_IGNORE_READS_END_ATTRIBUTE \
   __attribute((unlock_function("*")))
 
-#else  // ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED == 0
+#else  // !defined(ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED)
 
 #define ABSL_INTERNAL_IGNORE_READS_BEGIN_ATTRIBUTE  // empty
 #define ABSL_INTERNAL_IGNORE_READS_END_ATTRIBUTE    // empty
 
-#endif  // ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED
+#endif  // defined(ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED)
 
 // -------------------------------------------------------------------------
 // Define IGNORE_READS_BEGIN/_END annotations.
@@ -367,7 +362,7 @@
 // -------------------------------------------------------------------------
 // Address sanitizer annotations
 
-#ifdef ADDRESS_SANITIZER
+#ifdef ABSL_HAVE_ADDRESS_SANITIZER
 // Describe the current state of a contiguous container such as e.g.
 // std::vector or std::string. For more details see
 // sanitizer/common_interface_defs.h, which is provided by the compiler.
@@ -385,7 +380,7 @@
 #define ANNOTATE_CONTIGUOUS_CONTAINER(beg, end, old_mid, new_mid)
 #define ADDRESS_SANITIZER_REDZONE(name) static_assert(true, "")
 
-#endif  // ADDRESS_SANITIZER
+#endif  // ABSL_HAVE_ADDRESS_SANITIZER
 
 // -------------------------------------------------------------------------
 // Undefine the macros intended only for this file.

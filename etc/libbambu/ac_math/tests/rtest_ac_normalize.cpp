@@ -52,8 +52,11 @@ using namespace ac_math;
 //   bit-widths of the types.
 
 template <int Wfi, int Ifi, bool Sfi>
-void test_ac_normalize(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in1, ac_fixed<Wfi, int(Sfi), Sfi, AC_TRN, AC_WRAP>& out1, const ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>& in2,
-                       ac_complex<ac_fixed<Wfi, int(Sfi), Sfi, AC_TRN, AC_WRAP>>& out2, int& expret_fixed, int& expret_complex)
+void test_ac_normalize(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in1,
+                       ac_fixed<Wfi, int(Sfi), Sfi, AC_TRN, AC_WRAP>& out1,
+                       const ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>& in2,
+                       ac_complex<ac_fixed<Wfi, int(Sfi), Sfi, AC_TRN, AC_WRAP>>& out2, int& expret_fixed,
+                       int& expret_complex)
 {
    expret_fixed = ac_normalize(in1, out1);
    expret_complex = ac_normalize(in2, out2);
@@ -113,26 +116,36 @@ int test_driver_fixed(bool& all_tests_pass, bool details = false)
          input_fixed = i;
          cmplx_input_fixed.r() = i;
          cmplx_input_fixed.i() = j;
-         test_ac_normalize(input_fixed, output_fixed, cmplx_input_fixed, cmplx_output_fixed, expret_fixed, expret_complex);
+         test_ac_normalize(input_fixed, output_fixed, cmplx_input_fixed, cmplx_output_fixed, expret_fixed,
+                           expret_complex);
          nocalls++;
 
          // This flag is set to false if the real output is incorrect
          bool incorrect_fixed = (output_fixed.to_double() * pow(2, (double)expret_fixed) != input_fixed);
          // Make sure that the range of the normalized output is as expected.
-         incorrect_fixed = incorrect_fixed || ((output_fixed > -0.5) && (output_fixed < 0.5)) || ((output_fixed >= 1) && (output_fixed < -1));
-         // Inputs and outputs being zero is a special case, and the range-checking above will produce a false negative in such a case. This is taken care of below.
+         incorrect_fixed = incorrect_fixed || ((output_fixed > -0.5) && (output_fixed < 0.5)) ||
+                           ((output_fixed >= 1) && (output_fixed < -1));
+         // Inputs and outputs being zero is a special case, and the range-checking above will produce a false negative
+         // in such a case. This is taken care of below.
          if(output_fixed == 0 && input_fixed == 0)
          {
             incorrect_fixed = false;
          }
 
          // This flag is set to false if the complex output is incorrect
-         bool incorrect_complex = ((cmplx_output_fixed.r().to_double() * pow(2, (double)expret_complex) != cmplx_input_fixed.r().to_double()) || (cmplx_output_fixed.i().to_double() * pow(2, (double)expret_complex) != cmplx_input_fixed.i().to_double()));
+         bool incorrect_complex = ((cmplx_output_fixed.r().to_double() * pow(2, (double)expret_complex) !=
+                                    cmplx_input_fixed.r().to_double()) ||
+                                   (cmplx_output_fixed.i().to_double() * pow(2, (double)expret_complex) !=
+                                    cmplx_input_fixed.i().to_double()));
          // Make sure that the range of the normalized output is as expected.
-         incorrect_complex = incorrect_complex || ((cmplx_output_fixed.r() > -0.5) && (cmplx_output_fixed.r() < 0.5) && (cmplx_output_fixed.i() > -0.5) && (cmplx_output_fixed.i() < 0.5));
-         incorrect_complex = incorrect_complex || (cmplx_output_fixed.r() >= 1) || (cmplx_output_fixed.r() < -1) || ((cmplx_output_fixed.i() >= 1) && (cmplx_output_fixed.i() < -1));
-         // Inputs and outputs being zero is a special case, and the range-checking above will produce a false negative in such a case. This is taken care of below.
-         if(cmplx_output_fixed.r() == 0 && cmplx_output_fixed.i() == 0 && cmplx_input_fixed.r() == 0 && cmplx_input_fixed.i() == 0)
+         incorrect_complex = incorrect_complex || ((cmplx_output_fixed.r() > -0.5) && (cmplx_output_fixed.r() < 0.5) &&
+                                                   (cmplx_output_fixed.i() > -0.5) && (cmplx_output_fixed.i() < 0.5));
+         incorrect_complex = incorrect_complex || (cmplx_output_fixed.r() >= 1) || (cmplx_output_fixed.r() < -1) ||
+                             ((cmplx_output_fixed.i() >= 1) && (cmplx_output_fixed.i() < -1));
+         // Inputs and outputs being zero is a special case, and the range-checking above will produce a false negative
+         // in such a case. This is taken care of below.
+         if(cmplx_output_fixed.r() == 0 && cmplx_output_fixed.i() == 0 && cmplx_input_fixed.r() == 0 &&
+            cmplx_input_fixed.i() == 0)
          {
             incorrect_complex = false;
          }
@@ -195,9 +208,10 @@ int main(int argc, char* argv[])
    // Notify the user whether or not the test was a failure.
    if(!all_tests_pass)
    {
-      cout << "  ac_normalize - FAILED - Normalized output does not match input for all test values" << endl; // LCOV_EXCL_LINE
-      cout << "=============================================================================" << endl;        // LCOV_EXCL_LINE
-      return -1;                                                                                              // LCOV_EXCL_LINE
+      cout << "  ac_normalize - FAILED - Normalized output does not match input for all test values"
+           << endl;                                                                                    // LCOV_EXCL_LINE
+      cout << "=============================================================================" << endl; // LCOV_EXCL_LINE
+      return -1;                                                                                       // LCOV_EXCL_LINE
    }
    else
    {

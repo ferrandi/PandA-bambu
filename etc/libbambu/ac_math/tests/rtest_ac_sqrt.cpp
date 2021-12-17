@@ -59,7 +59,8 @@ void test_ac_sqrt_int(const ac_int<Wint, false>& in1, ac_int<outWint, false>& ou
 
 // Test for ac_fixed inputs and outputs.
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-void test_ac_sqrt_fixed(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in2, ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out2)
+void test_ac_sqrt_fixed(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in2,
+                        ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out2)
 {
    ac_sqrt(in2, out2);
 }
@@ -98,14 +99,17 @@ bool output_check_int(const ac_int<Wint, false> input, ac_int<outWint, false> ou
 // Calculating error for real, ac_fixed datatype.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-double err_calc(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> input, const ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP> output, const double allowed_error, const double threshold)
+double err_calc(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> input,
+                const ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP> output, const double allowed_error,
+                const double threshold)
 {
    // The typecasting is done in order to provide quantization on the expected output.
    double expected_value = ((ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>)(sqrt(input.to_double()))).to_double();
    double actual_value = output.to_double();
    double this_error;
 
-   // If expected value is greater than a particular threshold, calculate relative error, else, calculate absolute error.
+   // If expected value is greater than a particular threshold, calculate relative error, else, calculate absolute
+   // error.
    if(abs(expected_value) > threshold)
    {
       this_error = abs((expected_value - actual_value) / expected_value) * 100.0;
@@ -180,7 +184,8 @@ int test_driver_int(bool& all_tests_pass)
 //   accumulated in variables defined in the calling function.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-int test_driver_fixed(double& cumulative_max_error_fixed, const double allowed_error_fixed, const double threshold, bool details = false)
+int test_driver_fixed(double& cumulative_max_error_fixed, const double allowed_error_fixed, const double threshold,
+                      bool details = false)
 {
    bool passed;
    double max_error_fixed = 0.0; // reset for this run
@@ -281,10 +286,12 @@ int main(int argc, char* argv[])
    test_driver_fixed<12, 5, 64, 32>(max_error_fixed, allowed_error_fixed, threshold_fixed);
 
    cout << "=============================================================================" << endl;
-   cout << "  Testbench finished. Maximum error observed across all bit-width variations for unsigned ac_fixed:" << endl;
+   cout << "  Testbench finished. Maximum error observed across all bit-width variations for unsigned ac_fixed:"
+        << endl;
    cout << "    max_error_fixed       = " << max_error_fixed << endl;
 
-   // If error limits on ac_fixed datatypes have been crossed, or the output for ac_int datatypes is not correct, the test has failed.
+   // If error limits on ac_fixed datatypes have been crossed, or the output for ac_int datatypes is not correct, the
+   // test has failed.
    bool test_fail = (max_error_fixed > allowed_error_fixed) || (!all_tests_pass);
 
    // Notify the user that the test was a failure.

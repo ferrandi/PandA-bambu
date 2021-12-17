@@ -652,7 +652,8 @@ namespace ac_math
 
       typedef ac_int<AC_MAX(T_in::width - T_in::i_width - 3, 1), false> lutindextype1;
       // Extracting (MSB-3:LSB) bits of scaled input to determine the lookup table index
-      lutindextype1 lut_index1 = posinput.template slc<AC_MAX(T_in::width - T_in::i_width - 3, 1)>(0); // Extracting the lookup table index
+      lutindextype1 lut_index1 =
+          posinput.template slc<AC_MAX(T_in::width - T_in::i_width - 3, 1)>(0); // Extracting the lookup table index
 
       if(T_in::width - T_in::i_width >= 4 && T_in::width - T_in::i_width <= 12)
       {
@@ -663,11 +664,14 @@ namespace ac_math
       {
          // Lookup table index for the scaled inputs whose number of bits are greater than 12
          lut_index = lut_index1 / (1 << (AC_MAX(T_in::width - T_in::i_width - 12, 0)));
-         if((lut_index1 % (1 << (AC_MAX(T_in::width - T_in::i_width - 12, 0)))) > (1 << (AC_MAX(T_in::width - T_in::i_width - 13, 0))))
+         if((lut_index1 % (1 << (AC_MAX(T_in::width - T_in::i_width - 12, 0)))) >
+            (1 << (AC_MAX(T_in::width - T_in::i_width - 13, 0))))
          {
             lut_index = lut_index + 1;
          }
-         typedef ac_fixed<AC_MAX((AC_MAX(T_in::width - T_in::i_width - 3, 1) + T_in::width - T_in::i_width - 12), 1), AC_MAX(T_in::width - T_in::i_width - 3, 1), false> datatype;
+         typedef ac_fixed<AC_MAX((AC_MAX(T_in::width - T_in::i_width - 3, 1) + T_in::width - T_in::i_width - 12), 1),
+                          AC_MAX(T_in::width - T_in::i_width - 3, 1), false>
+             datatype;
          datatype x = (datatype)lut_index1;
          x = x >> AC_MAX(T_in::width - T_in::i_width - 12, 0);
          if(x > 511.5)
@@ -689,18 +693,41 @@ namespace ac_math
          octanttype octant = posinput.template slc<3>(T_in::width - T_in::i_width - 3);
          lut_index = (octant[0] == 1) ? (lutindextype)(512 - lut_index) : (lutindextype)(lut_index);
          // imaginary part is sine
-         outputtemp.i() = ((octant == 0) | (octant == 3)) ? (T_out)sincos[lut_index].i() : ((octant == 2) | (octant == 1)) ? (T_out)sincos[lut_index].r() : ((octant == 7) | (octant == 4)) ? (T_out)-sincos[lut_index].i() : (T_out)-sincos[lut_index].r();
+         outputtemp.i() =
+             ((octant == 0) | (octant == 3)) ?
+                 (T_out)sincos[lut_index].i() :
+                 ((octant == 2) | (octant == 1)) ?
+                 (T_out)sincos[lut_index].r() :
+                 ((octant == 7) | (octant == 4)) ? (T_out)-sincos[lut_index].i() : (T_out)-sincos[lut_index].r();
          // real part is cosine
-         outputtemp.r() = ((octant == 6) | (octant == 1)) ? (T_out)sincos[lut_index].i() : ((octant == 3) | (octant == 4)) ? (T_out)-sincos[lut_index].r() : ((octant == 2) | (octant == 5)) ? (T_out)-sincos[lut_index].i() : (T_out)sincos[lut_index].r();
-         // Below two are the cases when the output corresponds to + or - (0 or 1) for which there is no entry in the lookup table
-         output.i() = ((posinput == 0.125 | posinput == 0.375)) ? (T_out)(0.7071067811865475244008) : ((posinput == 0.625 | posinput == 0.875)) ? (T_out)(-0.7071067811865475244008) : outputtemp.i();
-         output.r() = ((posinput == 0.125 | posinput == 0.875)) ? (T_out)(0.7071067811865475244008) : ((posinput == 0.375 | posinput == 0.625)) ? (T_out)(-0.7071067811865475244008) : outputtemp.r();
+         outputtemp.r() =
+             ((octant == 6) | (octant == 1)) ?
+                 (T_out)sincos[lut_index].i() :
+                 ((octant == 3) | (octant == 4)) ?
+                 (T_out)-sincos[lut_index].r() :
+                 ((octant == 2) | (octant == 5)) ? (T_out)-sincos[lut_index].i() : (T_out)sincos[lut_index].r();
+         // Below two are the cases when the output corresponds to + or - (0 or 1) for which there is no entry in the
+         // lookup table
+         output.i() =
+             ((posinput == 0.125 | posinput == 0.375)) ?
+                 (T_out)(0.7071067811865475244008) :
+                 ((posinput == 0.625 | posinput == 0.875)) ? (T_out)(-0.7071067811865475244008) : outputtemp.i();
+         output.r() =
+             ((posinput == 0.125 | posinput == 0.875)) ?
+                 (T_out)(0.7071067811865475244008) :
+                 ((posinput == 0.375 | posinput == 0.625)) ? (T_out)(-0.7071067811865475244008) : outputtemp.r();
       }
 
       if(T_in::width - T_in::i_width <= 2)
       {
-         output.i() = (posinput == 0) ? (T_out)0 : (posinput == 0.25) ? (T_out)1 : (posinput == 0.5) ? (T_out)0 : (posinput == 0.75) ? (T_out)-1 : outputtemp.i();
-         output.r() = (posinput == 0) ? (T_out)1 : (posinput == 0.25) ? (T_out)0 : (posinput == 0.5) ? (T_out)-1 : (posinput == 0.75) ? (T_out)0 : outputtemp.r();
+         output.i() = (posinput == 0) ? (T_out)0 :
+                                        (posinput == 0.25) ?
+                                        (T_out)1 :
+                                        (posinput == 0.5) ? (T_out)0 : (posinput == 0.75) ? (T_out)-1 : outputtemp.i();
+         output.r() = (posinput == 0) ? (T_out)1 :
+                                        (posinput == 0.25) ?
+                                        (T_out)0 :
+                                        (posinput == 0.5) ? (T_out)-1 : (posinput == 0.75) ? (T_out)0 : outputtemp.r();
       }
 
 #if !defined(__BAMBU__) && defined(SINCOS_DEBUG)

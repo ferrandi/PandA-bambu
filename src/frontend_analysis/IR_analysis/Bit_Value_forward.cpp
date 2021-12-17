@@ -408,7 +408,6 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       {
          const auto operation = GetPointer<const unary_expr>(GET_CONST_NODE(rhs));
 
-         const auto op_signed = IsSignedIntegerType(operation->op);
          if(!IsHandledByBitvalue(operation->op))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -417,6 +416,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             res = create_u_bitstring(lhs_size);
             break;
          }
+         const auto op_signed = IsSignedIntegerType(operation->op);
          auto op_bitstring = get_current(operation->op);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "---forward_transfer, operand(" + STR(GET_INDEX_NODE(operation->op)) +
@@ -580,7 +580,25 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case widen_mult_expr_K:
       case extract_bit_expr_K:
       {
-         const auto operation = GetPointer<const binary_expr>(GET_CONST_NODE(rhs));
+         const auto operation = GetPointerS<const binary_expr>(GET_CONST_NODE(rhs));
+
+         if(!IsHandledByBitvalue(operation->op0))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---operand " + STR(operation->op0) + " of type " +
+                               STR(tree_helper::CGetType(operation->op0)) + " not handled by bitvalue");
+            res = create_u_bitstring(lhs_size);
+            break;
+         }
+
+         if(!IsHandledByBitvalue(operation->op1))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---operand " + STR(operation->op1) + " of type " +
+                               STR(tree_helper::CGetType(operation->op1)) + " not handled by bitvalue");
+            res = create_u_bitstring(lhs_size);
+            break;
+         }
 
          const auto op0_signed = IsSignedIntegerType(operation->op0);
          auto op0_bitstring = get_current(operation->op0);
@@ -680,52 +698,42 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == eq_expr_K)
          {
-            if(tree_helper::IsRealType(operation->op0) || tree_helper::IsRealType(operation->op1))
+            if(op0_bitstring.size() > op1_bitstring.size())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                              "---forward_transfer Error: operation unhandled yet with real type operands -> " +
-                                  tree_node::GetString(rhs_kind));
-               break;
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
             }
-            else
+            if(op1_bitstring.size() > op0_bitstring.size())
             {
-               if(op0_bitstring.size() > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
-               }
-               if(op1_bitstring.size() > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
-               }
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
+            }
 
-               auto op0_bitstring_it = op0_bitstring.begin();
-               auto op1_bitstring_it = op1_bitstring.begin();
-               auto computed_result = false;
-               for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end();
-                   ++op0_bitstring_it, ++op1_bitstring_it)
+            auto op0_bitstring_it = op0_bitstring.begin();
+            auto op1_bitstring_it = op1_bitstring.begin();
+            auto computed_result = false;
+            for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end();
+                ++op0_bitstring_it, ++op1_bitstring_it)
+            {
+               if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
                {
-                  if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
-                  {
-                     // <U> is UNKNOWN
-                     res.push_front(bit_lattice::U);
-                     computed_result = true;
-                     break;
-                  }
-                  else if((*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE) ||
-                          (*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO))
-                  {
-                     // <0> is FALSE
-                     res.push_front(bit_lattice::ZERO);
-                     computed_result = true;
-                     break;
-                  }
+                  // <U> is UNKNOWN
+                  res.push_front(bit_lattice::U);
+                  computed_result = true;
+                  break;
                }
-               if(!computed_result)
+               else if((*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE) ||
+                       (*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO))
                {
-                  // If the result is not computed until now the bitstring are equal
-                  // <1> is TRUE
-                  res.push_front(bit_lattice::ONE);
+                  // <0> is FALSE
+                  res.push_front(bit_lattice::ZERO);
+                  computed_result = true;
+                  break;
                }
+            }
+            if(!computed_result)
+            {
+               // If the result is not computed until now the bitstring are equal
+               // <1> is TRUE
+               res.push_front(bit_lattice::ONE);
             }
          }
          else if(rhs_kind == exact_div_expr_K || rhs_kind == trunc_div_expr_K)
@@ -1232,51 +1240,42 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == ne_expr_K)
          {
-            if(tree_helper::IsRealType(operation->op0) && tree_helper::IsRealType(operation->op1))
+            if(op0_bitstring.size() > op1_bitstring.size())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                              "---forward_transfer Error: operation unhandled yet with real type operands -> " +
-                                  tree_node::GetString(rhs_kind));
+               op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
             }
-            else
+            if(op1_bitstring.size() > op0_bitstring.size())
             {
-               if(op0_bitstring.size() > op1_bitstring.size())
-               {
-                  op1_bitstring = sign_extend_bitstring(op1_bitstring, op1_signed, op0_bitstring.size());
-               }
-               if(op1_bitstring.size() > op0_bitstring.size())
-               {
-                  op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
-               }
+               op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, op1_bitstring.size());
+            }
 
-               auto op0_bitstring_it = op0_bitstring.begin();
-               auto op1_bitstring_it = op1_bitstring.begin();
-               auto computed_result = false;
-               for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end();
-                   ++op0_bitstring_it, ++op1_bitstring_it)
+            auto op0_bitstring_it = op0_bitstring.begin();
+            auto op1_bitstring_it = op1_bitstring.begin();
+            auto computed_result = false;
+            for(; op0_bitstring_it != op0_bitstring.end() && op1_bitstring_it != op1_bitstring.end();
+                ++op0_bitstring_it, ++op1_bitstring_it)
+            {
+               if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
                {
-                  if(*op0_bitstring_it == bit_lattice::U || *op1_bitstring_it == bit_lattice::U)
-                  {
-                     // <U> is UNKNOWN
-                     res.push_front(bit_lattice::U);
-                     computed_result = true;
-                     break;
-                  }
-                  else if((*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE) ||
-                          (*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO))
-                  {
-                     // <1> is TRUE
-                     res.push_front(bit_lattice::ONE);
-                     computed_result = true;
-                     break;
-                  }
+                  // <U> is UNKNOWN
+                  res.push_front(bit_lattice::U);
+                  computed_result = true;
+                  break;
                }
-               if(!computed_result)
+               else if((*op0_bitstring_it == bit_lattice::ZERO && *op1_bitstring_it == bit_lattice::ONE) ||
+                       (*op0_bitstring_it == bit_lattice::ONE && *op1_bitstring_it == bit_lattice::ZERO))
                {
-                  // If the result is not computed until now the bitstring are equal
-                  // <0> is FALSE
-                  res.push_front(bit_lattice::ZERO);
+                  // <1> is TRUE
+                  res.push_front(bit_lattice::ONE);
+                  computed_result = true;
+                  break;
                }
+            }
+            if(!computed_result)
+            {
+               // If the result is not computed until now the bitstring are equal
+               // <0> is FALSE
+               res.push_front(bit_lattice::ZERO);
             }
          }
          else if(rhs_kind == plus_expr_K || rhs_kind == pointer_plus_expr_K)
@@ -1509,6 +1508,33 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case fshr_expr_K:
       {
          const auto operation = GetPointer<const ternary_expr>(GET_CONST_NODE(rhs));
+
+         if(!IsHandledByBitvalue(operation->op0))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---operand " + STR(operation->op0) + " of type " +
+                               STR(tree_helper::CGetType(operation->op0)) + " not handled by bitvalue");
+            res = create_u_bitstring(lhs_size);
+            break;
+         }
+
+         if(!IsHandledByBitvalue(operation->op1))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---operand " + STR(operation->op1) + " of type " +
+                               STR(tree_helper::CGetType(operation->op1)) + " not handled by bitvalue");
+            res = create_u_bitstring(lhs_size);
+            break;
+         }
+
+         if(!IsHandledByBitvalue(operation->op2))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---operand " + STR(operation->op2) + " of type " +
+                               STR(tree_helper::CGetType(operation->op2)) + " not handled by bitvalue");
+            res = create_u_bitstring(lhs_size);
+            break;
+         }
 
          const auto op0_signed = IsSignedIntegerType(operation->op0);
          auto op0_bitstring = get_current(operation->op0);

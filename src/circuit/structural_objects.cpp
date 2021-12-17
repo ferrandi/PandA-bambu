@@ -480,7 +480,7 @@ structural_type_descriptor::structural_type_descriptor(unsigned int _treenode, t
 structural_type_descriptor::structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper)
 {
    unsigned int type_index = helper->get_type(index);
-   /// first set defaults5
+   /// first set defaults
    type = UNKNOWN;
    size = size_DEFAULT;
    vector_size = vector_size_DEFAULT;
@@ -562,9 +562,7 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
    {
       if(helper->is_bool(index))
       {
-         type = VECTOR_BOOL;
-         size = 1;
-         vector_size = 1;
+         type = BOOL;
       }
       else if(helper->is_int(index))
       {
@@ -1094,7 +1092,7 @@ port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _d
 
 void port_o::add_connection(structural_objectRef s)
 {
-   THROW_ASSERT(s, get_path() + ": NULL object received: " + s->get_path());
+   THROW_ASSERT(s, get_path() + ": NULL object received: ");
    THROW_ASSERT(
        (get_kind() == port_o_K &&
         (s->get_kind() == port_o_K || s->get_kind() == signal_o_K || s->get_kind() == constant_o_K)) ||

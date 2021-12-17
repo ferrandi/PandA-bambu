@@ -196,13 +196,16 @@ namespace ac_math
    struct determinant_matrix
    {
       // Function inside helper struct that carries out the procedure of computing determinant
-      template <typename input_type, typename output_type, typename c_type, typename temp_type, typename d_type, typename base_type>
+      template <typename input_type, typename output_type, typename c_type, typename temp_type, typename d_type,
+                typename base_type>
       static output_type determinant_compute(const ac_matrix<input_type, M, M>& A)
       {
-         int pr = -1;                           // pr is used to keep track of sign in determinant computation
-         c_type c[M];                           // c is used to store the internal results of intermediate matrices, before multiplication and accumulation happens
-         d_type d = 0;                          // d is used to store and return the final result
-         ac_matrix<input_type, M - 1, M - 1> b; // b is used to store minor matrix whose determinant is then to be computed recursively
+         int pr = -1;  // pr is used to keep track of sign in determinant computation
+         c_type c[M];  // c is used to store the internal results of intermediate matrices, before multiplication and
+                       // accumulation happens
+         d_type d = 0; // d is used to store and return the final result
+         ac_matrix<input_type, M - 1, M - 1>
+             b; // b is used to store minor matrix whose determinant is then to be computed recursively
 
          temp_type temp;
          // PIVOT loop to keep track of pivot (element about which minor is to be computed)
@@ -237,7 +240,8 @@ namespace ac_math
             // Change sign every alternate time
             pr = (-1) * pr;
             // Recursive call using template recursion
-            temp = determinant_matrix<M - 1>::template determinant_compute<input_type, output_type, c_type, temp_type, d_type, base_type>(b);
+            temp = determinant_matrix<M - 1>::template determinant_compute<input_type, output_type, c_type, temp_type,
+                                                                           d_type, base_type>(b);
             c[j] = pr * temp;
          }
          // Accumulate loop for accumulation after multiplication with pivot
@@ -263,7 +267,8 @@ namespace ac_math
    template <>
    struct determinant_matrix<2>
    {
-      template <typename input_type, typename output_type, typename c_type, typename temp_type, typename d_type, typename base_type>
+      template <typename input_type, typename output_type, typename c_type, typename temp_type, typename d_type,
+                typename base_type>
       static base_type determinant_compute(const ac_matrix<input_type, 2, 2>& a)
       {
          base_type result;
@@ -282,7 +287,8 @@ namespace ac_math
    template <>
    struct determinant_matrix<1>
    {
-      template <typename input_type, typename output_type, typename c_type, typename temp_type, typename d_type, typename base_type>
+      template <typename input_type, typename output_type, typename c_type, typename temp_type, typename d_type,
+                typename base_type>
       static base_type determinant_compute(const ac_matrix<input_type, 1, 1>& a)
       {
          base_type result;
@@ -297,8 +303,10 @@ namespace ac_math
    };
 
    // This structure is used to define internal datatypes for ac_fixed implementation
-   template <unsigned M, bool internal_adjust, int Wtemp, int Itemp, bool signtemp, ac_q_mode qtemp, ac_o_mode otemp, int W, int I, bool S, ac_q_mode q_mode, ac_o_mode o_mode>
-   struct types_params<M, internal_adjust, ac_fixed<Wtemp, Itemp, signtemp, qtemp, otemp>, ac_fixed<W, I, S, q_mode, o_mode>>
+   template <unsigned M, bool internal_adjust, int Wtemp, int Itemp, bool signtemp, ac_q_mode qtemp, ac_o_mode otemp,
+             int W, int I, bool S, ac_q_mode q_mode, ac_o_mode o_mode>
+   struct types_params<M, internal_adjust, ac_fixed<Wtemp, Itemp, signtemp, qtemp, otemp>,
+                       ac_fixed<W, I, S, q_mode, o_mode>>
    {
       enum
       {
@@ -328,8 +336,10 @@ namespace ac_math
    };
 
    // This structure is used to define internal datatypes for ac_complex<ac_fixed> implementation
-   template <unsigned M, bool internal_adjust, int Wtemp, int Itemp, bool signtemp, ac_q_mode qtemp, ac_o_mode otemp, int W, int I, bool S, ac_q_mode q_mode, ac_o_mode o_mode>
-   struct types_params<M, internal_adjust, ac_complex<ac_fixed<Wtemp, Itemp, signtemp, qtemp, otemp>>, ac_complex<ac_fixed<W, I, S, q_mode, o_mode>>>
+   template <unsigned M, bool internal_adjust, int Wtemp, int Itemp, bool signtemp, ac_q_mode qtemp, ac_o_mode otemp,
+             int W, int I, bool S, ac_q_mode q_mode, ac_o_mode o_mode>
+   struct types_params<M, internal_adjust, ac_complex<ac_fixed<Wtemp, Itemp, signtemp, qtemp, otemp>>,
+                       ac_complex<ac_fixed<W, I, S, q_mode, o_mode>>>
    {
       enum
       {
@@ -356,7 +366,8 @@ namespace ac_math
       };
       // all the four typedefs for four internal variables
       typedef ac_complex<ac_fixed<c_width, c_int, c_sign, (ac_q_mode)c_qmode, (ac_o_mode)c_omode>> c_type;
-      typedef ac_complex<ac_fixed<temp_width, temp_int, temp_sign, (ac_q_mode)temp_qmode, (ac_o_mode)temp_omode>> temp_type;
+      typedef ac_complex<ac_fixed<temp_width, temp_int, temp_sign, (ac_q_mode)temp_qmode, (ac_o_mode)temp_omode>>
+          temp_type;
       typedef ac_complex<ac_fixed<base_width, base_int, true, q_mode, o_mode>> base_type;
       typedef ac_complex<ac_fixed<d_width, d_int, d_sign, (ac_q_mode)d_qmode, (ac_o_mode)d_omode>> d_type;
    };
@@ -390,13 +401,15 @@ namespace ac_math
       typedef typename types_params<M, override, internal_type, input_type>::base_type base_type1;
 
       // get the final answer of template recursion with full precision
-      d_type1 result1 = determinant_matrix<M>::template determinant_compute<input_type, output_type, c_type1, temp_type1, d_type1, base_type1>(a);
+      d_type1 result1 = determinant_matrix<M>::template determinant_compute<input_type, output_type, c_type1,
+                                                                            temp_type1, d_type1, base_type1>(a);
       // assign the full-precision output to the final output provided by the user
       result = result1;
    }
 
-   template <bool override = false, int internal_width = 16, int internal_int = 8, bool internal_sign = true, ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M, int W1, int I1, bool S1, ac_q_mode q1, ac_o_mode o1, int W2, int I2,
-             ac_q_mode q2, ac_o_mode o2>
+   template <bool override = false, int internal_width = 16, int internal_int = 8, bool internal_sign = true,
+             ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M, int W1, int I1, bool S1,
+             ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2, ac_o_mode o2>
    void ac_determinant(const ac_matrix<ac_fixed<W1, I1, S1, q1, o1>, M, M>& a, ac_fixed<W2, I2, true, q2, o2>& result)
    {
       typedef ac_fixed<internal_width, internal_int, internal_sign, internal_rnd, internal_sat> internal_type;
@@ -412,11 +425,14 @@ namespace ac_math
 #endif
    }
 
-   template <bool override = false, int internal_width = 16, int internal_int = 8, bool internal_sign = true, ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M, int W1, int I1, bool S1, ac_q_mode q1, ac_o_mode o1, int W2, int I2,
-             ac_q_mode q2, ac_o_mode o2>
-   void ac_determinant(const ac_matrix<ac_complex<ac_fixed<W1, I1, S1, q1, o1>>, M, M>& a, ac_complex<ac_fixed<W2, I2, true, q2, o2>>& result)
+   template <bool override = false, int internal_width = 16, int internal_int = 8, bool internal_sign = true,
+             ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M, int W1, int I1, bool S1,
+             ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2, ac_o_mode o2>
+   void ac_determinant(const ac_matrix<ac_complex<ac_fixed<W1, I1, S1, q1, o1>>, M, M>& a,
+                       ac_complex<ac_fixed<W2, I2, true, q2, o2>>& result)
    {
-      typedef ac_complex<ac_fixed<internal_width, internal_int, internal_sign, internal_rnd, internal_sat>> internal_type;
+      typedef ac_complex<ac_fixed<internal_width, internal_int, internal_sign, internal_rnd, internal_sat>>
+          internal_type;
       typedef ac_complex<ac_fixed<W1, I1, S1, q1, o1>> input_type;
       typedef ac_complex<ac_fixed<W2, I2, true, q2, o2>> output_type;
       ac_determinant_combined<M, override, input_type, output_type, internal_type>(a, result);
@@ -430,8 +446,9 @@ namespace ac_math
    }
 
    // Define c-array function versions for determinant
-   template <bool override = false, int internal_width = 16, int internal_int = 8, bool internal_sign = true, ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M, int W1, int I1, bool S1, ac_q_mode q1, ac_o_mode o1, int W2, int I2,
-             ac_q_mode q2, ac_o_mode o2>
+   template <bool override = false, int internal_width = 16, int internal_int = 8, bool internal_sign = true,
+             ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M, int W1, int I1, bool S1,
+             ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2, ac_o_mode o2>
    void ac_determinant(const ac_fixed<W1, I1, S1, q1, o1> a[M][M], ac_fixed<W2, I2, true, q2, o2>& result)
    {
       ac_matrix<ac_fixed<W1, I1, S1, q1, o1>, M, M> a_temp;
@@ -460,9 +477,11 @@ namespace ac_math
       ac_determinant<override, internal_width, internal_int, internal_sign, internal_rnd, internal_sat>(a_temp, result);
    }
 
-   template <bool override = false, int internal_width = 16, int internal_int = 8, bool internal_sign = true, ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M, int W1, int I1, bool S1, ac_q_mode q1, ac_o_mode o1, int W2, int I2,
-             ac_q_mode q2, ac_o_mode o2>
-   void ac_determinant(const ac_complex<ac_fixed<W1, I1, S1, q1, o1>> a[M][M], ac_complex<ac_fixed<W2, I2, true, q2, o2>>& result)
+   template <bool override = false, int internal_width = 16, int internal_int = 8, bool internal_sign = true,
+             ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M, int W1, int I1, bool S1,
+             ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2, ac_o_mode o2>
+   void ac_determinant(const ac_complex<ac_fixed<W1, I1, S1, q1, o1>> a[M][M],
+                       ac_complex<ac_fixed<W2, I2, true, q2, o2>>& result)
    {
       ac_matrix<ac_complex<ac_fixed<W1, I1, S1, q1, o1>>, M, M> a_temp;
 #if !defined(__clang__)
@@ -490,7 +509,9 @@ namespace ac_math
    }
 
    // Version that allows returning of values for ac_matrix inputs.
-   template <class T_out, bool override = false, int internal_width = 16, int internal_int = 8, bool internal_sign = true, ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M, class T_in>
+   template <class T_out, bool override = false, int internal_width = 16, int internal_int = 8,
+             bool internal_sign = true, ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M,
+             class T_in>
    T_out ac_determinant(const ac_matrix<T_in, M, M>& input)
    {
       T_out output;
@@ -499,7 +520,9 @@ namespace ac_math
    }
 
    // Version that allows returning of values for c style array inputs.
-   template <class T_out, bool override = false, int internal_width = 16, int internal_int = 8, bool internal_sign = true, ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M, class T_in>
+   template <class T_out, bool override = false, int internal_width = 16, int internal_int = 8,
+             bool internal_sign = true, ac_q_mode internal_rnd = AC_RND, ac_o_mode internal_sat = AC_SAT, unsigned M,
+             class T_in>
    T_out ac_determinant(const T_in input[M][M])
    {
       T_out output;

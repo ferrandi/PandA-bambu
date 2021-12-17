@@ -26,7 +26,8 @@ a copy of the GCC Runtime Library Exception along with this program;
 see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 <http://www.gnu.org/licenses/>.  */
 
-typedef union {
+typedef union
+{
    double value;
    unsigned long long int u_value;
 } local_double_shape_type;

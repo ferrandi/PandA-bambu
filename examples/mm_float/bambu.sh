@@ -2,20 +2,17 @@
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
 
-mkdir -p mm_float_sim
-cd mm_float_sim
-echo "# HLS synthesis, testbench generation and simulation with ICARUS"
-timeout 2h bambu -O3 $root_dir/module.c --simulate --generate-tb=$root_dir/test.xml --simulator=ICARUS --pretty-print=a.c --channels-type=MEM_ACC_NN --device-name=EP2C70F896C6-R --memory-allocation-policy=EXT_PIPELINED_BRAM --experimental-setup=BAMBU "$@"
-return_value=$?
-if test $return_value != 0; then
-   exit $return_value
-fi
-cd ..
+export NPROC=8
+export NCORE=8
+export DIE_AREA="0 0 180 180"
+export CORE_AREA="5.08 5.08 170 170"
 
 mkdir -p mm_float_synth
 cd mm_float_synth
-echo "# HLS synthesis, testbench generation, simulation with ICARUS and RTL synthesis with Quartus"
-timeout 2h bambu -O3 $root_dir/module.c --generate-tb=$root_dir/test.xml --evaluation --simulator=ICARUS --pretty-print=a.c --channels-type=MEM_ACC_NN --device-name=EP2C70F896C6-R --memory-allocation-policy=EXT_PIPELINED_BRAM --experimental-setup=BAMBU "$@"
+echo "# HLS synthesis, testbench generation, simulation with ICARUS and RTL synthesis with OpenRoad"
+timeout 2h bambu $root_dir/module.c --clock-period=1.5 --std=c99 -s --top-fname=mm --generate-tb=$root_dir/test.xml \
+                 --evaluation --simulator=ICARUS --device-name=asap7-BC --memory-allocation-policy=NO_BRAM \
+                 --channels-number=8 --experimental-setup=BAMBU-PERFORMANCE-MP --compiler=I386_CLANG12 -v4 "$@"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
