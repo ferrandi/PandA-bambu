@@ -1085,11 +1085,13 @@ double AllocationInformation::estimate_muxNto1_delay(unsigned int fu_prec, unsig
    }
    THROW_ASSERT(mux_timing_db.find(fu_prec) != mux_timing_db.end(),
                 STR(fu_prec) + " not found in mux database of " + STR(mux_timing_db.size()) + " elements");
-   while(mux_timing_db.find(fu_prec)->second.find(mux_ins) == mux_timing_db.find(fu_prec)->second.end() && mux_ins <= MAX_MUX_N_INPUTS)
+   while(mux_timing_db.find(fu_prec)->second.find(mux_ins) == mux_timing_db.find(fu_prec)->second.end() &&
+         mux_ins <= MAX_MUX_N_INPUTS)
    {
       ++mux_ins;
    }
-   THROW_ASSERT(mux_timing_db.find(fu_prec)->second.find(mux_ins) != mux_timing_db.find(fu_prec)->second.end(), "fu_prec:" +STR(fu_prec) + " mux_ins: " + STR(mux_ins));
+   THROW_ASSERT(mux_timing_db.find(fu_prec)->second.find(mux_ins) != mux_timing_db.find(fu_prec)->second.end(),
+                "fu_prec:" + STR(fu_prec) + " mux_ins: " + STR(mux_ins));
    double ret = mux_timing_db.at(fu_prec).at(mux_ins) - get_setup_hold_time();
    // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---delay of MUX with " + STR(mux_ins) + " inputs and with
    // " + STR(fu_prec) + " bits: " + STR(ret));
@@ -1107,7 +1109,8 @@ double AllocationInformation::estimate_muxNto1_area(unsigned int fu_prec, unsign
    {
       mux_ins = MAX_MUX_N_INPUTS;
    }
-   while(mux_area_db.find(fu_prec)->second.find(mux_ins) == mux_area_db.find(fu_prec)->second.end() && mux_ins <= MAX_MUX_N_INPUTS)
+   while(mux_area_db.find(fu_prec)->second.find(mux_ins) == mux_area_db.find(fu_prec)->second.end() &&
+         mux_ins <= MAX_MUX_N_INPUTS)
    {
       ++mux_ins;
    }
@@ -2758,7 +2761,8 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    else if(operation_name == "lut_expr")
    {
       // std::cerr << "get_correction_time " << operation_name << " - " << n_ins << "\n";
-      if(HLS_T->get_target_device()->has_parameter("max_lut_size") && HLS_T->get_target_device()->get_parameter<size_t>("max_lut_size") != 0)
+      if(HLS_T->get_target_device()->has_parameter("max_lut_size") &&
+         HLS_T->get_target_device()->get_parameter<size_t>("max_lut_size") != 0)
       {
          const technology_managerRef TM = HLS_T->get_technology_manager();
          technology_nodeRef f_unit_lut = TM->get_fu(LUT_EXPR_STD, LIBRARY_STD_FU);

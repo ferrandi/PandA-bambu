@@ -57,10 +57,14 @@
 #include <cstdlib>
 #include <iostream>
 
-static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMap;
-static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMapArraySize;
-static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMapAttribute2;
-static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMapAttribute3;
+static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>>
+    HLS_interface_PragmaMap;
+static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>>
+    HLS_interface_PragmaMapArraySize;
+static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>>
+    HLS_interface_PragmaMapAttribute2;
+static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>>
+    HLS_interface_PragmaMapAttribute3;
 
 static std::map<std::string, std::vector<clang::SourceLocation>> HLS_pipeline_PragmaMap;
 static std::map<std::string, std::vector<clang::SourceLocation>> HLS_simple_pipeline_PragmaMap;
@@ -180,7 +184,8 @@ namespace clang
          stream << "<module>\n";
          for(auto funArgPair : Fun2Params)
          {
-            if(!TopFunctionName.empty() && Fun2Demangled.find(funArgPair.first)->second != TopFunctionName && funArgPair.first != TopFunctionName)
+            if(!TopFunctionName.empty() && Fun2Demangled.find(funArgPair.first)->second != TopFunctionName &&
+               funArgPair.first != TopFunctionName)
             {
                continue;
             }
@@ -241,7 +246,8 @@ namespace clang
          stream << "<module>\n";
          for(auto funArgPair : Fun2Params)
          {
-            if(!TopFunctionName.empty() && Fun2Demangled.find(funArgPair.first)->second != TopFunctionName && funArgPair.first != TopFunctionName)
+            if(!TopFunctionName.empty() && Fun2Demangled.find(funArgPair.first)->second != TopFunctionName &&
+               funArgPair.first != TopFunctionName)
             {
                continue;
             }
@@ -260,13 +266,23 @@ namespace clang
                   std::string typenameOrigArg = interfaceTypenameOrigVec.at(ArgIndex);
                   convert_unescaped(typenameArg);
                   convert_unescaped(typenameOrigArg);
-                  stream << "    <arg id=\"" << par << "\" interface_type=\"" << interfaceTypeVec.at(ArgIndex) << "\" interface_typename=\"" << typenameArg << "\" interface_typename_orig=\"" << typenameOrigArg << "\"";
-                  if(Fun2ParamSize.find(funArgPair.first) != Fun2ParamSize.end() && Fun2ParamSize.find(funArgPair.first)->second.find(par) != Fun2ParamSize.find(funArgPair.first)->second.end())
+                  stream << "    <arg id=\"" << par << "\" interface_type=\"" << interfaceTypeVec.at(ArgIndex)
+                         << "\" interface_typename=\"" << typenameArg << "\" interface_typename_orig=\""
+                         << typenameOrigArg << "\"";
+                  if(Fun2ParamSize.find(funArgPair.first) != Fun2ParamSize.end() &&
+                     Fun2ParamSize.find(funArgPair.first)->second.find(par) !=
+                         Fun2ParamSize.find(funArgPair.first)->second.end())
                      stream << " size=\"" << Fun2ParamSize.find(funArgPair.first)->second.find(par)->second << "\"";
-                  if(Fun2ParamAttribute2.find(funArgPair.first) != Fun2ParamAttribute2.end() && Fun2ParamAttribute2.find(funArgPair.first)->second.find(par) != Fun2ParamAttribute2.find(funArgPair.first)->second.end())
-                     stream << " attribute2=\"" << Fun2ParamAttribute2.find(funArgPair.first)->second.find(par)->second << "\"";
-                  if(Fun2ParamAttribute3.find(funArgPair.first) != Fun2ParamAttribute3.end() && Fun2ParamAttribute3.find(funArgPair.first)->second.find(par) != Fun2ParamAttribute3.find(funArgPair.first)->second.end())
-                     stream << " attribute3=\"" << Fun2ParamAttribute3.find(funArgPair.first)->second.find(par)->second << "\"";
+                  if(Fun2ParamAttribute2.find(funArgPair.first) != Fun2ParamAttribute2.end() &&
+                     Fun2ParamAttribute2.find(funArgPair.first)->second.find(par) !=
+                         Fun2ParamAttribute2.find(funArgPair.first)->second.end())
+                     stream << " attribute2=\"" << Fun2ParamAttribute2.find(funArgPair.first)->second.find(par)->second
+                            << "\"";
+                  if(Fun2ParamAttribute3.find(funArgPair.first) != Fun2ParamAttribute3.end() &&
+                     Fun2ParamAttribute3.find(funArgPair.first)->second.find(par) !=
+                         Fun2ParamAttribute3.find(funArgPair.first)->second.end())
+                     stream << " attribute3=\"" << Fun2ParamAttribute3.find(funArgPair.first)->second.find(par)->second
+                            << "\"";
                   stream << " interface_typename_include=\"" << interfaceTypenameIncludeVec.at(ArgIndex) << "\"/>\n";
                   ++ArgIndex;
                }
@@ -306,9 +322,11 @@ namespace clang
                else
                {
                   DiagnosticsEngine& D = CI.getDiagnostics();
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "The defined pipeline is not simple nor stallable"));
+                  D.Report(
+                      D.getCustomDiagID(DiagnosticsEngine::Error, "The defined pipeline is not simple nor stallable"));
                }
-               stream << "  <function id=\"" << function_name << "\" is_pipelined=\"" << is_pipelined << "\" is_simple=\"" << simple_pipeline << "\" initiation_time=\"" << initiation_time << "\"/>\n";
+               stream << "  <function id=\"" << function_name << "\" is_pipelined=\"" << is_pipelined
+                      << "\" is_simple=\"" << simple_pipeline << "\" initiation_time=\"" << initiation_time << "\"/>\n";
             }
          }
          stream << "</module>\n";
@@ -395,7 +413,8 @@ namespace clang
          if(llvm::isa<CXXConstructorDecl>(decl) || llvm::isa<CXXDestructorDecl>(decl))
          {
             delete mangleContext;
-            return decl->getNameInfo().getName().getAsString();;
+            return decl->getNameInfo().getName().getAsString();
+            ;
          }
          llvm::raw_string_ostream ostream(mangledName);
          if(mangleContext->shouldMangleCXXName(decl))
@@ -452,7 +471,9 @@ namespace clang
                if(userMaskInfo.mt & mt_Bitmask)
                {
                   DiagnosticsEngine& D = CI.getDiagnostics();
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of floating point type: use sign/exponent/significand directives"));
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                             "#pragma mask non-consistent with parameter of floating point type: use "
+                                             "sign/exponent/significand directives"));
                }
                int exp_halfrange;
                int s_bits;
@@ -470,14 +491,17 @@ namespace clang
                else
                {
                   DiagnosticsEngine& D = CI.getDiagnostics();
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask sign/exponent/significand directives are valid for 32/64bits IEEE754 floating point types only"));
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                             "#pragma mask sign/exponent/significand directives are valid for "
+                                             "32/64bits IEEE754 floating point types only"));
                }
                if(userMaskInfo.mt & mt_Exponent)
                {
                   if(userMaskInfo.min_exp <= -exp_halfrange || userMaskInfo.max_exp > exp_halfrange)
                   {
                      DiagnosticsEngine& D = CI.getDiagnostics();
-                     D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent: range out of bounds"));
+                     D.Report(
+                         D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent: range out of bounds"));
                   }
                   // Exponent range is stored as unsigned value range of exponent bits (not actual exponent number)
                   userMaskInfo.min_exp += exp_halfrange - 1;
@@ -488,7 +512,8 @@ namespace clang
                   if(userMaskInfo.significand_bits > s_bits)
                   {
                      DiagnosticsEngine& D = CI.getDiagnostics();
-                     D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask significand: too many bits for parameter type"));
+                     D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                "#pragma mask significand: too many bits for parameter type"));
                   }
                }
             }
@@ -497,7 +522,9 @@ namespace clang
                if(userMaskInfo.mt != mt_Invalid && userMaskInfo.mt != mt_Bitmask)
                {
                   DiagnosticsEngine& D = CI.getDiagnostics();
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of integer type: use bitmask directive"));
+                  D.Report(D.getCustomDiagID(
+                      DiagnosticsEngine::Error,
+                      "#pragma mask non-consistent with parameter of integer type: use bitmask directive"));
                }
             }
             else
@@ -505,11 +532,13 @@ namespace clang
                DiagnosticsEngine& D = CI.getDiagnostics();
                if(userMaskInfo.mt == mt_Bitmask)
                {
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of non-integer type"));
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                             "#pragma mask non-consistent with parameter of non-integer type"));
                }
                else
                {
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of non-floating-point type"));
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                             "#pragma mask non-consistent with parameter of non-floating-point type"));
                }
             }
          };
@@ -519,7 +548,7 @@ namespace clang
             auto funName = getMangledName(FD);
             bool storeInfos = false;
             std::vector<MaskInfo> fpInfos;
-            auto par_index =0u;
+            auto par_index = 0u;
             for(const auto par : FD->parameters())
             {
                if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
@@ -618,7 +647,7 @@ namespace clang
             auto funName = getMangledName(FD);
             Fun2Demangled[funName] = FD->getNameInfo().getName().getAsString();
             // llvm::errs()<<"funName:"<<funName<<"\n";
-            auto par_index =0u;
+            auto par_index = 0u;
             for(const auto par : FD->parameters())
             {
                if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
@@ -656,8 +685,7 @@ namespace clang
                      }
                   }
                   auto argType = ND->getType();
-                  auto manageArray = [&] (const ConstantArrayType* CA, bool setInterfaceType)
-                  {
+                  auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
                      auto OrigTotArraySize = CA->getSize();
                      std::string Dimensions;
                      if(!setInterfaceType)
@@ -669,11 +697,11 @@ namespace clang
                         CA = cast<ConstantArrayType>(CA->getElementType());
                         auto n_el = CA->getSize();
                         Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
-                        OrigTotArraySize *=n_el;
+                        OrigTotArraySize *= n_el;
                      }
                      auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " *";
-                     ParamTypeNameOrig = paramTypeRemTD.getAsString() + (Dimensions ==  "" ? " *" : " (*)"+Dimensions);
+                     ParamTypeNameOrig = paramTypeRemTD.getAsString() + (Dimensions == "" ? " *" : " (*)" + Dimensions);
                      if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
                         ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      if(setInterfaceType)
@@ -683,7 +711,7 @@ namespace clang
                         assert(arraySize != "0");
                      }
                   };
-                  //argType->dump ();
+                  // argType->dump ();
                   if(isa<DecayedType>(argType))
                   {
                      auto DT = cast<DecayedType>(argType);
@@ -701,11 +729,16 @@ namespace clang
                      }
                      if(UDIT_p)
                      {
-                        if(UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType.find("array") == std::string::npos && UserDefinedInterfaceType != "bus" && UserDefinedInterfaceType != "m_axi" &&
+                        if(UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "fifo" &&
+                           UserDefinedInterfaceType.find("array") == std::string::npos &&
+                           UserDefinedInterfaceType != "bus" && UserDefinedInterfaceType != "m_axi" &&
                            UserDefinedInterfaceType != "axis")
                         {
                            DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of constant array type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
+                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                      "#pragma HLS_interface non-consistent with parameter of constant "
+                                                      "array type, where user defined interface is: %0"))
+                               .AddString(UserDefinedInterfaceType);
                         }
                         else
                         {
@@ -715,7 +748,10 @@ namespace clang
                               if(interface_PragmaMapArraySize.find(parName) == interface_PragmaMapArraySize.end())
                               {
                                  DiagnosticsEngine& D = CI.getDiagnostics();
-                                 D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface inconsistent internal data structure: %0")).AddString(UserDefinedInterfaceType);
+                                 D.Report(D.getCustomDiagID(
+                                              DiagnosticsEngine::Error,
+                                              "#pragma HLS_interface inconsistent internal data structure: %0"))
+                                     .AddString(UserDefinedInterfaceType);
                               }
                               else
                                  arraySize = interface_PragmaMapArraySize.find(parName)->second;
@@ -737,7 +773,8 @@ namespace clang
                            ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " *";
                            ParamTypeNameOrig = paramTypeRemTD.getAsString() + " *";
                            if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                              ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                              ParamTypeInclude =
+                                  SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                         }
                      }
                      else if(auto RT = dyn_cast<ReferenceType>(argType))
@@ -755,16 +792,21 @@ namespace clang
                         ParamTypeNameOrig = paramTypeRemTD.getAsString();
                         if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
                            ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-
                      }
                      interfaceType = "ptrdefault";
                      if(UDIT_p)
                      {
-                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" && UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" && UserDefinedInterfaceType != "ovalid" &&
-                           UserDefinedInterfaceType != "acknowledge" && UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType != "bus" && UserDefinedInterfaceType != "m_axi" && UserDefinedInterfaceType != "axis")
+                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" &&
+                           UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" &&
+                           UserDefinedInterfaceType != "ovalid" && UserDefinedInterfaceType != "acknowledge" &&
+                           UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType != "bus" &&
+                           UserDefinedInterfaceType != "m_axi" && UserDefinedInterfaceType != "axis")
                         {
                            DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of pointer type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
+                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                      "#pragma HLS_interface non-consistent with parameter of pointer "
+                                                      "type, where user defined interface is: %0"))
+                               .AddString(UserDefinedInterfaceType);
                         }
                         else
                         {
@@ -785,11 +827,15 @@ namespace clang
                      }
                      if(UDIT_p)
                      {
-                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" && UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" && UserDefinedInterfaceType != "ovalid" &&
-                           UserDefinedInterfaceType != "acknowledge")
+                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" &&
+                           UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" &&
+                           UserDefinedInterfaceType != "ovalid" && UserDefinedInterfaceType != "acknowledge")
                         {
                            DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of builtin type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
+                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                      "#pragma HLS_interface non-consistent with parameter of builtin "
+                                                      "type, where user defined interface is: %0"))
+                               .AddString(UserDefinedInterfaceType);
                         }
                         else
                         {
@@ -868,7 +914,9 @@ namespace clang
       }
 
     public:
-      FunctionArgConsumer(CompilerInstance& Instance, const std::string& _topfname, const std::string& _outdir_name, std::string _InFile) : CI(Instance), topfname(_topfname), outdir_name(_outdir_name), InFile(_InFile)
+      FunctionArgConsumer(CompilerInstance& Instance, const std::string& _topfname, const std::string& _outdir_name,
+                          std::string _InFile)
+          : CI(Instance), topfname(_topfname), outdir_name(_outdir_name), InFile(_InFile)
       {
       }
 
@@ -957,18 +1005,26 @@ namespace clang
                   auto tokString = PP.getSpelling(Tok);
                   if(index == 1)
                   {
-                     if(tokString != "none" && tokString != "none_registered" && tokString != "array" && tokString != "bus" && tokString != "fifo" && tokString != "handshake" && tokString != "valid" && tokString != "ovalid" && tokString != "acknowledge" &&
-                        tokString != "m_axi" && tokString != "axis")
+                     if(tokString != "none" && tokString != "none_registered" && tokString != "array" &&
+                        tokString != "bus" && tokString != "fifo" && tokString != "handshake" && tokString != "valid" &&
+                        tokString != "ovalid" && tokString != "acknowledge" && tokString != "m_axi" &&
+                        tokString != "axis")
                      {
                         DiagnosticsEngine& D = PP.getDiagnostics();
-                        unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface unexpected interface type. Currently accepted keywords are: none,none_registered,array,bus,fifo,handshake,valid,ovalid,acknowledge");
+                        unsigned ID = D.getCustomDiagID(
+                            DiagnosticsEngine::Error,
+                            "#pragma HLS_interface unexpected interface type. Currently accepted keywords are: "
+                            "none,none_registered,array,bus,fifo,handshake,valid,ovalid,acknowledge");
                         D.Report(PragmaTok.getLocation(), ID);
                      }
                      interface += tokString;
                   }
                   else if(index == 2)
                   {
-                     if((Tok.isNot(tok::numeric_constant) && interface == "array") || ((tokString != "direct" && tokString != "axi_slave" && tokString != "bundle") && interface == "m_axi") || (interface != "array" && interface != "m_axi"))
+                     if((Tok.isNot(tok::numeric_constant) && interface == "array") ||
+                        ((tokString != "direct" && tokString != "axi_slave" && tokString != "bundle") &&
+                         interface == "m_axi") ||
+                        (interface != "array" && interface != "m_axi"))
                      {
                         DiagnosticsEngine& D = PP.getDiagnostics();
                         unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed1");
@@ -1124,7 +1180,9 @@ namespace clang
                         else
                         {
                            DiagnosticsEngine& D = PP.getDiagnostics();
-                           unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask unexpected token. Currently accepted keywords are: <numeric_const>, sign, exponent, significand");
+                           unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                           "#pragma mask unexpected token. Currently accepted keywords "
+                                                           "are: <numeric_const>, sign, exponent, significand");
                            D.Report(Tok.getLocation(), ID);
                         }
                      }
@@ -1137,7 +1195,9 @@ namespace clang
                         if(Tok.isNot(tok::numeric_constant) || (s != 0 && s != 1))
                         {
                            DiagnosticsEngine& D = PP.getDiagnostics();
-                           unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask sign unexpected sign value. Currently accepted sign values are 0 or 1");
+                           unsigned ID = D.getCustomDiagID(
+                               DiagnosticsEngine::Error,
+                               "#pragma mask sign unexpected sign value. Currently accepted sign values are 0 or 1");
                            D.Report(Tok.getLocation(), ID);
                         }
                         sign = static_cast<bool>(s);
@@ -1153,7 +1213,9 @@ namespace clang
                         if(s_bits <= 0)
                         {
                            DiagnosticsEngine& D = PP.getDiagnostics();
-                           unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask significand unexpected value. Only positive integers expected");
+                           unsigned ID = D.getCustomDiagID(
+                               DiagnosticsEngine::Error,
+                               "#pragma mask significand unexpected value. Only positive integers expected");
                            D.Report(Tok.getLocation(), ID);
                         }
                         index = 3;
@@ -1165,7 +1227,8 @@ namespace clang
                      if(exp_l >= exp_u)
                      {
                         DiagnosticsEngine& D = PP.getDiagnostics();
-                        unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent unexpected value");
+                        unsigned ID =
+                            D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent unexpected value");
                         D.Report(Tok.getLocation(), ID);
                      }
                   }
@@ -1189,11 +1252,13 @@ namespace clang
             }
             else if(mask == 2)
             {
-               HLS_mask_PragmaMap[filename][loc] = std::make_pair(par, (MaskInfo){mt_Exponent, false, exp_l, exp_u, 0, 0});
+               HLS_mask_PragmaMap[filename][loc] =
+                   std::make_pair(par, (MaskInfo){mt_Exponent, false, exp_l, exp_u, 0, 0});
             }
             else if(mask == 4)
             {
-               HLS_mask_PragmaMap[filename][loc] = std::make_pair(par, (MaskInfo){mt_Significand, false, 0, 0, s_bits, 0});
+               HLS_mask_PragmaMap[filename][loc] =
+                   std::make_pair(par, (MaskInfo){mt_Significand, false, 0, 0, s_bits, 0});
             }
          }
          else
@@ -1275,7 +1340,8 @@ namespace clang
                   if(Tok.isNot(tok::numeric_constant))
                   {
                      DiagnosticsEngine& D = PP.getDiagnostics();
-                     unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline malformed");
+                     unsigned ID =
+                         D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline malformed");
                      D.Report(PragmaTok.getLocation(), ID);
                   }
                }
@@ -1381,11 +1447,13 @@ namespace clang
 
    void initializeplugin_ASTAnalyzer()
    {
-      static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
+      static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(
+          CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
    }
 #endif
 } // namespace clang
 
 #ifndef _WIN32
-static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
+static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)>
+    X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
 #endif

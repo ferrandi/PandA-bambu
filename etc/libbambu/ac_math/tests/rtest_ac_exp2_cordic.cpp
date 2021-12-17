@@ -50,7 +50,8 @@ using namespace ac_math;
 //   ac_fixed inputs.
 
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi>
-void test_ac_exp2_cordic(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in, ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out_exp2)
+void test_ac_exp2_cordic(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in,
+                         ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out_exp2)
 {
    ac_exp2_cordic(in, out_exp2);
 }
@@ -82,7 +83,8 @@ using namespace std;
 //   in variables defined in the calling function.
 
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi>
-int test_driver(double& cumulative_max_error_exp2, const double allowed_error, const double threshold, bool details = false)
+int test_driver(double& cumulative_max_error_exp2, const double allowed_error, const double threshold,
+                bool details = false)
 {
    bool passed = true;
    double max_error_exp2 = 0.0; // reset for this run

@@ -48,7 +48,8 @@ using namespace ac_math;
 //   Template parameters are used to configure the bit-widths of the types.
 
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
-void test_ac_arcsin_cordic(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in, ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& out_sin)
+void test_ac_arcsin_cordic(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in,
+                           ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& out_sin)
 {
    ac_arcsin_cordic(in, out_sin);
 }

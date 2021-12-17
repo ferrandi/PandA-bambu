@@ -43,7 +43,8 @@
 
 #include "math_privatetf.h"
 
-int __isnormal(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+int __isnormal(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
+               _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
    unsigned long long exp = (x >> __frac_bits) & ((1ULL << __exp_bits) - 1);
    _Bool expMax = __nan && (exp == ((1ULL << __exp_bits) - 1));

@@ -2001,9 +2001,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             if(disabling_slack_cond0)
             {
                clique_covering_algorithm = CliqueCovering_Algorithm::BIPARTITE_MATCHING;
-               PRINT_DBG_MEX(
-                   DEBUG_LEVEL_VERBOSE, debug_level,
-                   "DISABLING STD clique covering algorithm. Forced to BIPARTITE_MATCHING");
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                             "DISABLING STD clique covering algorithm. Forced to BIPARTITE_MATCHING");
             }
 
             const CliqueCovering_Algorithm clique_covering_method_used = clique_covering_algorithm;
@@ -2188,7 +2187,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Restarting with BIPARTITE_MATCHING: " + res_name);
                   }
                   module_clique = clique_covering<vertex>::create_solver(
-                      (disabling_slack_cond0? CliqueCovering_Algorithm::WEIGHTED_COLORING: CliqueCovering_Algorithm::BIPARTITE_MATCHING), static_cast<unsigned>(partition.second.size()));
+                      (disabling_slack_cond0 ? CliqueCovering_Algorithm::WEIGHTED_COLORING :
+                                               CliqueCovering_Algorithm::BIPARTITE_MATCHING),
+                      static_cast<unsigned>(partition.second.size()));
                   for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
                      std::string el1_name =

@@ -49,7 +49,8 @@ using namespace ac_math;
 //   parameters are used to configure the bit-widths of the ac_fixed inputs.
 
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi>
-void test_ac_exp_pwl(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in, ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out_exp)
+void test_ac_exp_pwl(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in,
+                     ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out_exp)
 {
    out_exp = ac_exp_pwl<ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>>(in);
 }
@@ -72,7 +73,8 @@ using namespace std;
 //   in variables defined in the calling function.
 
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi>
-int test_driver(double& cumulative_max_error_exp, const double allowed_error, const double threshold, bool details = false)
+int test_driver(double& cumulative_max_error_exp, const double allowed_error, const double threshold,
+                bool details = false)
 {
    bool passed = true;
    bool check_monotonic = true;
@@ -135,9 +137,10 @@ int test_driver(double& cumulative_max_error_exp, const double allowed_error, co
 
       if(check_monotonic)
       {
-         // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with current value. Since the exponential function we
-         // are testing is an increasing function, and our testbench value keeps incrementing or remains the same (in case of saturation), we expect the
-         // old value to be lesser than or equal to the current one.
+         // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with
+         // current value. Since the exponential function we are testing is an increasing function, and our testbench
+         // value keeps incrementing or remains the same (in case of saturation), we expect the old value to be lesser
+         // than or equal to the current one.
 
          // Update the old value
          old_output_exp = actual_value_exp;

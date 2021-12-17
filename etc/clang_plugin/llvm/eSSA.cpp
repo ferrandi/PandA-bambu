@@ -74,7 +74,8 @@ namespace eSSAInfoClasses
       }
 
     protected:
-      PredicateWithCondition(PredicateType PT, llvm::Value* Op, llvm::Value* Condition) : PredicateBase(PT, Op), Condition(Condition)
+      PredicateWithCondition(PredicateType PT, llvm::Value* Op, llvm::Value* Condition)
+          : PredicateBase(PT, Op), Condition(Condition)
       {
       }
    };
@@ -86,7 +87,8 @@ namespace eSSAInfoClasses
    {
     public:
       llvm::IntrinsicInst* AssumeInst;
-      PredicateAssume(llvm::Value* Op, llvm::IntrinsicInst* AssumeInst, llvm::Value* Condition) : PredicateWithCondition(PT_Assume, Op, Condition), AssumeInst(AssumeInst)
+      PredicateAssume(llvm::Value* Op, llvm::IntrinsicInst* AssumeInst, llvm::Value* Condition)
+          : PredicateWithCondition(PT_Assume, Op, Condition), AssumeInst(AssumeInst)
       {
       }
       PredicateAssume() = delete;
@@ -111,7 +113,9 @@ namespace eSSAInfoClasses
       }
 
     protected:
-      PredicateWithEdge(PredicateType PType, llvm::Value* Op, llvm::BasicBlock* From, llvm::BasicBlock* To, llvm::Value* Cond) : PredicateWithCondition(PType, Op, Cond), From(From), To(To)
+      PredicateWithEdge(PredicateType PType, llvm::Value* Op, llvm::BasicBlock* From, llvm::BasicBlock* To,
+                        llvm::Value* Cond)
+          : PredicateWithCondition(PType, Op, Cond), From(From), To(To)
       {
       }
    };
@@ -122,7 +126,9 @@ namespace eSSAInfoClasses
     public:
       // If true, SplitBB is the true successor, otherwise it's the false successor.
       bool TrueEdge;
-      PredicateBranch(llvm::Value* Op, llvm::BasicBlock* BranchBB, llvm::BasicBlock* SplitBB, llvm::Value* Condition, bool TakenEdge) : PredicateWithEdge(PT_Branch, Op, BranchBB, SplitBB, Condition), TrueEdge(TakenEdge)
+      PredicateBranch(llvm::Value* Op, llvm::BasicBlock* BranchBB, llvm::BasicBlock* SplitBB, llvm::Value* Condition,
+                      bool TakenEdge)
+          : PredicateWithEdge(PT_Branch, Op, BranchBB, SplitBB, Condition), TrueEdge(TakenEdge)
       {
       }
       PredicateBranch() = delete;
@@ -138,7 +144,9 @@ namespace eSSAInfoClasses
       llvm::Value* CaseValue;
       // This is the switch instruction.
       llvm::SwitchInst* Switch;
-      PredicateSwitch(llvm::Value* Op, llvm::BasicBlock* SwitchBB, llvm::BasicBlock* TargetBB, llvm::Value* CaseValue, llvm::SwitchInst* SI) : PredicateWithEdge(PT_Switch, Op, SwitchBB, TargetBB, SI->getCondition()), CaseValue(CaseValue), Switch(SI)
+      PredicateSwitch(llvm::Value* Op, llvm::BasicBlock* SwitchBB, llvm::BasicBlock* TargetBB, llvm::Value* CaseValue,
+                      llvm::SwitchInst* SI)
+          : PredicateWithEdge(PT_Switch, Op, SwitchBB, TargetBB, SI->getCondition()), CaseValue(CaseValue), Switch(SI)
       {
       }
       PredicateSwitch() = delete;
@@ -160,8 +168,8 @@ namespace eSSAInfoClasses
    // branching terminator.
    //    static llvm::Instruction* getBranchTerminator(const PredicateBase* PB)
    //    {
-   //       assert(llvm::isa<PredicateWithEdge>(PB) && "Not a predicate info type we know how to get a terminator from.");
-   //       return llvm::cast<PredicateWithEdge>(PB)->From->getTerminator();
+   //       assert(llvm::isa<PredicateWithEdge>(PB) && "Not a predicate info type we know how to get a terminator
+   //       from."); return llvm::cast<PredicateWithEdge>(PB)->From->getTerminator();
    //    }
 
    // Given a predicate info that is a type of branching terminator, get the
@@ -253,7 +261,8 @@ namespace eSSAInfoClasses
 
          if(!SameBlock || A.LocalNum != LN_Middle || B.LocalNum != LN_Middle)
          {
-            return std::tie(A.DFSIn, A.DFSOut, A.LocalNum, A.Def, A.U) < std::tie(B.DFSIn, B.DFSOut, B.LocalNum, B.Def, B.U);
+            return std::tie(A.DFSIn, A.DFSOut, A.LocalNum, A.Def, A.U) <
+                   std::tie(B.DFSIn, B.DFSOut, B.LocalNum, B.Def, B.U);
          }
          return localComesBefore(A, B);
       }
@@ -385,7 +394,8 @@ namespace eSSAInfoClasses
 
    // Convert the uses of Op into a vector of uses, associating global and local
    // DFS info with each one.
-   void convertUsesToDFSOrdered(llvm::Value* Op, llvm::SmallVectorImpl<ValueDFS>& DFSOrderedSet, const llvm::DominatorTree* DT)
+   void convertUsesToDFSOrdered(llvm::Value* Op, llvm::SmallVectorImpl<ValueDFS>& DFSOrderedSet,
+                                const llvm::DominatorTree* DT)
    {
       for(auto& U : Op->uses())
       {
@@ -432,7 +442,8 @@ namespace eSSAInfoClasses
       llvm::SmallVector<PredicateBase*, 4> UninsertedInfos;
    };
 
-   const ValueInfo& getValueInfo(llvm::Value* Operand, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums, llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos)
+   const ValueInfo& getValueInfo(llvm::Value* Operand, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums,
+                                 llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos)
    {
       auto OINI = ValueInfoNums.lookup(Operand);
       assert(OINI != 0 && "Operand was not really in the Value Info Numbers");
@@ -442,7 +453,9 @@ namespace eSSAInfoClasses
 
    // Given the renaming stack, make all the operands currently on the stack real
    // by inserting them into the IR.  Return the last operation's value.
-   llvm::Value* materializeStack(unsigned int& Counter, ValueDFSStack& RenameStack, llvm::Value* OrigOp, llvm::Function& /*F*/, llvm::DenseMap<const llvm::Value*, const PredicateBase*>& PredicateMap)
+   llvm::Value* materializeStack(unsigned int& Counter, ValueDFSStack& RenameStack, llvm::Value* OrigOp,
+                                 llvm::Function& /*F*/,
+                                 llvm::DenseMap<const llvm::Value*, const PredicateBase*>& PredicateMap)
    {
       // Find the first thing we have to materialize
       auto RevIter = RenameStack.rbegin();
@@ -479,7 +492,8 @@ namespace eSSAInfoClasses
          else
          {
             llvm_unreachable("assume intrinsic not yet supported");
-            assert(llvm::dyn_cast<PredicateAssume>(ValInfo) && "Should not have gotten here without it being an assume");
+            assert(llvm::dyn_cast<PredicateAssume>(ValInfo) &&
+                   "Should not have gotten here without it being an assume");
             // llvm::IRBuilder<> B(PAssume->AssumeInst);
             // llvm::Function *IF = llvm::Intrinsic::getDeclaration(
             //                        F.getParent(), llvm::Intrinsic::ssa_copy, Op->getType());
@@ -508,7 +522,10 @@ namespace eSSAInfoClasses
    // a use, we materialize the predicateinfo instruction in the right place and
    // use it.
    //
-   void renameUses(llvm::SmallPtrSetImpl<llvm::Value*>& OpSet, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums, llvm::SmallVector<ValueInfo, 32>& ValueInfos, llvm::Function& fun, const llvm::DominatorTree* DT, llvm::OrderedInstructions* OI,
+   void renameUses(llvm::SmallPtrSetImpl<llvm::Value*>& OpSet,
+                   llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums,
+                   llvm::SmallVector<ValueInfo, 32>& ValueInfos, llvm::Function& fun, const llvm::DominatorTree* DT,
+                   llvm::OrderedInstructions* OI,
                    llvm::DenseSet<std::pair<llvm::BasicBlock*, llvm::BasicBlock*>>& EdgeUsesOnly)
    {
       // This maps from copy operands to Predicate Info. Note that it does not own
@@ -609,7 +626,8 @@ namespace eSSAInfoClasses
             }
             else
             {
-               llvm::errs() << "Rename Stack Top DFS numbers are (" << RenameStack.back().DFSIn << "," << RenameStack.back().DFSOut << ")\n";
+               llvm::errs() << "Rename Stack Top DFS numbers are (" << RenameStack.back().DFSIn << ","
+                            << RenameStack.back().DFSOut << ")\n";
             }
 
             llvm::errs() << "Current DFS numbers are (" << VD.DFSIn << "," << VD.DFSOut << ")\n";
@@ -648,15 +666,18 @@ namespace eSSAInfoClasses
             }
 
 #if DEBUG_ESSA
-            llvm::errs() << "Found replacement " << *Result.Def << " for " << *VD.U->get() << " in " << *(VD.U->getUser()) << "\n";
+            llvm::errs() << "Found replacement " << *Result.Def << " for " << *VD.U->get() << " in "
+                         << *(VD.U->getUser()) << "\n";
 #endif
-            assert(DT->dominates(llvm::cast<llvm::Instruction>(Result.Def), *VD.U) && "Predicateinfo def should have dominated this use");
+            assert(DT->dominates(llvm::cast<llvm::Instruction>(Result.Def), *VD.U) &&
+                   "Predicateinfo def should have dominated this use");
             VD.U->set(Result.Def);
          }
       }
    }
 
-   ValueInfo& getOrCreateValueInfo(llvm::Value* Operand, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums, llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos)
+   ValueInfo& getOrCreateValueInfo(llvm::Value* Operand, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums,
+                                   llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos)
    {
       auto OIN = ValueInfoNums.find(Operand);
       if(OIN == ValueInfoNums.end())
@@ -671,7 +692,9 @@ namespace eSSAInfoClasses
       return ValueInfos[OIN->second];
    }
 
-   void addInfoFor(llvm::SmallPtrSetImpl<llvm::Value*>& OpsToRename, llvm::Value* Op, PredicateBase* PB, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums, llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos)
+   void addInfoFor(llvm::SmallPtrSetImpl<llvm::Value*>& OpsToRename, llvm::Value* Op, PredicateBase* PB,
+                   llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums,
+                   llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos)
    {
       OpsToRename.insert(Op);
       auto& OperandInfo = getOrCreateValueInfo(Op, ValueInfoNums, ValueInfos);
@@ -706,14 +729,19 @@ namespace eSSAInfoClasses
 
    // Process an assume instruction and place relevant operations we want to rename
    // into OpsToRename.
-   void processAssume(llvm::IntrinsicInst* II, llvm::BasicBlock* /*AssumeBB*/, llvm::SmallPtrSetImpl<llvm::Value*>& OpsToRename, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums, llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos)
+   void processAssume(llvm::IntrinsicInst* II, llvm::BasicBlock* /*AssumeBB*/,
+                      llvm::SmallPtrSetImpl<llvm::Value*>& OpsToRename,
+                      llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums,
+                      llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos)
    {
       // See if we have a comparison we support
       llvm::SmallVector<llvm::Value*, 8> CmpOperands;
       llvm::SmallVector<llvm::Value*, 2> ConditionsToProcess;
       llvm::CmpInst::Predicate Pred;
       llvm::Value* Operand = II->getOperand(0);
-      if(m_c_And(m_Cmp(Pred, llvm::PatternMatch::m_Value(), llvm::PatternMatch::m_Value()), m_Cmp(Pred, llvm::PatternMatch::m_Value(), llvm::PatternMatch::m_Value())).match(II->getOperand(0)))
+      if(m_c_And(m_Cmp(Pred, llvm::PatternMatch::m_Value(), llvm::PatternMatch::m_Value()),
+                 m_Cmp(Pred, llvm::PatternMatch::m_Value(), llvm::PatternMatch::m_Value()))
+             .match(II->getOperand(0)))
       {
          ConditionsToProcess.push_back(llvm::cast<llvm::BinaryOperator>(Operand)->getOperand(0));
          ConditionsToProcess.push_back(llvm::cast<llvm::BinaryOperator>(Operand)->getOperand(1));
@@ -752,7 +780,10 @@ namespace eSSAInfoClasses
 
    // Process a block terminating branch, and place relevant operations to be
    // renamed into OpsToRename.
-   void processBranch(llvm::BranchInst* BI, llvm::BasicBlock* BranchBB, llvm::SmallPtrSetImpl<llvm::Value*>& OpsToRename, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums, llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos,
+   void processBranch(llvm::BranchInst* BI, llvm::BasicBlock* BranchBB,
+                      llvm::SmallPtrSetImpl<llvm::Value*>& OpsToRename,
+                      llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums,
+                      llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos,
                       llvm::DenseSet<std::pair<llvm::BasicBlock*, llvm::BasicBlock*>>& EdgeUsesOnly)
    {
       llvm::BasicBlock* FirstBB = BI->getSuccessor(0);
@@ -823,7 +854,8 @@ namespace eSSAInfoClasses
          else if(auto* BinOp = llvm::dyn_cast<llvm::BinaryOperator>(Cond))
          {
             // This must be an AND or an OR.
-            assert((BinOp->getOpcode() == llvm::Instruction::And || BinOp->getOpcode() == llvm::Instruction::Or) && "Should have been an AND or an OR");
+            assert((BinOp->getOpcode() == llvm::Instruction::And || BinOp->getOpcode() == llvm::Instruction::Or) &&
+                   "Should have been an AND or an OR");
             // The actual value of the binop is not subject to the same restrictions
             // as the comparison. It's either true or false on the true/false branch.
             InsertHelper(BinOp, false, false, BinOp);
@@ -837,7 +869,10 @@ namespace eSSAInfoClasses
    }
    // Process a block terminating switch, and place relevant operations to be
    // renamed into OpsToRename.
-   void processSwitch(llvm::SwitchInst* SI, llvm::BasicBlock* BranchBB, llvm::SmallPtrSetImpl<llvm::Value*>& OpsToRename, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums, llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos,
+   void processSwitch(llvm::SwitchInst* SI, llvm::BasicBlock* BranchBB,
+                      llvm::SmallPtrSetImpl<llvm::Value*>& OpsToRename,
+                      llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums,
+                      llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos,
                       llvm::DenseSet<std::pair<llvm::BasicBlock*, llvm::BasicBlock*>>& EdgeUsesOnly)
    {
       llvm::Value* Op = SI->getCondition();

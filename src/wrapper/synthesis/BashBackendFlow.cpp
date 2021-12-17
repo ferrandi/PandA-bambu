@@ -276,8 +276,10 @@ void BashBackendFlow::CheckSynthesisResults()
    auto* lut_m = GetPointer<LUT_model>(time_m);
    if(design_values[BASHBACKEND_DESIGN_DELAY] != 0.0)
    {
-      auto is_time_unit_PS = target->get_target_device()->has_parameter("USE_TIME_UNIT_PS") && target->get_target_device()->get_parameter<int>("USE_TIME_UNIT_PS") == 1;
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[BASHBACKEND_DESIGN_DELAY]/(is_time_unit_PS?1000:1));
+      auto is_time_unit_PS = target->get_target_device()->has_parameter("USE_TIME_UNIT_PS") &&
+                             target->get_target_device()->get_parameter<int>("USE_TIME_UNIT_PS") == 1;
+      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY,
+                              design_values[BASHBACKEND_DESIGN_DELAY] / (is_time_unit_PS ? 1000 : 1));
    }
    else
    {

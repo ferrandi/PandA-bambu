@@ -65,7 +65,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
       return rso.str();
    }
 
-   bool get_reachables_and_externals(llvm::Use* use_rec, const std::set<llvm::BasicBlock*>& blocks, std::set<llvm::Use*>& reachables, std::set<llvm::Use*>& externals)
+   bool get_reachables_and_externals(llvm::Use* use_rec, const std::set<llvm::BasicBlock*>& blocks,
+                                     std::set<llvm::Use*>& reachables, std::set<llvm::Use*>& externals)
    {
       /// Process only if instruction not already in the reachables set
       if(reachables.insert(use_rec).second)
@@ -114,7 +115,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                {
                   externals.insert(&phi_operand);
 
-                  if(!llvm::isa<llvm::Argument>(phi_operand.get()) and !llvm::isa<llvm::GlobalValue>(phi_operand.get()) and !llvm::isa<llvm::PHINode>(phi_operand.get()))
+                  if(!llvm::isa<llvm::Argument>(phi_operand.get()) and
+                     !llvm::isa<llvm::GlobalValue>(phi_operand.get()) and !llvm::isa<llvm::PHINode>(phi_operand.get()))
                   {
                      return false;
                   }
@@ -152,7 +154,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                {
                   externals.insert(&phi_operand);
 
-                  if(!llvm::isa<llvm::Argument>(phi_operand.get()) and !llvm::isa<llvm::GlobalValue>(phi_operand.get()) and !llvm::isa<llvm::PHINode>(phi_operand.get()))
+                  if(!llvm::isa<llvm::Argument>(phi_operand.get()) and
+                     !llvm::isa<llvm::GlobalValue>(phi_operand.get()) and !llvm::isa<llvm::PHINode>(phi_operand.get()))
                   {
                      return false;
                   }
@@ -168,7 +171,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
       return true;
    }
 
-   llvm::Value* operate_on_index(llvm::BinaryOperator::BinaryOps bin_op, llvm::Value* lhs_idx, llvm::Value* rhs_idx, llvm::Instruction* insert_point, llvm::Type* idx_ty)
+   llvm::Value* operate_on_index(llvm::BinaryOperator::BinaryOps bin_op, llvm::Value* lhs_idx, llvm::Value* rhs_idx,
+                                 llvm::Instruction* insert_point, llvm::Type* idx_ty)
    {
       if(llvm::ConstantInt* constant_lhs = llvm::dyn_cast<llvm::ConstantInt>(lhs_idx))
       {
@@ -185,7 +189,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
             }
             else
             {
-               llvm::BinaryOperator* add_op = llvm::BinaryOperator::Create(bin_op, lhs_idx, rhs_idx, "offset", insert_point);
+               llvm::BinaryOperator* add_op =
+                   llvm::BinaryOperator::Create(bin_op, lhs_idx, rhs_idx, "offset", insert_point);
                return add_op;
             }
          }
@@ -200,13 +205,15 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
             }
             else
             {
-               llvm::BinaryOperator* add_op = llvm::BinaryOperator::Create(bin_op, lhs_idx, rhs_idx, "offset", insert_point);
+               llvm::BinaryOperator* add_op =
+                   llvm::BinaryOperator::Create(bin_op, lhs_idx, rhs_idx, "offset", insert_point);
                return add_op;
             }
          }
          else
          {
-            llvm::BinaryOperator* add_op = llvm::BinaryOperator::Create(llvm::BinaryOperator::BinaryOps::Add, rhs_idx, lhs_idx, "offset", insert_point);
+            llvm::BinaryOperator* add_op = llvm::BinaryOperator::Create(llvm::BinaryOperator::BinaryOps::Add, rhs_idx,
+                                                                        lhs_idx, "offset", insert_point);
             return add_op;
          }
       }
@@ -253,7 +260,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                            llvm::Value* opu = call_inst->getOperandUse(arg->getArgNo());
                            if(llvm::GEPOperator* gep_op = llvm::dyn_cast<llvm::GEPOperator>(opu))
                            {
-                              if(llvm::GlobalVariable* g_var = llvm::dyn_cast<llvm::GlobalVariable>(gep_op->getPointerOperand()))
+                              if(llvm::GlobalVariable* g_var =
+                                     llvm::dyn_cast<llvm::GlobalVariable>(gep_op->getPointerOperand()))
                               {
                                  if(arg->getType()->getPointerElementType()->isIntegerTy(8))
                                  {
@@ -284,7 +292,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
 
          for(llvm::Use& phi_candidate_use : candidate_phi->uses())
          {
-            feasible = get_reachables_and_externals(&phi_candidate_use, blocks, reachable_uses, external_uses) and feasible;
+            feasible =
+                get_reachables_and_externals(&phi_candidate_use, blocks, reachable_uses, external_uses) and feasible;
          }
 
          /// Feasible only if phi operands are other phis, gepis, args, or globals
@@ -298,7 +307,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
 
             for(llvm::Use* external_use : external_uses)
             {
-               std::pair<llvm::Value*, std::set<llvm::Value*>> vec_pair = std::make_pair(external_use->get(), std::set<llvm::Value*>());
+               std::pair<llvm::Value*, std::set<llvm::Value*>> vec_pair =
+                   std::make_pair(external_use->get(), std::set<llvm::Value*>());
                vec_ptr_addr_set.push_back(vec_pair);
                vec_ptr_addr_set.back().second.insert(external_use->get());
             }
@@ -371,7 +381,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
 
                for(llvm::Use* external_use : external_uses)
                {
-                  auto insert_it = external_offset_map.insert(std::make_pair(external_use, llvm::ConstantInt::get(llvm::Type::getInt32Ty(L->getHeader()->getContext()), 0)));
+                  auto insert_it = external_offset_map.insert(std::make_pair(
+                      external_use, llvm::ConstantInt::get(llvm::Type::getInt32Ty(L->getHeader()->getContext()), 0)));
 
                   llvm::Value*& external_offset_ref = insert_it.first->second;
 
@@ -386,7 +397,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                      llvm::Use& single_idx = *use_as_gepi->idx_begin();
                      use_rec = &use_as_gepi->getOperandUse(use_as_gepi->getPointerOperandIndex());
 
-                     external_offset_ref = operate_on_index(llvm::BinaryOperator::BinaryOps::Add, external_offset_ref, single_idx, use_as_gepi, idx_ty);
+                     external_offset_ref = operate_on_index(llvm::BinaryOperator::BinaryOps::Add, external_offset_ref,
+                                                            single_idx, use_as_gepi, idx_ty);
                   }
                }
 
@@ -394,12 +406,15 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                llvm::errs() << "      With reachable uses: \n";
                for(llvm::Use* reachable_use : reachable_uses)
                {
-                  llvm::errs() << "          #" << reachable_use->getOperandNo() << " in " << get_val_string(reachable_use->getUser()) << "\n";
+                  llvm::errs() << "          #" << reachable_use->getOperandNo() << " in "
+                               << get_val_string(reachable_use->getUser()) << "\n";
                }
                llvm::errs() << "      With external uses: \n";
                for(llvm::Use* external_use : external_uses)
                {
-                  llvm::errs() << "          #" << external_use->getOperandNo() << " in " << get_val_string(external_use->getUser()) << " (with offset " << get_val_string(external_offset_map.at(external_use)) << ")\n";
+                  llvm::errs() << "          #" << external_use->getOperandNo() << " in "
+                               << get_val_string(external_use->getUser()) << " (with offset "
+                               << get_val_string(external_offset_map.at(external_use)) << ")\n";
                }
                llvm::errs() << "      With common external: \n";
                llvm::errs() << "          " << get_val_string(common_external) << "\n";
@@ -419,7 +434,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                for(std::pair<llvm::PHINode* const, llvm::PHINode*>& phi_pair : phi_map)
                {
                   llvm::PHINode* phi_iter = phi_pair.first;
-                  llvm::PHINode* phi_index = llvm::PHINode::Create(idx_ty, phi_iter->getNumIncomingValues(), phi_iter->getName().str() + ".idx", phi_iter);
+                  llvm::PHINode* phi_index = llvm::PHINode::Create(idx_ty, phi_iter->getNumIncomingValues(),
+                                                                   phi_iter->getName().str() + ".idx", phi_iter);
                   phi_pair.second = phi_index;
 
                   for(llvm::Use& phi_incoming : phi_iter->incoming_values())
@@ -450,9 +466,12 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
 
                   std::vector<llvm::Value*> idxs;
                   idxs.push_back(phi_index);
-                  llvm::GetElementPtrInst* first_gepi = llvm::GetElementPtrInst::CreateInBounds(common_external, idxs, phi_iter->getName().str() + ".firstgepi", &*phi_iter->getParent()->getFirstInsertionPt());
+                  llvm::GetElementPtrInst* first_gepi = llvm::GetElementPtrInst::CreateInBounds(
+                      common_external, idxs, phi_iter->getName().str() + ".firstgepi",
+                      &*phi_iter->getParent()->getFirstInsertionPt());
 
-                  llvm::errs() << "      Assigning first gepi " << get_val_string(first_gepi) << " to phi " << get_val_string(phi_index) << "\n";
+                  llvm::errs() << "      Assigning first gepi " << get_val_string(first_gepi) << " to phi "
+                               << get_val_string(phi_index) << "\n";
 
                   phi_iter->replaceAllUsesWith(first_gepi);
                   for(llvm::Use& gepi_use : first_gepi->uses())
@@ -465,8 +484,10 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                {
                   llvm::Use* use_to_process = uses_to_process.at(i);
 
-                  llvm::errs() << "      Transforming use #" << use_to_process->getOperandNo() << " of " << get_val_string(use_to_process->getUser()) << "\n";
-                  if(llvm::GetElementPtrInst* use_as_gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->get()))
+                  llvm::errs() << "      Transforming use #" << use_to_process->getOperandNo() << " of "
+                               << get_val_string(use_to_process->getUser()) << "\n";
+                  if(llvm::GetElementPtrInst* use_as_gepi =
+                         llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->get()))
                   {
                      if(llvm::PHINode* user_as_phi = llvm::dyn_cast<llvm::PHINode>(use_to_process->getUser()))
                      {
@@ -474,7 +495,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         if(phi_it != phi_map.end())
                         {
                            llvm::PHINode* phi_index = phi_map.at(user_as_phi);
-                           int incoming_value_idx = user_as_phi->getBasicBlockIndex(user_as_phi->getIncomingBlock(*use_to_process));
+                           int incoming_value_idx =
+                               user_as_phi->getBasicBlockIndex(user_as_phi->getIncomingBlock(*use_to_process));
                            phi_index->setIncomingValue(incoming_value_idx, use_as_gepi->getOperand(1));
                            llvm::errs() << "            as " << get_val_string(phi_index) << "\n";
                         }
@@ -484,20 +506,24 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         }
                         uses_to_set.erase(use_to_process);
                      }
-                     else if(llvm::GetElementPtrInst* user_as_gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->getUser()))
+                     else if(llvm::GetElementPtrInst* user_as_gepi =
+                                 llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->getUser()))
                      {
-                        llvm::Value* new_idx = operate_on_index(llvm::BinaryOperator::BinaryOps::Add, use_as_gepi->getOperand(1), user_as_gepi->getOperand(1), user_as_gepi, idx_ty);
+                        llvm::Value* new_idx =
+                            operate_on_index(llvm::BinaryOperator::BinaryOps::Add, use_as_gepi->getOperand(1),
+                                             user_as_gepi->getOperand(1), user_as_gepi, idx_ty);
 
                         std::vector<llvm::Value*> idxs;
                         idxs.push_back(new_idx);
-                        llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::CreateInBounds(common_external, idxs, user_as_gepi->getName().str() + ".gepi", user_as_gepi);
+                        llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::CreateInBounds(
+                            common_external, idxs, user_as_gepi->getName().str() + ".gepi", user_as_gepi);
 
                         llvm::errs() << "            as " << get_val_string(new_gepi) << "\n";
 
                         user_as_gepi->replaceAllUsesWith(new_gepi);
                         for(llvm::Use& gepi_use : new_gepi->uses())
                         {
-                           //unsigned long operand_no = gepi_use.getOperandNo();
+                           // unsigned long operand_no = gepi_use.getOperandNo();
                            uses_to_set.erase(&gepi_use);
                            uses_to_process.push_back(&gepi_use);
                         }
@@ -516,7 +542,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         }
                         else
                         {
-                           while(llvm::GetElementPtrInst* use_as_gepi_rec = llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->get()))
+                           while(llvm::GetElementPtrInst* use_as_gepi_rec =
+                                     llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->get()))
                            {
                               if(use_as_gepi_rec == common_external)
                               {
@@ -524,11 +551,14 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                               }
                               llvm::Use& single_idx = *use_as_gepi_rec->idx_begin();
                               use_rec = &use_as_gepi_rec->getOperandUse(use_as_gepi->getPointerOperandIndex());
-                              offset = operate_on_index(llvm::BinaryOperator::BinaryOps::Add, offset, single_idx, use_as_gepi_rec, idx_ty);
+                              offset = operate_on_index(llvm::BinaryOperator::BinaryOps::Add, offset, single_idx,
+                                                        use_as_gepi_rec, idx_ty);
                            }
                         }
 
-                        llvm::CmpInst* new_cmp = llvm::CmpInst::Create(llvm::CmpInst::ICmp, user_as_cmp->getPredicate(), use_as_gepi->getOperand(1), offset, user_as_cmp->getName() + ".idx", user_as_cmp);
+                        llvm::CmpInst* new_cmp = llvm::CmpInst::Create(llvm::CmpInst::ICmp, user_as_cmp->getPredicate(),
+                                                                       use_as_gepi->getOperand(1), offset,
+                                                                       user_as_cmp->getName() + ".idx", user_as_cmp);
 
                         llvm::errs() << "            as " << get_val_string(new_cmp) << "\n";
 

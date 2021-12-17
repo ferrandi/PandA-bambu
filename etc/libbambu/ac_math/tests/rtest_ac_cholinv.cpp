@@ -52,9 +52,14 @@ using namespace ac_math;
 // Test Design for real and complex fixed point values, using PWL functions
 // for cholesky decomposition.
 template <unsigned M, int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
-void test_ac_cholinv_pwl(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> A1[M][M], ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> L1[M][M], const ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> A2[M][M],
-                         ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> L2[M][M], const ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M>& A3, ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& L3,
-                         const ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M>& A4, ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& L4)
+void test_ac_cholinv_pwl(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> A1[M][M],
+                         ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> L1[M][M],
+                         const ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> A2[M][M],
+                         ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> L2[M][M],
+                         const ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M>& A3,
+                         ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& L3,
+                         const ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M>& A4,
+                         ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& L4)
 {
    ac_cholinv<true, true>(A1, L1);
    ac_cholinv<true, true>(A2, L2);
@@ -65,9 +70,14 @@ void test_ac_cholinv_pwl(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> A1[M][M]
 // Test Design for real and complex fixed point values, using accurate div and sqrt
 // functions for cholesky decomposition.
 template <unsigned M, int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
-void test_ac_cholinv_accurate(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> A1[M][M], ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> L1[M][M], const ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> A2[M][M],
-                              ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> L2[M][M], const ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M>& A3, ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& L3,
-                              const ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M>& A4, ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& L4)
+void test_ac_cholinv_accurate(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> A1[M][M],
+                              ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> L1[M][M],
+                              const ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> A2[M][M],
+                              ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> L2[M][M],
+                              const ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M>& A3,
+                              ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& L3,
+                              const ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M>& A4,
+                              ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& L4)
 {
    ac_cholinv<false, false>(A1, L1);
    ac_cholinv<false, false>(A2, L2);
@@ -516,7 +526,8 @@ double conv_val(ac_complex<ac_fixed<W, I, S, Q, O>> x)
 }
 
 template <unsigned M, class T, class T_tb>
-double compare_matrices(const ac_matrix<T, M, M>& Ainv, const ac_matrix<T_tb, M, M>& Ainv_tb, const double allowed_error)
+double compare_matrices(const ac_matrix<T, M, M>& Ainv, const ac_matrix<T_tb, M, M>& Ainv_tb,
+                        const double allowed_error)
 {
    double this_error, max_error = 0, max_val;
    // Find the max. abs. value in the matrix. In case of complex matrices, this is the max.
@@ -629,7 +640,8 @@ int test_driver_pwl(double& cumulative_max_error, double& cumulative_max_error_c
    copy_to_array_2D(A_ac_matrix, A_C_array);
    copy_to_array_2D(cmplx_A_ac_matrix, cmplx_A_C_array);
 
-   test_ac_cholinv_pwl(A_C_array, Ainv_C_array, cmplx_A_C_array, cmplx_Ainv_C_array, A_ac_matrix, Ainv_ac_matrix, cmplx_A_ac_matrix, cmplx_Ainv_ac_matrix);
+   test_ac_cholinv_pwl(A_C_array, Ainv_C_array, cmplx_A_C_array, cmplx_Ainv_C_array, A_ac_matrix, Ainv_ac_matrix,
+                       cmplx_A_ac_matrix, cmplx_Ainv_ac_matrix);
 
    ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M> Ainv_C_array_converted;
    ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M> cmplx_Ainv_C_array_converted;
@@ -694,7 +706,8 @@ int test_driver_pwl(double& cumulative_max_error, double& cumulative_max_error_c
 
    // Put max overall error in a separate variable.
    double max_error_overall = max_error > max_error_ac_matrix ? max_error : max_error_ac_matrix;
-   double max_error_cmplx_overall = max_error_cmplx > max_error_cmplx_ac_matrix ? max_error_cmplx : max_error_cmplx_ac_matrix;
+   double max_error_cmplx_overall =
+       max_error_cmplx > max_error_cmplx_ac_matrix ? max_error_cmplx : max_error_cmplx_ac_matrix;
 
    passed = (max_error_overall < allowed_error) && (max_error_cmplx_overall < allowed_error);
 
@@ -760,7 +773,8 @@ int test_driver_accurate(double& cumulative_max_error, double& cumulative_max_er
    copy_to_array_2D(A_ac_matrix, A_C_array);
    copy_to_array_2D(cmplx_A_ac_matrix, cmplx_A_C_array);
 
-   test_ac_cholinv_accurate(A_C_array, Ainv_C_array, cmplx_A_C_array, cmplx_Ainv_C_array, A_ac_matrix, Ainv_ac_matrix, cmplx_A_ac_matrix, cmplx_Ainv_ac_matrix);
+   test_ac_cholinv_accurate(A_C_array, Ainv_C_array, cmplx_A_C_array, cmplx_Ainv_C_array, A_ac_matrix, Ainv_ac_matrix,
+                            cmplx_A_ac_matrix, cmplx_Ainv_ac_matrix);
 
    ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M> Ainv_C_array_converted;
    ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M> cmplx_Ainv_C_array_converted;
@@ -825,7 +839,8 @@ int test_driver_accurate(double& cumulative_max_error, double& cumulative_max_er
 
    // Put max overall error in a separate variable.
    double max_error_overall = max_error > max_error_ac_matrix ? max_error : max_error_ac_matrix;
-   double max_error_cmplx_overall = max_error_cmplx > max_error_cmplx_ac_matrix ? max_error_cmplx : max_error_cmplx_ac_matrix;
+   double max_error_cmplx_overall =
+       max_error_cmplx > max_error_cmplx_ac_matrix ? max_error_cmplx : max_error_cmplx_ac_matrix;
 
    passed = (max_error_overall < allowed_error) && (max_error_cmplx_overall < allowed_error);
 
@@ -857,7 +872,8 @@ int main(int argc, char* argv[])
    double allowed_error_accurate = 0.005;
 
    cout << "=============================================================================" << endl;
-   cout << "Testing function: ac_cholinv(), for scalar and complex datatypes - allowed_error_pwl = " << allowed_error_pwl << ", allowed_error_accurate = " << allowed_error_accurate << endl;
+   cout << "Testing function: ac_cholinv(), for scalar and complex datatypes - allowed_error_pwl = "
+        << allowed_error_pwl << ", allowed_error_accurate = " << allowed_error_accurate << endl;
 
    // template <unsigned M, unsigned N, int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
    test_driver_pwl<4, 4, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
@@ -872,43 +888,70 @@ int main(int argc, char* argv[])
    test_driver_pwl<5, 8, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
    test_driver_pwl<5, 9, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
    test_driver_pwl<5, 10, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
-   // test_driver_pwl<6,  6, 41, 21, true, 64, 32, true> (max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl); //corner case, will fail
+   // test_driver_pwl<6,  6, 41, 21, true, 64, 32, true> (max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
+   // //corner case, will fail
    test_driver_pwl<6, 7, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
-   // test_driver_pwl<6,  8, 41, 21, true, 64, 32, true> (max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl); //corner case, will fail
+   // test_driver_pwl<6,  8, 41, 21, true, 64, 32, true> (max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
+   // //corner case, will fail
    test_driver_pwl<6, 9, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
    test_driver_pwl<6, 10, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
    test_driver_pwl<6, 11, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
-   // test_driver_pwl<7,  7, 41, 21, true, 64, 32, true> (max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl); //corner case, will fail
+   // test_driver_pwl<7,  7, 41, 21, true, 64, 32, true> (max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
+   // //corner case, will fail
    test_driver_pwl<7, 8, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
    test_driver_pwl<7, 9, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
    test_driver_pwl<7, 10, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
    test_driver_pwl<7, 11, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
    test_driver_pwl<7, 12, 41, 21, true, 64, 32, true>(max_error_pwl, cmplx_max_error_pwl, allowed_error_pwl);
 
-   test_driver_accurate<4, 4, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<4, 5, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<4, 6, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<4, 7, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<4, 8, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<4, 9, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<5, 5, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<5, 6, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<5, 7, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<5, 8, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<5, 9, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<5, 10, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<6, 6, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<6, 7, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<6, 8, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<6, 9, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<6, 10, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<6, 11, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<7, 7, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<7, 8, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<7, 9, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<7, 10, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<7, 11, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
-   test_driver_accurate<7, 12, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate, allowed_error_accurate);
+   test_driver_accurate<4, 4, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<4, 5, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<4, 6, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<4, 7, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<4, 8, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<4, 9, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<5, 5, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<5, 6, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<5, 7, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<5, 8, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<5, 9, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<5, 10, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                           allowed_error_accurate);
+   test_driver_accurate<6, 6, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<6, 7, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<6, 8, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<6, 9, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<6, 10, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                           allowed_error_accurate);
+   test_driver_accurate<6, 11, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                           allowed_error_accurate);
+   test_driver_accurate<7, 7, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<7, 8, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<7, 9, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                          allowed_error_accurate);
+   test_driver_accurate<7, 10, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                           allowed_error_accurate);
+   test_driver_accurate<7, 11, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                           allowed_error_accurate);
+   test_driver_accurate<7, 12, 41, 21, true, 64, 32, true>(max_error_accurate, cmplx_max_error_accurate,
+                                                           allowed_error_accurate);
 
    cout << "=============================================================================" << endl;
    cout << "  Testbench finished. Maximum errors observed across all data type / bit-width variations:" << endl;
@@ -918,7 +961,9 @@ int main(int argc, char* argv[])
    cout << "    cmplx_max_error_accurate = " << cmplx_max_error_accurate << endl;
 
    // If error limits on any tested datatype have been crossed, the test has failed
-   bool test_fail = (max_error_pwl > allowed_error_pwl) || (cmplx_max_error_pwl > allowed_error_pwl) || (max_error_accurate > allowed_error_accurate) || (cmplx_max_error_accurate > allowed_error_accurate);
+   bool test_fail = (max_error_pwl > allowed_error_pwl) || (cmplx_max_error_pwl > allowed_error_pwl) ||
+                    (max_error_accurate > allowed_error_accurate) ||
+                    (cmplx_max_error_accurate > allowed_error_accurate);
 
    // Notify the user whether or not the test was a failure.
    if(test_fail)

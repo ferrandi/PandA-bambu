@@ -53,8 +53,11 @@
 #endif
 namespace llvm
 {
-   cl::opt<std::string> outdir_nameGE("pandaGE-outputdir", cl::desc("Specify the directory where the gimple raw file will be written"), cl::value_desc("directory path"));
-   cl::opt<std::string> InFileGE("pandaGE-infile", cl::desc("Specify the name of the compiled source file"), cl::value_desc("filename path"));
+   cl::opt<std::string> outdir_nameGE("pandaGE-outputdir",
+                                      cl::desc("Specify the directory where the gimple raw file will be written"),
+                                      cl::value_desc("directory path"));
+   cl::opt<std::string> InFileGE("pandaGE-infile", cl::desc("Specify the name of the compiled source file"),
+                                 cl::value_desc("filename path"));
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty) : public ModulePass
    {
       static char ID;
@@ -90,7 +93,9 @@ namespace llvm
 
 #ifndef _WIN32
 
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)>
+    XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
+          false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
@@ -99,13 +104,15 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 }
 // These constructors add our pass to a list of global extensions.
 #if ADD_RSP
-static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyLoader_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
+static llvm::RegisterStandardPasses
+    CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyLoader_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
 #endif
 
 #ifdef _WIN32
 using namespace llvm;
 
-INITIALIZE_PASS_BEGIN(clang7_plugin_dumpGimpleEmpty, "clang7_plugin_dumpGimpleEmpty", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_BEGIN(clang7_plugin_dumpGimpleEmpty, "clang7_plugin_dumpGimpleEmpty",
+                      "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(LazyValueInfoWrapperPass)
@@ -115,7 +122,8 @@ INITIALIZE_PASS_DEPENDENCY(TargetLibraryInfoWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
 INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
-INITIALIZE_PASS_END(clang7_plugin_dumpGimpleEmpty, "clang7_plugin_dumpGimpleEmpty", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_END(clang7_plugin_dumpGimpleEmpty, "clang7_plugin_dumpGimpleEmpty",
+                    "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 
 namespace llvm
 {

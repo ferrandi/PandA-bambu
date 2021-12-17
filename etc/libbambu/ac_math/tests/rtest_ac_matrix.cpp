@@ -88,7 +88,8 @@ void reset_matrix(ac_matrix<ACType, Rows, Cols>& mat, unsigned numCols, unsigned
 }
 
 template <typename ACType, unsigned Rows, unsigned Cols>
-void reset_matrix(ac_matrix<ac_complex<ACType>, Rows, Cols>& mat, unsigned numCols, unsigned serial_number, unsigned scale = 1)
+void reset_matrix(ac_matrix<ac_complex<ACType>, Rows, Cols>& mat, unsigned numCols, unsigned serial_number,
+                  unsigned scale = 1)
 {
    for(unsigned i = 0; i < Rows; i++)
       for(unsigned j = 0; j < Cols; j++)
@@ -425,9 +426,11 @@ int main(int argc, char* argv[])
    TEST_OP_MANUAL(-, ACTYPE, 4, 5, S16TYPE, 4, 5, 5, 100, 5, 200, ACTYPEplusS16TYPE, 4, 5, false)
 
    TEST_OPEQ_MANUAL(+=, ACTYPE, 4, 5, ACTYPE, 4, 5, 5, 100, 5, 200, false)
-   //    TEST_OPEQ_MANUAL(+=,     ACTYPE,4,5,     S16TYPE,4,5,     5,100,    5,200,                               false) // not supported
+   //    TEST_OPEQ_MANUAL(+=,     ACTYPE,4,5,     S16TYPE,4,5,     5,100,    5,200,                               false)
+   //    // not supported
    TEST_OPEQ_MANUAL(-=, ACTYPE, 4, 5, ACTYPE, 4, 5, 5, 100, 5, 200, false)
-   //    TEST_OPEQ_MANUAL(-=,     ACTYPE,4,5,     S16TYPE,4,5,     5,100,    5,200,                               false) // not supported
+   //    TEST_OPEQ_MANUAL(-=,     ACTYPE,4,5,     S16TYPE,4,5,     5,100,    5,200,                               false)
+   //    // not supported
 
    TEST_FUNC_AUTO(pwisemult, *, ACTYPE, 4, 5, ACTYPE, 4, 5, 5, 100, 5, 200, ACTYPEmultACTYPE, 4, 5, false)
 
@@ -444,9 +447,11 @@ int main(int argc, char* argv[])
    TEST_OP_MANUAL(-, cACTYPE, 4, 5, cS16TYPE, 4, 5, 5, 100, 5, 200, cACTYPEplusS16TYPE, 4, 5, false)
 
    TEST_OPEQ_MANUAL(+=, cACTYPE, 4, 5, cACTYPE, 4, 5, 5, 100, 5, 200, false)
-   //    TEST_OPEQ_MANUAL(+=,    cACTYPE,4,5,    cS16TYPE,4,5,     5,100,    5,200,                               false) // not supported
+   //    TEST_OPEQ_MANUAL(+=,    cACTYPE,4,5,    cS16TYPE,4,5,     5,100,    5,200,                               false)
+   //    // not supported
    TEST_OPEQ_MANUAL(-=, cACTYPE, 4, 5, cACTYPE, 4, 5, 5, 100, 5, 200, false)
-   //    TEST_OPEQ_MANUAL(-=,    cACTYPE,4,5,    cS16TYPE,4,5,     5,100,    5,200,                               false) // not supported
+   //    TEST_OPEQ_MANUAL(-=,    cACTYPE,4,5,    cS16TYPE,4,5,     5,100,    5,200,                               false)
+   //    // not supported
 
    TEST_FUNC_AUTO(pwisemult, *, cACTYPE, 4, 5, cACTYPE, 4, 5, 5, 100, 5, 200, cACTYPEmultACTYPE, 4, 5, false)
 

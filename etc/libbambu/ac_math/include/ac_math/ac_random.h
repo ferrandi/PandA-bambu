@@ -41,7 +41,8 @@
 #ifndef AC_RANDOM_H_INC
 #define AC_RANDOM_H_INC
 
-// Make sure that this library does not get synthesized by throwing a compilation error if synthesis directive is defined
+// Make sure that this library does not get synthesized by throwing a compilation error if synthesis directive is
+// defined
 #ifdef __BAMBU__
 #error Synthesis directive defined for ac_random.h
 #endif

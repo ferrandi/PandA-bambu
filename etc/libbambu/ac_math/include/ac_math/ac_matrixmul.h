@@ -117,8 +117,10 @@ namespace ac_math
    // Usage:
    //    See above example code for usage.
    //-------------------------------------------------------------------------
-   template <unsigned M, unsigned N, unsigned P, int W1, int I1, bool S1, ac_q_mode Q1, ac_o_mode O1, int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO>
-   void ac_matrixmul(const ac_fixed<W1, I1, S1, Q1, O1> A[M][N], const ac_fixed<W2, I2, S2, Q2, O2> B[N][P], ac_fixed<outW, outI, outS, outQ, outO> C[M][P])
+   template <unsigned M, unsigned N, unsigned P, int W1, int I1, bool S1, ac_q_mode Q1, ac_o_mode O1, int W2, int I2,
+             bool S2, ac_q_mode Q2, ac_o_mode O2, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO>
+   void ac_matrixmul(const ac_fixed<W1, I1, S1, Q1, O1> A[M][N], const ac_fixed<W2, I2, S2, Q2, O2> B[N][P],
+                     ac_fixed<outW, outI, outS, outQ, outO> C[M][P])
    {
       arraymultiply<M, N, P>(A, B, C);
    }
@@ -129,8 +131,11 @@ namespace ac_math
    // Usage:
    //    See above example code for usage.
    //-------------------------------------------------------------------------
-   template <unsigned M, unsigned N, unsigned P, int W1, int I1, bool S1, ac_q_mode Q1, ac_o_mode O1, int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO>
-   void ac_matrixmul(const ac_complex<ac_fixed<W1, I1, S1, Q1, O1>> A[M][N], const ac_complex<ac_fixed<W2, I2, S2, Q2, O2>> B[N][P], ac_complex<ac_fixed<outW, outI, outS, outQ, outO>> C[M][P])
+   template <unsigned M, unsigned N, unsigned P, int W1, int I1, bool S1, ac_q_mode Q1, ac_o_mode O1, int W2, int I2,
+             bool S2, ac_q_mode Q2, ac_o_mode O2, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO>
+   void ac_matrixmul(const ac_complex<ac_fixed<W1, I1, S1, Q1, O1>> A[M][N],
+                     const ac_complex<ac_fixed<W2, I2, S2, Q2, O2>> B[N][P],
+                     ac_complex<ac_fixed<outW, outI, outS, outQ, outO>> C[M][P])
    {
       arraymultiply<M, N, P>(A, B, C);
    }
@@ -156,8 +161,11 @@ namespace ac_math
    // Usage:
    //    See above example code for usage.
    //-------------------------------------------------------------------------
-   template <unsigned M, unsigned N, unsigned P, int W1, int I1, bool S1, ac_q_mode Q1, ac_o_mode O1, int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO>
-   void ac_matrixmul(const ac_matrix<ac_fixed<W1, I1, S1, Q1, O1>, M, N>& A, const ac_matrix<ac_fixed<W2, I2, S2, Q2, O2>, N, P>& B, ac_matrix<ac_fixed<outW, outI, outS, outQ, outO>, M, P>& C)
+   template <unsigned M, unsigned N, unsigned P, int W1, int I1, bool S1, ac_q_mode Q1, ac_o_mode O1, int W2, int I2,
+             bool S2, ac_q_mode Q2, ac_o_mode O2, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO>
+   void ac_matrixmul(const ac_matrix<ac_fixed<W1, I1, S1, Q1, O1>, M, N>& A,
+                     const ac_matrix<ac_fixed<W2, I2, S2, Q2, O2>, N, P>& B,
+                     ac_matrix<ac_fixed<outW, outI, outS, outQ, outO>, M, P>& C)
 
    {
       ac_matrix_matrixmul(A, B, C);
@@ -169,8 +177,11 @@ namespace ac_math
    // Usage:
    //    See above example code for usage.
    //-------------------------------------------------------------------------
-   template <unsigned M, unsigned N, unsigned P, int W1, int I1, bool S1, ac_q_mode Q1, ac_o_mode O1, int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO>
-   void ac_matrixmul(const ac_matrix<ac_complex<ac_fixed<W1, I1, S1, Q1, O1>>, M, N>& A, const ac_matrix<ac_complex<ac_fixed<W2, I2, S2, Q2, O2>>, N, P>& B, ac_matrix<ac_complex<ac_fixed<outW, outI, outS, outQ, outO>>, M, P>& C)
+   template <unsigned M, unsigned N, unsigned P, int W1, int I1, bool S1, ac_q_mode Q1, ac_o_mode O1, int W2, int I2,
+             bool S2, ac_q_mode Q2, ac_o_mode O2, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO>
+   void ac_matrixmul(const ac_matrix<ac_complex<ac_fixed<W1, I1, S1, Q1, O1>>, M, N>& A,
+                     const ac_matrix<ac_complex<ac_fixed<W2, I2, S2, Q2, O2>>, N, P>& B,
+                     ac_matrix<ac_complex<ac_fixed<outW, outI, outS, outQ, outO>>, M, P>& C)
    {
       ac_matrix_matrixmul(A, B, C);
    }

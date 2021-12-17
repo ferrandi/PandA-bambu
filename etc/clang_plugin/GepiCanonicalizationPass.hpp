@@ -76,10 +76,12 @@ class GepiCanonicalizationPass : public llvm::FunctionPass
    unsigned short optimization_selection = 0;
 
  public:
-   explicit GepiCanonicalizationPass(char& _ID, unsigned short optimization_selection) : llvm::FunctionPass(_ID), optimization_selection(optimization_selection)
+   explicit GepiCanonicalizationPass(char& _ID, unsigned short optimization_selection)
+       : llvm::FunctionPass(_ID), optimization_selection(optimization_selection)
    {
    }
-   explicit GepiCanonicalizationPass(unsigned short optimization_selection) : llvm::FunctionPass(ID), optimization_selection(optimization_selection)
+   explicit GepiCanonicalizationPass(unsigned short optimization_selection)
+       : llvm::FunctionPass(ID), optimization_selection(optimization_selection)
    {
    }
 
@@ -110,6 +112,5 @@ GepiCanonicalizationPass* createRemoveIntrinsicPass();
 GepiCanonicalizationPass* createSelectLoweringPass();
 
 GepiCanonicalizationPass* createGepiCanonicalIdxsPass();
-
 
 #endif // SCALAR_REPLACEMENT_OF_AGGREGATES_GEPICANONICALIZATIONPASS_HPP

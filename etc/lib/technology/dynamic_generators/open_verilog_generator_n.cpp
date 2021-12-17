@@ -1,7 +1,7 @@
-  std::cout << " // verilator lint_off LITENDIAN" << std::endl;
-  std::cout << "parameter MAX_BUFF_SIZE = 256;" << std::endl;
-  std::cout << "reg [0:8*MAX_BUFF_SIZE-1] buffer_name;" << std::endl;
-  std::string clog2_function = "\n\
+std::cout << " // verilator lint_off LITENDIAN" << std::endl;
+std::cout << "parameter MAX_BUFF_SIZE = 256;" << std::endl;
+std::cout << "reg [0:8*MAX_BUFF_SIZE-1] buffer_name;" << std::endl;
+std::string clog2_function = "\n\
   `ifndef _SIM_HAVE_CLOG2\n\
     function integer log2;\n\
        input integer value;\n\
@@ -13,28 +13,30 @@
       end\n\
     endfunction\n\
   `endif";
-  std::cout << clog2_function << std::endl;
+std::cout << clog2_function << std::endl;
 
-  std::string nbit_buffer = "\n\
+std::string nbit_buffer = "\n\
   `ifdef _SIM_HAVE_CLOG2\n\
     parameter nbits_buffer = $clog2(MAX_BUFF_SIZE);\n\
   `else\n\
     parameter nbits_buffer = log2(MAX_BUFF_SIZE);\n\
   `endif";
-  std::cout << nbit_buffer << std::endl;
+std::cout << nbit_buffer << std::endl;
 
-  std::string sensitivity;
-  for(int i=0;i<_np;i++)
-  {
-    sensitivity += " or " + _p[i].name;
-  }
+std::string sensitivity;
+for(int i = 0; i < _np; i++)
+{
+   sensitivity += " or " + _p[i].name;
+}
 
-  std::string modes = "in2";
+std::string modes = "in2";
 
-  std::string flags_string = "(" + modes + " & "  + STR(O_RDWR) + ") != 0 && (" + modes + " & "  + STR(O_APPEND) + ") ? \"a+b\" : ((" + modes + " & "  + STR(O_RDWR) + ") != 0 ? \"r+b\" : ((" + modes + " & "  + STR(O_WRONLY) + ") != 0 && (" + modes + " & "  + STR(O_APPEND) + ") ? \"ab\" : (" + modes + " & "  + STR(O_WRONLY) + ") != 0 ? \"wb\" : \"rb\"" + "))";
-  
+std::string flags_string = "(" + modes + " & " + STR(O_RDWR) + ") != 0 && (" + modes + " & " + STR(O_APPEND) +
+                           ") ? \"a+b\" : ((" + modes + " & " + STR(O_RDWR) + ") != 0 ? \"r+b\" : ((" + modes + " & " +
+                           STR(O_WRONLY) + ") != 0 && (" + modes + " & " + STR(O_APPEND) + ") ? \"ab\" : (" + modes +
+                           " & " + STR(O_WRONLY) + ") != 0 ? \"wb\" : \"rb\"" + "))";
 
-  std::string fsm="\
+std::string fsm = "\
   reg [nbits_buffer-1:0] _present_index 1INIT_ZERO_VALUE;\n\
   reg [nbits_buffer-1:0] _next_index;\n\
   reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer 1INIT_ZERO_VALUE;\n\
@@ -71,7 +73,8 @@
       end\n\
   \n\
   assign out1 = {1'b0,temp_out1[30:0]};\
-  always @(_present_state or _present_pointer or _present_index or start_port or M_DataRdy[0] or Min_we_ram or Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" + sensitivity + " or M_Rdata_ram[7:0])\n\
+  always @(_present_state or _present_pointer or _present_index or start_port or M_DataRdy[0] or Min_we_ram or Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" +
+                  sensitivity + " or M_Rdata_ram[7:0])\n\
       begin\n\
         Mout_we_ram = Min_we_ram;\n\
         Mout_Wdata_ram = Min_Wdata_ram;\n\
@@ -109,7 +112,8 @@
          S_2:\n\
            begin\n\
 // synthesis translate_off\n\
-             temp_out1 = $fopen(buffer_name, "+ flags_string + ");\n\
+             temp_out1 = $fopen(buffer_name, " +
+                  flags_string + ");\n\
 // synthesis translate_on\n\
              done_port = 1'b1;\n\
              _next_state=S_0;\n\

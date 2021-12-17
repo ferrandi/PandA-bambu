@@ -59,7 +59,9 @@
 
 static llvm::cl::OptionCategory bambuSource2SourceCategory("bambu source to source options");
 
-static llvm::cl::opt<std::string> top_fun_names("topf", llvm::cl::desc("top function names, separated by commas if needed. -topf=\"fun1,fun2,fun3\""), llvm::cl::value_desc("top-function-names"), llvm::cl::cat(bambuSource2SourceCategory));
+static llvm::cl::opt<std::string>
+    top_fun_names("topf", llvm::cl::desc("top function names, separated by commas if needed. -topf=\"fun1,fun2,fun3\""),
+                  llvm::cl::value_desc("top-function-names"), llvm::cl::cat(bambuSource2SourceCategory));
 
 /**
  * Matchers
@@ -69,13 +71,18 @@ static llvm::cl::opt<std::string> top_fun_names("topf", llvm::cl::desc("top func
 auto return_expr_matcher(std::string const& fname)
 {
    using namespace clang::ast_matchers;
-   return returnStmt(hasAncestor(functionDecl(unless(isExpansionInSystemHeader()), hasName(fname), returns(unless(hasCanonicalType(asString("void"))))).bind("function"))).bind("return_expr");
+   return returnStmt(hasAncestor(functionDecl(unless(isExpansionInSystemHeader()), hasName(fname),
+                                              returns(unless(hasCanonicalType(asString("void")))))
+                                     .bind("function")))
+       .bind("return_expr");
 }
 /// function declaration returning non-void values matchers
 auto function_decl_matcher(std::string const& fname)
 {
    using namespace clang::ast_matchers;
-   return functionDecl(unless(isExpansionInSystemHeader()), hasName(fname), returns(unless(hasCanonicalType(asString("void"))))).bind("function");
+   return functionDecl(unless(isExpansionInSystemHeader()), hasName(fname),
+                       returns(unless(hasCanonicalType(asString("void")))))
+       .bind("function");
 }
 auto loop_matcher0()
 {
@@ -97,7 +104,9 @@ auto loop_matcher2()
 auto struct_parm_decl_matcher(std::string const& fname)
 {
    using namespace clang::ast_matchers;
-   return parmVarDecl(hasAncestor(functionDecl(unless(isExpansionInSystemHeader()), hasName(fname))), hasType(hasCanonicalType(pointsTo(recordDecl(isStruct()).bind("record_type_decl"))))).bind("struct_parm_decl");
+   return parmVarDecl(hasAncestor(functionDecl(unless(isExpansionInSystemHeader()), hasName(fname))),
+                      hasType(hasCanonicalType(pointsTo(recordDecl(isStruct()).bind("record_type_decl")))))
+       .bind("struct_parm_decl");
 }
 
 // Returns the text that makes up 'node' in the source.
@@ -118,7 +127,8 @@ static std::string getText(const clang::SourceManager& SourceManager, const clan
       return std::string();
    }
    auto Start = SourceManager.getDecomposedLoc(StartSpellingLocation);
-   auto End = SourceManager.getDecomposedLoc(clang::Lexer::getLocForEndOfToken(EndSpellingLocation, 0, SourceManager, LangOpts));
+   auto End = SourceManager.getDecomposedLoc(
+       clang::Lexer::getLocForEndOfToken(EndSpellingLocation, 0, SourceManager, LangOpts));
    if(Start.first != End.first)
    {
       // Start and end are in different files.
@@ -134,7 +144,8 @@ static std::string getText(const clang::SourceManager& SourceManager, const clan
 
 // Specialization of getText returning the text associated with the token starting at given source location
 template <>
-std::string getText(const clang::SourceManager& SourceManager, const clang::LangOptions& LangOpts, const clang::SourceLocation& Loc)
+std::string getText(const clang::SourceManager& SourceManager, const clang::LangOptions& LangOpts,
+                    const clang::SourceLocation& Loc)
 {
    if(!Loc.isValid())
    {
@@ -162,7 +173,8 @@ std::string getText(const clang::SourceManager& SourceManager, const clang::Lang
 }
 #define RES_DECL_PREFIX "__res_"
 
-static clang::Optional<clang::Token> findNextToken_local(clang::SourceLocation Loc, const clang::SourceManager& SM, const clang::LangOptions& LangOpts)
+static clang::Optional<clang::Token> findNextToken_local(clang::SourceLocation Loc, const clang::SourceManager& SM,
+                                                         const clang::LangOptions& LangOpts)
 {
    if(Loc.isMacroID())
    {
@@ -211,7 +223,8 @@ struct re_user : public clang::ast_matchers::MatchFinder::MatchCallback
       const CharSourceRange CRT_sourceRange(returnRange, true);
       std::string result_varNameAssignment = func->getName();
       result_varNameAssignment = std::string("*") + RES_DECL_PREFIX + result_varNameAssignment + " =";
-      clang::tooling::Replacement Rep(*result.SourceManager, CRT_sourceRange, result_varNameAssignment, ctx.getLangOpts());
+      clang::tooling::Replacement Rep(*result.SourceManager, CRT_sourceRange, result_varNameAssignment,
+                                      ctx.getLangOpts());
       auto errRes = FileToReplaces[result.SourceManager->getFilename(rsLoc)].add(Rep);
       if(errRes)
       {
@@ -222,7 +235,8 @@ struct re_user : public clang::ast_matchers::MatchFinder::MatchCallback
    } // run
 
    //  explicit re_user(clang::tooling::Replacements *_replace) : replace(_replace) {}
-   explicit re_user(std::map<std::string, clang::tooling::Replacements>& _FileToReplaces) : FileToReplaces(_FileToReplaces)
+   explicit re_user(std::map<std::string, clang::tooling::Replacements>& _FileToReplaces)
+       : FileToReplaces(_FileToReplaces)
    {
    }
 
@@ -262,7 +276,8 @@ struct fd_user : public clang::ast_matchers::MatchFinder::MatchCallback
          if(Tok.hasValue() && (Tok.getValue().is(tok::kw_void) || (Tok.getValue().is(tok::raw_identifier))))
          {
             auto LocAfterEnd = Tok.getValue().getLocation();
-            clang::tooling::Replacement RepVoid(*result.SourceManager, LocAfterEnd, Tok.getValue().getLength(), result_varNameDecl);
+            clang::tooling::Replacement RepVoid(*result.SourceManager, LocAfterEnd, Tok.getValue().getLength(),
+                                                result_varNameDecl);
             auto errRes = FileToReplaces[result.SourceManager->getFilename(LocAfterEnd)].add(RepVoid);
             if(errRes)
             {
@@ -312,7 +327,8 @@ struct fd_user : public clang::ast_matchers::MatchFinder::MatchCallback
    } // run
 
    //  explicit re_user(clang::tooling::Replacements *_replace) : replace(_replace) {}
-   explicit fd_user(std::map<std::string, clang::tooling::Replacements>& _FileToReplaces) : FileToReplaces(_FileToReplaces)
+   explicit fd_user(std::map<std::string, clang::tooling::Replacements>& _FileToReplaces)
+       : FileToReplaces(_FileToReplaces)
    {
    }
 
@@ -333,7 +349,8 @@ struct fd_user : public clang::ast_matchers::MatchFinder::MatchCallback
  * }
  * @return 0 upon success. Non-zero upon failure.
  */
-int toVoidRefactor(clang::tooling::CommonOptionsParser& op, const boost::tokenizer<boost::char_separator<char>>& topFunTokenizer)
+int toVoidRefactor(clang::tooling::CommonOptionsParser& op,
+                   const boost::tokenizer<boost::char_separator<char>>& topFunTokenizer)
 {
    clang::tooling::RefactoringTool Tool(op.getCompilations(), op.getSourcePathList());
    Tool.clearArgumentsAdjusters();
@@ -363,7 +380,9 @@ struct pragmaInfo
 class pragmaCallBack : public clang::PPCallbacks
 {
  public:
-   explicit pragmaCallBack(std::map<clang::SourceLocation, std::list<pragmaInfo>>& _pragmaAnnotations, const clang::SourceManager& _SM, const clang::LangOptions& _langOpts) : SM(_SM), langOpts(_langOpts), pragmaAnnotations(_pragmaAnnotations)
+   explicit pragmaCallBack(std::map<clang::SourceLocation, std::list<pragmaInfo>>& _pragmaAnnotations,
+                           const clang::SourceManager& _SM, const clang::LangOptions& _langOpts)
+       : SM(_SM), langOpts(_langOpts), pragmaAnnotations(_pragmaAnnotations)
    {
    }
    void PragmaDirective(clang::SourceLocation Loc, clang::PragmaIntroducerKind Introducer) override
@@ -429,7 +448,8 @@ class pragmaCallBack : public clang::PPCallbacks
 
 struct pragmaManipulatorCallBack : public clang::tooling::SourceFileCallbacks
 {
-   explicit pragmaManipulatorCallBack(std::map<clang::SourceLocation, std::list<pragmaInfo>>& _pragmaAnnotations) : pragmaAnnotations(_pragmaAnnotations)
+   explicit pragmaManipulatorCallBack(std::map<clang::SourceLocation, std::list<pragmaInfo>>& _pragmaAnnotations)
+       : pragmaAnnotations(_pragmaAnnotations)
    {
    }
 
@@ -466,7 +486,8 @@ struct Loop_user0 : public clang::ast_matchers::MatchFinder::MatchCallback
    } // run
 
    //  explicit re_user(clang::tooling::Replacements *_replace) : replace(_replace) {}
-   explicit Loop_user0(std::map<std::string, clang::tooling::Replacements>& _FileToReplaces) : FileToReplaces(_FileToReplaces)
+   explicit Loop_user0(std::map<std::string, clang::tooling::Replacements>& _FileToReplaces)
+       : FileToReplaces(_FileToReplaces)
    {
    }
 
@@ -482,7 +503,8 @@ struct Loop_user1 : public clang::ast_matchers::MatchFinder::MatchCallback
    } // run
 
    //  explicit re_user(clang::tooling::Replacements *_replace) : replace(_replace) {}
-   explicit Loop_user1(std::map<std::string, clang::tooling::Replacements>& _FileToReplaces) : FileToReplaces(_FileToReplaces)
+   explicit Loop_user1(std::map<std::string, clang::tooling::Replacements>& _FileToReplaces)
+       : FileToReplaces(_FileToReplaces)
    {
    }
 
@@ -498,7 +520,8 @@ struct Loop_user2 : public clang::ast_matchers::MatchFinder::MatchCallback
    } // run
 
    //  explicit re_user(clang::tooling::Replacements *_replace) : replace(_replace) {}
-   explicit Loop_user2(std::map<std::string, clang::tooling::Replacements>& _FileToReplaces) : FileToReplaces(_FileToReplaces)
+   explicit Loop_user2(std::map<std::string, clang::tooling::Replacements>& _FileToReplaces)
+       : FileToReplaces(_FileToReplaces)
    {
    }
 
@@ -543,7 +566,8 @@ class OMPMASTVisitor : public clang::RecursiveASTVisitor<OMPMASTVisitor>
          TheRewriter.InsertText(forStatement->getForLoc(), "\n// 'for' loop", false, false);
 
          auto rparent = forStatement->getRParenLoc();
-         clang::Optional<clang::Token> Tok = findNextToken_local(rparent, TheRewriter.getSourceMgr(), TheRewriter.getLangOpts());
+         clang::Optional<clang::Token> Tok =
+             findNextToken_local(rparent, TheRewriter.getSourceMgr(), TheRewriter.getLangOpts());
          bool isCompoundStmt = false;
          if(Tok.hasValue() && Tok.getValue().is(clang::tok::l_brace))
          {
@@ -560,7 +584,8 @@ class OMPMASTVisitor : public clang::RecursiveASTVisitor<OMPMASTVisitor>
 #endif
          if(!isCompoundStmt)
          {
-            clang::Optional<clang::Token> afterSemiTok = findNextToken_local(end, TheRewriter.getSourceMgr(), TheRewriter.getLangOpts());
+            clang::Optional<clang::Token> afterSemiTok =
+                findNextToken_local(end, TheRewriter.getSourceMgr(), TheRewriter.getLangOpts());
             if(Tok.hasValue())
                end = afterSemiTok->getLocation();
             else
@@ -600,7 +625,8 @@ class OMPMASTConsumer : public clang::ASTConsumer
    OMPMASTVisitor Visitor;
 };
 
-inline std::unique_ptr<clang::tooling::FrontendActionFactory> localnewFrontendActionFactory(clang::tooling::SourceFileCallbacks* Callbacks)
+inline std::unique_ptr<clang::tooling::FrontendActionFactory>
+localnewFrontendActionFactory(clang::tooling::SourceFileCallbacks* Callbacks)
 {
    class FrontendActionFactoryAdapter : public clang::tooling::FrontendActionFactory
    {
@@ -632,7 +658,8 @@ inline std::unique_ptr<clang::tooling::FrontendActionFactory> localnewFrontendAc
          // Create the AST consumer object for this action
          // CI - The current compiler instance
          // file - The current input file
-         std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef file) override
+         std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance& CI,
+                                                               clang::StringRef file) override
          {
             TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
             return std::make_unique<OMPMASTConsumer>(TheRewriter);

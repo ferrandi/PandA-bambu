@@ -3,4 +3,3 @@
 #include "s_sin.c"
 #include "s_tan.c"
 #include "w_sincos.c"
-

@@ -138,8 +138,9 @@ using namespace std;
 
 namespace ac_math
 {
-   template <bool use_pwl1 = false, bool use_pwl2 = false, int add2w = 0, int add2i = 0, ac_q_mode temp_Q = AC_RND, ac_o_mode temp_O = AC_SAT, unsigned M, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ,
-             ac_o_mode outO>
+   template <bool use_pwl1 = false, bool use_pwl2 = false, int add2w = 0, int add2i = 0, ac_q_mode temp_Q = AC_RND,
+             ac_o_mode temp_O = AC_SAT, unsigned M, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI,
+             bool outS, ac_q_mode outQ, ac_o_mode outO>
    void ac_cholinv(const ac_fixed<W, I, S, Q, O> A[M][M], ac_fixed<outW, outI, outS, outQ, outO> Ainv[M][M])
    {
       typedef ac_fixed<outW, outI, outS, outQ, outO> T_out;
@@ -206,7 +207,7 @@ namespace ac_math
          Linv_Linvtrans_COL:
             for(unsigned k = 0; k < M; k++)
             {
-               sum += (k < j | k < i) ? (Tout)0 :  (Tout)(Linv[k][i] * Linv[k][j]);
+               sum += (k < j | k < i) ? (Tout)0 : (Tout)(Linv[k][i] * Linv[k][j]);
             }
             Ainv[i][j] = sum;
          }
@@ -261,9 +262,11 @@ namespace ac_math
    //
    //--------------------------------------------------------------------------------------
 
-   template <bool use_pwl1 = false, bool use_pwl2 = false, int add2w = 0, int add2i = 0, ac_q_mode temp_Q = AC_RND, ac_o_mode temp_O = AC_SAT, unsigned M, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ,
-             ac_o_mode outO>
-   void ac_cholinv(const ac_complex<ac_fixed<W, I, S, Q, O>> A[M][M], ac_complex<ac_fixed<outW, outI, outS, outQ, outO>> Ainv[M][M])
+   template <bool use_pwl1 = false, bool use_pwl2 = false, int add2w = 0, int add2i = 0, ac_q_mode temp_Q = AC_RND,
+             ac_o_mode temp_O = AC_SAT, unsigned M, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI,
+             bool outS, ac_q_mode outQ, ac_o_mode outO>
+   void ac_cholinv(const ac_complex<ac_fixed<W, I, S, Q, O>> A[M][M],
+                   ac_complex<ac_fixed<outW, outI, outS, outQ, outO>> Ainv[M][M])
    {
       typedef ac_fixed<outW, outI, outS, outQ, outO> T_out;
       typedef ac_complex<ac_fixed<T_out::width + add2w, T_out::i_width + add2i, T_out::sign, temp_Q, temp_O>> Tout;
@@ -340,7 +343,8 @@ namespace ac_math
 // Function: ac_matrix_cholinv
 // Helper function for using ac_cholinv on ac_matrix objects
 
-template <bool use_pwl1 = false, bool use_pwl2 = false, int add2w = 0, int add2i = 0, ac_q_mode temp_Q = AC_RND, ac_o_mode temp_O = AC_SAT, unsigned M1, class T1, class T2>
+template <bool use_pwl1 = false, bool use_pwl2 = false, int add2w = 0, int add2i = 0, ac_q_mode temp_Q = AC_RND,
+          ac_o_mode temp_O = AC_SAT, unsigned M1, class T1, class T2>
 void ac_matrix_cholinv(const ac_matrix<T1, M1, M1>& input, ac_matrix<T2, M1, M1>& output)
 {
    // Extract 2D array member data, and pass it over to the 2D array implementation.
@@ -396,9 +400,11 @@ namespace ac_math
    //
    //-----------------------------------------------------------------------------
 
-   template <bool use_pwl1 = false, bool use_pwl2 = false, int add2w = 0, int add2i = 0, ac_q_mode temp_Q = AC_RND, ac_o_mode temp_O = AC_SAT, unsigned M, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ,
-             ac_o_mode outO>
-   void ac_cholinv(const ac_matrix<ac_fixed<W, I, S, Q, O>, M, M>& A, ac_matrix<ac_fixed<outW, outI, outS, outQ, outO>, M, M>& Ainv)
+   template <bool use_pwl1 = false, bool use_pwl2 = false, int add2w = 0, int add2i = 0, ac_q_mode temp_Q = AC_RND,
+             ac_o_mode temp_O = AC_SAT, unsigned M, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI,
+             bool outS, ac_q_mode outQ, ac_o_mode outO>
+   void ac_cholinv(const ac_matrix<ac_fixed<W, I, S, Q, O>, M, M>& A,
+                   ac_matrix<ac_fixed<outW, outI, outS, outQ, outO>, M, M>& Ainv)
    {
       ac_matrix_cholinv<use_pwl1, use_pwl2, add2w, add2i, temp_Q, temp_O>(A, Ainv);
    }
@@ -449,9 +455,11 @@ namespace ac_math
    //    implementation.
    //-------------------------------------------------------------------------
 
-   template <bool use_pwl1 = false, bool use_pwl2 = false, int add2w = 0, int add2i = 0, ac_q_mode temp_Q = AC_RND, ac_o_mode temp_O = AC_SAT, unsigned M, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ,
-             ac_o_mode outO>
-   void ac_cholinv(const ac_matrix<ac_complex<ac_fixed<W, I, S, Q, O>>, M, M>& A, ac_matrix<ac_complex<ac_fixed<outW, outI, outS, outQ, outO>>, M, M>& Ainv)
+   template <bool use_pwl1 = false, bool use_pwl2 = false, int add2w = 0, int add2i = 0, ac_q_mode temp_Q = AC_RND,
+             ac_o_mode temp_O = AC_SAT, unsigned M, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI,
+             bool outS, ac_q_mode outQ, ac_o_mode outO>
+   void ac_cholinv(const ac_matrix<ac_complex<ac_fixed<W, I, S, Q, O>>, M, M>& A,
+                   ac_matrix<ac_complex<ac_fixed<outW, outI, outS, outQ, outO>>, M, M>& Ainv)
    {
       ac_matrix_cholinv<use_pwl1, use_pwl2, add2w, add2i, temp_Q, temp_O>(A, Ainv);
    }

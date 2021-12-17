@@ -27,21 +27,24 @@
 #define UNROLL_FACTOR 1
 #endif
 
-#define LOOP_BODY(z, n, data)                                                                                                                                                       \
-   divisor_select = partial_remainder_sign ^ plus_divisor_sign;                                                                                                                     \
-   carry_input = !divisor_select;                                                                                                                                                   \
-   w = divisor_select ? plus_divisor : minus_divisor;                                                                                                                               \
-   w_sign = divisor_select ? plus_divisor_sign : minus_divisor_sign;                                                                                                                \
-   partial_remainder_sign = SELECT_BIT(partial_remainderH, DIV_NUM_BIT_M1);                                                                                                         \
-   partial_remainderH = (VAL_RESIZE(partial_remainderH, DIV_NUM_BIT_M1) << 1) | SELECT_BIT(partial_remainderL, DIV_NUM_BIT_M1);                                                     \
-   partial_remainderL = VAL_RESIZE(partial_remainderL << 1, DIV_NUM_BIT);                                                                                                           \
-   sum_result = VAL_RESIZE(w, DIV_NUM_BIT_M1) + VAL_RESIZE(partial_remainderH, DIV_NUM_BIT_M1) + carry_input;                                                                       \
-   sum_result_msb = SELECT_BIT(sum_result, DIV_NUM_BIT_M1) ^ SELECT_BIT(w, DIV_NUM_BIT_M1) ^ SELECT_BIT(partial_remainderH, DIV_NUM_BIT_M1);                                        \
-   sum_result_carry = (SELECT_BIT(sum_result, DIV_NUM_BIT_M1) & SELECT_BIT(w, DIV_NUM_BIT_M1)) | (SELECT_BIT(w, DIV_NUM_BIT_M1) & SELECT_BIT(partial_remainderH, DIV_NUM_BIT_M1)) | \
-                      (SELECT_BIT(sum_result, DIV_NUM_BIT_M1) & SELECT_BIT(partial_remainderH, DIV_NUM_BIT_M1));                                                                    \
-   sum_result_sign = w_sign ^ partial_remainder_sign ^ sum_result_carry;                                                                                                            \
-   partial_remainderH = (((UDATATYPE)sum_result_msb) << DIV_NUM_BIT_M1) | VAL_RESIZE(sum_result, DIV_NUM_BIT_M1);                                                                   \
-   partial_remainder_sign = sum_result_sign;                                                                                                                                        \
+#define LOOP_BODY(z, n, data)                                                                                     \
+   divisor_select = partial_remainder_sign ^ plus_divisor_sign;                                                   \
+   carry_input = !divisor_select;                                                                                 \
+   w = divisor_select ? plus_divisor : minus_divisor;                                                             \
+   w_sign = divisor_select ? plus_divisor_sign : minus_divisor_sign;                                              \
+   partial_remainder_sign = SELECT_BIT(partial_remainderH, DIV_NUM_BIT_M1);                                       \
+   partial_remainderH =                                                                                           \
+       (VAL_RESIZE(partial_remainderH, DIV_NUM_BIT_M1) << 1) | SELECT_BIT(partial_remainderL, DIV_NUM_BIT_M1);    \
+   partial_remainderL = VAL_RESIZE(partial_remainderL << 1, DIV_NUM_BIT);                                         \
+   sum_result = VAL_RESIZE(w, DIV_NUM_BIT_M1) + VAL_RESIZE(partial_remainderH, DIV_NUM_BIT_M1) + carry_input;     \
+   sum_result_msb = SELECT_BIT(sum_result, DIV_NUM_BIT_M1) ^ SELECT_BIT(w, DIV_NUM_BIT_M1) ^                      \
+                    SELECT_BIT(partial_remainderH, DIV_NUM_BIT_M1);                                               \
+   sum_result_carry = (SELECT_BIT(sum_result, DIV_NUM_BIT_M1) & SELECT_BIT(w, DIV_NUM_BIT_M1)) |                  \
+                      (SELECT_BIT(w, DIV_NUM_BIT_M1) & SELECT_BIT(partial_remainderH, DIV_NUM_BIT_M1)) |          \
+                      (SELECT_BIT(sum_result, DIV_NUM_BIT_M1) & SELECT_BIT(partial_remainderH, DIV_NUM_BIT_M1));  \
+   sum_result_sign = w_sign ^ partial_remainder_sign ^ sum_result_carry;                                          \
+   partial_remainderH = (((UDATATYPE)sum_result_msb) << DIV_NUM_BIT_M1) | VAL_RESIZE(sum_result, DIV_NUM_BIT_M1); \
+   partial_remainder_sign = sum_result_sign;                                                                      \
    res = VAL_RESIZE((res << 1) | (partial_remainder_sign ^ minus_divisor_sign), DIV_NUM_BIT);
 
 static inline long long non_restoring_sdiv(long long a, long long b, long long* rem, _Bool signed_div)
@@ -88,9 +91,12 @@ static inline long long non_restoring_sdiv(long long a, long long b, long long* 
    partial_remainder = VAL_RESIZE(partial_remainderH + w + carry_input, DIV_NUM_BIT);
    rem_nul = partial_remainderH == 0;
    rem_nul_after = partial_remainder == 0;
-   plus_one = (plus_divisor_sign && !sign_a) || (!partial_remainder_sign && plus_divisor_sign && rem_nul) || (!partial_remainder_sign && !plus_divisor_sign && sign_a && !rem_nul) || (!plus_divisor_sign && sign_a && !rem_nul && !rem_nul_after) ||
+   plus_one = (plus_divisor_sign && !sign_a) || (!partial_remainder_sign && plus_divisor_sign && rem_nul) ||
+              (!partial_remainder_sign && !plus_divisor_sign && sign_a && !rem_nul) ||
+              (!plus_divisor_sign && sign_a && !rem_nul && !rem_nul_after) ||
               (partial_remainder_sign && plus_divisor_sign && sign_a && !rem_nul && rem_nul_after);
-   rem_correction = (!rem_nul && (partial_remainder_sign ^ sign_a)) || (partial_remainder_sign && sign_a && rem_nul_after);
+   rem_correction =
+       (!rem_nul && (partial_remainder_sign ^ sign_a)) || (partial_remainder_sign && sign_a && rem_nul_after);
    if(rem_correction)
    {
       partial_remainderH = partial_remainder;

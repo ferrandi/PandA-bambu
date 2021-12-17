@@ -42,7 +42,7 @@ ssize_t read(int fd, void* __restrict buf, size_t count)
    }
    while(index < count)
    {
-      res = (short int )__bambu_readc((unsigned int)fd);
+      res = (short int)__bambu_readc((unsigned int)fd);
       if(res < 0)
          break;
       ((signed char*)buf)[index] = res;

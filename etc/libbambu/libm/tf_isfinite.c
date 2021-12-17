@@ -43,7 +43,10 @@
 
 #include "math_privatetf.h"
 
-static int __attribute__((always_inline)) inline __local_finite(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+static int
+    __attribute__((always_inline)) inline __local_finite(unsigned long long x, unsigned char __exp_bits,
+                                                         unsigned char __frac_bits, int __exp_bias, _Bool __rounding,
+                                                         _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
    unsigned long long exp = (x >> __frac_bits) & ((1ULL << __exp_bits) - 1);
    if(__nan)
@@ -56,12 +59,14 @@ static int __attribute__((always_inline)) inline __local_finite(unsigned long lo
    }
 }
 
-int __finite(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+int __finite(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
+             _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
    return __local_finite(x, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
 
-int __isfinite(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+int __isfinite(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
+               _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
    return __local_finite(x, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }

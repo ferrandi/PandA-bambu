@@ -141,13 +141,15 @@ strong_alias(__divdi3, __divdi3_internal)
 }
 strong_alias(__moddi3, __moddi3_internal)
 
-    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions"))) __udivdi3(UDWtype u, UDWtype v)
+    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions")))
+    __udivdi3(UDWtype u, UDWtype v)
 {
    return __udivmoddi4(u, v, NULL);
 }
 strong_alias(__udivdi3, __udivdi3_internal)
 
-    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions"))) __umoddi3(UDWtype u, UDWtype v)
+    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions")))
+    __umoddi3(UDWtype u, UDWtype v)
 {
    UDWtype w;
 

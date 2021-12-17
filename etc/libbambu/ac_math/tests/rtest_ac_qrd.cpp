@@ -52,10 +52,17 @@ using namespace ac_math;
 // Test Design for real and complex fixed point values, using PWL functions
 // for QR decomposition.
 template <unsigned M, int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
-void test_ac_qrd_pwl(ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> in_arr[M][M], ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> Q_arr[M][M], ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> R_arr[M][M],
-                     ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> in_cmplx_arr[M][M], ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> Q_cmplx_arr[M][M], ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> R_cmplx_arr[M][M],
-                     ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M>& in_matrix, ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& Q_matrix, ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& R_matrix,
-                     ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M>& in_cmplx_matrix, ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& Q_cmplx_matrix,
+void test_ac_qrd_pwl(ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> in_arr[M][M],
+                     ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> Q_arr[M][M],
+                     ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> R_arr[M][M],
+                     ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> in_cmplx_arr[M][M],
+                     ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> Q_cmplx_arr[M][M],
+                     ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> R_cmplx_arr[M][M],
+                     ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M>& in_matrix,
+                     ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& Q_matrix,
+                     ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& R_matrix,
+                     ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M>& in_cmplx_matrix,
+                     ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& Q_cmplx_matrix,
                      ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& R_cmplx_matrix)
 {
    ac_qrd<true>(in_arr, Q_arr, R_arr);
@@ -67,11 +74,19 @@ void test_ac_qrd_pwl(ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> in_arr[M][M], ac_f
 // Test Design for real and complex fixed point values, using the accurate
 // functions for QR decomposition.
 template <unsigned M, int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
-void test_ac_qrd_accurate(ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> in_arr[M][M], ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> Q_arr[M][M], ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> R_arr[M][M],
-                          ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> in_cmplx_arr[M][M], ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> Q_cmplx_arr[M][M],
-                          ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> R_cmplx_arr[M][M], ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M>& in_matrix, ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& Q_matrix,
-                          ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& R_matrix, ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M>& in_cmplx_matrix,
-                          ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& Q_cmplx_matrix, ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& R_cmplx_matrix)
+void test_ac_qrd_accurate(
+    ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> in_arr[M][M],
+    ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> Q_arr[M][M],
+    ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> R_arr[M][M],
+    ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> in_cmplx_arr[M][M],
+    ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> Q_cmplx_arr[M][M],
+    ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> R_cmplx_arr[M][M],
+    ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M>& in_matrix,
+    ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& Q_matrix,
+    ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, M>& R_matrix,
+    ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M>& in_cmplx_matrix,
+    ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& Q_cmplx_matrix,
+    ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, M>& R_cmplx_matrix)
 {
    ac_qrd<false>(in_arr, Q_arr, R_arr);
    ac_qrd<false>(in_cmplx_arr, Q_cmplx_arr, R_cmplx_arr);
@@ -333,7 +348,8 @@ int test_driver_pwl(double& cumulative_max_error, double& cumulative_max_error_c
       }
    }
 
-   test_ac_qrd_pwl(in_arr, Q_arr, R_arr, in_cmplx_arr, Q_cmplx_arr, R_cmplx_arr, in_matrix, Q_matrix, R_matrix, in_cmplx_matrix, Q_cmplx_matrix, R_cmplx_matrix);
+   test_ac_qrd_pwl(in_arr, Q_arr, R_arr, in_cmplx_arr, Q_cmplx_arr, R_cmplx_arr, in_matrix, Q_matrix, R_matrix,
+                   in_cmplx_matrix, Q_cmplx_matrix, R_cmplx_matrix);
 
    ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> Q_ac_matrix_converted[M][M];
    ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> R_ac_matrix_converted[M][M];
@@ -370,11 +386,13 @@ int test_driver_pwl(double& cumulative_max_error, double& cumulative_max_error_c
    double max_error = compare_matrices(recovered_double, input_double, allowed_error);
    double max_error_cmplx = compare_matrices(recovered_cmplx_double, input_cmplx_double, allowed_error);
    double max_error_ac_matrix = compare_matrices(recovered_matrix_double, input_double, allowed_error);
-   double max_error_cmplx_ac_matrix = compare_matrices(recovered_cmplx_matrix_double, input_cmplx_double, allowed_error);
+   double max_error_cmplx_ac_matrix =
+       compare_matrices(recovered_cmplx_matrix_double, input_cmplx_double, allowed_error);
 
    // Put max overall error in a separate variable.
    double max_error_overall = max_error > max_error_ac_matrix ? max_error : max_error_ac_matrix;
-   double max_error_cmplx_overall = max_error_cmplx > max_error_cmplx_ac_matrix ? max_error_cmplx : max_error_cmplx_ac_matrix;
+   double max_error_cmplx_overall =
+       max_error_cmplx > max_error_cmplx_ac_matrix ? max_error_cmplx : max_error_cmplx_ac_matrix;
 
    passed = (max_error_overall < allowed_error) && (max_error_cmplx_overall < allowed_error);
 
@@ -461,7 +479,8 @@ int test_driver_accurate(double& cumulative_max_error, double& cumulative_max_er
       }
    }
 
-   test_ac_qrd_accurate(in_arr, Q_arr, R_arr, in_cmplx_arr, Q_cmplx_arr, R_cmplx_arr, in_matrix, Q_matrix, R_matrix, in_cmplx_matrix, Q_cmplx_matrix, R_cmplx_matrix);
+   test_ac_qrd_accurate(in_arr, Q_arr, R_arr, in_cmplx_arr, Q_cmplx_arr, R_cmplx_arr, in_matrix, Q_matrix, R_matrix,
+                        in_cmplx_matrix, Q_cmplx_matrix, R_cmplx_matrix);
 
    ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> Q_ac_matrix_converted[M][M];
    ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> R_ac_matrix_converted[M][M];
@@ -498,11 +517,13 @@ int test_driver_accurate(double& cumulative_max_error, double& cumulative_max_er
    double max_error = compare_matrices(recovered_double, input_double, allowed_error);
    double max_error_cmplx = compare_matrices(recovered_cmplx_double, input_cmplx_double, allowed_error);
    double max_error_ac_matrix = compare_matrices(recovered_matrix_double, input_double, allowed_error);
-   double max_error_cmplx_ac_matrix = compare_matrices(recovered_cmplx_matrix_double, input_cmplx_double, allowed_error);
+   double max_error_cmplx_ac_matrix =
+       compare_matrices(recovered_cmplx_matrix_double, input_cmplx_double, allowed_error);
 
    // Put max overall error in a separate variable.
    double max_error_overall = max_error > max_error_ac_matrix ? max_error : max_error_ac_matrix;
-   double max_error_cmplx_overall = max_error_cmplx > max_error_cmplx_ac_matrix ? max_error_cmplx : max_error_cmplx_ac_matrix;
+   double max_error_cmplx_overall =
+       max_error_cmplx > max_error_cmplx_ac_matrix ? max_error_cmplx : max_error_cmplx_ac_matrix;
 
    passed = (max_error_overall < allowed_error) && (max_error_cmplx_overall < allowed_error);
 
