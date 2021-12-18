@@ -20,6 +20,7 @@ New features introduced:
 - Improved support to interface synthesis by allowing references in called functions.
 - Added a first support to axis interface.
 - Simulation and synthesis tools are now detected at runtime. Configure options have been removed, now vendor specific install directories may be specified using Bambu option --<vendor>-root=<path> (e.g. --xilinx-root=/opt/Xilinx).
+- PandA-bambu reference paper has been published at DAC: F. Ferrandi, V. G. Castellana, S. Curzel, P. Fezzardi, M. Fiorito, M. Lattuada, M. Minutoli, C. Pilato, and A. Tumeo, “Invited: Bambu: an Open-Source Research Framework for the High-Level Synthesis of Complex Applications,” in 2021 58th ACM/IEEE Design Automation Conference (DAC), 2021, pp. 1327-1330. 
 
 =========== PANDA 0.9.6 ===========
 Sat 11 January 2020, PandA release 0.9.6
