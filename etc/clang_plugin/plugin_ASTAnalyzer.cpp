@@ -388,9 +388,9 @@ namespace clang
             return t;
       }
 
-      std::string GetTypeNameCanonical(QualType t) const
+      std::string GetTypeNameCanonical(const QualType& t, const PrintingPolicy& pp) const
       {
-         auto typeName = t->getCanonicalTypeInternal().getAsString();
+         auto typeName = t->getCanonicalTypeInternal().getAsString(pp);
          auto key = std::string("class ");
          auto constkey = std::string("const class ");
          if(typeName.find(key) == 0)
@@ -685,6 +685,8 @@ namespace clang
                      }
                   }
                   auto argType = ND->getType();
+                  auto pp = clang::PrintingPolicy(clang::LangOptions());
+                  pp.adjustForCPlusPlus();
                   auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
                      auto OrigTotArraySize = CA->getSize();
                      std::string Dimensions;
@@ -700,8 +702,9 @@ namespace clang
                         OrigTotArraySize *= n_el;
                      }
                      auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
-                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " *";
-                     ParamTypeNameOrig = paramTypeRemTD.getAsString() + (Dimensions == "" ? " *" : " (*)" + Dimensions);
+                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
+                     ParamTypeNameOrig =
+                         paramTypeRemTD.getAsString(pp) + (Dimensions == "" ? " *" : " (*)" + Dimensions);
                      if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
                         ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      if(setInterfaceType)
@@ -722,8 +725,8 @@ namespace clang
                      else
                      {
                         auto paramTypeRemTD = RemoveTypedef(argType);
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD);
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString();
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
                         if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
                            ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      }
@@ -770,8 +773,8 @@ namespace clang
                         else
                         {
                            auto paramTypeRemTD = RemoveTypedef(PT->getPointeeType());
-                           ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " *";
-                           ParamTypeNameOrig = paramTypeRemTD.getAsString() + " *";
+                           ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
+                           ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + " *";
                            if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
                               ParamTypeInclude =
                                   SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
@@ -780,16 +783,16 @@ namespace clang
                      else if(auto RT = dyn_cast<ReferenceType>(argType))
                      {
                         auto paramTypeRemTD = RemoveTypedef(RT->getPointeeType());
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " &";
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString() + " &";
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " &";
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + " &";
                         if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
                            ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      }
                      else
                      {
                         auto paramTypeRemTD = RemoveTypedef(argType);
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD);
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString();
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
                         if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
                            ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      }
@@ -817,8 +820,8 @@ namespace clang
                   else
                   {
                      auto paramTypeRemTD = RemoveTypedef(argType);
-                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD);
-                     ParamTypeNameOrig = paramTypeRemTD.getAsString();
+                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
+                     ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
                      if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
                         ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      if(!argType->isBuiltinType() && !argType->isEnumeralType())
