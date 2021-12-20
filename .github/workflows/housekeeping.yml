@@ -10,7 +10,7 @@ jobs:
     runs-on: [self-hosted]
     steps:
       - name: Delete workflow runs
-        uses: Mattraks/delete-workflow-runs@main
+        uses: Ansaya/delete-workflow-runs@keep_min_runs-fix
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
