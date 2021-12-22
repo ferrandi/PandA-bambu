@@ -590,16 +590,16 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
 
 void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behavioral_helper)
 {
-   const unsigned int function_index = behavioral_helper->get_function_index();
-   const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(function_index);
+   const auto function_index = behavioral_helper->get_function_index();
+   const auto return_type_index = behavioral_helper->GetFunctionReturnType(function_index);
 
-   std::string function_name = behavioral_helper->get_function_name();
+   auto function_name = behavioral_helper->get_function_name();
    // avoid collision with the main
    if(function_name == "main")
    {
-      bool is_discrepancy = (Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) or
-                            (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw));
-      if(not is_discrepancy)
+      const auto is_discrepancy = (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
+                                  (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
+      if(!is_discrepancy)
       {
          function_name = "system";
       }
@@ -610,8 +610,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
    }
 
    bool is_system;
-   std::string decl =
-       std::get<0>(behavioral_helper->get_definition(behavioral_helper->get_function_index(), is_system));
+   const auto decl = std::get<0>(behavioral_helper->get_definition(behavioral_helper->get_function_index(), is_system));
    if((is_system || decl == "<built-in>") && return_type_index && behavioral_helper->is_real(return_type_index))
    {
       indented_output_stream->Append("extern " + behavioral_helper->print_type(return_type_index) + " " +
@@ -628,13 +627,13 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
             indented_output_stream->Append(", ");
          }
 
-         unsigned int type_id = behavioral_helper->get_type(p);
-         std::string type = behavioral_helper->print_type(type_id);
-         std::string param = behavioral_helper->PrintVariable(p);
+         const auto type_id = behavioral_helper->get_type(p);
+         const auto type = behavioral_helper->print_type(type_id);
+         const auto param = behavioral_helper->PrintVariable(p);
 
          if(behavioral_helper->is_a_pointer(p))
          {
-            var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
+            const auto var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
             indented_output_stream->Append(tree_helper::print_type(TM, type_id, false, false, false, p, var_functor));
          }
          else
@@ -647,7 +646,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
 
    if(return_type_index)
    {
-      indented_output_stream->Append(std::string(RETURN_PORT_NAME) + " = ");
+      indented_output_stream->Append(RETURN_PORT_NAME " = ");
    }
 
    indented_output_stream->Append(function_name + "(");
@@ -668,8 +667,8 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
          }
          if(flag_cpp && behavioral_helper->is_a_pointer(p))
          {
-            auto fnode = TM->get_tree_node_const(behavioral_helper->get_function_index());
-            auto fd = GetPointer<function_decl>(fnode);
+            const auto fnode = TM->CGetTreeNode(behavioral_helper->get_function_index());
+            const auto fd = GetPointerS<const function_decl>(fnode);
             std::string fname;
             tree_helper::get_mangled_fname(fd, fname);
             const auto& DesignInterfaceTypenameOrig =
@@ -681,7 +680,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
                indented_output_stream->Append(") ");
             }
          }
-         std::string param = behavioral_helper->PrintVariable(p);
+         const auto param = behavioral_helper->PrintVariable(p);
          indented_output_stream->Append(param);
          ++par_index;
       }
@@ -693,9 +692,9 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
    }
    indented_output_stream->Append(");\n");
 
-   if(function_name == "system" and return_type_index)
+   if(function_name == "system" && return_type_index)
    {
-      if(not Param->getOption<bool>(OPT_no_return_zero))
+      if(!Param->getOption<bool>(OPT_no_return_zero))
       {
          indented_output_stream->Append("if(" RETURN_PORT_NAME " != 0) exit(1);\n");
       }

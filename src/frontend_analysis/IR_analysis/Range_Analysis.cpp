@@ -98,9 +98,6 @@
 //    #define EARLY_DEAD_CODE_RESTART     // Abort analysis when dead code is detected instead of waiting step's end
 #define INTEGER_PTR     // Pointers are considered as integers
 #define BITVALUE_UPDATE // Read/write bitvalue information during the analysis
-#ifdef BITVALUE_UPDATE
-#define BITVALUE_PHI_MASK // Propagate bit_values through phis for floating-point variables
-#endif
 
 #define RA_EXEC_NORMAL 0
 #define RA_EXEC_READONLY 1
@@ -2130,67 +2127,6 @@ std::string OpNode::ToString() const
 // ========================================================================== //
 // NodeContainer
 // ========================================================================== //
-
-struct UnpackSelector
-{
-   enum PackPos
-   {
-      packPos_Undefined,
-      packPos_Sign32,
-      packPos_Exp32,
-      packPos_Sigf32,
-      packPos_Sign64,
-      packPos_Exp64,
-      packPos_Sigf64
-   };
-
-   uint64_t mask;
-   uint8_t rshift;
-
-   UnpackSelector(uint64_t m = 0ULL, uint8_t rs = 0U) : mask(m), rshift(rs)
-   {
-   }
-
-   friend UnpackSelector operator&(const UnpackSelector& a, const uint64_t& m)
-   {
-      return UnpackSelector(a.mask & (m << a.rshift), a.rshift);
-   }
-
-   friend UnpackSelector operator>>(const UnpackSelector& a, const uint8_t& s)
-   {
-      const auto rs = static_cast<uint8_t>(a.rshift + s);
-      return UnpackSelector((a.mask >> rs) << rs, rs);
-   }
-
-   PackPos getSelector() const
-   {
-      if(mask == 4294967296U && rshift == 31U)
-      {
-         return packPos_Sign32;
-      }
-      else if(mask == 2139095040U && rshift == 23U)
-      {
-         return packPos_Exp32;
-      }
-      else if(mask == 8388607U && !rshift)
-      {
-         return packPos_Sigf32;
-      }
-      else if(mask == 9223372036854775808ULL && rshift == 63U)
-      {
-         return packPos_Sign64;
-      }
-      else if(mask == 9218868437227405312ULL && rshift == 52U)
-      {
-         return packPos_Exp64;
-      }
-      else if(mask == 4503599627370495ULL && !rshift)
-      {
-         return packPos_Sigf64;
-      }
-      return packPos_Undefined;
-   }
-};
 
 // The VarNodes type.
 using VarNodes = std::map<tree_nodeConstRef, VarNode*, tree_reindexCompare>;
