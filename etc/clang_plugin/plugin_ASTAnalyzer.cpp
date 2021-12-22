@@ -78,6 +78,7 @@ namespace clang
       std::string topfname;
       std::string outdir_name;
       std::string InFile;
+      clang::PrintingPolicy pp;
 
       std::map<std::string, std::vector<std::string>> Fun2Params;
       std::map<std::string, std::vector<std::string>> Fun2ParamType;
@@ -435,8 +436,6 @@ namespace clang
                      }
                   }
                   auto argType = ND->getType();
-                  auto pp = clang::PrintingPolicy(clang::LangOptions());
-                  pp.adjustForCPlusPlus();
                   auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
                      auto OrigTotArraySize = CA->getSize();
                      std::string Dimensions;
@@ -668,8 +667,8 @@ namespace clang
 
     public:
       FunctionArgConsumer(CompilerInstance& Instance, const std::string& _topfname, const std::string& _outdir_name,
-                          std::string _InFile)
-          : CI(Instance), topfname(_topfname), outdir_name(_outdir_name), InFile(_InFile)
+                          std::string _InFile, const clang::PrintingPolicy& _pp)
+          : CI(Instance), topfname(_topfname), outdir_name(_outdir_name), InFile(_InFile), pp(_pp)
       {
       }
 
@@ -958,6 +957,7 @@ namespace clang
    {
       std::string topfname;
       std::string outdir_name;
+      int inputtype;
 
     protected:
       std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& CI, llvm::StringRef InFile) override
@@ -971,10 +971,15 @@ namespace clang
          PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
          PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
          PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
+         auto pp = clang::PrintingPolicy(clang::LangOptions());
+         if(inputtype == 5)
+         {
+            pp.adjustForCPlusPlus();
+         }
 #if __clang_major__ > 9
-         return std::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile.data());
+         return std::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile.data(), pp);
 #else
-         return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile);
+         return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile, pp);
 #endif
       }
 
@@ -1003,6 +1008,16 @@ namespace clang
                ++i;
                outdir_name = args.at(i);
             }
+            else if(args.at(i) == "-inputtype")
+            {
+               if(i + 1 >= e)
+               {
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "missing inputtype argument"));
+                  return false;
+               }
+               ++i;
+               inputtype = std::atoi(args.at(i).data());
+            }
          }
          if(!args.empty() && args.at(0) == "-help")
          {
@@ -1013,6 +1028,11 @@ namespace clang
          {
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir not specified"));
          }
+
+         if(inputtype == INT32_MAX)
+         {
+            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "inputtype not specified"));
+         }
          return true;
       }
 
@@ -1021,6 +1041,8 @@ namespace clang
          ros << "Help for " CLANG_VERSION_STRING(_plugin_ASTAnalyzer) " plugin\n";
          ros << "-outputdir <directory>\n";
          ros << "  Directory where the raw file will be written\n";
+         ros << "-inputtype <type>\n";
+         ros << "  Langauage of the input source file\n";
          ros << "-topfname <function name>\n";
          ros << "  Function from which the Point-To analysis has to start\n";
       }
@@ -1031,7 +1053,7 @@ namespace clang
       }
 
     public:
-      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)()
+      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)() : inputtype(INT32_MAX)
       {
       }
       CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)(const CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) & step) = delete;

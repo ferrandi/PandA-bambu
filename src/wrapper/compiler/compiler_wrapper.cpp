@@ -494,15 +494,15 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include -isystem "
                  "/mingw64/include/c++/v1/"; /// needed by clang compiler
 #endif
-   if(((Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) ||
-       (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw))) and
+   if(((Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
+       (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw))) &&
       (cm == CompilerWrapper_CompilerMode::CM_STD || cm == CompilerWrapper_CompilerMode::CM_EMPTY))
    {
       command += " -D__BAMBU_DISCREPANCY__ ";
    }
 
    /// Adding source code includes
-   if(original_file_name != "-" and original_file_name != real_file_name)
+   if(original_file_name != "-" && original_file_name != real_file_name)
    {
       std::list<std::string> source_files;
       source_files.push_back(original_file_name);
@@ -575,14 +575,18 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                  compiler.ASTAnalyzer_plugin_name + " -Xclang " +
                  Param->getOption<std::string>(OPT_output_temporary_directory);
 
+      command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name + " -Xclang -plugin-arg-" +
+                 compiler.ASTAnalyzer_plugin_name + " -Xclang -inputtype -Xclang -plugin-arg-" +
+                 compiler.ASTAnalyzer_plugin_name + " -Xclang " + Param->getOption<std::string>(OPT_input_format);
+
       if(addTopFName)
       {
          command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
                     " -Xclang -topfname -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + fname;
       }
    }
-   else if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or
-           (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
+   else if((Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E)) ||
+           (Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S)))
    {
       ;
 #if HAVE_FROM_RTL_BUILT
@@ -748,8 +752,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    std::string temporary_file_run_o;
    if(cm != CompilerWrapper_CompilerMode::CM_LTO)
    {
-      if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or
-         (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
+      if((Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E)) ||
+         (Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S)))
       {
          if(Param->isOption(OPT_output_file))
          {
@@ -784,7 +788,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
    }
    command += " " + local_parameters_line;
-   if(original_file_name == "-" or original_file_name == "/dev/null")
+   if(original_file_name == "-" || original_file_name == "/dev/null")
    {
       command += real_file_name;
    }
@@ -816,8 +820,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    }
 #endif
 
-   if(!((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or
-        (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)) or
+   if(!((Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E)) ||
+        (Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S)) ||
         cm == CompilerWrapper_CompilerMode::CM_LTO))
    {
       std::remove(temporary_file_run_o.c_str());
@@ -950,7 +954,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       /// create obj
       CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
                   enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD);
-      if(!Param->isOption(OPT_gcc_E) and !Param->isOption(OPT_gcc_S) and !enable_LTO)
+      if(!Param->isOption(OPT_gcc_E) && !Param->isOption(OPT_gcc_S) && !enable_LTO)
       {
          if(!(boost::filesystem::exists(
                 boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
@@ -977,7 +981,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
 
 #if HAVE_FROM_RTL_BUILT
-         if((Param->getOption<bool>(OPT_use_rtl)) and
+         if((Param->getOption<bool>(OPT_use_rtl)) &&
             boost::filesystem::exists(boost::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix)))
          {
             obj = boost::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix);
@@ -1471,11 +1475,11 @@ void CompilerWrapper::InitializeCompilerParameters()
       frontend_compiler_parameters += "--std=" + standard + " ";
    }
 
-   if(Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E))
+   if(Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E))
    {
       frontend_compiler_parameters += "-E ";
    }
-   if(Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S))
+   if(Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S))
    {
       frontend_compiler_parameters += "-S ";
    }
@@ -1595,7 +1599,7 @@ void CompilerWrapper::SetZebuDefault()
    // FIXME: to be replaced with plugin; deactivated since it does not work with sparc-elf-gcc
    //   optimization_values["tree-parallelize-loops"]=1;///requires tree-loop-optimize
 
-   if(opt_level == CompilerWrapper_OptimizationSet::O1 or opt_level == CompilerWrapper_OptimizationSet::O2 or
+   if(opt_level == CompilerWrapper_OptimizationSet::O1 || opt_level == CompilerWrapper_OptimizationSet::O2 ||
       opt_level == CompilerWrapper_OptimizationSet::O3)
    {
       optimization_flags["guess-branch-probability"] =
@@ -1606,7 +1610,7 @@ void CompilerWrapper::SetZebuDefault()
       optimization_flags["tree-sra"] = false;            /// Introduces conversion from struct to scalar
       optimization_flags["rename-registers"] = false;    /// cross compilation problems
    }
-   if(opt_level == CompilerWrapper_OptimizationSet::O2 or opt_level == CompilerWrapper_OptimizationSet::O3)
+   if(opt_level == CompilerWrapper_OptimizationSet::O2 || opt_level == CompilerWrapper_OptimizationSet::O3)
    {
       optimization_flags["optimize-sibling-calls"] = false; /// Execution error on 20020406-1.c
       optimization_flags["tree-pre"] = false;               /// some loop are incorrecty identified
@@ -1878,11 +1882,11 @@ void CompilerWrapper::SetBambuDefault()
       optimization_flags["vect-cost-model"] = false;
       optimization_flags["fast-math"] = true;
    }
-   if(opt_level == CompilerWrapper_OptimizationSet::O4 or opt_level == CompilerWrapper_OptimizationSet::O5)
+   if(opt_level == CompilerWrapper_OptimizationSet::O4 || opt_level == CompilerWrapper_OptimizationSet::O5)
    {
       if(true
 #if HAVE_I386_GCC49_COMPILER
-         and compiler != CompilerWrapper_CompilerTarget::CT_I386_GCC49
+         && compiler != CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
       )
       {
@@ -1895,25 +1899,25 @@ void CompilerWrapper::SetBambuDefault()
    ///-param option with with values
    if(false
 #if HAVE_I386_GCC47_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if HAVE_I386_GCC48_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
    )
    {
@@ -1922,22 +1926,22 @@ void CompilerWrapper::SetBambuDefault()
    }
    if(false
 #if HAVE_I386_GCC48_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
    )
    {
@@ -2373,7 +2377,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #ifndef NDEBUG
       const bool debug_condition =
 #if HAVE_SPARC_COMPILER
-          (compiler_target == CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC) or
+          (compiler_target == CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC) ||
 #endif
           (static_cast<int>(compiler_target) & static_cast<int>(compatible_compilers));
       THROW_ASSERT(debug_condition,
@@ -3179,7 +3183,7 @@ size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
    }
 
    std::ifstream output_file(output_file_name.c_str());
-   if(output_file.is_open() and !output_file.eof())
+   if(output_file.is_open() && !output_file.eof())
    {
       std::string line;
       getline(output_file, line);
@@ -3368,13 +3372,13 @@ std::string CompilerWrapper::WriteOptimizationsString()
 {
    std::string optimizations;
    /// Preparing optimizations string
-   bool argument_noalias = optimization_flags.find("argument-noalias") != optimization_flags.end() and
+   bool argument_noalias = optimization_flags.find("argument-noalias") != optimization_flags.end() &&
                            optimization_flags.find("argument-noalias")->second;
-   bool argument_noalias_global = optimization_flags.find("argument-noalias-global") != optimization_flags.end() and
+   bool argument_noalias_global = optimization_flags.find("argument-noalias-global") != optimization_flags.end() &&
                                   optimization_flags.find("argument-noalias-global")->second;
-   bool argument_noalias_anything = optimization_flags.find("argument-noalias-anything") != optimization_flags.end() and
+   bool argument_noalias_anything = optimization_flags.find("argument-noalias-anything") != optimization_flags.end() &&
                                     optimization_flags.find("argument-noalias-anything")->second;
-   bool strict_aliasing = optimization_flags.find("strict-aliasing") != optimization_flags.end() and
+   bool strict_aliasing = optimization_flags.find("strict-aliasing") != optimization_flags.end() &&
                           optimization_flags.find("strict-aliasing")->second;
    std::map<std::string, bool>::const_iterator it, it_end = optimization_flags.end();
    if(strict_aliasing)
@@ -3384,15 +3388,15 @@ std::string CompilerWrapper::WriteOptimizationsString()
    for(it = optimization_flags.begin(); it != it_end; ++it)
    {
       /*argument aliasing should be treated in a different way*/
-      if(it->first == "argument-alias" and (argument_noalias or argument_noalias_global or argument_noalias_anything))
+      if(it->first == "argument-alias" && (argument_noalias || argument_noalias_global || argument_noalias_anything))
       {
          continue;
       }
-      else if(it->first == "argument-noalias" and (argument_noalias_global or argument_noalias_anything))
+      else if(it->first == "argument-noalias" && (argument_noalias_global || argument_noalias_anything))
       {
          continue;
       }
-      else if(it->first == "argument-noalias-global" and (argument_noalias_anything))
+      else if(it->first == "argument-noalias-global" && (argument_noalias_anything))
       {
          continue;
       }
@@ -3434,7 +3438,7 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
          for(root_child = root_children.begin(); root_child != root_child_end; ++root_child)
          {
             const auto* root_child_element = GetPointer<const xml_element>(*root_child);
-            if(not root_child_element)
+            if(!root_child_element)
             {
                continue;
             }
@@ -3447,7 +3451,7 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                    ++optimizations_child)
                {
                   const auto* optimizations_child_element = GetPointer<const xml_element>(*optimizations_child);
-                  if(not optimizations_child_element)
+                  if(!optimizations_child_element)
                   {
                      continue;
                   }
@@ -3460,11 +3464,11 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                          ++parameter_value)
                      {
                         const auto* parameter_value_element = GetPointer<const xml_element>(*parameter_value);
-                        if(not parameter_value_element)
+                        if(!parameter_value_element)
                         {
                            continue;
                         }
-                        if(not(parameter_value_element->get_attribute(STR_XML_gcc_name) and
+                        if(not(parameter_value_element->get_attribute(STR_XML_gcc_name) &&
                                parameter_value_element->get_attribute(STR_XML_gcc_value)))
                         {
                            THROW_ERROR("Parameter value node without name or value");
@@ -3483,12 +3487,12 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                          optimization_flag != optimization_flag_end; ++optimization_flag)
                      {
                         const auto* optimization_flag_element = GetPointer<const xml_element>(*optimization_flag);
-                        if(not optimization_flag_element)
+                        if(!optimization_flag_element)
                         {
                            continue;
                         }
-                        if(not(optimization_flag_element->get_attribute(STR_XML_gcc_name) and
-                               optimization_flag_element->get_attribute(STR_XML_gcc_value)))
+                        if(!(optimization_flag_element->get_attribute(STR_XML_gcc_name) &&
+                             optimization_flag_element->get_attribute(STR_XML_gcc_value)))
                         {
                            THROW_ERROR("Optimization flag node without name or value");
                         }
@@ -3506,12 +3510,12 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                          optimization_value != optimization_value_end; ++optimization_value)
                      {
                         const auto* optimization_value_element = GetPointer<const xml_element>(*optimization_value);
-                        if(not optimization_value_element)
+                        if(!optimization_value_element)
                         {
                            continue;
                         }
-                        if(not(optimization_value_element->get_attribute(STR_XML_gcc_name) and
-                               optimization_value_element->get_attribute(STR_XML_gcc_value)))
+                        if(!(optimization_value_element->get_attribute(STR_XML_gcc_name) &&
+                             optimization_value_element->get_attribute(STR_XML_gcc_value)))
                         {
                            THROW_ERROR("Optimization value node without name or value");
                         }
@@ -3525,7 +3529,7 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
             else if(root_child_element->get_name() == STR_XML_gcc_standard)
             {
                const xml_element* standard = root_child_element;
-               if(not standard->get_attribute(STR_XML_gcc_value))
+               if(!standard->get_attribute(STR_XML_gcc_value))
                {
                   THROW_ERROR("Standard node without value");
                }
@@ -3538,11 +3542,11 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                for(define = defines.begin(); define != define_end; ++define)
                {
                   const auto* define_element = GetPointer<const xml_element>(*define);
-                  if(not define_element)
+                  if(!define_element)
                   {
                      continue;
                   }
-                  if(not define_element->get_attribute(STR_XML_gcc_value))
+                  if(!define_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
@@ -3557,11 +3561,11 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                for(undefine = undefines.begin(); undefine != undefine_end; ++undefine)
                {
                   const auto* undefine_element = GetPointer<const xml_element>(*undefine);
-                  if(not undefine_element)
+                  if(!undefine_element)
                   {
                      continue;
                   }
-                  if(not undefine_element->get_attribute(STR_XML_gcc_value))
+                  if(!undefine_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
@@ -3576,11 +3580,11 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                for(warning = warnings.begin(); warning != warning_end; ++warning)
                {
                   const auto* warning_element = GetPointer<const xml_element>(*warning);
-                  if(not warning_element)
+                  if(!warning_element)
                   {
                      continue;
                   }
-                  if(not warning_element->get_attribute(STR_XML_gcc_value))
+                  if(!warning_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
@@ -3595,11 +3599,11 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                for(include = includes.begin(); include != include_end; ++include)
                {
                   const auto* include_element = GetPointer<const xml_element>(*include);
-                  if(not include_element)
+                  if(!include_element)
                   {
                      continue;
                   }
-                  if(not include_element->get_attribute(STR_XML_gcc_value))
+                  if(!include_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
@@ -3614,11 +3618,11 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                for(library = libraries.begin(); library != library_end; ++library)
                {
                   const auto* library_element = GetPointer<const xml_element>(*library);
-                  if(not library_element)
+                  if(!library_element)
                   {
                      continue;
                   }
-                  if(not library_element->get_attribute(STR_XML_gcc_value))
+                  if(!library_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
@@ -3634,11 +3638,11 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                    ++library_directory)
                {
                   const auto* library_directory_element = GetPointer<const xml_element>(*library_directory);
-                  if(not library_directory_element)
+                  if(!library_directory_element)
                   {
                      continue;
                   }
-                  if(not library_directory_element->get_attribute(STR_XML_gcc_value))
+                  if(!library_directory_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
@@ -3716,7 +3720,7 @@ const std::string CompilerWrapper::AddSourceCodeIncludes(const std::list<std::st
 #ifdef _WIN32
       boost::replace_all(new_path, "\\", "/");
 #endif
-      if(frontend_compiler_parameters.find(new_path) == std::string::npos and
+      if(frontend_compiler_parameters.find(new_path) == std::string::npos &&
          includes.find(new_path) == std::string::npos)
       {
          includes += new_path;
@@ -4245,7 +4249,7 @@ void CompilerWrapper::CheckCompilerCompatibleVersion(const std::string& compiler
    const size_t plugin_version_number = ConvertVersion(plugin_version);
    const size_t minimum_plugin_version_number = ConvertVersion(STR_CST_gcc_min_plugin_version);
    const size_t maximum_plugin_version_number = ConvertVersion(STR_CST_gcc_max_plugin_version);
-   if(plugin_version_number < minimum_plugin_version_number or plugin_version_number > maximum_plugin_version_number)
+   if(plugin_version_number < minimum_plugin_version_number || plugin_version_number > maximum_plugin_version_number)
    {
       THROW_ERROR("Plugin version not correct. Plugin version supported has to be in this range: [" +
                   std::string(STR_CST_gcc_min_plugin_version) + "-" + std::string(STR_CST_gcc_max_plugin_version) +
@@ -4266,7 +4270,7 @@ void CompilerWrapper::CheckCompilerCompatibleVersion(const std::string& compiler
 size_t CompilerWrapper::CGetPointerSize(const ParameterConstRef parameters)
 {
    const auto gcc_m32_mx32 = parameters->getOption<std::string>(OPT_gcc_m32_mx32);
-   if(gcc_m32_mx32 == "-m32" or gcc_m32_mx32 == "-m32 -mno-sse2")
+   if(gcc_m32_mx32 == "-m32" || gcc_m32_mx32 == "-m32 -mno-sse2")
    {
       return 32;
    }
