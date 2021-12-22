@@ -70,36 +70,6 @@ static std::map<std::string, std::vector<clang::SourceLocation>> HLS_pipeline_Pr
 static std::map<std::string, std::vector<clang::SourceLocation>> HLS_simple_pipeline_PragmaMap;
 static std::map<std::string, std::map<clang::SourceLocation, std::string>> HLS_stallable_pipeline_PragmaMap;
 
-enum mask_type : uint8_t
-{
-   mt_Invalid = 0,
-   mt_Sign = 1,
-   mt_Exponent = 2,
-   mt_Significand = 4,
-   mt_Bitmask = 8
-};
-struct MaskInfo
-{
-   uint8_t mt;
-   bool sign;
-   int16_t min_exp;
-   int16_t max_exp;
-   uint8_t significand_bits;
-   uint64_t bitmask;
-
-   MaskInfo& operator|=(const MaskInfo& rhs)
-   {
-      mt |= rhs.mt;
-      sign |= rhs.sign;
-      min_exp |= rhs.min_exp;
-      max_exp |= rhs.max_exp;
-      significand_bits |= rhs.significand_bits;
-      bitmask |= rhs.bitmask;
-      return *this;
-   }
-};
-static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, MaskInfo>>> HLS_mask_PragmaMap;
-
 namespace clang
 {
    class FunctionArgConsumer : public clang::ASTConsumer
@@ -124,8 +94,6 @@ namespace clang
       std::set<std::string> HLS_pipelineSet;
       std::set<std::string> HLS_simple_pipelineSet;
       std::map<std::string, std::string> HLS_stallable_pipelineMap;
-
-      std::map<std::string, std::vector<MaskInfo>> HLS_maskMap;
 
       std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
       {
@@ -170,68 +138,6 @@ namespace clang
                }
             }
          }
-      }
-
-      void writeXML_maskFile(const std::string& filename, const std::string& TopFunctionName) const
-      {
-         std::error_code EC;
-#if __clang_major__ >= 7 && !defined(VVD)
-         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
-#else
-         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
-#endif
-         stream << "<?xml version=\"1.0\"?>\n";
-         stream << "<module>\n";
-         for(auto funArgPair : Fun2Params)
-         {
-            if(!TopFunctionName.empty() && Fun2Demangled.find(funArgPair.first)->second != TopFunctionName &&
-               funArgPair.first != TopFunctionName)
-            {
-               continue;
-            }
-            auto maskInfoIT = HLS_maskMap.find(funArgPair.first);
-            if(maskInfoIT != HLS_maskMap.end())
-            {
-               auto pushMaskInfoAttributes = [](const MaskInfo& maskInfo, llvm::raw_fd_ostream& str) {
-                  if(maskInfo.mt != mt_Invalid)
-                  {
-                     if(maskInfo.mt & mt_Sign)
-                     {
-                        str << " sign=\"" << +maskInfo.sign << "\"";
-                     }
-                     if(maskInfo.mt & mt_Exponent)
-                     {
-                        str << " exp_range=\"" << +maskInfo.min_exp << "," << +maskInfo.max_exp << "\"";
-                     }
-                     if(maskInfo.mt & mt_Significand)
-                     {
-                        str << " sig_bitwidth=\"" << +maskInfo.significand_bits << "\"";
-                     }
-                     if(maskInfo.mt & mt_Bitmask)
-                     {
-                        str << " bitmask=\"" << +maskInfo.bitmask << "\"";
-                     }
-                  }
-               };
-               const auto& maskInfos = maskInfoIT->second;
-
-               stream << "  <function id=\"" << funArgPair.first << "\"";
-               pushMaskInfoAttributes(maskInfos.back(), stream);
-               stream << ">\n";
-
-               unsigned int ArgIndex = 0;
-               for(const auto& par : funArgPair.second)
-               {
-                  stream << "    <arg id=\"" << par << "\"";
-                  pushMaskInfoAttributes(maskInfos.at(ArgIndex), stream);
-                  stream << "/>\n";
-                  ++ArgIndex;
-               }
-
-               stream << "  </function>\n";
-            }
-         }
-         stream << "</module>\n";
       }
 
       void writeXML_interfaceFile(const std::string& filename, const std::string& TopFunctionName) const
@@ -348,6 +254,7 @@ namespace clang
             stream << "\n";
          }
       }
+
       const NamedDecl* getBaseTypeDecl(const QualType& qt) const
       {
          const Type* ty = qt.getTypePtr();
@@ -428,163 +335,6 @@ namespace clang
          ostream.flush();
          delete mangleContext;
          return mangledName;
-      }
-
-      void maskAnalyzeFD(const FunctionDecl* FD)
-      {
-         auto& SM = FD->getASTContext().getSourceManager();
-         std::map<std::string, MaskInfo> mask_PragmaMap;
-         auto locEnd = FD->getSourceRange().getEnd();
-         auto filename = SM.getPresumedLoc(locEnd, false).getFilename();
-         if(HLS_mask_PragmaMap.find(filename) != HLS_mask_PragmaMap.end())
-         {
-            SourceLocation prev;
-            if(prevLoc.find(filename) != prevLoc.end())
-            {
-               prev = prevLoc.find(filename)->second;
-            }
-            for(auto& loc2pair : HLS_mask_PragmaMap.find(filename)->second)
-            {
-               if((prev.isInvalid() || prev < loc2pair.first) && (loc2pair.first < locEnd))
-               {
-                  auto maskInfoIT = mask_PragmaMap.find(loc2pair.second.first);
-                  if(maskInfoIT == mask_PragmaMap.end())
-                  {
-                     mask_PragmaMap[loc2pair.second.first] = loc2pair.second.second;
-                  }
-                  else
-                  {
-                     maskInfoIT->second |= loc2pair.second.second;
-                  }
-               }
-            }
-         }
-
-         auto maskInfoParser = [&](MaskInfo& userMaskInfo, clang::QualType argType) {
-            if(userMaskInfo.mt == mt_Invalid)
-            {
-               return;
-            }
-
-            if(argType->isFloatingType())
-            {
-               if(userMaskInfo.mt & mt_Bitmask)
-               {
-                  DiagnosticsEngine& D = CI.getDiagnostics();
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                             "#pragma mask non-consistent with parameter of floating point type: use "
-                                             "sign/exponent/significand directives"));
-               }
-               int exp_halfrange;
-               int s_bits;
-               const auto* BT = dyn_cast<BuiltinType>(argType);
-               if(BT && BT->getKind() == BuiltinType::Double)
-               {
-                  exp_halfrange = 1024;
-                  s_bits = 52;
-               }
-               else if(BT && BT->getKind() == BuiltinType::Float)
-               {
-                  exp_halfrange = 128;
-                  s_bits = 23;
-               }
-               else
-               {
-                  DiagnosticsEngine& D = CI.getDiagnostics();
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                             "#pragma mask sign/exponent/significand directives are valid for "
-                                             "32/64bits IEEE754 floating point types only"));
-               }
-               if(userMaskInfo.mt & mt_Exponent)
-               {
-                  if(userMaskInfo.min_exp <= -exp_halfrange || userMaskInfo.max_exp > exp_halfrange)
-                  {
-                     DiagnosticsEngine& D = CI.getDiagnostics();
-                     D.Report(
-                         D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent: range out of bounds"));
-                  }
-                  // Exponent range is stored as unsigned value range of exponent bits (not actual exponent number)
-                  userMaskInfo.min_exp += exp_halfrange - 1;
-                  userMaskInfo.max_exp += exp_halfrange - 1;
-               }
-               if(userMaskInfo.mt & mt_Significand)
-               {
-                  if(userMaskInfo.significand_bits > s_bits)
-                  {
-                     DiagnosticsEngine& D = CI.getDiagnostics();
-                     D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                                "#pragma mask significand: too many bits for parameter type"));
-                  }
-               }
-            }
-            else if(argType->isIntegerType())
-            {
-               if(userMaskInfo.mt != mt_Invalid && userMaskInfo.mt != mt_Bitmask)
-               {
-                  DiagnosticsEngine& D = CI.getDiagnostics();
-                  D.Report(D.getCustomDiagID(
-                      DiagnosticsEngine::Error,
-                      "#pragma mask non-consistent with parameter of integer type: use bitmask directive"));
-               }
-            }
-            else
-            {
-               DiagnosticsEngine& D = CI.getDiagnostics();
-               if(userMaskInfo.mt == mt_Bitmask)
-               {
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                             "#pragma mask non-consistent with parameter of non-integer type"));
-               }
-               else
-               {
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                             "#pragma mask non-consistent with parameter of non-floating-point type"));
-               }
-            }
-         };
-
-         if(!FD->isVariadic() && FD->hasBody())
-         {
-            auto funName = getMangledName(FD);
-            bool storeInfos = false;
-            std::vector<MaskInfo> fpInfos;
-            auto par_index = 0u;
-            for(const auto par : FD->parameters())
-            {
-               if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
-               {
-                  MaskInfo userMaskInfo = {mt_Invalid, false, 0, 0, 0, 0};
-                  auto parName = ND->getNameAsString();
-                  auto maskInfoIT = mask_PragmaMap.find(parName);
-                  if(parName.empty())
-                  {
-                     parName = "P" + std::to_string(par_index);
-                  }
-                  if(maskInfoIT != mask_PragmaMap.end())
-                  {
-                     userMaskInfo = maskInfoIT->second;
-                     maskInfoParser(userMaskInfo, ND->getType());
-                     storeInfos = true;
-                  }
-                  fpInfos.push_back(std::move(userMaskInfo));
-               }
-               ++par_index;
-            }
-            MaskInfo returnMaskInfo = {mt_Invalid, false, 0, 0, 0, 0};
-            const auto returnUI = mask_PragmaMap.find("@");
-            if(returnUI != mask_PragmaMap.end())
-            {
-               returnMaskInfo = returnUI->second;
-               maskInfoParser(returnMaskInfo, FD->getReturnType());
-               storeInfos = true;
-            }
-            fpInfos.push_back(std::move(returnMaskInfo));
-
-            if(storeInfos)
-            {
-               HLS_maskMap[funName] = std::move(fpInfos);
-            }
-         }
       }
 
       void AnalyzeFunctionDecl(const FunctionDecl* FD)
@@ -930,7 +680,6 @@ namespace clang
             if(const auto* FD = dyn_cast<FunctionDecl>(D))
             {
                AnalyzeFunctionDecl(FD);
-               maskAnalyzeFD(FD);
                auto endLoc = FD->getSourceRange().getEnd();
                auto& SM = FD->getASTContext().getSourceManager();
                auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
@@ -943,7 +692,6 @@ namespace clang
                   if(const FunctionDecl* fd = dyn_cast<FunctionDecl>(d))
                   {
                      AnalyzeFunctionDecl(fd);
-                     maskAnalyzeFD(fd);
                      auto endLoc = fd->getSourceRange().getEnd();
                      auto& SM = fd->getASTContext().getSourceManager();
                      auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
@@ -963,7 +711,6 @@ namespace clang
          std::string pipeline_XML_filename = baseFilename + ".pipeline.xml";
          writeFun2Params(interface_fun2parms_filename);
          writeXML_interfaceFile(interface_XML_filename, topfname);
-         writeXML_maskFile(baseFilename + ".mask.xml", topfname);
          writeXML_pipelineFile(pipeline_XML_filename, topfname);
       }
    };
@@ -1118,161 +865,6 @@ namespace clang
       }
    };
 
-   class Mask_PragmaHandler : public PragmaHandler
-   {
-    public:
-      Mask_PragmaHandler() : PragmaHandler("mask")
-      {
-      }
-
-      void HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
-                        PragmaIntroducer
-#else
-                        PragmaIntroducerKind
-#endif
-                        /*Introducer*/,
-                        Token& PragmaTok) override
-      {
-         Token Tok{};
-         unsigned int index = 0;
-         std::string par;
-         unsigned long long mask;
-         bool sign = false;
-         int16_t exp_l = 0;
-         int16_t exp_u = 0;
-         uint8_t s_bits = 0;
-         auto loc = PragmaTok.getLocation();
-         while(Tok.isNot(tok::eod))
-         {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::eod))
-            {
-               if(index == 0)
-               {
-                  par = PP.getSpelling(Tok);
-               }
-               else if(index >= 1)
-               {
-                  auto tokString = PP.getSpelling(Tok);
-                  if(Tok.is(tok::minus))
-                  {
-                     PP.Lex(Tok);
-                     tokString += PP.getSpelling(Tok);
-                  }
-                  if(index == 1)
-                  {
-                     if(Tok.is(tok::numeric_constant))
-                     {
-                        mask = std::strtoull(tokString.data(), nullptr, 0);
-                     }
-                     else
-                     {
-                        if(tokString == "sign")
-                        {
-                           mask = 1;
-                        }
-                        else if(tokString == "exponent")
-                        {
-                           mask = 2;
-                        }
-                        else if(tokString == "significand")
-                        {
-                           mask = 4;
-                        }
-                        else
-                        {
-                           DiagnosticsEngine& D = PP.getDiagnostics();
-                           unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error,
-                                                           "#pragma mask unexpected token. Currently accepted keywords "
-                                                           "are: <numeric_const>, sign, exponent, significand");
-                           D.Report(Tok.getLocation(), ID);
-                        }
-                     }
-                  }
-                  else if(index == 2)
-                  {
-                     if(mask == 1)
-                     {
-                        int s = std::strtol(tokString.data(), nullptr, 0);
-                        if(Tok.isNot(tok::numeric_constant) || (s != 0 && s != 1))
-                        {
-                           DiagnosticsEngine& D = PP.getDiagnostics();
-                           unsigned ID = D.getCustomDiagID(
-                               DiagnosticsEngine::Error,
-                               "#pragma mask sign unexpected sign value. Currently accepted sign values are 0 or 1");
-                           D.Report(Tok.getLocation(), ID);
-                        }
-                        sign = static_cast<bool>(s);
-                        index = 3;
-                     }
-                     else if(mask == 2)
-                     {
-                        exp_l = std::strtol(tokString.data(), nullptr, 0);
-                     }
-                     else if(mask == 4)
-                     {
-                        s_bits = std::strtoull(tokString.data(), nullptr, 0);
-                        if(s_bits <= 0)
-                        {
-                           DiagnosticsEngine& D = PP.getDiagnostics();
-                           unsigned ID = D.getCustomDiagID(
-                               DiagnosticsEngine::Error,
-                               "#pragma mask significand unexpected value. Only positive integers expected");
-                           D.Report(Tok.getLocation(), ID);
-                        }
-                        index = 3;
-                     }
-                  }
-                  else if(index == 3)
-                  {
-                     exp_u = std::strtol(tokString.data(), nullptr, 0);
-                     if(exp_l >= exp_u)
-                     {
-                        DiagnosticsEngine& D = PP.getDiagnostics();
-                        unsigned ID =
-                            D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent unexpected value");
-                        D.Report(Tok.getLocation(), ID);
-                     }
-                  }
-               }
-               ++index;
-            }
-         }
-         if(index == 2)
-         {
-            auto& SM = PP.getSourceManager();
-            auto filename = SM.getPresumedLoc(loc, false).getFilename();
-            HLS_mask_PragmaMap[filename][loc] = std::make_pair(par, (MaskInfo){mt_Bitmask, false, 0, 0, 0, mask});
-         }
-         else if(index == 4)
-         {
-            auto& SM = PP.getSourceManager();
-            auto filename = SM.getPresumedLoc(loc, false).getFilename();
-            if(mask == 1)
-            {
-               HLS_mask_PragmaMap[filename][loc] = std::make_pair(par, (MaskInfo){mt_Sign, sign, 0, 0, 0, 0});
-            }
-            else if(mask == 2)
-            {
-               HLS_mask_PragmaMap[filename][loc] =
-                   std::make_pair(par, (MaskInfo){mt_Exponent, false, exp_l, exp_u, 0, 0});
-            }
-            else if(mask == 4)
-            {
-               HLS_mask_PragmaMap[filename][loc] =
-                   std::make_pair(par, (MaskInfo){mt_Significand, false, 0, 0, s_bits, 0});
-            }
-         }
-         else
-         {
-            DiagnosticsEngine& D = PP.getDiagnostics();
-            unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask malformed");
-            D.Report(PragmaTok.getLocation(), ID);
-         }
-      }
-   };
-
    class HLS_simple_pipeline_PragmaHandler : public PragmaHandler
    {
     public:
@@ -1377,7 +969,6 @@ namespace clang
          }
          clang::Preprocessor& PP = CI.getPreprocessor();
          PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
-         PP.AddPragmaHandler(new Mask_PragmaHandler());
          PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
          PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
 #if __clang_major__ > 9
@@ -1424,6 +1015,7 @@ namespace clang
          }
          return true;
       }
+
       void PrintHelp(llvm::raw_ostream& ros)
       {
          ros << "Help for " CLANG_VERSION_STRING(_plugin_ASTAnalyzer) " plugin\n";
