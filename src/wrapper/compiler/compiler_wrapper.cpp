@@ -575,10 +575,14 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                  compiler.ASTAnalyzer_plugin_name + " -Xclang " +
                  Param->getOption<std::string>(OPT_output_temporary_directory);
 
-      command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name + " -Xclang -plugin-arg-" +
-                 compiler.ASTAnalyzer_plugin_name + " -Xclang -inputtype -Xclang -plugin-arg-" +
-                 compiler.ASTAnalyzer_plugin_name + " -Xclang " + Param->getOption<std::string>(OPT_input_format);
-
+      if(Param->isOption(OPT_input_format) &&
+         (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
+          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
+      {
+         command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name + " -Xclang -plugin-arg-" +
+                    compiler.ASTAnalyzer_plugin_name + " -Xclang -cppflag -Xclang -plugin-arg-" +
+                    compiler.ASTAnalyzer_plugin_name + " -Xclang 1";
+      }
       if(addTopFName)
       {
          command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +

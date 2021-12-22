@@ -319,80 +319,80 @@ enum class Parameters_FileFormat
 {
    FF_UNKNOWN = 0, /**< UNKNOWN */
 #if HAVE_FROM_AADL_ASN_BUILT
-   FF_AADL = 1, /**< (Input) Aadl file */
-   FF_ASN = 2,  /**< (Input) Asn file */
+   FF_AADL, /**< (Input) Aadl file */
+   FF_ASN,  /**< (Input) Asn file */
 #endif
 #if HAVE_FROM_C_BUILT
-   FF_C = 3,            /**< (Input/Output) C source file */
-   FF_OBJECTIVEC = 4,   /**< (Input/Output) Objective C source file */
-   FF_CPP = 5,          /**< (Input/Output) C++ source file */
-   FF_OBJECTIVECPP = 6, /**< (Input/Output) Objective C++ source file */
-   FF_FORTRAN = 7,      /**< (Input/Output) Fortran source file */
-   FF_LLVM = 8,         /**< (Input/Output) LLVM source bitcode file */
-   FF_LLVM_CPP = 9,     /**< (Input/Output) LLVM source bitcode file generated from c++ source code*/
+   FF_C,            /**< (Input/Output) C source file */
+   FF_OBJECTIVEC,   /**< (Input/Output) Objective C source file */
+   FF_CPP,          /**< (Input/Output) C++ source file */
+   FF_OBJECTIVECPP, /**< (Input/Output) Objective C++ source file */
+   FF_FORTRAN,      /**< (Input/Output) Fortran source file */
+   FF_LLVM,         /**< (Input/Output) LLVM source bitcode file */
+   FF_LLVM_CPP,     /**< (Input/Output) LLVM source bitcode file generated from c++ source code*/
 #endif
-   FF_CSV = 10, /**< (Input) comma separated value */
+   FF_CSV, /**< (Input) comma separated value */
 #if HAVE_EXPERIMENTAL
-   FF_CSV_RTL = 11, /**< (Output) comma separated value rtl sequences */
-   FF_CSV_TRE = 12, /**< (Output) comma seperated value tree sequences */
+   FF_CSV_RTL, /**< (Output) comma separated value rtl sequences */
+   FF_CSV_TRE, /**< (Output) comma seperated value tree sequences */
 #endif
 #if HAVE_FROM_LIBERTY
-   FF_LIB = 13, /**< (Input) Liberty file */
+   FF_LIB, /**< (Input) Liberty file */
 #endif
 #if HAVE_EXPERIMENTAL
-   FF_LOG = 14, /**< (Input) log file */
-   FF_PA = 15,  /**< (Input) Profiling analysis */
+   FF_LOG, /**< (Input) log file */
+   FF_PA,  /**< (Input) Profiling analysis */
 #endif
 #if HAVE_FROM_PSPLIB_BUILT
-   FF_PSPLIB_MM = 16, /**< (Input) Multi-mode Project Scheduling Problem */
-   FF_PSPLIB_SM = 17, /**< (Input) Single-mode Project Scheduling Problem */
+   FF_PSPLIB_MM, /**< (Input) Multi-mode Project Scheduling Problem */
+   FF_PSPLIB_SM, /**< (Input) Single-mode Project Scheduling Problem */
 #endif
 #if HAVE_FROM_C_BUILT
-   FF_RAW = 18, /**< (Input/Output) raw file */
+   FF_RAW, /**< (Input/Output) raw file */
 #endif
-   FF_TEX = 19,     /**< (Output) Latex table */
-   FF_TGFF = 20,    /**< (Input) task graph for free */
-   FF_VERILOG = 21, /**< (Input) verilog */
-   FF_VHDL = 22,    /**< (Input) vhdl */
-   FF_XML = 23,     /**< (Input/Output) XML */
+   FF_TEX,     /**< (Output) Latex table */
+   FF_TGFF,    /**< (Input) task graph for free */
+   FF_VERILOG, /**< (Input) verilog */
+   FF_VHDL,    /**< (Input) vhdl */
+   FF_XML,     /**< (Input/Output) XML */
 #if HAVE_REGRESSORS_BUILT
-   FF_XML_AGG = 24, /**< (Input) XML aggregated features */
+   FF_XML_AGG, /**< (Input) XML aggregated features */
 #endif
 #if HAVE_FROM_ARCH_BUILT
-   FF_XML_ARCHITECTURE = 25, /**< (Input) XML architecture file */
+   FF_XML_ARCHITECTURE, /**< (Input) XML architecture file */
 #endif
 #if HAVE_BAMBU_RESULTS_XML
-   FF_XML_BAMBU_RESULTS = 26, /**< (Input) XML bambu results*/
+   FF_XML_BAMBU_RESULTS, /**< (Input) XML bambu results*/
 #endif
 #if HAVE_FROM_LIBERTY
-   FF_XML_CELLS = 27, /**< (Input) XML describing list of cells */
+   FF_XML_CELLS, /**< (Input) XML describing list of cells */
 #endif
 #if HAVE_HLS_BUILT
-   FF_XML_CON = 28, /**< (Input) XML storing constraints */
+   FF_XML_CON, /**< (Input) XML storing constraints */
 #endif
 #if HAVE_DESIGN_ANALYSIS_BUILT
-   FF_XML_DESIGN_HIERARCHY = 29, /**< (Input) XML storing hierarchy of a design */
+   FF_XML_DESIGN_HIERARCHY, /**< (Input) XML storing hierarchy of a design */
 #endif
-   FF_XML_EXPERIMENTAL_SETUP = 30, /**< (Input) XML storing experimental setup */
-   FF_XML_IP_XACT_COMPONENT = 31,  /**< (Input) XML storing IP-XACT component */
-   FF_XML_IP_XACT_DESIGN = 32,     /**< (Input) XML storing IP-XACT design */
-   FF_XML_IP_XACT_GENERATOR = 33,  /**< (Input) XML storing IP-XACT generator chain */
-   FF_XML_IP_XACT_CONFIG = 34,     /**< (Input) XML storing IP-XACT design configuration */
+   FF_XML_EXPERIMENTAL_SETUP, /**< (Input) XML storing experimental setup */
+   FF_XML_IP_XACT_COMPONENT,  /**< (Input) XML storing IP-XACT component */
+   FF_XML_IP_XACT_DESIGN,     /**< (Input) XML storing IP-XACT design */
+   FF_XML_IP_XACT_GENERATOR,  /**< (Input) XML storing IP-XACT generator chain */
+   FF_XML_IP_XACT_CONFIG,     /**< (Input) XML storing IP-XACT design configuration */
 #if HAVE_FROM_SDF3_BUILT
-   FF_XML_SDF3 = 35, /**< (Input) XML storing synchronous data flow graph */
+   FF_XML_SDF3, /**< (Input) XML storing synchronous data flow graph */
 #endif
-   FF_XML_SKIP_ROW = 36, /**< (Input) XML benchhmarks to be execluded from training set */
+   FF_XML_SKIP_ROW, /**< (Input) XML benchhmarks to be execluded from training set */
 #if HAVE_SOURCE_CODE_STATISTICS_XML
-   FF_XML_STAT = 37, /**< (Input) XML statistics about source code files */
+   FF_XML_STAT, /**< (Input) XML statistics about source code files */
 #endif
-   FF_XML_SYM_SIM = 38, /**< (Input) XML storing symbolic symulation results */
+   FF_XML_SYM_SIM, /**< (Input) XML storing symbolic symulation results */
 #if HAVE_TECHNOLOGY_BUILT
-   FF_XML_TARGET = 39, /**< (Input) XML storing information about a particular target device */
-   FF_XML_TEC = 40,    /**< (Input) XML storing technology libraries */
+   FF_XML_TARGET, /**< (Input) XML storing information about a particular target device */
+   FF_XML_TEC,    /**< (Input) XML storing technology libraries */
 #endif
-   FF_XML_TEX_TABLE = 41, /**< (Input) XML storing format of latex table to be produced */
-   FF_XML_WGT_GM = 42,    /**< (Output) XML weights of single operations computed */
-   FF_XML_WGT_SYM = 43,   /**< (Input/Output) XML symbolic weights */
+   FF_XML_TEX_TABLE, /**< (Input) XML storing format of latex table to be produced */
+   FF_XML_WGT_GM,    /**< (Output) XML weights of single operations computed */
+   FF_XML_WGT_SYM,   /**< (Input/Output) XML symbolic weights */
 };
 
 class Parameter

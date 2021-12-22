@@ -957,7 +957,7 @@ namespace clang
    {
       std::string topfname;
       std::string outdir_name;
-      int inputtype;
+      bool cppflag;
 
     protected:
       std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& CI, llvm::StringRef InFile) override
@@ -972,7 +972,7 @@ namespace clang
          PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
          PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
          auto pp = clang::PrintingPolicy(clang::LangOptions());
-         if(inputtype == 5)
+         if(cppflag)
          {
             pp.adjustForCPlusPlus();
          }
@@ -1008,15 +1008,15 @@ namespace clang
                ++i;
                outdir_name = args.at(i);
             }
-            else if(args.at(i) == "-inputtype")
+            else if(args.at(i) == "-cppflag")
             {
                if(i + 1 >= e)
                {
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "missing inputtype argument"));
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "missing cppflag argument"));
                   return false;
                }
                ++i;
-               inputtype = std::atoi(args.at(i).data());
+               cppflag = std::atoi(args.at(i).data()) == 1;
             }
          }
          if(!args.empty() && args.at(0) == "-help")
@@ -1028,11 +1028,6 @@ namespace clang
          {
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir not specified"));
          }
-
-         if(inputtype == INT32_MAX)
-         {
-            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "inputtype not specified"));
-         }
          return true;
       }
 
@@ -1041,8 +1036,8 @@ namespace clang
          ros << "Help for " CLANG_VERSION_STRING(_plugin_ASTAnalyzer) " plugin\n";
          ros << "-outputdir <directory>\n";
          ros << "  Directory where the raw file will be written\n";
-         ros << "-inputtype <type>\n";
-         ros << "  Langauage of the input source file\n";
+         ros << "-cppflag <type>\n";
+         ros << "  1 if input source file is C++, 0 else\n";
          ros << "-topfname <function name>\n";
          ros << "  Function from which the Point-To analysis has to start\n";
       }
@@ -1053,7 +1048,7 @@ namespace clang
       }
 
     public:
-      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)() : inputtype(INT32_MAX)
+      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)() : cppflag(false)
       {
       }
       CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)(const CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) & step) = delete;
