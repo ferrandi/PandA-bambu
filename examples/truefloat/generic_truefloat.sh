@@ -7,9 +7,9 @@ BATCH_ARGS=("--no-iob" "--soft-float" "--registered-inputs=top" "--panda-paramet
 OUT_SUFFIX="${compiler}_truefloat"
 
 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
-   --args="--configuration-name=${compiler}_wo-exc --softfloat-noexception   --max-ulp=0 ${BATCH_ARGS[*]}"\
-   --args="--configuration-name=${compiler}_wo-rnd --softfloat-norounding    --max-ulp=4 ${BATCH_ARGS[*]}"\
-   --args="--configuration-name=${compiler}_e11m52 --fp-format=@*11*52*-1023 --max-ulp=0 ${BATCH_ARGS[*]}"\
+   --args="--configuration-name=${compiler}_wo-exc --softfloat-noexception   --max-ulp=1 ${BATCH_ARGS[*]}"\
+   --args="--configuration-name=${compiler}_wo-rnd --softfloat-norounding    --max-ulp=4 --pretty-print=a.c ${BATCH_ARGS[*]}"\
+   --args="--configuration-name=${compiler}_e11m52 --fp-format=@*11*52*-1023 --max-ulp=1 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}_e11m45 --fp-format=@*11*45*-1023 --max-ulp=128 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}_e11m40 --fp-format=@*11*40*-1023 --max-ulp=4096 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}_e11m35 --fp-format=@*11*35*-1023 --max-ulp=131072 ${BATCH_ARGS[*]}"\
