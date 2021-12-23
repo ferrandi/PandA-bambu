@@ -496,7 +496,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       }
    }
    THROW_ASSERT(!_version->ieee_format() || _version->internal,
-                "An standard floating-point format function should be internal.");
+                "A standard floating-point format function should be internal.");
 
 #ifndef NDEBUG
    const auto fn_name = tree_helper::print_type(
@@ -660,9 +660,21 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   if(!_version->ieee_format())
                   {
                      const auto ssa_ff = tree_helper::Size(parmSSA->type) == 32 ? float32FF : float64FF;
-                     inputInterface.insert(
+                     const auto ientry = inputInterface.insert(
                          {GetPointerS<ssa_name>(GET_CONST_NODE(GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0)),
                           {ssa_ff, std::vector<unsigned int>()}});
+                     THROW_ASSERT(ientry.second, "");
+                     const auto oentry = outputInterface.find(parmSSA);
+                     if(oentry != outputInterface.end())
+                     {
+                        const auto& oentry_list = std::get<1>(oentry->second);
+                        auto& ientry_list = std::get<1>(ientry.first->second);
+                        for(const auto& e : oentry_list)
+                        {
+                           ientry_list.push_back(e->index);
+                        }
+                        outputInterface.erase(oentry);
+                     }
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Input interface required for current parameter");
                   }
@@ -670,7 +682,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Lowering statement added to BB" + STR(first_bb->number) + ": " +
                                   GET_NODE(vc_stmt)->ToString());
-               auto lowered_parm = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
+               const auto lowered_parm = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
                const auto parm_uses = parmSSA->CGetUseStmts();
                for(const auto& stmt_uses : parm_uses)
                {
@@ -806,11 +818,33 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Generating input interface for " + STR(inputInterface.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      for(const auto& if_info : inputInterface)
+      for(auto& if_info : inputInterface)
       {
          const auto* SSA = if_info.first;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input interface for " + SSA->ToString());
          const auto ssa = TreeM->GetTreeReindex(SSA->index);
-         const auto& exclude = std::get<1>(if_info.second);
+         auto& exclude = std::get<1>(if_info.second);
+         const auto oentry = outputInterface.find(if_info.first);
+         if(oentry != outputInterface.end())
+         {
+            const auto& oentry_list = std::get<1>(oentry->second);
+            std::transform(oentry_list.begin(), oentry_list.end(), std::back_inserter(exclude),
+                           [&](const tree_nodeRef& tn) {
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                             "---Skipping replacement for statement " + GET_NODE(tn)->ToString());
+                              return tn->index;
+                           });
+            outputInterface.erase(oentry);
+         }
+
+         // Get ssa uses before renaming to avoid replacement in cast rename operations
+         const auto ssaUses = SSA->CGetUseStmts();
+         if(ssaUses.size() == exclude.size())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Input interface for " + SSA->ToString() + " has no users, skipping...");
+            continue;
+         }
 
          auto defStmt = SSA->CGetDefStmt();
          const auto def = GetPointerS<gimple_node>(GET_NODE(defStmt));
@@ -821,7 +855,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                          "BB " + STR(def->bb_index) + " not present in current function.");
             bb = sl->list_of_bloc.at(def->bb_index);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Input interface for " + SSA->ToString() + " will be inserted in BB" + STR(bb->number));
+                           "Input interface will be inserted in BB" + STR(bb->number));
          }
          else if(def->get_kind() == gimple_phi_K)
          {
@@ -830,7 +864,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             bb = sl->list_of_bloc.at(def->bb_index);
             defStmt = nullptr;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Input interface for phi " + SSA->ToString() + " will be inserted in BB" + STR(bb->number));
+                           "Input interface for phi will be inserted in BB" + STR(bb->number));
          }
          else
          {
@@ -840,12 +874,8 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             bb = sl->list_of_bloc.at(realEntryBBIdx);
             defStmt = nullptr;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Input interface for parameter " + SSA->ToString() + " will be inserted in BB" +
-                               STR(bb->number));
+                           "Input interface for parameter will be inserted in BB" + STR(bb->number));
          }
-
-         // Get ssa uses before renaming to avoid replacement in cast rename operations
-         const auto ssaUses = SSA->CGetUseStmts();
 
          const auto convertedSSA =
              generate_interface(bb, defStmt, ssa, std::get<0>(if_info.second), _version->userRequired);
