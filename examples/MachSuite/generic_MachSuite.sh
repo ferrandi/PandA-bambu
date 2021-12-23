@@ -7,7 +7,7 @@ BATCH_ARGS=("--no-iob" "--hls-div" "--experimental-setup=BAMBU-PERFORMANCE-MP" "
 OUT_SUFFIX="${compiler}_MachSuite"
 
 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
-   --args="--configuration-name=${compiler} common/harness.c ${BATCH_ARGS[*]}"\
+   --args="--configuration-name=${compiler} ${BATCH_ARGS[*]}"\
    -lmachsuite_list \
    -o "out${OUT_SUFFIX}" -b$script_dir \
    --name="${OUT_SUFFIX}" "$@"
