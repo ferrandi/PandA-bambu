@@ -138,6 +138,9 @@ cat > dist/usr/bin/tool_select.sh << EOF
 export LC_ALL="C"
 BINARY_NAME=\$(basename "\$ARGV0")
 BINARY_PATH="\$APPDIR/usr/bin/\$BINARY_NAME"
+if [ "\$BINARY_NAME" == "debug_terminal" ]; then
+   BINARY_PATH="/bin/bash"
+fi
 if [ ! -e "\$BINARY_PATH" ]; then
    BINARY_PATH="\$APPDIR/usr/bin/bambu"
 fi
