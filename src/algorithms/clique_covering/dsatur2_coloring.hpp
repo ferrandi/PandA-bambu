@@ -32,7 +32,8 @@
  */
 /**
  * @file dsatur2_coloring.hpp
- * @brief Boost-based implementation of a heuristic sequential coloring algorithm based on the work of Daniel Brelaz (Version 2).
+ * @brief Boost-based implementation of a heuristic sequential coloring algorithm based on the work of Daniel Brelaz
+ * (Version 2).
  *
  * Some ideas come from the Michael A. Trick's implementation of DSATUR heuristic of Daniel Brelaz.
  * For more details see
@@ -102,7 +103,9 @@ namespace boost
          size_type c1 = ColorCount[i1], c2 = ColorCount[i2];
          return !((c1 > c2) || ((c1 == c2) && (DegreeCount[i1] > DegreeCount[i2])));
       }
-      dsatur2_heap_compare_functor(const std::vector<size_type>& _ColorCount, const std::vector<size_type>& _DegreeCount) : ColorCount(_ColorCount), DegreeCount(_DegreeCount)
+      dsatur2_heap_compare_functor(const std::vector<size_type>& _ColorCount,
+                                   const std::vector<size_type>& _DegreeCount)
+          : ColorCount(_ColorCount), DegreeCount(_DegreeCount)
       {
       }
 
@@ -131,7 +134,14 @@ namespace boost
 
     public:
       dsatur2_coloring_helper(const VertexListGraph& _G, ColorMap& _CM, const size_type _num_node)
-          : num_node(_num_node), valid(_num_node, true), ColorAdj(_num_node, _num_node), ColorCount(_num_node, 0), DegreeCount(_num_node), G(_G), CM(_CM), HCF(ColorCount, DegreeCount)
+          : num_node(_num_node),
+            valid(_num_node, true),
+            ColorAdj(_num_node, _num_node),
+            ColorCount(_num_node, 0),
+            DegreeCount(_num_node),
+            G(_G),
+            CM(_CM),
+            HCF(ColorCount, DegreeCount)
       {
          unsigned int i, iheap = 0;
          heap_container = new size_type[_num_node];

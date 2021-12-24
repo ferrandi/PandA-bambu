@@ -87,7 +87,8 @@ class commutative_expr_restructuring : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -97,7 +98,9 @@ class commutative_expr_restructuring : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   commutative_expr_restructuring(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   commutative_expr_restructuring(const application_managerRef AppM, unsigned int function_id,
+                                  const DesignFlowManagerConstRef design_flow_manager,
+                                  const ParameterConstRef parameters);
 
    /**
     *  Destructor

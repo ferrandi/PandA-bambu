@@ -91,7 +91,8 @@
 
 void SpiderParameter::PrintHelp(std::ostream& os) const
 {
-   os << "Usage: " << getOption<std::string>(OPT_program_name) << " [options] input_file [input_files] output_file" << std::endl;
+   os << "Usage: " << getOption<std::string>(OPT_program_name) << " [options] input_file [input_files] output_file"
+      << std::endl;
    os << std::endl;
    os << "Options: \n"
       << "\n";
@@ -105,14 +106,19 @@ void SpiderParameter::PrintHelp(std::ostream& os) const
       << "                                      diopsis (default)\n"
       << "                                      tsim\n"
       << "                                      simit\n"
-      << "    --analysis-level=<value>        Set the analysis level for instructions sequences analysis (default=0): \n"
+      << "    --analysis-level=<value>        Set the analysis level for instructions sequences analysis (default=0): "
+         "\n"
       << "                                      0: no analysis is performed;\n"
-      << "                                      1: analysis is performed at application level. Only aggregate information of all benchmarks \n"
+      << "                                      1: analysis is performed at application level. Only aggregate "
+         "information of all benchmarks \n"
       << "                                      will be saved on XML file;\n"
-      << "                                      2: analysis is performed at application level. Aggregate information of all benchmarks and\n"
+      << "                                      2: analysis is performed at application level. Aggregate information "
+         "of all benchmarks and\n"
       << "                                      data of each single benchmark will be saved on XML file;\n"
-      << "                                      3: analysis is performed at function level. XML file will be completely generated(file contents:\n"
-      << "                                      aggregate information of all benchmarks,  data of each single benchmark and data of each \n"
+      << "                                      3: analysis is performed at function level. XML file will be "
+         "completely generated(file contents:\n"
+      << "                                      aggregate information of all benchmarks,  data of each single "
+         "benchmark and data of each \n"
       << "                                      function analyzed); \n"
       << "\n";
    PrintOutputOptionsUsage(os);
@@ -123,7 +129,8 @@ void SpiderParameter::PrintHelp(std::ostream& os) const
       << "    --processing-element, -p <pe>   Specify of which processing element model weights are\n"
       << "    --accuracy=<level>              Accuracy level while evaluating similar benchmarks (default=0)\n"
       << "    --benchmark-bounds=<number,number>\n"
-      << "                                    Set the bound of average execution cycles of benchmarks used for training.\n"
+      << "                                    Set the bound of average execution cycles of benchmarks used for "
+         "training.\n"
       << "\n"
       << "  Output options:\n"
       << "    --output-format, -O <extension> Format of the output file\n"
@@ -140,7 +147,8 @@ void SpiderParameter::PrintHelp(std::ostream& os) const
       << "     --cross-validation=<value>     The value of cross validiation fold\n"
       << "     --minimum-significance         The minimum significance required for a regressor\n"
 #endif
-      << "     --normalization-sequences      Sequences of transformations to be applied before building performance model; sequences can be composed of:\n"
+      << "     --normalization-sequences      Sequences of transformations to be applied before building performance "
+         "model; sequences can be composed of:\n"
       << "                                    'L' - remove pseudo-linear dependent benchmarks\n"
       << "                                    'M' - remove smallest and largest benchmarks\n"
       << "                                    'R' - remove smallest benchmarks\n"
@@ -151,7 +159,8 @@ void SpiderParameter::PrintHelp(std::ostream& os) const
 #endif
        ;
 #if HAVE_TECHNOLOGY_BUILT
-   os << "     --components=<value>           The components to be inserted in the list of functional units to be characterized (default=all).\n";
+   os << "     --components=<value>           The components to be inserted in the list of functional units to be "
+         "characterized (default=all).\n";
 #endif
 }
 
@@ -169,7 +178,8 @@ void SpiderParameter::PrintProgramName(std::ostream& os) const
    os << "********************************************************************************" << std::endl;
 }
 
-SpiderParameter::SpiderParameter(const std::string& _program_name, int _argc, char** const _argv) : Parameter(_program_name, _argc, _argv)
+SpiderParameter::SpiderParameter(const std::string& _program_name, int _argc, char** const _argv)
+    : Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
 }
@@ -358,7 +368,7 @@ void SpiderParameter::SetDefaults()
    setOption(OPT_minimum_significance, 0);
 #endif
    setOption(OPT_normalization_sequences, "S");
-   setOption(OPT_output_directory, ".");
+   setOption(OPT_output_directory, GetPath("."));
    /// Output level
 #if RELEASE
    setOption(OPT_output_level, OUTPUT_LEVEL_NONE);
@@ -378,8 +388,9 @@ void SpiderParameter::CheckParameters()
    {
       Parameters_FileFormat input_format = Parameters_FileFormat::FF_UNKNOWN, temp = Parameters_FileFormat::FF_UNKNOWN;
       const auto input_files = getOption<const CustomSet<std::string>>(OPT_input_file);
-      for(const auto& input_file : input_files)
+      for(auto input_file : input_files)
       {
+         input_file = GetPath(input_file);
          temp = GetFileFormat(input_file, true);
          switch(temp)
          {
@@ -427,6 +438,7 @@ void SpiderParameter::CheckParameters()
             case(Parameters_FileFormat::FF_CPP):
             case(Parameters_FileFormat::FF_FORTRAN):
             case(Parameters_FileFormat::FF_LLVM):
+            case(Parameters_FileFormat::FF_LLVM_CPP):
 #endif
             case(Parameters_FileFormat::FF_CSV):
 #if HAVE_FROM_CSV_BUILT
@@ -489,10 +501,11 @@ void SpiderParameter::CheckParameters()
       setOption(OPT_output_format, static_cast<int>(output_format));
    }
 #if HAVE_FROM_LIBERTY
-   if(getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_CELLS or getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LIB)
+   if(getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_CELLS ||
+      getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LIB)
    {
       const auto input_files = getOption<const CustomSet<std::string>>(OPT_input_file);
-      if(not(input_files.size() == 1 or (input_files.size() == 2 and isOption(OPT_aggregated_features))))
+      if(!(input_files.size() == 1 || (input_files.size() == 2 && isOption(OPT_aggregated_features))))
          THROW_ERROR("Only a liberty file required");
    }
 #endif
@@ -501,20 +514,29 @@ void SpiderParameter::CheckParameters()
    {
       if(GetFileFormat(input_file, true) == Parameters_FileFormat::FF_XML_TEC)
       {
-         setOption(OPT_technology_file, (isOption(OPT_technology_file) ? (getOption<std::string>(OPT_technology_file) + STR_CST_string_separator) : "") + input_file);
+         setOption(OPT_technology_file, (isOption(OPT_technology_file) ?
+                                             (getOption<std::string>(OPT_technology_file) + STR_CST_string_separator) :
+                                             "") +
+                                            input_file);
       }
       else if(GetFileFormat(input_file, true) == Parameters_FileFormat::FF_XML_TARGET)
       {
-         if(isOption(OPT_target_device_file) and getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_TEC)
+         if(isOption(OPT_target_device_file) &&
+            getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_TEC)
          {
-            THROW_ERROR("Multiple target device file: " + input_file + " " + getOption<std::string>(OPT_target_device_file));
+            THROW_ERROR("Multiple target device file: " + input_file + " " +
+                        getOption<std::string>(OPT_target_device_file));
          }
-         setOption(OPT_target_device_file, (isOption(OPT_target_device_file) ? (getOption<std::string>(OPT_target_device_file) + STR_CST_string_separator) : "") + input_file);
+         setOption(OPT_target_device_file,
+                   (isOption(OPT_target_device_file) ?
+                        (getOption<std::string>(OPT_target_device_file) + STR_CST_string_separator) :
+                        "") +
+                       input_file);
       }
    }
    if(getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_TEC)
    {
-      if(not isOption(OPT_target_device_file))
+      if(!isOption(OPT_target_device_file))
       {
          THROW_ERROR("Target device file not specified");
       }

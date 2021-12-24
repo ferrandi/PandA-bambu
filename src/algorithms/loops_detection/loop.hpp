@@ -221,7 +221,8 @@ class Loop
    /// The index of the tree node containing the value of the initialization of the induction variable
    unsigned int initialization_tree_node_id;
 
-   /// The index of the gimple tree node containing the initialization of the induction variable; right operand can be different from initialization_tree_node_id because of assignments chain
+   /// The index of the gimple tree node containing the initialization of the induction variable; right operand can be
+   /// different from initialization_tree_node_id because of assignments chain
    unsigned int init_gimple_id;
 
    /// The node id containing the increment statement

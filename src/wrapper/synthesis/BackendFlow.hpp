@@ -194,7 +194,8 @@ class BackendFlow
    /**
     * Creates the flow specification based on the given parameters
     */
-   static BackendFlowRef CreateFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
+   static BackendFlowRef CreateFlow(const ParameterConstRef Param, const std::string& flow_name,
+                                    const target_managerRef target);
 
    /**
     * Determines the type of the backend flow based on the target device
@@ -204,7 +205,9 @@ class BackendFlow
    /**
     * Generates the synthesis scripts for the specified design
     */
-   virtual std::string GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM, const std::list<std::string>& hdl_files, const std::list<std::string>& aux_files);
+   virtual std::string GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM,
+                                                const std::list<std::string>& hdl_files,
+                                                const std::list<std::string>& aux_files);
 
    /**
     * Executes the synthesis with the implemented flow
@@ -214,7 +217,8 @@ class BackendFlow
    /**
     * Executes the synthesis with the implemented flow
     */
-   void Execute(const std::string& top_id, const std::string& top_normalized, const std::string& filestring, const std::string& filename_bench, const std::string& clock, double clk_period, bool syntax_check);
+   void Execute(const std::string& top_id, const std::string& top_normalized, const std::string& filestring,
+                const std::string& filename_bench, const std::string& clock, double clk_period, bool syntax_check);
 
    /**
     * Creates the scripts for the specified tools in the right order, along with the overall configuration.
@@ -258,7 +262,8 @@ class BackendFlow
    /**
     * Sets parameters
     */
-   void set_initial_parameters(const DesignParametersRef& flow_parameters, const CustomOrderedSet<std::string>& undefined_parameters);
+   void set_initial_parameters(const DesignParametersRef& flow_parameters,
+                               const CustomOrderedSet<std::string>& undefined_parameters);
 
    /**
     * Sets actual parameters

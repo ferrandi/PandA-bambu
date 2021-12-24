@@ -28,11 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "single.h"
-#include "soft-fp.h"
-
-DFtype __extendsfdf2(SFtype a)
+static __FORCE_INLINE DFtype __extendsfdf2(SFtype a)
 {
    FP_DECL_EX;
    FP_DECL_S(A);

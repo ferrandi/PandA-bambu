@@ -1,4 +1,4 @@
-# Makefile for flopoco/src
+# Makefile for abseil library
 AUTOMAKE_OPTIONS = subdir-objects
 METASOURCES = AUTO
 

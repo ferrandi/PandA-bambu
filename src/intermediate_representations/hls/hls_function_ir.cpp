@@ -46,8 +46,11 @@
 /// HLS include
 #include "hls_manager.hpp"
 
-HLSFunctionIR::HLSFunctionIR(const HLS_managerRef _hls_manager, const unsigned int _function_index, const ParameterConstRef _parameters)
-    : HLSIR(_hls_manager, _parameters), hls(hlsRef(_hls_manager->get_HLS(_function_index).get(), null_deleter())), function_index(_function_index)
+HLSFunctionIR::HLSFunctionIR(const HLS_managerRef _hls_manager, const unsigned int _function_index,
+                             const ParameterConstRef _parameters)
+    : HLSIR(_hls_manager, _parameters),
+      hls(hlsRef(_hls_manager->get_HLS(_function_index).get(), null_deleter())),
+      function_index(_function_index)
 {
 }
 

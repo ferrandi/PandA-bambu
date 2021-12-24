@@ -46,9 +46,6 @@
 
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_L2_NAME.hpp"
-#include "config_HAVE_THREADS.hpp"
-#include "config_USE_PARALLEL_VERILATOR.hpp"
 
 /// Constants include
 #include "file_IO_constants.hpp"
@@ -76,7 +73,8 @@
 #define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/verilator"))
 
 // constructor
-VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, std::string _suffix) : SimulationTool(_Param), suffix(std::move(_suffix))
+VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, std::string _suffix)
+    : SimulationTool(_Param), suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the VERILATOR wrapper...");
    std::string verilator_beh_dir = SIM_SUBDIR + suffix;
@@ -94,7 +92,8 @@ void VerilatorWrapper::CheckExecution()
 {
 }
 
-void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
+void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
+                                      const std::list<std::string>& file_list)
 {
    for(const auto& file : file_list)
    {
@@ -103,8 +102,9 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Mixed simulation not supported by Verilator");
       }
    }
-   bool generate_vcd_output =
-       (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) || (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) || (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
+   bool generate_vcd_output = (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) ||
+                              (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
+                              (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
 
    const auto output_directory = Param->getOption<std::string>(OPT_output_directory);
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_verilator.log";
@@ -115,7 +115,9 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #else
    script << "verilator";
 #endif
-   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET";
+   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix +
+                 "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT "
+                 "-Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET";
 #else
 #ifdef _WIN32
    /// this removes the dependency from perl on MinGW32
@@ -125,24 +127,28 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #endif
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
    script << " -O3";
+   if(!generate_vcd_output)
+   {
+      script << " --x-assign fast --x-initial fast --noassert";
+   }
 #endif
-#if USE_PARALLEL_VERILATOR
-   unsigned int nThreads = std::thread::hardware_concurrency();
-#else
-   unsigned int nThreads = 1;
-#endif
-#if HAVE_THREADS
+   script << " -LDFLAGS -static";
+   unsigned int nThreads = Param->getOption<bool>(OPT_verilator_parallel) ? std::thread::hardware_concurrency() : 1;
    if(nThreads > 1)
    {
       script << " --threads " << nThreads;
    }
-#endif
    if(generate_vcd_output)
    {
       script << " --trace --trace-underscore"; // --trace-params
-#if HAVE_L2_NAME
-      script << " --l2-name v";
-#endif
+      if(Param->getOption<bool>(OPT_verilator_l2_name))
+      {
+         script << " --l2-name v";
+      }
+   }
+   if(Param->isOption(OPT_verilator_timescale_override))
+   {
+      script << " --timescale-override \"" << Param->getOption<std::string>(OPT_verilator_timescale_override) << "\"";
    }
    for(const auto& file : file_list)
    {
@@ -157,12 +163,8 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << std::endl << std::endl;
    script << "ln -s " + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
-   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j" << nThreads;
-#if HAVE_THREADS && USE_PARALLEL_VERILATOR
-   script << R"( OPT_FAST="-fstrict-aliasing -march=native" OPT_SLOW="-fstrict-aliasing" OPT="-march=native")";
-#else
-   script << " OPT_FAST=\"-O1 -fstrict-aliasing -march=native\"";
-#endif
+   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j";
+   script << " OPT=\"-fstrict-aliasing\"";
    script << " -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl

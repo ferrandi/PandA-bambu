@@ -75,14 +75,17 @@
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-string_cst_fix::string_cst_fix(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, STRING_CST_FIX, _design_flow_manager, _parameters)
+string_cst_fix::string_cst_fix(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager,
+                               const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, STRING_CST_FIX, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 string_cst_fix::~string_cst_fix() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> string_cst_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+string_cst_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -152,7 +155,9 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef curr_tn = GET_NODE(tn);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " + curr_tn->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " +
+                      curr_tn->ToString());
    switch(curr_tn->get_kind())
    {
       case call_expr_K:
@@ -179,7 +184,8 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          auto* gm = GetPointer<gimple_assign>(curr_tn);
          if(!gm->clobber)
          {
-            if(GET_NODE(gm->op0)->get_kind() == var_decl_K && (GET_NODE(gm->op1)->get_kind() == string_cst_K || GET_NODE(gm->op1)->get_kind() == constructor_K))
+            if(GET_NODE(gm->op0)->get_kind() == var_decl_K &&
+               (GET_NODE(gm->op1)->get_kind() == string_cst_K || GET_NODE(gm->op1)->get_kind() == constructor_K))
             {
                auto* vd = GetPointer<var_decl>(GET_NODE(gm->op0));
                THROW_ASSERT(vd, "not valid variable");
@@ -190,7 +196,8 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
                   /// So the solution for bambu is to not synthesize them.
                }
             }
-            else if(GET_NODE(gm->op0)->get_kind() == var_decl_K && GET_NODE(gm->op1)->get_kind() == var_decl_K && GetPointer<var_decl>(GET_NODE(gm->op1))->init && GetPointer<var_decl>(GET_NODE(gm->op1))->used == 0)
+            else if(GET_NODE(gm->op0)->get_kind() == var_decl_K && GET_NODE(gm->op1)->get_kind() == var_decl_K &&
+                    GetPointer<var_decl>(GET_NODE(gm->op1))->init && GetPointer<var_decl>(GET_NODE(gm->op1))->used == 0)
             {
                auto* vd = GetPointer<var_decl>(GET_NODE(gm->op0));
                THROW_ASSERT(vd, "not valid variable");
@@ -210,7 +217,8 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
             }
             if(!gm->init_assignment)
             {
-               if(GET_NODE(gm->op0)->get_kind() == var_decl_K && GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag && GET_NODE(gm->op1)->get_kind() == ssa_name_K)
+               if(GET_NODE(gm->op0)->get_kind() == var_decl_K &&
+                  GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag && GET_NODE(gm->op1)->get_kind() == ssa_name_K)
                {
                   GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag = false;
                }
@@ -451,13 +459,16 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          if(string_cst_map.find(GET_INDEX_NODE(tn)) == string_cst_map.end())
          {
             auto* sc = GetPointer<string_cst>(curr_tn);
-            const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+            const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
             const auto* type_sc = GetPointer<const type_node>(GET_NODE(sc->type));
             const std::string local_var_name = "__bambu_artificial_var_string_cst_" + STR(GET_INDEX_NODE(tn));
             auto local_var_identifier = tree_man->create_identifier_node(local_var_name);
             auto global_scpe = tree_man->create_translation_unit_decl();
-            auto new_var_decl = tree_man->create_var_decl(local_var_identifier, TM->CGetTreeReindex(GET_INDEX_NODE(sc->type)), global_scpe, TM->CGetTreeReindex(GET_INDEX_NODE(type_sc->size)), tree_nodeRef(), TM->CGetTreeReindex(GET_INDEX_NODE(tn)), srcp,
-                                                          type_sc->algn, 1, true, -1, false, false, true, false, true);
+            auto new_var_decl =
+                tree_man->create_var_decl(local_var_identifier, TM->CGetTreeReindex(GET_INDEX_NODE(sc->type)),
+                                          global_scpe, TM->CGetTreeReindex(GET_INDEX_NODE(type_sc->size)),
+                                          tree_nodeRef(), TM->CGetTreeReindex(GET_INDEX_NODE(tn)), srcp, type_sc->algn,
+                                          1, true, -1, false, false, true, false, true);
             string_cst_map[GET_INDEX_NODE(tn)] = new_var_decl;
             tn = new_var_decl;
          }
@@ -510,6 +521,7 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
       default:
          THROW_UNREACHABLE("");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed recursively " + STR(GET_INDEX_NODE(tn)) + ": " + STR(tn));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--Analyzed recursively " + STR(GET_INDEX_NODE(tn)) + ": " + STR(tn));
    return;
 }

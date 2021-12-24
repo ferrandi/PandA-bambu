@@ -75,8 +75,6 @@ REF_FORWARD_DECL(tree_node);
 class operations_cfg_computation : public FunctionFrontendFlowStep
 {
  private:
-   unsigned int last_bb_cfg_computation_version;
-
    /// relation between label declaration and first statement id
    std::map<unsigned int, std::string> label_decl_map;
 
@@ -126,24 +124,29 @@ class operations_cfg_computation : public FunctionFrontendFlowStep
     * @param next is the ending node of the edge that must be added to g.
     * @param true_edge when it is true the control edge is the true branch of an if then else statement.
     * @param false_edge when it is true the control edge is the false branch of an if then else statement.
-    * @param nodeid is meaningful only in case true_edge and false_edge are both true and the control edge is associated with a switch statement.
+    * @param nodeid is meaningful only in case true_edge and false_edge are both true and the control edge is associated
+    * with a switch statement.
     */
-   void connect_start_nodes(const operations_graph_constructorRef ogc, const std::string& next, bool true_edge = false, bool false_edge = false, unsigned int nodeid = 0);
+   void connect_start_nodes(const operations_graph_constructorRef ogc, const std::string& next, bool true_edge = false,
+                            bool false_edge = false, unsigned int nodeid = 0);
 
    /**
-    * Builds recursively the operation for a given tree node. We assume a one to one mapping between nodeids and vertices
+    * Builds recursively the operation for a given tree node. We assume a one to one mapping between nodeids and
+    * vertices
     * @param TM is the tree manager.
     * @param ogc is the operation graph constructor used to add the vertices.
     * @param tn is the reference of the tree node we are currently analyzing
     * @param f_name is the name of the function which the node we are analyzing belongs to
     */
-   void build_operation_recursive(const tree_managerRef TM, const operations_graph_constructorRef ogc, const tree_nodeRef tn, const std::string& f_name, unsigned int bb_index);
+   void build_operation_recursive(const tree_managerRef TM, const operations_graph_constructorRef ogc,
+                                  const tree_nodeRef tn, const std::string& f_name, unsigned int bb_index);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -152,7 +155,8 @@ class operations_cfg_computation : public FunctionFrontendFlowStep
     * @param AppM is the application manager
     * @param function_id is the identifier of the function
     */
-   operations_cfg_computation(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   operations_cfg_computation(const ParameterConstRef _parameters, const application_managerRef AppM,
+                              unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

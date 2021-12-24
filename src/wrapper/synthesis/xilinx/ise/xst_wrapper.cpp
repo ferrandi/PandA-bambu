@@ -55,7 +55,9 @@
 #include "utility.hpp"
 
 // constructor
-xst_wrapper::xst_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : XilinxWrapper(_Param, XST_TOOL_ID, _device, _output_dir, "xst")
+xst_wrapper::xst_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
+                         const target_deviceRef& _device)
+    : XilinxWrapper(_Param, XST_TOOL_ID, _device, _output_dir, "xst")
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the XST wrapper...");

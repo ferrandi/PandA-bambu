@@ -66,21 +66,26 @@
 #include "polixml.hpp"
 #include "xml_helper.hpp"
 
-ControllerCreatorBaseStep::ControllerCreatorBaseStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+ControllerCreatorBaseStep::ControllerCreatorBaseStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                                     unsigned int _funId,
+                                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                                     const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type), out_num(0), in_num(0)
 {
 }
 
 ControllerCreatorBaseStep::~ControllerCreatorBaseStep() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ControllerCreatorBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+ControllerCreatorBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -177,7 +182,8 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit, 
    out_num = 0;
    in_num = 0;
    const auto& selectors = HLS->Rconn->GetSelectors();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding " + std::to_string(selectors.size()) + " selectors");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Adding " + std::to_string(selectors.size()) + " selectors");
    for(const auto& selector : selectors)
    {
       for(const auto& j : selector.second)
@@ -191,7 +197,8 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit, 
                continue;
             }
             /// they represent commands to multiplexers or write enables to registers
-            structural_objectRef sel_obj = SM->add_port(j.second->get_structural_obj()->get_id(), port_o::OUT, circuit, bool_type);
+            structural_objectRef sel_obj =
+                SM->add_port(j.second->get_structural_obj()->get_id(), port_o::OUT, circuit, bool_type);
             GetPointer<commandport_obj>(j.second)->set_controller_obj(sel_obj);
             out_ports[j.second] = out_num++;
          }
@@ -202,7 +209,8 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit, 
             structural_objectRef sel_obj;
             if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTI_UNBOUNDED)
             {
-               sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
+               sel_obj =
+                   SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
                auto mu_obj = GetPointer<commandport_obj>(j.second)->get_elem();
                THROW_ASSERT(GetPointer<multi_unbounded_obj>(mu_obj), "unexpected condition");
                mu_ports[GetPointer<multi_unbounded_obj>(mu_obj)->get_fsm_state()] = in_num;
@@ -215,20 +223,26 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit, 
                {
                   /// multi bit selector representing the evaluation of a switch
                   unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, cond_v);
-                  structural_type_descriptorRef switch_port_type = structural_type_descriptorRef(new structural_type_descriptor(var_written, FB->CGetBehavioralHelper()));
-                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, switch_port_type);
+                  structural_type_descriptorRef switch_port_type = structural_type_descriptorRef(
+                      new structural_type_descriptor(var_written, FB->CGetBehavioralHelper()));
+                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit,
+                                         switch_port_type);
                }
                else if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTIIF)
                {
-                  std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, cond_v);
+                  std::vector<HLS_manager::io_binding_type> var_read =
+                      HLSMgr->get_required_values(HLS->functionId, cond_v);
                   auto vect_size = static_cast<unsigned int>(var_read.size());
-                  structural_type_descriptorRef multiif_port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", vect_size));
-                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, multiif_port_type);
+                  structural_type_descriptorRef multiif_port_type =
+                      structural_type_descriptorRef(new structural_type_descriptor("bool", vect_size));
+                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit,
+                                         multiif_port_type);
                }
                else
                {
                   /// single bit selector representing the evaluation of a condition
-                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
+                  sel_obj =
+                      SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
                }
                cond_ports[cond_v] = in_num;
             }

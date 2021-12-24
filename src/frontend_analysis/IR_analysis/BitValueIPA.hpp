@@ -64,17 +64,21 @@ class BitValueIPA : public ApplicationFrontendFlowStep, public BitLatticeManipul
     * steps have to be invalidated by this step
     */
    CustomOrderedSet<unsigned int> fun_id_to_restart;
+   CustomOrderedSet<unsigned int> fun_id_to_restart_caller;
 
    std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
    std::map<unsigned int, unsigned int> last_bb_ver;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   void ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationships,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
-   BitValueIPA(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef parameters);
+   BitValueIPA(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
+               const ParameterConstRef parameters);
 
    ~BitValueIPA() override;
 
@@ -89,11 +93,6 @@ class BitValueIPA : public ApplicationFrontendFlowStep, public BitLatticeManipul
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
 };
 
 #endif

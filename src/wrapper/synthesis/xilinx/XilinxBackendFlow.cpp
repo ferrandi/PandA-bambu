@@ -45,8 +45,6 @@
 #include "XilinxBackendFlow.hpp"
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
-#include "config_XILINX_SETTINGS.hpp"
-#include "config_XILINX_VIVADO_SETTINGS.hpp"
 
 /// constants include
 #include "synthesis_constants.hpp"
@@ -88,7 +86,9 @@
 #define VIVADO_XILINX_POWER "XILINX_POWER"
 #define VIVADO_XILINX_DESIGN_DELAY "XILINX_DESIGN_DELAY"
 
-XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
+XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
+                                     const target_managerRef _target)
+    : BackendFlow(_Param, _flow_name, _target)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating Xilinx Backend Flow ::.");
@@ -140,8 +140,11 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
       {
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/xilinx/") + default_data[device_string]));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                     "---Importing default scripts for target device family: " + device_string);
+      parser = XMLDomParserRef(
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/xilinx/") +
+                           default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -417,7 +420,8 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
          /// setting the global area occupation as the number of LUT/FF pairs when possible
          if(design_values.find(XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED) == design_values.end())
          {
-            design_values[XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED] = 0; // it may happen when the component will be completely "destroyed" by the logic synthesisstep
+            design_values[XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED] =
+                0; // it may happen when the component will be completely "destroyed" by the logic synthesisstep
          }
 
          clb_m->set_resource_value(clb_model::LUT_FF_PAIRS, design_values[XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED]);
@@ -474,8 +478,10 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
                lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(tk));
                if(boost::lexical_cast<double>(tk) > Param->getOption<double>(OPT_clock_period))
                {
-                  CopyFile(Param->getOption<std::string>(OPT_output_directory) + "/Synthesis/xst/" + actual_parameters->component_name + ".log",
-                           Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" + STR_CST_synthesis_timing_violation_report);
+                  CopyFile(Param->getOption<std::string>(OPT_output_directory) + "/Synthesis/xst/" +
+                               actual_parameters->component_name + ".log",
+                           Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" +
+                               STR_CST_synthesis_timing_violation_report);
                }
             }
          }
@@ -533,7 +539,8 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
                {
                   continue;
                }
-               if(flow_name == "Characterization" and EnodeC->get_name() == "twBody" && EnodeC->CGetDescendants("twErrRpt/twConst/twPathRpt/twConstPath/twSlack").size())
+               if(flow_name == "Characterization" and EnodeC->get_name() == "twBody" &&
+                  EnodeC->CGetDescendants("twErrRpt/twConst/twPathRpt/twConstPath/twSlack").size())
                {
                   const auto tw_slacks = EnodeC->CGetDescendants("twErrRpt/twConst/twPathRpt/twConstPath/twSlack");
                   if(tw_slacks.size() == 0)
@@ -633,7 +640,8 @@ void XilinxBackendFlow::CheckSynthesisResults()
       else if(boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_report]))
       {
          xparse_xst_utilization(actual_parameters->parameter_values[PARAM_xst_report]);
-         if(actual_parameters->parameter_values.find(PARAM_xst_log_file) != actual_parameters->parameter_values.end() && boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
+         if(actual_parameters->parameter_values.find(PARAM_xst_log_file) != actual_parameters->parameter_values.end() &&
+            boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
          {
             parse_DSPs(actual_parameters->parameter_values[PARAM_xst_log_file]);
          }
@@ -643,15 +651,21 @@ void XilinxBackendFlow::CheckSynthesisResults()
          THROW_ERROR("the script does not have a synthesis step");
       }
 
-      if(actual_parameters->parameter_values.find(PARAM_trce_report_post) != actual_parameters->parameter_values.end() && boost::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_post]))
+      if(actual_parameters->parameter_values.find(PARAM_trce_report_post) !=
+             actual_parameters->parameter_values.end() &&
+         boost::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_post]))
       {
          xparse_timing(actual_parameters->parameter_values[PARAM_trce_report_post], true);
       }
-      else if(actual_parameters->parameter_values.find(PARAM_trce_report_pre) != actual_parameters->parameter_values.end() && boost::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_pre]))
+      else if(actual_parameters->parameter_values.find(PARAM_trce_report_pre) !=
+                  actual_parameters->parameter_values.end() &&
+              boost::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_pre]))
       {
          xparse_timing(actual_parameters->parameter_values[PARAM_trce_report_pre], false);
       }
-      else if(actual_parameters->parameter_values.find(PARAM_xst_log_file) != actual_parameters->parameter_values.end() && boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
+      else if(actual_parameters->parameter_values.find(PARAM_xst_log_file) !=
+                  actual_parameters->parameter_values.end() &&
+              boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
       {
          parse_timing(actual_parameters->parameter_values[PARAM_xst_log_file]);
       }
@@ -669,7 +683,8 @@ void XilinxBackendFlow::CheckSynthesisResults()
       auto* area_clb_model = GetPointer<clb_model>(area_m);
       if(design_values[VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED] != 0.0)
       {
-         area_clb_model->set_resource_value(clb_model::LUT_FF_PAIRS, design_values[VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED]);
+         area_clb_model->set_resource_value(clb_model::LUT_FF_PAIRS,
+                                            design_values[VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED]);
       }
 
       if(design_values[VIVADO_XILINX_SLICE_LUTS] != 0.0)
@@ -687,10 +702,14 @@ void XilinxBackendFlow::CheckSynthesisResults()
       if(design_values[VIVADO_XILINX_DESIGN_DELAY] != 0.0)
       {
          lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[VIVADO_XILINX_DESIGN_DELAY]);
-         if(design_values[VIVADO_XILINX_DESIGN_DELAY] > Param->getOption<double>(OPT_clock_period) and actual_parameters->parameter_values.find(PARAM_vivado_timing_report) != actual_parameters->parameter_values.end() and
+         if(design_values[VIVADO_XILINX_DESIGN_DELAY] > Param->getOption<double>(OPT_clock_period) and
+            actual_parameters->parameter_values.find(PARAM_vivado_timing_report) !=
+                actual_parameters->parameter_values.end() and
             ExistFile(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))
          {
-            CopyFile(actual_parameters->parameter_values[PARAM_vivado_timing_report], Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" + STR_CST_synthesis_timing_violation_report);
+            CopyFile(actual_parameters->parameter_values[PARAM_vivado_timing_report],
+                     Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" +
+                         STR_CST_synthesis_timing_violation_report);
          }
       }
       else
@@ -698,8 +717,11 @@ void XilinxBackendFlow::CheckSynthesisResults()
          lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
       }
    }
-   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
-      ((actual_parameters->parameter_values.find(PARAM_vivado_timing_report) != actual_parameters->parameter_values.end() and ExistFile(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))))
+   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or
+       (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
+      ((actual_parameters->parameter_values.find(PARAM_vivado_timing_report) !=
+            actual_parameters->parameter_values.end() and
+        ExistFile(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))))
    {
       CopyStdout(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second);
    }
@@ -803,13 +825,14 @@ void XilinxBackendFlow::WriteFlowConfiguration(std::ostream& script)
    device_string = device->get_parameter<std::string>("family");
    if(device_string.find("-VVD") != std::string::npos)
    {
-      setupscr = STR(XILINX_VIVADO_SETTINGS);
+      setupscr =
+          Param->isOption(OPT_xilinx_vivado_settings) ? Param->getOption<std::string>(OPT_xilinx_vivado_settings) : "";
    }
    else
    {
-      setupscr = STR(XILINX_SETTINGS);
+      setupscr = Param->isOption(OPT_xilinx_settings) ? Param->getOption<std::string>(OPT_xilinx_settings) : "";
    }
-   if(setupscr.size() and setupscr != "0")
+   if(setupscr.size() && setupscr != "0")
    {
       script << "#configuration" << std::endl;
       if(boost::algorithm::starts_with(setupscr, "export"))
@@ -960,18 +983,21 @@ void XilinxBackendFlow::InitDesignParameters()
 void XilinxBackendFlow::create_cf(const DesignParametersRef dp, bool xst)
 {
    std::string ucf_filename = UCF_SUBDIR + dp->component_name + (xst ? ".xcf" : ".ucf");
-   std::ofstream UCF_file(ucf_filename.c_str());
+   std::ofstream UCF_file(ucf_filename);
    THROW_ASSERT(dp->parameter_values.find(PARAM_clk_name) != dp->parameter_values.end(), "");
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
-      UCF_file << "NET \"" << dp->parameter_values[PARAM_clk_name] << "\" TNM_NET = " << dp->parameter_values[PARAM_clk_name] << ";" << std::endl;
+      UCF_file << "NET \"" << dp->parameter_values[PARAM_clk_name]
+               << "\" TNM_NET = " << dp->parameter_values[PARAM_clk_name] << ";" << std::endl;
       if(xst)
       {
          UCF_file << "BEGIN MODEL \"" << dp->component_name << "\"" << std::endl;
          UCF_file << "NET \"" << dp->parameter_values[PARAM_clk_name] << "\" buffer_type=bufgp;" << std::endl;
          UCF_file << "END;" << std::endl;
       }
-      UCF_file << "TIMESPEC TS_" << dp->parameter_values[PARAM_clk_name] << " = PERIOD \"" << dp->parameter_values[PARAM_clk_name] << "\" " << dp->parameter_values[PARAM_clk_period] << " ns HIGH 50%;" << std::endl;
+      UCF_file << "TIMESPEC TS_" << dp->parameter_values[PARAM_clk_name] << " = PERIOD \""
+               << dp->parameter_values[PARAM_clk_name] << "\" " << dp->parameter_values[PARAM_clk_period]
+               << " ns HIGH 50%;" << std::endl;
    }
    else if(Param->isOption(OPT_connect_iob) && not Param->getOption<bool>(OPT_connect_iob))
    {

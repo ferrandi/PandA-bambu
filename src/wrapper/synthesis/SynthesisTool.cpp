@@ -89,8 +89,14 @@
 #include "DesignParameters.hpp"
 #include "xml_script_command.hpp"
 
-SynthesisTool::SynthesisTool(const ParameterConstRef& _Param, std::string _tool_exec, const target_deviceRef& _device, const std::string& _flow_name, std::string _output_dir)
-    : device(_device), Param(_Param), debug_level(Param->getOption<int>(OPT_debug_level)), output_level(Param->getOption<unsigned int>(OPT_output_level)), tool_exec(std::move(_tool_exec)), output_dir(std::move(_output_dir))
+SynthesisTool::SynthesisTool(const ParameterConstRef& _Param, std::string _tool_exec, const target_deviceRef& _device,
+                             const std::string& _flow_name, std::string _output_dir)
+    : device(_device),
+      Param(_Param),
+      debug_level(Param->getOption<int>(OPT_debug_level)),
+      output_level(Param->getOption<unsigned int>(OPT_output_level)),
+      tool_exec(std::move(_tool_exec)),
+      output_dir(std::move(_output_dir))
 {
    /// creating the output directory
    create_output_directory(_flow_name);
@@ -105,7 +111,8 @@ bool SynthesisTool::has_scripts() const
    return !script_map.empty() || !xml_script_nodes.empty();
 }
 
-SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device)
+SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const ParameterConstRef& _Param,
+                                                      const std::string& _output_dir, const target_deviceRef& _device)
 {
    switch(type)
    {
@@ -320,7 +327,8 @@ xml_nodeRef SynthesisTool::xwrite() const
    return root;
 }
 
-std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_node_tRef>& nodes, const DesignParametersRef& dp)
+std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_node_tRef>& nodes,
+                                                const DesignParametersRef& dp)
 {
    std::string script;
    for(const auto& node : nodes)

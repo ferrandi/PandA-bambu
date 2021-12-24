@@ -67,6 +67,7 @@
 #include "behavioral_helper.hpp"
 
 /// utility include
+#include "fileIO.hpp"
 #include "xml_helper.hpp"
 
 /// HLS include
@@ -85,14 +86,17 @@
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 
-Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::EVALUATION)
+Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                       const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::EVALUATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 Evaluation::~Evaluation() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
@@ -105,7 +109,8 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          {
             case Evaluation_Mode::DRY_RUN:
             {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::DRY_RUN_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+               ret.insert(std::make_tuple(HLSFlowStep_Type::DRY_RUN_EVALUATION, HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::WHOLE_APPLICATION));
                break;
             }
 #if HAVE_EXPERIMENTAL
@@ -114,11 +119,15 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                for(const auto objective : objective_vector)
                {
                   if(objective == "AREA")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::AREA_ESTIMATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::AREA_ESTIMATION, HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   else if(objective == "CLOCK_SLACK")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   else if(objective == "TIME")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::TIME_ESTIMATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::TIME_ESTIMATION, HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   else
                      THROW_ERROR("Estimation objective not yet supported " + objective);
                }
@@ -135,65 +144,93 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "AREA")
                   {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
                   else if(objective == "AREAxTIME")
                   {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "BRAMS")
                   {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
                   else if(objective == "CLOCK_SLACK")
                   {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
 #endif
 #if HAVE_SIMULATION_WRAPPER_BUILT
                   else if(objective == "CYCLES" || objective == "TOTAL_CYCLES")
                   {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "DSPS")
                   {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
 #endif
 #if HAVE_EXPERIMENTAL
                   else if(objective == "EDGES_REDUCTION_EVALUATION")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "FREQUENCY")
                   {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
                   else if(objective == "PERIOD")
                   {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
                   else if(objective == "REGISTERS")
                   {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
 #endif
 #if HAVE_EXPERIMENTAL
                   else if(objective == "NUM_AF_EDGES")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
                   else if(objective == "TIME" || objective == "TOTAL_TIME")
                   {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
 #endif
                   else
@@ -222,7 +259,8 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #if HAVE_VCD_BUILT
          if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::TOP_FUNCTION));
          }
 #endif
          break;
@@ -261,53 +299,64 @@ DesignFlowStep_Status Evaluation::Exec()
          THROW_ASSERT(evaluations.at("NUM_EXECUTIONS").size() == 1, "");
          auto num_executions = static_cast<unsigned long long int>(evaluations.at("NUM_EXECUTIONS")[0]);
          auto avg_cycles = static_cast<unsigned long long int>(evaluation);
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Total cycles             : " + STR(tot_cycles) + " cycles");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Total cycles             : " + STR(tot_cycles) + " cycles");
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of executions     : " + STR(num_executions));
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Average execution        : " + STR(avg_cycles) + " cycles");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Average execution        : " + STR(avg_cycles) + " cycles");
       }
       else if((objective == "AREA" or objective == "AREAxTIME") and !printed_area)
       {
          printed_area = true;
-         //         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Area                     : " + STR(evaluations.at("AREA").at(0) ));
+         //         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Area                     : " +
+         //         STR(evaluations.at("AREA").at(0) ));
          if(evaluations.find("SLICE") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("SLICE").size() == 1, "");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Slices                   : " + STR(evaluations.at("SLICE").at(0)));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Slices                   : " + STR(evaluations.at("SLICE").at(0)));
          }
          if(evaluations.find("SLICE_LUTS") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("SLICE_LUTS").size() == 1, "");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Luts                     : " + STR(evaluations.at("SLICE_LUTS").at(0)));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Luts                     : " + STR(evaluations.at("SLICE_LUTS").at(0)));
          }
          if(evaluations.find("LUT_FF_PAIRS") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("LUT_FF_PAIRS").size() == 1, "");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Lut FF Pairs             : " + STR(evaluations.at("LUT_FF_PAIRS").at(0)));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Lut FF Pairs             : " + STR(evaluations.at("LUT_FF_PAIRS").at(0)));
          }
          if(evaluations.find("LOGIC_ELEMENTS") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("LOGIC_ELEMENTS").size() == 1, "");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Logic Elements           : " + STR(evaluations.at("LOGIC_ELEMENTS").at(0)));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Logic Elements           : " + STR(evaluations.at("LOGIC_ELEMENTS").at(0)));
          }
          if(evaluations.find("FUNCTIONAL_ELEMENTS") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("FUNCTIONAL_ELEMENTS").size() == 1, "");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Functional Elements      : " + STR(evaluations.at("FUNCTIONAL_ELEMENTS").at(0)));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Functional Elements      : " + STR(evaluations.at("FUNCTIONAL_ELEMENTS").at(0)));
          }
          if(evaluations.find("LOGIC_AREA") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("LOGIC_AREA").size() == 1, "");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Logic Area               : " + STR(evaluations.at("LOGIC_AREA").at(0)));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Logic Area               : " + STR(evaluations.at("LOGIC_AREA").at(0)));
          }
          if(evaluations.find("POWER") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("POWER").size() == 1, "");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Power                    : " + STR(evaluations.at("POWER").at(0)));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Power                    : " + STR(evaluations.at("POWER").at(0)));
          }
          if(evaluations.find("ALMS") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("ALMS").size() == 1, "");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---ALMs                     : " + STR(evaluations.at("ALMS").at(0)));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---ALMs                     : " + STR(evaluations.at("ALMS").at(0)));
          }
       }
       else if(objective == "BRAMS")
@@ -330,8 +379,8 @@ DesignFlowStep_Status Evaluation::Exec()
          /// get the timing information after the synthesis
          double minimum_period = evaluation;
          auto clock_period = parameters->getOption<double>(OPT_clock_period);
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Clock period             : " + boost::lexical_cast<std::string>(clock_period));
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Design minimum period    : " + boost::lexical_cast<std::string>(minimum_period));
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Clock period             : " + STR(clock_period));
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Design minimum period    : " + STR(minimum_period));
       }
       else if(objective == "DSPS")
       {
@@ -339,7 +388,9 @@ DesignFlowStep_Status Evaluation::Exec()
          const auto dsps = evaluation;
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---DSPs                     : " + STR(dsps));
       }
-      else if((objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME") and not printed_frequency)
+      else if((objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or
+               objective == "AREAxTIME") and
+              not printed_frequency)
       {
          printed_frequency = true;
          /// get the timing information after the synthesis
@@ -370,7 +421,7 @@ DesignFlowStep_Status Evaluation::Exec()
    std::string candidate_out_file_name;
    do
    {
-      candidate_out_file_name = out_file_name + "_" + boost::lexical_cast<std::string>(progressive++) + ".xml";
+      candidate_out_file_name = GetPath(out_file_name + "_" + STR(progressive++) + ".xml");
    } while(boost::filesystem::exists(candidate_out_file_name));
 
    out_file_name = candidate_out_file_name;
@@ -386,7 +437,8 @@ DesignFlowStep_Status Evaluation::Exec()
    {
       bench_name += parameters->getOption<std::string>(OPT_benchmark_name);
    }
-   if(bench_name == "" || !parameters->IsParameter("simple-benchmark-name") || parameters->GetParameter<int>("simple-benchmark-name") == 0)
+   if(bench_name == "" || !parameters->IsParameter("simple-benchmark-name") ||
+      parameters->GetParameter<int>("simple-benchmark-name") == 0)
    {
       const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
 #if HAVE_TASTE
@@ -401,7 +453,7 @@ DesignFlowStep_Status Evaluation::Exec()
             bench_name += ":taste_architecture";
          }
 
-         bench_name += "_" + boost::lexical_cast<std::string>(progressive - 1);
+         bench_name += "_" + STR(progressive - 1);
       }
       else
 #endif
@@ -429,7 +481,7 @@ DesignFlowStep_Status Evaluation::Exec()
                bench_name += ":" + FB->CGetBehavioralHelper()->get_function_name();
             }
 
-            bench_name += "_" + boost::lexical_cast<std::string>(progressive - 1);
+            bench_name += "_" + STR(progressive - 1);
          }
       }
    }
@@ -451,7 +503,8 @@ DesignFlowStep_Status Evaluation::Exec()
          THROW_ASSERT(HLSMgr->evaluations.find("AREA") != HLSMgr->evaluations.end(), "Area value not found");
          THROW_ASSERT(HLSMgr->evaluations.find("CYCLES") != HLSMgr->evaluations.end(), "Cycles value not found");
          THROW_ASSERT(HLSMgr->evaluations.find("FREQUENCY") != HLSMgr->evaluations.end(), "Frequency value not found");
-         value = STR(HLSMgr->evaluations.find("AREA")->second[0] * HLSMgr->evaluations.find("CYCLES")->second[0] / HLSMgr->evaluations.find("FREQUENCY")->second[0]);
+         value = STR(HLSMgr->evaluations.find("AREA")->second[0] * HLSMgr->evaluations.find("CYCLES")->second[0] /
+                     HLSMgr->evaluations.find("FREQUENCY")->second[0]);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---AreaxTime                : " + value);
       }
       else if(objective == "TIME")
@@ -465,12 +518,14 @@ DesignFlowStep_Status Evaluation::Exec()
       {
          THROW_ASSERT(HLSMgr->evaluations.find("TOTAL_CYCLES") != HLSMgr->evaluations.end(), "Cycles value not found");
          THROW_ASSERT(HLSMgr->evaluations.find("FREQUENCY") != HLSMgr->evaluations.end(), "Frequency value not found");
-         value = STR(HLSMgr->evaluations.find("TOTAL_CYCLES")->second[0] / HLSMgr->evaluations.find("FREQUENCY")->second[0]);
+         value = STR(HLSMgr->evaluations.find("TOTAL_CYCLES")->second[0] /
+                     HLSMgr->evaluations.find("FREQUENCY")->second[0]);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Tot. Time                : " + value);
       }
       else
       {
-         THROW_ASSERT(HLSMgr->evaluations.find(objective) != HLSMgr->evaluations.end(), "Value of " + objective + " not found");
+         THROW_ASSERT(HLSMgr->evaluations.find(objective) != HLSMgr->evaluations.end(),
+                      "Value of " + objective + " not found");
          const std::vector<double>& local_evaluations = HLSMgr->evaluations.find(objective)->second;
          for(auto const single_evaluation : local_evaluations)
          {

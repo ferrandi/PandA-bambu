@@ -32,7 +32,8 @@
  */
 /**
  * @file add_op_loop_flow_edges.hpp
- * @brief Analysis step which adds flow edges for scheduling in operation graph connecting header to all the operations of a loop
+ * @brief Analysis step which adds flow edges for scheduling in operation graph connecting header to all the operations
+ * of a loop
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Revision$
@@ -66,7 +67,8 @@ class AddOpLoopFlowEdges : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -75,7 +77,8 @@ class AddOpLoopFlowEdges : public FunctionFrontendFlowStep
     * @param AppM is the application manager
     * @param function_id is the node id of the function analyzed.
     */
-   AddOpLoopFlowEdges(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   AddOpLoopFlowEdges(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id,
+                      const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

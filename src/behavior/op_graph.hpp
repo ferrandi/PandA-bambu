@@ -369,7 +369,8 @@ struct OpNodeInfo : public TypedNodeInfo
    CustomSet<unsigned int> cited_variables;
 
    /// set of scalar ssa accessed in this node
-   CustomMap<FunctionBehavior_VariableType, CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int>>> variables;
+   CustomMap<FunctionBehavior_VariableType, CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int>>>
+       variables;
 
 #if HAVE_EXPERIMENTAL
    /// set of memory locations dynamically accessed in this node
@@ -411,14 +412,16 @@ struct OpNodeInfo : public TypedNodeInfo
     * @param variable_type is the type of variables to be considered
     * @param access_type is the type of accesses to be considered
     */
-   const CustomSet<unsigned int>& GetVariables(const FunctionBehavior_VariableType variable_type, const FunctionBehavior_VariableAccessType access_type) const;
+   const CustomSet<unsigned int>& GetVariables(const FunctionBehavior_VariableType variable_type,
+                                               const FunctionBehavior_VariableAccessType access_type) const;
 
 #if HAVE_EXPERIMENTAL
    /**
     * Return a set of accessed dynamid data memory location
     * @param access_type is the type of accesses to be considered
     */
-   const CustomSet<MemoryAddress>& GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const;
+   const CustomSet<MemoryAddress>&
+   GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const;
 #endif
 
 #if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT
@@ -512,7 +515,8 @@ using OpNodeInfoConstRef = refcount<const OpNodeInfo>;
 #define RSDG_SELECTOR (TRED_SELECTOR)
 
 /// Control and Data dependence and antidependence graph edge selector with feedback edges
-#define FSADG_SELECTOR (CDG_SELECTOR | DFG_SELECTOR | ADG_SELECTOR | FB_CDG_SELECTOR | FB_DFG_SELECTOR | FB_ADG_SELECTOR)
+#define FSADG_SELECTOR \
+   (CDG_SELECTOR | DFG_SELECTOR | ADG_SELECTOR | FB_CDG_SELECTOR | FB_DFG_SELECTOR | FB_ADG_SELECTOR)
 /// Control and Data dependence and antidependence graph edge selector
 #define SAODG_SELECTOR (CDG_SELECTOR | DFG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR)
 /// data dependence antidependence and feedback graph edge selector
@@ -685,7 +689,8 @@ class OpVertexMap : public std::map<vertex, value, OpVertexSorter>
    /**
     * Constructor
     */
-   explicit OpVertexMap(const OpGraphConstRef op_graph) : std::map<vertex, value, OpVertexSorter>(OpVertexSorter(op_graph))
+   explicit OpVertexMap(const OpGraphConstRef op_graph)
+       : std::map<vertex, value, OpVertexSorter>(OpVertexSorter(op_graph))
    {
    }
 };
@@ -813,7 +818,8 @@ struct OpGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int selector, const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
+   OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int selector,
+           const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
 
    /**
     * Destructor
@@ -834,7 +840,8 @@ struct OpGraph : public graph
     * @param HLS is the high level synthesis structure
     * @param critical_paths is the set of operations belonging to critical paths
     */
-   void WriteDot(const std::string& file_name, const hlsConstRef HLS, const CustomSet<unsigned int> critical_paths) const;
+   void WriteDot(const std::string& file_name, const hlsConstRef HLS,
+                 const CustomSet<unsigned int> critical_paths) const;
 #endif
 
    /**

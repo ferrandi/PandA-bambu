@@ -57,7 +57,8 @@ class SimulationEvaluation : public EvaluationBaseStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    bool already_executed;
 
@@ -65,7 +66,8 @@ class SimulationEvaluation : public EvaluationBaseStep
    /**
     * Constructor of the class
     */
-   SimulationEvaluation(const ParameterConstRef Param, const HLS_managerRef hls_mgr, const DesignFlowManagerConstRef design_flow_manager);
+   SimulationEvaluation(const ParameterConstRef Param, const HLS_managerRef hls_mgr,
+                        const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor of the class
@@ -76,6 +78,6 @@ class SimulationEvaluation : public EvaluationBaseStep
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status Exec() override;
 };
 #endif

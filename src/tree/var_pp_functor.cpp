@@ -32,7 +32,8 @@
  */
 /**
  * @file var_pp_functor.cpp
- * @brief Helper for reading data about internal representation after behavioral_manager analysis about specification produced from tree
+ * @brief Helper for reading data about internal representation after behavioral_manager analysis about specification
+ * produced from tree
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -45,7 +46,9 @@
 #include "behavioral_helper.hpp"
 #include <cstddef> // for size_t
 
-pointer_var_pp_functor::pointer_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, bool _add_restrict) : pointer_based_variables(vars), BH(_BH), std_functor(std_var_pp_functor(_BH)), add_restrict(_add_restrict)
+pointer_var_pp_functor::pointer_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars,
+                                               bool _add_restrict)
+    : pointer_based_variables(vars), BH(_BH), std_functor(std_var_pp_functor(_BH)), add_restrict(_add_restrict)
 {
 }
 
@@ -88,7 +91,8 @@ std::string std_var_pp_functor::operator()(unsigned int var) const
          }
          else
          {
-            return "(*((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + offset_str + ")))" + "[" + this->operator()(index) + "]";
+            return "(*((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + offset_str + ")))" +
+                   "[" + this->operator()(index) + "]";
          }
       }
       else
@@ -127,7 +131,8 @@ std::string std_var_pp_functor::operator()(unsigned int var) const
          {
             type_string = type_string + "*";
          }
-         return "((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + this->operator()(offset) + "))";
+         return "((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + this->operator()(offset) +
+                "))";
       }
       else
       {
@@ -149,7 +154,9 @@ std::string std_var_pp_functor::operator()(unsigned int var) const
 
 std::string pointer_var_pp_functor::operator()(unsigned int var) const
 {
-   if(pointer_based_variables.find(var) == pointer_based_variables.end() and (not BH->IsDefaultSsaName(var) or pointer_based_variables.find(BH->GetVarFromSsa(var)) == pointer_based_variables.end()))
+   if(pointer_based_variables.find(var) == pointer_based_variables.end() and
+      (not BH->IsDefaultSsaName(var) or
+       pointer_based_variables.find(BH->GetVarFromSsa(var)) == pointer_based_variables.end()))
    {
       if(BH->is_an_indirect_ref(var))
       {
@@ -223,7 +230,9 @@ std::string pointer_var_pp_functor::operator()(unsigned int var) const
    }
 }
 
-address_var_pp_functor::address_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, const CustomSet<unsigned int> pointer_vars) : addr_based_variables(vars), pointer_based_variables(pointer_vars), BH(_BH)
+address_var_pp_functor::address_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars,
+                                               const CustomSet<unsigned int> pointer_vars)
+    : addr_based_variables(vars), pointer_based_variables(pointer_vars), BH(_BH)
 {
 }
 
@@ -310,7 +319,8 @@ std::string isolated_var_pp_functor::operator()(unsigned int var) const
          }
          else
          {
-            return "(*((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + offset_str + ")))" + "[" + this->operator()(index) + "]";
+            return "(*((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + offset_str + ")))" +
+                   "[" + this->operator()(index) + "]";
          }
       }
       else
@@ -349,7 +359,8 @@ std::string isolated_var_pp_functor::operator()(unsigned int var) const
          {
             type_string = type_string + "*";
          }
-         return "((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + this->operator()(offset) + "))";
+         return "((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + this->operator()(offset) +
+                "))";
       }
       else
       {

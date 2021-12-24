@@ -46,96 +46,109 @@
 
 #define __FORCE_INLINE __attribute__((always_inline)) inline
 
-namespace hls {
-
-template<typename T>
-class stream
+namespace hls
 {
- public:
-   /// Constructors
-   __FORCE_INLINE stream() {
-    }
+   template <typename T>
+   class stream
+   {
+    public:
+      /// Constructors
+      __FORCE_INLINE stream()
+      {
+      }
 
-   __FORCE_INLINE explicit stream(const char* name) {
-   }
+      __FORCE_INLINE explicit stream(const char* name)
+      {
+      }
 
-   /// Make copy constructor and assignment operator private
- private:
-    __FORCE_INLINE stream(const stream< T >& chn):V(chn.V) {
-   }
+      /// Make copy constructor and assignment operator private
+    private:
+      __FORCE_INLINE stream(const stream<T>& chn) : V(chn.V)
+      {
+      }
 
-   __FORCE_INLINE stream& operator= (const stream< T >& chn) {
-      V = chn.V;
-      return *this;
-   }
+      __FORCE_INLINE stream& operator=(const stream<T>& chn)
+      {
+         V = chn.V;
+         return *this;
+      }
 
- public:
-   /// Overload >> and << operators to implement read() and write()
-   __FORCE_INLINE void operator >> (T& rdata) {
-      read(rdata);
-   }
+    public:
+      /// Overload >> and << operators to implement read() and write()
+      __FORCE_INLINE void operator>>(T& rdata)
+      {
+         read(rdata);
+      }
 
-   __FORCE_INLINE void operator << (const T& wdata) {
-      write(wdata);
-   }
+      __FORCE_INLINE void operator<<(const T& wdata)
+      {
+         write(wdata);
+      }
 
-   /// Public API
- public:
-   /// Empty & Full
-   __FORCE_INLINE bool empty() const {
+      /// Public API
+    public:
+      /// Empty & Full
+      __FORCE_INLINE bool empty() const
+      {
 #ifndef __BAMBU__
-      return V.empty();
+         return V.empty();
 #else
-      return __bambu_fifo_empty(&V);
+         return __bambu_fifo_empty(&V);
 #endif
-   }
+      }
 
-   __FORCE_INLINE bool full() const {
+      __FORCE_INLINE bool full() const
+      {
 #ifndef __BAMBU__
-      return false;
+         return false;
 #else
-      return __bambu_fifo_full(&V);
+         return __bambu_fifo_full(&V);
 #endif
-   }
+      }
 
-   /// Blocking read
-   __FORCE_INLINE void read(T& dout) {
+      /// Blocking read
+      __FORCE_INLINE void read(T& dout)
+      {
 #ifndef __BAMBU__
 #else
-      dout = __bambu_fifo_read(&V);
+         dout = __bambu_fifo_read(&V);
 #endif
-   }
+      }
 
-   __FORCE_INLINE T read() {
-      T tmp;
-      read(tmp);
-      return tmp;
-   }
+      __FORCE_INLINE T read()
+      {
+         T tmp;
+         read(tmp);
+         return tmp;
+      }
 
-   /// Nonblocking read
-   __FORCE_INLINE bool read_nb(T& dout) {
-      bool has_value = !empty(&V);
-      if (has_value)
-         dout = read();
-      return has_value;
-   }
+      /// Nonblocking read
+      __FORCE_INLINE bool read_nb(T& dout)
+      {
+         bool has_value = !empty(&V);
+         if(has_value)
+            dout = read();
+         return has_value;
+      }
 
-   /// Blocking write
-   __FORCE_INLINE void write(const T& din) {
+      /// Blocking write
+      __FORCE_INLINE void write(const T& din)
+      {
 #ifndef __BAMBU__
-      V.push_back(din);
+         V.push_back(din);
 #else
-      __bambu_fifo_write(&V, din);
+         __bambu_fifo_write(&V, din);
 #endif
-   }
+      }
 
-   /// Nonblocking write
-   __FORCE_INLINE bool write_nb(const T& din) {
-      bool is_not_full = !full(&V);
-      if (is_not_full)
-         write(din);
-      return is_not_full;
-   }
+      /// Nonblocking write
+      __FORCE_INLINE bool write_nb(const T& din)
+      {
+         bool is_not_full = !full(&V);
+         if(is_not_full)
+            write(din);
+         return is_not_full;
+      }
 
     public:
 #ifndef __BAMBU__
@@ -143,10 +156,7 @@ class stream
 #else
       T V;
 #endif
-
-
-};
+   };
 
 } // namespace hls
 #endif
-

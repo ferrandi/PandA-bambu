@@ -144,6 +144,7 @@
 /// utility includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
+#include "fileIO.hpp"
 #include "string_manipulation.hpp"
 
 #define MAX_LENGTH 10000
@@ -199,8 +200,9 @@ int main(int argc, char* argv[])
             TranslatorConstRef tr(new Translator(parameters));
             std::string csv_file;
             const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
-            for(const auto input_file : input_files)
+            for(auto input_file : input_files)
             {
+               input_file = GetPath(input_file);
                if(parameters->GetFileFormat(input_file, false) == Parameters_FileFormat::FF_CSV)
                {
                   csv_file = input_file;
@@ -214,7 +216,8 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_TEX):
                {
                   /// Read data
-                  tr->write_to_latex(results, Parameters_FileFormat::FF_CSV, parameters->getOption<std::string>(OPT_output_file));
+                  tr->write_to_latex(results, Parameters_FileFormat::FF_CSV,
+                                     parameters->getOption<std::string>(OPT_output_file));
                   break;
                }
 #if HAVE_FROM_AADL_ASN_BUILT
@@ -228,6 +231,7 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
                case(Parameters_FileFormat::FF_LLVM):
+               case(Parameters_FileFormat::FF_LLVM_CPP):
 #endif
                case(Parameters_FileFormat::FF_CSV):
                case(Parameters_FileFormat::FF_CSV_RTL):
@@ -289,7 +293,8 @@ int main(int argc, char* argv[])
                   const DataXmlParserConstRef data_xml_parser(new DataXmlParser(parameters));
                   data_xml_parser->Parse(input_files, results);
                   TranslatorConstRef tr(new Translator(parameters));
-                  tr->write_to_latex(results, Parameters_FileFormat::FF_XML, parameters->getOption<std::string>(OPT_output_file));
+                  tr->write_to_latex(results, Parameters_FileFormat::FF_XML,
+                                     parameters->getOption<std::string>(OPT_output_file));
                   break;
                }
 #if HAVE_EXPERIMENTAL
@@ -321,6 +326,7 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
                case(Parameters_FileFormat::FF_LLVM):
+               case(Parameters_FileFormat::FF_LLVM_CPP):
 #endif
                case(Parameters_FileFormat::FF_CSV):
 #if HAVE_FROM_CSV_BUILT
@@ -390,14 +396,18 @@ int main(int argc, char* argv[])
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*******************************************************************************");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*                        Computing cell area and time models                  *");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*******************************************************************************");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                 "*******************************************************************************");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                 "*                        Computing cell area and time models                  *");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                 "*******************************************************************************");
                }
                else
                {
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, " ======================= Computing cell area and time models ================= ");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                 " ======================= Computing cell area and time models ================= ");
                }
             }
             const technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
@@ -420,7 +430,8 @@ int main(int argc, char* argv[])
             if(parameters->getOption<int>(OPT_cross_validation) > 1)
             {
                const RegressorConstRef cross_validation_regression(new CrossValidation(linear_regression, parameters));
-               const RegressionResultsRef results = cross_validation_regression->Exec(column_names, STR_CST_physical_library_models_area, preprocessed_data);
+               const RegressionResultsRef results = cross_validation_regression->Exec(
+                   column_names, STR_CST_physical_library_models_area, preprocessed_data);
                if(output_level >= OUTPUT_LEVEL_MINIMUM)
                {
                   if(output_level >= OUTPUT_LEVEL_VERBOSE)
@@ -428,21 +439,26 @@ int main(int argc, char* argv[])
                      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
                      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
                      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*******************************************************************************");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*                             Cross validation results                        *");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*******************************************************************************");
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                    "*******************************************************************************");
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                    "*                             Cross validation results                        *");
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                    "*******************************************************************************");
                   }
                   else
                   {
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, " ============================ Cross validation results ======================= ");
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    " ============================ Cross validation results ======================= ");
                   }
                   results->Print(std::cerr);
                }
             }
             else
             {
-               const RegressionResultsRef results = linear_regression->Exec(column_names, STR_CST_physical_library_models_area, preprocessed_data);
+               const RegressionResultsRef results =
+                   linear_regression->Exec(column_names, STR_CST_physical_library_models_area, preprocessed_data);
                if(output_level >= OUTPUT_LEVEL_MINIMUM)
                {
                   if(output_level >= OUTPUT_LEVEL_VERBOSE)
@@ -450,14 +466,18 @@ int main(int argc, char* argv[])
                      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
                      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
                      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*******************************************************************************");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*                                Regression results                           *");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*******************************************************************************");
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                    "*******************************************************************************");
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                    "*                                Regression results                           *");
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                    "*******************************************************************************");
                   }
                   else
                   {
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, " =============================== Regression results ========================== ");
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    " =============================== Regression results ========================== ");
                   }
                   results->Print(std::cerr);
                }
@@ -480,13 +500,14 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_TEX):
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: xml - Output: tex");
-                  tr->write_to_latex(results, input_format, parameters->getOption<std::string>(OPT_output_file));
+                  tr->write_to_latex(results, input_format,
+                                     GetPath(parameters->getOption<std::string>(OPT_output_file)));
                   break;
                }
                case(Parameters_FileFormat::FF_CSV):
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: XML - Output: CSV");
-                  tr->write_to_csv(results, parameters->getOption<std::string>(OPT_output_file));
+                  tr->write_to_csv(results, GetPath(parameters->getOption<std::string>(OPT_output_file)));
                   break;
                }
 #if HAVE_FROM_AADL_ASN_BUILT
@@ -500,6 +521,7 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
                case(Parameters_FileFormat::FF_LLVM):
+               case(Parameters_FileFormat::FF_LLVM_CPP):
 #endif
 #if HAVE_FROM_CSV_BUILT
                case(Parameters_FileFormat::FF_CSV_RTL):
@@ -568,17 +590,22 @@ int main(int argc, char* argv[])
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*******************************************************************************");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*       Computing probability distribution of operation execution time        *");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*******************************************************************************");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                 "*******************************************************************************");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                 "*       Computing probability distribution of operation execution time        *");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                                 "*******************************************************************************");
                }
                else
                {
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, " ====== Computing probability distribution of operation execution time =======");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                 " ====== Computing probability distribution of operation execution time =======");
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Input xml is Symbolic Distribution: going to estimate assembly variances");
+            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                           "Input xml is Symbolic Distribution: going to estimate assembly variances");
             if(output_format != Parameters_FileFormat::FF_XML)
                THROW_ERROR("Not supported combination input file - output file types");
             const std::string sequences = parameters->getOption<std::string>(OPT_normalization_sequences);
@@ -586,13 +613,15 @@ int main(int argc, char* argv[])
             for(size_t sequence_number = 0; sequence_number < sequences_splitted.size(); sequence_number++)
             {
                const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
-               const PreprocessingConstRef performance_estimation_preprocessing(new PerformanceEstimationPreprocessing(sequences_splitted[sequence_number], parameters));
+               const PreprocessingConstRef performance_estimation_preprocessing(
+                   new PerformanceEstimationPreprocessing(sequences_splitted[sequence_number], parameters));
                std::map<std::string, std::map<std::string, long double>> data, filtered_data, preprocessed_data;
                CustomOrderedSet<std::string> column_names;
                performance_estimation_preprocessing->ReadData(input_files, data, column_names);
                const PreprocessingConstRef cell_selection(new CellSelection(parameters));
                cell_selection->Exec(data, filtered_data, column_names, STR_CST_cycles);
-               performance_estimation_preprocessing->Exec(filtered_data, preprocessed_data, column_names, STR_CST_cycles);
+               performance_estimation_preprocessing->Exec(filtered_data, preprocessed_data, column_names,
+                                                          STR_CST_cycles);
 
                long double error = INFINITE_LONG_DOUBLE;
                while(true)
@@ -602,7 +631,8 @@ int main(int argc, char* argv[])
                   {
                      regression = RegressorConstRef(new CrossValidation(regression, parameters));
                   }
-                  const RegressionResultsRef results = regression->Exec(column_names, STR_CST_cycles, preprocessed_data);
+                  const RegressionResultsRef results =
+                      regression->Exec(column_names, STR_CST_cycles, preprocessed_data);
                   error = results->average_training_error;
                   if(error < parameters->getOption<long double>(OPT_maximum_error))
                   {
@@ -611,7 +641,8 @@ int main(int argc, char* argv[])
                   long double max_error = 0.0;
                   std::string benchmark_to_be_removed;
                   const CustomUnorderedMap<std::string, long double>& training_errors = results->training_errors;
-                  CustomUnorderedMap<std::string, long double>::const_iterator training_error, training_error_end = training_errors.end();
+                  CustomUnorderedMap<std::string, long double>::const_iterator training_error,
+                      training_error_end = training_errors.end();
                   for(training_error = training_errors.begin(); training_error != training_error_end; ++training_error)
                   {
                      long double current_training_error = training_error->second;
@@ -625,9 +656,13 @@ int main(int argc, char* argv[])
                         max_error = current_training_error;
                      }
                   }
-                  THROW_ASSERT(preprocessed_data.find(benchmark_to_be_removed) != preprocessed_data.end(), benchmark_to_be_removed + " is not in the map");
+                  THROW_ASSERT(preprocessed_data.find(benchmark_to_be_removed) != preprocessed_data.end(),
+                               benchmark_to_be_removed + " is not in the map");
                   preprocessed_data.erase(preprocessed_data.find(benchmark_to_be_removed));
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, debug_level, "Removed " + benchmark_to_be_removed + " with error " + boost::lexical_cast<std::string>(max_error) + ": current average error is " + boost::lexical_cast<std::string>(error));
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, debug_level,
+                                 "Removed " + benchmark_to_be_removed + " with error " +
+                                     boost::lexical_cast<std::string>(max_error) + ": current average error is " +
+                                     boost::lexical_cast<std::string>(error));
                }
                while(true)
                {
@@ -636,18 +671,22 @@ int main(int argc, char* argv[])
                   {
                      regression = RegressorConstRef(new CrossValidation(regression, parameters));
                   }
-                  const RegressionResultsRef results = regression->Exec(column_names, STR_CST_cycles, preprocessed_data);
+                  const RegressionResultsRef results =
+                      regression->Exec(column_names, STR_CST_cycles, preprocessed_data);
                   results->Print(std::cerr);
-                  long double current_minimum_significance = GetPointer<LinearRegressionResults>(results)->regressor_minimum_significance;
+                  long double current_minimum_significance =
+                      GetPointer<LinearRegressionResults>(results)->regressor_minimum_significance;
                   if(current_minimum_significance >= parameters->getOption<long double>(OPT_minimum_significance))
                   {
                      XMLGeneratorConstRef generator(new XMLGenerator(parameters));
-                     generator->GenerateRtlSequenceWeightModel(results->model, parameters->getOption<std::string>(OPT_output_file));
+                     generator->GenerateRtlSequenceWeightModel(results->model,
+                                                               parameters->getOption<std::string>(OPT_output_file));
                      break;
                   }
                   data = preprocessed_data;
-                  const PreprocessingConstRef significance_preprocessing(
-                      new SignificancePreprocessing(GetPointer<LinearRegressionResults>(results)->regressor_significances, GetPointer<LinearRegressionResults>(results)->regressor_minimum_significance, parameters));
+                  const PreprocessingConstRef significance_preprocessing(new SignificancePreprocessing(
+                      GetPointer<LinearRegressionResults>(results)->regressor_significances,
+                      GetPointer<LinearRegressionResults>(results)->regressor_minimum_significance, parameters));
                   significance_preprocessing->Exec(data, preprocessed_data, column_names, STR_CST_cycles);
                }
             }
@@ -669,25 +708,40 @@ int main(int argc, char* argv[])
             const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
 
-            const DesignFlowStepFactoryConstRef technology_flow_step_factory(new TechnologyFlowStepFactory(TM, device, design_flow_manager, parameters));
+            const DesignFlowStepFactoryConstRef technology_flow_step_factory(
+                new TechnologyFlowStepFactory(TM, device, design_flow_manager, parameters));
             design_flow_manager->RegisterFactory(technology_flow_step_factory);
 
-            const std::string load_technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
-            const vertex load_technology_flow_step = design_flow_manager->GetDesignFlowStep(load_technology_flow_signature);
-            const DesignFlowStepRef load_technology_design_flow_step = load_technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(load_technology_flow_step)->design_flow_step :
-                                                                                                   GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
+            const std::string load_technology_flow_signature =
+                TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
+            const vertex load_technology_flow_step =
+                design_flow_manager->GetDesignFlowStep(load_technology_flow_signature);
+            const DesignFlowStepRef load_technology_design_flow_step =
+                load_technology_flow_step ?
+                    design_flow_graph->CGetDesignFlowStepInfo(load_technology_flow_step)->design_flow_step :
+                    GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)
+                        ->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
             design_flow_manager->AddStep(load_technology_design_flow_step);
 
-            const std::string fix_technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::FIX_CHARACTERIZATION);
-            const vertex fix_technology_flow_step = design_flow_manager->GetDesignFlowStep(fix_technology_flow_signature);
-            const DesignFlowStepRef fix_technology_design_flow_step = fix_technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(fix_technology_flow_step)->design_flow_step :
-                                                                                                 GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::FIX_CHARACTERIZATION);
+            const std::string fix_technology_flow_signature =
+                TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::FIX_CHARACTERIZATION);
+            const vertex fix_technology_flow_step =
+                design_flow_manager->GetDesignFlowStep(fix_technology_flow_signature);
+            const DesignFlowStepRef fix_technology_design_flow_step =
+                fix_technology_flow_step ?
+                    design_flow_graph->CGetDesignFlowStepInfo(fix_technology_flow_step)->design_flow_step :
+                    GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)
+                        ->CreateTechnologyFlowStep(TechnologyFlowStep_Type::FIX_CHARACTERIZATION);
             design_flow_manager->AddStep(fix_technology_design_flow_step);
 
-            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
+            const std::string technology_flow_signature =
+                TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
             const vertex technology_flow_step = design_flow_manager->GetDesignFlowStep(technology_flow_signature);
-            const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
-                                                                                         GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
+            const DesignFlowStepRef technology_design_flow_step =
+                technology_flow_step ?
+                    design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                    GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)
+                        ->CreateTechnologyFlowStep(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
             design_flow_manager->AddStep(technology_design_flow_step);
             design_flow_manager->Exec();
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--Merged characterizations");
@@ -706,16 +760,21 @@ int main(int argc, char* argv[])
             const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
 
-            const DesignFlowStepFactoryConstRef technology_flow_step_factory(new TechnologyFlowStepFactory(TM, device, design_flow_manager, parameters));
+            const DesignFlowStepFactoryConstRef technology_flow_step_factory(
+                new TechnologyFlowStepFactory(TM, device, design_flow_manager, parameters));
             design_flow_manager->RegisterFactory(technology_flow_step_factory);
 
-            const DesignFlowStepFactoryConstRef to_data_file_step_factory(new ToDataFileStepFactory(target, design_flow_manager, parameters));
+            const DesignFlowStepFactoryConstRef to_data_file_step_factory(
+                new ToDataFileStepFactory(target, design_flow_manager, parameters));
             design_flow_manager->RegisterFactory(to_data_file_step_factory);
 
-            const std::string to_data_file_step_signature = ToDataFileStep::ComputeSignature(ToDataFileStep_Type::GENERATE_FU_LIST);
+            const std::string to_data_file_step_signature =
+                ToDataFileStep::ComputeSignature(ToDataFileStep_Type::GENERATE_FU_LIST);
             const vertex to_data_file_vertex = design_flow_manager->GetDesignFlowStep(to_data_file_step_signature);
             const DesignFlowStepRef to_data_file_step =
-                to_data_file_vertex ? design_flow_graph->CGetDesignFlowStepInfo(to_data_file_vertex)->design_flow_step : GetPointer<const ToDataFileStepFactory>(to_data_file_step_factory)->CreateStep(to_data_file_step_signature);
+                to_data_file_vertex ? design_flow_graph->CGetDesignFlowStepInfo(to_data_file_vertex)->design_flow_step :
+                                      GetPointer<const ToDataFileStepFactory>(to_data_file_step_factory)
+                                          ->CreateStep(to_data_file_step_signature);
             design_flow_manager->AddStep(to_data_file_step);
             design_flow_manager->Exec();
 #else
@@ -740,14 +799,22 @@ int main(int argc, char* argv[])
                         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
                         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
                         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                        INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*******************************************************************************");
-                        INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*                   Genereting symbolic sequence weight model                 *");
-                        INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*******************************************************************************");
+                        INDENT_OUT_MEX(
+                            OUTPUT_LEVEL_VERBOSE, output_level,
+                            "*******************************************************************************");
+                        INDENT_OUT_MEX(
+                            OUTPUT_LEVEL_VERBOSE, output_level,
+                            "*                   Genereting symbolic sequence weight model                 *");
+                        INDENT_OUT_MEX(
+                            OUTPUT_LEVEL_VERBOSE, output_level,
+                            "*******************************************************************************");
                      }
                      else
                      {
                         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-                        INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, " ================== Generating symbolic sequence weight models =============== ");
+                        INDENT_OUT_MEX(
+                            OUTPUT_LEVEL_MINIMUM, output_level,
+                            " ================== Generating symbolic sequence weight models =============== ");
                      }
                   }
                   XMLGeneratorConstRef generator(new XMLGenerator(parameters));
@@ -769,6 +836,7 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
                case(Parameters_FileFormat::FF_LLVM):
+               case(Parameters_FileFormat::FF_LLVM_CPP):
 #endif
                case(Parameters_FileFormat::FF_CSV):
                case(Parameters_FileFormat::FF_CSV_RTL):
@@ -836,6 +904,7 @@ int main(int argc, char* argv[])
          case(Parameters_FileFormat::FF_CPP):
          case(Parameters_FileFormat::FF_FORTRAN):
          case(Parameters_FileFormat::FF_LLVM):
+         case(Parameters_FileFormat::FF_LLVM_CPP):
 #endif
 #if HAVE_FROM_CSV_BUILT
          case(Parameters_FileFormat::FF_CSV_RTL):
@@ -899,7 +968,7 @@ int main(int argc, char* argv[])
    {
       std::cerr << "Unknown error type" << std::endl;
    }
-   if(not(parameters->getOption<bool>(OPT_no_clean)))
+   if(!parameters->getOption<bool>(OPT_no_clean))
    {
       boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
    }

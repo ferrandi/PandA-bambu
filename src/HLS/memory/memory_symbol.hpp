@@ -69,7 +69,11 @@ class memory_symbol
    /**
     * Constructor
     */
-   memory_symbol(unsigned int var, const std::string& _name, unsigned long long _address, unsigned int funId) : variable(var), symbol_name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)), name(_name), address(_address)
+   memory_symbol(unsigned int var, const std::string& _name, unsigned long long _address, unsigned int funId)
+       : variable(var),
+         symbol_name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)),
+         name(_name),
+         address(_address)
    {
    }
 

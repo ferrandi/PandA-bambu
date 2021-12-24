@@ -63,7 +63,8 @@
 /// macro used to traverse non empty sequences
 #define SEQ_VISIT_MEMBER(mask, seq, seqbasetype, method, visitor_type, visitor_obj) \
    if(((1 << GETID(seq)) & (mask)) == 0 && !(seq).empty())                          \
-   std::for_each((seq).begin(), (seq).end(), for_each_functor<seqbasetype, visitor_type>(&seqbasetype::method, visitor_obj))
+   std::for_each((seq).begin(), (seq).end(),                                        \
+                 for_each_functor<seqbasetype, visitor_type>(&seqbasetype::method, visitor_obj))
 /// constant used to avoid member visit
 #define NO_VISIT ~0U
 /// constant used to allow member visit
@@ -113,7 +114,8 @@ class object_visitor
     * virtual template object functor
     * @param obj is the object visited
     * @param mask control the visit of the object members.
-    * the next macro will define a set of virtual function starting from VISITED_OBJ_SEQ1 VISITED_OBJ_SEQ2 following the schema:
+    * the next macro will define a set of virtual function starting from VISITED_OBJ_SEQ1 VISITED_OBJ_SEQ2 following the
+    * schema:
     *
     * virtual void operator()(const VISITED_OBJ * obj, unsigned int & mask) {}
     *
@@ -136,7 +138,8 @@ class for_each_functor : public std::unary_function<const refcount<T>&, void>
 
  public:
    /// constructor
-   for_each_functor(const visitor_function_type _visitor_function, visitor_type _vo) : visitor_function(_visitor_function), vo(_vo)
+   for_each_functor(const visitor_function_type _visitor_function, visitor_type _vo)
+       : visitor_function(_visitor_function), vo(_vo)
    {
    }
    /// functor

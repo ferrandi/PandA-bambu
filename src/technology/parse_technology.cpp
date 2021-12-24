@@ -85,7 +85,8 @@
 /// utility include
 #include "string_manipulation.hpp"
 
-void read_technology_File(const std::string& fn, const technology_managerRef& TM, const ParameterConstRef& Param, const target_deviceRef& device)
+void read_technology_File(const std::string& fn, const technology_managerRef& TM, const ParameterConstRef& Param,
+                          const target_deviceRef& device)
 {
    try
    {
@@ -116,7 +117,8 @@ void read_technology_File(const std::string& fn, const technology_managerRef& TM
             }
          }
          /// FIXME: setting paraemeters
-         const_cast<Parameter*>(Param.get())->setOption(OPT_input_libraries, convert_vector_to_string<std::string>(input_libraries, ";"));
+         const_cast<Parameter*>(Param.get())
+             ->setOption(OPT_input_libraries, convert_vector_to_string<std::string>(input_libraries, ";"));
       }
    }
    catch(const char* msg)
@@ -137,7 +139,8 @@ void read_technology_File(const std::string& fn, const technology_managerRef& TM
    }
 }
 
-void read_technology_library(const technology_managerRef& TM, const ParameterConstRef& Param, const target_deviceRef& device)
+void read_technology_library(const technology_managerRef& TM, const ParameterConstRef& Param,
+                             const target_deviceRef& device)
 {
 #if HAVE_EXPERIMENTAL || HAVE_FROM_LIBERTY || HAVE_LIBRARY_COMPILER
    int output_level = Param->getOption<int>(OPT_output_level);
@@ -175,13 +178,16 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
          if(!boost::filesystem::exists(LibraryFile))
             THROW_ERROR("Liberty file \"" + LibraryFile + "\" does not exists!");
          START_TIME(lib2xmlTime);
-         std::string TargetXML = Param->getOption<std::string>(OPT_output_temporary_directory) + "/library_" + boost::lexical_cast<std::string>(i) + ".xml";
+         std::string TargetXML = Param->getOption<std::string>(OPT_output_temporary_directory) + "/library_" +
+                                 boost::lexical_cast<std::string>(i) + ".xml";
          lib2xml(LibraryFile, TargetXML, Param);
          if(XmlList.size())
             XmlList += ";";
          XmlList += TargetXML;
          STOP_TIME(lib2xmlTime);
-         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "(koala) Read and converted the liberty file \"" + LibraryFile + "\" in " + boost::lexical_cast<std::string>(print_cpu_time(lib2xmlTime)) + " seconds;\n");
+         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                       "(koala) Read and converted the liberty file \"" + LibraryFile + "\" in " +
+                           boost::lexical_cast<std::string>(print_cpu_time(lib2xmlTime)) + " seconds;\n");
       }
       /// FIXME: setting parameters
       const_cast<Parameter*>(Param.get())->setOption("input_xml_library_file", XmlList);
@@ -198,7 +204,9 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
       technology_managerRef local_TM = technology_managerRef(new technology_manager(Param));
       read_genlib_technology_File(LibraryName, local_TM, Param);
       STOP_TIME(genlibTime);
-      PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "(koala) Read the technology library file \"" + LibraryName + "\" in " + boost::lexical_cast<std::string>(print_cpu_time(genlibTime)) + " seconds;\n");
+      PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                    "(koala) Read the technology library file \"" + LibraryName + "\" in " +
+                        boost::lexical_cast<std::string>(print_cpu_time(genlibTime)) + " seconds;\n");
       write_technology_File(technology_manager::XML, "genlib", local_TM, device->get_type());
       /// FIXME: setting parameters
       const_cast<Parameter*>(Param.get())->setOption("input_xml_library_file", "genlib.xml");
@@ -224,7 +232,9 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
          START_TIME(xmlTime);
          read_technology_File(SplittedLibs[i], TM, Param, device);
          STOP_TIME(xmlTime);
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "(koala) Read the XML technology library file \"" + LibraryName + "\" in " + boost::lexical_cast<std::string>(print_cpu_time(xmlTime)) + " seconds;\n");
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                       "(koala) Read the XML technology library file \"" + LibraryName + "\" in " +
+                           boost::lexical_cast<std::string>(print_cpu_time(xmlTime)) + " seconds;\n");
       }
 
 #if HAVE_BOOLEAN_PARSER_BUILT
@@ -265,7 +275,8 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
          const library_managerRef& LM = TM->get_library_manager(LibraryName);
          LM->set_info(library_manager::LEF, LefFileName);
 
-         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "(koala) Stored LEF file \"" + LefFileName + "\" for library \"" + LibraryName + "\";\n");
+         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                       "(koala) Stored LEF file \"" + LefFileName + "\" for library \"" + LibraryName + "\";\n");
       }
    }
 #endif
@@ -293,7 +304,8 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
          const library_managerRef LM = TM->get_library_manager(LibraryName);
          LM->set_info(library_manager::DB, dbFileName);
 
-         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "(koala) Stored DB file \"" + dbFileName + "\" for library \"" + LibraryName + "\";\n");
+         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                       "(koala) Stored DB file \"" + dbFileName + "\" for library \"" + LibraryName + "\";\n");
       }
    }
 #endif
@@ -423,7 +435,8 @@ void write_xml_technology_File(const std::string& f, library_manager* LM, Target
 }
 
 #if HAVE_FROM_LIBERTY
-void write_lib_technology_File(const std::string& f, technology_managerRef const& TM, const CustomOrderedSet<std::string>& libraries)
+void write_lib_technology_File(const std::string& f, technology_managerRef const& TM,
+                               const CustomOrderedSet<std::string>& libraries)
 {
    try
    {
@@ -473,7 +486,8 @@ void write_lib_technology_File(const std::string& f, library_manager* LM, Target
 #endif
 
 #if HAVE_EXPERIMENTAL
-void write_lef_technology_File(const std::string& f, technology_managerRef const& TM, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& libraries)
+void write_lef_technology_File(const std::string& f, technology_managerRef const& TM, TargetDevice_Type dv_type,
+                               const CustomOrderedSet<std::string>& libraries)
 {
    try
    {

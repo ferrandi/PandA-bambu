@@ -69,22 +69,25 @@
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, DOM_POST_DOM_COMPUTATION, _design_flow_manager, _parameters), bb_cfg_computation_bb_version(0)
+dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _parameters,
+                                                   const application_managerRef _AppM, unsigned int _function_id,
+                                                   const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, DOM_POST_DOM_COMPUTATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 dom_post_dom_computation::~dom_post_dom_computation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> dom_post_dom_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+dom_post_dom_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -108,13 +111,6 @@ void dom_post_dom_computation::Initialize()
 
 DesignFlowStep_Status dom_post_dom_computation::InternalExec()
 {
-   const auto bb_cfg_computation_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BASIC_BLOCKS_CFG_COMPUTATION, function_id);
-   const auto bb_cfg_computation_vertex = design_flow_manager.lock()->GetDesignFlowStep(bb_cfg_computation_signature);
-   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const auto bb_cfg_computation_step = design_flow_graph->CGetDesignFlowStepInfo(bb_cfg_computation_vertex)->design_flow_step;
-   THROW_ASSERT(bb_cfg_computation_step, bb_cfg_computation_signature);
-   bb_cfg_computation_bb_version = GetPointer<const FunctionFrontendFlowStep>(bb_cfg_computation_step)->CGetBBVersion();
-
    const BBGraphConstRef fbb = function_behavior->CGetBBGraph(FunctionBehavior::FBB);
 
    const BehavioralHelperConstRef helper = function_behavior->CGetBehavioralHelper();
@@ -149,28 +145,12 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
          function_behavior->bbgc->AddEdge(it.second, it.first, PD_SELECTOR);
       }
    }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built post-dominators tree of " + helper->get_function_name());
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                 "Built post-dominators tree of " + helper->get_function_name());
 
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->GetBBGraph(FunctionBehavior::POST_DOM_TREE)->WriteDot("BB_post_dom_tree.dot");
    }
    return DesignFlowStep_Status::SUCCESS;
-}
-
-bool dom_post_dom_computation::HasToBeExecuted() const
-{
-   const auto bb_cfg_computation_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BASIC_BLOCKS_CFG_COMPUTATION, function_id);
-   const auto bb_cfg_computation_vertex = design_flow_manager.lock()->GetDesignFlowStep(bb_cfg_computation_signature);
-   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const auto bb_cfg_computation_step = design_flow_graph->CGetDesignFlowStepInfo(bb_cfg_computation_vertex)->design_flow_step;
-   THROW_ASSERT(bb_cfg_computation_step, bb_cfg_computation_signature);
-   if(GetPointer<const FunctionFrontendFlowStep>(bb_cfg_computation_step)->CGetBBVersion() != bb_cfg_computation_bb_version)
-   {
-      return true;
-   }
-   else
-   {
-      return FunctionFrontendFlowStep::HasToBeExecuted();
-   }
 }

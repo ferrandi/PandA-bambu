@@ -75,14 +75,16 @@ class liberty_model : public time_model
 
    void xwrite(xml_element* pin_node, const std::string& output_pin) override;
 
-   void add_timing_group(const std::string& output, const CustomOrderedSet<std::string>& inputs, const timing_groupRef& tg);
+   void add_timing_group(const std::string& output, const CustomOrderedSet<std::string>& inputs,
+                         const timing_groupRef& tg);
 
    std::map<std::string, std::map<CustomOrderedSet<std::string>, timing_groupRef>> get_timing_groups() const
    {
       return timing_groups;
    }
 
-   void set_timing_groups(const std::map<std::string, std::map<CustomOrderedSet<std::string>, timing_groupRef>>& timing_groups_);
+   void set_timing_groups(
+       const std::map<std::string, std::map<CustomOrderedSet<std::string>, timing_groupRef>>& timing_groups_);
 
    bool has_timing_groups() const
    {

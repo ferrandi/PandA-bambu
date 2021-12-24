@@ -64,8 +64,10 @@
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
 
-values_scheme::values_scheme(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
-    : storage_value_insertion(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION)
+values_scheme::values_scheme(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                             const DesignFlowManagerConstRef _design_flow_manager)
+    : storage_value_insertion(_Param, _HLSMgr, _funId, _design_flow_manager,
+                              HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION)
 {
 }
 
@@ -76,7 +78,8 @@ void values_scheme::Initialize()
    HLSFunctionStep::Initialize();
    if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
    {
-      HLS->storage_value_information = StorageValueInformationPipelineRef(new StorageValueInformationPipeline(HLSMgr, funId));
+      HLS->storage_value_information =
+          StorageValueInformationPipelineRef(new StorageValueInformationPipeline(HLSMgr, funId));
    }
    else
    {
@@ -98,7 +101,8 @@ DesignFlowStep_Status values_scheme::InternalExec()
    vertex current_vertex;
    vertex start_state = HLS->STG->get_entry_state();
    const std::list<vertex>& support = HLS->Rliv->get_support();
-   last_intermediate_state fetch_previous(HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline());
+   last_intermediate_state fetch_previous(HLS->STG->GetStg(),
+                                          HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline());
    next_unique_state get_next(HLS->STG->GetStg());
 
    const auto vEnd = support.end();
@@ -150,15 +154,15 @@ DesignFlowStep_Status values_scheme::InternalExec()
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Storage Value Information of function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "-->Storage Value Information of function " +
+                      HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of storage values inserted: " + std::to_string(i));
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);
-   }
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
-   {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to compute storage value information: " + print_cpu_time(step_time) + " seconds");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "Time to compute storage value information: " + print_cpu_time(step_time) + " seconds");
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)

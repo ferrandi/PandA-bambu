@@ -58,11 +58,14 @@ class XilinxTasteBackendFlow : public XilinxBackendFlow
     * @param flow_name is the name of the create flow
     * @param manager is the target manager
     */
-   XilinxTasteBackendFlow(const ParameterConstRef& parameters, const std::string& flow_name, const target_managerRef& manager);
+   XilinxTasteBackendFlow(const ParameterConstRef& parameters, const std::string& flow_name,
+                          const target_managerRef& manager);
 
    /**
     * Generates the synthesis scripts for the specified design
     */
-   std::string GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM, const std::list<std::string>& hdl_files, const std::list<std::string>& aux_files) override;
+   std::string GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM,
+                                        const std::list<std::string>& hdl_files,
+                                        const std::list<std::string>& aux_files) override;
 };
 #endif

@@ -28,11 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "single.h"
-#include "soft-fp.h"
-
-SFtype __truncdfsf2(DFtype a)
+static __FORCE_INLINE SFtype __truncdfsf2(DFtype a)
 {
    FP_DECL_EX;
    FP_DECL_D(A);

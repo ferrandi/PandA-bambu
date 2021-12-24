@@ -400,6 +400,7 @@ if BUILD_LIB_LIBRARY_CHARACTERIZATION
    -I$(top_srcdir)/src/wrapper \
    -I$(top_srcdir)/src/wrapper/synthesis\
    -I$(top_srcdir)/src/wrapper/synthesis/xilinx \
+   -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
 

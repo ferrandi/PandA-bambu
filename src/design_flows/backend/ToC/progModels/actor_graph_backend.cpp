@@ -71,8 +71,10 @@ std::string ToString(ActorGraphBackend_Type actor_graph_backend_type)
    return "";
 }
 
-ActorGraphBackend::ActorGraphBackend(const PartitioningManagerConstRef& _partitioning_manager, const CustomUnorderedMap<ActorGraph_Type, ActorGraphBackendRef>& _actor_graph_backends, const CWriterRef& _c_writer,
-                                     const IndentedOutputStreamRef& _indented_output_stream, const ParameterConstRef& _parameters, const bool _verbose)
+ActorGraphBackend::ActorGraphBackend(
+    const PartitioningManagerConstRef& _partitioning_manager,
+    const CustomUnorderedMap<ActorGraph_Type, ActorGraphBackendRef>& _actor_graph_backends, const CWriterRef& _c_writer,
+    const IndentedOutputStreamRef& _indented_output_stream, const ParameterConstRef& _parameters, const bool _verbose)
     : partitioning_manager(_partitioning_manager),
       actor_graph_backends(_actor_graph_backends),
       c_writer(_c_writer),

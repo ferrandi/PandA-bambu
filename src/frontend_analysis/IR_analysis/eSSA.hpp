@@ -34,7 +34,7 @@
  * @file eSSA.hpp
  * @brief
  *
- * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -62,11 +62,13 @@ class eSSA : public FunctionFrontendFlowStep
 
  private:
    BBGraphRef DT;
-   unsigned int bv_ver;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   bool renameUses(CustomSet<OperandRef>& OpSet, ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, CustomMap<unsigned int, DFSInfo>& DFSInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, statement_list* sl);
+   bool renameUses(CustomSet<OperandRef>& OpSet, ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos,
+                   CustomMap<unsigned int, DFSInfo>& DFSInfos,
+                   CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, statement_list* sl);
 
  public:
    /**
@@ -76,7 +78,8 @@ class eSSA : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   eSSA(const ParameterConstRef Param, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm);
+   eSSA(const ParameterConstRef Param, const application_managerRef AM, unsigned int f_id,
+        const DesignFlowManagerConstRef dfm);
 
    /**
     *  Destructor
@@ -93,8 +96,6 @@ class eSSA : public FunctionFrontendFlowStep
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
-
-   bool HasToBeExecuted() const override;
 };
 
 #endif // !ESSA_HPP

@@ -43,6 +43,7 @@
 /// Autoheader include
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG12_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -111,7 +112,8 @@
 #define OPT_MINUS_MAP 269
 #define OPT_GC_SECTIONS 270
 
-tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string& _program_name, int _argc, char** const _argv) : Parameter(_program_name, _argc, _argv)
+tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string& _program_name, int _argc, char** const _argv)
+    : Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
 }
@@ -311,9 +313,11 @@ int tree_panda_gcc_parameter::Exec()
          }
          case OPT_PRINT_FILE_NAME:
          {
-            const CompilerWrapper_OptimizationSet optimization_set = getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
+            const CompilerWrapper_OptimizationSet optimization_set =
+                getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
             refcount<tree_panda_gcc_parameter> param(this, null_deleter());
-            CompilerWrapperRef Wrap = CompilerWrapperRef(new CompilerWrapper(param, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, optimization_set));
+            CompilerWrapperRef Wrap = CompilerWrapperRef(
+                new CompilerWrapper(param, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, optimization_set));
             Wrap->QueryCompilerConfig("--print-file-name=" + std::string(optarg));
             return EXIT_SUCCESS;
          }
@@ -402,7 +406,8 @@ void tree_panda_gcc_parameter::CheckParameters()
 
 void tree_panda_gcc_parameter::PrintHelp(std::ostream& os) const
 {
-   os << "Usage: " << getOption<std::string>(OPT_program_name) << " [options] <input_file1> [<input_file2> ... <input_fileN>]" << std::endl;
+   os << "Usage: " << getOption<std::string>(OPT_program_name)
+      << " [options] <input_file1> [<input_file2> ... <input_fileN>]" << std::endl;
    os << std::endl;
    os << "Options: \n"
       << "\n";
@@ -485,6 +490,8 @@ void tree_panda_gcc_parameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10));
 #elif HAVE_I386_CLANG11_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11));
+#elif HAVE_I386_CLANG12_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12));
 #elif HAVE_I386_CLANGVVD_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD));
 #else
@@ -541,6 +548,9 @@ void tree_panda_gcc_parameter::SetDefaults()
 #endif
 #if HAVE_I386_CLANG11_COMPILER
                                            | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12)
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
                                            | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)

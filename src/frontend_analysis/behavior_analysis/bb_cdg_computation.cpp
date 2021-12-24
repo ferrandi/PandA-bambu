@@ -53,23 +53,25 @@
 #include "hash_helper.hpp"
 #include "op_graph.hpp"
 
-BBCdgComputation::BBCdgComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+BBCdgComputation::BBCdgComputation(const ParameterConstRef _Param, const application_managerRef _AppM,
+                                   unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, BB_CONTROL_DEPENDENCE_COMPUTATION, _design_flow_manager, _Param)
 {
 }
 
 BBCdgComputation::~BBCdgComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BBCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+BBCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_ORDER_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_ORDER_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -168,7 +170,8 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
          InEdgeIterator eii, eii_end;
          for(boost::tie(eii, eii_end) = boost::in_edges(*it, *cdg_bb); eii != eii_end; eii++)
          {
-            this_cod.emplace(std::pair<vertex, CustomOrderedSet<unsigned int>>(boost::source(*eii, *cdg_bb), cdg_bb->CGetBBEdgeInfo(*eii)->get_labels(CDG_SELECTOR)));
+            this_cod.emplace(std::pair<vertex, CustomOrderedSet<unsigned int>>(
+                boost::source(*eii, *cdg_bb), cdg_bb->CGetBBEdgeInfo(*eii)->get_labels(CDG_SELECTOR)));
          }
          if(cdg_to_index.find(this_cod) == cdg_to_index.end())
          {

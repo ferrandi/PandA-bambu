@@ -87,23 +87,39 @@ OpNodeInfo::OpNodeInfo() : node(tree_nodeRef()), bb_index(0), cer(0)
 void OpNodeInfo::Initialize()
 {
    /// This is necessary to be sure that the set exists (even if empty)
-   variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::USE] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::DEFINITION] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::OVER] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::ADDRESS] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::MEMORY][FunctionBehavior_VariableAccessType::USE] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::MEMORY][FunctionBehavior_VariableAccessType::DEFINITION] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::MEMORY][FunctionBehavior_VariableAccessType::OVER] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::MEMORY][FunctionBehavior_VariableAccessType::ADDRESS] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::VIRTUAL][FunctionBehavior_VariableAccessType::USE] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::VIRTUAL][FunctionBehavior_VariableAccessType::DEFINITION] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::VIRTUAL][FunctionBehavior_VariableAccessType::OVER] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::VIRTUAL][FunctionBehavior_VariableAccessType::ADDRESS] = CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::USE] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::DEFINITION] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::OVER] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::ADDRESS] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::MEMORY][FunctionBehavior_VariableAccessType::USE] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::MEMORY][FunctionBehavior_VariableAccessType::DEFINITION] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::MEMORY][FunctionBehavior_VariableAccessType::OVER] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::MEMORY][FunctionBehavior_VariableAccessType::ADDRESS] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::VIRTUAL][FunctionBehavior_VariableAccessType::USE] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::VIRTUAL][FunctionBehavior_VariableAccessType::DEFINITION] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::VIRTUAL][FunctionBehavior_VariableAccessType::OVER] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::VIRTUAL][FunctionBehavior_VariableAccessType::ADDRESS] =
+       CustomSet<unsigned int>();
 #if HAVE_EXPERIMENTAL
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::USE] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::DEFINITION] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::OVER] = CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::ADDRESS] = CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::USE] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::DEFINITION] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::OVER] =
+       CustomSet<unsigned int>();
+   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::ADDRESS] =
+       CustomSet<unsigned int>();
    dynamic_memory_locations[FunctionBehavior_VariableAccessType::USE] = CustomSet<MemoryAddress>();
    dynamic_memory_locations[FunctionBehavior_VariableAccessType::DEFINITION] = CustomSet<MemoryAddress>();
    dynamic_memory_locations[FunctionBehavior_VariableAccessType::OVER] = CustomSet<MemoryAddress>();
@@ -112,13 +128,15 @@ void OpNodeInfo::Initialize()
 
 OpNodeInfo::~OpNodeInfo() = default;
 
-const CustomSet<unsigned int>& OpNodeInfo::GetVariables(const FunctionBehavior_VariableType variable_type, const FunctionBehavior_VariableAccessType access_type) const
+const CustomSet<unsigned int>& OpNodeInfo::GetVariables(const FunctionBehavior_VariableType variable_type,
+                                                        const FunctionBehavior_VariableAccessType access_type) const
 {
    return variables.find(variable_type)->second.find(access_type)->second;
 }
 
 #if HAVE_EXPERIMENTAL
-const CustomSet<MemoryAddress>& OpNodeInfo::GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const
+const CustomSet<MemoryAddress>&
+OpNodeInfo::GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const
 {
    return dynamic_memory_locations.find(access_type)->second;
 }
@@ -140,7 +158,8 @@ const std::string OpNodeInfo::GetOperation() const
       return NOP;
    }
    THROW_ASSERT(node, "");
-   THROW_ASSERT(GetPointer<const gimple_node>(GET_NODE(node)), "Node is not a gimple_node but a " + GET_NODE(node)->get_kind_text());
+   THROW_ASSERT(GetPointer<const gimple_node>(GET_NODE(node)),
+                "Node is not a gimple_node but a " + GET_NODE(node)->get_kind_text());
    return GetPointer<const gimple_node>(GET_NODE(node))->operation;
 }
 #endif
@@ -163,7 +182,8 @@ unsigned int OpNodeInfo::GetNodeId() const
    return 0;
 }
 
-void PrintVariablesList(std::ostream& stream, const std::string& name, const CustomSet<unsigned int> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
+void PrintVariablesList(std::ostream& stream, const std::string& name, const CustomSet<unsigned int> variables,
+                        const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
 {
    if(variables.size())
    {
@@ -176,7 +196,8 @@ void PrintVariablesList(std::ostream& stream, const std::string& name, const Cus
    }
 }
 
-void PrintMemoriesList(std::ostream& stream, const std::string& name, const CustomSet<MemoryAddress> variables, const BehavioralHelperConstRef, const bool dotty_format)
+void PrintMemoriesList(std::ostream& stream, const std::string& name, const CustomSet<MemoryAddress> variables,
+                       const BehavioralHelperConstRef, const bool dotty_format)
 {
    if(variables.size())
    {
@@ -188,32 +209,43 @@ void PrintMemoriesList(std::ostream& stream, const std::string& name, const Cust
    }
 }
 
-void PrintVariablesLists(std::ostream& stream, const std::string& name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int>> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
+void PrintVariablesLists(std::ostream& stream, const std::string& name,
+                         const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int>> variables,
+                         const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
 {
    for(const auto& local_variables : variables)
    {
       if(local_variables.second.size())
       {
          stream << name << ":" << (dotty_format ? "\\n" : "\n");
-         PrintVariablesList(stream, "USES", variables.find(FunctionBehavior_VariableAccessType::USE)->second, behavioral_helper, dotty_format);
-         PrintVariablesList(stream, "DEFS", variables.find(FunctionBehavior_VariableAccessType::DEFINITION)->second, behavioral_helper, dotty_format);
-         PrintVariablesList(stream, "OVERS", variables.find(FunctionBehavior_VariableAccessType::OVER)->second, behavioral_helper, dotty_format);
-         PrintVariablesList(stream, "ADDR", variables.find(FunctionBehavior_VariableAccessType::ADDRESS)->second, behavioral_helper, dotty_format);
+         PrintVariablesList(stream, "USES", variables.find(FunctionBehavior_VariableAccessType::USE)->second,
+                            behavioral_helper, dotty_format);
+         PrintVariablesList(stream, "DEFS", variables.find(FunctionBehavior_VariableAccessType::DEFINITION)->second,
+                            behavioral_helper, dotty_format);
+         PrintVariablesList(stream, "OVERS", variables.find(FunctionBehavior_VariableAccessType::OVER)->second,
+                            behavioral_helper, dotty_format);
+         PrintVariablesList(stream, "ADDR", variables.find(FunctionBehavior_VariableAccessType::ADDRESS)->second,
+                            behavioral_helper, dotty_format);
          break;
       }
    }
 }
 
-void PrintMemoriesLists(std::ostream& stream, const std::string& name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<MemoryAddress>> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
+void PrintMemoriesLists(std::ostream& stream, const std::string& name,
+                        const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<MemoryAddress>> variables,
+                        const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
 {
    for(const auto& local_variables : variables)
    {
       if(local_variables.second.size())
       {
          stream << name << ":" << (dotty_format ? "\\n" : "\n");
-         PrintMemoriesList(stream, "USES", variables.find(FunctionBehavior_VariableAccessType::USE)->second, behavioral_helper, dotty_format);
-         PrintMemoriesList(stream, "DEFS", variables.find(FunctionBehavior_VariableAccessType::DEFINITION)->second, behavioral_helper, dotty_format);
-         PrintMemoriesList(stream, "OVERS", variables.find(FunctionBehavior_VariableAccessType::OVER)->second, behavioral_helper, dotty_format);
+         PrintMemoriesList(stream, "USES", variables.find(FunctionBehavior_VariableAccessType::USE)->second,
+                           behavioral_helper, dotty_format);
+         PrintMemoriesList(stream, "DEFS", variables.find(FunctionBehavior_VariableAccessType::DEFINITION)->second,
+                           behavioral_helper, dotty_format);
+         PrintMemoriesList(stream, "OVERS", variables.find(FunctionBehavior_VariableAccessType::OVER)->second,
+                           behavioral_helper, dotty_format);
          break;
       }
    }
@@ -222,25 +254,31 @@ void PrintMemoriesLists(std::ostream& stream, const std::string& name, const Cus
 void OpNodeInfo::Print(std::ostream& stream, const BehavioralHelperConstRef behavioral_helper, bool dotty_format) const
 {
    PrintVariablesList(stream, "source code variables", cited_variables, behavioral_helper, dotty_format);
-   PrintVariablesLists(stream, "SCALARS", variables.find(FunctionBehavior_VariableType::SCALAR)->second, behavioral_helper, dotty_format);
+   PrintVariablesLists(stream, "SCALARS", variables.find(FunctionBehavior_VariableType::SCALAR)->second,
+                       behavioral_helper, dotty_format);
 #if HAVE_EXPERIMENTAL
-   PrintVariablesLists(stream, "AGGREGATE", variables.find(FunctionBehavior_VariableType::AGGREGATE)->second, behavioral_helper, dotty_format);
+   PrintVariablesLists(stream, "AGGREGATE", variables.find(FunctionBehavior_VariableType::AGGREGATE)->second,
+                       behavioral_helper, dotty_format);
 #endif
-   PrintVariablesLists(stream, "MEMORY", variables.find(FunctionBehavior_VariableType::MEMORY)->second, behavioral_helper, dotty_format);
-   PrintVariablesLists(stream, "VIRTUAL", variables.find(FunctionBehavior_VariableType::VIRTUAL)->second, behavioral_helper, dotty_format);
+   PrintVariablesLists(stream, "MEMORY", variables.find(FunctionBehavior_VariableType::MEMORY)->second,
+                       behavioral_helper, dotty_format);
+   PrintVariablesLists(stream, "VIRTUAL", variables.find(FunctionBehavior_VariableType::VIRTUAL)->second,
+                       behavioral_helper, dotty_format);
 #if HAVE_EXPERIMENTAL
    PrintMemoriesLists(stream, "DYNAMIC MEMORY", dynamic_memory_locations, behavioral_helper, dotty_format);
 #endif
 }
 
-OpGraphInfo::OpGraphInfo(const BehavioralHelperConstRef _BH) : entry_vertex(NULL_VERTEX), exit_vertex(NULL_VERTEX), BH(_BH)
+OpGraphInfo::OpGraphInfo(const BehavioralHelperConstRef _BH)
+    : entry_vertex(NULL_VERTEX), exit_vertex(NULL_VERTEX), BH(_BH)
 {
 }
 
 OpGraphInfo::~OpGraphInfo() = default;
 
 OpGraphsCollection::OpGraphsCollection(const OpGraphInfoRef _info, const ParameterConstRef _parameters)
-    : graphs_collection(RefcountCast<GraphInfo>(_info), _parameters), operations(OpGraphConstRef(new OpGraph(OpGraphsCollectionRef(this, null_deleter()), 0)))
+    : graphs_collection(RefcountCast<GraphInfo>(_info), _parameters),
+      operations(OpGraphConstRef(new OpGraph(OpGraphsCollectionRef(this, null_deleter()), 0)))
 {
 }
 
@@ -311,11 +349,14 @@ OpEdgeSet::OpEdgeSet(OpGraphConstRef _op_graph) : std::set<EdgeDescriptor, OpEdg
 }
 #endif
 
-OpGraph::OpGraph(OpGraphsCollectionRef _op_graphs_collection, int _selector) : graph(_op_graphs_collection.get(), _selector)
+OpGraph::OpGraph(OpGraphsCollectionRef _op_graphs_collection, int _selector)
+    : graph(_op_graphs_collection.get(), _selector)
 {
 }
 
-OpGraph::OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int _selector, const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& _sub) : graph(_op_graphs_collection.get(), _selector, _sub)
+OpGraph::OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int _selector,
+                 const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& _sub)
+    : graph(_op_graphs_collection.get(), _selector, _sub)
 {
 }
 
@@ -324,7 +365,8 @@ OpGraph::~OpGraph() = default;
 void OpGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
-   std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
+   std::string output_directory =
+       collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
    if(!boost::filesystem::exists(output_directory))
    {
       boost::filesystem::create_directories(output_directory);
@@ -406,10 +448,12 @@ OpEdgeSet OpGraph::CGetOutEdges(const vertex v) const
 #endif
 
 #if HAVE_HLS_BUILT
-void OpGraph::WriteDot(const std::string& file_name, const hlsConstRef HLS, const CustomSet<unsigned int> critical_paths) const
+void OpGraph::WriteDot(const std::string& file_name, const hlsConstRef HLS,
+                       const CustomSet<unsigned int> critical_paths) const
 {
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
-   std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
+   std::string output_directory =
+       collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
    if(!boost::filesystem::exists(output_directory))
    {
       boost::filesystem::create_directories(output_directory);

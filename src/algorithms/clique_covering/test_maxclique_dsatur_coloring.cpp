@@ -32,7 +32,8 @@
  */
 /**
  * @file test_maxclique_dsatur_coloring.hpp
- * @brief Test unit of the Boost-based implementation of the exact sequential coloring algorithm based on the work of Olivier Coudert and Daniel Brelaz.
+ * @brief Test unit of the Boost-based implementation of the exact sequential coloring algorithm based on the work of
+ * Olivier Coudert and Daniel Brelaz.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -256,7 +257,8 @@ int main(int argc, char* argv[])
 
    {
       std::vector<vertices_size_type> color_vec(num_vertices(g1));
-      iterator_property_map<vertices_size_type*, vertex_index_map, vertices_size_type, vertices_size_type&> color(&color_vec.front(), get(vertex_index, g1));
+      iterator_property_map<vertices_size_type*, vertex_index_map, vertices_size_type, vertices_size_type&> color(
+          &color_vec.front(), get(vertex_index, g1));
       vertices_size_type num_colors = maxclique_dsatur_coloring(g1, color);
       std::cout << "Boost colors are: " << num_colors << std::endl;
    }

@@ -90,7 +90,8 @@ using TBB = unsigned long;
 template <typename GraphObj>
 class dom_info
 {
-   /// The algorithm uses two different indices for each Vertex: a generic index given by boost and the index in the dfs search
+   /// The algorithm uses two different indices for each Vertex: a generic index given by boost and the index in the dfs
+   /// search
  private:
    /// Definition of Vertex
    using Vertex = typename boost::graph_traits<const GraphObj>::vertex_descriptor;
@@ -113,7 +114,8 @@ class dom_info
     */
    std::vector<TBB> key;
 
-   /// The value in path_min[x] is the node y on the path from x to the root of the tree x is in with the smallest key[y]
+   /// The value in path_min[x] is the node y on the path from x to the root of the tree x is in with the smallest
+   /// key[y]
    std::vector<TBB> path_min;
 
    /// bucket[x] points to the first node of the set of nodes having x as key.
@@ -192,7 +194,8 @@ class dom_info
     */
    void calc_dfs_tree_rec(Vertex bb)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing dfs tree starting from v_" + boost::lexical_cast<std::string>(bb));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Computing dfs tree starting from v_" + boost::lexical_cast<std::string>(bb));
       // bb is the parent Vertex
       /* We call this _only_ if bb is not already visited.  */
       edge e;
@@ -226,7 +229,8 @@ class dom_info
          // recursive call
          calc_dfs_tree_rec(bn);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed dfs tree starting from v_" + boost::lexical_cast<std::string>(bb));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Computed dfs tree starting from v_" + boost::lexical_cast<std::string>(bb));
    }
    /**
     * Compress the path from V to the root of its set and update path_min at the
@@ -454,12 +458,16 @@ class dom_info
          ++counter;
 #endif
       /* This aborts e.g. when there is _no_ path from ENTRY to EXIT at all.  */
-      THROW_ASSERT(nodes == counter,
-                   "there is _no_ path from ENTRY to EXIT at all. Number of vertices in the graph: " + boost::lexical_cast<std::string>(num_vertices(g)) + " Number of reachable from entry vertices " + boost::lexical_cast<std::string>(nodes));
+      THROW_ASSERT(nodes == counter, "there is _no_ path from ENTRY to EXIT at all. Number of vertices in the graph: " +
+                                         boost::lexical_cast<std::string>(num_vertices(g)) +
+                                         " Number of reachable from entry vertices " +
+                                         boost::lexical_cast<std::string>(nodes));
 #ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Vertices in dfs order");
       for(size_t index = 0; index < dfs_to_bb.size(); index++)
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + boost::lexical_cast<std::string>(index) + " v_" + boost::lexical_cast<std::string>(dfs_to_bb[index]));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---" + boost::lexical_cast<std::string>(index) + " v_" +
+                            boost::lexical_cast<std::string>(dfs_to_bb[index]));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 #endif
    }
@@ -479,12 +487,15 @@ class dom_info
       v = nodes;
       while(v > 1)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node in position " + boost::lexical_cast<std::string>(v) + " v_" + boost::lexical_cast<std::string>(dfs_to_bb[v]));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Analyzing node in position " + boost::lexical_cast<std::string>(v) + " v_" +
+                            boost::lexical_cast<std::string>(dfs_to_bb[v]));
          Vertex bb = dfs_to_bb[v];
          edge e;
          bool do_fake_exit_edge = false;
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parent is " + boost::lexical_cast<std::string>(dfs_parent[v]));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Parent is " + boost::lexical_cast<std::string>(dfs_parent[v]));
          TBB par = dfs_parent[v];
          TBB k = v;
 
@@ -529,7 +540,9 @@ class dom_info
                   k1 = dfs_order[index_map[b]];
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Predecessor is " + boost::lexical_cast<std::string>(k1) + " v_" + boost::lexical_cast<std::string>(b));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Predecessor is " + boost::lexical_cast<std::string>(k1) + " v_" +
+                               boost::lexical_cast<std::string>(b));
             /* Call eval() only if really needed.  If k1 is above V in DFS tree,
             then we know, that eval(k1) == k1 and key[k1] == k1.  */
             // k1 is the dfs index of the predecessor, v is the dfs of this Vertex
@@ -547,7 +560,8 @@ class dom_info
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Key is " + boost::lexical_cast<std::string>(k));
 
-         // k becomes the key for v, so we have to add v to the bucket of k. It becomes the first element because we are reverse counting v
+         // k becomes the key for v, so we have to add v to the bucket of k. It becomes the first element because we are
+         // reverse counting v
          key[v] = k;
          link_roots(par, v);
          next_bucket[v] = bucket[k];
@@ -566,11 +580,13 @@ class dom_info
             {
                dom[w] = par;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dom[w] is " + boost::lexical_cast<std::string>(dom[w]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---dom[w] is " + boost::lexical_cast<std::string>(dom[w]));
          }
          /* We don't need to cleanup next_bucket[].  */
          bucket[par] = 0;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed node in position " + boost::lexical_cast<std::string>(v));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Analyzed node in position " + boost::lexical_cast<std::string>(v));
          v--;
       }
 
@@ -598,7 +614,8 @@ class dom_info
          TBB d = dom[dfs_order[index_map[*vi]]];
          if(dfs_to_bb[d] != boost::graph_traits<GraphObj>::null_vertex())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dom is " + boost::lexical_cast<std::string>(dfs_to_bb[d]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---dom is " + boost::lexical_cast<std::string>(dfs_to_bb[d]));
             dom_map[*vi] = dfs_to_bb[d];
          }
       }
@@ -724,7 +741,13 @@ class dominance
     * @param dl is the debug_level
     */
    dominance(const GraphObj& _g, const Vertex _en_block, const Vertex _ex_block, const ParameterConstRef _param)
-       : dom_dir(CDI_NONE), dom_computed(DOM_NONE), g(_g), en_block(_en_block), ex_block(_ex_block), param(_param), debug_level(_param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
+       : dom_dir(CDI_NONE),
+         dom_computed(DOM_NONE),
+         g(_g),
+         en_block(_en_block),
+         ex_block(_ex_block),
+         param(_param),
+         debug_level(_param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
    {
       THROW_ASSERT(_en_block != _ex_block, "incorrect entry and exit basic blocks");
    }
@@ -766,7 +789,8 @@ class dominance
             mSetIter mSetBeg, mSetEnd;
             for(mSetBeg = dominated.begin(), mSetEnd = dominated.end(); mSetBeg != mSetEnd; ++mSetBeg)
             {
-               if((mSetBeg->second).find(dom_it->second) != (mSetBeg->second).end() && (mSetBeg->second).find(dom_it->first) == (mSetBeg->second).end())
+               if((mSetBeg->second).find(dom_it->second) != (mSetBeg->second).end() &&
+                  (mSetBeg->second).find(dom_it->first) == (mSetBeg->second).end())
                {
                   dominated[mSetBeg->first].insert(dom_it->first);
                   changed = true;

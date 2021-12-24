@@ -78,7 +78,8 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "technology_node.hpp"
 
-top_entity::top_entity(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+top_entity::top_entity(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                       const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -86,17 +87,20 @@ top_entity::top_entity(const ParameterConstRef _parameters, const HLS_managerRef
 
 top_entity::~top_entity() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> top_entity::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+top_entity::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          if(HLSMgr->get_HLS(funId))
          {
-            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          break;
       }
@@ -143,7 +147,8 @@ DesignFlowStep_Status top_entity::InternalExec()
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Top circuit creation");
 
    /// main circuit type
-   structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(module_name));
+   structural_type_descriptorRef module_type =
+       structural_type_descriptorRef(new structural_type_descriptor(module_name));
    /// setting top circuit component
    SM->set_top_info(module_name, module_type);
    structural_objectRef circuit = SM->get_circ();
@@ -186,7 +191,8 @@ DesignFlowStep_Status top_entity::InternalExec()
    /// connect to datapath and controller clock
    structural_objectRef datapath_clock = datapath_circuit->find_member(CLOCK_PORT_NAME, port_o_K, datapath_circuit);
    SM->add_connection(datapath_clock, clock_obj);
-   structural_objectRef controller_clock = controller_circuit->find_member(CLOCK_PORT_NAME, port_o_K, controller_circuit);
+   structural_objectRef controller_clock =
+       controller_circuit->find_member(CLOCK_PORT_NAME, port_o_K, controller_circuit);
    SM->add_connection(controller_clock, clock_obj);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tClock signal added!");
 
@@ -197,14 +203,16 @@ DesignFlowStep_Status top_entity::InternalExec()
    structural_objectRef datapath_reset = datapath_circuit->find_member(RESET_PORT_NAME, port_o_K, datapath_circuit);
    SM->add_connection(datapath_reset, reset_obj);
    /// connecting global reset port to the controller one
-   structural_objectRef controller_reset = controller_circuit->find_member(RESET_PORT_NAME, port_o_K, controller_circuit);
+   structural_objectRef controller_reset =
+       controller_circuit->find_member(RESET_PORT_NAME, port_o_K, controller_circuit);
    SM->add_connection(controller_reset, reset_obj);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tReset signal added!");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tAdding start signal...");
    /// start port
    structural_objectRef start_obj = SM->add_port(START_PORT_NAME, port_o::IN, circuit, bool_type);
-   structural_objectRef controller_start = controller_circuit->find_member(START_PORT_NAME, port_o_K, controller_circuit);
+   structural_objectRef controller_start =
+       controller_circuit->find_member(START_PORT_NAME, port_o_K, controller_circuit);
    /// check if datapath has a start signal
    structural_objectRef datapath_start = datapath_circuit->find_member(START_PORT_NAME, port_o_K, datapath_circuit);
    structural_objectRef sync_datapath_controller;
@@ -232,9 +240,12 @@ DesignFlowStep_Status top_entity::InternalExec()
       SM->add_connection(sync_datapath_controller, controller_start);
    }
    structural_objectRef done_signal_out;
-   if(HLS->registered_done_port and
-      (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
-       parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR))
+   if(HLS->registered_done_port and (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) ==
+                                         HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or
+                                     parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) ==
+                                         HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
+                                     parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) ==
+                                         HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR))
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
       std::string delay_unit;
@@ -247,7 +258,8 @@ DesignFlowStep_Status top_entity::InternalExec()
       {
          delay_unit = flipflop_AR;
       }
-      structural_objectRef delay_gate = SM->add_module_from_technology_library("done_delayed_REG", delay_unit, LIBRARY_STD, circuit, TM);
+      structural_objectRef delay_gate =
+          SM->add_module_from_technology_library("done_delayed_REG", delay_unit, LIBRARY_STD, circuit, TM);
       structural_objectRef port_ck = delay_gate->find_member(CLOCK_PORT_NAME, port_o_K, delay_gate);
       if(port_ck)
       {
@@ -259,10 +271,12 @@ DesignFlowStep_Status top_entity::InternalExec()
          SM->add_connection(reset_obj, port_rst);
       }
 
-      structural_objectRef done_signal_in = SM->add_sign("done_delayed_REG_signal_in", circuit, GetPointer<module>(delay_gate)->get_in_port(2)->get_typeRef());
+      structural_objectRef done_signal_in = SM->add_sign("done_delayed_REG_signal_in", circuit,
+                                                         GetPointer<module>(delay_gate)->get_in_port(2)->get_typeRef());
       SM->add_connection(GetPointer<module>(delay_gate)->get_in_port(2), done_signal_in);
       SM->add_connection(controller_done, done_signal_in);
-      done_signal_out = SM->add_sign("done_delayed_REG_signal_out", circuit, GetPointer<module>(delay_gate)->get_out_port(0)->get_typeRef());
+      done_signal_out = SM->add_sign("done_delayed_REG_signal_out", circuit,
+                                     GetPointer<module>(delay_gate)->get_out_port(0)->get_typeRef());
       SM->add_connection(GetPointer<module>(delay_gate)->get_out_port(0), done_signal_out);
       SM->add_connection(done_obj, done_signal_out);
    }
@@ -284,7 +298,8 @@ DesignFlowStep_Status top_entity::InternalExec()
    /// check if checker has to be added
    if(HLS->control_flow_checker)
    {
-      structural_objectRef controller_flow_start = datapath_circuit->find_member(START_PORT_NAME_CFC, port_o_K, datapath_circuit);
+      structural_objectRef controller_flow_start =
+          datapath_circuit->find_member(START_PORT_NAME_CFC, port_o_K, datapath_circuit);
       THROW_ASSERT(controller_flow_start, "controller flow start signal not found in the datapath");
       if(datapath_start)
       {
@@ -295,19 +310,26 @@ DesignFlowStep_Status top_entity::InternalExec()
          SM->add_connection(start_obj, controller_flow_start);
       }
       THROW_ASSERT(done_signal_out, "expected done signal");
-      structural_objectRef controller_flow_done = datapath_circuit->find_member(DONE_PORT_NAME_CFC, port_o_K, datapath_circuit);
+      structural_objectRef controller_flow_done =
+          datapath_circuit->find_member(DONE_PORT_NAME_CFC, port_o_K, datapath_circuit);
       THROW_ASSERT(controller_flow_done, "controller flow done signal not found in the datapath");
       SM->add_connection(done_signal_out, controller_flow_done);
-      structural_objectRef controller_flow_present_state = datapath_circuit->find_member(PRESENT_STATE_PORT_NAME, port_o_K, datapath_circuit);
+      structural_objectRef controller_flow_present_state =
+          datapath_circuit->find_member(PRESENT_STATE_PORT_NAME, port_o_K, datapath_circuit);
       THROW_ASSERT(controller_flow_present_state, "controller flow present state signal not found in the datapath");
-      structural_objectRef controller_present_state = Controller->add_port(PRESENT_STATE_PORT_NAME, port_o::OUT, controller_circuit, controller_flow_present_state->get_typeRef());
-      structural_objectRef p_signal = SM->add_sign(PRESENT_STATE_PORT_NAME "_sig1", circuit, controller_flow_present_state->get_typeRef());
+      structural_objectRef controller_present_state = Controller->add_port(
+          PRESENT_STATE_PORT_NAME, port_o::OUT, controller_circuit, controller_flow_present_state->get_typeRef());
+      structural_objectRef p_signal =
+          SM->add_sign(PRESENT_STATE_PORT_NAME "_sig1", circuit, controller_flow_present_state->get_typeRef());
       SM->add_connection(controller_present_state, p_signal);
       SM->add_connection(p_signal, controller_flow_present_state);
-      structural_objectRef controller_flow_next_state = datapath_circuit->find_member(NEXT_STATE_PORT_NAME, port_o_K, datapath_circuit);
+      structural_objectRef controller_flow_next_state =
+          datapath_circuit->find_member(NEXT_STATE_PORT_NAME, port_o_K, datapath_circuit);
       THROW_ASSERT(controller_flow_next_state, "controller flow next state signal not found in the datapath");
-      structural_objectRef controller_next_state = Controller->add_port(NEXT_STATE_PORT_NAME, port_o::OUT, controller_circuit, controller_flow_next_state->get_typeRef());
-      structural_objectRef n_signal = SM->add_sign(NEXT_STATE_PORT_NAME "_sig1", circuit, controller_flow_next_state->get_typeRef());
+      structural_objectRef controller_next_state = Controller->add_port(
+          NEXT_STATE_PORT_NAME, port_o::OUT, controller_circuit, controller_flow_next_state->get_typeRef());
+      structural_objectRef n_signal =
+          SM->add_sign(NEXT_STATE_PORT_NAME "_sig1", circuit, controller_flow_next_state->get_typeRef());
       SM->add_connection(controller_next_state, n_signal);
       SM->add_connection(n_signal, controller_flow_next_state);
    }
@@ -322,7 +344,7 @@ DesignFlowStep_Status top_entity::InternalExec()
    this->add_command_signals(circuit);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tCommand ports added!");
 
-   if(!is_top || !parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+   if(!is_top || (parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals)))
    {
       memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
    }
@@ -331,12 +353,15 @@ DesignFlowStep_Status top_entity::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void top_entity::add_input_register(structural_objectRef port_in, const std::string& port_prefix, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef e_port)
+void top_entity::add_input_register(structural_objectRef port_in, const std::string& port_prefix,
+                                    structural_objectRef circuit, structural_objectRef clock_port,
+                                    structural_objectRef reset_port, structural_objectRef e_port)
 {
    const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
    std::string register_library = TM->get_library(register_STD);
    structural_objectRef r_signal;
-   structural_objectRef reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_STD, register_library, circuit, TM);
+   structural_objectRef reg_mod =
+       SM->add_module_from_technology_library(port_prefix + "_REG", register_STD, register_library, circuit, TM);
    GetPointer<module>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_in));
    GetPointer<module>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_in));
 
@@ -350,12 +375,14 @@ void top_entity::add_input_register(structural_objectRef port_in, const std::str
    SM->add_connection(e_port, r_signal);
    SM->add_connection(GetPointer<module>(reg_mod)->get_in_port(2), r_signal);
 
-   r_signal = SM->add_sign(port_prefix + "_SIGI2", circuit, GetPointer<module>(reg_mod)->get_out_port(0)->get_typeRef());
+   r_signal =
+       SM->add_sign(port_prefix + "_SIGI2", circuit, GetPointer<module>(reg_mod)->get_out_port(0)->get_typeRef());
    SM->add_connection(GetPointer<module>(reg_mod)->get_out_port(0), r_signal);
    SM->add_connection(port_in, r_signal);
 }
 
-void top_entity::add_ports(structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port)
+void top_entity::add_ports(structural_objectRef circuit, structural_objectRef clock_port,
+                           structural_objectRef reset_port)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding ports");
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
@@ -371,10 +398,14 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
       // structural_objectRef in_obj = input->get_structural_obj();
       // structural_type_descriptorRef port_type = in_obj->get_typeRef();
       std::string prefix = "in_port_";
-      structural_objectRef in_obj = Datapath->find_member(prefix + BH->PrintVariable(function_parameter), port_o_K, Datapath); // port get by name in order to do not use conn_binding
+      structural_objectRef in_obj =
+          Datapath->find_member(prefix + BH->PrintVariable(function_parameter), port_o_K,
+                                Datapath); // port get by name in order to do not use conn_binding
       THROW_ASSERT(in_obj, "in_obj is not a port");
       structural_type_descriptorRef port_type;
-      if(HLSMgr->Rmem->has_base_address(function_parameter) && !HLSMgr->Rmem->has_parameter_base_address(function_parameter, HLS->functionId) && !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
+      if(HLSMgr->Rmem->has_base_address(function_parameter) &&
+         !HLSMgr->Rmem->has_parameter_base_address(function_parameter, HLS->functionId) &&
+         !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
       {
          port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
       }
@@ -386,11 +417,13 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
       if(in_obj->get_kind() == port_vector_o_K)
       {
          THROW_ERROR("Should never be reached, in_obj is not a port vector");
-         top_obj = SM->add_port_vector(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, GetPointer<port_o>(in_obj)->get_ports_size(), circuit, port_type);
+         top_obj = SM->add_port_vector(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN,
+                                       GetPointer<port_o>(in_obj)->get_ports_size(), circuit, port_type);
       }
       else
       {
-         top_obj = SM->add_port(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, circuit, port_type);
+         top_obj = SM->add_port(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, circuit,
+                                port_type);
       }
       bool is_pipelined = HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline();
       if(has_registered_inputs && !is_pipelined)
@@ -400,7 +433,9 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          {
             for(unsigned int p = 0; p < GetPointer<port_o>(in_obj)->get_ports_size(); ++p)
             {
-               add_input_register(GetPointer<port_o>(in_obj)->get_port(p), port_prefix + GetPointer<port_o>(in_obj)->get_port(p)->get_id(), circuit, clock_port, reset_port, GetPointer<port_o>(top_obj)->get_port(p));
+               add_input_register(GetPointer<port_o>(in_obj)->get_port(p),
+                                  port_prefix + GetPointer<port_o>(in_obj)->get_port(p)->get_id(), circuit, clock_port,
+                                  reset_port, GetPointer<port_o>(top_obj)->get_port(p));
             }
          }
          else
@@ -427,9 +462,12 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
       }
       else
       {
-         ret_obj = Datapath->find_member(RETURN_PORT_NAME, port_o_K, Datapath); // port get by name in order to do not use conn_binding
+         ret_obj = Datapath->find_member(RETURN_PORT_NAME, port_o_K,
+                                         Datapath); // port get by name in order to do not use conn_binding
          THROW_ASSERT(ret_obj, "in_obj is not a port");
-         if(HLSMgr->Rmem->has_base_address(return_type_index) && !HLSMgr->Rmem->has_parameter_base_address(return_type_index, HLS->functionId) && !HLSMgr->Rmem->is_parm_decl_stored(return_type_index))
+         if(HLSMgr->Rmem->has_base_address(return_type_index) &&
+            !HLSMgr->Rmem->has_parameter_base_address(return_type_index, HLS->functionId) &&
+            !HLSMgr->Rmem->is_parm_decl_stored(return_type_index))
          {
             port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
          }
@@ -442,7 +480,8 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
       if(ret_obj->get_kind() == port_vector_o_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding vector return port");
-         top_obj = SM->add_port_vector(RETURN_PORT_NAME, port_o::OUT, GetPointer<port_o>(ret_obj)->get_ports_size(), circuit, port_type);
+         top_obj = SM->add_port_vector(RETURN_PORT_NAME, port_o::OUT, GetPointer<port_o>(ret_obj)->get_ports_size(),
+                                       circuit, port_type);
       }
       else
       {
@@ -471,11 +510,14 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
             structural_objectRef ext_port;
             if(port_in->get_kind() == port_vector_o_K)
             {
-               ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_in)->get_id(), port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), circuit, port_in->get_typeRef());
+               ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_in)->get_id(), port_o::IN,
+                                                    GetPointer<port_o>(port_in)->get_ports_size(), circuit,
+                                                    port_in->get_typeRef());
             }
             else
             {
-               ext_port = this->SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
+               ext_port = this->SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit,
+                                             port_in->get_typeRef());
             }
             port_o::fix_port_properties(port_in, ext_port);
             // adding connection between datapath extern port and top extern port
@@ -485,7 +527,8 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          {
             if(null_values.find(GET_TYPE_SIZE(port_in)) == null_values.end())
             {
-               structural_objectRef const_obj = SM->add_constant("null_value_" + STR(GET_TYPE_SIZE(port_in)), circuit, port_in->get_typeRef(), STR(0));
+               structural_objectRef const_obj = SM->add_constant("null_value_" + STR(GET_TYPE_SIZE(port_in)), circuit,
+                                                                 port_in->get_typeRef(), STR(0));
                null_values[GET_TYPE_SIZE(port_in)] = const_obj;
             }
             SM->add_connection(port_in, null_values[GET_TYPE_SIZE(port_in)]);
@@ -498,11 +541,14 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
             structural_objectRef ext_port;
             if(port_in->get_kind() == port_vector_o_K)
             {
-               ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_in)->get_id(), port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), circuit, port_in->get_typeRef());
+               ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_in)->get_id(), port_o::IN,
+                                                    GetPointer<port_o>(port_in)->get_ports_size(), circuit,
+                                                    port_in->get_typeRef());
             }
             else
             {
-               ext_port = this->SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
+               ext_port = this->SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit,
+                                             port_in->get_typeRef());
             }
             port_o::fix_port_properties(port_in, ext_port);
             // adding connection between datapath extern port and top extern port
@@ -512,7 +558,8 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          {
             if(null_values.find(GET_TYPE_SIZE(port_in)) == null_values.end())
             {
-               structural_objectRef const_obj = SM->add_constant("null_value_" + STR(GET_TYPE_SIZE(port_in)), circuit, port_in->get_typeRef(), STR(0));
+               structural_objectRef const_obj = SM->add_constant("null_value_" + STR(GET_TYPE_SIZE(port_in)), circuit,
+                                                                 port_in->get_typeRef(), STR(0));
                null_values[GET_TYPE_SIZE(port_in)] = const_obj;
             }
             SM->add_connection(port_in, null_values[GET_TYPE_SIZE(port_in)]);
@@ -523,11 +570,14 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          structural_objectRef ext_port;
          if(port_in->get_kind() == port_vector_o_K)
          {
-            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_in)->get_id(), port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), circuit, port_in->get_typeRef());
+            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_in)->get_id(), port_o::IN,
+                                                 GetPointer<port_o>(port_in)->get_ports_size(), circuit,
+                                                 port_in->get_typeRef());
          }
          else
          {
-            ext_port = this->SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
+            ext_port =
+                this->SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
          }
          port_o::fix_port_properties(port_in, ext_port);
          // adding connection between datapath interface port and top interface port
@@ -547,11 +597,14 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          structural_objectRef ext_port;
          if(port_out->get_kind() == port_vector_o_K)
          {
-            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), circuit, port_out->get_typeRef());
+            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT,
+                                                 GetPointer<port_o>(port_out)->get_ports_size(), circuit,
+                                                 port_out->get_typeRef());
          }
          else
          {
-            ext_port = this->SM->add_port(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, circuit, port_out->get_typeRef());
+            ext_port = this->SM->add_port(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, circuit,
+                                          port_out->get_typeRef());
          }
          port_o::fix_port_properties(port_out, ext_port);
          // adding connection between datapath extern port and top extern port
@@ -562,11 +615,14 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          structural_objectRef ext_port;
          if(port_out->get_kind() == port_vector_o_K)
          {
-            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), circuit, port_out->get_typeRef());
+            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT,
+                                                 GetPointer<port_o>(port_out)->get_ports_size(), circuit,
+                                                 port_out->get_typeRef());
          }
          else
          {
-            ext_port = this->SM->add_port(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, circuit, port_out->get_typeRef());
+            ext_port = this->SM->add_port(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, circuit,
+                                          port_out->get_typeRef());
          }
          port_o::fix_port_properties(port_out, ext_port);
          // adding connection between datapath extern port and top extern port
@@ -577,11 +633,14 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          structural_objectRef ext_port;
          if(port_out->get_kind() == port_vector_o_K)
          {
-            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), circuit, port_out->get_typeRef());
+            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT,
+                                                 GetPointer<port_o>(port_out)->get_ports_size(), circuit,
+                                                 port_out->get_typeRef());
          }
          else
          {
-            ext_port = this->SM->add_port(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, circuit, port_out->get_typeRef());
+            ext_port = this->SM->add_port(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, circuit,
+                                          port_out->get_typeRef());
          }
          port_o::fix_port_properties(port_out, ext_port);
          // adding connection between datapath interface port and top interface port
@@ -598,11 +657,14 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          structural_objectRef ext_port;
          if(port_in_out->get_kind() == port_vector_o_K)
          {
-            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_in_out)->get_id(), port_o::IO, GetPointer<port_o>(port_in_out)->get_ports_size(), circuit, port_in_out->get_typeRef());
+            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_in_out)->get_id(), port_o::IO,
+                                                 GetPointer<port_o>(port_in_out)->get_ports_size(), circuit,
+                                                 port_in_out->get_typeRef());
          }
          else
          {
-            ext_port = this->SM->add_port(GetPointer<port_o>(port_in_out)->get_id(), port_o::IO, circuit, port_in_out->get_typeRef());
+            ext_port = this->SM->add_port(GetPointer<port_o>(port_in_out)->get_id(), port_o::IO, circuit,
+                                          port_in_out->get_typeRef());
          }
          port_o::fix_port_properties(port_in_out, ext_port);
          // adding connection between datapath extern port and top extern port

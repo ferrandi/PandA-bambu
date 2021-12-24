@@ -69,7 +69,9 @@ class top_entity : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Add the register to store input parameters
@@ -80,7 +82,9 @@ class top_entity : public HLSFunctionStep
     * @param reset_port is the port of the reset signal
     * @param e_port is the input parameter port of the top entity
     */
-   virtual void add_input_register(structural_objectRef port_in, const std::string& port_prefix, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef e_port);
+   virtual void add_input_register(structural_objectRef port_in, const std::string& port_prefix,
+                                   structural_objectRef circuit, structural_objectRef clock_port,
+                                   structural_objectRef reset_port, structural_objectRef e_port);
 
  public:
    /**
@@ -88,7 +92,9 @@ class top_entity : public HLSFunctionStep
     * @param design_flow_manager is the design flow manager
     * @param top_entity_type is the type of top entity to be created
     */
-   top_entity(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::TOP_ENTITY_CREATION);
+   top_entity(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+              const DesignFlowManagerConstRef design_flow_manager,
+              const HLSFlowStep_Type = HLSFlowStep_Type::TOP_ENTITY_CREATION);
 
    /**
     * Destructor
@@ -99,6 +105,6 @@ class top_entity : public HLSFunctionStep
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec();
+   virtual DesignFlowStep_Status InternalExec() override;
 };
 #endif

@@ -60,13 +60,17 @@ class CTestbenchExecution : public HLS_step
 
    const std::string testbench_basename;
 
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
  public:
    /**
     * constructor
     */
-   CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const std::string& testbench_basename = "values");
+   CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM,
+                       const DesignFlowManagerConstRef design_flow_manager,
+                       const std::string& testbench_basename = "values");
 
    void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
 

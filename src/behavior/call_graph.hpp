@@ -170,7 +170,8 @@ class CallGraph : public graph
     * @param selector is the selector of the view
     * @param vertices is the set of vertices to be considered
     */
-   CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int selector, const CustomUnorderedSet<vertex>& vertices);
+   CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int selector,
+             const CustomUnorderedSet<vertex>& vertices);
 
    /**
     * Destructor

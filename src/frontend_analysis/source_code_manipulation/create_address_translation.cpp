@@ -72,22 +72,27 @@
 #include "indented_output_stream.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-CreateAddressTranslation::CreateAddressTranslation(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::CREATE_ADDRESS_TRANSLATION, _design_flow_manager, _parameters), aadl_information(GetPointer<const HLS_manager>(_AppM)->aadl_information)
+CreateAddressTranslation::CreateAddressTranslation(const application_managerRef _AppM,
+                                                   const DesignFlowManagerConstRef _design_flow_manager,
+                                                   const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::CREATE_ADDRESS_TRANSLATION, _design_flow_manager,
+                                  _parameters),
+      aadl_information(GetPointer<const HLS_manager>(_AppM)->aadl_information)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 CreateAddressTranslation::~CreateAddressTranslation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CreateAddressTranslation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CreateAddressTranslation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -98,7 +103,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS)
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          }
          break;
       }
@@ -108,8 +113,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned long long int& bambu_address, unsigned long long int& taste_address, unsigned int& registers, const bool first_level,
-                                              const bool little_endianess)
+void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type,
+                                              unsigned long long int& bambu_address,
+                                              unsigned long long int& taste_address, unsigned int& registers,
+                                              const bool first_level, const bool little_endianess)
 {
    switch(asn_type->GetKind())
    {
@@ -194,9 +201,11 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
             if(byte_size <= 4)
             {
-               little_endianess ? address_translation->Append(",0," + STR(bambu_address)) : address_translation->Append("," + STR(bambu_address) + ",0");
+               little_endianess ? address_translation->Append(",0," + STR(bambu_address)) :
+                                  address_translation->Append("," + STR(bambu_address) + ",0");
                little_endianess ? memory_enabling->Append(",0,1") : memory_enabling->Append(",1,0");
-               little_endianess ? data_size->Append(",0," + STR(byte_size)) : data_size->Append("," + STR(byte_size) + ",0");
+               little_endianess ? data_size->Append(",0," + STR(byte_size)) :
+                                  data_size->Append("," + STR(byte_size) + ",0");
                endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
                endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
                bambu_address = bambu_address + byte_size;
@@ -266,9 +275,11 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
             if(byte_size == 4)
             {
-               little_endianess ? address_translation->Append(",0," + STR(bambu_address)) : address_translation->Append("," + STR(bambu_address) + ",0");
+               little_endianess ? address_translation->Append(",0," + STR(bambu_address)) :
+                                  address_translation->Append("," + STR(bambu_address) + ",0");
                little_endianess ? memory_enabling->Append(",0,1") : memory_enabling->Append(",1,0");
-               little_endianess ? data_size->Append(",0," + STR(byte_size)) : data_size->Append("," + STR(byte_size) + ",0");
+               little_endianess ? data_size->Append(",0," + STR(byte_size)) :
+                                  data_size->Append("," + STR(byte_size) + ",0");
                endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
                bambu_address = bambu_address + byte_size;
                taste_address = taste_address + 4;
@@ -294,7 +305,8 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
       {
          const auto redefine = GetPointer<const RedefineAsnType>(asn_type);
          const auto redefine_asn_type = aadl_information->CGetAsnType(redefine->name);
-         ComputeAddress(redefine_asn_type, tree_parameter_type, bambu_address, taste_address, registers, first_level, little_endianess);
+         ComputeAddress(redefine_asn_type, tree_parameter_type, bambu_address, taste_address, registers, first_level,
+                        little_endianess);
          break;
       }
       case AsnType_Kind::SEQUENCE:
@@ -305,8 +317,10 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          size_t tree_field_index = 0;
          for(const auto& field : sequence->fields)
          {
-            ComputeAddress(field.second, tree_helper::CGetType(GET_NODE(tree_fields[tree_field_index]))->index, bambu_address, taste_address, registers, false, little_endianess);
-            const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
+            ComputeAddress(field.second, tree_helper::CGetType(tree_fields[tree_field_index])->index, bambu_address,
+                           taste_address, registers, false, little_endianess);
+            const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(
+                GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
             THROW_ASSERT(field_bpos % 8 == 0, "Bitfield not supported");
             const auto current_field_beginning = field_bpos / 8;
             const auto next_field_beginning = [&]() -> long long int {
@@ -316,11 +330,14 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
                }
                else
                {
-                  return tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos))) / 8;
+                  return tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(
+                             GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos))) /
+                         8;
                }
             }();
-            const auto field_size = tree_helper::Size(GET_NODE(tree_fields[tree_field_index])) / 8;
-            bambu_address = bambu_address + static_cast<unsigned int>(field_size - (next_field_beginning - current_field_beginning));
+            const auto field_size = tree_helper::Size(tree_fields[tree_field_index]) / 8;
+            bambu_address = bambu_address +
+                            static_cast<unsigned int>(field_size - (next_field_beginning - current_field_beginning));
             tree_field_index++;
          }
          break;
@@ -332,7 +349,9 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          const auto element_type = aadl_information->CGetAsnType(sequenceof->element);
          for(size_t counter = 0; counter < sequenceof->size; counter++)
          {
-            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->get_tree_node_const(tree_parameter_type))->index, bambu_address, taste_address, registers, false, little_endianess);
+            ComputeAddress(element_type,
+                           tree_helper::CGetPointedType(TreeM->CGetTreeReindex(tree_parameter_type))->index,
+                           bambu_address, taste_address, registers, false, little_endianess);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          break;
@@ -340,13 +359,15 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
       case AsnType_Kind::SET:
       {
          const auto set = GetPointer<const SetAsnType>(asn_type);
-         const auto tree_record_type = GetPointer<const record_type>(TreeM->get_tree_node_const(tree_parameter_type));
+         const auto tree_record_type = GetPointer<const record_type>(TreeM->CGetTreeNode(tree_parameter_type));
          const auto tree_fields = tree_record_type->list_of_flds;
          size_t tree_field_index = 0;
          for(const auto& field : set->fields)
          {
-            ComputeAddress(field.second, tree_helper::CGetType(GET_NODE(tree_fields[tree_field_index]))->index, bambu_address, taste_address, registers, false, little_endianess);
-            const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
+            ComputeAddress(field.second, tree_helper::CGetType(tree_fields[tree_field_index])->index, bambu_address,
+                           taste_address, registers, false, little_endianess);
+            const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(
+                GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
             THROW_ASSERT(field_bpos % 8 == 0, "Bitfield not supported");
             const auto current_field_beginning = field_bpos / 8;
             const auto next_field_beginning = [&]() -> long long int {
@@ -356,11 +377,14 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
                }
                else
                {
-                  return tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos))) / 8;
+                  return tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(
+                             GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos))) /
+                         8;
                }
             }();
-            const auto field_size = tree_helper::Size(GET_NODE(tree_fields[tree_field_index])) / 8;
-            bambu_address = bambu_address + static_cast<unsigned int>(field_size - (next_field_beginning - current_field_beginning));
+            const auto field_size = tree_helper::Size(tree_fields[tree_field_index]) / 8;
+            bambu_address = bambu_address +
+                            static_cast<unsigned int>(field_size - (next_field_beginning - current_field_beginning));
             tree_field_index++;
          }
          break;
@@ -371,7 +395,9 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          const auto element_type = aadl_information->CGetAsnType(setof->element);
          for(size_t counter = 0; counter < setof->size; counter++)
          {
-            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->get_tree_node_const(tree_parameter_type))->index, bambu_address, taste_address, registers, false, little_endianess);
+            ComputeAddress(element_type,
+                           tree_helper::CGetPointedType(TreeM->CGetTreeReindex(tree_parameter_type))->index,
+                           bambu_address, taste_address, registers, false, little_endianess);
          }
          break;
       }
@@ -394,15 +420,19 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       /// The taste address of return (if any)
       unsigned long long int taste_return_address = 0;
 
-      THROW_ASSERT(aadl_information->function_parameters.find("PI_" + top_function_name) != aadl_information->function_parameters.end(), top_function_name);
+      THROW_ASSERT(aadl_information->function_parameters.find("PI_" + top_function_name) !=
+                       aadl_information->function_parameters.end(),
+                   top_function_name);
       auto& function_parameters = aadl_information->function_parameters.find("PI_" + top_function_name)->second;
-      const auto function_id = TreeM->function_index(top_function_name);
+      const auto function_node = TreeM->GetFunction(top_function_name);
       address_translation = IndentedOutputStreamRef(new IndentedOutputStream());
-      address_translation->Append("unsigned int " STR_CST_taste_address_translation + top_function_name + "(unsigned int arg)\n");
+      address_translation->Append("unsigned int " STR_CST_taste_address_translation + top_function_name +
+                                  "(unsigned int arg)\n");
       address_translation->Append("{\n");
       address_translation->Append("const unsigned int address[] = {0");
       memory_enabling = IndentedOutputStreamRef(new IndentedOutputStream());
-      memory_enabling->Append("unsigned int " STR_CST_taste_memory_enabling + top_function_name + "(unsigned int arg)\n");
+      memory_enabling->Append("unsigned int " STR_CST_taste_memory_enabling + top_function_name +
+                              "(unsigned int arg)\n");
       memory_enabling->Append("{\n");
       memory_enabling->Append("const unsigned int memory_enabling[] = {0");
       data_size = IndentedOutputStreamRef(new IndentedOutputStream());
@@ -410,7 +440,8 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       data_size->Append("{\n");
       data_size->Append("const unsigned int data_size[] = {0");
       endianess_check = IndentedOutputStreamRef(new IndentedOutputStream());
-      endianess_check->Append("unsigned int " STR_CST_taste_endianess_check + top_function_name + "(unsigned int arg)\n");
+      endianess_check->Append("unsigned int " STR_CST_taste_endianess_check + top_function_name +
+                              "(unsigned int arg)\n");
       endianess_check->Append("{\n");
       endianess_check->Append("const unsigned int endianess_check[] = {0");
       unsigned long long int bambu_address = 0;
@@ -418,14 +449,14 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       unsigned long long int taste_address = 4;
       /// Build the map between parameter name and index type
       CustomMap<std::string, unsigned int> parameter_to_type;
-      THROW_ASSERT(function_id, "Function " + top_function_name + " not found in tree");
-      const auto fd = GetPointer<const function_decl>(TreeM->CGetTreeNode(function_id));
+      THROW_ASSERT(function_node, "Function " + top_function_name + " not found in tree");
+      const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(function_node));
       for(const auto& arg : fd->list_of_args)
       {
          const auto pd = GetPointer<const parm_decl>(GET_NODE(arg));
          const auto id = GetPointer<const identifier_node>(GET_NODE(pd->name));
          const auto param_name = id->strg;
-         parameter_to_type[param_name] = tree_helper::CGetType(GET_NODE(arg))->index;
+         parameter_to_type[param_name] = tree_helper::CGetType(arg)->index;
       }
       const auto ft = GetPointer<const function_type>(GET_NODE(fd->type));
       if(ft->retn)
@@ -448,7 +479,8 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
             else
             {
                THROW_ASSERT(not used_return, "Parameter " + parameter_name + " not found in C function");
-               THROW_ASSERT(parameter_to_type.find("return") != parameter_to_type.end(), "Parameter " + parameter_name + " not found in C function");
+               THROW_ASSERT(parameter_to_type.find("return") != parameter_to_type.end(),
+                            "Parameter " + parameter_name + " not found in C function");
                used_return = true;
                taste_return_address = taste_address;
                return parameter_to_type.find("return")->second;
@@ -458,7 +490,8 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
          /// Starting address of the parameter
          parameter.bambu_address = bambu_address;
          parameter.pointer = tree_helper::is_a_pointer(TreeM, tree_parameter_index);
-         ComputeAddress(asn_type, tree_parameter_index, bambu_address, taste_address, parameter.num_registers, true, parameter.endianess);
+         ComputeAddress(asn_type, tree_parameter_index, bambu_address, taste_address, parameter.num_registers, true,
+                        parameter.endianess);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed parameter " + parameter_name);
       }
       address_translation->Append("};\n");
@@ -484,8 +517,10 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
          aadl_information->internal_memory_sizes[top_function_name] = bambu_address;
          aadl_information->exposed_memory_sizes[top_function_name] = taste_address;
          changed = true;
-         const auto address_translation_file = tmp_directory + "/" + STR_CST_taste_address_translation + top_function_name + ".c";
-         const auto memory_enabling_file = tmp_directory + "/" + STR_CST_taste_memory_enabling + top_function_name + ".c";
+         const auto address_translation_file =
+             tmp_directory + "/" + STR_CST_taste_address_translation + top_function_name + ".c";
+         const auto memory_enabling_file =
+             tmp_directory + "/" + STR_CST_taste_memory_enabling + top_function_name + ".c";
          const auto data_size_file = tmp_directory + "/" + STR_CST_taste_data_size + top_function_name + ".c";
          address_translation->WriteFile(address_translation_file);
          memory_enabling->WriteFile(memory_enabling_file);
@@ -493,11 +528,14 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
          AppM->input_files[address_translation_file] = address_translation_file;
          AppM->input_files[memory_enabling_file] = memory_enabling_file;
          AppM->input_files[data_size_file] = data_size_file;
-         new_top_functions +=
-             STR_CST_string_separator + STR_CST_taste_address_translation + top_function_name + STR_CST_string_separator + STR_CST_taste_memory_enabling + top_function_name + STR_CST_string_separator + STR_CST_taste_data_size + top_function_name;
+         new_top_functions += STR_CST_string_separator + STR_CST_taste_address_translation + top_function_name +
+                              STR_CST_string_separator + STR_CST_taste_memory_enabling + top_function_name +
+                              STR_CST_string_separator + STR_CST_taste_data_size + top_function_name;
       }
       IndentedOutputStreamRef output_multiplexer = IndentedOutputStreamRef(new IndentedOutputStream());
-      output_multiplexer->Append("unsigned int " STR_CST_taste_output_multiplexer + top_function_name + "(unsigned int address, unsigned int reg_status" + (used_return ? ", unsigned int function_return_port" : "") +
+      output_multiplexer->Append("unsigned int " STR_CST_taste_output_multiplexer + top_function_name +
+                                 "(unsigned int address, unsigned int reg_status" +
+                                 (used_return ? ", unsigned int function_return_port" : "") +
                                  (bambu_address != 0 ? ", unsigned int from_memory" : "") + ")\n");
       output_multiplexer->Append("{\n");
       output_multiplexer->Append("unsigned int ret = 0;\n");
@@ -524,7 +562,8 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
          output_multiplexer->Append("return reg_status;\n");
       }
       output_multiplexer->Append("}\n");
-      const auto output_multiplexer_file = tmp_directory + "/" + STR_CST_taste_output_multiplexer + top_function_name + ".c";
+      const auto output_multiplexer_file =
+          tmp_directory + "/" + STR_CST_taste_output_multiplexer + top_function_name + ".c";
       output_multiplexer->WriteFile(output_multiplexer_file);
       AppM->input_files[output_multiplexer_file] = output_multiplexer_file;
       new_top_functions += STR_CST_string_separator + STR_CST_taste_output_multiplexer + top_function_name;
@@ -532,17 +571,20 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed function " + top_function_name);
    }
    IndentedOutputStreamRef reg_status(new IndentedOutputStream());
-   reg_status->Append("unsigned int " STR_CST_taste_reg_status "(unsigned int current_value, unsigned int from_outside, unsigned int from_done)\n");
+   reg_status->Append("unsigned int " STR_CST_taste_reg_status
+                      "(unsigned int current_value, unsigned int from_outside, unsigned int from_done)\n");
    reg_status->Append("{\n");
    reg_status->Append("unsigned int ret = 0;\n");
    /// Storing starting coming from outside
    reg_status->Append("unsigned int bit0 = from_outside & 1;\n");
    reg_status->Append("ret = ret | bit0 ;\n");
    /// We are running if we receive the start and we were not running or if we were running and we didn't receive done
-   reg_status->Append("unsigned int bit1 = (((bit0 != 0) && (current_value & 2 == 0)) || (((current_value & 2) != 0) && (from_done == 0))) ? 2 : 0;\n");
+   reg_status->Append("unsigned int bit1 = (((bit0 != 0) && (current_value & 2 == 0)) || (((current_value & 2) != 0) "
+                      "&& (from_done == 0))) ? 2 : 0;\n");
    reg_status->Append("ret = ret | bit1;\n");
    /// We ended if (we ended in the past or we just ended) and we were not starting
-   reg_status->Append("unsigned int bit2 = (((current_value & 4) || (from_done)) && !((bit0) && !(current_value & 2))) ? 4 : 0;\n");
+   reg_status->Append(
+       "unsigned int bit2 = (((current_value & 4) || (from_done)) && !((bit0) && !(current_value & 2))) ? 4 : 0;\n");
    reg_status->Append("ret = ret | bit2;\n");
    /// We are starting if we start and we are not running
    reg_status->Append("unsigned int bit3 = ((bit0) && (current_value & 2)) ? 8 : 0;\n");

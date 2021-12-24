@@ -70,7 +70,8 @@
 #include "dbgPrintHelper.hpp"
 #include "utility.hpp"
 
-OmpFunctionAllocationCS::OmpFunctionAllocationCS(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+OmpFunctionAllocationCS::OmpFunctionAllocationCS(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                                 const DesignFlowManagerConstRef _design_flow_manager)
     : fun_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -89,11 +90,12 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
    auto root_functions = call_graph_manager->GetRootFunctions();
    if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
    {
-      const auto top_rtldesign_function_id = HLSMgr->get_tree_manager()->function_index(parameters->getOption<std::string>(OPT_top_design_name));
-      if(top_rtldesign_function_id != 0 and root_functions.find(top_rtldesign_function_id) != root_functions.end())
+      const auto top_rtldesign_function =
+          HLSMgr->get_tree_manager()->GetFunction(parameters->getOption<std::string>(OPT_top_design_name));
+      if(top_rtldesign_function && root_functions.count(top_rtldesign_function->index))
       {
          root_functions.clear();
-         root_functions.insert(top_rtldesign_function_id);
+         root_functions.insert(top_rtldesign_function->index);
       }
    }
    CustomUnorderedSet<vertex> vertex_subset;
@@ -113,41 +115,59 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
    {
       bool function_classification_found = false;
       const auto function_id = call_graph_manager->get_function(function);
-      std::cout << cycleInd << " " << HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name() << std::endl;
-      if(HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetOmpForDegree()) // look for OMP function, add it to struct
+      std::cout << cycleInd << " "
+                << HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name() << std::endl;
+      if(HLSMgr->CGetFunctionBehavior(function_id)
+             ->CGetBehavioralHelper()
+             ->GetOmpForDegree()) // look for OMP function, add it to struct
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found omp for wrapper " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Found omp for wrapper " +
+                            HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
          omp_functions->omp_for_wrappers.insert(function_id);
          ++cycleInd;
          continue;
       }
       InEdgeIterator ie, ie_end;
-      for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end && !function_classification_found; ie++)
+      for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph);
+          ie != ie_end && !function_classification_found; ie++)
       { // if current function is called by parallel then is kernel
          const auto source = boost::source(*ie, *call_graph);
          const auto source_id = call_graph_manager->get_function(source);
          if(omp_functions->omp_for_wrappers.find(source_id) != omp_functions->omp_for_wrappers.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found kernel function: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Found kernel function: " +
+                               HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
             omp_functions->kernel_functions.insert(function_id);
             function_classification_found = true;
             break;
          }
       }
-      for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end && !function_classification_found; ie++)
+      for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph);
+          ie != ie_end && !function_classification_found; ie++)
       { // if current function is called by kernel or a parallel function then is a function inside the kernel
          const auto source = boost::source(*ie, *call_graph);
          const auto source_id = call_graph_manager->get_function(source);
-         if(omp_functions->kernel_functions.find(source_id) != omp_functions->kernel_functions.end() or omp_functions->parallelized_functions.find(source_id) != omp_functions->parallelized_functions.end())
+         if(omp_functions->kernel_functions.find(source_id) != omp_functions->kernel_functions.end() or
+            omp_functions->parallelized_functions.find(source_id) != omp_functions->parallelized_functions.end())
          {
-            if(HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->IsOmpFunctionAtomic()) // atomic function
+            if(HLSMgr->CGetFunctionBehavior(function_id)
+                   ->CGetBehavioralHelper()
+                   ->IsOmpFunctionAtomic()) // atomic function
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found atomic function: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
+               INDENT_DBG_MEX(
+                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                   "---Found atomic function: " +
+                       HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
                omp_functions->atomic_functions.insert(function_id);
             }
             else // is a normal function under the kernel
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found function to be parallelized: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
+               INDENT_DBG_MEX(
+                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                   "---Found function to be parallelized: " +
+                       HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
                omp_functions->parallelized_functions.insert(function_id);
             }
             break;
@@ -160,15 +180,19 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
    for(const auto function : boost::adaptors::reverse(sorted_functions))
    {
       const auto function_id = call_graph_manager->get_function(function);
-      std::cout << cycleInd << " " << HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name() << std::endl;
+      std::cout << cycleInd << " "
+                << HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name() << std::endl;
       OutEdgeIterator ie, ie_end;
       for(boost::tie(ie, ie_end) = boost::out_edges(function, *call_graph); ie != ie_end; ie++)
       { // if current function is called by parallel then is kernel
          const auto target = boost::target(*ie, *call_graph);
          const auto target_id = call_graph_manager->get_function(target);
-         if(omp_functions->omp_for_wrappers.find(target_id) != omp_functions->omp_for_wrappers.end() or omp_functions->hierarchical_functions.find(target_id) != omp_functions->hierarchical_functions.end())
+         if(omp_functions->omp_for_wrappers.find(target_id) != omp_functions->omp_for_wrappers.end() or
+            omp_functions->hierarchical_functions.find(target_id) != omp_functions->hierarchical_functions.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found hierarchical function: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Found hierarchical function: " +
+                               HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
             omp_functions->hierarchical_functions.insert(function_id);
             break;
          }

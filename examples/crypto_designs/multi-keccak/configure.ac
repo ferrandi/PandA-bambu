@@ -9,5 +9,5 @@ LT_INIT([disable-shared])
 AC_PROG_CC
 AC_PROG_INSTALL
 CFLAGS=' -O3'
-CC=/opt/panda/bin/tree-panda-gcc
+CC=tree-panda-gcc
 AC_OUTPUT(Makefile include/Makefile src/Makefile src/chi/Makefile src/iota/Makefile src/pi/Makefile src/rho/Makefile  src/theta/Makefile)

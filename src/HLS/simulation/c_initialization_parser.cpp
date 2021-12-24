@@ -61,18 +61,22 @@ CInitializationParser::CInitializationParser(const ParameterConstRef _parameters
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-void CInitializationParser::Parse(CInitializationParserFunctorRef c_initialization_parser_functor, const std::string& initialization_string) const
+void CInitializationParser::Parse(CInitializationParserFunctorRef c_initialization_parser_functor,
+                                  const std::string& initialization_string) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing initialization string " + initialization_string);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Analyzing initialization string " + initialization_string);
    if(initialization_string.size() > DATA_SIZE_THRESHOLD)
    {
       std::string seed_name = "_cip";
-      auto output_parameter_initialization_filename = parameters->getOption<std::string>(OPT_output_directory) + "/simulation/";
+      auto output_parameter_initialization_filename =
+          parameters->getOption<std::string>(OPT_output_directory) + "/simulation/";
       unsigned int progressive = 0;
       std::string candidate_out_file_name;
       do
       {
-         candidate_out_file_name = output_parameter_initialization_filename + seed_name + "_" + std::to_string(progressive++) + ".data";
+         candidate_out_file_name =
+             output_parameter_initialization_filename + seed_name + "_" + std::to_string(progressive++) + ".data";
       } while(boost::filesystem::exists(candidate_out_file_name));
       c_initialization_parser_functor->ActivateFileInit(candidate_out_file_name);
    }

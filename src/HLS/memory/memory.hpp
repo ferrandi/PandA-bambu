@@ -191,6 +191,8 @@ class memory
 
    const unsigned& bus_addr_bitsize;
 
+   bool enable_hls_bit_value;
+
    /**
     * Alignment utility function
     */
@@ -206,14 +208,18 @@ class memory
    /**
     * Constructor
     */
-   memory(const tree_managerRef TreeM, unsigned long long int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned long long initial_internal_address, const unsigned& _bus_addr_bitsize);
+   memory(const tree_managerRef TreeM, unsigned long long int off_base_address, unsigned int max_bram,
+          bool null_pointer_check, bool initial_internal_address_p, unsigned long long initial_internal_address,
+          const unsigned& _bus_addr_bitsize);
 
    /**
     * Destructor
     */
    virtual ~memory();
 
-   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p,
+   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM,
+                                  unsigned long long int _off_base_address, unsigned int max_bram,
+                                  bool _null_pointer_check, bool initial_internal_address_p,
                                   unsigned int initial_internal_address, const unsigned int& _address_bitsize);
 
    /**
@@ -227,7 +233,8 @@ class memory
    void add_external_variable(unsigned int var, const std::string& var_name);
 
    /**
-    * Allocates a variable to the set of variables allocated outside to outermost function. The corresponding symbol is already provided
+    * Allocates a variable to the set of variables allocated outside to outermost function. The corresponding symbol is
+    * already provided
     */
    void add_external_symbol(unsigned int var, const memory_symbolRef m_sym);
 
@@ -286,7 +293,8 @@ class memory
    bool is_read_only_variable(unsigned var) const;
 
    /**
-    * Allocates a variable to the set of variables allocated internally to the given function. The corresponding symbol is already provided
+    * Allocates a variable to the set of variables allocated internally to the given function. The corresponding symbol
+    * is already provided
     */
    void add_internal_symbol(unsigned int funID_scope, unsigned int var, const memory_symbolRef m_sym);
 
@@ -810,6 +818,15 @@ class memory
 
    /// return true in case the current memory object and the passed one are different
    bool notEQ(refcount<memory> ref) const;
+
+   void set_enable_hls_bit_value(bool value)
+   {
+      enable_hls_bit_value = value;
+   }
+   bool get_enable_hls_bit_value()
+   {
+      return enable_hls_bit_value;
+   }
 };
 /// refcount definition of the class
 using memoryRef = refcount<memory>;

@@ -62,14 +62,14 @@ class reg_binding_cs : public reg_binding
     * @param i
     * @return
     */
-   std::string CalculateRegisterName(unsigned int i);
+   std::string CalculateRegisterName(unsigned int i) override;
 
    /**
     * @brief specialise_reg add dimension selector
     * @param reg
     * @param r
     */
-   void specialise_reg(structural_objectRef& reg, unsigned int r);
+   void specialise_reg(structural_objectRef& reg, unsigned int r) override;
 };
 
 #endif // REG_BINDING_CS_H

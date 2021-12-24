@@ -89,7 +89,11 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-#define SKIPPED_COLUMN ("Loop_number")("bit_expr")("comp_expr")("const_readings")("div_expr")("mult_expr")("plusminus_expr")("memory_writings")("register_accesses")("memory_readings")("register_writing")("Backward_branches")
+#define CSV_COL_SEPARATOR ","
+
+#define SKIPPED_COLUMN                                                                                    \
+   ("Loop_number")("bit_expr")("comp_expr")("const_readings")("div_expr")("mult_expr")("plusminus_expr")( \
+       "memory_writings")("register_accesses")("memory_readings")("register_writing")("Backward_branches")
 
 #define SKIPPING_MACRO(r, data, elem) skipping.insert(elem);
 
@@ -123,17 +127,24 @@ const char* latex_format_edges_reduction = {
 };
 #endif
 Translator::LatexColumnFormat::LatexColumnFormat()
-    : column_alignment("c|"), text_format(LatexColumnFormat::TF_number), precision(NUM_CST_latex_table_number_precision), comparison_operator(LatexColumnFormat::CO_abs_le), total_format(LatexColumnFormat::TOF_none)
+    : column_alignment("c|"),
+      text_format(LatexColumnFormat::TF_number),
+      precision(NUM_CST_latex_table_number_precision),
+      comparison_operator(LatexColumnFormat::CO_abs_le),
+      total_format(LatexColumnFormat::TOF_none)
 {
 }
 
 CustomUnorderedMap<std::string, Translator::LatexColumnFormat::TextFormat> Translator::LatexColumnFormat::string_to_TF;
 
-CustomUnorderedMap<std::string, Translator::LatexColumnFormat::ComparisonOperator> Translator::LatexColumnFormat::string_to_CO;
+CustomUnorderedMap<std::string, Translator::LatexColumnFormat::ComparisonOperator>
+    Translator::LatexColumnFormat::string_to_CO;
 
-CustomUnorderedMap<std::string, Translator::LatexColumnFormat::TotalFormat> Translator::LatexColumnFormat::string_to_TOF;
+CustomUnorderedMap<std::string, Translator::LatexColumnFormat::TotalFormat>
+    Translator::LatexColumnFormat::string_to_TOF;
 
-Translator::LatexColumnFormat::TextFormat Translator::LatexColumnFormat::LatexColumnFormat::get_TF(const std::string& string)
+Translator::LatexColumnFormat::TextFormat
+Translator::LatexColumnFormat::LatexColumnFormat::get_TF(const std::string& string)
 {
    if(string_to_TF.empty())
    {
@@ -145,7 +156,8 @@ Translator::LatexColumnFormat::TextFormat Translator::LatexColumnFormat::LatexCo
    return string_to_TF.find(string)->second;
 }
 
-Translator::LatexColumnFormat::ComparisonOperator Translator::LatexColumnFormat::LatexColumnFormat::get_CO(const std::string& string)
+Translator::LatexColumnFormat::ComparisonOperator
+Translator::LatexColumnFormat::LatexColumnFormat::get_CO(const std::string& string)
 {
    if(string_to_CO.empty())
    {
@@ -153,11 +165,13 @@ Translator::LatexColumnFormat::ComparisonOperator Translator::LatexColumnFormat:
       std::string name;
       BOOST_PP_SEQ_FOR_EACH(CO_NAME, BOOST_PP_EMPTY, COMPARISON_OPERATOR);
    }
-   THROW_ASSERT(string_to_CO.find(string) != string_to_CO.end(), "String " + string + " is not a valid Comparison Operator");
+   THROW_ASSERT(string_to_CO.find(string) != string_to_CO.end(),
+                "String " + string + " is not a valid Comparison Operator");
    return string_to_CO.find(string)->second;
 }
 
-Translator::LatexColumnFormat::TotalFormat Translator::LatexColumnFormat::LatexColumnFormat::GetTotalFormat(const std::string& string)
+Translator::LatexColumnFormat::TotalFormat
+Translator::LatexColumnFormat::LatexColumnFormat::GetTotalFormat(const std::string& string)
 {
    if(string_to_TOF.empty())
    {
@@ -169,7 +183,8 @@ Translator::LatexColumnFormat::TotalFormat Translator::LatexColumnFormat::LatexC
    return string_to_TOF.find(string)->second;
 }
 
-bool Translator::LatexColumnFormat::Compare(const long double A, const ComparisonOperator comparator, const long double B)
+bool Translator::LatexColumnFormat::Compare(const long double A, const ComparisonOperator comparator,
+                                            const long double B)
 {
    switch(comparator)
    {
@@ -185,12 +200,14 @@ bool Translator::LatexColumnFormat::Compare(const long double A, const Compariso
    return false;
 }
 
-Translator::Translator(const ParameterConstRef _Param) : Param(_Param), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
+Translator::Translator(const ParameterConstRef _Param)
+    : Param(_Param), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
 {
 }
 
 #if HAVE_RTL_BUILT
-void Translator::Translate(const CustomUnorderedMap<std::string, long double> input, std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& output) const
+void Translator::Translate(const CustomUnorderedMap<std::string, long double> input,
+                           std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& output) const
 {
    CustomOrderedSet<mode_kind> int_type, float_type;
 
@@ -225,9 +242,11 @@ void Translator::Translate(const CustomUnorderedMap<std::string, long double> in
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Translating tag " + tag);
       if(tag == "Dynamic_operations_is_main")
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "traslator: translate: dynamic_operation_is_main: getting constant distribution");
+         PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
+                       "traslator: translate: dynamic_operation_is_main: getting constant distribution");
          output[is_main_R][none_R] = it->second * normalization_value + base * normalization_value;
-         PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "traslator: translate: dynamic_operation_is_main: constant distribution r updated, saved");
+         PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
+                       "traslator: translate: dynamic_operation_is_main: constant distribution r updated, saved");
       }
       else if(tag == "Dynamic_operations_assignment")
       {
@@ -246,11 +265,15 @@ void Translator::Translate(const CustomUnorderedMap<std::string, long double> in
       }
       else if(tag == "Dynamic_operations_Backward_branches")
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "traslator: translate: dynamic_operation_is_Backward_braches: getting constant distribution");
+         PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
+                       "traslator: translate: dynamic_operation_is_Backward_braches: getting constant distribution");
          output[backward_branches_R][none_R] = it->second * normalization_value + base * normalization_value;
-         PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "traslator: translate: dynamic_operation_Backward_braches: constant distribution r updated, saved");
+         PRINT_DBG_MEX(
+             DEBUG_LEVEL_PARANOIC, debug_level,
+             "traslator: translate: dynamic_operation_Backward_braches: constant distribution r updated, saved");
          // OLD VERSION
-         // rtl_node::backward_branches[Param->getOption<std::string>(processing_element")] = it->second*normalization_value + base*normalization_value;
+         // rtl_node::backward_branches[Param->getOption<std::string>(processing_element")] =
+         // it->second*normalization_value + base*normalization_value;
       }
       else if(tag == "Dynamic_operations_branch_expr")
       {
@@ -465,14 +488,16 @@ void Translator::Translate(const CustomUnorderedMap<std::string, long double> in
 
          PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Translator: translate: BASE: constant distribution saved");
          // OLD VERSION
-         // rtl_node::base[Param->getOption<std::string>("processing_element")] = it->second*normalization_value + base*normalization_value;
+         // rtl_node::base[Param->getOption<std::string>("processing_element")] = it->second*normalization_value +
+         // base*normalization_value;
       }
       else
          THROW_ERROR("Found tag " + tag);
    }
 }
 
-void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& data, std::string file_name) const
+void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& data,
+                              std::string file_name) const
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Staring writing to xml");
    xml_document document;
@@ -481,18 +506,21 @@ void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_k
    xml_element* rtl_weights = root->add_child_element(STR_XML_weights_rtl);
    WRITE_XNVM2("processing_element_type", Param->getOption<std::string>(OPT_processing_element_type), rtl_weights);
 
-   if(data.find(is_main_R) != data.end() and data.find(is_main_R)->second.find(none_R) != data.find(is_main_R)->second.end())
+   if(data.find(is_main_R) != data.end() and
+      data.find(is_main_R)->second.find(none_R) != data.find(is_main_R)->second.end())
    {
       long double is_main_value = data.find(is_main_R)->second.find(none_R)->second;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "is_main is " + STR(is_main_value));
       xml_element* is_main = rtl_weights->add_child_element("is_main");
       WRITE_XNVM2(STR_XML_weights_cycles, STR(is_main_value), is_main);
    }
-   if(data.find(backward_branches_R) != data.end() and data.find(backward_branches_R)->second.find(none_R) != data.find(backward_branches_R)->second.end())
+   if(data.find(backward_branches_R) != data.end() and
+      data.find(backward_branches_R)->second.find(none_R) != data.find(backward_branches_R)->second.end())
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Translator: write_to_xml: br is not zero");
       xml_element* backward_branches = rtl_weights->add_child_element("backward_branches");
-      WRITE_XNVM2(STR_XML_weights_cycles, STR(data.find(backward_branches_R)->second.find(none_R)->second), backward_branches);
+      WRITE_XNVM2(STR_XML_weights_cycles, STR(data.find(backward_branches_R)->second.find(none_R)->second),
+                  backward_branches);
    }
    std::map<enum rtl_kind, std::map<enum mode_kind, long double>>::const_iterator it, it_end = data.end();
    for(it = data.begin(); it != it_end; ++it)
@@ -520,8 +548,12 @@ void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_k
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Ended writing to xml");
 }
 
-void Translator::write_to_csv(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
-                              const std::string& file_name) const
+void Translator::write_to_csv(
+    const std::map<std::string, CustomOrderedSet<std::string>>& tags,
+    const CustomUnorderedMap<std::string,
+                             CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>&
+        results,
+    const std::string& file_name) const
 {
    CustomUnorderedSet<std::string> skipping;
    BOOST_PP_SEQ_FOR_EACH(SKIPPING_MACRO, BOOST_PP_EMPTY, SKIPPED_COLUMN);
@@ -545,13 +577,16 @@ void Translator::write_to_csv(const std::map<std::string, CustomOrderedSet<std::
       for(it4 = cat_tags.begin(); it4 != it4_end; ++it4)
       {
          if(skipping.find(*it4) == skipping.end())
-            out << ", " << it2->first << "_" << *it4;
+            out << CSV_COL_SEPARATOR << it2->first << "_" << *it4;
       }
       /// writing is_main
-      out << ", " << it2->first << "_is_main";
+      out << CSV_COL_SEPARATOR << it2->first << "_is_main";
    }
    out << std::endl;
-   CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>::const_iterator it, it_end = results.end();
+   CustomUnorderedMap<
+       std::string,
+       CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>::const_iterator it,
+       it_end = results.end();
    for(it = results.begin(); it != it_end; ++it)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   Analyzing line " + it->first);
@@ -603,24 +638,25 @@ void Translator::write_to_csv(const std::map<std::string, CustomOrderedSet<std::
                   if(normalization.find(complete_tag) != normalization.end())
                      normalization_value = normalization[complete_tag];
                   if(cat_counters.find(*it4) != cat_counters.end())
-                     out << ", " << ((cat_counters.find(*it4)->second) * normalization_value) / operations;
+                     out << CSV_COL_SEPARATOR << ((cat_counters.find(*it4)->second) * normalization_value) / operations;
                   else
-                     out << ", 0.0";
+                     out << CSV_COL_SEPARATOR "0.0";
                }
             }
          }
          /// writing is_main
          if(normalization.find("Dynamic_operations_is_main") != normalization.end())
-            out << ", " << normalization["Dynamic_operations_is_main"] / operations;
+            out << CSV_COL_SEPARATOR << normalization["Dynamic_operations_is_main"] / operations;
          else
-            out << ", " << 1 / operations;
+            out << CSV_COL_SEPARATOR << 1 / operations;
       }
       out << std::endl;
    }
 }
 #endif
 
-void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string, std::string>>& results, const std::string& file_name) const
+void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string, std::string>>& results,
+                              const std::string& file_name) const
 {
    std::ofstream out(file_name.c_str());
    THROW_ASSERT(out, "Error in opening output file " + file_name);
@@ -632,30 +668,44 @@ void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string,
          column_labels.insert(column.first);
       }
    }
-   out << "Benchmark, ";
+   out << "Benchmark";
    for(const auto& column_label : column_labels)
    {
-      out << column_label << ", ";
+      out << CSV_COL_SEPARATOR << column_label;
    }
    out << std::endl;
    for(const auto& row : results)
    {
-      THROW_ASSERT(static_cast<decltype(row.second.size())>(column_labels.size()) == row.second.size(), "Lines with different number of fields " + STR(row.second.size()) + " vs. " + STR(column_labels.size()));
-      out << row.first << ", ";
+      out << row.first;
       for(const auto& column_label : column_labels)
       {
-         out << row.second.at(column_label) << ",";
+         const auto val_it = row.second.find(column_label);
+         if(val_it != row.second.end())
+         {
+            out << CSV_COL_SEPARATOR << row.second.at(column_label);
+         }
+         else
+         {
+            out << CSV_COL_SEPARATOR;
+         }
       }
       out << std::endl;
    }
 }
 
-void Translator::write_to_pa(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
-                             const std::string& file_name) const
+void Translator::write_to_pa(
+    const std::map<std::string, CustomOrderedSet<std::string>>& tags,
+    const CustomUnorderedMap<std::string,
+                             CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>&
+        results,
+    const std::string& file_name) const
 {
    std::ofstream out(file_name.c_str());
    THROW_ASSERT(out, "Error in opening output file " + file_name);
-   CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>::const_iterator it, it_end = results.end();
+   CustomUnorderedMap<
+       std::string,
+       CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>::const_iterator it,
+       it_end = results.end();
    for(it = results.begin(); it != it_end; ++it)
    {
       out << "#Benchmark " << it->first << "# ";
@@ -676,7 +726,7 @@ void Translator::write_to_pa(const std::map<std::string, CustomOrderedSet<std::s
                   out << cat_counters.find(*it4)->second;
                else
                   out << "0.0";
-               out << ", ";
+               out << CSV_COL_SEPARATOR;
             }
          }
       }
@@ -791,7 +841,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    XMLDomParserRef parser;
 
 #if HAVE_EXPERIMENTAL
-   if(Param->isOption(OPT_evaluation) and (Param->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT and Param->isOption(OPT_evaluation_objectives)))
+   if(Param->isOption(OPT_evaluation) and
+      (Param->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT and
+       Param->isOption(OPT_evaluation_objectives)))
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Case: Estimation=EXACT");
       std::string objective_string = Param->getOption<std::string>(OPT_evaluation_objectives);
@@ -808,7 +860,8 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          else if(objective_vector[v] == "EDGES_REDUCTION")
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Case: Objective=EDGES_REDUCTION");
-            parser = XMLDomParserRef(new XMLDomParser("latex_format_edges_reduction.data", latex_format_edges_reduction));
+            parser =
+                XMLDomParserRef(new XMLDomParser("latex_format_edges_reduction.data", latex_format_edges_reduction));
             objectives_hits++;
          }
          else if(objectives_hits == 0 and v == objective_vector.size() - 1)
@@ -824,7 +877,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    else
    {
 #if HAVE_SOURCE_CODE_STATISTICS_XML
-      THROW_ASSERT(input_format == Parameters_FileFormat::FF_XML_STAT, "Input format " + STR(static_cast<int>(input_format)) + " not supported for conversion to latex table");
+      THROW_ASSERT(input_format == Parameters_FileFormat::FF_XML_STAT,
+                   "Input format " + STR(static_cast<int>(input_format)) +
+                       " not supported for conversion to latex table");
 #endif
       parser = XMLDomParserRef(new XMLDomParser("default_latex_format_stat.data", default_latex_format_stat));
    }
@@ -930,10 +985,14 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking cell " + line.first);
             bool bold = true;
             const CustomUnorderedSet<std::string> columns_to_be_compared = column.compared_columns;
-            CustomUnorderedSet<std::string>::const_iterator column_to_be_compared, column_to_be_compared_end = columns_to_be_compared.end();
-            for(column_to_be_compared = columns_to_be_compared.begin(); column_to_be_compared != column_to_be_compared_end; ++column_to_be_compared)
+            CustomUnorderedSet<std::string>::const_iterator column_to_be_compared,
+                column_to_be_compared_end = columns_to_be_compared.end();
+            for(column_to_be_compared = columns_to_be_compared.begin();
+                column_to_be_compared != column_to_be_compared_end; ++column_to_be_compared)
             {
-               if(not LatexColumnFormat::Compare(boost::lexical_cast<long double>(line.second[column.source_name]), column.comparison_operator, boost::lexical_cast<long double>(line.second[*column_to_be_compared])))
+               if(not LatexColumnFormat::Compare(boost::lexical_cast<long double>(line.second[column.source_name]),
+                                                 column.comparison_operator,
+                                                 boost::lexical_cast<long double>(line.second[*column_to_be_compared])))
                {
                   bold = false;
                   break;
@@ -961,7 +1020,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       if(escaped_index.size() > data_width[(latex_column_formats.begin())->source_name])
       {
          data_width[(latex_column_formats.begin())->source_name] = escaped_index.size();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Set data width for column " + std::string((latex_column_formats.begin())->source_name) + " to " + STR(escaped_index.size()));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Set data width for column " + std::string((latex_column_formats.begin())->source_name) +
+                            " to " + STR(escaped_index.size()));
       }
 
       const auto& current_line = line.second;
@@ -971,7 +1032,8 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          if(current_tag.second.size() > data_width[current_tag.first])
          {
             data_width[current_tag.first] = current_tag.second.size();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New column width " + STR(data_width[current_tag.first]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---New column width " + STR(data_width[current_tag.first]));
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read column " + current_tag.first);
       }
@@ -979,7 +1041,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    }
    for(const auto& total : totals)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering width total for column " + total.first + ": " + STR(total.second.size()) + " vs " + STR(data_width[total.first]));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Considering width total for column " + total.first + ": " + STR(total.second.size()) + " vs " +
+                         STR(data_width[total.first]));
       if(total.second.size() > data_width[total.first])
       {
          data_width[total.first] = total.second.size();
@@ -994,7 +1058,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    {
       if(column.text_format == LatexColumnFormat::TF_number)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + column.column_name + " " + STR(data_width[column.source_name]) + " vs " + STR(max_column_width));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---" + column.column_name + " " + STR(data_width[column.source_name]) + " vs " +
+                            STR(max_column_width));
       }
       if(data_width[column.source_name] > max_column_width and column.text_format == LatexColumnFormat::TF_number)
       {
@@ -1047,7 +1113,8 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          data_width[column.source_name] = 0;
          for(auto const& line : results)
          {
-            if(line.second.find(column.source_name) != line.second.end() and line.second.find(column.source_name)->second.size() > data_width[column.source_name])
+            if(line.second.find(column.source_name) != line.second.end() and
+               line.second.find(column.source_name)->second.size() > data_width[column.source_name])
                data_width[column.source_name] = line.second.find(column.source_name)->second.size();
          }
          data_width[column.source_name] += 4;
@@ -1055,7 +1122,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       else if(column.text_format == LatexColumnFormat::TF_number)
       {
          data_width[column.source_name] += 4;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New size of " + std::string(column.source_name) + ": " + STR(data_width[column.source_name]));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---New size of " + std::string(column.source_name) + ": " +
+                            STR(data_width[column.source_name]));
       }
    }
    for(auto const& column : latex_column_formats)
@@ -1113,10 +1182,12 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing line for benchmark " + line.first);
       for(auto const& column : latex_column_formats)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing column " + column.column_name + " (" + column.source_name + ")");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Printing column " + column.column_name + " (" + column.source_name + ")");
          if(not first_column)
             out << " & ";
-         if(column.text_format == LatexColumnFormat::TF_number or column.text_format == LatexColumnFormat::TF_exponential)
+         if(column.text_format == LatexColumnFormat::TF_number or
+            column.text_format == LatexColumnFormat::TF_exponential)
          {
             out << "$ ";
          }
@@ -1130,14 +1201,19 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             value = line.second.find(column.source_name)->second;
          }
          add_escape(value, "_");
-         size_t numerical_delimiters_size = (column.text_format == LatexColumnFormat::TF_number or column.text_format == LatexColumnFormat::TF_exponential) ? 4 : 0;
+         size_t numerical_delimiters_size = (column.text_format == LatexColumnFormat::TF_number or
+                                             column.text_format == LatexColumnFormat::TF_exponential) ?
+                                                4 :
+                                                0;
          if(value.size() + numerical_delimiters_size < data_width[column.source_name])
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Resize to " + STR(data_width[column.source_name]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Resize to " + STR(data_width[column.source_name]));
             value.resize(data_width[column.source_name] - numerical_delimiters_size, ' ');
          }
          out << value;
-         if(column.text_format == LatexColumnFormat::TF_number or column.text_format == LatexColumnFormat::TF_exponential)
+         if(column.text_format == LatexColumnFormat::TF_number or
+            column.text_format == LatexColumnFormat::TF_exponential)
          {
             out << " $";
          }
@@ -1179,7 +1255,8 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       {
          if(not first_column)
             out << " & ";
-         if(column.text_format == LatexColumnFormat::TF_number or column.text_format == LatexColumnFormat::TF_exponential)
+         if(column.text_format == LatexColumnFormat::TF_number or
+            column.text_format == LatexColumnFormat::TF_exponential)
          {
             out << "$ ";
          }
@@ -1214,14 +1291,19 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             value = totals.find(column.source_name)->second;
          }
          add_escape(value, "_");
-         size_t numerical_delimiters_size = (column.text_format == LatexColumnFormat::TF_number or column.text_format == LatexColumnFormat::TF_exponential) ? 4 : 0;
+         size_t numerical_delimiters_size = (column.text_format == LatexColumnFormat::TF_number or
+                                             column.text_format == LatexColumnFormat::TF_exponential) ?
+                                                4 :
+                                                0;
          if(value.size() + numerical_delimiters_size < data_width[column.source_name])
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Resize to " + STR(data_width[column.source_name]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Resize to " + STR(data_width[column.source_name]));
             value.resize(data_width[column.source_name] - numerical_delimiters_size, ' ');
          }
          out << value;
-         if(column.text_format == LatexColumnFormat::TF_number or column.text_format == LatexColumnFormat::TF_exponential)
+         if(column.text_format == LatexColumnFormat::TF_number or
+            column.text_format == LatexColumnFormat::TF_exponential)
          {
             out << " $";
          }
@@ -1243,19 +1325,31 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    }
 }
 
-void Translator::merge_pa(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomOrderedSet<std::string>>& keys,
-                          const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& input_data,
-                          const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& merge_data,
-                          CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& output_data) const
+void Translator::merge_pa(
+    const std::map<std::string, CustomOrderedSet<std::string>>& tags,
+    const CustomUnorderedMap<std::string, CustomOrderedSet<std::string>>& keys,
+    const CustomUnorderedMap<std::string,
+                             CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>&
+        input_data,
+    const CustomUnorderedMap<std::string,
+                             CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>&
+        merge_data,
+    CustomUnorderedMap<std::string,
+                       CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>&
+        output_data) const
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting merging");
    output_data = input_data;
-   CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>::const_iterator it, it_end = input_data.end();
+   CustomUnorderedMap<
+       std::string,
+       CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>::const_iterator it,
+       it_end = input_data.end();
    for(it = input_data.begin(); it != it_end; ++it)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering input " + it->first);
       const auto& cat = it->second;
-      CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>::const_iterator it2, it2_end = cat.end();
+      CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>::const_iterator it2,
+          it2_end = cat.end();
       for(it2 = cat.begin(); it2 != it2_end; ++it2)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering category " + it2->first);
@@ -1277,7 +1371,8 @@ void Translator::merge_pa(const std::map<std::string, CustomOrderedSet<std::stri
                         if(cat_merge_data.find(*it3) != cat_merge_data.end())
                         {
                            output_data[it->first][it2->first][*it3] = cat_merge_data.find(*it3)->second;
-                           PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Replacing " + it->first + "." + it2->first);
+                           PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                         "Replacing " + it->first + "." + it2->first);
                         }
                      }
                   }
@@ -1317,7 +1412,8 @@ void Translator::get_normalization(CustomUnorderedMap<std::string, long double>&
                LOAD_XVM(name, feature);
                LOAD_XVM(value, feature);
                normalization[name] = value;
-               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read feature normalization" + name + " " + STR(value));
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                             "Read feature normalization" + name + " " + STR(value));
             }
          }
       }
@@ -1382,7 +1478,8 @@ std::string Translator::get_exponential_notation(const std::string& input) const
    return mantissa + " \\cdot 10^{" + exponent + "}";
 }
 
-void Translator::read_column_formats(const XMLDomParserRef parser, std::list<LatexColumnFormat>& latex_column_formats, size_t& max_column_size) const
+void Translator::read_column_formats(const XMLDomParserRef parser, std::list<LatexColumnFormat>& latex_column_formats,
+                                     size_t& max_column_size) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Read column formats");
    parser->Exec();
@@ -1398,7 +1495,8 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
       if(!child_element)
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading information about new column");
-      THROW_ASSERT(child_element->get_name() == STR_XML_latex_table_column, "Child not known: " + child_element->get_name());
+      THROW_ASSERT(child_element->get_name() == STR_XML_latex_table_column,
+                   "Child not known: " + child_element->get_name());
       LatexColumnFormat latex_column_format;
       const std::string column_name = child_element->get_attribute(STR_XML_latex_table_column_name)->get_value();
       latex_column_format.column_name = column_name;
@@ -1440,7 +1538,8 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
             }
             if(field_element->get_attribute(STR_XML_latex_table_operator))
             {
-               const std::string comparison_operator = field_element->get_attribute(STR_XML_latex_table_operator)->get_value();
+               const std::string comparison_operator =
+                   field_element->get_attribute(STR_XML_latex_table_operator)->get_value();
                latex_column_format.comparison_operator = LatexColumnFormat::get_CO(comparison_operator);
             }
          }
@@ -1457,5 +1556,6 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
       latex_column_formats.push_back(latex_column_format);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read information about new column");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read " + STR(latex_column_formats.size()) + " column format");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--Read " + STR(latex_column_formats.size()) + " column format");
 }

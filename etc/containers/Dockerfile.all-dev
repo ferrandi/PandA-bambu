@@ -1,0 +1,41 @@
+FROM ubuntu:focal
+ARG DEBIAN_FRONTEND=noninteractive
+
+ENV TZ=Europe/Rome
+RUN dpkg --add-architecture i386 \
+   && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+   && apt-get update && apt-get install -y --no-install-recommends \
+   autoconf autoconf-archive automake bison ca-certificates ccache clang curl doxygen flex g++ gcc gfortran git graphviz lsb-release make pkg-config python3-distutils python3-defusedxml texlive-latex-recommended texlive-latex-extra time xz-utils \
+   libbdd-dev libfl-dev libglpk-dev libicu-dev libltdl-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev zlib1g-dev \
+   libboost-dev libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-regex-dev libboost-regex-dev libboost-date-time-dev libboost-wave-dev \
+   iverilog verilator locales \
+   && rm -rf /var/lib/apt/lists/* \
+   && locale-gen en_US.UTF-8
+
+RUN echo "deb http://dk.archive.ubuntu.com/ubuntu/ xenial main" >> /etc/apt/sources.list \
+   && echo "deb http://dk.archive.ubuntu.com/ubuntu/ xenial universe" >> /etc/apt/sources.list \
+   && echo "deb http://dk.archive.ubuntu.com/ubuntu/ bionic main" >> /etc/apt/sources.list \
+   && echo "deb http://dk.archive.ubuntu.com/ubuntu/ bionic universe" >> /etc/apt/sources.list \
+   && dpkg --add-architecture i386 \
+   && apt-get update && apt-get install -y --no-install-recommends \
+   libc6:i386 libncurses5:i386 libstdc++6:i386 libxft2 libxft2:i386 lib32ncurses5 libxext6 libxext6:i386 linux-libc-dev:i386 \
+   libtinfo5 \
+   gcc-4.9 gcc-4.9-plugin-dev gcc-4.9-multilib g++-4.9 g++-4.9-multilib gfortran-4.9 gfortran-4.9-multilib \
+   gcc-5 gcc-5-plugin-dev gcc-5-multilib g++-5 g++-5-multilib gfortran-5 gfortran-5-multilib \
+   gcc-6 gcc-6-plugin-dev gcc-6-multilib g++-6 g++-6-multilib gfortran-6 gfortran-6-multilib \
+   gcc-7 gcc-7-plugin-dev gcc-7-multilib g++-7 g++-7-multilib gfortran-7 gfortran-7-multilib \
+   gcc-8 gcc-8-plugin-dev gcc-8-multilib g++-8 g++-8-multilib gfortran-8 gfortran-8-multilib \
+   clang-4.0 libclang-4.0-dev llvm-4.0-dev \
+   clang-5.0 libclang-5.0-dev llvm-5.0-dev \
+   clang-6.0 libclang-6.0-dev llvm-6.0-dev \
+   clang-7 libclang-7-dev llvm-7-dev \
+   clang-11 libclang-11-dev llvm-11-dev clang-tools-11 \
+   && rm -rf /var/lib/apt/lists/* 
+
+RUN adduser --disabled-password --gecos '' --gid 0 jenkins \
+   && mkdir -p /opt/panda \
+   && chown -R jenkins /opt/panda
+USER jenkins
+WORKDIR /home/jenkins
+
+CMD [ "/bin/bash" ]

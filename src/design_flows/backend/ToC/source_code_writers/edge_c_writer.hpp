@@ -88,7 +88,8 @@ class EdgeCWriter : public virtual CWriter
    virtual void print_end_path(unsigned int fun_id, unsigned int loop_id);
 
    /**
-    * Print operation requested for record information about a path which exit from a loop and immediately enter in another
+    * Print operation requested for record information about a path which exit from a loop and immediately enter in
+    * another
     * @param e is the edge
     */
    virtual void print_loop_switching(EdgeDescriptor e);
@@ -110,7 +111,9 @@ class EdgeCWriter : public virtual CWriter
     * @param bb_start is the first basic block to be printed
     * @param bb_end is the set of first basic block not to be printed
     */
-   void writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, const var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX, CustomOrderedSet<vertex> bb_end = CustomOrderedSet<vertex>()) override;
+   void writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions,
+                                 const var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX,
+                                 CustomOrderedSet<vertex> bb_end = CustomOrderedSet<vertex>()) override;
 
  protected:
    /// Increment which should be added before the label in a basic block
@@ -158,7 +161,9 @@ class EdgeCWriter : public virtual CWriter
     * @param Param is the set of parameters
     * @param verbose tells if annotations
     */
-   EdgeCWriter(const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param, bool verbose = true);
+   EdgeCWriter(const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer,
+               const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param,
+               bool verbose = true);
 
    /**
     * Destructor

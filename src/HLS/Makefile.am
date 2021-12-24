@@ -235,6 +235,7 @@ lib_interconnectionbinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/algorithms/clique_covering \
    -I$(top_srcdir)/src/behavior  \
    -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/HLS \
@@ -351,6 +352,7 @@ lib_hls_chaining_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/virtual_components \
    -I$(top_srcdir)/src/intermediate_representations \
    -I$(top_srcdir)/src/intermediate_representations/hls \
+   -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
 
@@ -742,7 +744,6 @@ noinst_HEADERS += \
    module_allocation/add_library.hpp \
    module_allocation/allocation.hpp \
    module_allocation/allocation_information.hpp \
-   module_allocation/hls_bit_value.hpp \
    module_allocation/hls_function_bit_value.hpp \
    module_allocation/omp_allocation.hpp
 
@@ -750,7 +751,6 @@ lib_allocation_la_SOURCES = \
    module_allocation/add_library.cpp \
    module_allocation/allocation.cpp \
    module_allocation/allocation_information.cpp \
-   module_allocation/hls_bit_value.cpp \
    module_allocation/hls_function_bit_value.cpp \
    module_allocation/omp_allocation.cpp
 

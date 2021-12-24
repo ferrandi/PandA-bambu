@@ -84,7 +84,8 @@ class target_device
    /// Reference to the target technology which will be used in the target device
    target_technologyRef target;
 
-   /// Map containing all the parameters of the technology. All the values are stored as strings and they have correctly converted through the get_parameter template.
+   /// Map containing all the parameters of the technology. All the values are stored as strings and they have correctly
+   /// converted through the get_parameter template.
    std::map<std::string, std::string> parameters;
 
    /// map with all the pairs variable/variable value used in the script as bash default values
@@ -143,7 +144,8 @@ class target_device
     * @param TM is the reference to the current technology library
     * @param target is the reference to the current target technology
     */
-   static target_deviceRef create_device(const TargetDevice_Type type, const ParameterConstRef& Param, const technology_managerRef& TM);
+   static target_deviceRef create_device(const TargetDevice_Type type, const ParameterConstRef& Param,
+                                         const technology_managerRef& TM);
 
    /**
     * Returns the value of the specified parameter, if any. Otherwise, it throws an exception.

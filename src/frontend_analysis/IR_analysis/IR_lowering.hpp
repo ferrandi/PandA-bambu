@@ -96,42 +96,56 @@ class IR_lowering : public FunctionFrontendFlowStep
     * convenient.  Use the shift/add sequence described by ALG and apply
     * the final fixup specified by VARIANT.
     */
-   tree_nodeRef expand_mult_const(tree_nodeRef op0, unsigned long long int val, const struct algorithm& alg, enum mult_variant& variant, const tree_nodeRef stmt, const blocRef block, tree_nodeRef& type, const std::string& srcp_default);
+   tree_nodeRef expand_mult_const(const tree_nodeRef& op0, unsigned long long int val, const struct algorithm& alg,
+                                  enum mult_variant& variant, const tree_nodeRef& stmt, const blocRef& block,
+                                  const tree_nodeRef& type, const std::string& srcp_default);
 
    /**
     * Expand signed modulus of OP0 by a power of two D in mode MODE.
     */
-   tree_nodeRef expand_smod_pow2(tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef& type, const std::string& srcp_default);
+   tree_nodeRef expand_smod_pow2(const tree_nodeRef& op0, unsigned long long int d, const tree_nodeRef& stmt,
+                                 const blocRef& block, const tree_nodeRef& type, const std::string& srcp_default);
 
    /**
     * Expand signed division of OP0 by a power of two D in mode MODE.
     * This routine is only called for positive values of D.
     */
-   tree_nodeRef expand_sdiv_pow2(tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef& type, const std::string& srcp_default);
+   tree_nodeRef expand_sdiv_pow2(const tree_nodeRef& op0, unsigned long long int d, const tree_nodeRef& stmt,
+                                 const blocRef& block, const tree_nodeRef& type, const std::string& srcp_default);
 
-   tree_nodeRef expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree_nodeRef old_target, const tree_nodeRef stmt, const blocRef block, tree_nodeRef& type_expr, const std::string& srcp_default);
+   tree_nodeRef expand_MC(const tree_nodeRef& op0, const integer_cst* ic_node, const tree_nodeRef& old_target,
+                          const tree_nodeRef& stmt, const blocRef& block, const tree_nodeRef& type_expr,
+                          const std::string& srcp_default);
 
-   bool expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeRef stmt, const blocRef block, const std::string& srcp_default, bool temp_addr);
+   bool expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeRef& stmt, const blocRef& block,
+                              const std::string& srcp_default, bool temp_addr);
 
-   tree_nodeRef expand_mult_highpart(tree_nodeRef op0, unsigned long long int ml, tree_nodeRef type_expr, int data_bitsize, const std::list<tree_nodeRef>::const_iterator it_los, const blocRef block, const std::string& srcp_default);
+   tree_nodeRef expand_mult_highpart(const tree_nodeRef& op0, unsigned long long int ml, const tree_nodeRef& type_expr,
+                                     int data_bitsize, const std::list<tree_nodeRef>::const_iterator it_los,
+                                     const blocRef& block, const std::string& srcp_default);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   tree_nodeRef array_ref_lowering(array_ref* AR, const std::string& srcp_default, std::pair<unsigned int, blocRef> block, std::list<tree_nodeRef>::const_iterator it_los, bool temp_addr);
+   tree_nodeRef array_ref_lowering(array_ref* AR, const std::string& srcp_default,
+                                   std::pair<unsigned int, blocRef> block,
+                                   std::list<tree_nodeRef>::const_iterator it_los, bool temp_addr);
 
    /**
     * @brief check if the max transformation limit has been reached
     * @param stmt is the current statement
     * @return true in case all the next transformations have to be skipped
     */
-   bool reached_max_transformation_limit(tree_nodeRef stmt);
+   bool reached_max_transformation_limit(const tree_nodeRef& stmt);
 
-   void division_by_a_constant(const std::pair<unsigned int, blocRef>& block, std::list<tree_nodeRef>::const_iterator& it_los, gimple_assign* ga, tree_nodeRef op1, enum kind code1, bool& restart_analysis, const std::string& srcp_default,
-                               const std::string& step_name);
+   void division_by_a_constant(const std::pair<unsigned int, blocRef>& block,
+                               std::list<tree_nodeRef>::const_iterator& it_los, gimple_assign* ga,
+                               const tree_nodeRef& op1, enum kind code1, bool& restart_analysis,
+                               const std::string& srcp_default, const std::string& step_name);
 
  public:
    /**
@@ -141,7 +155,8 @@ class IR_lowering : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   IR_lowering(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   IR_lowering(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id,
+               const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor
@@ -149,7 +164,7 @@ class IR_lowering : public FunctionFrontendFlowStep
    ~IR_lowering() override;
 
    /**
-    * Computes the operations CFG graph data structure.
+    * traverse the data structure to simplify and make more homogeneous as possible.
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;
@@ -164,6 +179,7 @@ class IR_lowering : public FunctionFrontendFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

@@ -52,3 +52,9 @@ main_test (void)
   __builtin_printf_unlocked ("%s", "");
 #endif
 }
+
+int main()
+{
+   main_test();
+   return 0;
+}

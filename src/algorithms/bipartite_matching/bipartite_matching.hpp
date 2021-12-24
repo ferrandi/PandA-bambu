@@ -34,8 +34,9 @@
  * @file bipartite_matching.hpp
  * @brief The class solve the bipartite weighted matching problem with the Hungarian method.
  *
- * The algorithm is based on the description available through http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=hungarianAlgorithm
- * in particular it has been implemented the O(n^3) version of the algorithm.
+ * The algorithm is based on the description available through
+ * http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=hungarianAlgorithm in particular it has been
+ * implemented the O(n^3) version of the algorithm.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$

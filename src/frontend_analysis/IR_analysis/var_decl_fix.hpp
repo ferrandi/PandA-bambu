@@ -65,6 +65,7 @@ REF_FORWARD_DECL(tree_node);
 class VarDeclFix : public FunctionFrontendFlowStep
 {
  protected:
+   bool modified;
    /**
     * Return the normalized identifier; in this class it is the identifier itself. Subclasses can specialize it
     * @param identifier is the identifier to be normalized
@@ -75,14 +76,17 @@ class VarDeclFix : public FunctionFrontendFlowStep
    /**
     * Recursive examinate tree node
     */
-   void recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& already_examinated_decls, CustomUnorderedSet<std::string>& already_examinated_names, CustomUnorderedSet<std::string>& already_examinated_type_names,
+   void recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& already_examinated_decls,
+                            CustomUnorderedSet<std::string>& already_examinated_names,
+                            CustomUnorderedSet<std::string>& already_examinated_type_names,
                             CustomUnorderedSet<unsigned int>& already_visited_ae);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -93,7 +97,9 @@ class VarDeclFix : public FunctionFrontendFlowStep
     * @param parameters is the set of input parameters
     * @param frontend_flow_step_type is the type of step; it is different for subclasses
     */
-   VarDeclFix(const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters, const FrontendFlowStepType frontend_flow_step_type = VAR_DECL_FIX);
+   VarDeclFix(const application_managerRef AppM, unsigned int _function_id,
+              const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters,
+              const FrontendFlowStepType frontend_flow_step_type = VAR_DECL_FIX);
 
    /**
     * Destructor

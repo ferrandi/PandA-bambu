@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "soft-fp.h"
-
-USItype __fixunsdfsi(DFtype a)
+static __FORCE_INLINE USItype __fixunsdfsi(DFtype a)
 {
    FP_DECL_EX;
    FP_DECL_D(A);
@@ -43,9 +40,4 @@ USItype __fixunsdfsi(DFtype a)
    FP_HANDLE_EXCEPTIONS;
 
    return r;
-}
-
-inline USItype __float64_to_uint32_round_to_zeroif(DFtype a)
-{
-   return __fixunsdfsi(a);
 }

@@ -52,7 +52,9 @@
 
 #include "string_manipulation.hpp" // for GET_CLASS
 
-CBackendStepFactory::CBackendStepFactory(const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _application_manager, const ParameterConstRef _parameters)
+CBackendStepFactory::CBackendStepFactory(const DesignFlowManagerConstRef _design_flow_manager,
+                                         const application_managerConstRef _application_manager,
+                                         const ParameterConstRef _parameters)
     : DesignFlowStepFactory(_design_flow_manager, _parameters), application_manager(_application_manager)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -65,7 +67,10 @@ const std::string CBackendStepFactory::GetPrefix() const
    return "CBackend";
 }
 
-const DesignFlowStepRef CBackendStepFactory::CreateCBackendStep(const CBackend::Type c_backend_type, const std::string& file_name, const CBackendInformationConstRef c_backend_information) const
+const DesignFlowStepRef
+CBackendStepFactory::CreateCBackendStep(const CBackend::Type c_backend_type, const std::string& file_name,
+                                        const CBackendInformationConstRef c_backend_information) const
 {
-   return DesignFlowStepRef(new CBackend(c_backend_type, c_backend_information, design_flow_manager.lock(), application_manager, file_name, parameters));
+   return DesignFlowStepRef(new CBackend(c_backend_type, c_backend_information, design_flow_manager.lock(),
+                                         application_manager, file_name, parameters));
 }

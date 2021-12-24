@@ -66,7 +66,9 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-remove_clobber_ga::remove_clobber_ga(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+remove_clobber_ga::remove_clobber_ga(const application_managerRef _AppM, unsigned int _function_id,
+                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                     const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, REMOVE_CLOBBER_GA, _design_flow_manager, _parameters)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -74,15 +76,17 @@ remove_clobber_ga::remove_clobber_ga(const application_managerRef _AppM, unsigne
 
 remove_clobber_ga::~remove_clobber_ga() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> remove_clobber_ga::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+remove_clobber_ga::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(REBUILD_INITIALIZATION, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -107,7 +111,8 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   const bool is_single_write_memory = GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory();
+   const bool is_single_write_memory =
+       GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory();
 
    for(auto block : sl->list_of_bloc)
    {
@@ -166,9 +171,13 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
                         res = var_substitution_table.find(GET_INDEX_NODE(res))->second;
                      }
                      THROW_ASSERT(
-                         !(GetPointer<ssa_name>(GET_NODE(res)) && GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt())) && GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt()))->clobber),
+                         !(GetPointer<ssa_name>(GET_NODE(res)) &&
+                           GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt())) &&
+                           GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt()))
+                               ->clobber),
                          "unexpected condition");
-                     gp->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(TM->GetTreeReindex(GET_INDEX_NODE(res)), def_edge.second));
+                     gp->ReplaceDefEdge(TM, def_edge,
+                                        gimple_phi::DefEdge(TM->GetTreeReindex(GET_INDEX_NODE(res)), def_edge.second));
                   }
                }
             }
@@ -185,7 +194,8 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
             }
             if(var_substitution_table.find(GET_INDEX_NODE(gn->memuse)) != var_substitution_table.end())
             {
-               gn->memuse = TM->GetTreeReindex(GET_INDEX_NODE(var_substitution_table.find(GET_INDEX_NODE(gn->memuse))->second));
+               gn->memuse =
+                   TM->GetTreeReindex(GET_INDEX_NODE(var_substitution_table.find(GET_INDEX_NODE(gn->memuse))->second));
             }
          }
       }
@@ -198,7 +208,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
       unsigned int curr_bb = stbr_it->first;
       for(const auto& to_be_removed : stbr_it->second)
       {
-         sl->list_of_bloc[curr_bb]->RemoveStmt(to_be_removed);
+         sl->list_of_bloc[curr_bb]->RemoveStmt(to_be_removed, AppM);
       }
    }
 

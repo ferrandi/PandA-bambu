@@ -53,7 +53,8 @@ class DryRunEvaluation : public EvaluationBaseStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of evaluation
     */
-   DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+                    const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -61,15 +62,9 @@ class DryRunEvaluation : public EvaluationBaseStep
    ~DryRunEvaluation() override;
 
    /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
-
-   /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status Exec() override;
 };
 #endif

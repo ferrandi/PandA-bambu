@@ -94,24 +94,32 @@
 /// FIXED metadata bit size
 #define FIXED_METADATA_SIZE 6
 
-HWDiscrepancyAnalysis::HWDiscrepancyAnalysis(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+HWDiscrepancyAnalysis::HWDiscrepancyAnalysis(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                             const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS),
       Discr(_HLSMgr->RDiscr),
-      present_state_name(static_cast<HDLWriter_Language>(_parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VERILOG ? "_present_state" : "present_state")
+      present_state_name(static_cast<HDLWriter_Language>(_parameters->getOption<unsigned int>(OPT_writer_language)) ==
+                                 HDLWriter_Language::VERILOG ?
+                             "_present_state" :
+                             "present_state")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HWDiscrepancyAnalysis::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HWDiscrepancyAnalysis::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::CALL_GRAPH_UNFOLDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::HW_PATH_COMPUTATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::CALL_GRAPH_UNFOLDING, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HW_PATH_COMPUTATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -174,7 +182,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    for(const auto& f : Discr->c_control_flow_trace)
    {
       const auto f_id = f.first;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Untangling software control flow trace of function: " + STR(f_id) + " " + HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->get_function_name());
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "-->Untangling software control flow trace of function: " + STR(f_id) + " " +
+                         HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->get_function_name());
       const auto& stg = HLSMgr->get_HLS(f_id)->STG->CGetStg();
       const auto& epp_stg = HLSMgr->get_HLS(f_id)->STG->CGetEPPStg();
       const auto& stg_info = stg->CGetStateTransitionGraphInfo();
@@ -182,7 +192,8 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       const auto fsm_exit_node = stg_info->exit_node;
       const auto& state_id_to_check = Discr->hw_discrepancy_info->fu_id_to_states_to_check.at(f_id);
 #if HAVE_ASSERTS
-      const auto& state_id_to_check_on_feedback = Discr->hw_discrepancy_info->fu_id_to_feedback_states_to_check.at(f_id);
+      const auto& state_id_to_check_on_feedback =
+          Discr->hw_discrepancy_info->fu_id_to_feedback_states_to_check.at(f_id);
       const auto& reset_transitions = Discr->hw_discrepancy_info->fu_id_to_reset_edges.at(f_id);
 #endif
 
@@ -203,7 +214,8 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
              * but it may have a non zero increment on its single outgoing edge,
              * so we must check it and potentially add it to the epp_counter
              */
-            THROW_ASSERT(boost::out_degree(current_state, *stg) == 1, "entry state has out degree = " + STR(boost::out_degree(current_state, *stg)));
+            THROW_ASSERT(boost::out_degree(current_state, *stg) == 1,
+                         "entry state has out degree = " + STR(boost::out_degree(current_state, *stg)));
             // select the only outgoing edge (must not be a feedback edge)
             OutEdgeIterator out_edge, out_end;
             boost::tie(out_edge, out_end) = boost::out_edges(current_state, *stg);
@@ -216,7 +228,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             // update the current_state with the only successor of entry
             current_state = boost::target(taken_edge, *stg);
             // check that the first state is not a loop header
-            THROW_ASSERT(state_id_to_check_on_feedback.find(stg_info->vertex_to_state_id.at(current_state)) == state_id_to_check_on_feedback.cend(), "");
+            THROW_ASSERT(state_id_to_check_on_feedback.find(stg_info->vertex_to_state_id.at(current_state)) ==
+                             state_id_to_check_on_feedback.cend(),
+                         "");
          }
          if(HLSMgr->get_HLS(f_id)->registered_inputs)
          {
@@ -228,8 +242,10 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
              * but it may have a non zero increment on its single outgoing edge,
              * so we must check it and potentially add it to the epp_counter
              */
-            THROW_ASSERT(boost::out_degree(current_state, *stg) == 1, "registered input state has out degree = " + STR(boost::out_degree(current_state, *stg)));
-            THROW_ASSERT(state_id_to_check.find(stg_info->vertex_to_state_id.at(current_state)) == state_id_to_check.cend(), "");
+            THROW_ASSERT(boost::out_degree(current_state, *stg) == 1,
+                         "registered input state has out degree = " + STR(boost::out_degree(current_state, *stg)));
+            THROW_ASSERT(
+                state_id_to_check.find(stg_info->vertex_to_state_id.at(current_state)) == state_id_to_check.cend(), "");
             // select the only outgoing edge (must not be a feedback edge)
             OutEdgeIterator out_edge, out_end;
             boost::tie(out_edge, out_end) = boost::out_edges(current_state, *stg);
@@ -281,16 +297,24 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                {
                   const auto dst = boost::target(e, *stg);
                   const auto dst_info = stg->CGetStateInfo(dst);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---analyzing next state: " + ((dst == fsm_exit_node) ? STR("EXIT") : STR(stg_info->vertex_to_state_id.at(dst))) + " in the same BB " + STR(bb_id));
+                  INDENT_DBG_MEX(
+                      DEBUG_LEVEL_PEDANTIC, debug_level,
+                      "---analyzing next state: " +
+                          ((dst == fsm_exit_node) ? STR("EXIT") : STR(stg_info->vertex_to_state_id.at(dst))) +
+                          " in the same BB " + STR(bb_id));
                   if((not dst_info->is_dummy) and (*dst_info->BB_ids.begin() == bb_id))
                   {
                      if(not(stg->GetSelector(e) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK))
                      {
-                        THROW_ASSERT(not found_valid_next_state, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(bb_id));
+                        THROW_ASSERT(not found_valid_next_state,
+                                     "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) +
+                                         " have the same BB id = " + STR(bb_id));
                         found_valid_next_state = true;
                         taken_edge = e;
                         next_state = dst;
-                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---FOUND next state: " + STR(stg_info->vertex_to_state_id.at(next_state)) + " in the same BB " + STR(bb_id));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                       "---FOUND next state: " + STR(stg_info->vertex_to_state_id.at(next_state)) +
+                                           " in the same BB " + STR(bb_id));
                      }
                   }
                   else if(dst_info->is_dummy)
@@ -312,14 +336,19 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                         const auto dst_info = stg->CGetStateInfo(dst);
                         if((not dst_info->is_dummy) and (*dst_info->BB_ids.begin() == next_bb_id))
                         {
-                           THROW_ASSERT(not found_valid_next_state, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(next_bb_id));
+                           THROW_ASSERT(not found_valid_next_state,
+                                        "two neighbors of state S_" +
+                                            STR(stg_info->vertex_to_state_id.at(current_state)) +
+                                            " have the same BB id = " + STR(next_bb_id));
 #if HAVE_ASSERTS
                            found_valid_next_state = true;
 #endif
                            end_of_bb_execution = true;
                            taken_edge = e;
                            next_state = dst;
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---FOUND next state: " + STR(stg_info->vertex_to_state_id.at(next_state)) + " in new BB " + STR(next_bb_id));
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                          "---FOUND next state: " + STR(stg_info->vertex_to_state_id.at(next_state)) +
+                                              " in new BB " + STR(next_bb_id));
                            if(stg->GetSelector(taken_edge) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
                            {
                               takes_feedback_edge = true;
@@ -353,12 +382,15 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                   THROW_ASSERT(end_of_bb_execution, "");
                }
                THROW_ASSERT(found_valid_next_state, "next valid state not found");
-               THROW_ASSERT(takes_feedback_edge == (reset_transitions.find(taken_edge) != reset_transitions.cend()), "");
+               THROW_ASSERT(takes_feedback_edge == (reset_transitions.find(taken_edge) != reset_transitions.cend()),
+                            "");
                if(next_state != fsm_exit_node)
                {
                   const auto next_state_id = stg_info->vertex_to_state_id.at(next_state);
                   scope_to_state_trace[scope].push_back(next_state_id);
-                  THROW_ASSERT((not takes_feedback_edge) or (state_id_to_check_on_feedback.find(next_state_id) != state_id_to_check_on_feedback.cend()), "");
+                  THROW_ASSERT((not takes_feedback_edge) or (state_id_to_check_on_feedback.find(next_state_id) !=
+                                                             state_id_to_check_on_feedback.cend()),
+                               "");
                }
                const auto taken_edge_info = epp_stg->CGetTransitionInfo(taken_edge);
                epp_counter += taken_edge_info->get_epp_increment();
@@ -386,7 +418,8 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                   const auto from_entry_edge_info = epp_stg->CGetTransitionInfo(epp_edge_from_entry);
                   const auto to_exit_edge_info = epp_stg->CGetTransitionInfo(epp_edge_to_exit);
                   scope_to_epp_trace[scope].push_back(epp_counter + to_exit_edge_info->get_epp_increment());
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "epp_trace " + STR(epp_counter + to_exit_edge_info->get_epp_increment()));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "epp_trace " + STR(epp_counter + to_exit_edge_info->get_epp_increment()));
                   epp_counter = from_entry_edge_info->get_epp_increment();
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "reset epp_counter " + STR(epp_counter));
                }
@@ -429,10 +462,12 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          {
             bitsnumber = language_writer::bitnumber(max_value);
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " ONE HOT" + STR(one_hot_encoding ? "  true" : " false"));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---f_id " + STR(f_id) + " ONE HOT" + STR(one_hot_encoding ? "  true" : " false"));
 
          const unsigned int state_bitsize = one_hot_encoding ? (max_value + 1) : bitsnumber;
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " STATE BITSIZE " + STR(state_bitsize));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---f_id " + STR(f_id) + " STATE BITSIZE " + STR(state_bitsize));
 
          size_t f_state_of_the_art_usage = 0;
          size_t f_state_of_the_art_usage_fixed = 0;
@@ -445,8 +480,11 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             }
             const auto& state_trace = scope_to_state_trace.at(scope);
             size_t scope_memory_usage = state_bitsize * state_trace.size();
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art memory usage (BITS): " + STR(scope_memory_usage));
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art memory usage (BYTES): " + STR((scope_memory_usage / 8) + (((scope_memory_usage % 8) == 0) ? 0 : 1)));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---scope " + scope + " state_of_the_art memory usage (BITS): " + STR(scope_memory_usage));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---scope " + scope + " state_of_the_art memory usage (BYTES): " +
+                               STR((scope_memory_usage / 8) + (((scope_memory_usage % 8) == 0) ? 0 : 1)));
             f_state_of_the_art_usage += scope_memory_usage;
 
             size_t prev_state = std::numeric_limits<std::size_t>::max() - 1;
@@ -492,24 +530,48 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                }
                prev_state = state_id;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art fixed memory usage (BITS): " + STR(scope_memory_usage_fixed));
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art fixed memory usage (BYTES): " + STR((scope_memory_usage_fixed / 8) + (((scope_memory_usage_fixed % 8) == 0) ? 0 : 1)));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---scope " + scope +
+                               " state_of_the_art fixed memory usage (BITS): " + STR(scope_memory_usage_fixed));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---scope " + scope + " state_of_the_art fixed memory usage (BYTES): " +
+                               STR((scope_memory_usage_fixed / 8) + (((scope_memory_usage_fixed % 8) == 0) ? 0 : 1)));
             f_state_of_the_art_usage_fixed += scope_memory_usage_fixed;
             size_t min_scope_memory_usage_opt = std::numeric_limits<size_t>::max();
             for(unsigned int metadata_bitsize = 0; metadata_bitsize < MAX_METADATA_BITSIZE; metadata_bitsize++)
             {
-               min_scope_memory_usage_opt = std::min(min_scope_memory_usage_opt, scope_memory_usage_opt[metadata_bitsize]);
+               min_scope_memory_usage_opt =
+                   std::min(min_scope_memory_usage_opt, scope_memory_usage_opt[metadata_bitsize]);
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art opt memory usage (BITS): " + STR(min_scope_memory_usage_opt));
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art opt memory usage (BYTES): " + STR((min_scope_memory_usage_opt / 8) + (((min_scope_memory_usage_opt % 8) == 0) ? 0 : 1)));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---scope " + scope +
+                               " state_of_the_art opt memory usage (BITS): " + STR(min_scope_memory_usage_opt));
+            INDENT_DBG_MEX(
+                DEBUG_LEVEL_PEDANTIC, debug_level,
+                "---scope " + scope + " state_of_the_art opt memory usage (BYTES): " +
+                    STR((min_scope_memory_usage_opt / 8) + (((min_scope_memory_usage_opt % 8) == 0) ? 0 : 1)));
             f_state_of_the_art_usage_opt += min_scope_memory_usage_opt;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art memory usage (BITS): " + STR(f_state_of_the_art_usage));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art memory usage (BYTES): " + STR((f_state_of_the_art_usage / 8) + (((f_state_of_the_art_usage % 8) == 0) ? 0 : 1)));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art fixed memory usage (BITS): " + STR(f_state_of_the_art_usage_fixed));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art fixed memory usage (BYTES): " + STR((f_state_of_the_art_usage_fixed / 8) + (((f_state_of_the_art_usage_fixed % 8) == 0) ? 0 : 1)));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art opt memory usage (BITS): " + STR(f_state_of_the_art_usage_opt));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art opt memory usage (BYTES): " + STR((f_state_of_the_art_usage_opt / 8) + (((f_state_of_the_art_usage_opt % 8) == 0) ? 0 : 1)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---f_id " + STR(f_id) +
+                            " state_of_the_art memory usage (BITS): " + STR(f_state_of_the_art_usage));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---f_id " + STR(f_id) + " state_of_the_art memory usage (BYTES): " +
+                            STR((f_state_of_the_art_usage / 8) + (((f_state_of_the_art_usage % 8) == 0) ? 0 : 1)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---f_id " + STR(f_id) +
+                            " state_of_the_art fixed memory usage (BITS): " + STR(f_state_of_the_art_usage_fixed));
+         INDENT_DBG_MEX(
+             DEBUG_LEVEL_PEDANTIC, debug_level,
+             "---f_id " + STR(f_id) + " state_of_the_art fixed memory usage (BYTES): " +
+                 STR((f_state_of_the_art_usage_fixed / 8) + (((f_state_of_the_art_usage_fixed % 8) == 0) ? 0 : 1)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---f_id " + STR(f_id) +
+                            " state_of_the_art opt memory usage (BITS): " + STR(f_state_of_the_art_usage_opt));
+         INDENT_DBG_MEX(
+             DEBUG_LEVEL_PEDANTIC, debug_level,
+             "---f_id " + STR(f_id) + " state_of_the_art opt memory usage (BYTES): " +
+                 STR((f_state_of_the_art_usage_opt / 8) + (((f_state_of_the_art_usage_opt % 8) == 0) ? 0 : 1)));
          total_state_of_the_art_memory_usage += f_state_of_the_art_usage;
          total_state_of_the_art_fixed_memory_usage += f_state_of_the_art_usage_fixed;
          total_state_of_the_art_opt_memory_usage += f_state_of_the_art_usage_opt;
@@ -519,14 +581,17 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          std::vector<size_t> f_memory_usage = std::vector<size_t>(MAX_METADATA_BITSIZE, 0);
          size_t f_min_memory_usage = 0;
          std::map<std::string, std::map<size_t, size_t>> scope_to_bits_to_usage;
-         if(Discr->hw_discrepancy_info->fu_id_control_flow_skip.find(f_id) == Discr->hw_discrepancy_info->fu_id_control_flow_skip.end())
+         if(Discr->hw_discrepancy_info->fu_id_control_flow_skip.find(f_id) ==
+            Discr->hw_discrepancy_info->fu_id_control_flow_skip.end())
          {
             size_t f_id_epp_trace_memory_word_bitsize = Discr->hw_discrepancy_info->fu_id_to_epp_trace_bitsize.at(f_id);
-            if((Discr->hw_discrepancy_info->fu_id_to_max_epp_path_val.at(f_id) + 1) == (1ULL << f_id_epp_trace_memory_word_bitsize))
+            if((Discr->hw_discrepancy_info->fu_id_to_max_epp_path_val.at(f_id) + 1) ==
+               (1ULL << f_id_epp_trace_memory_word_bitsize))
             {
                f_id_epp_trace_memory_word_bitsize++;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " EPP TRACE BITSIZE " + STR(f_id_epp_trace_memory_word_bitsize));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---f_id " + STR(f_id) + " EPP TRACE BITSIZE " + STR(f_id_epp_trace_memory_word_bitsize));
             for(const auto& scope : Discr->f_id_to_scope.at(f_id))
             {
                if(scope_to_epp_trace.find(scope) == scope_to_epp_trace.end())
@@ -534,8 +599,12 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                   continue;
                }
                const auto epp_trace = scope_to_epp_trace.at(scope);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " EPP TRACE LENGTH " + STR(epp_trace.size()));
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " expected baseline EPP TRACE LENGTH " + STR(f_id_epp_trace_memory_word_bitsize * epp_trace.size()));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                              "---f_id " + STR(f_id) + " scope " + scope + " EPP TRACE LENGTH " +
+                                  STR(epp_trace.size()));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                              "---f_id " + STR(f_id) + " scope " + scope + " expected baseline EPP TRACE LENGTH " +
+                                  STR(f_id_epp_trace_memory_word_bitsize * epp_trace.size()));
                size_t best_metadata_bitsize = 0;
                size_t min_scope_memory_usage = std::numeric_limits<size_t>::max();
                for(size_t i = 0; i < MAX_METADATA_BITSIZE; i++)
@@ -570,10 +639,15 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                         compressed_epp_trace_with_metadata.emplace_back(metadata_counter - 1, prev_epp_counter);
                      }
                   }
-                  size_t scope_memory_usage = (f_id_epp_trace_memory_word_bitsize + i) * compressed_epp_trace_with_metadata.size();
+                  size_t scope_memory_usage =
+                      (f_id_epp_trace_memory_word_bitsize + i) * compressed_epp_trace_with_metadata.size();
                   scope_to_bits_to_usage[scope][i] = scope_memory_usage;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " memory usage (METADATA) " + STR(i) + " (BITS): " + STR(scope_memory_usage));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " memory usage (METADATA) " + STR(i) + " (BYTES): " + STR((scope_memory_usage / 8) + (((scope_memory_usage % 8) == 0) ? 0 : 1)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---scope " + scope + " memory usage (METADATA) " + STR(i) +
+                                     " (BITS): " + STR(scope_memory_usage));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---scope " + scope + " memory usage (METADATA) " + STR(i) + " (BYTES): " +
+                                     STR((scope_memory_usage / 8) + (((scope_memory_usage % 8) == 0) ? 0 : 1)));
                   if(scope_memory_usage < min_scope_memory_usage)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---new best metadata bitsize = " + STR(i));
@@ -597,25 +671,35 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " NO CONTROL FLOW CHECKS NEEDED");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---f_id " + STR(f_id) + " NO CONTROL FLOW CHECKS NEEDED");
          }
 
          for(size_t i = 0; i < MAX_METADATA_BITSIZE; i++)
          {
             tot_memory_usage_per_bits.at(i) += f_memory_usage.at(i);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " memory usage (METADATA) " + STR(i) + " (BITS): " + STR(f_memory_usage.at(i)));
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " memory usage (METADATA) " + STR(i) + " (BYTES): " + STR((f_memory_usage.at(i) / 8) + (((f_memory_usage.at(i) % 8) == 0) ? 0 : 1)));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---f_id " + STR(f_id) + " memory usage (METADATA) " + STR(i) +
+                               " (BITS): " + STR(f_memory_usage.at(i)));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---f_id " + STR(f_id) + " memory usage (METADATA) " + STR(i) + " (BYTES): " +
+                               STR((f_memory_usage.at(i) / 8) + (((f_memory_usage.at(i) % 8) == 0) ? 0 : 1)));
          }
          min_memory_usage += f_min_memory_usage;
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " memory usage (BITS): " + STR(f_min_memory_usage));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " memory usage (BYTES): " + STR((f_min_memory_usage / 8) + (((f_min_memory_usage % 8) == 0) ? 0 : 1)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---f_id " + STR(f_id) + " memory usage (BITS): " + STR(f_min_memory_usage));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---f_id " + STR(f_id) + " memory usage (BYTES): " +
+                            STR((f_min_memory_usage / 8) + (((f_min_memory_usage % 8) == 0) ? 0 : 1)));
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Untangled software control flow trace of function: " + STR(f_id));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "<--Untangled software control flow trace of function: " + STR(f_id));
    }
 #ifndef NDEBUG
    for(const auto& i : scope_to_state_trace)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---state trace length for function scope: " + i.first + ": " + STR(i.second.size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "---state trace length for function scope: " + i.first + ": " + STR(i.second.size()));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
       for(const auto id : i.second)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---S_" + STR(id));
@@ -624,7 +708,8 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    }
    for(const auto& i : scope_to_epp_trace)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---EPP trace length for function scope: " + i.first + ": " + STR(i.second.size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "---EPP trace length for function scope: " + i.first + ": " + STR(i.second.size()));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
       for(const auto id : i.second)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---EPP_" + STR(id));
@@ -648,12 +733,16 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       {
          if(i.second.empty())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Skipping scope " + i.first + " since it is not executed");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "<--Skipping scope " + i.first + " since it is not executed");
             continue;
          }
-         if(Discr->hw_discrepancy_info->fu_id_control_flow_skip.find(f_id) != Discr->hw_discrepancy_info->fu_id_control_flow_skip.end())
+         if(Discr->hw_discrepancy_info->fu_id_control_flow_skip.find(f_id) !=
+            Discr->hw_discrepancy_info->fu_id_control_flow_skip.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Skipping scope " + i.first + " since it is belongs to a function without control flow instructions");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "<--Skipping scope " + i.first +
+                               " since it is belongs to a function without control flow instructions");
             continue;
          }
       }
@@ -675,7 +764,8 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       structural_objectRef curr_module = top_module;
       for(; tok_iter != tok_iter_end; ++tok_iter)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Looking for " + *tok_iter + " in " + curr_module->get_path());
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---Looking for " + *tok_iter + " in " + curr_module->get_path());
          curr_module = curr_module->find_member(*tok_iter, component_o_K, curr_module);
          THROW_ASSERT(curr_module, "unexpected condition");
       }
@@ -685,12 +775,15 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       const std::string cfc_id = "ControlFlowChecker_i";
       curr_module = curr_module->find_member(cfc_id, component_o_K, curr_module);
       THROW_ASSERT(curr_module, "unexpected condition");
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Found " + curr_module->get_path() + " of type " + GET_TYPE_NAME(curr_module));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "---Found " + curr_module->get_path() + " of type " + GET_TYPE_NAME(curr_module));
       GetPointer<module>(curr_module)->SetParameter("EPP_MISMATCH_ID", STR(scope_id));
 
-      const size_t trace_len = i.second.size() + 1; // use one entry more in the trace to avoid ever accessing out of bounds
+      const size_t trace_len =
+          i.second.size() + 1; // use one entry more in the trace to avoid ever accessing out of bounds
       const size_t metadata_word_size = scope_to_best_metadata_bits.at(scope);
-      auto data_word_size = boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->GetParameter("EPP_TRACE_BITSIZE"));
+      auto data_word_size =
+          boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->GetParameter("EPP_TRACE_BITSIZE"));
       if((Discr->hw_discrepancy_info->fu_id_to_max_epp_path_val.at(f_id) + 1) == (1ULL << data_word_size))
       {
          data_word_size++;
@@ -705,7 +798,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---COMPRESSED_EPP " + STR(id.first) + ":" + STR(id.second));
 #endif
       const std::string init_filename = "epp_control_flow_trace_scope__" + STR(scope_id) + ".mem";
-      std::ofstream init_file(GetPath((init_filename).c_str()));
+      std::ofstream init_file(GetPath(init_filename));
 
       for(const auto& id : i.second)
       {
@@ -713,7 +806,8 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          const auto data = id.second;
          if(metadata >> metadata_word_size)
          {
-            THROW_ERROR("metadata " + STR(metadata) + " cannot be represented with " + STR(metadata_word_size) + " bits");
+            THROW_ERROR("metadata " + STR(metadata) + " cannot be represented with " + STR(metadata_word_size) +
+                        " bits");
          }
          if(data >> data_word_size)
          {
@@ -737,23 +831,49 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    }
    for(size_t i = 0; i < MAX_METADATA_BITSIZE; i++)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage (METADATA) " + STR(i) + " (BITS): " + STR(tot_memory_usage_per_bits.at(i)));
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage (METADATA) " + STR(i) + " (BYTES): " + STR((tot_memory_usage_per_bits.at(i) / 8) + (((tot_memory_usage_per_bits.at(i) % 8) == 0) ? 0 : 1)));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "---tot memory usage (METADATA) " + STR(i) + " (BITS): " + STR(tot_memory_usage_per_bits.at(i)));
+      INDENT_DBG_MEX(
+          DEBUG_LEVEL_PEDANTIC, debug_level,
+          "---tot memory usage (METADATA) " + STR(i) + " (BYTES): " +
+              STR((tot_memory_usage_per_bits.at(i) / 8) + (((tot_memory_usage_per_bits.at(i) % 8) == 0) ? 0 : 1)));
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---HW Discrepancy Analysis results:");
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---tot memory usage BASE (BITS): " + STR(tot_memory_usage_per_bits.at(0)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---tot memory usage BASE (BYTES): " + STR((tot_memory_usage_per_bits.at(0) / 8) + (((tot_memory_usage_per_bits.at(0) % 8) == 0) ? 0 : 1)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---tot memory usage FIXED (BITS): " + STR(tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---tot memory usage FIXED (BYTES): " + STR((tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE) / 8) + (((tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE) % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---tot memory usage BASE (BITS): " + STR(tot_memory_usage_per_bits.at(0)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---tot memory usage BASE (BYTES): " + STR((tot_memory_usage_per_bits.at(0) / 8) +
+                                                             (((tot_memory_usage_per_bits.at(0) % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---tot memory usage FIXED (BITS): " + STR(tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---tot memory usage FIXED (BYTES): " +
+                      STR((tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE) / 8) +
+                          (((tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE) % 8) == 0) ? 0 : 1)));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---minimal tot memory usage (BITS): " + STR(min_memory_usage));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---minimal tot memory usage (BYTES): " + STR((min_memory_usage / 8) + (((min_memory_usage % 8) == 0) ? 0 : 1)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art memory usage (BITS): " + STR(total_state_of_the_art_memory_usage));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art memory usage (BYTES): " + STR((total_state_of_the_art_memory_usage / 8) + (((total_state_of_the_art_memory_usage % 8) == 0) ? 0 : 1)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art fixed memory usage (BITS): " + STR(total_state_of_the_art_fixed_memory_usage));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art fixed memory usage (BYTES): " + STR((total_state_of_the_art_fixed_memory_usage / 8) + (((total_state_of_the_art_fixed_memory_usage % 8) == 0) ? 0 : 1)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art opt memory usage (BITS): " + STR(total_state_of_the_art_opt_memory_usage));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art opt memory usage (BYTES): " + STR((total_state_of_the_art_opt_memory_usage / 8) + (((total_state_of_the_art_opt_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---minimal tot memory usage (BYTES): " +
+                      STR((min_memory_usage / 8) + (((min_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---total state_of_the_art memory usage (BITS): " + STR(total_state_of_the_art_memory_usage));
+   INDENT_OUT_MEX(
+       OUTPUT_LEVEL_MINIMUM, output_level,
+       "---total state_of_the_art memory usage (BYTES): " +
+           STR((total_state_of_the_art_memory_usage / 8) + (((total_state_of_the_art_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---total state_of_the_art fixed memory usage (BITS): " +
+                      STR(total_state_of_the_art_fixed_memory_usage));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---total state_of_the_art fixed memory usage (BYTES): " +
+                      STR((total_state_of_the_art_fixed_memory_usage / 8) +
+                          (((total_state_of_the_art_fixed_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---total state_of_the_art opt memory usage (BITS): " + STR(total_state_of_the_art_opt_memory_usage));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---total state_of_the_art opt memory usage (BYTES): " +
+                      STR((total_state_of_the_art_opt_memory_usage / 8) +
+                          (((total_state_of_the_art_opt_memory_usage % 8) == 0) ? 0 : 1)));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "\n");
    return DesignFlowStep_Status::SUCCESS;
 }

@@ -34,7 +34,7 @@
  * @file Range_Analysis.hpp
  * @brief
  *
- * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -84,8 +84,10 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    std::map<unsigned int, unsigned int> last_bitvalue_ver;
    std::map<unsigned int, unsigned int> last_bb_ver;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-   void ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type) override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   void ComputeRelationships(DesignFlowStepSet& relationships,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
@@ -95,7 +97,8 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef parameters);
+   RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
+                 const ParameterConstRef parameters);
 
    /**
     *  Destructor

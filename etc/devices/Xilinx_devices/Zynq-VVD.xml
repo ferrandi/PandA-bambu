@@ -25,6 +25,9 @@
       <cmd name="  set DSPs 0"/>
       <cmd name="  set TotPower 0"/>
       <cmd name="  set design_datapath_delay 0"/>
+      <cmd name="  set mpc 0"/>
+      <cmd name="  set design_slack 0"/>
+      <cmd name="  set design_req 0"/>
       <cmd name="  set design_delay 0"/>
       <cmd name="  regexp --  {\s*LUT Flip Flop Pairs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore LUTFFPairs"/>
       <cmd name="  regexp --  {\s*Slice Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceRegisters"/>
@@ -53,22 +56,40 @@
       <cmd name="  set Timing_Paths [get_timing_paths -max_paths 1 -nworst 1 -setup]"/>
       <cmd name="  if { [expr {$Timing_Paths == &quot;&quot;}] } {"/>
       <cmd name="    set design_datapath_delay 0"/>
+      <cmd name="    set design_slack 0"/>
+      <cmd name="    set design_req 0"/>
+      <cmd name="    set mpc 0"/>
       <cmd name="  } else {"/>
       <cmd name="    set design_datapath_delay [get_property DATAPATH_DELAY $Timing_Paths]"/>
       <cmd name="    set design_slack [get_property SLACK $Timing_Paths]"/>
-      <cmd name="    set design_skew [get_property SKEW $Timing_Paths]"/>
-      <cmd name="    set uncertainty [get_property UNCERTAINTY $Timing_Paths]"/>
-      <cmd name="    if { [expr {$uncertainty ==  &quot;&quot;}] } {"/>
-      <cmd name="      set uncertainty 0"/>
-      <cmd name="    }"/>
-      <cmd name="    set requirement [get_property REQUIREMENT $Timing_Paths]"/>
-      <cmd name="    set design_datapath_delay [expr {abs($design_slack) + ($requirement) + ($design_skew) - $uncertainty}]"/>
+      <cmd name="    set design_req [get_property REQUIREMENT  $Timing_Paths]"/>
       <cmd name="    puts $design_datapath_delay"/>
+      <cmd name="    set min_period_check [report_pulse_width -min_period -return_string]"/>
+      <cmd name="    regexp --  {Min Period\s*([^[:blank:]]+)\s*([^[:blank:]]+)\s*([^[:blank:]]+)\s*([^[:blank:]]+)} $min_period_check ignore ignore ignore ignore mpc"/>
+      <cmd name="    puts $mpc"/>
       <cmd name="  }"/>
       <cmd name="  if { [expr {$design_datapath_delay == &quot;&quot;}] } {"/>
       <cmd name="    set design_datapath_delay 0"/>
       <cmd name="  }"/>
+      <cmd name="  if { [expr {$design_slack == &quot;&quot;}] } {"/>
+      <cmd name="    set design_slack 0"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$design_req == &quot;&quot;}] } {"/>
+      <cmd name="    set design_req 0"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$mpc == &quot;&quot;}] } {"/>
+      <cmd name="    set mpc 0"/>
+      <cmd name="  }"/>
       <cmd name="  set design_delay [expr {$design_datapath_delay}]"/>
+      <cmd name="  puts $design_delay "/>
+      <cmd name="  if { [expr {$DSPs != 0}] } {"/>
+      <cmd name="    if { [expr {$mpc &gt; $design_delay}] } {"/>
+      <cmd name="      set design_delay [expr {$mpc}]"/>
+      <cmd name="    }"/>
+      <cmd name="    if {[expr {$design_req - $design_slack}] &gt; $design_delay } {"/>
+      <cmd name="      set design_delay [expr {$design_req - $design_slack}]"/>
+      <cmd name="    }"/>
+      <cmd name="  }"/>
       <cmd name="  puts $design_delay "/>
       <cmd name="  file delete -force ${__vivado_report__} "/>
       <cmd name="  set ofile_report [open ${__vivado_report__} w]"/>

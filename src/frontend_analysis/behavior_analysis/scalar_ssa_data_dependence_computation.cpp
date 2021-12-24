@@ -56,7 +56,9 @@
 #include "operations_graph_constructor.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-ScalarSsaDataDependenceComputation::ScalarSsaDataDependenceComputation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+ScalarSsaDataDependenceComputation::ScalarSsaDataDependenceComputation(
+    const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id,
+    const DesignFlowManagerConstRef _design_flow_manager)
     : DataDependenceComputation(_AppM, _function_id, SCALAR_SSA_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -64,16 +66,18 @@ ScalarSsaDataDependenceComputation::ScalarSsaDataDependenceComputation(const Par
 
 ScalarSsaDataDependenceComputation::~ScalarSsaDataDependenceComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ScalarSsaDataDependenceComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+ScalarSsaDataDependenceComputation::ComputeFrontendRelationships(
+    const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VAR_ANALYSIS, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_ORDER_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(VAR_ANALYSIS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_ORDER_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -99,7 +103,9 @@ void ScalarSsaDataDependenceComputation::Initialize()
          EdgeIterator edge, edge_end;
          for(boost::tie(edge, edge_end) = boost::edges(*fsaodg); edge != edge_end; edge++)
          {
-            function_behavior->ogc->RemoveSelector(*edge, DFG_SCA_SELECTOR | FB_DFG_SCA_SELECTOR | ADG_SCA_SELECTOR | FB_ADG_SCA_SELECTOR | ODG_SCA_SELECTOR | FB_ODG_SCA_SELECTOR);
+            function_behavior->ogc->RemoveSelector(*edge, DFG_SCA_SELECTOR | FB_DFG_SCA_SELECTOR | ADG_SCA_SELECTOR |
+                                                              FB_ADG_SCA_SELECTOR | ODG_SCA_SELECTOR |
+                                                              FB_ODG_SCA_SELECTOR);
          }
       }
    }

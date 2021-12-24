@@ -66,14 +66,21 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/filesystem.hpp>
 
-target_device::target_device(const ParameterConstRef& _Param, const technology_managerRef& _TM, const TargetDevice_Type type)
-    : device_type(type), Param(_Param), TM(_TM), core_height(0), core_width(0), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
+target_device::target_device(const ParameterConstRef& _Param, const technology_managerRef& _TM,
+                             const TargetDevice_Type type)
+    : device_type(type),
+      Param(_Param),
+      TM(_TM),
+      core_height(0),
+      core_width(0),
+      debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
 {
 }
 
 target_device::~target_device() = default;
 
-target_deviceRef target_device::create_device(const TargetDevice_Type type, const ParameterConstRef& param, const technology_managerRef& TM)
+target_deviceRef target_device::create_device(const TargetDevice_Type type, const ParameterConstRef& param,
+                                              const technology_managerRef& TM)
 {
    switch(type)
    {
@@ -105,7 +112,9 @@ void target_device::xload(const target_deviceRef& device, const xml_element* nod
    for(const auto& n : c_list)
    {
       // The second part of the condition is false when we are generating the list of functional units in spider
-      if(n->get_name() == "technology" and (not Param->isOption(OPT_input_format) or Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_XML_TEC))
+      if(n->get_name() == "technology" and
+         (not Param->isOption(OPT_input_format) or
+          Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_XML_TEC))
       {
          const auto* tech_xml = GetPointer<const xml_element>(n);
          TM->xload(tech_xml, device);
@@ -155,7 +164,9 @@ void target_device::xload_device_parameters(const xml_element* dev_xml)
    }
    if(device_type == TargetDevice_Type::FPGA)
    {
-      std::string device_string = Param->getOption<std::string>("device_name") + Param->getOption<std::string>("device_speed") + Param->getOption<std::string>("device_package");
+      std::string device_string = Param->getOption<std::string>("device_name") +
+                                  Param->getOption<std::string>("device_speed") +
+                                  Param->getOption<std::string>("device_package");
       const_cast<Parameter*>(Param.get())->setOption(OPT_device_string, device_string);
    }
 }

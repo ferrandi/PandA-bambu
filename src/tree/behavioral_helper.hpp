@@ -71,7 +71,9 @@ CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(var_pp_functor);
+class TreeNodeConstSet;
 //@}
 
 using tree_class = unsigned int;
@@ -133,7 +135,8 @@ class BehavioralHelper
     * @param body specifies if function body is available
     * @param parameters is the set of input parameters
     */
-   BehavioralHelper(const application_managerRef AppM, unsigned int index, bool body, const ParameterConstRef parameters);
+   BehavioralHelper(const application_managerRef AppM, unsigned int index, bool body,
+                    const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -146,7 +149,9 @@ class BehavioralHelper
     * @param bool tells if the type hype has been already recognized as system
     * @return a pair composed by the filename and the line:column of the definition
     */
-   virtual std::tuple<std::string, unsigned int, unsigned int> get_definition(unsigned int index, bool& is_system) const;
+   /// FIXME: to be remove after substitution with tree_helper::GetSourcePath
+   virtual std::tuple<std::string, unsigned int, unsigned int> get_definition(unsigned int index,
+                                                                              bool& is_system) const;
 
    /**
     * Print the operations corrisponding to the vertex
@@ -155,14 +160,15 @@ class BehavioralHelper
     * @param vppf is the functor used to dump the variable var.
     * @param dot tells if the output is a dot graph
     */
-   std::string print_vertex(const OpGraphConstRef g, const vertex v, const var_pp_functorConstRef vppf, const bool dot = false) const;
+   std::string print_vertex(const OpGraphConstRef g, const vertex v, const var_pp_functorConstRef vppf,
+                            const bool dot = false) const;
 
    /**
     * Print the initialization part
-    * @param index is the initialization expression.
+    * @param var is the initialization expression.
     * @param vppf is the functor used to dump the variable var.
     */
-   virtual std::string print_init(unsigned int var, const var_pp_functorConstRef vppf) const;
+   virtual std::string PrintInit(const tree_nodeConstRef& var, const var_pp_functorConstRef vppf) const;
 
    /**
     * Print the attributes associated to a variable
@@ -185,11 +191,12 @@ class BehavioralHelper
    void InvaildateVariableName(const unsigned int index);
 
    /**
-    * Print the constant associated with index.
-    * @param index is the constant id.
+    * Print the constant associated with var
+    * @param var is the constant tree node
     * @param vppf is the functor used to dump the variable var.
     */
-   virtual std::string print_constant(unsigned int var, const var_pp_functorConstRef vppf = var_pp_functorConstRef()) const;
+   virtual std::string PrintConstant(const tree_nodeConstRef& var,
+                                     const var_pp_functorConstRef vppf = var_pp_functorConstRef()) const;
 
    /**
     * Print a type and its variable in case var is not zero.
@@ -202,8 +209,10 @@ class BehavioralHelper
     * @param prefix is the string to be appended at the begining of the printing
     * @return the printed string
     */
-   virtual std::string print_type(unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string& prefix = "",
-                                  const std::string& tail = "") const;
+   virtual std::string print_type(unsigned int type, bool global = false, bool print_qualifiers = false,
+                                  bool print_storage = false, unsigned int var = 0,
+                                  const var_pp_functorConstRef vppf = var_pp_functorConstRef(),
+                                  const std::string& prefix = "", const std::string& tail = "") const;
 
    /**
     * Print the declaration of a non built-in type.
@@ -234,7 +243,9 @@ class BehavioralHelper
     * @param function_is is the index of the function
     * @return the index of the type
     */
-   unsigned int GetFunctionReturnType(unsigned int function) const;
+   unsigned int
+   /// FIXME: to be remove after substitution with tree_helper::GetFunctionReturnType
+   GetFunctionReturnType(unsigned int function) const;
 
    /**
     * Return true if index is a variable or a type of type bool
@@ -472,12 +483,17 @@ class BehavioralHelper
     * Returns the types of the parameters
     * @return the types of the parameters
     */
-   virtual const CustomUnorderedSet<unsigned int> GetParameterTypes() const;
+   virtual TreeNodeConstSet GetParameterTypes() const;
 
    /**
     * Return the list of index of original parameters of the function
     */
    const std::list<unsigned int> get_parameters() const;
+
+   /**
+    * Return the list of index of original parameters of the function
+    */
+   std::vector<tree_nodeRef> GetParameters() const;
 
    /**
     * Return true if function has implementation
@@ -586,7 +602,8 @@ class BehavioralHelper
     * @param left_part is the tree_node of the left part
     * @param right_part is tree_node of the right part
     */
-   virtual void create_gimple_modify_stmt(unsigned int function_decl_nid, blocRef& block, tree_nodeRef left_part, tree_nodeRef right_part);
+   virtual void create_gimple_modify_stmt(unsigned int function_decl_nid, blocRef& block, tree_nodeRef left_part,
+                                          tree_nodeRef right_part);
 
    /**
     * Print the declaration of a non built-in type.
@@ -600,20 +617,16 @@ class BehavioralHelper
    virtual bool is_empty_return(unsigned int index) const;
 
    /**
-    * return the nodeID of the original gimple_phi in case the statement comes from a splitted phi node
-    * @param nodeID is the statement nodeID
-    */
-   virtual unsigned int is_coming_from_phi_node(unsigned int nodeID) const;
-
-   /**
     * Print the operations corresponding to the node
-    * @param index is the index of the node
+    * @param node is the node to print
     * @param v is the vertex of the operation
     * @param vppf is the functor used to dump the variable var.
     * The stream on which string is printed is the one associate with the identer
     * @return the string corrisponding to the node
     */
-   virtual std::string print_node(unsigned int index, vertex v, const var_pp_functorConstRef vppf) const;
+   virtual std::string PrintNode(const tree_nodeConstRef& node, vertex v, const var_pp_functorConstRef vppf) const;
+
+   virtual std::string PrintNode(unsigned int node_id, vertex v, const var_pp_functorConstRef vppf) const;
 
    /**
     * This method returns true if the node specified in the parameters is
@@ -642,9 +655,10 @@ class BehavioralHelper
     * when the variable var is equal to 4(a) and the vppf is an instance of std_var_pp_functor.
     * @param var is the considered variable.
     * @param vppf is the functor used to dump the variable var.
-    * @param print_init tells if the init has to be printed
+    * @param init_has_to_be_printed tells if the init has to be printed
     */
-   std::string PrintVarDeclaration(unsigned int var, const var_pp_functorConstRef vppf, bool init_has_to_be_printed) const;
+   std::string PrintVarDeclaration(unsigned int var, const var_pp_functorConstRef vppf,
+                                   bool init_has_to_be_printed) const;
 
    /**
     * Return the unqualified version of a type
@@ -666,11 +680,11 @@ class BehavioralHelper
    static void clear_renaming_table();
 
    /**
-    * return the types used in type casting by nodeid
-    * @param nodeid is the statement analyzed
-    * @param types is the set of types type-casted by nodeid
+    * return the types used in type casting by tn
+    * @param tn is the statement analyzed
+    * @param types is the set of types type-casted by tn
     */
-   virtual void get_typecast(unsigned int nodeid, CustomUnorderedSet<unsigned int>& types) const;
+   virtual void GetTypecast(const tree_nodeConstRef& tn, TreeNodeConstSet& types) const;
 
    /**
     * Return true if node is the default ssa_name

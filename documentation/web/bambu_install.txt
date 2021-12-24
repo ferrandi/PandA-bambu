@@ -28,17 +28,6 @@ Currently accepted parameters are:
 <pre>
   --enable-flopoco: add floating point support by leveraging FloPoCo Library 
                    http://flopoco.gforge.inria.fr/
-  --enable-xilinx: enable Xilinx RTL synthesis and simulation tools execution 
-                   within the framework
-  --enable-altera: enable Altera RTL synthesis tool execution within the framework
-  --enable-altera-64bit: configure to use the 64bit version of the Altera tools
-  --enable-lattice: enable Lattice RTL synthesis tool execution within the framework
-  --enable-modelsim: enable Modelsim-based simulation directly within the framework
-  --with-mentor-license=&lt;license-file/license-server&gt;
-  --enable-icarus: enable Icarus-based simulation
-                   http://iverilog.icarus.com/
-  --enable-verilator: enable Verilator-based simulation
-                   http://www.veripool.org/wiki/verilator
   --enable-debug: add debugging symbols to the binaries 
   --enable-opt: Compile the framework with GCC optimizations enabled
   --enable-release: Remove further tests not useful in a production environment
@@ -53,7 +42,7 @@ have such support.
 
 The suggested configuration is
 <pre>
-../configure --prefix=/opt/panda --enable-flopoco --enable-icarus --enable-verilator --enable-xilinx --enable-modelsim --enable-altera --enable-opt --enable-altera-64bit --enable-lattice --enable-release --with-mentor-license=&lt;license-string&gt;
+../configure --prefix=/opt/panda --enable-flopoco --enable-opt --enable-release
 
 </pre>
 A subset of such tools is obviously acceptable.
@@ -658,8 +647,7 @@ make and make install sequence.
 
 <pre>
     $ ../configure --with-gcc48=/usr/bin/gcc --enable-bambu \
-         --enable-icarus  --prefix=/opt/panda --enable-flopoco \
-         --enable-verilator --disable-release
+         --prefix=/opt/panda --enable-flopoco --disable-release
     $ make -j4
     $ make install
 </pre>
@@ -688,13 +676,9 @@ once the package has been converted you can install with:
   $sudo dpkg -i diamond-3-7-base-x64_3.7-97_amd64.deb
 </pre>
 
-<h2>Notes on Ubuntu 13.04 64bit and Altera Quartus II</h2>
-
-64bit version of Quartus II tools can be enabled by adding the --enable-altera-64bit beside the standard --enable-altera option.
-
 <h2>Notes on Modelsim</h2>
 
-PandA/bambu supports both Modelsim full version and Student/Free version by adding --enable-modelsim option to the PandA configure.
+PandA/bambu supports both Modelsim full version and Student/Free version.
 When the Free/Student version of Modelsim is used, PandA/bambu should be configured by further adding the --disable-mentor-optimizer option. The Student/Free version does not have the optimization feature.
 
 <h2>Notes on backend installation directories</h2>
@@ -704,13 +688,13 @@ For Lattice it checks this set of directories /usr/local/diamond/*
 For Mentor it checks this set of directories /opt/mentor and /opt/mentor/*
 For Xilinx ISE it checks these sets of directories /opt/Xilinx/* and /opt/Xilinx/*/ISE*
 For Xilinx VIVADO it checks this set of directories /opt/Xilinx/* and /opt/Xilinx/Vivado/*
-Anyway, it is possible to specify a different position of the filesystem for the configuration script to look into.
+Anyway, it is possible to specify a different position of the filesystem for the application to look into.
 This is the list of options that may be useful for this purpose:
 <pre>
-  --with-altera-dir=DIR  where the root where ALTERA tools are installed
-  --with-lattice-dir=DIR  where the root where LATTICE tools are installed
-  --with-mentor-dir=DIR  where the root where MENTOR tools are installed
-  --with-xilinx-root-dir=DIR  where the root where XILINX tools are installed
+  --altera-root=DIR  where the root where ALTERA tools are installed
+  --lattice-root=DIR  where the root where LATTICE tools are installed
+  --mentor-root=DIR  where the root where MENTOR tools are installed
+  --xilinx-root=DIR  where the root where XILINX tools are installed
 </pre>
 
 

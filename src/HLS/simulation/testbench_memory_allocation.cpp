@@ -76,11 +76,13 @@
 /// utility include
 #include "utility.hpp"
 
-TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                                     const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION)
 {
    flag_cpp = _HLSMgr.get()->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) &&
-              (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) || !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
+              (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) ||
+               !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
@@ -144,7 +146,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
          bool is_memory = false;
          std::string test_v = "0";
-         if(mem_vars.find(*l) != mem_vars.end() && std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end())
+         if(mem_vars.find(*l) != mem_vars.end() &&
+            std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end())
          {
             is_memory = true;
             test_v = TestbenchGenerationBaseStep::print_var_init(TM, *l, HLSMgr->Rmem);
@@ -161,48 +164,48 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initialization string is " + test_v);
 
-         unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
+         const auto lnode = TM->CGetTreeReindex(*l);
+         auto reserved_bytes = tree_helper::Size(lnode) / 8;
          if(reserved_bytes == 0)
          {
             reserved_bytes = 1;
          }
 
-         if(tree_helper::is_a_pointer(TM, *l) && !is_memory)
+         if(tree_helper::IsPointerType(lnode) && !is_memory)
          {
-            unsigned int base_type = tree_helper::get_type_index(TM, *l);
-            tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
+            const auto pt_node = tree_helper::CGetType(lnode);
             if(flag_cpp)
             {
-               unsigned int ptd_base_type = 0;
-               if(pt_node->get_kind() == pointer_type_K)
+               tree_nodeConstRef ptd_base_type;
+               if(GET_CONST_NODE(pt_node)->get_kind() == pointer_type_K)
                {
-                  ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
+                  ptd_base_type = GetPointer<const pointer_type>(GET_CONST_NODE(pt_node))->ptd;
                }
-               else if(pt_node->get_kind() == reference_type_K)
+               else if(GET_CONST_NODE(pt_node)->get_kind() == reference_type_K)
                {
-                  ptd_base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
+                  ptd_base_type = GetPointer<const reference_type>(GET_CONST_NODE(pt_node))->refd;
                }
                else
                {
                   THROW_ERROR("A pointer type is expected");
                }
-               unsigned int base_type_byte_size;
 
-               if(behavioral_helper->is_a_struct(ptd_base_type) || behavioral_helper->is_an_union(ptd_base_type))
+               unsigned int base_type_byte_size;
+               if(tree_helper::IsStructType(ptd_base_type) || tree_helper::IsUnionType(ptd_base_type))
                {
-                  base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
+                  base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
                }
-               else if(behavioral_helper->is_an_array(ptd_base_type))
+               else if(tree_helper::IsArrayType(ptd_base_type))
                {
-                  base_type_byte_size = tree_helper::get_array_data_bitsize(TM, ptd_base_type) / 8;
+                  base_type_byte_size = tree_helper::GetArrayElementSize(ptd_base_type) / 8;
                }
-               else if(tree_helper::size(TM, ptd_base_type) == 1)
+               else if(tree_helper::Size(ptd_base_type) == 1)
                {
                   base_type_byte_size = 1;
                }
                else
                {
-                  base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
+                  base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
                }
 
                if(base_type_byte_size == 0)
@@ -214,7 +217,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             }
             else
             {
-               const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new ComputeReservedMemory(TM, TM->CGetTreeNode(*l)));
+               const CInitializationParserFunctorRef c_initialization_parser_functor(
+                   new ComputeReservedMemory(TM, lnode));
                c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
                reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
             }
@@ -225,9 +229,11 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                HLSMgr->RSim->param_mem_size[v_idx][*l] = reserved_bytes;
                HLSMgr->Rmem->reserve_space(reserved_bytes);
 
-               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                              "---Parameter " + param + " (" + STR((*l)) + ") (testvector " + STR(v_idx) + ") allocated at " + STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
-                                  " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
+               INDENT_OUT_MEX(
+                   OUTPUT_LEVEL_VERBOSE, output_level,
+                   "---Parameter " + param + " (" + STR((*l)) + ") (testvector " + STR(v_idx) + ") allocated at " +
+                       STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
+                       " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
             }
          }
          else if(!is_memory)
@@ -242,23 +248,32 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          /// check the next free aligned address
          if(l_next != mem.end() && mem_vars.find(*l_next) != mem_vars.end() && mem_vars.find(*l) != mem_vars.end())
          {
-            next_object_offset = HLSMgr->Rmem->get_base_address(*l_next, function_id) - HLSMgr->Rmem->get_base_address(*l, function_id);
+            next_object_offset =
+                HLSMgr->Rmem->get_base_address(*l_next, function_id) - HLSMgr->Rmem->get_base_address(*l, function_id);
          }
-         else if(mem_vars.find(*l) != mem_vars.end() && (l_next == mem.end() || HLSMgr->RSim->param_address.at(v_idx).find(*l_next) == HLSMgr->RSim->param_address.at(v_idx).end()))
+         else if(mem_vars.find(*l) != mem_vars.end() &&
+                 (l_next == mem.end() ||
+                  HLSMgr->RSim->param_address.at(v_idx).find(*l_next) == HLSMgr->RSim->param_address.at(v_idx).end()))
          {
             next_object_offset = HLSMgr->Rmem->get_memory_address() - HLSMgr->Rmem->get_base_address(*l, function_id);
          }
-         else if(l_next != mem.end() && mem_vars.find(*l) != mem_vars.end() && HLSMgr->RSim->param_address.at(v_idx).find(*l_next) != HLSMgr->RSim->param_address.at(v_idx).end())
+         else if(l_next != mem.end() && mem_vars.find(*l) != mem_vars.end() &&
+                 HLSMgr->RSim->param_address.at(v_idx).find(*l_next) != HLSMgr->RSim->param_address.at(v_idx).end())
          {
-            next_object_offset = HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second - HLSMgr->Rmem->get_base_address(*l, function_id);
+            next_object_offset = HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second -
+                                 HLSMgr->Rmem->get_base_address(*l, function_id);
          }
-         else if(l_next != mem.end() && HLSMgr->RSim->param_address.at(v_idx).find(*l) != HLSMgr->RSim->param_address.at(v_idx).end() && HLSMgr->RSim->param_address.at(v_idx).find(*l_next) != HLSMgr->RSim->param_address.at(v_idx).end())
+         else if(l_next != mem.end() &&
+                 HLSMgr->RSim->param_address.at(v_idx).find(*l) != HLSMgr->RSim->param_address.at(v_idx).end() &&
+                 HLSMgr->RSim->param_address.at(v_idx).find(*l_next) != HLSMgr->RSim->param_address.at(v_idx).end())
          {
-            next_object_offset = HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second - HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
+            next_object_offset = HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second -
+                                 HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
          }
          else if(HLSMgr->RSim->param_address.at(v_idx).find(*l) != HLSMgr->RSim->param_address.at(v_idx).end())
          {
-            next_object_offset = HLSMgr->Rmem->get_memory_address() - HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
+            next_object_offset =
+                HLSMgr->Rmem->get_memory_address() - HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
          }
          else
          {
@@ -266,7 +281,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
 
          if(next_object_offset < reserved_bytes)
-            THROW_ERROR("more allocated memory than expected  next_object_offset=" + STR(next_object_offset) + " reserved_bytes=" + STR(reserved_bytes));
+            THROW_ERROR("more allocated memory than expected  next_object_offset=" + STR(next_object_offset) +
+                        " reserved_bytes=" + STR(reserved_bytes));
          HLSMgr->RSim->param_next_off[v_idx][*l] = next_object_offset;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + param);
       }
@@ -276,14 +292,16 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    return;
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:

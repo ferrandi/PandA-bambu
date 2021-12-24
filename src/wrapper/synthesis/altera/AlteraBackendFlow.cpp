@@ -48,8 +48,6 @@
 
 /// Autoheader includes
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
-#include "config_QUARTUS_13_SETTINGS.hpp"
-#include "config_QUARTUS_SETTINGS.hpp"
 
 /// constants include
 #include "synthesis_constants.hpp"
@@ -83,7 +81,9 @@
 #define ALTERA_DSP "ALTERA_DSP"
 #define ALTERA_MEM "ALTERA_MEM"
 
-AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
+AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
+                                     const target_managerRef _target)
+    : BackendFlow(_Param, _flow_name, _target)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Altera Backend Flow ::.");
@@ -122,8 +122,11 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
       {
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/altera/") + default_data[device_string]));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                     "Importing default scripts for target device family: " + device_string);
+      parser = XMLDomParserRef(
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/altera/") +
+                           default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -269,7 +272,9 @@ void AlteraBackendFlow::CheckSynthesisResults()
    lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, combinational_delay);
    if(combinational_delay > Param->getOption<double>(OPT_clock_period))
    {
-      CopyFile(actual_parameters->parameter_values[PARAM_top_id] + ".sta.rpt", Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" + STR_CST_synthesis_timing_violation_report);
+      CopyFile(GetPath(actual_parameters->parameter_values[PARAM_top_id] + ".sta.rpt"),
+               Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" +
+                   STR_CST_synthesis_timing_violation_report);
    }
 }
 
@@ -278,13 +283,13 @@ void AlteraBackendFlow::WriteFlowConfiguration(std::ostream& script)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing flow configuration");
    auto device_string = Param->getOption<std::string>(OPT_device_string);
    std::string setupscr;
-   if(STR(QUARTUS_SETTINGS) != "0" and device_string.find("EP2C") == std::string::npos)
+   if(Param->isOption(OPT_quartus_settings) and device_string.find("EP2C") == std::string::npos)
    {
-      setupscr = STR(QUARTUS_SETTINGS);
+      setupscr = Param->getOption<std::string>(OPT_quartus_settings);
    }
-   else if(STR(QUARTUS_13_SETTINGS) != "0")
+   else if(Param->isOption(OPT_quartus_13_settings))
    {
-      setupscr = STR(QUARTUS_13_SETTINGS);
+      setupscr = Param->getOption<std::string>(OPT_quartus_13_settings);
    }
    if(setupscr.size())
    {
@@ -310,14 +315,21 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
    std::ofstream sdc_file(sdc_filename.c_str());
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
-      sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      if(get_flow_name() != "Characterization" && (boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) || (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) && !Param->isOption(OPT_backend_sdc_extensions))
+      sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock +
+                      " [get_ports " + clock + "]\n";
+      if(get_flow_name() != "Characterization" &&
+         (boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) ||
+          (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) &&
+         !Param->isOption(OPT_backend_sdc_extensions))
       {
          sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
          sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
-         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_registers]\n";
-         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_registers] -to [all_outputs]\n";
-         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] +
+                         " -from [all_inputs] -to [all_registers]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] +
+                         " -from [all_registers] -to [all_outputs]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] +
+                         " -from [all_inputs] -to [all_outputs]\n";
       }
       sdc_file << "derive_pll_clocks\n";
       sdc_file << "derive_clock_uncertainty\n";

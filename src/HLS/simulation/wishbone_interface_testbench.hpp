@@ -69,7 +69,8 @@ class WishboneInterfaceTestbench : public TestbenchGenerationBaseStep
    void write_wishbone_output_signal_declaration(bool& withMemory, bool& hasMultiIrq) const;
 
  public:
-   WishboneInterfaceTestbench(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   WishboneInterfaceTestbench(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                              const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

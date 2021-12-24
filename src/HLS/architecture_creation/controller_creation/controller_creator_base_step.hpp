@@ -34,8 +34,8 @@
  * @file controller_creator_base_step.hpp
  * @brief Base class for all the controller creation algorithms.
  *
- * This class is a pure virtual one, that has to be specilized in order to implement a particular algorithm to create the
- * controller.
+ * This class is a pure virtual one, that has to be specilized in order to implement a particular algorithm to create
+ * the controller.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  *
@@ -82,13 +82,16 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
     * Constructor
     */
-   ControllerCreatorBaseStep(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   ControllerCreatorBaseStep(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                             const DesignFlowManagerConstRef design_flow_manager,
+                             const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor.

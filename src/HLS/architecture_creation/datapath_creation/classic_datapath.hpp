@@ -70,12 +70,14 @@ class classic_datapath : public datapath_creator
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   classic_datapath(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR);
+   classic_datapath(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                    const DesignFlowManagerConstRef design_flow_manager,
+                    const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR);
 
    /**
     * Destructor.
     */
-   ~classic_datapath() override;
+   virtual ~classic_datapath() override;
 
    /**
     * Execute the step

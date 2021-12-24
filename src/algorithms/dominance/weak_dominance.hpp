@@ -93,7 +93,8 @@ class weak_dominance
     * @param _param is the set of input parameters
     * @param _selector is the selctor of edges to be added
     */
-   weak_dominance(const graph* _input, vertex _start, vertex _end, const ParameterConstRef param, int selector = WD_SELECTOR);
+   weak_dominance(const graph* _input, vertex _start, vertex _end, const ParameterConstRef param,
+                  int selector = WD_SELECTOR);
 
    /**
     * Destructor
@@ -106,6 +107,7 @@ class weak_dominance
     * @param i2o is the map from input vertex to output vertex
     * @param o2i is the map from output vertex to input vertex
     */
-   void calculate_weak_dominance_info(graphs_collection* output, CustomUnorderedMap<vertex, vertex>& i2o, CustomUnorderedMap<vertex, vertex>& o2i);
+   void calculate_weak_dominance_info(graphs_collection* output, CustomUnorderedMap<vertex, vertex>& i2o,
+                                      CustomUnorderedMap<vertex, vertex>& o2i);
 };
 #endif

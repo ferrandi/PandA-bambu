@@ -5,7 +5,7 @@ if [ ! -d sdc_test ]; then
    mkdir sdc_test
 fi
 cd sdc_test
-$dir_script/panda_regression_hls1.sh $@ -c="--speculative-sdc-scheduling -t 120m"
+$dir_script/panda_regression_hls1.sh "$@" -c="--speculative-sdc-scheduling -t 120m"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
@@ -15,7 +15,7 @@ if [ ! -d vhdl_test ]; then
    mkdir vhdl_test
 fi
 cd vhdl_test
-$dir_script/panda_regression_hls1.sh $@ -c="-wH" --name="_VHDL"
+$dir_script/panda_regression_hls1.sh "$@" -c="-wH" --name="_VHDL"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

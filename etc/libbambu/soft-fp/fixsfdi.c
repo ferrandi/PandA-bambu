@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "single.h"
-#include "soft-fp.h"
-
-DItype __fixsfdi(SFtype a)
+static __FORCE_INLINE DItype __fixsfdi(SFtype a)
 {
    FP_DECL_EX;
    FP_DECL_S(A);
@@ -43,9 +40,4 @@ DItype __fixsfdi(SFtype a)
    FP_HANDLE_EXCEPTIONS;
 
    return r;
-}
-
-inline DItype __float32_to_int64_round_to_zeroif(SFtype a)
-{
-   return __fixsfdi(a);
 }

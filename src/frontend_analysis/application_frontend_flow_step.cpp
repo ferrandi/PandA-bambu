@@ -58,7 +58,10 @@
 #include <boost/lexical_cast.hpp>                      // for lexical_cast
 #include <iostream>                                    // for ios_base::fai...
 
-ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_managerRef _AppM,
+                                                         const FrontendFlowStepType _frontend_flow_step_type,
+                                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                                         const ParameterConstRef _parameters)
     : FrontendFlowStep(_AppM, _frontend_flow_step_type, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -82,7 +85,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case ADD_OP_PHI_FLOW_EDGES:
 #endif
-      case AGGREGATE_DATA_FLOW_ANALYSIS:
 #if HAVE_ZEBU_BUILT
       case(ARRAY_REF_FIX):
 #endif
@@ -94,6 +96,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case BIT_VALUE:
       case BIT_VALUE_OPT:
+      case BITVALUE_RANGE:
 #endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
@@ -111,7 +114,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case CHECK_PIPELINABLE_LOOPS:
 #endif
       case CHECK_SYSTEM_TYPE:
-      case CLEAN_VIRTUAL_PHI:
       case COMPLETE_BB_GRAPH:
 #if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:
@@ -147,7 +149,9 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case EXTRACT_PATTERNS:
       case FIX_STRUCTS_PASSED_BY_VALUE:
+      case FIX_VDEF:
       case FUNCTION_CALL_TYPE_CLEANUP:
+      case FUNCTION_CALL_OPT:
 #endif
 #if HAVE_ZEBU_BUILT
       case GLOBAL_VARIABLES_ANALYSIS:
@@ -183,7 +187,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
-      case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
       case NI_SSA_LIVENESS:
@@ -200,6 +203,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case PARALLEL_REGIONS_GRAPH_COMPUTATION:
 #endif
+      case PARM2SSA:
 #if HAVE_BAMBU_BUILT
       case PARM_DECL_TAKEN_ADDRESS:
       case PHI_OPT:
@@ -308,8 +312,11 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
       case DYNAMIC_VAR_COMPUTATION:
 #endif
+#if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
+      case DEAD_CODE_ELIMINATION_IPA:
+#endif
 #if HAVE_BAMBU_BUILT
-      case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FIND_MAX_TRANSFORMATIONS:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
@@ -321,10 +328,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
 #endif
-#if HAVE_BAMBU_BUILT
-      case(IPA_POINT_TO_ANALYSIS):
-#endif
-      case PARM2SSA:
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:
 #endif

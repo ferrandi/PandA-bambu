@@ -17,6 +17,7 @@ lib_tree_la_SOURCES = tree/tree_node.cpp tree/tree_reindex.cpp tree/tree_basic_b
 if BUILD_BAMBU
    lib_tree_la_CPPFLAGS += \
       -I$(top_srcdir)/src/graph \
+      -I$(top_srcdir)/src/behavior \
       -I$(top_srcdir)/src/HLS/scheduling
 endif
 

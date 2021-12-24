@@ -1594,8 +1594,8 @@ generate
 endgenerate
 
 assign out1_shifted = dout &gt;&gt; delayed_byte_offset*8;
-assign out1 = out1_shifted[BITSIZE_out1-1:0];
-assign proxy_out1 = out1_shifted[BITSIZE_proxy_out1-1:0];
+assign out1 = out1_shifted;
+assign proxy_out1 = out1_shifted;
 
 always @(posedge clock 1RESET_EDGE)
 begin
@@ -1892,8 +1892,8 @@ begin
 
    out1_shifted &lt;= std_logic_vector(shift_right(unsigned(dout), to_integer(unsigned(delayed_byte_offset(nbits_byte_offset-1 downto 0)))*8));
 
-   out1 &lt;= out1_shifted(BITSIZE_out1-1 downto 0);
-   proxy_out1 &lt;= out1_shifted(BITSIZE_proxy_out1-1 downto 0);
+   out1 &lt;= std_logic_vector(resize(unsigned(out1_shifted(2*BRAM_BITSIZE-1 downto 0)), BITSIZE_out1));
+   proxy_out1 &lt;= std_logic_vector(resize(unsigned(out1_shifted(2*BRAM_BITSIZE-1 downto 0)), BITSIZE_proxy_out1));
 
    L16 : process(reset, clock)
    begin

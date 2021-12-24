@@ -60,7 +60,10 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 
-bb_feedback_edges_computation::bb_feedback_edges_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+bb_feedback_edges_computation::bb_feedback_edges_computation(const ParameterConstRef _parameters,
+                                                             const application_managerRef _AppM,
+                                                             unsigned int _function_id,
+                                                             const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, BB_FEEDBACK_EDGES_IDENTIFICATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -68,14 +71,16 @@ bb_feedback_edges_computation::bb_feedback_edges_computation(const ParameterCons
 
 bb_feedback_edges_computation::~bb_feedback_edges_computation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> bb_feedback_edges_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+bb_feedback_edges_computation::ComputeFrontendRelationships(
+    const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(LOOPS_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -110,7 +115,9 @@ DesignFlowStep_Status bb_feedback_edges_computation::InternalExec()
       {
          vertex from_bb = sp_back_edge.first;
          vertex to_bb = sp_back_edge.second;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Transforming " + STR(fbb->CGetBBNodeInfo(from_bb)->block->number) + "->" + STR(fbb->CGetBBNodeInfo(to_bb)->block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Transforming " + STR(fbb->CGetBBNodeInfo(from_bb)->block->number) + "->" +
+                            STR(fbb->CGetBBNodeInfo(to_bb)->block->number));
          function_behavior->bbgc->RemoveEdge(from_bb, to_bb, CFG_SELECTOR);
          function_behavior->bbgc->AddEdge(from_bb, to_bb, FB_CFG_SELECTOR);
       }
@@ -131,22 +138,26 @@ DesignFlowStep_Status bb_feedback_edges_computation::InternalExec()
    catch(const char* msg)
    {
       function_behavior->GetBBGraph(FunctionBehavior::BB)->WriteDot("Error.dot");
-      THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC, helper->get_function_name() + " cannot be synthesized: irreducible loops are not yet supported");
+      THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC,
+                       helper->get_function_name() + " cannot be synthesized: irreducible loops are not yet supported");
    }
    catch(const std::string& msg)
    {
       function_behavior->GetBBGraph(FunctionBehavior::BB)->WriteDot("Error.dot");
-      THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC, helper->get_function_name() + " cannot be synthesized: irreducible loops are not yet supported");
+      THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC,
+                       helper->get_function_name() + " cannot be synthesized: irreducible loops are not yet supported");
    }
    catch(const std::exception& ex)
    {
       function_behavior->GetBBGraph(FunctionBehavior::BB)->WriteDot("Error.dot");
-      THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC, helper->get_function_name() + " cannot be synthesized: irreducible loops are not yet supported");
+      THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC,
+                       helper->get_function_name() + " cannot be synthesized: irreducible loops are not yet supported");
    }
    catch(...)
    {
       function_behavior->GetBBGraph(FunctionBehavior::BB)->WriteDot("Error.dot");
-      THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC, helper->get_function_name() + " cannot be synthesized: irreducible loops are not yet supported");
+      THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC,
+                       helper->get_function_name() + " cannot be synthesized: irreducible loops are not yet supported");
    }
    return DesignFlowStep_Status::SUCCESS;
 }

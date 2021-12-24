@@ -177,7 +177,8 @@ void NP_functionality::get_library_parameters(std::vector<std::string>& paramete
    }
 }
 
-void NP_functionality::get_port_list(std::map<unsigned int, std::map<std::string, std::string>>& InPortMap, std::map<unsigned int, std::map<std::string, std::string>>& OutPortMap) const
+void NP_functionality::get_port_list(std::map<unsigned int, std::map<std::string, std::string>>& InPortMap,
+                                     std::map<unsigned int, std::map<std::string, std::string>>& OutPortMap) const
 {
    std::string port_list = get_NP_functionality(NP_functionality::PORT_LIST);
    if(port_list.empty())

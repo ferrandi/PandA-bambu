@@ -62,15 +62,19 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-PredicateStatements::PredicateStatements(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, FrontendFlowStepType::PREDICATE_STATEMENTS, _design_flow_manager, _parameters)
+PredicateStatements::PredicateStatements(const application_managerRef _AppM, unsigned int _function_id,
+                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                         const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, FrontendFlowStepType::PREDICATE_STATEMENTS, _design_flow_manager,
+                               _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 PredicateStatements::~PredicateStatements() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> PredicateStatements::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+PredicateStatements::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -88,7 +92,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
 #if HAVE_FROM_PRAGMA_BUILT
          relationships.insert(std::make_pair(PRAGMA_ANALYSIS, WHOLE_APPLICATION));
 #endif
-         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
+         if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
+         {
+            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
+         }
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
@@ -107,10 +114,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
 
 bool PredicateStatements::HasToBeExecuted() const
 {
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
    return bb_version == 0;
 }
 
@@ -118,10 +121,9 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
 {
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    const auto TM = AppM->get_tree_manager();
-   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
-   const auto true_value_id = TM->new_tree_node_id();
-   const auto boolean_type = tree_man->create_boolean_type();
-   const auto true_value = tree_man->CreateIntegerCst(boolean_type, 1, true_value_id);
+   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
+   const auto boolean_type = tree_man->GetBooleanType();
+   const auto true_value = TM->CreateUniqueIntegerCst(1, boolean_type);
 
    bool bb_modified = false;
    const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
@@ -130,15 +132,16 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
    {
       for(const auto& stmt : block.second->CGetStmtList())
       {
-         auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
-         if(behavioral_helper->CanBeSpeculated(stmt->index) or not ga or (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))
+         const auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
+         if(behavioral_helper->CanBeSpeculated(stmt->index) || !ga ||
+            (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))
          {
             continue;
          }
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Predicating " + STR(stmt));
-            THROW_ASSERT(!ga->predicate, "unexpected condition");
+            THROW_ASSERT(!ga->predicate || ga->predicate->index == true_value->index, "unexpected condition");
             ga->predicate = true_value;
          }
       }

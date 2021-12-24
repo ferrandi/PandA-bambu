@@ -76,9 +76,15 @@
 #include <iostream>                           // for ios_base::fai...
 #include <utility>                            // for pair
 
-FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef _AppM, const unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager,
+FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef _AppM, const unsigned int _function_id,
+                                                   const FrontendFlowStepType _frontend_flow_step_type,
+                                                   const DesignFlowManagerConstRef _design_flow_manager,
                                                    const ParameterConstRef _parameters)
-    : FrontendFlowStep(_AppM, _frontend_flow_step_type, _design_flow_manager, _parameters), function_behavior(_AppM->GetFunctionBehavior(_function_id)), function_id(_function_id), bb_version(0), bitvalue_version(0)
+    : FrontendFlowStep(_AppM, _frontend_flow_step_type, _design_flow_manager, _parameters),
+      function_behavior(_AppM->GetFunctionBehavior(_function_id)),
+      function_id(_function_id),
+      bb_version(0),
+      bitvalue_version(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -90,9 +96,11 @@ const std::string FunctionFrontendFlowStep::GetSignature() const
    return ComputeSignature(frontend_flow_step_type, function_id);
 }
 
-const std::string FunctionFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type, const unsigned int function_id)
+const std::string FunctionFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type,
+                                                             const unsigned int function_id)
 {
-   return "Frontend::" + boost::lexical_cast<std::string>(frontend_flow_step_type) + "::" + boost::lexical_cast<std::string>(function_id);
+   return "Frontend::" + boost::lexical_cast<std::string>(frontend_flow_step_type) +
+          "::" + boost::lexical_cast<std::string>(function_id);
 }
 
 const std::string FunctionFrontendFlowStep::GetName() const
@@ -104,16 +112,20 @@ const std::string FunctionFrontendFlowStep::GetName() const
    const std::string version = "";
    const std::string bv_version = "";
 #endif
-   return "Frontend::" + GetKindText() + "::" + function_behavior->CGetBehavioralHelper()->get_function_name() + version + bv_version;
+   return "Frontend::" + GetKindText() + "::" + function_behavior->CGetBehavioralHelper()->get_function_name() +
+          version + bv_version;
 }
 
-void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
+void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relationships,
+                                                    const DesignFlowStep::RelationshipType relationship_type)
 {
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
-   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships = ComputeFrontendRelationships(relationship_type);
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships =
+       ComputeFrontendRelationships(relationship_type);
 
-   /// Precedence step whose symbolic application frontend flow step has to be executed can be considered as dependence step
+   /// Precedence step whose symbolic application frontend flow step has to be executed can be considered as dependence
+   /// step
    if(relationship_type == DEPENDENCE_RELATIONSHIP)
    {
       const auto precedence_relationships = ComputeFrontendRelationships(PRECEDENCE_RELATIONSHIP);
@@ -121,18 +133,22 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
       {
          if(precedence_relationship.second == SAME_FUNCTION)
          {
-            const auto signature = FunctionFrontendFlowStep::ComputeSignature(precedence_relationship.first, function_id);
-            const auto symbolic_signature = SymbolicApplicationFrontendFlowStep::ComputeSignature(precedence_relationship.first);
+            const auto signature =
+                FunctionFrontendFlowStep::ComputeSignature(precedence_relationship.first, function_id);
+            const auto symbolic_signature =
+                SymbolicApplicationFrontendFlowStep::ComputeSignature(precedence_relationship.first);
             const auto symbolic_step = design_flow_manager.lock()->GetDesignFlowStep(symbolic_signature);
             if(symbolic_step)
             {
 #ifndef NDEBUG
-               if(not(design_flow_manager.lock()->GetStatus(symbolic_signature) == DesignFlowStep_Status::UNEXECUTED or design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::SUCCESS or
-                      design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::UNCHANGED))
+               if(!(design_flow_manager.lock()->GetStatus(symbolic_signature) == DesignFlowStep_Status::UNEXECUTED ||
+                    design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::SUCCESS ||
+                    design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::UNCHANGED))
                {
                   design_flow_manager.lock()->CGetDesignFlowGraph()->WriteDot("Design_Flow_Error");
                   const auto design_flow_step_info = design_flow_graph->CGetDesignFlowStepInfo(symbolic_step);
-                  THROW_UNREACHABLE("Symbolic step " + design_flow_step_info->design_flow_step->GetName() + " is not unexecuted");
+                  THROW_UNREACHABLE("Symbolic step " + design_flow_step_info->design_flow_step->GetName() +
+                                    " is not unexecuted");
                }
 #endif
                frontend_relationships.insert(precedence_relationship);
@@ -140,8 +156,10 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          }
       }
    }
-   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
-   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; ++frontend_relationship)
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>::const_iterator frontend_relationship,
+       frontend_relationship_end = frontend_relationships.end();
+   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end;
+       ++frontend_relationship)
    {
       switch(frontend_relationship->second)
       {
@@ -152,26 +170,30 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          }
          case(CALLED_FUNCTIONS):
          {
-            const CallGraphManagerConstRef call_graph_manager = AppM->CGetCallGraphManager();
-            const CallGraphConstRef acyclic_call_graph = call_graph_manager->CGetAcyclicCallGraph();
-            const vertex function_vertex = call_graph_manager->GetVertex(function_id);
+            const auto call_graph_manager = AppM->CGetCallGraphManager();
+            const auto acyclic_call_graph = call_graph_manager->CGetAcyclicCallGraph();
+            const auto function_vertex = call_graph_manager->GetVertex(function_id);
             OutEdgeIterator oe, oe_end;
             for(boost::tie(oe, oe_end) = boost::out_edges(function_vertex, *acyclic_call_graph); oe != oe_end; oe++)
             {
                const vertex target = boost::target(*oe, *acyclic_call_graph);
                const unsigned int called_function = call_graph_manager->get_function(target);
-               if(AppM->CGetFunctionBehavior(called_function)->CGetBehavioralHelper()->has_implementation() and function_id != called_function)
+               if(AppM->CGetFunctionBehavior(called_function)->CGetBehavioralHelper()->has_implementation() and
+                  function_id != called_function)
                {
-                  vertex function_frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, called_function));
+                  vertex function_frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(
+                      FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, called_function));
                   DesignFlowStepRef design_flow_step;
                   if(function_frontend_flow_step)
                   {
-                     design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(function_frontend_flow_step)->design_flow_step;
+                     design_flow_step =
+                         design_flow_graph->CGetDesignFlowStepInfo(function_frontend_flow_step)->design_flow_step;
                      relationships.insert(design_flow_step);
                   }
                   else
                   {
-                     design_flow_step = frontend_flow_step_factory->CreateFunctionFrontendFlowStep(frontend_relationship->first, called_function);
+                     design_flow_step = frontend_flow_step_factory->CreateFunctionFrontendFlowStep(
+                         frontend_relationship->first, called_function);
                      relationships.insert(design_flow_step);
                   }
                }
@@ -180,9 +202,9 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          }
          case(CALLING_FUNCTIONS):
          {
-            const CallGraphManagerConstRef call_graph_manager = AppM->CGetCallGraphManager();
-            const CallGraphConstRef acyclic_call_graph = call_graph_manager->CGetAcyclicCallGraph();
-            const vertex function_vertex = call_graph_manager->GetVertex(function_id);
+            const auto call_graph_manager = AppM->CGetCallGraphManager();
+            const auto acyclic_call_graph = call_graph_manager->CGetAcyclicCallGraph();
+            const auto function_vertex = call_graph_manager->GetVertex(function_id);
             InEdgeIterator ie, ie_end;
             for(boost::tie(ie, ie_end) = boost::in_edges(function_vertex, *acyclic_call_graph); ie != ie_end; ie++)
             {
@@ -190,16 +212,19 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
                const unsigned int calling_function = call_graph_manager->get_function(source);
                if(calling_function != function_id)
                {
-                  vertex function_frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, calling_function));
+                  const auto function_frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(
+                      FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, calling_function));
                   DesignFlowStepRef design_flow_step;
                   if(function_frontend_flow_step)
                   {
-                     design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(function_frontend_flow_step)->design_flow_step;
+                     design_flow_step =
+                         design_flow_graph->CGetDesignFlowStepInfo(function_frontend_flow_step)->design_flow_step;
                      relationships.insert(design_flow_step);
                   }
                   else
                   {
-                     design_flow_step = frontend_flow_step_factory->CreateFunctionFrontendFlowStep(frontend_relationship->first, calling_function);
+                     design_flow_step = frontend_flow_step_factory->CreateFunctionFrontendFlowStep(
+                         frontend_relationship->first, calling_function);
                      relationships.insert(design_flow_step);
                   }
                }
@@ -208,7 +233,8 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          }
          case(SAME_FUNCTION):
          {
-            vertex prec_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, function_id));
+            const auto prec_step = design_flow_manager.lock()->GetDesignFlowStep(
+                FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, function_id));
             DesignFlowStepRef design_flow_step;
             if(prec_step)
             {
@@ -217,7 +243,8 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
             }
             else
             {
-               design_flow_step = frontend_flow_step_factory->CreateFunctionFrontendFlowStep(frontend_relationship->first, function_id);
+               design_flow_step = frontend_flow_step_factory->CreateFunctionFrontendFlowStep(
+                   frontend_relationship->first, function_id);
                relationships.insert(design_flow_step);
             }
             break;
@@ -238,7 +265,15 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
 
 DesignFlowStep_Status FunctionFrontendFlowStep::Exec()
 {
-   const auto status = InternalExec();
+   DesignFlowStep_Status status;
+   if(!HasToBeExecuted0())
+   {
+      status = DesignFlowStep_Status::UNCHANGED;
+   }
+   else
+   {
+      status = InternalExec();
+   }
    bb_version = function_behavior->GetBBVersion();
    bitvalue_version = function_behavior->GetBitValueVersion();
    return status;
@@ -257,10 +292,6 @@ bool FunctionFrontendFlowStep::HasToBeExecuted0() const
 
 bool FunctionFrontendFlowStep::HasToBeExecuted() const
 {
-   //   if(!HasToBeExecuted0())
-   //   {
-   //      return false;
-   //   }
    return bb_version != function_behavior->GetBBVersion();
 }
 
@@ -274,9 +305,10 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    const auto fd = GetPointer<const function_decl>(function_tree_node);
    const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
    /// add vertices
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
-      inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
+      inverse_vertex_map[block.first] =
+          GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
    }
    /// Set entry and exit
    if(inverse_vertex_map.find(bloc::ENTRY_BLOCK_ID) == inverse_vertex_map.end())
@@ -302,9 +334,11 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
       }
       for(const auto succ : block.second->list_of_succ)
       {
-         THROW_ASSERT(inverse_vertex_map.find(block.first) != inverse_vertex_map.end(), "BB" + STR(block.first) + " does not exist");
+         THROW_ASSERT(inverse_vertex_map.find(block.first) != inverse_vertex_map.end(),
+                      "BB" + STR(block.first) + " does not exist");
          THROW_ASSERT(inverse_vertex_map.find(succ) != inverse_vertex_map.end(), "BB" + STR(succ) + " does not exist");
-         if(block.second->CGetStmtList().size() and GET_NODE(block.second->CGetStmtList().back())->get_kind() == gimple_multi_way_if_K)
+         if(block.second->CGetStmtList().size() and
+            GET_NODE(block.second->CGetStmtList().back())->get_kind() == gimple_multi_way_if_K)
          {
             const auto gmwi = GetPointer<const gimple_multi_way_if>(GET_NODE(block.second->CGetStmtList().back()));
             CustomSet<unsigned int> conds;
@@ -322,13 +356,15 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
                   }
                }
             }
-            THROW_ASSERT(conds.size(), "Inconsistency between cfg and output of gimple_multi_way_if " + gmwi->ToString() + "- condition for BB" + STR(succ) + " not found");
+            THROW_ASSERT(conds.size(), "Inconsistency between cfg and output of gimple_multi_way_if " +
+                                           gmwi->ToString() + "- condition for BB" + STR(succ) + " not found");
             const EdgeInfoRef edge_info(new BBEdgeInfo());
             for(auto cond : conds)
             {
                GetPointer<BBEdgeInfo>(edge_info)->add_nodeID(cond, CFG_SELECTOR);
             }
-            GCC_bb_graphs_collection->InternalAddEdge(inverse_vertex_map[block.first], inverse_vertex_map[succ], CFG_SELECTOR, edge_info);
+            GCC_bb_graphs_collection->InternalAddEdge(inverse_vertex_map[block.first], inverse_vertex_map[succ],
+                                                      CFG_SELECTOR, edge_info);
          }
          else
          {
@@ -337,12 +373,14 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
       }
       if(block.second->list_of_succ.empty())
       {
-         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[block.first], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
+         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[block.first], inverse_vertex_map[bloc::EXIT_BLOCK_ID],
+                                           CFG_SELECTOR);
       }
    }
 
    /// add a connection between entry and exit thus avoiding problems with non terminating code
-   GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
+   GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID],
+                                     CFG_SELECTOR);
    BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR).WriteDot(filename);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename);
    /// add edges
@@ -352,7 +390,9 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
       for(const auto& phi : block.second->CGetPhiList())
       {
          const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
-         THROW_ASSERT(gp->CGetDefEdgesList().size() == block.second->list_of_pred.size(), "BB" + STR(block.second->number) + " has " + STR(block.second->list_of_pred.size()) + " incoming edges but contains " + STR(phi));
+         THROW_ASSERT(gp->CGetDefEdgesList().size() == block.second->list_of_pred.size(),
+                      "BB" + STR(block.second->number) + " has " + STR(block.second->list_of_pred.size()) +
+                          " incoming edges but contains " + STR(phi));
       }
    }
 #endif
@@ -363,14 +403,25 @@ unsigned int FunctionFrontendFlowStep::CGetBBVersion() const
    return bb_version;
 }
 
+unsigned int FunctionFrontendFlowStep::GetBitValueVersion() const
+{
+   return bitvalue_version;
+}
+
 void FunctionFrontendFlowStep::PrintInitialIR() const
 {
-   WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
+   if(!parameters->IsParameter("disable-print-dot-FF"))
+   {
+      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
+   }
    FrontendFlowStep::PrintInitialIR();
 }
 
 void FunctionFrontendFlowStep::PrintFinalIR() const
 {
-   WriteBBGraphDot("BB_After_" + GetName() + ".dot");
+   if(!parameters->IsParameter("disable-print-dot-FF"))
+   {
+      WriteBBGraphDot("BB_After_" + GetName() + ".dot");
+   }
    FrontendFlowStep::PrintFinalIR();
 }

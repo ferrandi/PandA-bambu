@@ -58,20 +58,16 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_helper.hpp"
 
-DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
-    : EvaluationBaseStep(_parameters, _HLSMgr, 0, _design_flow_manager, HLSFlowStep_Type::DRY_RUN_EVALUATION)
+DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                   const DesignFlowManagerConstRef _design_flow_manager)
+    : EvaluationBaseStep(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::DRY_RUN_EVALUATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 DryRunEvaluation::~DryRunEvaluation() = default;
 
-bool DryRunEvaluation::HasToBeExecuted() const
-{
-   return true;
-}
-
-DesignFlowStep_Status DryRunEvaluation::InternalExec()
+DesignFlowStep_Status DryRunEvaluation::Exec()
 {
    auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");

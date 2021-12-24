@@ -57,40 +57,17 @@
 
 unsigned int HWCallInjection::builtinWaitCallDeclIdx = 0;
 
-HWCallInjection::HWCallInjection(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int funId, const DesignFlowManagerConstRef DFM) : FunctionFrontendFlowStep(_AppM, funId, HWCALL_INJECTION, DFM, Param), already_executed(false)
+HWCallInjection::HWCallInjection(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int funId,
+                                 const DesignFlowManagerConstRef DFM)
+    : FunctionFrontendFlowStep(_AppM, funId, HWCALL_INJECTION, DFM, Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 HWCallInjection::~HWCallInjection() = default;
 
-DesignFlowStep_Status HWCallInjection::InternalExec()
-{
-   tree_managerRef TM = AppM->get_tree_manager();
-   tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   auto* fd = GetPointer<function_decl>(tn);
-   THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   THROW_ASSERT(sl, "Body is not a statement_list");
-
-   for(const auto& block : sl->list_of_bloc)
-   {
-      const auto list_of_stmt = block.second->CGetStmtList();
-      auto stmt = list_of_stmt.begin();
-      while(stmt != list_of_stmt.end())
-      {
-         stmt++;
-         if(isHardwareCall(GET_NODE(*(std::prev(stmt)))))
-         {
-            buildBuiltinCall(block.second, *(std::prev(stmt)));
-         }
-      }
-   }
-   already_executed = true;
-   return DesignFlowStep_Status::SUCCESS;
-}
-
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(RT)
@@ -115,277 +92,263 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-bool HWCallInjection::isHardwareCall(tree_nodeRef expr)
+bool HWCallInjection::HasToBeExecuted() const
 {
-   tree_managerRef TM = AppM->get_tree_manager();
-   const ParameterConstRef Param = AppM->get_parameter();
-
-   tree_nodeRef FD;
-   if(expr->get_kind() == gimple_call_K)
-   {
-      auto* GC = GetPointer<gimple_call>(expr);
-      FD = GetPointer<addr_expr>(GET_NODE(GC->fn)) ? GetPointer<addr_expr>(GET_NODE(GC->fn))->op : GC->fn;
-   }
-   else if(expr->get_kind() == gimple_assign_K)
-   {
-      auto* GA = GetPointer<gimple_assign>(expr);
-      if(GET_NODE(GA->op1)->get_kind() == call_expr_K || GET_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
-      {
-         auto* CE = GetPointer<call_expr>(GET_NODE(GA->op1));
-         FD = GetPointer<addr_expr>(GET_NODE(CE->fn)) ? GetPointer<addr_expr>(GET_NODE(CE->fn))->op : CE->fn;
-      }
-   }
-
-   // When the instruction is not a function call return false.
-   if(!FD)
-   {
-      return false;
-   }
-
-   bool result = false;
-   if(GET_NODE(FD)->get_kind() == function_decl_K)
-   {
-      auto* FDPtr = GetPointer<function_decl>(GET_NODE(FD));
-      result = FDPtr->hwcall_flag;
-
-      if(!result)
-      {
-         std::string name = tree_helper::name_function(TM, GET_INDEX_NODE(FD));
-         auto cmdArg = Param->getOption<std::string>(OPT_additional_top);
-
-         std::vector<std::string> additionalTops = SplitString(cmdArg, ",");
-
-         result |= std::find(additionalTops.begin(), additionalTops.end(), name) != additionalTops.end();
-      }
-   }
-   else if(GET_NODE(FD)->get_kind() == ssa_name_K)
-   {
-      // This is the case for function pointers call.
-      result = true;
-   }
-
-   return result;
+   return bb_version == 0;
 }
 
-void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
+DesignFlowStep_Status HWCallInjection::InternalExec()
 {
-   tree_nodeRef expr = GET_NODE(stmt);
-   tree_managerRef TM = AppM->get_tree_manager();
-   tree_manipulationRef IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   const auto TM = AppM->get_tree_manager();
+   const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
+   THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
+   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   THROW_ASSERT(sl, "Body is not a statement_list");
 
-   unsigned int retVar = 0;
+   const auto isHardwareCall = [&](const tree_nodeRef& expr) -> bool {
+      THROW_ASSERT(expr->get_kind() != tree_reindex_K, "");
+      tree_nodeRef FD;
+      if(expr->get_kind() == gimple_call_K)
+      {
+         const auto GC = GetPointerS<gimple_call>(expr);
+         FD = GetPointer<const addr_expr>(GET_CONST_NODE(GC->fn)) ?
+                  GetPointerS<const addr_expr>(GET_CONST_NODE(GC->fn))->op :
+                  GC->fn;
+      }
+      else if(expr->get_kind() == gimple_assign_K)
+      {
+         const auto GA = GetPointerS<const gimple_assign>(expr);
+         if(GET_CONST_NODE(GA->op1)->get_kind() == call_expr_K ||
+            GET_CONST_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
+         {
+            const auto CE = GetPointerS<const call_expr>(GET_CONST_NODE(GA->op1));
+            FD = GetPointer<const addr_expr>(GET_CONST_NODE(CE->fn)) ?
+                     GetPointerS<const addr_expr>(GET_CONST_NODE(CE->fn))->op :
+                     CE->fn;
+         }
+      }
+
+      // When the instruction is not a function call return false.
+      bool result = false;
+      if(FD)
+      {
+         if(GET_CONST_NODE(FD)->get_kind() == function_decl_K)
+         {
+            const auto FDPtr = GetPointerS<const function_decl>(GET_CONST_NODE(FD));
+            result = FDPtr->hwcall_flag;
+            if(!result)
+            {
+               const auto cmdArg = parameters->getOption<std::string>(OPT_additional_top);
+               const auto additionalTops = SplitString(cmdArg, ",");
+               const auto name = tree_helper::print_function_name(TM, FDPtr);
+               result |= std::find(additionalTops.begin(), additionalTops.end(), name) != additionalTops.end();
+            }
+         }
+         else if(GET_CONST_NODE(FD)->get_kind() == ssa_name_K)
+         {
+            // This is the case for function pointers call.
+            result = true;
+         }
+      }
+      return result;
+   };
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Searching for hardware implemented calls");
+   for(const auto& block : sl->list_of_bloc)
+   {
+      const auto list_of_stmt = block.second->CGetStmtList();
+      auto stmt = list_of_stmt.begin();
+      while(stmt != list_of_stmt.end())
+      {
+         stmt++;
+         const auto& cur_stmt = *std::prev(stmt);
+         if(isHardwareCall(GET_NODE(cur_stmt)))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Transforming call " + STR(cur_stmt));
+            buildBuiltinCall(block.second, cur_stmt);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         }
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   return DesignFlowStep_Status::SUCCESS;
+}
+
+void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef& stmt)
+{
+   const auto stmt_kind = GET_NODE(stmt)->get_kind();
+   const auto TM = AppM->get_tree_manager();
+   const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
 
    if(!builtinWaitCallDeclIdx)
    {
-      unsigned int varArgParamList = TM->new_tree_node_id();
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> varArgParamMap;
-      varArgParamMap[TOK(TOK_VALU)] = STR(GET_INDEX_NODE(IRman->create_default_integer_type()));
-      TM->create_tree_node(varArgParamList, tree_list_K, varArgParamMap);
+      const auto vararg_list_idx = TM->new_tree_node_id();
+      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> attr_map;
+      attr_map[TOK(TOK_VALU)] = STR(GET_INDEX_NODE(IRman->GetSignedIntegerType()));
+      TM->create_tree_node(vararg_list_idx, tree_list_K, attr_map);
+      attr_map.clear();
 
-      unsigned int builtinIdString = GET_INDEX_NODE(IRman->create_identifier_node(BUILTIN_WAIT_CALL));
+      const auto ftype_idx = TM->new_tree_node_id();
+      attr_map[TOK(TOK_RETN)] = STR(GET_INDEX_NODE(IRman->GetVoidType()));
+      attr_map[TOK(TOK_VARARGS)] = STR(1);
+      attr_map[TOK(TOK_PRMS)] = STR(vararg_list_idx);
+      const auto funTypeSize = TM->CreateUniqueIntegerCst(8, IRman->GetSignedIntegerType());
+      attr_map[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(funTypeSize));
+      attr_map[TOK(TOK_ALIGNED)] = STR(8);
+      TM->create_tree_node(ftype_idx, function_type_K, attr_map);
+      attr_map.clear();
 
-      unsigned int funTypeSizeIdx = TM->new_tree_node_id();
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> funTypeSize;
-      funTypeSize[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_default_integer_type()));
-      funTypeSize[TOK(TOK_VALUE)] = STR(8);
-      TM->create_tree_node(funTypeSizeIdx, integer_cst_K, funTypeSize);
-
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> builtinFunTypeMap;
-      builtinFunTypeMap[TOK(TOK_RETN)] = STR(GET_INDEX_NODE(IRman->create_void_type()));
-      builtinFunTypeMap[TOK(TOK_VARARGS)] = STR(1);
-      builtinFunTypeMap[TOK(TOK_PRMS)] = STR(varArgParamList);
-      builtinFunTypeMap[TOK(TOK_SIZE)] = STR(funTypeSizeIdx);
-      builtinFunTypeMap[TOK(TOK_ALIGNED)] = STR(8);
-
-      unsigned int builtinFunctionTypeIdx = TM->new_tree_node_id();
-      TM->create_tree_node(builtinFunctionTypeIdx, function_type_K, builtinFunTypeMap);
-
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> builtinFunctionDeclMap;
-      builtinFunctionDeclMap[TOK(TOK_TYPE)] = STR(builtinFunctionTypeIdx);
-      builtinFunctionDeclMap[TOK(TOK_NAME)] = STR(builtinIdString);
-      builtinFunctionDeclMap[TOK(TOK_SRCP)] = "<builtin>:0:0";
       builtinWaitCallDeclIdx = TM->new_tree_node_id();
-      TM->create_tree_node(builtinWaitCallDeclIdx, function_decl_K, builtinFunctionDeclMap);
+      attr_map[TOK(TOK_TYPE)] = STR(ftype_idx);
+      const auto builtinIdString = IRman->create_identifier_node(BUILTIN_WAIT_CALL);
+      attr_map[TOK(TOK_NAME)] = STR(GET_INDEX_CONST_NODE(builtinIdString));
+      attr_map[TOK(TOK_SRCP)] = BUILTIN_SRCP;
+      TM->create_tree_node(builtinWaitCallDeclIdx, function_decl_K, attr_map);
+      attr_map.clear();
    }
 
-   auto* srcPtr = GetPointer<srcp>(expr);
+   const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
+   const auto srcp_str = gn->include_name + ":" + STR(gn->line_number) + ":" + STR(gn->column_number);
 
-   tree_nodeRef functionDeclTN = TM->GetTreeNode(builtinWaitCallDeclIdx);
-   auto* functionDecl = GetPointer<function_decl>(functionDeclTN);
-
-   unsigned int addrExprBuiltinCall = TM->new_tree_node_id();
-   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprBuiltinCallMap;
-   addrExprBuiltinCallMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_pointer_type(functionDecl->type, 8)));
-   addrExprBuiltinCallMap[TOK(TOK_OP)] = STR(builtinWaitCallDeclIdx);
-   addrExprBuiltinCallMap[TOK(TOK_SRCP)] = srcPtr->include_name + ":" + STR(srcPtr->line_number) + ":" + STR(srcPtr->column_number);
-   TM->create_tree_node(addrExprBuiltinCall, addr_expr_K, addrExprBuiltinCallMap);
-
-   unsigned int gimpleCallIdx = TM->new_tree_node_id();
-   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimpleCallMap;
-   gimpleCallMap[TOK(TOK_FN)] = STR(addrExprBuiltinCall);
-   gimpleCallMap[TOK(TOK_SRCP)] = srcPtr->include_name + ":" + STR(srcPtr->line_number) + ":" + STR(srcPtr->column_number);
-   TM->create_tree_node(gimpleCallIdx, gimple_call_K, gimpleCallMap);
-
-   tree_nodeRef builtinGimpleCallTN = TM->GetTreeNode(gimpleCallIdx);
-   tree_nodeRef builtinCallTN = TM->GetTreeReindex(gimpleCallIdx);
-   auto* builtinGimpleCall = GetPointer<gimple_call>(builtinGimpleCallTN);
-   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> HasReturnMap;
-   HasReturnMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_default_integer_type()));
-   if(GetPointer<gimple_call>(expr))
+   const auto builtin_stmt_idx = TM->new_tree_node_id();
    {
-      auto* GC = GetPointer<gimple_call>(expr);
-      builtinGimpleCall->AddArg(GC->fn);
+      const auto addr_expr_idx = TM->new_tree_node_id();
+      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> attr_map;
+      const auto functionDecl = GetPointerS<const function_decl>(TM->CGetTreeNode(builtinWaitCallDeclIdx));
+      attr_map[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->GetPointerType(functionDecl->type, 8)));
+      attr_map[TOK(TOK_OP)] = STR(builtinWaitCallDeclIdx);
+      attr_map[TOK(TOK_SRCP)] = srcp_str;
+      TM->create_tree_node(addr_expr_idx, addr_expr_K, attr_map);
+      attr_map.clear();
 
-      unsigned int HasReturnIdx = TM->new_tree_node_id();
-      HasReturnMap[TOK(TOK_VALUE)] = STR(0);
-      TM->create_tree_node(HasReturnIdx, integer_cst_K, HasReturnMap);
-      builtinGimpleCall->AddArg(TM->GetTreeReindex(HasReturnIdx));
+      attr_map[TOK(TOK_FN)] = STR(addr_expr_idx);
+      if(stmt_kind == gimple_call_K)
+      {
+         const auto GC = GetPointerS<const gimple_call>(GET_NODE(stmt));
+         attr_map[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(GC->scpe));
+      }
+      else if(stmt_kind == gimple_assign_K)
+      {
+         const auto GA = GetPointerS<const gimple_assign>(GET_NODE(stmt));
+         attr_map[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(GA->scpe));
+      }
+      attr_map[TOK(TOK_SRCP)] = srcp_str;
+      TM->create_tree_node(builtin_stmt_idx, gimple_call_K, attr_map);
+   }
+
+   const auto builtin_stmt = TM->GetTreeReindex(builtin_stmt_idx);
+   const auto builtin_call = GetPointerS<gimple_call>(GET_NODE(builtin_stmt));
+   tree_nodeRef retVar = nullptr;
+   if(stmt_kind == gimple_call_K)
+   {
+      const auto GC = GetPointerS<gimple_call>(GET_NODE(stmt));
+      builtin_call->AddArg(GC->fn);
+
+      const auto has_return = TM->CreateUniqueIntegerCst(0, IRman->GetSignedIntegerType());
+      builtin_call->AddArg(has_return);
 
       for(const auto& arg : GC->args)
       {
-         builtinGimpleCall->AddArg(arg);
+         builtin_call->AddArg(arg);
       }
 
-      builtinGimpleCall->memuse = GC->memuse;
-      builtinGimpleCall->memdef = GC->memdef;
-      ssa_name* ssamemdef = builtinGimpleCall->memdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->memdef)) : nullptr;
-      if(ssamemdef)
-      {
-         ssamemdef->SetDefStmt(builtinCallTN);
-      }
+      builtin_call->memuse = GC->memuse;
+      builtin_call->memdef = GC->memdef;
+      builtin_call->vdef = GC->vdef;
+      builtin_call->vuses = GC->vuses;
+      builtin_call->vovers = GC->vovers;
 
-      builtinGimpleCall->vuses = GC->vuses;
-      builtinGimpleCall->vovers = GC->vovers;
-      builtinGimpleCall->vdef = GC->vdef;
-      ssa_name* ssavdef = builtinGimpleCall->vdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->vdef)) : nullptr;
-      if(ssavdef)
-      {
-         ssavdef->SetDefStmt(builtinCallTN);
-      }
-
-      builtinGimpleCall->pragmas = GC->pragmas;
-      builtinGimpleCall->use_set = GC->use_set;
-      builtinGimpleCall->clobbered_set = GC->clobbered_set;
-      builtinGimpleCall->scpe = GC->scpe;
-      builtinGimpleCall->bb_index = GC->bb_index;
-      builtinGimpleCall->include_name = GC->include_name;
-      builtinGimpleCall->line_number = GC->line_number;
-      builtinGimpleCall->column_number = GC->column_number;
-
-      GC->memuse = tree_nodeRef();
-      GC->memdef = tree_nodeRef();
-
-      GC->vdef = tree_nodeRef();
-      GC->vovers = TreeNodeSet();
-      GC->vuses = TreeNodeSet();
-
-      GC->pragmas = std::vector<tree_nodeRef>();
-      GC->use_set = PointToSolutionRef(new PointToSolution());
-      GC->clobbered_set = PointToSolutionRef(new PointToSolution());
+      builtin_call->pragmas = GC->pragmas;
+      builtin_call->use_set = GC->use_set;
+      builtin_call->clobbered_set = GC->clobbered_set;
+      builtin_call->scpe = GC->scpe;
+      builtin_call->bb_index = GC->bb_index;
+      builtin_call->include_name = GC->include_name;
+      builtin_call->line_number = GC->line_number;
+      builtin_call->column_number = GC->column_number;
    }
-   else if(GetPointer<gimple_assign>(expr))
+   else if(stmt_kind == gimple_assign_K)
    {
-      auto* GA = GetPointer<gimple_assign>(expr);
+      const auto GA = GetPointerS<gimple_assign>(GET_NODE(stmt));
       if(GET_NODE(GA->op1)->get_kind() == call_expr_K || GET_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
       {
-         auto* CE = GetPointer<call_expr>(GET_NODE(GA->op1));
-         builtinGimpleCall->AddArg(CE->fn);
+         const auto CE = GetPointerS<const call_expr>(GET_CONST_NODE(GA->op1));
+         builtin_call->AddArg(CE->fn);
 
-         unsigned int HasReturnIdx = TM->new_tree_node_id();
-         HasReturnMap[TOK(TOK_VALUE)] = STR(1);
-         TM->create_tree_node(HasReturnIdx, integer_cst_K, HasReturnMap);
-         builtinGimpleCall->AddArg(TM->GetTreeReindex(HasReturnIdx));
+         const auto has_return = TM->CreateUniqueIntegerCst(1, IRman->GetSignedIntegerType());
+         builtin_call->AddArg(has_return);
 
          for(const auto& arg : CE->args)
          {
-            builtinGimpleCall->AddArg(arg);
+            builtin_call->AddArg(arg);
          }
 
-         if(auto* ssaRet = GetPointer<ssa_name>(GET_NODE(GA->op0)))
+         if(const auto ssaRet = GetPointer<const ssa_name>(GET_CONST_NODE(GA->op0)))
          {
-            retVar = TM->new_tree_node_id();
-            std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> retVarMap;
-
-            retVarMap[TOK(TOK_SRCP)] = GA->include_name + ":" + STR(GA->line_number) + ":" + STR(GA->column_number);
+            tree_nodeRef ret_var_type, ret_var_size;
+            unsigned int ret_var_algn;
             if(ssaRet->type)
             {
-               retVarMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(ssaRet->type));
-               retVarMap[TOK(TOK_SIZE)] = STR(GET_INDEX_NODE(GetPointer<type_node>(GET_NODE(ssaRet->type))->size));
-               retVarMap[TOK(TOK_ALGN)] = STR(GetPointer<type_node>(GET_NODE(ssaRet->type))->algn);
+               ret_var_type = ssaRet->type;
+               ret_var_size = GetPointerS<const type_node>(GET_CONST_NODE(ssaRet->type))->size;
+               ret_var_algn = GetPointerS<const type_node>(GET_CONST_NODE(ssaRet->type))->algn;
             }
             else
             {
-               auto* vd = GetPointer<var_decl>(GET_NODE(ssaRet->var));
-               retVarMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(vd->type));
-               retVarMap[TOK(TOK_SIZE)] = STR(GET_INDEX_NODE(GetPointer<type_node>(GET_NODE(vd->type))->size));
-               retVarMap[TOK(TOK_ALGN)] = STR(GetPointer<type_node>(GET_NODE(vd->type))->algn);
+               const auto vd = GetPointerS<const var_decl>(GET_CONST_NODE(ssaRet->var));
+               ret_var_type = vd->type;
+               ret_var_size = GetPointerS<const type_node>(GET_CONST_NODE(vd->type))->size;
+               ret_var_algn = GetPointerS<const type_node>(GET_CONST_NODE(vd->type))->algn;
             }
-            std::string var_name = std::string("__return_value_") + STR(retVar);
-            retVarMap[TOK(TOK_NAME)] = STR(GET_INDEX_NODE(IRman->create_identifier_node(var_name)));
-            retVarMap[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(GA->scpe));
-            retVarMap[TOK(TOK_USED)] = STR(1);
-            retVarMap[TOK(TOK_USE_TMPL)] = STR(-1);
-            retVarMap[TOK(TOK_STATIC_STATIC)] = STR(false);
-            retVarMap[TOK(TOK_EXTERN)] = STR(false);
-            retVarMap[TOK(TOK_STATIC)] = STR(false);
-            retVarMap[TOK(TOK_REGISTER)] = STR(false);
-            retVarMap[TOK(TOK_ARTIFICIAL)] = STR(true);
-            TM->create_tree_node(retVar, var_decl_K, retVarMap);
+            retVar = IRman->create_var_decl(
+                IRman->create_identifier_node("__return_value"), ret_var_type, GA->scpe, ret_var_size, nullptr, nullptr,
+                STR(GA->include_name + ":" + STR(GA->line_number) + ":" + STR(GA->column_number)), ret_var_algn, 1,
+                true);
 
-            GA->op1 = TM->GetTreeReindex(retVar);
+            GA->op1 = retVar;
          }
 
          if(!retVar)
          {
-            retVar = GET_INDEX_NODE(GA->op0);
+            retVar = GA->op0;
          }
 
-         unsigned int addrExprReturnValue = TM->new_tree_node_id();
-         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;
-         auto typeRetVar = TM->GetTreeReindex(tree_helper::get_type_index(TM, retVar));
-         addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_pointer_type(typeRetVar, ALGN_POINTER)));
-         addrExprReturnValueMap[TOK(TOK_OP)] = STR(retVar);
-         addrExprReturnValueMap[TOK(TOK_SRCP)] = GA->include_name + ":" + STR(GA->line_number) + ":" + STR(GA->column_number);
-         TM->create_tree_node(addrExprReturnValue, addr_expr_K, addrExprReturnValueMap);
-         builtinGimpleCall->AddArg(TM->GetTreeReindex(addrExprReturnValue));
-
-         builtinGimpleCall->memuse = GA->memuse;
-         builtinGimpleCall->memdef = GA->memdef;
-         ssa_name* ssamemdef = builtinGimpleCall->memdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->memdef)) : nullptr;
-         if(ssamemdef)
+         const auto addrExprReturnValue = TM->new_tree_node_id();
          {
-            ssamemdef->SetDefStmt(builtinCallTN);
+            std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;
+            const auto typeRetVar = tree_helper::CGetType(retVar);
+            addrExprReturnValueMap[TOK(TOK_TYPE)] =
+                STR(GET_INDEX_NODE(IRman->GetPointerType(typeRetVar, ALGN_POINTER)));
+            addrExprReturnValueMap[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(retVar));
+            addrExprReturnValueMap[TOK(TOK_SRCP)] = srcp_str;
+            TM->create_tree_node(addrExprReturnValue, addr_expr_K, addrExprReturnValueMap);
          }
+         builtin_call->AddArg(TM->GetTreeReindex(addrExprReturnValue));
 
-         builtinGimpleCall->vuses = GA->vuses;
-         builtinGimpleCall->vovers = GA->vovers;
-         builtinGimpleCall->vdef = GA->vdef;
-         ssa_name* ssavdef = builtinGimpleCall->vdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->vdef)) : nullptr;
-         if(ssavdef)
-         {
-            ssavdef->SetDefStmt(builtinCallTN);
-         }
+         builtin_call->memdef = GA->memdef;
+         builtin_call->memuse = GA->memuse;
+         builtin_call->vdef = GA->vdef;
+         builtin_call->vuses = GA->vuses;
+         builtin_call->vovers = GA->vovers;
 
-         builtinGimpleCall->pragmas = GA->pragmas;
-         builtinGimpleCall->use_set = GA->use_set;
-         builtinGimpleCall->clobbered_set = GA->clobbered_set;
-         builtinGimpleCall->scpe = GA->scpe;
-         builtinGimpleCall->bb_index = GA->bb_index;
-         builtinGimpleCall->include_name = GA->include_name;
-         builtinGimpleCall->line_number = GA->line_number;
-         builtinGimpleCall->column_number = GA->column_number;
+         builtin_call->pragmas = GA->pragmas;
+         builtin_call->use_set = GA->use_set;
+         builtin_call->clobbered_set = GA->clobbered_set;
+         builtin_call->scpe = GA->scpe;
+         builtin_call->bb_index = GA->bb_index;
+         builtin_call->include_name = GA->include_name;
+         builtin_call->line_number = GA->line_number;
+         builtin_call->column_number = GA->column_number;
 
-         GA->memuse = builtinGimpleCall->memdef;
-         GA->memdef = tree_nodeRef();
+         GA->memdef = nullptr;
+         GA->memuse = builtin_call->memdef;
+         GA->vdef = nullptr;
+         GA->vuses.clear();
+         GA->vovers.clear();
+         THROW_ASSERT(builtin_call->vdef, "Unexpected condition");
+         GA->AddVuse(builtin_call->vdef);
 
-         GA->vdef = tree_nodeRef();
-         GA->vovers = TreeNodeSet();
-         GA->vuses = TreeNodeSet();
-         THROW_ASSERT(builtinGimpleCall->vdef, "");
-         GA->vuses.insert(builtinGimpleCall->vdef);
-         GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->vdef))->AddUseStmt(stmt);
-
-         GA->pragmas = std::vector<tree_nodeRef>();
+         GA->pragmas.clear();
          GA->use_set = PointToSolutionRef(new PointToSolution());
          GA->clobbered_set = PointToSolutionRef(new PointToSolution());
       }
@@ -395,20 +358,17 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
       THROW_UNREACHABLE("Error not a gimple call or assign statement!");
    }
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding to BB" + STR(block->number) + " stmt: " + builtinCallTN->ToString());
-   block->PushBefore(builtinCallTN, stmt);
-   if(not retVar)
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Added to BB" + STR(block->number) + " " + STR(builtin_stmt));
+   block->PushBefore(builtin_stmt, stmt, AppM);
+   if(!retVar)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---removing from BB" + STR(block->number) + " stmt: " + stmt->ToString());
-      block->RemoveStmt(stmt);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Removed from BB" + STR(block->number) + " " + STR(stmt));
+      block->RemoveStmt(stmt, AppM);
    }
-}
-
-bool HWCallInjection::HasToBeExecuted() const
-{
-   if(!HasToBeExecuted0())
+   else
    {
-      return false;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Modified " + STR(stmt));
    }
-   return not already_executed;
 }

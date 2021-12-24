@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "soft-fp.h"
-
-DFtype __negdf2(DFtype a)
+static __FORCE_INLINE DFtype __negdf2(DFtype a)
 {
    FP_DECL_D(A);
    FP_DECL_D(R);

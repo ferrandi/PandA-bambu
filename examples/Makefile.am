@@ -27,15 +27,11 @@ include $(top_srcdir)/examples/onnx/onnx.am
 include $(top_srcdir)/examples/parallel_queries/parallel_queries.am
 include $(top_srcdir)/examples/pong/pong.am
 include $(top_srcdir)/examples/python-bindings/python-bindings.am
+include $(top_srcdir)/examples/rosetta/rosetta.am
+include $(top_srcdir)/examples/sha-256/sha-256.am
 include $(top_srcdir)/examples/simple_asm/simple_asm.am
 include $(top_srcdir)/examples/softfloat/softfloat.am
 include $(top_srcdir)/examples/taste/taste.am
+include $(top_srcdir)/examples/truefloat/truefloat.am
 include $(top_srcdir)/examples/VGA/VGA.am
 include $(top_srcdir)/examples/VGA_Nexys4/VGA_Nexys4.am
-include $(top_srcdir)/examples/rosetta/rosetta.am
-include $(top_srcdir)/examples/sha-256/sha-256.am
-
-examples_dir = $(pkgdatadir)/examples
-examples_arf_dir = $(examples_dir)/arf
-examples_arf__DATA = ../examples/arf/bambu.sh ../examples/arf/module.c ../examples/arf/README.txt ../examples/arf/test.xml
-

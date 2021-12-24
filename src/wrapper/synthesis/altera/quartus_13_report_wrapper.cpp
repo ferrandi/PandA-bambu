@@ -42,9 +42,6 @@
 /// Header include
 #include "quartus_13_report_wrapper.hpp"
 
-/// Autoheader include
-#include "config_HAVE_QUARTUS_13_64BIT.hpp"
-
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
 
@@ -53,7 +50,9 @@
 #define PARAM_quartus_report "quartus_report"
 
 // constructor
-Quartus13ReportWrapper::Quartus13ReportWrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : AlteraWrapper(_Param, QUARTUS_13_REPORT_TOOL_EXEC, _device, _output_dir, QUARTUS_13_REPORT_TOOL_ID)
+Quartus13ReportWrapper::Quartus13ReportWrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
+                                               const target_deviceRef& _device)
+    : AlteraWrapper(_Param, QUARTUS_13_REPORT_TOOL_EXEC, _device, _output_dir, QUARTUS_13_REPORT_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the QUARTUS_REPORT wrapper...");
 }
@@ -71,9 +70,11 @@ std::string Quartus13ReportWrapper::get_command_line(const DesignParametersRef& 
 {
    std::ostringstream s;
    s << get_tool_exec() << " -t ";
-#if HAVE_QUARTUS_13_64BIT
-   s << " --64bit ";
-#endif
+   THROW_ASSERT(Param->isOption(OPT_quartus_13_64bit), "");
+   if(Param->getOption<bool>(OPT_quartus_13_64bit))
+   {
+      s << " --64bit ";
+   }
    s << script_name;
    for(const auto& option : xml_tool_options)
    {

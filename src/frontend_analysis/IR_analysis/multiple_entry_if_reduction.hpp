@@ -122,7 +122,8 @@ class MultipleEntryIfReduction : public FunctionFrontendFlowStep
    /// Estimate the area cost of the statements of a basic block
    double GetAreaCost(const std::list<tree_nodeRef>& list_of_stmt) const;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -132,7 +133,8 @@ class MultipleEntryIfReduction : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   MultipleEntryIfReduction(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   MultipleEntryIfReduction(const ParameterConstRef _Param, const application_managerRef _AppM,
+                            unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

@@ -127,7 +127,8 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-BB_based_stg::BB_based_stg(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager)
+BB_based_stg::BB_based_stg(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId,
+                           const DesignFlowManagerConstRef _design_flow_manager)
     : STG_creator(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::BB_STG_CREATOR)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
@@ -141,12 +142,14 @@ void BB_based_stg::Initialize()
    HLS->STG = StateTransitionGraphManagerRef(new StateTransitionGraphManager(HLSMgr, HLS, parameters));
 }
 
-static void add_in_sched_order(std::list<vertex>& statement_list, vertex stmt, const ScheduleConstRef sch, const OpGraphConstRef ASSERT_PARAMETER(dfg))
+static void add_in_sched_order(std::list<vertex>& statement_list, vertex stmt, const ScheduleConstRef sch,
+                               const OpGraphConstRef ASSERT_PARAMETER(dfg))
 {
    THROW_ASSERT(sch->is_scheduled(stmt), "First vertex is not scheduled");
    auto it_end = statement_list.end();
    std::list<vertex>::iterator it;
-   THROW_ASSERT(std::find(statement_list.begin(), statement_list.end(), stmt) == statement_list.end(), "Statement already ordered: " + GET_NAME(dfg, stmt));
+   THROW_ASSERT(std::find(statement_list.begin(), statement_list.end(), stmt) == statement_list.end(),
+                "Statement already ordered: " + GET_NAME(dfg, stmt));
 
    for(it = statement_list.begin(); it != it_end; ++it)
    {
@@ -159,7 +162,8 @@ static void add_in_sched_order(std::list<vertex>& statement_list, vertex stmt, c
    statement_list.insert(it, stmt);
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> BB_based_stg::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+BB_based_stg::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -169,12 +173,14 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #if HAVE_ILP_BUILT
          if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::LIST_BASED_SCHEDULING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::LIST_BASED_SCHEDULING, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          else
 #endif
          {
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm),
+                                       HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          break;
       }
@@ -234,12 +240,16 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 
    const CallGraphManagerConstRef CGM = HLSMgr->CGetCallGraphManager();
    const auto top_functions = CGM->GetRootFunctions();
-   bool needMemoryMappedRegisters = (top_functions.find(funId) != top_functions.end() && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
-                                    (HLSMgr->hasToBeInterfaced(funId) and top_functions.find(funId) == top_functions.end()) || parameters->getOption<bool>(OPT_memory_mapped_top);
+   bool needMemoryMappedRegisters =
+       (top_functions.find(funId) != top_functions.end() &&
+        parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
+       (HLSMgr->hasToBeInterfaced(funId) and top_functions.find(funId) == top_functions.end()) ||
+       parameters->getOption<bool>(OPT_memory_mapped_top);
    bool has_registered_inputs = HLS->registered_inputs && !needMemoryMappedRegisters;
    std::string function_name = functions::get_function_name_cleaned(funId, HLSMgr);
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   if(top_function_ids.find(funId) != top_function_ids.end() and parameters->getOption<std::string>(OPT_registered_inputs) == "top")
+   if(top_function_ids.find(funId) != top_function_ids.end() and
+      parameters->getOption<std::string>(OPT_registered_inputs) == "top")
    {
       has_registered_inputs = true;
    }
@@ -254,7 +264,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    {
       has_registered_inputs = true;
    }
-   if(parameters->getOption<std::string>(OPT_registered_inputs) != "no" && !has_registered_inputs && !needMemoryMappedRegisters)
+   if(parameters->getOption<std::string>(OPT_registered_inputs) != "no" && !has_registered_inputs &&
+      !needMemoryMappedRegisters)
    {
       /// the analysis has to be performed only on the reachable functions
       /// functions to be analyzed
@@ -271,7 +282,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       for(boost::tie(ie_it, ie_it_end) = boost::in_edges(current_vertex, *subgraph); ie_it != ie_it_end; ++ie_it)
       {
          const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*ie_it, *subgraph);
-         n_call_sites += static_cast<size_t>(info->direct_call_points.size()) + static_cast<size_t>(info->indirect_call_points.size());
+         n_call_sites += static_cast<size_t>(info->direct_call_points.size()) +
+                         static_cast<size_t>(info->indirect_call_points.size());
       }
       HLS->call_sites_number = n_call_sites;
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Number of function call sites = " + STR(n_call_sites));
@@ -281,8 +293,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       {
          ;
       }
-      double mux_time_estimation = (n_levels * HLS->allocation_information->mux_time_unit(32)) + (n_levels > 0 ? controller_delay : 0);
-      if(mux_time_estimation > HLS->allocation_information->getMinimumSlack() && !is_pipelined)
+      double mux_time_estimation =
+          (n_levels * HLS->allocation_information->mux_time_unit(32)) + (n_levels > 0 ? controller_delay : 0);
+      if(mux_time_estimation > HLS->allocation_information->getMinimumSlack())
       {
          has_registered_inputs = true;
       }
@@ -310,7 +323,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          last_state[*vit] = first_state[*vit] = HLS->STG->get_exit_state();
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Building STG of BB" + STR(fbb->CGetBBNodeInfo(*vit)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Building STG of BB" + STR(fbb->CGetBBNodeInfo(*vit)->block->number));
       const BBNodeInfoConstRef operations = fbb->CGetBBNodeInfo(*vit);
       std::list<vertex> ordered_operations;
       auto ops_it_end = operations->statements_list.end();
@@ -335,7 +349,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   std::list<vertex> exec_ops, start_ops, end_ops;
                   const BBNodeInfoConstRef entry_operations = fbb->CGetBBNodeInfo(bb_src);
                   auto entry_ops_it_end = entry_operations->statements_list.end();
-                  for(auto entry_ops_it = entry_operations->statements_list.begin(); entry_ops_it_end != entry_ops_it; ++entry_ops_it)
+                  for(auto entry_ops_it = entry_operations->statements_list.begin(); entry_ops_it_end != entry_ops_it;
+                      ++entry_ops_it)
                   {
                      exec_ops.push_back(*entry_ops_it);
                      start_ops.push_back(*entry_ops_it);
@@ -344,7 +359,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   CustomOrderedSet<unsigned int> BB_ids;
                   BB_ids.insert(entry_operations->get_bb_index());
                   vertex s_cur = STG_builder->create_state(exec_ops, start_ops, end_ops, BB_ids);
-                  STG_builder->connect_state(last_state[bb_src], s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                  STG_builder->connect_state(last_state[bb_src], s_cur,
+                                             TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
                   last_state[bb_src] = s_cur;
                   break;
                }
@@ -381,11 +397,15 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                }
                const BBNodeInfoConstRef out_bb_operations = fbb->CGetBBNodeInfo(tgt);
                auto obo_it_end = out_bb_operations->statements_list.end();
-               for(auto obo_it = out_bb_operations->statements_list.begin(); obo_it_end != obo_it && can_be_removed; ++obo_it)
+               for(auto obo_it = out_bb_operations->statements_list.begin(); obo_it_end != obo_it && can_be_removed;
+                   ++obo_it)
                {
                   if((GET_TYPE(dfgRef, *obo_it) & TYPE_PHI) != 0)
                   {
-                     for(const auto& def_edge : GetPointer<const gimple_phi>(HLSMgr->get_tree_manager()->get_tree_node_const(dfgRef->CGetOpNodeInfo(*obo_it)->GetNodeId()))->CGetDefEdgesList())
+                     for(const auto& def_edge :
+                         GetPointer<const gimple_phi>(HLSMgr->get_tree_manager()->get_tree_node_const(
+                                                          dfgRef->CGetOpNodeInfo(*obo_it)->GetNodeId()))
+                             ->CGetDefEdgesList())
                      {
                         if(not def_edge.first)
                         {
@@ -407,7 +427,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
          if(already_analyzed.find(op) != already_analyzed.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Already Analyzed operation " + GET_NAME(dfgRef, op));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--Already Analyzed operation " + GET_NAME(dfgRef, op));
             continue;
          }
          const auto cstep = sch->get_cstep(op).second;
@@ -468,19 +489,28 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          for(auto& exec_op : exec_ops)
          {
             technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(exec_op));
-            technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(exec_op)->GetOperation()));
-            THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(dfgRef, exec_op));
+            technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
+                tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(exec_op)->GetOperation()));
+            THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
+                         "Time model not available for operation: " + GET_NAME(dfgRef, exec_op));
             if(!GetPointer<operation>(op_tn)->is_bounded())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NAME(dfgRef, exec_op) + " is unbounded");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---" + GET_NAME(dfgRef, exec_op) + " is unbounded");
                call_operations[s_cur].push_back(exec_op);
             }
          }
-         // THROW_ASSERT(call_operations.find(s_cur) == call_operations.end() || call_operations.find(s_cur)->second.size() <= 1, "currently only one unbounded operation per state is admitted");
+         // THROW_ASSERT(call_operations.find(s_cur) == call_operations.end() ||
+         // call_operations.find(s_cur)->second.size() <= 1, "currently only one unbounded operation per state is
+         // admitted");
          if(call_operations.find(s_cur) != call_operations.end() && call_operations.find(s_cur)->second.size())
          {
-            THROW_ASSERT(call_operations.find(s_cur) != call_operations.end() && call_operations.find(s_cur)->second.begin() != call_operations.find(s_cur)->second.end(), "unexpected condition");
-            std::list<vertex> call_ops(call_operations.find(s_cur)->second.begin(), call_operations.find(s_cur)->second.end()), empty_ops;
+            THROW_ASSERT(call_operations.find(s_cur) != call_operations.end() &&
+                             call_operations.find(s_cur)->second.begin() != call_operations.find(s_cur)->second.end(),
+                         "unexpected condition");
+            std::list<vertex> call_ops(call_operations.find(s_cur)->second.begin(),
+                                       call_operations.find(s_cur)->second.end()),
+                empty_ops;
             CustomOrderedSet<unsigned int> call_BB_ids;
             call_BB_ids.insert(operations->get_bb_index());
             vertex s_call = STG_builder->create_state(call_ops, empty_ops, call_ops, call_BB_ids);
@@ -502,17 +532,22 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             }
             else
             {
-               THROW_ASSERT(call_operations.find(previous) != call_operations.end() && call_operations.find(previous)->second.begin() != call_operations.find(previous)->second.end(), "unexpected condition");
+               THROW_ASSERT(call_operations.find(previous) != call_operations.end() &&
+                                call_operations.find(previous)->second.begin() !=
+                                    call_operations.find(previous)->second.end(),
+                            "unexpected condition");
                THROW_ASSERT(call_states.find(previous) != call_states.end(), "unexpected condition");
                CustomOrderedSet<vertex> ops;
                ops.insert(call_operations.find(previous)->second.begin(), call_operations.find(previous)->second.end());
                auto call_sets = call_states.find(previous)->second;
                for(auto& call_set : call_sets)
                {
-                  EdgeDescriptor s_e = STG_builder->connect_state(call_set, s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                  EdgeDescriptor s_e =
+                      STG_builder->connect_state(call_set, s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
                   STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, previous);
                }
-               EdgeDescriptor s_e = STG_builder->connect_state(previous, s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+               EdgeDescriptor s_e =
+                   STG_builder->connect_state(previous, s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
                STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, previous);
             }
          }
@@ -528,22 +563,29 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
          if(call_states.find(s_cur) != call_states.end())
          {
-            THROW_ASSERT(call_operations.find(s_cur) != call_operations.end() && call_operations.find(s_cur)->second.begin() != call_operations.find(s_cur)->second.end(), "unexpected condition");
-            THROW_ASSERT(call_states.find(s_cur) != call_states.end() && call_states.find(s_cur)->second.begin() != call_states.find(s_cur)->second.end(), "unexpected condition");
+            THROW_ASSERT(call_operations.find(s_cur) != call_operations.end() &&
+                             call_operations.find(s_cur)->second.begin() != call_operations.find(s_cur)->second.end(),
+                         "unexpected condition");
+            THROW_ASSERT(call_states.find(s_cur) != call_states.end() &&
+                             call_states.find(s_cur)->second.begin() != call_states.find(s_cur)->second.end(),
+                         "unexpected condition");
             vertex waiting_state = call_states.find(s_cur)->second.front();
-            EdgeDescriptor s_e = STG_builder->connect_state(s_cur, waiting_state, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+            EdgeDescriptor s_e =
+                STG_builder->connect_state(s_cur, waiting_state, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
 
             CustomOrderedSet<vertex> ops;
             ops.insert(call_operations.find(s_cur)->second.begin(), call_operations.find(s_cur)->second.end());
             STG_builder->set_unbounded_condition(s_e, NOT_ALL_FINISHED, ops, s_cur);
 
-            s_e = STG_builder->connect_state(waiting_state, waiting_state, TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
+            s_e = STG_builder->connect_state(waiting_state, waiting_state,
+                                             TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
             STG_builder->set_unbounded_condition(s_e, NOT_ALL_FINISHED, ops, s_cur);
          }
          last_state[*vit] = s_cur;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered control step " + STR(l));
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Built STG of BB" + STR(fbb->CGetBBNodeInfo(*vit)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Built STG of BB" + STR(fbb->CGetBBNodeInfo(*vit)->block->number));
    }
 
    /// connect two states belonging to different basic blocks
@@ -562,7 +604,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       {
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->" + STR(fbb->CGetBBNodeInfo(bb_tgt)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Analyzing BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->" +
+                         STR(fbb->CGetBBNodeInfo(bb_tgt)->block->number));
       vertex s_src, s_tgt;
       if(bb_src == bb_exit)
       {
@@ -609,7 +653,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             }
             for(auto& call_set : call_sets)
             {
-               EdgeDescriptor s_e1 = STG_builder->connect_state(call_set, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
+               EdgeDescriptor s_e1 =
+                   STG_builder->connect_state(call_set, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
                STG_builder->set_unbounded_condition(s_e1, ALL_FINISHED, ops, s_src);
             }
          }
@@ -622,13 +667,16 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
          else
          {
-            THROW_ASSERT(call_operations.find(s_src) != call_operations.end() && call_operations.find(s_src)->second.size() != 0, "State " + HLS->STG->get_state_name(s_src) + " does not contain any call expression");
+            THROW_ASSERT(call_operations.find(s_src) != call_operations.end() &&
+                             call_operations.find(s_src)->second.size() != 0,
+                         "State " + HLS->STG->get_state_name(s_src) + " does not contain any call expression");
             auto call_sets = call_states.find(s_src)->second;
             CustomOrderedSet<vertex> ops;
             ops.insert(call_operations.find(s_src)->second.begin(), call_operations.find(s_src)->second.end());
             for(auto& call_set : call_sets)
             {
-               EdgeDescriptor s_edge = STG_builder->connect_state(call_set, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+               EdgeDescriptor s_edge =
+                   STG_builder->connect_state(call_set, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
                STG_builder->set_unbounded_condition(s_edge, ALL_FINISHED, ops, s_src);
             }
 
@@ -677,7 +725,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             STG_builder->set_switch_condition(s_e, last_operation, labels, has_default);
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->" + STR(fbb->CGetBBNodeInfo(bb_tgt)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Analyzed BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->" +
+                         STR(fbb->CGetBBNodeInfo(bb_tgt)->block->number));
    }
    ///*****************************************************
    if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
@@ -693,17 +743,24 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       {
          if(FB_CFG_SELECTOR & fbb->GetSelector(fbbei))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing cycle starting from " + STR(fbb->CGetBBNodeInfo(boost::source(fbbei, *fbb))->block->number) + "-->" + STR(fbb->CGetBBNodeInfo(boost::target(fbbei, *fbb))->block->number));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "-->Analyzing cycle starting from " +
+                               STR(fbb->CGetBBNodeInfo(boost::source(fbbei, *fbb))->block->number) + "-->" +
+                               STR(fbb->CGetBBNodeInfo(boost::target(fbbei, *fbb))->block->number));
             vertex bbEndingCycle = boost::source(fbbei, *fbb);
             // std::cerr << "begin cycles optimization" << std::endl;
-            optimize_cycles(bbEndingCycle, first_state, last_state, global_starting_ops, global_ending_ops, global_executing_ops, global_onfly_ops);
+            optimize_cycles(bbEndingCycle, first_state, last_state, global_starting_ops, global_ending_ops,
+                            global_executing_ops, global_onfly_ops);
             // std::cerr << "end cycles optimization " << STR(instance) << std::endl;
             if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
             {
                HLS->STG->CGetStg()->WriteDot("HLS_STGraph-post" + STR(instance) + ".dot");
             }
             ++instance;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed cycle starting from " + STR(fbb->CGetBBNodeInfo(boost::source(fbbei, *fbb))->block->number) + "-->" + STR(fbb->CGetBBNodeInfo(boost::target(fbbei, *fbb))->block->number));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--Analyzed cycle starting from " +
+                               STR(fbb->CGetBBNodeInfo(boost::source(fbbei, *fbb))->block->number) + "-->" +
+                               STR(fbb->CGetBBNodeInfo(boost::target(fbbei, *fbb))->block->number));
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed cycles");
@@ -737,9 +794,17 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->State Transition Graph Information of function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Number of operations: " + STR(boost::num_vertices(*(HLSMgr->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)))));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Number of basic blocks: " + STR(boost::num_vertices(*(HLSMgr->CGetFunctionBehavior(funId)->CGetBBGraph(FunctionBehavior::BB)))));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "-->State Transition Graph Information of function " +
+                      HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
+   INDENT_OUT_MEX(
+       OUTPUT_LEVEL_VERBOSE, output_level,
+       "---Number of operations: " +
+           STR(boost::num_vertices(*(HLSMgr->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)))));
+   INDENT_OUT_MEX(
+       OUTPUT_LEVEL_VERBOSE, output_level,
+       "---Number of basic blocks: " +
+           STR(boost::num_vertices(*(HLSMgr->CGetFunctionBehavior(funId)->CGetBBGraph(FunctionBehavior::BB)))));
    HLS->STG->print_statistics();
    if(has_registered_inputs)
    {
@@ -763,7 +828,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Time to perform creation of STG: " + print_cpu_time(step_time) + " seconds");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "---Time to perform creation of STG: " + print_cpu_time(step_time) + " seconds");
    }
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
@@ -808,13 +874,16 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                bb_ending = HLS->Rsch->get_cstep_end(op).second;
             }
          }
-         bb_length.insert(CustomMap<unsigned int, ControlStep>::value_type(bb_node_info->block->number, bb_ending - bb_begin + 1));
+         bb_length.insert(
+             CustomMap<unsigned int, ControlStep>::value_type(bb_node_info->block->number, bb_ending - bb_begin + 1));
       }
 #ifndef NDEBUG
       for(const auto& basic_block : bb_length)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---BB" + STR(basic_block.first) + ": " + STR(from_strongtype_cast<unsigned int>(basic_block.second)) + " vs. " + STR(from_strongtype_cast<unsigned int>(stg_length.find(basic_block.first)->second)));
+                        "---BB" + STR(basic_block.first) + ": " +
+                            STR(from_strongtype_cast<unsigned int>(basic_block.second)) + " vs. " +
+                            STR(from_strongtype_cast<unsigned int>(stg_length.find(basic_block.first)->second)));
       }
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked BB graph - ST graph consistency");
@@ -925,13 +994,15 @@ static size_t compute_edge_increments(const StateTransitionGraphManagerRef& STG)
 void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<vertex>>& starting_ops) const
 {
    const HWDiscrepancyInfoRef discr_info = HLSMgr->RDiscr->hw_discrepancy_info;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing Efficient Path Profiling edge increments for HW discrepancy analysis");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                  "-->Computing Efficient Path Profiling edge increments for HW discrepancy analysis");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding EPP edges");
    add_EPP_edges(HLS->STG);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Added EPP edges");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing EPP edge increments");
    size_t max_path_val = compute_edge_increments(HLS->STG);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed EPP edge increments: max_path_val = " + STR(max_path_val));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                  "<--Computed EPP edge increments: max_path_val = " + STR(max_path_val));
    if(max_path_val)
    {
       size_t epp_trace_bitsize = 0;
@@ -941,7 +1012,8 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
          max_path_val >>= 1;
       } while(max_path_val);
       discr_info->fu_id_control_flow_skip.erase(funId);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---fun id " + STR(funId) + "EPP path bits " + STR(epp_trace_bitsize));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                     "---fun id " + STR(funId) + "EPP path bits " + STR(epp_trace_bitsize));
       discr_info->fu_id_to_epp_trace_bitsize[funId] = epp_trace_bitsize;
       discr_info->fu_id_to_max_epp_path_val[funId] = max_path_val;
    }
@@ -972,7 +1044,9 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
          if(not GetPointer<const operation>(op_tn)->is_bounded()) // TODO actual call, not unbounded
          {
             const auto state_id = stg_info->vertex_to_state_id.at(state_to_op.first);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is always to check because it contains an unbounded operation");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "state: S_" + STR(state_id) +
+                               " is always to check because it contains an unbounded operation");
             state_id_to_check.insert(state_id);
          }
       }
@@ -989,9 +1063,13 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
          if(not dst_dummy)
          {
             const auto dst_state_id = stg_info->vertex_to_state_id.at(dst);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(dst_state_id) + " is to check on feedback because it is the destination of a feedback edge");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "state: S_" + STR(dst_state_id) +
+                               " is to check on feedback because it is the destination of a feedback edge");
             state_id_to_check_on_feedback.insert(dst_state_id);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "edge from state: S_" + STR(stg_info->vertex_to_state_id.at(src)) + " to state: S_" + STR(dst_state_id) + " is to reset");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "edge from state: S_" + STR(stg_info->vertex_to_state_id.at(src)) + " to state: S_" +
+                               STR(dst_state_id) + " is to reset");
             reset_edges.insert(e);
          }
          else
@@ -1008,12 +1086,14 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
       if(not src_dummy)
       {
          const auto state_id = stg_info->vertex_to_state_id.at(src);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is always to check because it is before end state");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "state: S_" + STR(state_id) + " is always to check because it is before end state");
          state_id_to_check.insert(state_id);
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed states where EPP trace must be checked");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed Efficient Path Profiling edge increments for HW discrepancy analysis");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                  "<--Computed Efficient Path Profiling edge increments for HW discrepancy analysis");
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       stg->WriteDot("STG_EPP.dot");
@@ -1027,16 +1107,21 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
  * overlap the execution of the last state of the bb ending the cycle
  * with the execution of the first state of the bb that begins the cycle.
  */
-void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vertex, vertex>& first_state, CustomUnorderedMap<vertex, vertex>& last_state, std::map<vertex, std::list<vertex>>& global_starting_ops,
-                                   std::map<vertex, std::list<vertex>>& global_ending_ops, std::map<vertex, std::list<vertex>>& global_executing_ops, std::map<vertex, std::list<vertex>>& global_onfly_ops)
+void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vertex, vertex>& first_state,
+                                   CustomUnorderedMap<vertex, vertex>& last_state,
+                                   std::map<vertex, std::list<vertex>>& global_starting_ops,
+                                   std::map<vertex, std::list<vertex>>& global_ending_ops,
+                                   std::map<vertex, std::list<vertex>>& global_executing_ops,
+                                   std::map<vertex, std::list<vertex>>& global_onfly_ops)
 {
    const BBGraphConstRef fbb = HLSMgr->CGetFunctionBehavior(funId)->CGetBBGraph(FunctionBehavior::FBB);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering bbEndingCycle:" + STR(fbb->CGetBBNodeInfo(bbEndingCycle)->block->number));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "Considering bbEndingCycle:" + STR(fbb->CGetBBNodeInfo(bbEndingCycle)->block->number));
    std::list<vertex>::iterator it, findIter;
    // The last state of the cycle
    const StateTransitionGraphConstRef stg = HLS->STG->CGetStg();
    vertex lastst = last_state[bbEndingCycle];
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Last state is " + stg->CGetStateInfo(lastst)->name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Last state is " + stg->CGetStateInfo(lastst)->name);
    if(stg->CGetStateInfo(lastst)->is_duplicated)
    {
       return;
@@ -1046,7 +1131,7 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       return;
    }
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Compute the second last state of the bb");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Compute the second last state of the bb");
    /*
     Compute the second last state of the bb. After the move,
     this state will become the last state of the bb.
@@ -1056,7 +1141,8 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
    {
       return;
    }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Second last state computed " + stg->CGetStateInfo(secondLastState)->name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "Second last state computed " + stg->CGetStateInfo(secondLastState)->name);
 
    BOOST_FOREACH(EdgeDescriptor oedge, boost::out_edges(lastst, *stg))
    {
@@ -1064,16 +1150,6 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       if(stg->CGetStateInfo(cstate)->is_duplicated)
       {
          return;
-      }
-   }
-   bool first_state_cannot_be_duplicated = false;
-   BOOST_FOREACH(EdgeDescriptor oedge, boost::out_edges(first_state[bbEndingCycle], *stg))
-   {
-      vertex cstate = boost::target(oedge, *stg);
-      if(stg->CGetStateInfo(cstate)->is_dummy)
-      {
-         first_state_cannot_be_duplicated = true;
-         break;
       }
    }
    // std::cerr << "considering this last state " << stg->CGetStateInfo(lastst)->name << std::endl;
@@ -1131,7 +1207,7 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
     From now on, lastStateEndingOpList can be considered a list
     containing all the operations of the state.
     *************************************************************/
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic checks passed");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic checks passed");
    /*
     Some operations cannot be moved in any case. If any of them
     is executed in the last state, I have to return without performing
@@ -1143,18 +1219,18 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
    const OpGraphConstRef dfgRef = HLSMgr->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::DFG);
    for(it = lastStateEndingOpList.begin(); it != lastStateEndingOpList.end(); ++it)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check phi");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check phi");
       // phi operators cannot be moved
       if(GET_TYPE(dfgRef, *it) & (TYPE_PHI | TYPE_VPHI))
       {
          return;
       }
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check return");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check return");
       if(GET_TYPE(dfgRef, *it) & TYPE_RET)
       {
          return;
       }
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check switch and multi-if");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check switch and multi-if");
       // creates a list containing all the conditional operations
       if(GET_TYPE(dfgRef, *it) & (TYPE_IF))
       {
@@ -1169,9 +1245,16 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
          return; // lastStateConditionalOpList.push_back(*it);
       }
 
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check unbounded");
-      technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(*it));
-      technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(*it)->GetOperation()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check unbounded");
+      auto fu_id = HLS->Rfu->get_assign(*it);
+      /// interface operations cannot be copied or moved
+      if(HLS->allocation_information->get_fu_name(fu_id).second == INTERFACE_LIBRARY)
+      {
+         return;
+      }
+      technology_nodeRef tn = HLS->allocation_information->get_fu(fu_id);
+      technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
+          tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(*it)->GetOperation()));
       if(!GetPointer<operation>(op_tn)->is_bounded())
       {
          return;
@@ -1182,11 +1265,12 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
          has_STOREs = true;
       }
 
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check resource-constrained");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check resource-constrained");
       // operations executed by resource-constrained fu should not be moved
       if(res_const_operation(*it, lastStateExecutingOpList, lastst))
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Resource constraints limit on operation " + dfgRef->CGetOpNodeInfo(*it)->GetOperation());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "Resource constraints limit on operation " + dfgRef->CGetOpNodeInfo(*it)->GetOperation());
          return;
       }
 
@@ -1194,33 +1278,34 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
         check if the operation is chained to a conditional operation:
         in this case, I cannot optimize.
         */
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check data dependency with control operation");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check data dependency with control operation");
       BOOST_FOREACH(EdgeDescriptor ei, boost::out_edges(*it, *dfgRef))
       {
          vertex tgt_op = boost::target(ei, *dfgRef);
-         if(std::find(lastStateExecutingOpList.begin(), lastStateExecutingOpList.end(), tgt_op) == lastStateExecutingOpList.end())
+         if(std::find(lastStateExecutingOpList.begin(), lastStateExecutingOpList.end(), tgt_op) ==
+            lastStateExecutingOpList.end())
          {
             continue;
          }
          if(GET_TYPE(dfgRef, tgt_op) & (TYPE_IF))
          {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "depending if");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "depending if");
             return;
          }
          if(GET_TYPE(dfgRef, tgt_op) & (TYPE_MULTIIF))
          {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "depending multi if");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "depending multi if");
             return;
          }
          if(GET_TYPE(dfgRef, tgt_op) & (TYPE_SWITCH))
          {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "depending switch");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "depending switch");
             return;
          }
       }
    }
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Creating list of following bb");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Creating list of following bb");
    /*
     Create a list of all the bb following the last bb of the cycle
     that I am optimizing.
@@ -1276,20 +1361,21 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       // std::cerr << fbb->CGetBBNodeInfo(tempBb)->get_bb_index() << std::endl;
    }
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "check if it is possible to move the last state");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "check if it is possible to move the last state");
    /*
     check if it is possible to move the last state of the cycle at the beginning
     of every adjacent bb.
     */
    for(auto bbVertex : followingBb)
    {
-      if(!can_be_moved(lastStateEndingOpList, lastStateConditionalOpList, first_state[bbVertex], global_starting_ops, global_executing_ops))
+      if(!can_be_moved(lastStateEndingOpList, lastStateConditionalOpList, first_state[bbVertex], global_starting_ops,
+                       global_executing_ops))
       {
          return;
       }
    }
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "compute which variables are defined and used");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "compute which variables are defined and used");
    /*
     compute which variables are defined and used by the operations that will be
     moved, and check that it is possible to store in registers all the used variables
@@ -1313,7 +1399,7 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
    }
    if(is_dest_first_st_equal_to_second)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "is_dest_first_st_equal_to_second is true!");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "is_dest_first_st_equal_to_second is true!");
    }
    for(auto bbVertex : followingBb)
    {
@@ -1343,7 +1429,7 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       }
       if(skip_phi)
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Phi can be skipped!");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Phi can be skipped!");
       }
       for(auto stmt : global_ending_ops[dest_first_state])
       {
@@ -1355,7 +1441,8 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
          {
             continue;
          }
-         const CustomSet<unsigned int>& scalar_defs = dfgRef->CGetOpNodeInfo(stmt)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+         const CustomSet<unsigned int>& scalar_defs = dfgRef->CGetOpNodeInfo(stmt)->GetVariables(
+             FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
          if(not scalar_defs.empty())
          {
             for(auto tree_var : scalar_defs)
@@ -1369,6 +1456,7 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       }
    }
    std::map<vertex, std::size_t> in_degree_following_Bb;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check dummy");
    for(auto bbVertex : followingBb)
    {
       in_degree_following_Bb[bbVertex] = boost::in_degree(first_state[bbVertex], *stg);
@@ -1377,23 +1465,37 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
          return;
       }
       /// check if first state duplication is required
-      if(in_degree_following_Bb[bbVertex] > 1 && first_state_cannot_be_duplicated)
+      if(in_degree_following_Bb[bbVertex] > 1)
       {
-         return;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "src state:" + stg->CGetStateInfo(first_state[bbVertex])->name);
+         BOOST_FOREACH(EdgeDescriptor oedge, boost::out_edges(first_state[bbVertex], *stg))
+         {
+            vertex cstate = boost::target(oedge, *stg);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "target state:" + stg->CGetStateInfo(cstate)->name);
+            if(stg->CGetStateInfo(cstate)->is_dummy)
+            {
+               return;
+            }
+         }
       }
    }
 
    for(auto bbVertex : followingBb)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "analyzing BB:" + STR(fbb->CGetBBNodeInfo(bbVertex)->block->number));
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "first state:" + stg->CGetStateInfo(first_state[bbVertex])->name);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "last state:" + stg->CGetStateInfo(last_state[bbVertex])->name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "analyzing BB:" + STR(fbb->CGetBBNodeInfo(bbVertex)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "first state:" + stg->CGetStateInfo(first_state[bbVertex])->name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "last state:" + stg->CGetStateInfo(last_state[bbVertex])->name);
       if(last_state[bbVertex] == first_state[bbVertex])
       {
          BOOST_FOREACH(EdgeDescriptor ei, boost::out_edges(bbVertex, *fbb))
          {
             vertex tgtBB = boost::target(ei, *fbb);
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "target BB:" + STR(fbb->CGetBBNodeInfo(tgtBB)->block->number));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "target BB:" + STR(fbb->CGetBBNodeInfo(tgtBB)->block->number));
             if(boost::in_degree(first_state[tgtBB], *stg) > 1)
             {
                return;
@@ -1404,7 +1506,7 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
    /********************************************************
     If I arrive here, it is possible to move the last state
     *********************************************************/
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "One state can be moved!");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "One state can be moved!");
 
    /*
     Move all the conditional operations from the last state to
@@ -1434,14 +1536,17 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
     */
    for(auto bbVertex : followingBb)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "analyzing BB:" + STR(fbb->CGetBBNodeInfo(bbVertex)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "analyzing BB:" + STR(fbb->CGetBBNodeInfo(bbVertex)->block->number));
       if(in_degree_following_Bb[bbVertex] > 1)
       {
-         move_with_duplication(lastst, secondLastState, first_state[bbVertex], global_starting_ops, global_executing_ops, global_ending_ops, defSet, useSet);
+         move_with_duplication(lastst, secondLastState, first_state[bbVertex], global_starting_ops,
+                               global_executing_ops, global_ending_ops, defSet, useSet);
       }
       else
       {
-         move_without_duplication(lastst, secondLastState, first_state[bbVertex], global_starting_ops, global_executing_ops, global_ending_ops, defSet, useSet);
+         move_without_duplication(lastst, secondLastState, first_state[bbVertex], global_starting_ops,
+                                  global_executing_ops, global_ending_ops, defSet, useSet);
       }
    }
 
@@ -1449,7 +1554,7 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
     Now I can delete the last state of the bb ending the cycle,
     and all the edges entering and exiting from it
     **********************************************************/
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Deleting the last state of the cycle..");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Deleting the last state of the cycle..");
    /*
     update the last_state map
     */
@@ -1458,7 +1563,8 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
     delete the edge entering the last state
     */
    HLS->STG->STG_builder->delete_edge(secondLastState, lastst);
-   // std::cerr << "deleting egde " << stg->CGetStateInfo(secondLastState)->name << "->" << stg->CGetStateInfo(lastst)->name << std::endl;
+   // std::cerr << "deleting egde " << stg->CGetStateInfo(secondLastState)->name << "->" <<
+   // stg->CGetStateInfo(lastst)->name << std::endl;
    /*
     delete all the edges exiting the last state
     */
@@ -1471,7 +1577,8 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
    for(auto cstate : linkedStates)
    {
       HLS->STG->STG_builder->delete_edge(lastst, cstate);
-      // std::cerr << "deleting egde " << stg->CGetStateInfo(lastst)->name << "->" << stg->CGetStateInfo(*its)->name << std::endl;
+      // std::cerr << "deleting egde " << stg->CGetStateInfo(lastst)->name << "->" << stg->CGetStateInfo(*its)->name <<
+      // std::endl;
    }
 
    // std::cerr << "deleting " << stg->CGetStateInfo(lastst)->name << std::endl;
@@ -1491,7 +1598,8 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
  * This method works fine only if the list of operation contains all the
  * operations executed in a state preceding the one passed as a parameter.
  */
-bool BB_based_stg::can_be_moved(std::list<vertex>& lastStateEndingOp, std::list<vertex>& lastStateConditionalOpList, vertex firstStateNextBb, std::map<vertex, std::list<vertex>>& global_starting_ops,
+bool BB_based_stg::can_be_moved(std::list<vertex>& lastStateEndingOp, std::list<vertex>& lastStateConditionalOpList,
+                                vertex firstStateNextBb, std::map<vertex, std::list<vertex>>& global_starting_ops,
                                 std::map<vertex, std::list<vertex>>& global_executing_ops)
 {
    vertex tempDependentOp;
@@ -1540,7 +1648,9 @@ bool BB_based_stg::can_be_moved(std::list<vertex>& lastStateEndingOp, std::list<
  * because it can be solved via chaining. An instantaneous operation is
  * returned only if no stronger data dependency is found.
  */
-vertex BB_based_stg::check_data_dependency(vertex operation, vertex state, std::map<vertex, std::list<vertex>>& global_starting_ops, std::map<vertex, std::list<vertex>>& global_executing_ops)
+vertex BB_based_stg::check_data_dependency(vertex operation, vertex state,
+                                           std::map<vertex, std::list<vertex>>& global_starting_ops,
+                                           std::map<vertex, std::list<vertex>>& global_executing_ops)
 {
    std::list<vertex> StartingOpList = global_starting_ops[state];
    std::list<vertex> ExecutingOpList = global_executing_ops[state];
@@ -1672,8 +1782,9 @@ bool BB_based_stg::res_const_operation(vertex& operation, std::list<vertex>& las
  * operations included in the ignoreList will not be considered in
  * this analysis.
  */
-void BB_based_stg::compute_use_def(const std::list<vertex>& opEndingList, const std::list<vertex>& opRuningList, const std::list<vertex>& ignoreList, CustomOrderedSet<unsigned int>& useSet, CustomOrderedSet<unsigned int>& defSet,
-                                   const OpGraphConstRef data)
+void BB_based_stg::compute_use_def(const std::list<vertex>& opEndingList, const std::list<vertex>& opRuningList,
+                                   const std::list<vertex>& ignoreList, CustomOrderedSet<unsigned int>& useSet,
+                                   CustomOrderedSet<unsigned int>& defSet, const OpGraphConstRef data)
 {
    /*
     Clear useSet and defSet
@@ -1693,7 +1804,8 @@ void BB_based_stg::compute_use_def(const std::list<vertex>& opEndingList, const 
          continue;
       }
 
-      const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(cur_op)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+      const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(cur_op)->GetVariables(
+          FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
 
       for(auto tree_var : scalar_defs)
       {
@@ -1711,7 +1823,8 @@ void BB_based_stg::compute_use_def(const std::list<vertex>& opEndingList, const 
          continue;
       }
 
-      const CustomSet<unsigned int>& scalar_uses = data->CGetOpNodeInfo(cur_op)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
+      const CustomSet<unsigned int>& scalar_uses = data->CGetOpNodeInfo(cur_op)->GetVariables(
+          FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
 
       for(auto tree_var : scalar_uses)
       {
@@ -1730,16 +1843,23 @@ void BB_based_stg::compute_use_def(const std::list<vertex>& opEndingList, const 
  * An edge is created from the second last state to the destination state.
  * The state to move, and all the edges to/from it are not modified by this method.
  */
-void BB_based_stg::move_without_duplication(const vertex stateToMove, const vertex secondLastState, const vertex destinationState, const std::map<vertex, std::list<vertex>>& global_starting_ops,
-                                            const std::map<vertex, std::list<vertex>>& global_executing_ops, const std::map<vertex, std::list<vertex>>& global_ending_ops, const CustomOrderedSet<unsigned int>& defSet,
+void BB_based_stg::move_without_duplication(const vertex stateToMove, const vertex secondLastState,
+                                            const vertex destinationState,
+                                            const std::map<vertex, std::list<vertex>>& global_starting_ops,
+                                            const std::map<vertex, std::list<vertex>>& global_executing_ops,
+                                            const std::map<vertex, std::list<vertex>>& global_ending_ops,
+                                            const CustomOrderedSet<unsigned int>& defSet,
                                             const CustomOrderedSet<unsigned int>& useSet)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Moving without duplication");
    StateTransitionGraphManagerRef STGMan = HLS->STG;
    StateTransitionGraphRef stg = STGMan->GetStg();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "moving operations from state: " + STGMan->get_state_name(stateToMove));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "moving operations to state: " + STGMan->get_state_name(destinationState));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "second last state: " + STGMan->get_state_name(secondLastState));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "moving operations from state: " + STGMan->get_state_name(stateToMove));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "moving operations to state: " + STGMan->get_state_name(destinationState));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "second last state: " + STGMan->get_state_name(secondLastState));
    const auto dstStateInfo = stg->GetStateInfo(destinationState);
    dstStateInfo->moved_op_use_set = useSet;
    dstStateInfo->moved_op_def_set = defSet;
@@ -1783,10 +1903,15 @@ void BB_based_stg::move_without_duplication(const vertex stateToMove, const vert
     * create an edge from the second last state to the new state
     */
    EdgeDescriptor linkingEdge = stg->CGetEdge(stateToMove, destinationState);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "existing edge: " + STGMan->get_state_name(stateToMove) + "->" + STGMan->get_state_name(destinationState));
-   EdgeDescriptor newEdge = HLS->STG->STG_builder->connect_state(secondLastState, destinationState, stg->GetSelector(linkingEdge));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "existing edge: " + STGMan->get_state_name(stateToMove) + "->" +
+                      STGMan->get_state_name(destinationState));
+   EdgeDescriptor newEdge =
+       HLS->STG->STG_builder->connect_state(secondLastState, destinationState, stg->GetSelector(linkingEdge));
    HLS->STG->STG_builder->copy_condition(newEdge, linkingEdge);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "new edge: " + STGMan->get_state_name(secondLastState) + "->" + STGMan->get_state_name(destinationState));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "new edge: " + STGMan->get_state_name(secondLastState) + "->" +
+                      STGMan->get_state_name(destinationState));
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Moved without duplication");
    return;
@@ -1799,8 +1924,13 @@ void BB_based_stg::move_without_duplication(const vertex stateToMove, const vert
  * the states that follows the first state of the destination bb.
  * The state to move, and all the edges to/from it are not modified by this method.
  */
-void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex secondLastState, const vertex stateToClone, const std::map<vertex, std::list<vertex>>& global_starting_ops, const std::map<vertex, std::list<vertex>>& global_executing_ops,
-                                         const std::map<vertex, std::list<vertex>>& global_ending_ops, const CustomOrderedSet<unsigned int>& defSet, const CustomOrderedSet<unsigned int>& useSet)
+void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex secondLastState,
+                                         const vertex stateToClone,
+                                         const std::map<vertex, std::list<vertex>>& global_starting_ops,
+                                         const std::map<vertex, std::list<vertex>>& global_executing_ops,
+                                         const std::map<vertex, std::list<vertex>>& global_ending_ops,
+                                         const CustomOrderedSet<unsigned int>& defSet,
+                                         const CustomOrderedSet<unsigned int>& useSet)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Moving with duplication");
    StateTransitionGraphRef stg = HLS->STG->GetStg();
@@ -1808,13 +1938,16 @@ void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex 
    const auto toCloneStateInfo = stg->GetStateInfo(stateToClone);
    const auto secondLastStateInfo = stg->GetStateInfo(secondLastState);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "moving operations from state: " + toMoveStateInfo->name);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "moving operations to state: " + toCloneStateInfo->name + " that will be cloned");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "moving operations to state: " + toCloneStateInfo->name + " that will be cloned");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "second last state: " + secondLastStateInfo->name);
    unsigned int currentBbID = *toMoveStateInfo->BB_ids.begin();
    /*
     * clone the first state of the destination bb
     */
-   vertex clonedState = HLS->STG->STG_builder->create_state(toCloneStateInfo->executing_operations, toCloneStateInfo->starting_operations, toCloneStateInfo->ending_operations, toCloneStateInfo->BB_ids);
+   vertex clonedState = HLS->STG->STG_builder->create_state(
+       toCloneStateInfo->executing_operations, toCloneStateInfo->starting_operations,
+       toCloneStateInfo->ending_operations, toCloneStateInfo->BB_ids);
    // set is_duplicated to true, and saves info about the source Bb of the data
    const auto clonedStateInfo = stg->GetStateInfo(clonedState);
    clonedStateInfo->is_duplicated = true;
@@ -1826,7 +1959,8 @@ void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex 
    toCloneStateInfo->isOriginalState = true;
    toCloneStateInfo->sourceBb = currentBbID;
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "cloned state: " + toCloneStateInfo->name + " new clone: " + clonedStateInfo->name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "cloned state: " + toCloneStateInfo->name + " new clone: " + clonedStateInfo->name);
 
    {
       const auto op_it = global_executing_ops.find(stateToMove);
@@ -1865,10 +1999,15 @@ void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex 
     * create a NORMAL edge from the second last state to the new state, and set the conditions
     */
    EdgeDescriptor linkingEdge = stg->CGetEdge(stateToMove, stateToClone);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "existing edge: " + toMoveStateInfo->name + "->" + toCloneStateInfo->name);
-   EdgeDescriptor newEdge = HLS->STG->STG_builder->connect_state(secondLastState, clonedState, stateToClone != secondLastState ? stg->GetSelector(linkingEdge) : TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "existing edge: " + toMoveStateInfo->name + "->" + toCloneStateInfo->name);
+   EdgeDescriptor newEdge = HLS->STG->STG_builder->connect_state(
+       secondLastState, clonedState,
+       stateToClone != secondLastState ? stg->GetSelector(linkingEdge) :
+                                         TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
    HLS->STG->STG_builder->copy_condition(newEdge, linkingEdge);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "new edge: " + secondLastStateInfo->name + "->" + clonedStateInfo->name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "new edge: " + secondLastStateInfo->name + "->" + clonedStateInfo->name);
    /*
     * create an edge from the the new state to every state that
     * follows the first state of the destination bb
@@ -1885,15 +2024,19 @@ void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->successor: " + stg->CGetStateInfo(successor)->name);
          THROW_ASSERT(successor != stateToMove, "unexpected case");
          vertex new_successor = ((successor == stateToMove) ? clonedState : successor);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "new successor: " + stg->CGetStateInfo(new_successor)->name);
-         EdgeDescriptor new_edge = HLS->STG->STG_builder->connect_state(clonedState, new_successor, stg->GetSelector(oe));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "new successor: " + stg->CGetStateInfo(new_successor)->name);
+         EdgeDescriptor new_edge =
+             HLS->STG->STG_builder->connect_state(clonedState, new_successor, stg->GetSelector(oe));
          HLS->STG->STG_builder->copy_condition(new_edge, oe);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "new edge: " + clonedStateInfo->name + "->" + stg->CGetStateInfo(new_successor)->name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "new edge: " + clonedStateInfo->name + "->" + stg->CGetStateInfo(new_successor)->name);
          if(successor == stateToClone)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "successor: " + stg->CGetStateInfo(successor)->name);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "state to clone: " + toCloneStateInfo->name);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "all path for " + stg->CGetStateInfo(successor)->name + " set to true");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "all path for " + stg->CGetStateInfo(successor)->name + " set to true");
             stg->GetStateInfo(successor)->all_paths = true;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1913,24 +2056,26 @@ void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--state to move : " + toMoveStateInfo->name);
             continue;
          }
-         const auto sel = successor != clonedState ? stg->GetSelector(oe) : TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK;
+         const auto sel =
+             successor != clonedState ? stg->GetSelector(oe) : TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK;
          EdgeDescriptor new_edge = HLS->STG->STG_builder->connect_state(clonedState, successor, sel);
          HLS->STG->STG_builder->copy_condition(new_edge, oe);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "new edge: " + clonedStateInfo->name + "->" + stg->GetStateInfo(successor)->name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "new edge: " + clonedStateInfo->name + "->" + stg->GetStateInfo(successor)->name);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       /*
       BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(stateToMove, *stg))
       {
          vertex next_state = boost::target(oe, *stg);
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "(F)newEdge " + clonedStateInfo->name + "->" +
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "(F)newEdge " + clonedStateInfo->name + "->" +
                stg->GetStateInfo(next_state == stateToClone ?  clonedState : next_state)->name);
          EdgeDescriptor new_edge = HLS->STG->STG_builder->connect_state(clonedState,
                next_state == stateToClone ?  clonedState : next_state, stg->GetSelector(oe));
          HLS->STG->STG_builder->copy_condition(new_edge, oe);
          if(next_state != stateToClone)
          {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
             "all path for " + stg->GetStateInfo(next_state)->name + "set to true");
             stg->GetStateInfo(next_state)->all_paths = true;
          }

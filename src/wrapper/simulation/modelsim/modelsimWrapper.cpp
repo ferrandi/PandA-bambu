@@ -42,14 +42,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_MENTOR_VISUALIZER_EXE.hpp"
-#include "config_MENTOR_LICENSE.hpp"
-#include "config_MENTOR_MODELSIM_BIN.hpp"
-#include "config_MODELSIM_OPTIMIZER_FLAGS.hpp"
-#if HAVE_MENTOR_VISUALIZER_EXE
-#include "config_MENTOR_VISUALIZER_EXE.hpp"
-#endif
 /// Includes the class definition
 #include "modelsimWrapper.hpp"
 
@@ -66,6 +58,7 @@
 #include "language_writer.hpp"
 
 #include <cerrno>
+#include <cstdlib>
 #include <fstream>
 #include <unistd.h>
 
@@ -73,7 +66,9 @@
 #include "custom_set.hpp"
 #include <utility>
 
-#define MODELSIM_BIN (STR(MENTOR_MODELSIM_BIN) != "0" ? STR(MENTOR_MODELSIM_BIN) + "/" : std::string(""))
+#define MODELSIM_BIN                                                                                          \
+   (Param->isOption(OPT_mentor_modelsim_bin) ? Param->getOption<std::string>(OPT_mentor_modelsim_bin) + "/" : \
+                                               std::string(""))
 
 #define MODELSIM_VDEL (MODELSIM_BIN + "vdel")
 #define MODELSIM_VLIB (MODELSIM_BIN + "vlib")
@@ -82,8 +77,6 @@
 #define MODELSIM_VLOG (MODELSIM_BIN + "vlog")
 #define MODELSIM_VSIM (MODELSIM_BIN + "vsim")
 
-#define MENTOR_LICENSE_SET std::string("export LM_LICENSE_FILE=") + STR(MENTOR_LICENSE) + std::string(";")
-
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
@@ -91,9 +84,16 @@
 #define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/modelsim"))
 
 // constructor
-modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, std::string _suffix) : SimulationTool(_Param), suffix(std::move(_suffix))
+modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, std::string _suffix)
+    : SimulationTool(_Param), suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the modelsim wrapper...");
+   const auto lic_path = std::getenv("LM_LICENSE_FILE");
+   if(!lic_path || std::string(lic_path) == "")
+   {
+      THROW_WARNING("Mentor license file has not been specified. User must set LM_LICENSE_FILE variable to point to "
+                    "the license file location.");
+   }
    boost::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
 }
 
@@ -104,14 +104,15 @@ void modelsimWrapper::CheckExecution()
 {
 }
 
-void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
+void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
+                                     const std::list<std::string>& file_list)
 {
    THROW_ASSERT(!file_list.empty(), "File list is empty");
    std::string MODELSIM_OPTIMIZER_FLAGS_DEF;
 
-   if(STR(MODELSIM_OPTIMIZER_FLAGS) != "0")
+   if(Param->getOption<bool>(OPT_mentor_optimizer))
    {
-      MODELSIM_OPTIMIZER_FLAGS_DEF = STR(MODELSIM_OPTIMIZER_FLAGS);
+      MODELSIM_OPTIMIZER_FLAGS_DEF = "-O5";
    }
    else
    {
@@ -155,7 +156,9 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
          script << MODELSIM_VCOM;
          if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
          {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -lint -check_synthesis -fsmsingle -fsmverbose w -work work -2008 " << file;
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF +
+                          " -lint -check_synthesis -fsmsingle -fsmverbose w -work work -2008 "
+                   << file;
          }
          else
          {
@@ -171,7 +174,8 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
          script << MODELSIM_VLOG;
          if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
          {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -sv -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + file;
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF +
+                          " -sv -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + file;
          }
          else
          {
@@ -188,18 +192,13 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       }
    }
 
-   /// add modelsim license variable
-   auto mentor_license = STR(MENTOR_LICENSE);
-   if(!mentor_license.empty() && mentor_license != "0")
-   {
-      script << MENTOR_LICENSE_SET;
-   }
    script << MODELSIM_VSIM;
    if(MODELSIM_OPTIMIZER_FLAGS_DEF.empty())
    {
       if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
       {
-         script << " -c -pedanticerrors -assertdebug -do \"onerror {quit -f -code 1;}; run -all; exit -f;\" work." + top_filename + "_tb_top";
+         script << " -c -pedanticerrors -assertdebug -do \"onerror {quit -f -code 1;}; run -all; exit -f;\" work." +
+                       top_filename + "_tb_top";
       }
       else
       {
@@ -208,33 +207,40 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
    }
    else
    {
-#if HAVE_MENTOR_VISUALIZER_EXE
-      if(Param->isOption(OPT_visualizer) && Param->getOption<bool>(OPT_visualizer))
+      if(Param->isOption(OPT_mentor_visualizer))
       {
-         script << " -qwavedb=+memory+signal+class+glitch+vhdlvariable";
+         if(Param->isOption(OPT_visualizer) && Param->getOption<bool>(OPT_visualizer))
+         {
+            script << " -qwavedb=+memory+signal+class+glitch+vhdlvariable";
+         }
+         if(Param->isOption(OPT_visualizer) && Param->getOption<bool>(OPT_visualizer))
+         {
+            MODELSIM_OPTIMIZER_FLAGS_DEF += " -debug -designfile design.bin";
+         }
       }
-      if(Param->isOption(OPT_visualizer) && Param->getOption<bool>(OPT_visualizer))
-      {
-         MODELSIM_OPTIMIZER_FLAGS_DEF += " -debug -designfile design.bin";
-      }
-#endif
       if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
       {
-         script << " -c -voptargs=\"+acc -hazards " + MODELSIM_OPTIMIZER_FLAGS_DEF +
-                       R"( " -pedanticerrors -assertdebug -do "set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;" work.)" + top_filename + "_tb_top";
+         script
+             << " -c -voptargs=\"+acc -hazards " + MODELSIM_OPTIMIZER_FLAGS_DEF +
+                    R"( " -pedanticerrors -assertdebug -do "set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;" work.)" +
+                    top_filename + "_tb_top";
       }
       else
       {
-         script << " -c -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF + R"(" -do "set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;" work.)" + top_filename + "_tb_top";
+         script
+             << " -c -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF +
+                    R"(" -do "set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;" work.)" +
+                    top_filename + "_tb_top";
       }
    }
    script << " 2>&1 | tee " << log_file << std::endl << std::endl;
-#if HAVE_MENTOR_VISUALIZER_EXE
-   if(Param->isOption(OPT_visualizer) && Param->getOption<bool>(OPT_visualizer))
+   if(Param->isOption(OPT_mentor_visualizer) && Param->isOption(OPT_visualizer) &&
+      Param->getOption<bool>(OPT_visualizer))
    {
-      script << MENTOR_VISUALIZER_EXE << " +designfile +wavefile -showglitches" << std::endl << std::endl;
+      script << Param->getOption<std::string>(OPT_mentor_visualizer) << " +designfile +wavefile -showglitches"
+             << std::endl
+             << std::endl;
    }
-#endif
 }
 
 void modelsimWrapper::Clean() const

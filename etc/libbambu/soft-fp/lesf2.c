@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "single.h"
-#include "soft-fp.h"
-
-CMPtype __lesf2(SFtype a, SFtype b)
+static __FORCE_INLINE CMPtype __lesf2(SFtype a, SFtype b)
 {
    FP_DECL_EX;
    FP_DECL_S(A);
@@ -50,8 +47,3 @@ CMPtype __lesf2(SFtype a, SFtype b)
 }
 
 strong_alias(__lesf2, __ltsf2);
-
-CMPtype __float32_leif(SFtype a, SFtype b)
-{
-   return __lesf2(a, b);
-}

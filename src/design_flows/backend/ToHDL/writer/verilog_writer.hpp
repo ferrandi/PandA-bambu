@@ -91,7 +91,8 @@ class verilog_writer : public language_writer
     */
    std::string type_converter(structural_type_descriptorRef Type) override;
    /**
-    * Return a language based type string given a structural_type_descriptor for the range of the array. In case of scalar type it return an empty string.
+    * Return a language based type string given a structural_type_descriptor for the range of the array. In case of
+    * scalar type it return an empty string.
     * @param cir is the object for which the size has been computed.
     */
    std::string type_converter_size(const structural_objectRef& cir) override;
@@ -141,10 +142,12 @@ class verilog_writer : public language_writer
    /**
     * Write the initial part of the instance of a module.
     * @param cir is the module to be instanced.
-    * @param component_name is the name of the module to be instanced. It has to be specified since VHDL and verilog can print in different ways
+    * @param component_name is the name of the module to be instanced. It has to be specified since VHDL and verilog can
+    * print in different ways
     * @param write_parametrization specified if parameters have to be written
     */
-   void write_module_instance_begin(const structural_objectRef& cir, const std::string& module_name, bool write_parametrization) override;
+   void write_module_instance_begin(const structural_objectRef& cir, const std::string& module_name,
+                                    bool write_parametrization) override;
 
    /**
     * Write the ending part of the instance of a module.
@@ -156,7 +159,8 @@ class verilog_writer : public language_writer
     * @param port is the port to be bounded.
     * @param top is the component owner of the component that has the port to be bounded.
     */
-   void write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded, bool first_port_analyzed) override;
+   void write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded,
+                           bool first_port_analyzed) override;
    void write_vector_port_binding(const structural_objectRef& port, bool first_port_analyzed) override;
    /**
     * Write the end part in a module declaration.
@@ -179,12 +183,12 @@ class verilog_writer : public language_writer
    void write_io_signal_post_fix(const structural_objectRef& port, const structural_objectRef& sig) override;
    void write_io_signal_post_fix_vector(const structural_objectRef& port, const structural_objectRef& sig) override;
    /**
-    * Module can be parameterized with respect different features. Port vectors areparameterizedd with the number of port associated,
-    * while ports are parameterized in case the type is a integer with the number of bits. The id of the module is modified
-    * by adding the parameters at its end. For example an AND_GATE with a port_vector of 2 will be declared as: AND_GATE_2.
-    * Moreover, a multiplier with the first input of four bits, the second input with eight bits and an output of twelve bits will be
-    * declared as: MULT_4_8_12.
-    * Note that parametrization has a meaning only in case the functionality come from the STD technology library.
+    * Module can be parameterized with respect different features. Port vectors areparameterizedd with the number of
+    * port associated, while ports are parameterized in case the type is a integer with the number of bits. The id of
+    * the module is modified by adding the parameters at its end. For example an AND_GATE with a port_vector of 2 will
+    * be declared as: AND_GATE_2. Moreover, a multiplier with the first input of four bits, the second input with eight
+    * bits and an output of twelve bits will be declared as: MULT_4_8_12. Note that parametrization has a meaning only
+    * in case the functionality come from the STD technology library.
     * @param cir is the component to be declared.
     */
    void write_module_parametrization(const structural_objectRef& cir) override;
@@ -197,7 +201,8 @@ class verilog_writer : public language_writer
     * write the declaration of all the states of the finite state machine.
     * @param list_of_states is the list of all the states.
     */
-   void write_state_declaration(const structural_objectRef& cir, const std::list<std::string>& list_of_states, const std::string& reset_port, const std::string& reset_state, bool one_hot) override;
+   void write_state_declaration(const structural_objectRef& cir, const std::list<std::string>& list_of_states,
+                                const std::string& reset_port, const std::string& reset_state, bool one_hot) override;
    /**
     * write the present_state update process
     * @param reset_state is the reset state.
@@ -205,7 +210,9 @@ class verilog_writer : public language_writer
     * @param clock_port is the clock port.
     * @param reset_type specify the type of the reset
     */
-   void write_present_state_update(const structural_objectRef cir, const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool connect_present_next_state_signals) override;
+   void write_present_state_update(const structural_objectRef cir, const std::string& reset_state,
+                                   const std::string& reset_port, const std::string& clock_port,
+                                   const std::string& reset_type, bool connect_present_next_state_signals) override;
 
    /**
     * Write the transition and output functions.
@@ -216,8 +223,11 @@ class verilog_writer : public language_writer
     * @param end is the end iterator of the state table.
     * @param is_yosys is true when the transition table is meant for YOSYS.
     */
-   void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
-                                          std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys, const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals) override;
+   void write_transition_output_functions(
+       bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state,
+       const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
+       std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys,
+       const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals) override;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.

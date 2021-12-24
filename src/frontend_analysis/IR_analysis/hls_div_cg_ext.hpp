@@ -62,6 +62,10 @@ REF_FORWARD_DECL(tree_node);
  */
 class hls_div_cg_ext : public FunctionFrontendFlowStep
 {
+ private:
+   /// Already visited tree node (used to avoid infinite recursion)
+   CustomUnorderedSet<unsigned int> already_visited;
+
  protected:
    const tree_managerRef TreeM;
 
@@ -77,13 +81,15 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
    /**
     * Recursive examine tree node
     */
-   void recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement, const tree_manipulationRef tree_man);
+   void recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
+                            const tree_manipulationRef tree_man);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -93,7 +99,8 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
     * @param fun_id is the function index
     * @param design_flow_manager is the design flow manager
     */
-   hls_div_cg_ext(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
+   hls_div_cg_ext(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id,
+                  const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

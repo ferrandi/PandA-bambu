@@ -63,7 +63,8 @@ REF_FORWARD_DECL(function_decl_refs);
 struct function_decl_refs : public tree_node_visitor
 {
    /// default constructor
-   explicit function_decl_refs(CustomUnorderedSet<unsigned int>& _function_decl_set) : function_decl_set(_function_decl_set)
+   explicit function_decl_refs(CustomUnorderedSet<unsigned int>& _function_decl_set)
+       : function_decl_set(_function_decl_set)
    {
    }
 

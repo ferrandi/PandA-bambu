@@ -61,7 +61,8 @@
 #include "lp_solve_solver.hpp"
 #endif
 
-meilp_solver::meilp_solver() : nel(0), real_buffer(nullptr), int_buffer(nullptr), unique_column_id(0), MAX_time(0), debug_level(DEBUG_LEVEL_NONE)
+meilp_solver::meilp_solver()
+    : nel(0), real_buffer(nullptr), int_buffer(nullptr), unique_column_id(0), MAX_time(0), debug_level(DEBUG_LEVEL_NONE)
 {
 }
 

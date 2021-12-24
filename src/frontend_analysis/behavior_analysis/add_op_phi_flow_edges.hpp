@@ -32,7 +32,8 @@
  */
 /**
  * @file add_op_phi_flow_edges.hpp
- * @brief Analysis step which adds flow edges from the computation of the condition(s) of gimple_cond and gimple_multi_way_if to phi
+ * @brief Analysis step which adds flow edges from the computation of the condition(s) of gimple_cond and
+ * gimple_multi_way_if to phi
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
@@ -57,7 +58,8 @@ class AddOpPhiFlowEdges : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -67,7 +69,8 @@ class AddOpPhiFlowEdges : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   AddOpPhiFlowEdges(const application_managerRef AppM, const unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   AddOpPhiFlowEdges(const application_managerRef AppM, const unsigned int function_id,
+                     const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

@@ -67,12 +67,16 @@
 #include "fileIO.hpp"
 #include "structural_objects.hpp"
 
-XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef& _parameters, const std::string& _flow_name, const target_managerRef& _manager) : XilinxBackendFlow(_parameters, _flow_name, _manager)
+XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef& _parameters, const std::string& _flow_name,
+                                               const target_managerRef& _manager)
+    : XilinxBackendFlow(_parameters, _flow_name, _manager)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&, const structural_managerRef, const std::list<std::string>& hdl_files, const std::list<std::string>& aux_files)
+std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&, const structural_managerRef,
+                                                             const std::list<std::string>& hdl_files,
+                                                             const std::list<std::string>& aux_files)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating synthesis scripts");
    std::string synthesis_file_list;
@@ -121,7 +125,8 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    if(Param->isOption(OPT_backend_script_extensions))
    {
       actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
-      actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
+      actual_parameters->parameter_values[PARAM_backend_script_extensions] =
+          Param->getOption<std::string>(OPT_backend_script_extensions);
    }
    else
    {
@@ -153,7 +158,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    if(actual_parameters->parameter_values.find(PARAM_xst_prj_file) != actual_parameters->parameter_values.end())
    {
       const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-      std::ofstream temp_file((output_temporary_directory + "/temp_xst_prj_file0").c_str());
+      std::ofstream temp_file(output_temporary_directory + "/temp_xst_prj_file0");
       temp_file << "vhdl grlib GRLIB/grlib/stdlib/version.vhd" << std::endl;
       temp_file << "vhdl grlib GRLIB/grlib/stdlib/stdlib.vhd" << std::endl;
       temp_file << "vhdl grlib GRLIB/grlib/amba/amba.vhd" << std::endl;
@@ -180,13 +185,16 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
       temp_file << "vhdl gaisler GRLIB/gaisler/pci/pcipads.vhd" << std::endl;
       temp_file << "vhdl gaisler GRLIB/gaisler/misc/rstgen.vhd" << std::endl;
       temp_file.close();
-      const auto xst_prj_file = actual_parameters->parameter_values.find(PARAM_xst_prj_file)->second;
-      const auto cat_ret = PandaSystem(Param, "cat " + output_temporary_directory + "/temp_xst_prj_file0 " + xst_prj_file, output_temporary_directory + "/temp_xst_prj_file1");
+      const auto xst_prj_file = GetPath(actual_parameters->parameter_values.at(PARAM_xst_prj_file));
+      const auto cat_ret =
+          PandaSystem(Param, "cat " + output_temporary_directory + "/temp_xst_prj_file0 " + xst_prj_file,
+                      output_temporary_directory + "/temp_xst_prj_file1");
       if(IsError(cat_ret))
       {
          THROW_ERROR("cat of " + xst_prj_file + " failed");
       }
-      const auto mv_ret = PandaSystem(Param, "mv " + output_temporary_directory + "/temp_xst_prj_file1 " + xst_prj_file);
+      const auto mv_ret =
+          PandaSystem(Param, "mv " + output_temporary_directory + "/temp_xst_prj_file1 " + xst_prj_file);
       if(IsError(mv_ret))
       {
          THROW_ERROR("mv to " + xst_prj_file + " failed");
@@ -200,7 +208,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
 void XilinxTasteBackendFlow::create_cf(const DesignParametersRef dp, bool xst)
 {
    std::string ucf_filename = UCF_SUBDIR + dp->component_name + (xst ? ".xcf" : ".ucf");
-   std::ofstream UCF_file(ucf_filename.c_str());
+   std::ofstream UCF_file(ucf_filename);
    UCF_file << "CONFIG STEPPING=\"0\";" << std::endl;
    UCF_file << "" << std::endl;
    UCF_file << "NET resetn TIG ;" << std::endl;
@@ -257,20 +265,27 @@ void XilinxTasteBackendFlow::create_cf(const DesignParametersRef dp, bool xst)
    UCF_file << "" << std::endl;
    UCF_file << R"(NET "pci_66"      LOC = "AW14" | IOSTANDARD=LVTTL;)" << std::endl;
    UCF_file << R"(NET "pci_host"    LOC = "AV14" | IOSTANDARD=LVTTL;)" << std::endl;
-   UCF_file << R"(NET "pci_devsel"  LOC = "AV10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this devseln)" << std::endl;
-   UCF_file << R"(NET "pci_frame"   LOC = "AR9"  | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this framen)" << std::endl;
+   UCF_file << R"(NET "pci_devsel"  LOC = "AV10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this devseln)"
+            << std::endl;
+   UCF_file << R"(NET "pci_frame"   LOC = "AR9"  | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this framen)"
+            << std::endl;
    UCF_file << R"(NET "pci_gnt"     LOC = "AV13" | IOSTANDARD=LVTTL; # the PCI spec calls this gntn)" << std::endl;
    UCF_file << R"(NET "pci_req"     LOC = "AW12" | IOSTANDARD=LVTTL; # the PCI spec calls this reqn)" << std::endl;
    UCF_file << "" << std::endl;
    UCF_file << R"(NET "pci_idsel"   LOC = "AV9"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_irdy"    LOC = "AW9"  | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this" irdyn)" << std::endl;
-   UCF_file << R"(NET "pci_lock"    LOC = "AU11" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this" lockn)" << std::endl;
+   UCF_file << R"(NET "pci_irdy"    LOC = "AW9"  | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this" irdyn)"
+            << std::endl;
+   UCF_file << R"(NET "pci_lock"    LOC = "AU11" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this" lockn)"
+            << std::endl;
    UCF_file << R"(NET "pci_par"     LOC = "AW11" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_perr"    LOC = "AW10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this perrn)" << std::endl;
+   UCF_file << R"(NET "pci_perr"    LOC = "AW10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this perrn)"
+            << std::endl;
    UCF_file << R"(NET "pci_rst"     LOC = "AV8"  | IOSTANDARD=LVTTL; # the PCI spec calls this rstn)" << std::endl;
    UCF_file << R"(NET "pci_serr"    LOC = "AT11" | IOSTANDARD=PCI33_3; # the PCI spec calls this serrn)" << std::endl;
-   UCF_file << R"(NET "pci_stop"    LOC = "AV12" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this stopn)" << std::endl;
-   UCF_file << R"(NET "pci_trdy"    LOC = "AU10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this trdyn)" << std::endl;
+   UCF_file << R"(NET "pci_stop"    LOC = "AV12" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this stopn)"
+            << std::endl;
+   UCF_file << R"(NET "pci_trdy"    LOC = "AU10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this trdyn)"
+            << std::endl;
    UCF_file.close();
    if(xst)
    {

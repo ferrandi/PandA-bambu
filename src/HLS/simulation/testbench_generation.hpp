@@ -64,7 +64,8 @@ class TestbenchGeneration
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -73,7 +74,8 @@ class TestbenchGeneration
     * @param hls_mgr is the HLS manager
     * @param design_flow_manager is the design flow manager
     */
-   TestbenchGeneration(const ParameterConstRef parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   TestbenchGeneration(const ParameterConstRef parameters, const HLS_managerRef _HLSMgr,
+                       const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

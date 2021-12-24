@@ -114,3 +114,9 @@ libpthread_clangvvd_a_SOURCES = pthread.c
 libpthread_clangvvd_a_CFLAGS = --compiler=I386_CLANGVVD $(common_treegccflags_clang)
 endif
 
+if BUILD_I386_CLANG12
+pkglib_LIBRARIES += libpthread_clang12.a
+libpthread_clang12_a_SOURCES = pthread.c
+libpthread_clang12_a_CFLAGS = --compiler=I386_CLANG12 $(common_treegccflags_clang)
+endif
+

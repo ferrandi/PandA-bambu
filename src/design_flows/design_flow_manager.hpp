@@ -106,7 +106,8 @@ class DesignFlowManager
    /// The design flow graph with feedback edges
    const DesignFlowGraphConstRef feedback_design_flow_graph;
 
-   /// The set of potentially ready steps; when a step is added to set is ready to be executed, but it can become unready because of new added vertices
+   /// The set of potentially ready steps; when a step is added to set is ready to be executed, but it can become
+   /// unready because of new added vertices
    std::set<vertex, DesignFlowStepNecessitySorter> possibly_ready;
 
    /// The registered factories
@@ -126,7 +127,8 @@ class DesignFlowManager
    /// Value is the selector
    CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>> edge_history;
 
-   /// The name of each vertex (we have to store since it is possible that it cannot be recomputed at the end - for example because the corresponding task graph has been deallocated)
+   /// The name of each vertex (we have to store since it is possible that it cannot be recomputed at the end - for
+   /// example because the corresponding task graph has been deallocated)
    CustomMap<vertex, std::string> step_names;
 
    /// The accumulated times of each step
@@ -154,7 +156,8 @@ class DesignFlowManager
    /**
     * Recursively add steps and corresponding dependencies to the design flow
     * @param steps is the set of steps to be added
-    * @param unnecessary specify if the steps have to be added only as a possible precedence of other steps (i.e., they could be not executed if no step depends on them)
+    * @param unnecessary specify if the steps have to be added only as a possible precedence of other steps (i.e., they
+    * could be not executed if no step depends on them)
     */
    void RecursivelyAddSteps(const DesignFlowStepSet& steps, const bool unnecessary);
 

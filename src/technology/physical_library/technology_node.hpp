@@ -282,8 +282,8 @@ enum tec_kind
    }
 
 /**
- * Abstract pure class for the technology structure. This node and in particular its refCount type will be used to describe all
- * nodes used to build a technology description.
+ * Abstract pure class for the technology structure. This node and in particular its refCount type will be used to
+ * describe all nodes used to build a technology description.
  */
 struct technology_node
 {
@@ -308,13 +308,15 @@ struct technology_node
     * @param owner is the refcount version of this.
     * @param TM is the technology manager.
     */
-   virtual void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device) = 0;
+   virtual void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param,
+                      const target_deviceRef device) = 0;
 
    /**
     * Add a technology_node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the technology node is attached.
     */
-   virtual void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, TargetDevice_Type type) = 0;
+   virtual void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
+                       TargetDevice_Type type) = 0;
 
    /**
     * Append a technology_node to a liberty file.
@@ -394,7 +396,8 @@ struct operation : public technology_node
    /// supported types and precision of the operation, in form (name, list_of_prec).
    std::map<std::string, std::vector<unsigned int>> supported_types;
 
-   /// comma separated string with the parameter for the different implementation of the pipeline. Empty when the operation is not pipelined
+   /// comma separated string with the parameter for the different implementation of the pipeline. Empty when the
+   /// operation is not pipelined
    std::string pipe_parameters;
 
    /// comma separed string with the parameter for different portsize values.
@@ -423,7 +426,7 @@ struct operation : public technology_node
     * If the attribute "supported_types" is not defined, it will always return true.
     * @param type_name is the name of the type
     */
-   bool is_type_supported(std::string type_name) const;
+   bool is_type_supported(const std::string& type_name) const;
 
    /**
     * Checks if the specified type name is supported
@@ -431,7 +434,7 @@ struct operation : public technology_node
     * @param type_name is the name of the type
     * @param type_prec is the type precision
     */
-   bool is_type_supported(std::string type_name, unsigned int type_prec) const;
+   bool is_type_supported(const std::string& type_name, unsigned int type_prec) const;
 
    /**
     * Checks if the specified type name is supported with the max precision in type_prec.
@@ -439,7 +442,8 @@ struct operation : public technology_node
     * @param type_name is the name of the type
     * @param type_prec is the vector of type precisions
     */
-   bool is_type_supported(const std::string& type_name, const std::vector<unsigned int>& type_prec, const std::vector<unsigned int>& type_n_element) const;
+   bool is_type_supported(const std::string& type_name, const std::vector<unsigned int>& type_prec,
+                          const std::vector<unsigned int>& type_n_element) const;
 
    /**
     * Returns the supported type as a string
@@ -452,13 +456,15 @@ struct operation : public technology_node
     * @param owner is the refcount version of this.
     * @param TM is the technology manager.
     */
-   void xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param, const target_deviceRef device) override;
+   void xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param,
+              const target_deviceRef device) override;
 
    /**
     * Add a operation node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the operation is attached.
     */
-   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, const TargetDevice_Type type) override;
+   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
+               const TargetDevice_Type type) override;
 
    /**
     * Append a technology_node to a liberty file.
@@ -611,12 +617,14 @@ struct functional_unit : public technology_node
    }
 
    /**
-    * Sets the clock period adopted for the synthesis (0 means that it has been generated with unconstrained synthesis) (in ns)
+    * Sets the clock period adopted for the synthesis (0 means that it has been generated with unconstrained synthesis)
+    * (in ns)
     */
    void set_clock_period(double _clock_period);
 
    /**
-    * Returns the clock period adopted for the synthesis (0 means that it has been generated with unconstrained synthesis) (in ns)
+    * Returns the clock period adopted for the synthesis (0 means that it has been generated with unconstrained
+    * synthesis) (in ns)
     */
    double get_clock_period() const
    {
@@ -673,7 +681,8 @@ struct functional_unit : public technology_node
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
-   void xload(const xml_element* node, const technology_nodeRef fu, const ParameterConstRef Param, const target_deviceRef device) override;
+   void xload(const xml_element* node, const technology_nodeRef fu, const ParameterConstRef Param,
+              const target_deviceRef device) override;
 
 #if HAVE_BOOLEAN_PARSER_BUILT
    /**
@@ -681,14 +690,16 @@ struct functional_unit : public technology_node
     * @param definition is a string representing the functional unit
     * @param owner is the refcount version of this.
     */
-   void gload(const std::string& definition, const std::string& fu_name, technology_nodeRef owner, const ParameterConstRef Param);
+   void gload(const std::string& definition, const std::string& fu_name, technology_nodeRef owner,
+              const ParameterConstRef Param);
 #endif
 
    /**
     * Add a functional unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the functional unit is attached.
     */
-   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, const TargetDevice_Type type) override;
+   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
+               const TargetDevice_Type type) override;
 
    /**
     * Append a technology_node to a liberty file.
@@ -778,13 +789,15 @@ struct functional_unit_template : public technology_node
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
-   void xload(const xml_element* Enode, const technology_nodeRef tnd, const ParameterConstRef Param, const target_deviceRef device) override;
+   void xload(const xml_element* Enode, const technology_nodeRef tnd, const ParameterConstRef Param,
+              const target_deviceRef device) override;
 
    /**
     * Add a functional unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the functional unit is attached.
     */
-   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, TargetDevice_Type type) override;
+   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
+               TargetDevice_Type type) override;
 
    /**
     * Append a technology_node to a liberty file.
@@ -841,7 +854,16 @@ struct storage_unit : public technology_node
 #endif
 
    /// Constructor
-   storage_unit() : bits(0), words(0), read_ports(0), read_latency(0), write_ports(0), write_latency(0), readwrite_ports(0), readwrite_latency(0), area(0)
+   storage_unit()
+       : bits(0),
+         words(0),
+         read_ports(0),
+         read_latency(0),
+         write_ports(0),
+         write_latency(0),
+         readwrite_ports(0),
+         readwrite_latency(0),
+         area(0)
    {
    }
 

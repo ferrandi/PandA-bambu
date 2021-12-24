@@ -62,14 +62,8 @@ class statement_list;
 class extract_patterns : public FunctionFrontendFlowStep
 {
  private:
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
-   /**
-    * look for ternary plus expressions
-    * @param sl is the statement list
-    * @param TM is the tree manager
-    */
-   void ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM);
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -79,7 +73,8 @@ class extract_patterns : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   extract_patterns(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   extract_patterns(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id,
+                    const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

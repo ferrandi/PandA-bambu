@@ -101,7 +101,8 @@ operation::operation() : commutative(false), bounded(true), primary_inputs_regis
 
 operation::~operation() = default;
 
-void operation::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param, const target_deviceRef device)
+void operation::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param,
+                      const target_deviceRef device)
 {
    THROW_ASSERT(CE_XVM(operation_name, Enode), "An operation must have a name");
    /// name of the operation
@@ -132,19 +133,22 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
       {
          if(type == "")
          {
-            THROW_ERROR("wrong XML syntax for supported_types attribute: null type description in \"" + supported_types_string + "\" [" + operation_name + "]");
+            THROW_ERROR("wrong XML syntax for supported_types attribute: null type description in \"" +
+                        supported_types_string + "\" [" + operation_name + "]");
          }
          std::string type_name;
          std::vector<unsigned int> type_precs;
          std::vector<std::string> type_name_to_precs = SplitString(type, ":");
          if(type_name_to_precs.size() != 2)
          {
-            THROW_ERROR("wrong XML syntax for supported_types attribute around \":\" \"" + type + "\" [" + operation_name + "]");
+            THROW_ERROR("wrong XML syntax for supported_types attribute around \":\" \"" + type + "\" [" +
+                        operation_name + "]");
          }
          type_name = type_name_to_precs[0];
          if(type_name == "")
          {
-            THROW_ERROR("wrong XML syntax for supported_types attribute: missing the supported type - \"" + type + "\" [" + operation_name + "]");
+            THROW_ERROR("wrong XML syntax for supported_types attribute: missing the supported type - \"" + type +
+                        "\" [" + operation_name + "]");
          }
 
          if(type_name_to_precs[1] != "*")
@@ -157,7 +161,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
                type_precs.push_back(type_uint);
             }
          }
-         supported_types.insert(make_pair(type_name, type_precs));
+         supported_types.insert(std::make_pair(type_name, type_precs));
       }
    }
    if(CE_XVM(pipe_parameters, Enode))
@@ -235,7 +239,8 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
    }
 }
 
-void operation::xwrite(xml_element* rootnode, const technology_nodeRef, const ParameterConstRef, const TargetDevice_Type /*type*/)
+void operation::xwrite(xml_element* rootnode, const technology_nodeRef, const ParameterConstRef,
+                       const TargetDevice_Type /*type*/)
 {
    xml_element* Enode = rootnode->add_child_element(get_kind_text());
 
@@ -341,27 +346,21 @@ void operation::lef_write(std::ofstream&, const simple_indentRef)
 
 void operation::print(std::ostream& os) const
 {
-   os << " [OP: " << operation_name << " " << (time_m ? STR(time_m->get_execution_time()) : "(n.a.)") << " " << (time_m ? STR(time_m->get_initiation_time()) : "(n.a.)") << " ";
+   os << " [OP: " << operation_name << " " << (time_m ? STR(time_m->get_execution_time()) : "(n.a.)") << " "
+      << (time_m ? STR(time_m->get_initiation_time()) : "(n.a.)") << " ";
    os << (commutative ? " commutative" : " non-commutative");
    os << (bounded ? " bounded" : " unbounded") << "]";
 }
 
-bool operation::is_type_supported(std::string type_name) const
+bool operation::is_type_supported(const std::string& type_name) const
 {
-   if(supported_types.begin() != supported_types.end())
-   {
-      /// if there is at least one supported type, the given type has to be in the list
-      if(supported_types.find(type_name) == supported_types.end())
-      {
-         return false;
-      }
-   }
-   return true;
+   /// if there is at least one supported type, the given type has to be in the list
+   return supported_types.empty() || supported_types.count(type_name);
 }
 
-bool operation::is_type_supported(std::string type_name, unsigned int type_prec) const
+bool operation::is_type_supported(const std::string& type_name, unsigned int type_prec) const
 {
-   if(supported_types.begin() != supported_types.end())
+   if(!supported_types.empty())
    {
       if(!is_type_supported(type_name))
       {
@@ -369,7 +368,8 @@ bool operation::is_type_supported(std::string type_name, unsigned int type_prec)
       }
       /// check also for the precision
       auto supported_type = supported_types.find(type_name);
-      if(supported_type->second.size() > 0 && std::find(supported_type->second.begin(), supported_type->second.end(), type_prec) == supported_type->second.end())
+      if(!supported_type->second.empty() && std::find(supported_type->second.begin(), supported_type->second.end(),
+                                                      type_prec) == supported_type->second.end())
       {
          return false;
       }
@@ -377,10 +377,10 @@ bool operation::is_type_supported(std::string type_name, unsigned int type_prec)
    return true;
 }
 
-bool operation::is_type_supported(const std::string& type_name, const std::vector<unsigned int>& type_prec, const std::vector<unsigned int>& /*type_n_element*/) const
+bool operation::is_type_supported(const std::string& type_name, const std::vector<unsigned int>& type_prec,
+                                  const std::vector<unsigned int>& /*type_n_element*/) const
 {
-   unsigned int max_prec = type_prec.begin() == type_prec.end() ? 0 : *max_element(type_prec.begin(), type_prec.end());
-
+   const auto max_prec = type_prec.empty() ? 0 : *max_element(type_prec.begin(), type_prec.end());
    return is_type_supported(type_name, max_prec);
 }
 
@@ -388,7 +388,8 @@ std::string operation::get_type_supported_string() const
 {
    std::string result;
    auto supported_type_it_end = supported_types.end();
-   for(auto supported_type_it = supported_types.begin(); supported_type_it != supported_type_it_end; ++supported_type_it)
+   for(auto supported_type_it = supported_types.begin(); supported_type_it != supported_type_it_end;
+       ++supported_type_it)
    {
       if(supported_type_it != supported_types.begin())
       {
@@ -405,11 +406,17 @@ std::map<std::string, std::map<std::string, double>> operation::get_pin_to_pin_d
    return time_m->pin_to_pin_delay;
 }
 
-functional_unit::functional_unit() : logical_type(UNKNOWN), clock_period(0), clock_period_resource_fraction(1), characterization_timestamp()
+functional_unit::functional_unit()
+    : logical_type(UNKNOWN), clock_period(0), clock_period_resource_fraction(1), characterization_timestamp()
 {
 }
 
-functional_unit::functional_unit(const xml_nodeRef _XML_description) : logical_type(UNKNOWN), clock_period(0), clock_period_resource_fraction(1), XML_description(_XML_description), characterization_timestamp()
+functional_unit::functional_unit(const xml_nodeRef _XML_description)
+    : logical_type(UNKNOWN),
+      clock_period(0),
+      clock_period_resource_fraction(1),
+      XML_description(_XML_description),
+      characterization_timestamp()
 {
 }
 
@@ -430,7 +437,8 @@ void functional_unit::set_clock_period(double _clock_period)
 
 void functional_unit::set_clock_period_resource_fraction(double _clock_period_resource_fraction)
 {
-   if(std::find(ordered_attributes.begin(), ordered_attributes.end(), "clock_period_resource_fraction") == ordered_attributes.end())
+   if(std::find(ordered_attributes.begin(), ordered_attributes.end(), "clock_period_resource_fraction") ==
+      ordered_attributes.end())
    {
       ordered_attributes.push_back("clock_period_resource_fraction");
    }
@@ -450,7 +458,8 @@ void functional_unit::print(std::ostream& os) const
    }
    if(list_of_operation.size() > 0)
    {
-      std::copy(list_of_operation.begin(), list_of_operation.end(), std::ostream_iterator<const technology_nodeRef>(os, ""));
+      std::copy(list_of_operation.begin(), list_of_operation.end(),
+                std::ostream_iterator<const technology_nodeRef>(os, ""));
       PP(os, "\n");
    }
    if(area_m)
@@ -538,12 +547,14 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
 #if HAVE_CIRCUIT_BUILT
             int debug_level = Param->getOption<int>(OPT_debug_level);
             CM = structural_managerRef(new structural_manager(Param));
-            structural_type_descriptorRef build_type = structural_type_descriptorRef(new structural_type_descriptor(functional_unit_name));
+            structural_type_descriptorRef build_type =
+                structural_type_descriptorRef(new structural_type_descriptor(functional_unit_name));
             CM->set_top_info(functional_unit_name + "IDLIB", build_type);
 
             structural_objectRef obj = CM->get_circ();
             module* mobj = GetPointer<module>(obj);
-            structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+            structural_type_descriptorRef bool_type =
+                structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
 
             /// FIXME: the implementation of the following function does not exist
             //            boolean_parseY(*s, inputs, output, 0);
@@ -729,7 +740,8 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
 }
 #endif
 
-void functional_unit::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param, const target_deviceRef device)
+void functional_unit::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param,
+                            const target_deviceRef device)
 {
    TargetDevice_Type dv_type = device->get_type();
 #ifndef NDEBUG
@@ -903,7 +915,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
          if(!CM)
          {
             CM = structural_managerRef(new structural_manager(Param));
-            structural_type_descriptorRef build_type = structural_type_descriptorRef(new structural_type_descriptor(functional_unit_name));
+            structural_type_descriptorRef build_type =
+                structural_type_descriptorRef(new structural_type_descriptor(functional_unit_name));
             CM->set_top_info(functional_unit_name, build_type);
          }
          // top must be a component_o
@@ -926,7 +939,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       {
          attribute::xload(EnodeC, ordered_attributes, attributes);
 #if HAVE_CMOS_BUILT
-         /// check the attributes to determine if the cell is physical and, thus, it has not to be used for the logic synthesis
+         /// check the attributes to determine if the cell is physical and, thus, it has not to be used for the logic
+         /// synthesis
          if(dv_type == TargetDevice_Type::IC && attributes.find("dont_use") != attributes.end())
          {
             auto value = attributes["dont_use"]->get_content<bool>();
@@ -972,13 +986,15 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 
          if(attribute_map[pin_name].find("function") != attribute_map[pin_name].end())
          {
-            const std::string this_function_attribute = functional_unit_name + "_" + boost::lexical_cast<std::string>(output_pin_counter);
+            const std::string this_function_attribute =
+                functional_unit_name + "_" + boost::lexical_cast<std::string>(output_pin_counter);
             output_pin_counter++;
             ordered_attributes.push_back(this_function_attribute);
             attributes[this_function_attribute] = attribute_map[pin_name]["function"];
          }
 
-         THROW_ASSERT(attribute_map[pin_name].find("direction") != attribute_map[pin_name].end(), "Direction not stored for pin: " + functional_unit_name + "/" + pin_name);
+         THROW_ASSERT(attribute_map[pin_name].find("direction") != attribute_map[pin_name].end(),
+                      "Direction not stored for pin: " + functional_unit_name + "/" + pin_name);
 
          std::string direction = attribute_map[pin_name]["direction"]->get_content_str();
          port_o::port_direction pdir = port_o::GEN;
@@ -998,7 +1014,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
          if(!CM)
          {
             CM = structural_managerRef(new structural_manager(Param));
-            structural_type_descriptorRef build_type = structural_type_descriptorRef(new structural_type_descriptor(functional_unit_name));
+            structural_type_descriptorRef build_type =
+                structural_type_descriptorRef(new structural_type_descriptor(functional_unit_name));
             CM->set_top_info(functional_unit_name, build_type);
          }
          structural_objectRef port = CM->add_port(pin_name, pdir, CM->get_circ(), bool_type);
@@ -1020,7 +1037,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
             xml_node::convert_escaped(function);
             equation = equation + pin_name + "=" + function + ";";
             NP_functionalities[NP_functionality::EQUATION] = equation;
-            if(dv_type == TargetDevice_Type::FPGA and NP_functionalities.find(NP_functionality::VERILOG_PROVIDED) == NP_functionalities.end())
+            if(dv_type == TargetDevice_Type::FPGA and
+               NP_functionalities.find(NP_functionality::VERILOG_PROVIDED) == NP_functionalities.end())
             {
                std::string verilog = equation;
                boost::replace_all(verilog, "=", " = ");
@@ -1077,7 +1095,9 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 #if HAVE_CIRCUIT_BUILT
    for(auto& NP_functionalitie : NP_functionalities)
    {
-      CM->add_NP_functionality(CM->get_circ(), static_cast<NP_functionality::NP_functionaly_type>(NP_functionalitie.first), NP_functionalitie.second);
+      CM->add_NP_functionality(CM->get_circ(),
+                               static_cast<NP_functionality::NP_functionaly_type>(NP_functionalitie.first),
+                               NP_functionalitie.second);
    }
 #endif
 
@@ -1117,7 +1137,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
          }
          if(attributes.find("drive_strength") != attributes.end())
          {
-            GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)->set_drive_strength(attributes["drive_strength"]->get_content<double>());
+            GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)
+                ->set_drive_strength(attributes["drive_strength"]->get_content<double>());
          }
 #if HAVE_CIRCUIT_BUILT
          if(!GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)->has_timing_groups() && CM && CM->get_circ())
@@ -1130,7 +1151,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
                {
                   inputs.insert(GetPointer<module>(CM->get_circ())->get_in_port(m)->get_id());
                }
-               GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)->add_timing_group(output_name, inputs, timing_groupRef(new timing_group));
+               GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)
+                   ->add_timing_group(output_name, inputs, timing_groupRef(new timing_group));
             }
          }
 #endif
@@ -1286,7 +1308,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 #endif
 }
 
-void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, const TargetDevice_Type dv_type)
+void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
+                             const TargetDevice_Type dv_type)
 {
    xml_element* xml_name = rootnode->add_child_element("name");
    /// functional unit name
@@ -1308,30 +1331,37 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
       {
          ordered_attributes.push_back("area");
       }
-      attributes["area"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(area_value)));
+      attributes["area"] =
+          attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(area_value)));
       /// FPGA
       auto* clb = GetPointer<clb_model>(area_m);
       if(clb)
       {
          if(clb->get_resource_value(clb_model::REGISTERS) != 0.0)
          {
-            attributes["REGISTERS"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::REGISTERS))));
+            attributes["REGISTERS"] = attributeRef(new attribute(
+                attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::REGISTERS))));
          }
          if(clb->get_resource_value(clb_model::SLICE_LUTS) != 0.0)
          {
-            attributes["SLICE_LUTS"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::SLICE_LUTS))));
+            attributes["SLICE_LUTS"] = attributeRef(new attribute(
+                attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::SLICE_LUTS))));
          }
          if(clb->get_resource_value(clb_model::LUT_FF_PAIRS) != 0.0)
          {
-            attributes["LUT_FF_PAIRS"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::LUT_FF_PAIRS))));
+            attributes["LUT_FF_PAIRS"] = attributeRef(
+                new attribute(attribute::FLOAT64,
+                              boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::LUT_FF_PAIRS))));
          }
          if(clb->get_resource_value(clb_model::DSP) != 0.0)
          {
-            attributes["DSP"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::DSP))));
+            attributes["DSP"] = attributeRef(new attribute(
+                attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::DSP))));
          }
          if(clb->get_resource_value(clb_model::BRAM) != 0.0)
          {
-            attributes["BRAM"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::BRAM))));
+            attributes["BRAM"] = attributeRef(new attribute(
+                attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::BRAM))));
          }
       }
    }
@@ -1345,7 +1375,9 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
       {
          ordered_attributes.push_back("drive_strength");
       }
-      attributes["drive_strength"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(GetPointer<liberty_model>(time_m)->get_drive_strength())));
+      attributes["drive_strength"] = attributeRef(
+          new attribute(attribute::FLOAT64,
+                        boost::lexical_cast<std::string>(GetPointer<liberty_model>(time_m)->get_drive_strength())));
    }
 #endif
 
@@ -1460,11 +1492,13 @@ functional_unit_template::functional_unit_template() : FU(new functional_unit), 
 {
 }
 
-functional_unit_template::functional_unit_template(const xml_nodeRef XML_description) : FU(new functional_unit(XML_description)), no_constant_characterization(false)
+functional_unit_template::functional_unit_template(const xml_nodeRef XML_description)
+    : FU(new functional_unit(XML_description)), no_constant_characterization(false)
 {
 }
 
-void functional_unit_template::xload(const xml_element* Enode, const technology_nodeRef tnd, const ParameterConstRef Param, const target_deviceRef device)
+void functional_unit_template::xload(const xml_element* Enode, const technology_nodeRef tnd,
+                                     const ParameterConstRef Param, const target_deviceRef device)
 {
    const xml_node::node_list list_int = Enode->get_children();
    for(const auto& iter_int : list_int)
@@ -1542,7 +1576,8 @@ void functional_unit_template::xload(const xml_element* Enode, const technology_
    FU->xload(Enode, tnd, Param, device);
 }
 
-void functional_unit_template::xwrite(xml_element* rootnode, const technology_nodeRef tnd, const ParameterConstRef Param, TargetDevice_Type type)
+void functional_unit_template::xwrite(xml_element* rootnode, const technology_nodeRef tnd,
+                                      const ParameterConstRef Param, TargetDevice_Type type)
 {
    if(specialized != "")
    {

@@ -45,8 +45,6 @@
 /// Header include
 #include "ngdbuild_wrapper.hpp"
 
-#include "config_XILINX_SETTINGS.hpp"
-
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
 
@@ -55,7 +53,9 @@
 #include <iostream>
 
 // constructor
-ngdbuild_wrapper::ngdbuild_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : XilinxWrapper(_Param, NGDBUILD_TOOL_ID, _device, _output_dir, "ngdbuild")
+ngdbuild_wrapper::ngdbuild_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
+                                   const target_deviceRef& _device)
+    : XilinxWrapper(_Param, NGDBUILD_TOOL_ID, _device, _output_dir, "ngdbuild")
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the NGDBUILD wrapper...");
 }

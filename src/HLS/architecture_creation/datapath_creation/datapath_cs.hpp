@@ -49,18 +49,19 @@ class datapath_cs : public classic_datapath
    /**
     * Adds the input/output ports of the module
     */
-   void add_ports();
+   void add_ports() override;
 
  public:
    /**
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   datapath_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   datapath_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+               const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor.
     */
-   virtual ~datapath_cs();
+   virtual ~datapath_cs() override;
 };
 #endif

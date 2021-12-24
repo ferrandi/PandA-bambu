@@ -65,7 +65,8 @@ class HLSFunctionIR : public HLSIR
     * @param function_index is the index of the function to which this IR is associated
     * @param parameters is the set of input parameters
     */
-   HLSFunctionIR(const HLS_managerRef hls_manager, const unsigned int function_index, const ParameterConstRef parameters);
+   HLSFunctionIR(const HLS_managerRef hls_manager, const unsigned int function_index,
+                 const ParameterConstRef parameters);
 
    /**
     * Destructor

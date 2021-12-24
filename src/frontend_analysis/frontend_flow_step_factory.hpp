@@ -79,7 +79,8 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
     * @param design_flow_manager is the design flow manager
     * @param _Param is the set of the parameters
     */
-   FrontendFlowStepFactory(const application_managerRef AppM, const ArchManagerRef arch_manager, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   FrontendFlowStepFactory(const application_managerRef AppM, const ArchManagerRef arch_manager,
+                           const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 #endif
 
    /**
@@ -88,7 +89,8 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
     * @param design_flow_manager is the design flow manager
     * @param _Param is the set of the parameters
     */
-   FrontendFlowStepFactory(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   FrontendFlowStepFactory(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager,
+                           const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -99,7 +101,8 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
     * Create the frontend design flow steps
     * @param frontend_flow_step_types is the set of frontend flow transformation to be considered
     */
-   const DesignFlowStepSet GenerateFrontendSteps(const CustomUnorderedSet<FrontendFlowStepType>& frontend_flow_step_types) const;
+   const DesignFlowStepSet
+   GenerateFrontendSteps(const CustomUnorderedSet<FrontendFlowStepType>& frontend_flow_step_types) const;
 
    /**
     * Create the frontend design flow step
@@ -120,7 +123,8 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
     * @param design_flow_step is the type of step to be created
     * @param function_id is the index of the function
     */
-   const DesignFlowStepRef CreateFunctionFrontendFlowStep(const FrontendFlowStepType design_flow_step_type, const unsigned int function_id) const;
+   const DesignFlowStepRef CreateFunctionFrontendFlowStep(const FrontendFlowStepType design_flow_step_type,
+                                                          const unsigned int function_id) const;
 
    /**
     * Return the prefix of the steps created by the factory

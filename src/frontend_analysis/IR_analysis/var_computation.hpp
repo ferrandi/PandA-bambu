@@ -86,7 +86,8 @@ class VarComputation : public FunctionFrontendFlowStep
     * @param tree_node is the tree node to be examined
     * @param access_type is the type of the access
     */
-   void RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef tree_node, const FunctionBehavior_VariableAccessType access_type) const;
+   void RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef& tree_node,
+                           const FunctionBehavior_VariableAccessType access_type) const;
 
    /**
     * Analyze virtual operands associated with a gimple node
@@ -99,7 +100,8 @@ class VarComputation : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -109,7 +111,8 @@ class VarComputation : public FunctionFrontendFlowStep
     * @param function_id is the index of the function
     * @param design_flow_manager is the design flow manager
     */
-   VarComputation(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   VarComputation(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id,
+                  const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

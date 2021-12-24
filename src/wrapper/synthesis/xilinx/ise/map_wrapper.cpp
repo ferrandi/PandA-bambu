@@ -45,8 +45,6 @@
 /// Header include
 #include "map_wrapper.hpp"
 
-#include "config_XILINX_SETTINGS.hpp"
-
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
 
@@ -55,7 +53,9 @@
 #include <iostream>
 
 // constructor
-map_wrapper::map_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : XilinxWrapper(_Param, MAP_TOOL_ID, _device, _output_dir, "map")
+map_wrapper::map_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
+                         const target_deviceRef& _device)
+    : XilinxWrapper(_Param, MAP_TOOL_ID, _device, _output_dir, "map")
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the MAP wrapper...");
 }

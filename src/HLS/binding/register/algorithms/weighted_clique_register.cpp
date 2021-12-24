@@ -68,7 +68,9 @@
 /// utility include
 #include "cpu_time.hpp"
 
-WeightedCliqueRegisterBindingSpecialization::WeightedCliqueRegisterBindingSpecialization(const CliqueCovering_Algorithm _clique_covering_algorithm) : clique_covering_algorithm(_clique_covering_algorithm)
+WeightedCliqueRegisterBindingSpecialization::WeightedCliqueRegisterBindingSpecialization(
+    const CliqueCovering_Algorithm _clique_covering_algorithm)
+    : clique_covering_algorithm(_clique_covering_algorithm)
 {
 }
 
@@ -82,11 +84,16 @@ const std::string WeightedCliqueRegisterBindingSpecialization::GetSignature() co
    return STR(static_cast<unsigned int>(clique_covering_algorithm));
 }
 
-weighted_clique_register::weighted_clique_register(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
-                                                   const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : compatibility_based_register(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING,
-                                   _hls_flow_step_specialization ? _hls_flow_step_specialization :
-                                                                   HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(_parameters->getOption<CliqueCovering_Algorithm>(OPT_weighted_clique_register_algorithm))))
+weighted_clique_register::weighted_clique_register(
+    const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId,
+    const DesignFlowManagerConstRef _design_flow_manager,
+    const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
+    : compatibility_based_register(
+          _parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING,
+          _hls_flow_step_specialization ?
+              _hls_flow_step_specialization :
+              HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(
+                  _parameters->getOption<CliqueCovering_Algorithm>(OPT_weighted_clique_register_algorithm))))
 {
 }
 
@@ -106,8 +113,12 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    {
       START_TIME(step_time);
    }
-   const CliqueCovering_Algorithm clique_covering_algorithm = GetPointer<const WeightedCliqueRegisterBindingSpecialization>(hls_flow_step_specialization)->clique_covering_algorithm;
-   refcount<clique_covering<CG_vertex_descriptor>> register_clique = clique_covering<CG_vertex_descriptor>::create_solver(clique_covering_algorithm, HLS->storage_value_information->get_number_of_storage_values());
+   const CliqueCovering_Algorithm clique_covering_algorithm =
+       GetPointer<const WeightedCliqueRegisterBindingSpecialization>(hls_flow_step_specialization)
+           ->clique_covering_algorithm;
+   refcount<clique_covering<CG_vertex_descriptor>> register_clique =
+       clique_covering<CG_vertex_descriptor>::create_solver(
+           clique_covering_algorithm, HLS->storage_value_information->get_number_of_storage_values());
    create_compatibility_graph();
 
    auto v_it_end = verts.end();
@@ -185,9 +196,13 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Register binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  std::string("---Register allocation algorithm obtains ") + (num_registers == register_lower_bound ? "an optimal" : "a sub-optimal") + " result: " + STR(num_registers) + " registers" +
+                  "-->Register binding information for function " + FB->CGetBehavioralHelper()->get_function_name() +
+                      ":");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  std::string("---Register allocation algorithm obtains ") +
+                      (num_registers == register_lower_bound ? "an optimal" : "a sub-optimal") +
+                      " result: " + STR(num_registers) + " registers" +
                       (num_registers == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
    {
@@ -195,7 +210,8 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)

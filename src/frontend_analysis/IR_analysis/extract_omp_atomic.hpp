@@ -43,19 +43,18 @@
 /// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-#include "refcount.hpp"
-
 /**
  * Extract openmp atomic in a separate function
  */
 class ExtractOmpAtomic : public FunctionFrontendFlowStep
 {
- protected:
+ private:
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -65,7 +64,8 @@ class ExtractOmpAtomic : public FunctionFrontendFlowStep
     * @param DesignFlowManagerConstRef is the design flow manager
     * @param Param is the set of the parameters
     */
-   ExtractOmpAtomic(const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   ExtractOmpAtomic(const application_managerRef _AppM, unsigned int function_id,
+                    const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor
@@ -75,11 +75,6 @@ class ExtractOmpAtomic : public FunctionFrontendFlowStep
    /**
     * Restructures the unstructured code
     */
-   DesignFlowStep_Status InternalExec();
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   virtual void Initialize();
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif

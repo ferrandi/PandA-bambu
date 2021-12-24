@@ -35,7 +35,8 @@
  * @brief interface of loops finding algorithm
  *
  * Loops are detection described in
- * in Vugranam C. Sreedhar, Guang R. Gao, Yong-Fong Lee: Identifying Loops Using DJ Graphs. ACM Trans. Program. Lang. Syst. 18(6): 649-658 (1996)
+ * in Vugranam C. Sreedhar, Guang R. Gao, Yong-Fong Lee: Identifying Loops Using DJ Graphs. ACM Trans. Program. Lang.
+ * Syst. 18(6): 649-658 (1996)
  *
  * @author Marco Garatti <m.garatti@gmail.com>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
@@ -124,11 +125,15 @@ class Loops
     * @param node is current vertex
     * @param header is the entry of the reducible loop
     */
-   void DetectReducibleLoop(const BBGraphRef djg, CustomOrderedSet<vertex>& visited, LoopRef loop, vertex node, vertex header);
+   void DetectReducibleLoop(const BBGraphRef djg, CustomOrderedSet<vertex>& visited, LoopRef loop, vertex node,
+                            vertex header);
 
-   void DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, unsigned int max_level, std::vector<std::list<vertex>>& level_vertices_rel);
+   void DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, unsigned int max_level,
+                              std::vector<std::list<vertex>>& level_vertices_rel);
 
-   void tarjan_scc(const BBGraphRef djg, vertex v, CustomUnorderedMap<vertex, unsigned int>& dfs_order, CustomUnorderedMap<vertex, unsigned int>& lowlink, std::list<vertex>& s, CustomOrderedSet<vertex>& u, unsigned int& max_dfs);
+   void tarjan_scc(const BBGraphRef djg, vertex v, CustomUnorderedMap<vertex, unsigned int>& dfs_order,
+                   CustomUnorderedMap<vertex, unsigned int>& lowlink, std::list<vertex>& s, CustomOrderedSet<vertex>& u,
+                   unsigned int& max_dfs);
 
    bool stack_contains(std::list<vertex> stack, vertex v);
 

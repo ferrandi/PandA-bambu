@@ -4323,7 +4323,7 @@ static void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Func
                      llvm::errs() << "ERR: Cannot inline function " << cf->getName() << "\n";
                      exit(-1);
                   }
-#if __clang_major__ == 11
+#if __clang_major__ >= 11
                   llvm::CallBase* CB = llvm::dyn_cast<llvm::CallBase>(call_inst);
                   if(!llvm::InlineFunction(*CB, IFI).isSuccess())
 #else
@@ -4354,7 +4354,9 @@ static void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Func
          for(llvm::Function::iterator BBIt = f->begin(); BBIt != f->end();)
             llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
          for(llvm::Function::iterator BBIt = f->begin(); BBIt != f->end();)
-#if __clang_major__ >= 6
+#if __clang_major__ > 11
+            llvm::simplifyCFG(&*BBIt++, TTI);
+#elif __clang_major__ >= 6
             llvm::simplifyCFG(&*BBIt++, TTI, 1);
 #else
             llvm::SimplifyCFG(&*BBIt++, TTI, 1);

@@ -65,7 +65,9 @@
 #define BASHBACKEND_POWER "BASHBACKEND_POWER"
 #define BASHBACKEND_DESIGN_DELAY "BASHBACKEND_DESIGN_DELAY"
 
-BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
+BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
+                                 const target_managerRef _target)
+    : BackendFlow(_Param, _flow_name, _target)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Generic Bash Backend Flow ::.");
 
@@ -98,8 +100,10 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
       {
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/") + default_data[device_string]));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                     "---Importing default scripts for target device family: " + device_string);
+      parser = XMLDomParserRef(new XMLDomParser(
+          relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/") + default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -200,9 +204,11 @@ void BashBackendFlow::create_sdc(const DesignParametersRef dp)
 {
    std::string sdc_filename = out_dir + "/" + dp->component_name + ".sdc";
    std::ofstream SDC_file(sdc_filename.c_str());
-   if(dp->parameter_values.find(PARAM_clk_name) != dp->parameter_values.end() && !boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+   if(dp->parameter_values.find(PARAM_clk_name) != dp->parameter_values.end() &&
+      !boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
-      SDC_file << "create_clock " << dp->parameter_values[PARAM_clk_name] << " -period " << dp->parameter_values[PARAM_clk_period] << std::endl;
+      SDC_file << "create_clock " << dp->parameter_values[PARAM_clk_name] << " -period "
+               << dp->parameter_values[PARAM_clk_period] << std::endl;
    }
    else
    {
@@ -276,8 +282,11 @@ void BashBackendFlow::CheckSynthesisResults()
    {
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
    }
-   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
-      ((actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report) != actual_parameters->parameter_values.end() and ExistFile(actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report)->second))))
+   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or
+       (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
+      ((actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report) !=
+            actual_parameters->parameter_values.end() and
+        ExistFile(actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report)->second))))
    {
       CopyStdout(actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report)->second);
    }
@@ -285,7 +294,8 @@ void BashBackendFlow::CheckSynthesisResults()
 
 void BashBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
-   script << "export PANDA_DATA_INSTALLDIR=" << relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/")) << "\n";
+   script << "export PANDA_DATA_INSTALLDIR=" << relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/"))
+          << "\n";
    script << "export CURR_WORKDIR=" << GetCurrentPath() << "\n";
 
    for(auto pair : target->get_target_device()->get_bash_vars())

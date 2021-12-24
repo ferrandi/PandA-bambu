@@ -65,7 +65,8 @@
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                                       unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_LOOP_FLOW_EDGES, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -73,22 +74,23 @@ AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, cons
 
 AddOpLoopFlowEdges::~AddOpLoopFlowEdges() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddOpLoopFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+AddOpLoopFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SCALAR_SSA_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SCALAR_SSA_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP):
       case(PRECEDENCE_RELATIONSHIP):
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -102,7 +104,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 void AddOpLoopFlowEdges::Initialize()
 {
-   if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
+   if(bb_version != 0 && bb_version != function_behavior->GetBBVersion())
    {
       const OpGraphConstRef flg = function_behavior->CGetOpGraph(FunctionBehavior::FLG);
       if(boost::num_vertices(*flg) != 0)
@@ -137,7 +139,8 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
    std::list<LoopConstRef>::const_iterator loop, loop_end = loops.end();
    for(loop = loops.begin(); loop != loop_end; ++loop)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering loop " + boost::lexical_cast<std::string>((*loop)->GetId()));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                    "Considering loop " + boost::lexical_cast<std::string>((*loop)->GetId()));
       if(!(*loop)->IsReducible())
       {
          THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC, "Irreducible loops not yet supported");
@@ -166,7 +169,8 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
       const vertex header = (*loop)->GetHeader();
       const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(header);
       const std::list<vertex>& statements_list = bb_node_info->statements_list;
-      THROW_ASSERT(statements_list.size(), "Header of a loop " + boost::lexical_cast<std::string>((*loop)->GetId()) + " is empty");
+      THROW_ASSERT(statements_list.size(),
+                   "Header of a loop " + boost::lexical_cast<std::string>((*loop)->GetId()) + " is empty");
       const vertex last_statement = *(statements_list.rbegin());
 
       /// add a flow edge from the last operation of the header and the operations of the loop
@@ -174,14 +178,17 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
       auto it3_end = loop_operations[(*loop)->GetId()].end();
       for(auto it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; ++it3)
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding flow edge from " + GET_NAME(fcfg, last_statement) + " to " + GET_NAME(fcfg, *it3));
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                       "Adding flow edge from " + GET_NAME(fcfg, last_statement) + " to " + GET_NAME(fcfg, *it3));
          function_behavior->ogc->AddEdge(last_statement, *it3, FLG_SELECTOR);
       }
       /// add a feedback flow edge from the operations of the loop to the first statement of the header
       const vertex first_statement = *(statements_list.begin());
       for(auto it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; ++it3)
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding a feedback flow edge from " + GET_NAME(fcfg, *it3) + " to " + GET_NAME(fcfg, first_statement));
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                       "Adding a feedback flow edge from " + GET_NAME(fcfg, *it3) + " to " +
+                           GET_NAME(fcfg, first_statement));
          function_behavior->ogc->AddEdge(*it3, first_statement, FB_FLG_SELECTOR);
       }
    }

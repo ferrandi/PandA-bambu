@@ -58,14 +58,17 @@
 #include <boost/filesystem/operations.hpp>
 #include <fstream>
 
-SynopsysWrapper::SynopsysWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec, const target_deviceRef& _device, const std::string& _output_dir, const std::string& _default_output_dir)
+SynopsysWrapper::SynopsysWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec,
+                                 const target_deviceRef& _device, const std::string& _output_dir,
+                                 const std::string& _default_output_dir)
     : SynthesisTool(_Param, _tool_exec, _device, _output_dir, _default_output_dir)
 {
 }
 
 SynopsysWrapper::~SynopsysWrapper() = default;
 
-SynthesisToolRef SynopsysWrapper::CreateWrapper(wrapper_t type, const ParameterConstRef& Param, const target_deviceRef& device, const std::string& output_dir)
+SynthesisToolRef SynopsysWrapper::CreateWrapper(wrapper_t type, const ParameterConstRef& Param,
+                                                const target_deviceRef& device, const std::string& output_dir)
 {
    switch(type)
    {

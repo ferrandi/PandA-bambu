@@ -51,14 +51,15 @@
 /// utility include
 #include "exceptions.hpp"
 
-ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn) : TM(_TM), tn(_tn), elements_number(1), depth_level(0)
+ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn)
+    : TM(_TM), tn(_tn), elements_number(1), depth_level(0)
 {
 }
 
 unsigned int ComputeReservedMemory::GetReservedBytes() const
 {
-   const auto ptd_type = tree_helper::get_pointed_type(TM, tree_helper::get_type_index(TM, tn->index));
-   auto reservedMem = elements_number * tree_helper::size(TM, ptd_type) / 8;
+   const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
+   auto reservedMem = elements_number * tree_helper::Size(ptd_type) / 8;
    return reservedMem ? reservedMem : 1;
 }
 

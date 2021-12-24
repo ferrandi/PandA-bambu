@@ -14,9 +14,11 @@ double f(struct s1 *a, struct s2 *b)
 
 int main()
 {
+#ifndef __llvm__
   union u a;
   a.x.d = 0.0;
   if (f (&a.x, &a.y) != 2.0)
     abort ();
+#endif
   return 0;
 }

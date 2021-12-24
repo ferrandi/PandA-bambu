@@ -101,7 +101,9 @@
 #include "copyrights_strings.hpp"
 #include "string_manipulation.hpp"
 
-pipeline_controller::pipeline_controller(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+pipeline_controller::pipeline_controller(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                         unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
+                                         const HLSFlowStep_Type _hls_flow_step_type)
     : ControllerCreatorBaseStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -119,7 +121,8 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
 
    const std::string function_name = FB->CGetBehavioralHelper()->get_function_name();
    /// main circuit type
-   structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor("controller_" + function_name));
+   structural_type_descriptorRef module_type =
+       structural_type_descriptorRef(new structural_type_descriptor("controller_" + function_name));
    structural_managerRef SM = this->HLS->controller;
    SM->set_top_info("Controller_i", module_type);
    structural_objectRef circuit = SM->get_circ();
@@ -135,7 +138,8 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
 
    std::string name = "controller_" + function_name;
    std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_SHIFT);
-   structural_objectRef controller = SM->add_module_from_technology_library(name, register_SHIFT, library, circuit, HLS->HLS_T->get_technology_manager());
+   structural_objectRef controller = SM->add_module_from_technology_library(name, register_SHIFT, library, circuit,
+                                                                            HLS->HLS_T->get_technology_manager());
    controller->SetParameter("CONTROLLER_LENGTH", std::to_string(num_states));
    const StateTransitionGraphConstRef astg = HLS->STG->CGetAstg();
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
@@ -147,7 +151,8 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
    boost::tie(oe, oend) = boost::out_edges(entry, *astg);
    /// Getting first state (initial one). It will be also first state for resetting
    vertex first_state = boost::target(*oe, *astg);
-   THROW_ASSERT(std::find(working_list.begin(), working_list.end(), first_state) != working_list.end(), "unexpected case");
+   THROW_ASSERT(std::find(working_list.begin(), working_list.end(), first_state) != working_list.end(),
+                "unexpected case");
    working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
    std::map<unsigned int, structural_objectRef> null_values;
@@ -157,8 +162,10 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
       for(const auto& op : operations)
       {
          technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
-         technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(data->CGetOpNodeInfo(op)->GetOperation()));
-         THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(data, op));
+         technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
+             tree_helper::normalized_ID(data->CGetOpNodeInfo(op)->GetOperation()));
+         THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
+                      "Time model not available for operation: " + GET_NAME(data, op));
          structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;
          if(!CM)
          {
@@ -177,8 +184,10 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
             THROW_ASSERT(portObj, "null object");
             if(null_values.find(GET_TYPE_SIZE(portObj)) == null_values.end())
             {
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding null value for bitsize " + STR(GET_TYPE_SIZE(portObj)));
-               structural_objectRef const_obj = SM->add_constant("null_value_" + STR(GET_TYPE_SIZE(portObj)), circuit, portObj->get_typeRef(), STR(0));
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                             "Adding null value for bitsize " + STR(GET_TYPE_SIZE(portObj)));
+               structural_objectRef const_obj = SM->add_constant("null_value_" + STR(GET_TYPE_SIZE(portObj)), circuit,
+                                                                 portObj->get_typeRef(), STR(0));
                null_values[GET_TYPE_SIZE(portObj)] = const_obj;
             }
             SM->add_connection(portObj, null_values[GET_TYPE_SIZE(portObj)]);
@@ -194,7 +203,8 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
    structural_objectRef port_strt = controller->find_member("in1", port_o_K, controller);
    SM->add_connection(start_port, port_strt);
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Created a shift register with " + std::to_string(num_states) + " bits as pipeline controller");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                 "Created a shift register with " + std::to_string(num_states) + " bits as pipeline controller");
 
    out_ports.clear();
    mu_ports.clear();

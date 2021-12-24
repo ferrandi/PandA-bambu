@@ -1,42 +1,9 @@
 EXTRA_DIST += \
-%D%/softfloat_list\
-%D%/softfloat_list_lattice\
-%D%/ECP3_constraints/constraints.xml\
-%D%/src/fsum.c\
-%D%/src/fdiv.c\
-%D%/src/f64mul.c\
-%D%/src/f64div.c\
-%D%/src/f64sum.c\
-%D%/src/fmul.c\
-%D%/src/fsub.c\
-%D%/src/f64sub.c\
-%D%/README.txt\
-%D%/5CSEMA5F31C6_06.6_OSF_sdc_flopoco.sh\
-%D%/5CSEMA5F31C6_06.6_OSF_sdc.sh\
-%D%/5CSEMA5F31C6_10.0_OSF_sdc_flopoco.sh\
-%D%/5CSEMA5F31C6_10.0_OSF_sdc.sh\
-%D%/5SGXEA7N2F45C1_03.3_OSF_sdc_flopoco.sh\
-%D%/5SGXEA7N2F45C1_03.3_OSF_sdc.sh\
-%D%/5SGXEA7N2F45C1_10.0_OSF_sdc_flopoco.sh\
-%D%/5SGXEA7N2F45C1_10.0_OSF_sdc.sh\
-%D%/all.sh\
-%D%/altera.sh\
-%D%/EP2C70F896C6-R_10.0_OSF_sdc_flopoco.sh\
-%D%/EP2C70F896C6-R_10.0_OSF_sdc.sh\
-%D%/lattice.sh\
-%D%/LFE335EA8FN484C_10.0_OSF_sdc_flopoco.sh\
-%D%/LFE335EA8FN484C_10.0_OSF_sdc.sh\
-%D%/xc7vx330t-1ffg1157_10.0_OSF_sdc_flopoco.sh\
-%D%/xc7vx330t-1ffg1157_10.0_OSF_sdc.sh\
-%D%/xc7vx690t-3ffg1930-VVD_02.5_OSF_sdc_flopoco.sh\
-%D%/xc7vx690t-3ffg1930-VVD_02.5_OSF_sdc.sh\
-%D%/xc7vx690t-3ffg1930-VVD_10.0_OSF_sdc_flopoco.sh\
-%D%/xc7vx690t-3ffg1930-VVD_10.0_OSF_sdc.sh\
-%D%/xc7z020-1clg484-VVD_05.0_OSF_sdc_flopoco.sh\
-%D%/xc7z020-1clg484-VVD_05.0_OSF_sdc.sh\
-%D%/xc7z020-1clg484-VVD_10.0_OSF_sdc_flopoco.sh\
-%D%/xc7z020-1clg484-VVD_10.0_OSF_sdc.sh\
-%D%/xilinx.sh \
+%D%/ECP3_constraints \
+%D%/ECP3_constraints/constraints.xml \
+%D%/generic_softfloat.sh \
+%D%/generic_softfloat_flopoco.sh \
+%D%/README.txt \
 %D%/softfloat_5CSEMA5F31C6_06.6_OSF_sdc.tex \
 %D%/softfloat_5CSEMA5F31C6_06.6_OSF_sdc_flopoco.tex \
 %D%/softfloat_5CSEMA5F31C6_10.0_OSF_sdc.tex \
@@ -47,6 +14,10 @@ EXTRA_DIST += \
 %D%/softfloat_5SGXEA7N2F45C1_10.0_OSF_sdc_flopoco.tex \
 %D%/softfloat_EP2C70F896C6-R_10.0_OSF_sdc.tex \
 %D%/softfloat_EP2C70F896C6-R_10.0_OSF_sdc_flopoco.tex \
+%D%/softfloat_LFE335EA8FN484C_10.0_OSF_sdc.tex \
+%D%/softfloat_LFE335EA8FN484C_10.0_OSF_sdc_flopoco.tex \
+%D%/softfloat_list \
+%D%/softfloat_list_lattice \
 %D%/softfloat_xc7vx330t-1ffg1157_10.0_OSF_sdc.tex \
 %D%/softfloat_xc7vx330t-1ffg1157_10.0_OSF_sdc_flopoco.tex \
 %D%/softfloat_xc7vx690t-3ffg1930-VVD_02.5_OSF_sdc.tex \
@@ -56,6 +27,13 @@ EXTRA_DIST += \
 %D%/softfloat_xc7z020-1clg484-VVD_05.0_OSF_sdc.tex \
 %D%/softfloat_xc7z020-1clg484-VVD_05.0_OSF_sdc_flopoco.tex \
 %D%/softfloat_xc7z020-1clg484-VVD_10.0_OSF_sdc.tex \
-%D%/softfloat_xc7z020-1clg484-VVD_10.0_OSF_sdc_flopoco.tex\
-%D%/softfloat_LFE335EA8FN484C_10.0_OSF_sdc_flopoco.tex\
-%D%/softfloat_LFE335EA8FN484C_10.0_OSF_sdc.tex
+%D%/softfloat_xc7z020-1clg484-VVD_10.0_OSF_sdc_flopoco.tex \
+%D%/src \
+%D%/src/f64div.c \
+%D%/src/f64mul.c \
+%D%/src/f64sub.c \
+%D%/src/f64sum.c \
+%D%/src/fdiv.c \
+%D%/src/fmul.c \
+%D%/src/fsub.c \
+%D%/src/fsum.c

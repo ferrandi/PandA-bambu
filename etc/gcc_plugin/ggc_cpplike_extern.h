@@ -7,6 +7,7 @@ struct GTY((for_user)) dg_descriptor_tree {
 struct GTY((for_user)) tree_2_ints {
   tree key;
   unsigned int value;
+  unsigned int has_body;
   unsigned int ann;
 };
 

@@ -1,2 +1,1 @@
 EXTRA_DIST += %D%/bambu.sh %D%/test.xml %D%/euclid.copy.f  %D%/euclid.f %D%/README.txt %D%/test.copy.xml
-TESTS+=%D%/bambu.sh

@@ -83,7 +83,8 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
     * Function that print the name and the operation performed by the vertex.
     * @param os is the output stream
     */
-   virtual void print_rowHead(std::ostream& os, const graph* data, typename vertex2obj<data_obj>::const_iterator& it) const
+   virtual void print_rowHead(std::ostream& os, const graph* data,
+                              typename vertex2obj<data_obj>::const_iterator& it) const
    {
       if(data)
       {

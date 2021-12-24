@@ -78,7 +78,8 @@ void reg_binding_cs::specialise_reg(structural_objectRef& reg, unsigned int r)
       selector_port->type_resize(static_cast<unsigned>(dimension)); // selector
    }
    GetPointer<module>(reg)->SetParameter("n_elements", STR(mem_dimension));
-   for(unsigned int j = 0; j < GetPointer<module>(reg)->get_in_port_size(); j++) // connect input scheduler with datapath input
+   for(unsigned int j = 0; j < GetPointer<module>(reg)->get_in_port_size();
+       j++) // connect input scheduler with datapath input
    {
       structural_objectRef port_i = GetPointer<module>(reg)->get_in_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();

@@ -62,7 +62,8 @@ class DesignFlow : public DesignFlowStep
     * @param design_flow_type is the type of the flow
     * @param parameters is the set of the parameters
     */
-   DesignFlow(const DesignFlowManagerConstRef design_flow_manager, const DesignFlow_Type design_flow_type, const ParameterConstRef parameters);
+   DesignFlow(const DesignFlowManagerConstRef design_flow_manager, const DesignFlow_Type design_flow_type,
+              const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -74,7 +75,8 @@ class DesignFlow : public DesignFlowStep
     * @param relationship is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Compute the signature of a step

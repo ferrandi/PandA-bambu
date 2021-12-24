@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "single.h"
-#include "soft-fp.h"
-
-SFtype __subsf3(SFtype a, SFtype b)
+static __FORCE_INLINE SFtype __subsf3(SFtype a, SFtype b)
 {
    FP_DECL_EX;
    FP_DECL_S(A);
@@ -47,9 +44,4 @@ SFtype __subsf3(SFtype a, SFtype b)
    FP_HANDLE_EXCEPTIONS;
 
    return r;
-}
-
-SFtype __float32_subif(SFtype a, SFtype b)
-{
-   return __subsf3(a, b);
 }

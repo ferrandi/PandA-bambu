@@ -54,7 +54,8 @@ class CompleteBBGraph : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -64,7 +65,8 @@ class CompleteBBGraph : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param _Param is the set of the parameters
     */
-   CompleteBBGraph(const application_managerRef AppM, const unsigned int function_index, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   CompleteBBGraph(const application_managerRef AppM, const unsigned int function_index,
+                   const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

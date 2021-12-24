@@ -267,7 +267,8 @@ class xml_child : public xml_node
    xml_text_node* add_child_text(const std::string& content);
 
    /** Get the first child text content node.
-    * This is a convenience method, meant as an alternative to iterating over all the child nodes to find the first suitable node then and getting the text directly.
+    * This is a convenience method, meant as an alternative to iterating over all the child nodes to find the first
+    * suitable node then and getting the text directly.
     * @returns The first text node, if any.
     */
    xml_text_node* get_child_text()
@@ -276,7 +277,8 @@ class xml_child : public xml_node
    }
 
    /** Get the first child text content node.
-    * This is a convenience method, meant as an alternative to iterating over all the child nodes to find the first suitable node then and getting the text directly.
+    * This is a convenience method, meant as an alternative to iterating over all the child nodes to find the first
+    * suitable node then and getting the text directly.
     * @returns The first text node, if any.
     */
    const xml_text_node* get_child_text() const

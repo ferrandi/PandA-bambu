@@ -59,7 +59,9 @@
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
 
-ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
+ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
+                                 const target_managerRef _target)
+    : BackendFlow(_Param, _flow_name, _target)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating ASIC Backend Flow ::.");
 
@@ -79,7 +81,8 @@ ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::stri
    else
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Importing default scripts for target technology: \"Nangate\"");
-      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/") + default_data["Nangate"]));
+      parser = XMLDomParserRef(new XMLDomParser(
+          relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/") + default_data["Nangate"]));
    }
    parse_flow(parser);
 }
@@ -90,9 +93,11 @@ void ASICBackendFlow::create_sdc(const DesignParametersRef dp)
 {
    std::string sdc_filename = out_dir + "/" + dp->component_name + ".sdc";
    std::ofstream SDC_file(sdc_filename.c_str());
-   if(dp->parameter_values.find(PARAM_clk_name) != dp->parameter_values.end() && !boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+   if(dp->parameter_values.find(PARAM_clk_name) != dp->parameter_values.end() &&
+      !boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
-      SDC_file << "create_clock " << dp->parameter_values[PARAM_clk_name] << " -period " << dp->parameter_values[PARAM_clk_period] << std::endl;
+      SDC_file << "create_clock " << dp->parameter_values[PARAM_clk_name] << " -period "
+               << dp->parameter_values[PARAM_clk_period] << std::endl;
    }
    else
    {

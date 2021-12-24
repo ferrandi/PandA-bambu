@@ -34,7 +34,7 @@
  * @file Range.cpp
  * @brief
  *
- * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -44,6 +44,7 @@
 #include "Range.hpp"
 
 #include "exceptions.hpp"
+#include "math_function.hpp"
 #include "string_manipulation.hpp"
 #include "tree_node.hpp"
 
@@ -384,13 +385,16 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
    auto manip = [&](const std::deque<bit_lattice>& bv_in) {
       if(bv_in.size() < bitwidth)
       {
-         return APInt(bitstring_to_int(BitLatticeManipulator::sign_extend_bitstring(bv_in, isSigned, bitwidth))).extOrTrunc(bitwidth, isSigned);
+         return APInt(bitstring_to_int(BitLatticeManipulator::sign_extend_bitstring(bv_in, isSigned, bitwidth)))
+             .extOrTrunc(bitwidth, isSigned);
       }
       return APInt(bitstring_to_int(bv_in)).extOrTrunc(bitwidth, isSigned);
    };
    const auto max = [&]() {
       std::deque<bit_lattice> bv_out;
-      bv_out.push_back((bv.front() == bit_lattice::U || bv.front() == bit_lattice::X) ? (isSigned ? bit_lattice::ZERO : bit_lattice::ONE) : bv.front());
+      bv_out.push_back((bv.front() == bit_lattice::U || bv.front() == bit_lattice::X) ?
+                           (isSigned ? bit_lattice::ZERO : bit_lattice::ONE) :
+                           bv.front());
       for(auto it = ++(bv.begin()); it != bv.end(); ++it)
       {
          bv_out.push_back((*it == bit_lattice::U || *it == bit_lattice::X) ? bit_lattice::ONE : *it);
@@ -399,7 +403,9 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
    }();
    const auto min = [&]() {
       std::deque<bit_lattice> bv_out;
-      bv_out.push_back((bv.front() == bit_lattice::U || bv.front() == bit_lattice::X) ? (isSigned ? bit_lattice::ONE : bit_lattice::ZERO) : bv.front());
+      bv_out.push_back((bv.front() == bit_lattice::U || bv.front() == bit_lattice::X) ?
+                           (isSigned ? bit_lattice::ONE : bit_lattice::ZERO) :
+                           bv.front());
       for(auto it = ++(bv.begin()); it != bv.end(); ++it)
       {
          bv_out.push_back((*it == bit_lattice::U || *it == bit_lattice::X) ? bit_lattice::ZERO : *it);
@@ -419,11 +425,14 @@ std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
    }
    if(isConstant())
    {
-      return create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw, isSigned);
+      return create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw,
+                                            isSigned);
    }
 
-   auto min = create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw, isSigned);
-   auto max = create_bitstring_from_constant((isSigned ? getSignedMax() : getUnsignedMax()).cast_to<long long>(), bw, isSigned);
+   auto min = create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw,
+                                             isSigned);
+   auto max = create_bitstring_from_constant((isSigned ? getSignedMax() : getUnsignedMax()).cast_to<long long>(), bw,
+                                             isSigned);
    auto& longer = min.size() >= max.size() ? min : max;
    auto& shorter = min.size() >= max.size() ? max : min;
    if(shorter.size() < longer.size())
@@ -730,23 +739,29 @@ RangeRef Range::sat_add(const RangeConstRef& other) const
          THROW_ASSERT(u != Max, "");
          if(ol > 0)
          {
-            return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) + ol, std::min(APInt::getSignedMaxValue(bw), u + ol)));
+            return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) + ol,
+                                      std::min(APInt::getSignedMaxValue(bw), u + ol)));
          }
-         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), std::max(APInt::getSignedMinValue(bw), u + ol)));
+         return RangeRef(
+             new Range(Regular, bw, APInt::getSignedMinValue(bw), std::max(APInt::getSignedMinValue(bw), u + ol)));
       }
       if(u == Max)
       {
          THROW_ASSERT(l != Min, "");
          if(ol > 0)
          {
-            return RangeRef(new Range(Regular, bw, std::min(APInt::getSignedMaxValue(bw), l + ol), APInt::getSignedMaxValue(bw)));
+            return RangeRef(
+                new Range(Regular, bw, std::min(APInt::getSignedMaxValue(bw), l + ol), APInt::getSignedMaxValue(bw)));
          }
-         return RangeRef(new Range(Regular, bw, std::max(APInt::getSignedMinValue(bw), l + ol), APInt::getSignedMaxValue(bw) + ol));
+         return RangeRef(
+             new Range(Regular, bw, std::max(APInt::getSignedMinValue(bw), l + ol), APInt::getSignedMaxValue(bw) + ol));
       }
    }
 
-   const auto min = std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getLower() + other->getLower()));
-   const auto max = std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getUpper() + other->getUpper()));
+   const auto min =
+       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getLower() + other->getLower()));
+   const auto max =
+       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getUpper() + other->getUpper()));
    RangeRef res(new Range(Regular, bw, min, max));
    if(res->getSpan() <= getSpan() || res->getSpan() <= other->getSpan())
    {
@@ -908,23 +923,29 @@ RangeRef Range::sat_sub(const RangeConstRef& other) const
          THROW_ASSERT(u != Max, "");
          if(ol < 0)
          {
-            return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) - ol, std::min(APInt::getSignedMaxValue(bw), u - ol)));
+            return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) - ol,
+                                      std::min(APInt::getSignedMaxValue(bw), u - ol)));
          }
-         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), std::max(APInt::getSignedMinValue(bw), u - ol)));
+         return RangeRef(
+             new Range(Regular, bw, APInt::getSignedMinValue(bw), std::max(APInt::getSignedMinValue(bw), u - ol)));
       }
       if(u == Max)
       {
          THROW_ASSERT(l != Min, "");
          if(ol < 0)
          {
-            return RangeRef(new Range(Regular, bw, std::min(APInt::getSignedMaxValue(bw), l - ol), APInt::getSignedMaxValue(bw)));
+            return RangeRef(
+                new Range(Regular, bw, std::min(APInt::getSignedMaxValue(bw), l - ol), APInt::getSignedMaxValue(bw)));
          }
-         return RangeRef(new Range(Regular, bw, std::max(APInt::getSignedMinValue(bw), l - ol), APInt::getSignedMaxValue(bw) - ol));
+         return RangeRef(
+             new Range(Regular, bw, std::max(APInt::getSignedMinValue(bw), l - ol), APInt::getSignedMaxValue(bw) - ol));
       }
    }
 
-   const auto min = std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getLower() - other->getUpper()));
-   const auto max = std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getUpper() - other->getLower()));
+   const auto min =
+       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getLower() - other->getUpper()));
+   const auto max =
+       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getUpper() - other->getLower()));
    RangeRef res(new Range(Regular, bw, min, max));
    if(res->getSpan() < getSpan() || res->getSpan() < other->getSpan())
    {
@@ -1028,7 +1049,8 @@ RangeRef Range::mul(const RangeConstRef& other) const
    Other_min = other->getSignedMin();
    Other_max = other->getSignedMax();
 
-   const auto res = std::minmax({this_min * Other_min, this_min * Other_max, this_max * Other_min, this_max * Other_max});
+   const auto res =
+       std::minmax({this_min * Other_min, this_min * Other_max, this_max * Other_min, this_max * Other_max});
    const auto Result_sext = Range(Regular, static_cast<bw_t>(bw * 2), res.first, res.second);
    const auto SR = Result_sext.truncate(bw);
 
@@ -1063,7 +1085,11 @@ RangeRef Range::udiv(const RangeConstRef& other) const
    return res;
 }
 
-#define DIV_HELPER(x, y) ((x) == Max) ? (((y) < 0) ? Min : (((y) == 0) ? 0 : Max)) : (((y) == Max) ? 0 : (((x) == Min) ? (((y) < 0) ? Max : (((y) == 0) ? 0 : Min)) : (((y) == Min) ? 0 : ((x) / (y)))))
+#define DIV_HELPER(x, y)                            \
+   ((x) == Max) ?                                   \
+       (((y) < 0) ? Min : (((y) == 0) ? 0 : Max)) : \
+       (((y) == Max) ? 0 :                          \
+                       (((x) == Min) ? (((y) < 0) ? Max : (((y) == 0) ? 0 : Min)) : (((y) == Min) ? 0 : ((x) / (y)))))
 
 RangeRef Range::sdiv(const RangeConstRef& other) const
 {
@@ -1212,57 +1238,32 @@ RangeRef Range::srem(const RangeConstRef& other) const
    {
       return RangeRef(new Range(Regular, bw));
    }
-   if(other->isConstant())
-   {
-      if(other->getSignedMin() == 0)
-      {
-         return RangeRef(new Range(Empty, bw));
-      }
-      else if(other->getSignedMin() == 1 || other->getSignedMin() == -1)
-      {
-         return RangeRef(new Range(Regular, bw, 0, 0));
-      }
-   }
 
    const auto& a = this->getLower();
    const auto& b = this->getUpper();
-   auto c = other->getLower();
+   const auto& c = other->getLower();
    const auto& d = other->getUpper();
 
    // Deal with mod 0 exception
-   if((c == 0) && (d == 0))
+   if(c <= 0 && d >= 0)
    {
       return RangeRef(new Range(Regular, bw));
    }
-   if(c == 0)
-   {
-      c = 1;
-   }
 
-   APInt candidates[4];
-   candidates[0] = Min;
-   candidates[1] = Min;
-   candidates[2] = Max;
-   candidates[3] = Max;
-   if((a != Min) && (c != Min))
+   const auto dmin = std::min(c.abs(), d.abs());
+   const auto dmax = std::max(c.abs(), d.abs());
+   const auto abs_min = std::min(a.abs(), b.abs());
+   const auto abs_max = std::max(a.abs(), b.abs());
+   if((abs_min < dmin && dmin < abs_max) || (abs_min < dmax && dmax < abs_max))
    {
-      candidates[0] = a % c; // lower lower
+      return RangeRef(new Range(Regular, bw, a >= 0 ? 0 : (a.abs() < dmax ? a : -(dmax - 1)),
+                                b <= 0 ? 0 : (b.abs() < dmax ? b : (dmax - 1))));
    }
-   if((a != Min) && (d != Max))
+   else if(abs_max < dmin)
    {
-      candidates[1] = a % d; // lower upper
+      return RangeRef(this->clone());
    }
-   if((b != Max) && (c != Min))
-   {
-      candidates[2] = b % c; // upper lower
-   }
-   if((b != Max) && (d != Max))
-   {
-      candidates[3] = b % d; // upper upper
-   }
-   // Lower bound is the min value from the vector, while upper bound is the max value
-   auto res = std::minmax_element(candidates, candidates + 4);
-   return RangeRef(new Range(Regular, bw, *res.first, *res.second));
+   return RangeRef(new Range(Regular, bw, a < 0 ? -(dmax - 1) : 0, b > 0 ? (dmax - 1) : 0));
 }
 
 RangeRef Range::shl(const RangeConstRef& other) const
@@ -1276,14 +1277,16 @@ RangeRef Range::shl(const RangeConstRef& other) const
    }
    if(this->isConstant() && other->isConstant())
    {
-      const auto c = (this->getLower() << other->getLower()).extOrTrunc(bw, true);
+      const auto c = (this->getLower() << other->getLower().extOrTrunc(static_cast<APInt::bw_t>(ceil_log2(bw)), false))
+                         .extOrTrunc(bw, true);
       return RangeRef(new Range(Regular, bw, c, c));
    }
 
    const auto a = this->getLower();
    const auto b = this->getUpper();
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
+   const auto fix = other->zextOrTrunc(static_cast<bw_t>(ceil_log2(bw)));
+   const auto c = fix->getUnsignedMin();
+   const auto d = fix->getUnsignedMax();
 
    if(c >= bw)
    {
@@ -1326,8 +1329,9 @@ RangeRef Range::shr(const RangeConstRef& other, bool sign) const
       return RangeRef(new Range(Regular, bw));
    }
 
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
+   const auto fix = other->zextOrTrunc(static_cast<bw_t>(ceil_log2(bw)));
+   const auto c = fix->getUnsignedMin();
+   const auto d = fix->getUnsignedMax();
 
    if(sign)
    {
@@ -2222,7 +2226,8 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
       return RangeRef(new Range(Regular, bitwidth, 0, APInt::getMaxValue(bw)));
    }
 
-   return RangeRef(new Range(Regular, bitwidth, this->getSignedMin().extOrTrunc(bw, false), this->getSignedMax().extOrTrunc(bw, false)));
+   return RangeRef(new Range(Regular, bitwidth, this->getSignedMin().extOrTrunc(bw, false),
+                             this->getSignedMax().extOrTrunc(bw, false)));
 }
 
 RangeRef Range::intersectWith(const RangeConstRef& other) const
@@ -2643,19 +2648,32 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other)
 // ========================================================================== //
 // RealRange
 // ========================================================================== //
-RealRange::RealRange(const Range& s, const Range& e, const Range& f) : Range(Real, static_cast<bw_t>(s.getBitWidth() + e.getBitWidth() + f.getBitWidth())), sign(s.clone()), exponent(e.clone()), significand(f.clone())
+RealRange::RealRange(const Range& s, const Range& e, const Range& f)
+    : Range(Real, static_cast<bw_t>(s.getBitWidth() + e.getBitWidth() + f.getBitWidth())),
+      sign(s.clone()),
+      exponent(e.clone()),
+      significand(f.clone())
 {
-   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s.ToString() + " " + e.ToString() + " " + f.ToString() + "]<" + STR(getBitWidth()) + ">");
+   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s.ToString() + " " +
+                                                                e.ToString() + " " + f.ToString() + "]<" +
+                                                                STR(getBitWidth()) + ">");
    THROW_ASSERT(!s.isReal() && !e.isReal() && !f.isReal(), "Real range components shouldn't be real ranges");
 }
 
-RealRange::RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f) : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())), sign(s->clone()), exponent(e->clone()), significand(f->clone())
+RealRange::RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f)
+    : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())),
+      sign(s->clone()),
+      exponent(e->clone()),
+      significand(f->clone())
 {
-   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s->ToString() + " " + e->ToString() + " " + f->ToString() + "]<" + STR(getBitWidth()) + ">");
+   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s->ToString() +
+                                                                " " + e->ToString() + " " + f->ToString() + "]<" +
+                                                                STR(getBitWidth()) + ">");
    THROW_ASSERT(!s->isReal() && !e->isReal() && !f->isReal(), "Real range components shouldn't be real ranges");
 }
 
-RealRange::RealRange(const RangeConstRef& vc) : Range(Real, vc->getBitWidth()), sign(vc->Slt(RangeRef(new Range(Regular, 1, 0, 0)), 1))
+RealRange::RealRange(const RangeConstRef& vc)
+    : Range(Real, vc->getBitWidth()), sign(vc->Slt(RangeRef(new Range(Regular, 1, 0, 0)), 1))
 {
    if(vc->getBitWidth() == 32)
    {
@@ -2751,7 +2769,8 @@ bool RealRange::isSameRange(const RangeConstRef& other) const
    if(other->isReal())
    {
       auto rOther = RefcountCast<const RealRange>(other);
-      return this->getBitWidth() == other->getBitWidth() && sign->isSameRange(rOther->sign) && exponent->isSameRange(rOther->exponent) && significand->isSameRange(rOther->significand);
+      return this->getBitWidth() == other->getBitWidth() && sign->isSameRange(rOther->sign) &&
+             exponent->isSameRange(rOther->exponent) && significand->isSameRange(rOther->significand);
    }
    return false;
 }
@@ -2832,14 +2851,18 @@ RangeRef RealRange::Eq(const RangeConstRef& other, bw_t _bw) const
       const auto zeroMt = significand->Eq(RangeRef(new Range(Regular, significand->getBitWidth(), 0, 0)), 1);
       const auto zeroContainedt = zeroEt->And(zeroMt);
       const auto zeroEo = rOther->exponent->Eq(RangeRef(new Range(Regular, rOther->exponent->getBitWidth(), 0, 0)), 1);
-      const auto zeroMo = rOther->significand->Eq(RangeRef(new Range(Regular, rOther->significand->getBitWidth(), 0, 0)), 1);
+      const auto zeroMo =
+          rOther->significand->Eq(RangeRef(new Range(Regular, rOther->significand->getBitWidth(), 0, 0)), 1);
       const auto zeroContainedo = zeroEo->And(zeroMo);
       const auto zeroContained = zeroContainedt->And(zeroContainedo);
       if(!zeroContained->isConstant() || zeroContained->getUnsignedMin() == 1)
       {
          return zeroContained->zextOrTrunc(_bw);
       }
-      return sign->Eq(rOther->sign, 1)->And(exponent->Eq(rOther->exponent, 1))->And(significand->Eq(rOther->significand, 1))->zextOrTrunc(_bw);
+      return sign->Eq(rOther->sign, 1)
+          ->And(exponent->Eq(rOther->exponent, 1))
+          ->And(significand->Eq(rOther->significand, 1))
+          ->zextOrTrunc(_bw);
    }
    return RangeRef(new Range(Regular, _bw, 0, 0));
 }
@@ -2856,7 +2879,8 @@ RangeRef RealRange::intersectWith(const RangeConstRef& other) const
 #endif
    THROW_ASSERT(other->isReal(), "Real range should intersect with real range only");
    auto rrOther = RefcountCast<const RealRange>(other);
-   return RangeRef(new RealRange(sign->intersectWith(rrOther->sign), exponent->intersectWith(rrOther->exponent), significand->intersectWith(rrOther->significand)));
+   return RangeRef(new RealRange(sign->intersectWith(rrOther->sign), exponent->intersectWith(rrOther->exponent),
+                                 significand->intersectWith(rrOther->significand)));
 }
 
 RangeRef RealRange::unionWith(const RangeConstRef& other) const
@@ -2866,7 +2890,8 @@ RangeRef RealRange::unionWith(const RangeConstRef& other) const
 #endif
    THROW_ASSERT(other->isReal(), "Real range should unite to real range only");
    auto rrOther = RefcountCast<const RealRange>(other);
-   return RangeRef(new RealRange(sign->unionWith(rrOther->sign), exponent->unionWith(rrOther->exponent), significand->unionWith(rrOther->significand)));
+   return RangeRef(new RealRange(sign->unionWith(rrOther->sign), exponent->unionWith(rrOther->exponent),
+                                 significand->unionWith(rrOther->significand)));
 }
 
 RangeRef RealRange::toFloat64() const
@@ -2888,10 +2913,12 @@ RangeRef RealRange::toFloat64() const
    }
    else
    {
-      exponent64.reset(new Range(Regular, 11, (exponent->getUnsignedMin() + 896).extOrTrunc(11, true), (exponent->getUnsignedMax() + 896).extOrTrunc(11, true)));
+      exponent64.reset(new Range(Regular, 11, (exponent->getUnsignedMin() + 896).extOrTrunc(11, true),
+                                 (exponent->getUnsignedMax() + 896).extOrTrunc(11, true)));
    }
 
-   return RangeRef(new RealRange(sign, exponent64, significand->zextOrTrunc(52)->shl(RangeRef(new Range(Regular, 52, 29, 29)))));
+   return RangeRef(
+       new RealRange(sign, exponent64, significand->zextOrTrunc(52)->shl(RangeRef(new Range(Regular, 52, 29, 29)))));
 }
 
 RangeRef RealRange::toFloat32() const
@@ -2920,7 +2947,8 @@ RangeRef RealRange::toFloat32() const
    }
    else
    {
-      exponent32.reset(new Range(Regular, 8, std::max({min, APInt(0)}).extOrTrunc(8, true), std::min({max, APInt(255)}).extOrTrunc(8, true)));
+      exponent32.reset(new Range(Regular, 8, std::max({min, APInt(0)}).extOrTrunc(8, true),
+                                 std::min({max, APInt(255)}).extOrTrunc(8, true)));
    }
 
    return RangeRef(new RealRange(sign, exponent32, significand32));
@@ -2931,5 +2959,7 @@ refcount<RealRange> RealRange::fromBitValues(const std::deque<bit_lattice>& bv)
    THROW_ASSERT(bv.size() == 32 || bv.size() == 64, "Floating-point bit_values must be exact");
    const std::deque<bit_lattice> bv_exp(bv.begin() + 1, bv.begin() + (bv.size() == 64 ? 12 : 9));
    const std::deque<bit_lattice> bv_sigf(bv.begin() + 1 + static_cast<long>(bv_exp.size()), bv.end());
-   return refcount<RealRange>(new RealRange(Range::fromBitValues({bv.front()}, 1, false), Range::fromBitValues(bv_exp, static_cast<bw_t>(bv_exp.size()), true), Range::fromBitValues(bv_sigf, static_cast<bw_t>(bv_sigf.size()), true)));
+   return refcount<RealRange>(new RealRange(Range::fromBitValues({bv.front()}, 1, false),
+                                            Range::fromBitValues(bv_exp, static_cast<bw_t>(bv_exp.size()), true),
+                                            Range::fromBitValues(bv_sigf, static_cast<bw_t>(bv_sigf.size()), true)));
 }

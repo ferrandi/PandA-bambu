@@ -54,7 +54,8 @@
 #include <iterator>                // for front_insert_iterator
 #include <list>                    // for list, _List_iterator
 
-void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, CustomUnorderedMap<vertex, vertex>& i2o, CustomUnorderedMap<vertex, vertex>& o2i)
+void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, CustomUnorderedMap<vertex, vertex>& i2o,
+                                                   CustomUnorderedMap<vertex, vertex>& o2i)
 {
    if(boost::num_vertices(*input) == 0)
    {
@@ -111,8 +112,14 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, Cu
    }
 }
 
-weak_dominance::weak_dominance(const graph* _input, vertex _start, vertex _end, const ParameterConstRef _param, int _selector)
-    : input(_input), start(_start), end(_end), selector(_selector), param(_param), debug_level(_param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
+weak_dominance::weak_dominance(const graph* _input, vertex _start, vertex _end, const ParameterConstRef _param,
+                               int _selector)
+    : input(_input),
+      start(_start),
+      end(_end),
+      selector(_selector),
+      param(_param),
+      debug_level(_param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 {
 }
 

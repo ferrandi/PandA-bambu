@@ -82,7 +82,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #endif
    CREATE_TREE_MANAGER,
 #if HAVE_BAMBU_BUILT
-   FIND_MAX_CFG_TRANSFORMATIONS,
+   FIND_MAX_TRANSFORMATIONS,
 #endif
    FUNCTION_ANALYSIS, //! Creation of the call graph
 #if HAVE_ZEBU_BUILT
@@ -90,9 +90,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #endif
 #if HAVE_HOST_PROFILING_BUILT
    HOST_PROFILING,
-#endif
-#if HAVE_BAMBU_BUILT
-   IPA_POINT_TO_ANALYSIS,
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
    PRAGMA_SUBSTITUTION,
@@ -114,7 +111,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    ADD_OP_PHI_FLOW_EDGES,
 #endif
-   AGGREGATE_DATA_FLOW_ANALYSIS,
 #if HAVE_ZEBU_BUILT
    ARRAY_REF_FIX,
 #endif
@@ -129,6 +125,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    BIT_VALUE,
    BIT_VALUE_OPT,
+   BITVALUE_RANGE,
    BIT_VALUE_IPA,
 #endif
    BLOCK_FIX,
@@ -147,7 +144,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    CHECK_CRITICAL_SESSION,
 #endif
    CHECK_SYSTEM_TYPE, //! Set the system flag to variables and types
-   CLEAN_VIRTUAL_PHI,
    COMPLETE_BB_GRAPH,
    COMPLETE_CALL_GRAPH,
 #if HAVE_BAMBU_BUILT
@@ -163,6 +159,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #endif
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
    DEAD_CODE_ELIMINATION,
+   DEAD_CODE_ELIMINATION_IPA,
 #endif
 #if HAVE_BAMBU_BUILT
    DETERMINE_MEMORY_ACCESSES,
@@ -188,7 +185,9 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    EXTRACT_PATTERNS,
    FIX_STRUCTS_PASSED_BY_VALUE,
    FUNCTION_CALL_TYPE_CLEANUP,
+   FUNCTION_CALL_OPT,
    FANOUT_OPT,
+   FIX_VDEF,
 #endif
 #if HAVE_ZEBU_BUILT
    GLOBAL_VARIABLES_ANALYSIS,
@@ -229,7 +228,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    LUT_TRANSFORMATION,
 #endif
-   MEMORY_DATA_FLOW_ANALYSIS,
 #if HAVE_BAMBU_BUILT
    MULTI_WAY_IF,
    MULTIPLE_ENTRY_IF_REDUCTION,
@@ -392,7 +390,8 @@ class FrontendFlowStep : public DesignFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
+   virtual const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
 
  public:
    /**
@@ -402,7 +401,8 @@ class FrontendFlowStep : public DesignFlowStep
     * @param frontend_flow_step_type is the type of the analysis
     * @param _Param is the set of the parameters
     */
-   FrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   FrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType frontend_flow_step_type,
+                    const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -414,17 +414,21 @@ class FrontendFlowStep : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
-    * Create the relationship steps of a step with other steps starting from already specified dependencies between frontend flow steps
+    * Create the relationship steps of a step with other steps starting from already specified dependencies between
+    * frontend flow steps
     * @param design_flow_manager is the design flow manager
     * @param frontend_relationships describes the set of relationships to be created
     * @param application_manager is the application manager
     * @param relationships is the output of the function
     */
-   static void CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships, const application_managerConstRef application_manager,
-                           DesignFlowStepSet& relationships);
+   static void
+   CreateSteps(const DesignFlowManagerConstRef design_flow_manager,
+               const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships,
+               const application_managerConstRef application_manager, DesignFlowStepSet& relationships);
 
    /**
     * Return the name of the type of this frontend flow step
@@ -468,7 +472,8 @@ class FrontendFlowStep : public DesignFlowStep
 namespace std
 {
    template <>
-   struct hash<FrontendFlowStep::FunctionRelationship> : public unary_function<FrontendFlowStep::FunctionRelationship, size_t>
+   struct hash<FrontendFlowStep::FunctionRelationship>
+       : public unary_function<FrontendFlowStep::FunctionRelationship, size_t>
    {
       size_t operator()(FrontendFlowStep::FunctionRelationship relationship) const
       {

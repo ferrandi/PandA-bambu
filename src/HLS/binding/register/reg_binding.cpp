@@ -76,7 +76,8 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "technology_node.hpp"
 
-reg_binding::reg_binding(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) : debug(HLS_->debug_level), used_regs(0), HLS(HLS_), HLSMgr(HLSMgr_), all_regs_without_enable(false)
+reg_binding::reg_binding(const hlsRef& HLS_, const HLS_managerRef HLSMgr_)
+    : debug(HLS_->debug_level), used_regs(0), HLS(HLS_), HLSMgr(HLSMgr_), all_regs_without_enable(false)
 {
 }
 
@@ -88,11 +89,13 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
    {
       auto omp_functions = GetPointer<OmpFunctions>(HLSMgr_->Rfuns);
       bool found = false;
-      if(HLSMgr_->is_reading_writing_function(HLS->functionId) && omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
+      if(HLSMgr_->is_reading_writing_function(HLS->functionId) &&
+         omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
       {
          found = true;
       }
-      if(HLSMgr_->is_reading_writing_function(HLS->functionId) && omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end())
+      if(HLSMgr_->is_reading_writing_function(HLS->functionId) &&
+         omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end())
       {
          found = true;
       }
@@ -118,14 +121,18 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
 void reg_binding::print_el(const_iterator& it) const
 {
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
-                  "---Storage Value: " + STR(it->first) + " for variable " + HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->PrintVariable(HLS->storage_value_information->get_variable_index(it->first)) + " stored into register " +
-                      it->second->get_string());
+                  "---Storage Value: " + STR(it->first) + " for variable " +
+                      HLSMgr->CGetFunctionBehavior(HLS->functionId)
+                          ->CGetBehavioralHelper()
+                          ->PrintVariable(HLS->storage_value_information->get_variable_index(it->first)) +
+                      " stored into register " + it->second->get_string());
 }
 
 CustomOrderedSet<unsigned int> reg_binding::get_vars(const unsigned int& r) const
 {
    CustomOrderedSet<unsigned int> vars;
-   THROW_ASSERT(reg2storage_values.find(r) != reg2storage_values.end() && !reg2storage_values.find(r)->second.empty(), "at least a storage value has to be mapped on register r");
+   THROW_ASSERT(reg2storage_values.find(r) != reg2storage_values.end() && !reg2storage_values.find(r)->second.empty(),
+                "at least a storage value has to be mapped on register r");
 
    auto rs_it_end = reg2storage_values.find(r)->second.end();
    for(auto rs_it = reg2storage_values.find(r)->second.begin(); rs_it != rs_it_end; ++rs_it)
@@ -141,9 +148,12 @@ unsigned int reg_binding::compute_bitsize(unsigned int r)
    unsigned int max_bits = 0;
    for(unsigned int reg_var : reg_vars)
    {
-      structural_type_descriptorRef node_type0 = structural_type_descriptorRef(new structural_type_descriptor(reg_var, HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()));
+      structural_type_descriptorRef node_type0 = structural_type_descriptorRef(new structural_type_descriptor(
+          reg_var, HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()));
       unsigned int node_size = STD_GET_SIZE(node_type0);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "- Analyzing node " + STR(reg_var) + ", whose type is " + node_type0->get_name() + " (size: " + STR(node_type0->size) + ", vector_size: " + STR(node_type0->vector_size) + ")");
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
+                    "- Analyzing node " + STR(reg_var) + ", whose type is " + node_type0->get_name() +
+                        " (size: " + STR(node_type0->size) + ", vector_size: " + STR(node_type0->vector_size) + ")");
       max_bits = max_bits < node_size ? node_size : max_bits;
    }
    bitsize_map[r] = max_bits;
@@ -180,12 +190,16 @@ void reg_binding::specialise_reg(structural_objectRef& reg, unsigned int r)
    if(STD_GET_SIZE(in_type) < max_bits)
    {
       GetPointer<module>(reg)->get_in_port(offset)->type_resize(max_bits); // in1
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "- " + GetPointer<module>(reg)->get_in_port(0)->get_path() + " -> " + in_type->get_name() + " (size: " + STR(in_type->size) + ", vector_size: " + STR(in_type->vector_size) + ")");
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
+                    "- " + GetPointer<module>(reg)->get_in_port(0)->get_path() + " -> " + in_type->get_name() +
+                        " (size: " + STR(in_type->size) + ", vector_size: " + STR(in_type->vector_size) + ")");
    }
    if(STD_GET_SIZE(out_type) < max_bits)
    {
       GetPointer<module>(reg)->get_out_port(0)->type_resize(max_bits); // out1
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "- " + GetPointer<module>(reg)->get_out_port(0)->get_path() + " -> " + out_type->get_name() + " (size: " + STR(out_type->size) + ", vector_size: " + STR(out_type->vector_size) + ")");
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
+                    "- " + GetPointer<module>(reg)->get_out_port(0)->get_path() + " -> " + out_type->get_name() +
+                        " (size: " + STR(out_type->size) + ", vector_size: " + STR(out_type->vector_size) + ")");
    }
 }
 
@@ -304,11 +318,14 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   bool stallable_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipeline_enabled() && !HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline();
+   bool stallable_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipeline_enabled() &&
+                             !HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline();
 
    if(stallable_pipeline)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs() + stall_reg_table.size()) + ", " + std::to_string(stall_reg_table.size()) + " introduced for supporting pipelined loops");
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
+                    "Number of registers: " + std::to_string(get_used_regs() + stall_reg_table.size()) + ", " +
+                        std::to_string(stall_reg_table.size()) + " introduced for supporting pipelined loops");
    }
    else
    {
@@ -331,7 +348,8 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       all_regs_without_enable = all_regs_without_enable && curr_is_is_without_enable;
       std::string register_type_name = CalculateRegisterName(i);
       std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);
-      structural_objectRef reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit, HLS->HLS_T->get_technology_manager());
+      structural_objectRef reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit,
+                                                                            HLS->HLS_T->get_technology_manager());
       this->specialise_reg(reg_mod, i);
       structural_objectRef port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
       SM->add_connection(clock_port, port_ck);
@@ -341,12 +359,16 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
          SM->add_connection(reset_port, port_rst);
       }
       regis->set_structural_obj(reg_mod);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
+                    "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
       if(stallable_pipeline && stall_reg_table.find(i) != stall_reg_table.end())
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " also needs a stall register, allocating it...");
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
+                       "Register " + boost::lexical_cast<std::string>(i) +
+                           " also needs a stall register, allocating it...");
          name = "stall_" + name;
-         reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit, HLS->HLS_T->get_technology_manager());
+         reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit,
+                                                          HLS->HLS_T->get_technology_manager());
          this->specialise_reg(reg_mod, i);
          port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
          SM->add_connection(clock_port, port_ck);
@@ -354,7 +376,8 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
          THROW_ASSERT(port_rst != nullptr, "The stall register was not allocated a reset port");
          SM->add_connection(reset_port, port_rst);
          regis->set_structural_obj(reg_mod);
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Successfully allocated stall register for std reg " + boost::lexical_cast<std::string>(i));
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
+                       "Successfully allocated stall register for std reg " + boost::lexical_cast<std::string>(i));
       }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
@@ -365,11 +388,15 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       {
          number_ff += get_bitsize(r);
       }
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, HLS->output_level, "---Total number of flip-flops in function " + HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->get_function_name() + ": " + STR(number_ff));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, HLS->output_level,
+                     "---Total number of flip-flops in function " +
+                         HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->get_function_name() +
+                         ": " + STR(number_ff));
    }
    if(all_regs_without_enable)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, HLS->output_level, "---All registers are without enable: function pipelining may come for free");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, HLS->output_level,
+                     "---All registers are without enable: function pipelining may come for free");
    }
 }
 
@@ -377,7 +404,8 @@ std::string reg_binding::CalculateRegisterName(unsigned int i)
 {
    std::string register_type_name;
    auto synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
-   if((is_without_enable.find(i) != is_without_enable.end()) | HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
+   if((is_without_enable.find(i) != is_without_enable.end()) |
+      HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
    {
       register_type_name = register_STD;
    }

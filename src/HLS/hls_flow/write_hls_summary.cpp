@@ -52,24 +52,29 @@
 #include "hls_manager.hpp"
 
 #include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
 #include "memory.hpp"
 
 #include <boost/filesystem/operations.hpp>
 
-WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::WRITE_HLS_SUMMARY)
+WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr,
+                                 const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::WRITE_HLS_SUMMARY)
 {
 }
 
 WriteHLSSummary::~WriteHLSSummary() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> WriteHLSSummary::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+WriteHLSSummary::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::ALL_FUNCTIONS));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -94,7 +99,7 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
       top_HLS->PrintResources();
       if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       {
-         std::string out_file_name = "memory_allocation";
+         std::string out_file_name = GetPath("memory_allocation");
          unsigned int progressive = 0;
          std::string candidate_out_file_name;
          do
@@ -105,7 +110,7 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
          HLSMgr->Rmem->xwrite(out_file_name);
       }
 #if 0
-      std::string out_file_name = "hls_summary";
+      std::string out_file_name = GetPath("hls_summary");
       unsigned int progressive = 0;
       std::string candidate_out_file_name;
       do

@@ -80,7 +80,8 @@ class HostProfiling : public ApplicationFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -89,7 +90,8 @@ class HostProfiling : public ApplicationFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of the parameters
     */
-   HostProfiling(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   HostProfiling(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager,
+                 const ParameterConstRef parameters);
 
    /**
     *  Destructor
@@ -107,7 +109,11 @@ class HostProfiling : public ApplicationFrontendFlowStep
     * @param loop_instances is how many times each loop is executed
     * @param Parameters is the set of input parameters
     */
-   static void normalize(const application_managerRef AppM, const CustomUnorderedMap<unsigned int, CustomUnorderedMapStable<unsigned int, long long unsigned int>>& loop_instances, const ParameterConstRef parameters);
+   static void
+   normalize(const application_managerRef AppM,
+             const CustomUnorderedMap<unsigned int, CustomUnorderedMapStable<unsigned int, long long unsigned int>>&
+                 loop_instances,
+             const ParameterConstRef parameters);
 };
 
 #endif

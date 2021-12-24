@@ -60,7 +60,9 @@
 /// utility include
 #include "cpu_time.hpp"
 
-unique_binding_register::unique_binding_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+unique_binding_register::unique_binding_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                                 unsigned int _funId,
+                                                 const DesignFlowManagerConstRef _design_flow_manager)
     : reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::UNIQUE_REGISTER_BINDING)
 {
 }
@@ -89,14 +91,17 @@ DesignFlowStep_Status unique_binding_register::InternalExec()
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level,
+                  "-->Register binding information for function " +
+                      HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
    {
       HLS->Rreg->print();
    }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "<--");
    if(output_level == OUTPUT_LEVEL_PEDANTIC)

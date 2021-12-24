@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "single.h"
-#include "soft-fp.h"
-
-SFtype __floatunsisf(USItype i)
+static __FORCE_INLINE SFtype __floatunsisf(USItype i)
 {
    FP_DECL_EX;
    FP_DECL_S(A);
@@ -43,9 +40,4 @@ SFtype __floatunsisf(USItype i)
    FP_HANDLE_EXCEPTIONS;
 
    return a;
-}
-
-SFtype __uint32_to_float32if(USItype i)
-{
-   return __floatunsisf(i);
 }

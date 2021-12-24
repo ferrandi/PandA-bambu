@@ -41,6 +41,7 @@
 // include autoheaders
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG12_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -103,24 +104,32 @@
 
 #include "string_manipulation.hpp" // for GET_CLASS
 
-CTestbenchExecution::CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef _design_flow_manager, const std::string& _testbench_basename)
-    : HLS_step(Param, AppM, _design_flow_manager, HLSFlowStep_Type::C_TESTBENCH_EXECUTION), output_directory(Param->getOption<std::string>(OPT_output_directory) + "/simulation/"), testbench_basename(_testbench_basename)
+CTestbenchExecution::CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM,
+                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                         const std::string& _testbench_basename)
+    : HLS_step(Param, AppM, _design_flow_manager, HLSFlowStep_Type::C_TESTBENCH_EXECUTION),
+      output_directory(Param->getOption<std::string>(OPT_output_directory) + "/simulation/"),
+      testbench_basename(_testbench_basename)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> CTestbenchExecution::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+CTestbenchExecution::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::TOP_FUNCTION));
          }
          break;
       }
@@ -145,98 +154,145 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
    const auto top_function_id = *(top_function_ids.begin());
-   const auto top_function_name = HLSMgr->CGetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name();
-   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler), CompilerWrapper_OptimizationSet::O0));
+   const auto top_function_name =
+       HLSMgr->CGetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name();
+   const CompilerWrapperConstRef compiler_wrapper(
+       new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
+                           CompilerWrapper_OptimizationSet::O0));
 
-   std::string compiler_flags = "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+   std::string compiler_flags = "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse "
+                                "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
 
 #if HAVE_I386_CLANG4_COMPILER
-   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4)
+   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+      CompilerWrapper_CompilerTarget::CT_I386_CLANG4)
    {
-      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
+                       "-D'__builtin_bambu_time_stop()=' ";
    }
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG5)
+   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+      CompilerWrapper_CompilerTarget::CT_I386_CLANG5)
    {
-      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
+                       "-D'__builtin_bambu_time_stop()=' ";
    }
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG6)
+   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+      CompilerWrapper_CompilerTarget::CT_I386_CLANG6)
    {
-      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
+                       "-D'__builtin_bambu_time_stop()=' ";
    }
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG7)
+   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+      CompilerWrapper_CompilerTarget::CT_I386_CLANG7)
    {
-      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
+                       "-D'__builtin_bambu_time_stop()=' ";
    }
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG8)
+   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+      CompilerWrapper_CompilerTarget::CT_I386_CLANG8)
    {
-      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
+                       "-D'__builtin_bambu_time_stop()=' ";
    }
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG9)
+   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+      CompilerWrapper_CompilerTarget::CT_I386_CLANG9)
    {
-      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
+                       "-D'__builtin_bambu_time_stop()=' ";
    }
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG10)
+   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+      CompilerWrapper_CompilerTarget::CT_I386_CLANG10)
    {
-      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
+                       "-D'__builtin_bambu_time_stop()=' ";
    }
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
+   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+      CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
    {
-      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
+                       "-D'__builtin_bambu_time_stop()=' ";
+   }
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+      CompilerWrapper_CompilerTarget::CT_I386_CLANG12)
+   {
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
+                       "-D'__builtin_bambu_time_stop()=' ";
    }
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
+   if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+      CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
    {
-      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
+                       "-D'__builtin_bambu_time_stop()=' ";
    }
 #endif
 
-   if(!parameters->isOption(OPT_input_format) || parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C || parameters->isOption(OPT_pretty_print))
+   if(!parameters->isOption(OPT_input_format) ||
+      parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C ||
+      parameters->isOption(OPT_pretty_print))
    {
       if(true
 #if HAVE_I386_CLANG4_COMPILER
-         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) != CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) != CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) != CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) != CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) != CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) != CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) != CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) != CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) != CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+         && parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
+      {
          compiler_flags += " -fexcess-precision=standard ";
+      }
    }
    if(parameters->isOption(OPT_testbench_extra_gcc_flags))
    {
@@ -253,102 +309,190 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       }
    }
 
-   if(((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))) and
-      (!parameters->isOption(OPT_discrepancy_permissive_ptrs) || !parameters->getOption<bool>(OPT_discrepancy_permissive_ptrs)))
+   if(((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or
+       (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))) and
+      (!parameters->isOption(OPT_discrepancy_permissive_ptrs) ||
+       !parameters->getOption<bool>(OPT_discrepancy_permissive_ptrs)))
    {
       if(false
 #if HAVE_I386_GCC48_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if HAVE_I386_CLANG4_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
       {
          compiler_flags += " -g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
       }
       if(false
+#if HAVE_I386_GCC48_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if HAVE_I386_GCC49_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC49
+#endif
 #if HAVE_I386_GCC5_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC8
+#endif
+      )
+      {
+         compiler_flags += " -static-libasan ";
+      }
+      if(false
+#if HAVE_I386_GCC5_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if HAVE_I386_GCC7_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_GCC8_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if HAVE_I386_CLANG4_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
       {
          compiler_flags += " -fsanitize=undefined -fsanitize-recover=undefined ";
+      }
+      if(false
+#if HAVE_I386_GCC5_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if HAVE_I386_GCC7_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_GCC8_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC8
+#endif
+      )
+      {
+         compiler_flags += " -static-libubsan ";
       }
    }
    // setup source files
@@ -363,7 +507,8 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
          file_sources.push_back(no_parse_file);
       }
    }
-   if((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw)))
+   if((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or
+      (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw)))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---with discrepancy");
       /// Nothing to do
@@ -415,50 +560,69 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       c_stdout_file = output_directory + "dynamic_discrepancy_stats";
    }
    // executing the test to generate inputs and expected outputs values
-   if((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw)))
+   if((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or
+      (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw)))
    {
       if(false
 #if HAVE_I386_GCC49_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if HAVE_I386_CLANG4_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+#endif
+#if HAVE_I386_CLANG12_COMPILER
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+         or parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
       )
       {
@@ -480,20 +644,26 @@ bool CTestbenchExecution::HasToBeExecuted() const
    return true;
 }
 
-void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship,
+                                               const DesignFlowStep::RelationshipType relationship_type)
 {
    HLS_step::ComputeRelationships(relationship, relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const auto* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+         const auto* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
 
-         const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
+         const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
+             ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
 
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
 
-         const DesignFlowStepRef cg_design_flow_step = call_graph_computation_step ? design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step : frontend_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+         const DesignFlowStepRef cg_design_flow_step =
+             call_graph_computation_step ?
+                 design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
+                 frontend_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
 
          relationship.insert(cg_design_flow_step);
 
@@ -506,15 +676,22 @@ void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship, 
             return;
          }
 
-         const auto* c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+         const auto* c_backend_factory =
+             GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
 
-         const bool is_discrepancy = (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw));
+         const bool is_discrepancy =
+             (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or
+             (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw));
          CBackend::Type hls_c_backend_type = is_discrepancy ? CBackend::CB_DISCREPANCY_ANALYSIS : CBackend::CB_HLS;
-         vertex hls_c_backend_step = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(hls_c_backend_type));
+         vertex hls_c_backend_step =
+             design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(hls_c_backend_type));
 
          const DesignFlowStepRef design_flow_step =
-             hls_c_backend_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_c_backend_step)->design_flow_step :
-                                  c_backend_factory->CreateCBackendStep(hls_c_backend_type, output_directory + testbench_basename + ".c", CBackendInformationConstRef(new HLSCBackendInformation(output_directory + testbench_basename + ".txt", HLSMgr)));
+             hls_c_backend_step ?
+                 design_flow_graph->CGetDesignFlowStepInfo(hls_c_backend_step)->design_flow_step :
+                 c_backend_factory->CreateCBackendStep(hls_c_backend_type, output_directory + testbench_basename + ".c",
+                                                       CBackendInformationConstRef(new HLSCBackendInformation(
+                                                           output_directory + testbench_basename + ".txt", HLSMgr)));
          relationship.insert(design_flow_step);
       }
       case PRECEDENCE_RELATIONSHIP:

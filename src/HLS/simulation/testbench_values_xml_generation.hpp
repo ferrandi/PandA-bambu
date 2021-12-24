@@ -53,7 +53,8 @@ CONSTREF_FORWARD_DECL(DesignFlowManager);
 CONSTREF_FORWARD_DECL(tree_manager);
 
 /**
- * TestbenchValuesXMLGeneration is the step which generates values.txt exploiting only values stored in xml (output included)
+ * TestbenchValuesXMLGeneration is the step which generates values.txt exploiting only values stored in xml (output
+ * included)
  */
 class TestbenchValuesXMLGeneration : public HLS_step
 {
@@ -74,7 +75,9 @@ class TestbenchValuesXMLGeneration : public HLS_step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
  public:
    /**
@@ -84,7 +87,8 @@ class TestbenchValuesXMLGeneration : public HLS_step
     * @param design_flow_manager is the design flow manager
     *
     */
-   TestbenchValuesXMLGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_manager, const DesignFlowManagerConstRef design_flow_manager);
+   TestbenchValuesXMLGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_manager,
+                                const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

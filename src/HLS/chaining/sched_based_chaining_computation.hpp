@@ -50,7 +50,8 @@ class sched_based_chaining_computation : public chaining
     * Constructor
     * @param design_flow_manager is the design flow manager
     */
-   sched_based_chaining_computation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   sched_based_chaining_computation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                                    const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

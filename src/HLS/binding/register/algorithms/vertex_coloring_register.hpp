@@ -52,7 +52,8 @@ class vertex_coloring_register : public conflict_based_register
     * Constructor of the class.
     * @param design_flow_manager is the design flow manager
     */
-   vertex_coloring_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   vertex_coloring_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                            const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor of the class.

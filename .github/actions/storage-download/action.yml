@@ -1,0 +1,54 @@
+name: 'Storage downlaod'
+description: 'Download a file or directory from private storage'
+inputs:
+  name:
+    description: 'Storage id of the package to download'
+    required: true
+  storage-url:
+    description: 'Url of private storage'
+    required: true
+  path:
+    description: 'Path were the package is downloaded'
+    required: false
+    default: './'
+  username:
+    description: 'Username for private storage access'
+    required: false
+    default: ''
+  password:
+    description: 'Password for private storage access'
+    required: false
+    default: ''
+  storage-path:
+    description: 'Custom storage path'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Download package
+      id: dwn
+      shell: bash
+      run: |
+        set -e
+        export XZ_OPT='-T0'
+        if [[ ! -z "${{inputs.storage-path}}" ]]; then
+          PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/${{inputs.name}}"
+        else
+          PKG_URL="${{inputs.storage-url}}/${{github.ref}}/${{inputs.name}}"
+        fi
+        PKG_URL+=".gh.pkg"
+        CURL_CMD='curl -L --fail '
+        if [[ ! -z '${{inputs.username}}' ]]; then
+          CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
+        fi
+        echo "Downloading package information"
+        STORAGE_COMPRESSED="$($CURL_CMD -s $PKG_URL.nfo)"
+        echo "Downloading from $PKG_URL to ${{inputs.path}}"
+        mkdir -p "${{inputs.path}}"
+        if [[ "$STORAGE_COMPRESSED" != "false" ]]; then
+          $CURL_CMD $PKG_URL | tar -C "${{inputs.path}}" -xJf -
+        else
+          $CURL_CMD $PKG_URL | tar -C "${{inputs.path}}" -xf -
+        fi
+        echo "Content restored in '${{inputs.path}}'"

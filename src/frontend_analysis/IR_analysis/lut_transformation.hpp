@@ -84,10 +84,13 @@ class lut_transformation : public FunctionFrontendFlowStep
 #if HAVE_STDCXX_17
 
    /// The list of all operation that can be converted to a lut.
-   const std::vector<enum kind> lutBooleanExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, truth_orif_expr_K, bit_xor_expr_K, truth_xor_expr_K, eq_expr_K,
-                                                                   ge_expr_K,      lut_expr_K,       cond_expr_K,    gt_expr_K,       le_expr_K,         lt_expr_K,      ne_expr_K};
+   const std::vector<enum kind> lutBooleanExpressibleOperations = {
+       bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, truth_orif_expr_K,
+       bit_xor_expr_K, truth_xor_expr_K, eq_expr_K,      ge_expr_K,       lut_expr_K,
+       cond_expr_K,    gt_expr_K,        le_expr_K,      lt_expr_K,       ne_expr_K};
 
-   const std::vector<enum kind> lutIntegerExpressibleOperations = {eq_expr_K, ne_expr_K, lt_expr_K, le_expr_K, gt_expr_K, ge_expr_K};
+   const std::vector<enum kind> lutIntegerExpressibleOperations = {eq_expr_K, ne_expr_K, lt_expr_K,
+                                                                   le_expr_K, gt_expr_K, ge_expr_K};
 
    bool CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const;
    bool CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const;
@@ -120,7 +123,8 @@ class lut_transformation : public FunctionFrontendFlowStep
 
    bool CheckIfProcessable(std::pair<unsigned int, blocRef> block);
 
-   tree_nodeRef CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index, std::vector<tree_nodeRef>& prev_stmts_to_add);
+   tree_nodeRef CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index,
+                                             std::vector<tree_nodeRef>& prev_stmts_to_add);
 
 #endif
 
@@ -128,7 +132,8 @@ class lut_transformation : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -138,7 +143,8 @@ class lut_transformation : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   lut_transformation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   lut_transformation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id,
+                      const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor
@@ -161,7 +167,8 @@ class lut_transformation : public FunctionFrontendFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Check if this step has actually to be executed

@@ -77,7 +77,8 @@ class SimulationTool
    /**
     * Performs the actual writing
     */
-   virtual void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) = 0;
+   virtual void GenerateScript(std::ostringstream& script, const std::string& top_filename,
+                               const std::list<std::string>& file_list) = 0;
 
  public:
    /**
@@ -93,7 +94,8 @@ class SimulationTool
    /**
     * Factory method
     */
-   static SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param, const std::string& suffix);
+   static SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param,
+                                                 const std::string& suffix);
 
    /**
     * Checks if the current specification can be executed or not
@@ -103,7 +105,8 @@ class SimulationTool
    /**
     * Generates the proper simulation script
     */
-   virtual std::string GenerateSimulationScript(const std::string& top_filename, const std::list<std::string>& file_list);
+   virtual std::string GenerateSimulationScript(const std::string& top_filename,
+                                                const std::list<std::string>& file_list);
 
    /**
     * Performs the simulation and returns the number of cycles

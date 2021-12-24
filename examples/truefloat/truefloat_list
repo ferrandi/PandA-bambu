@@ -1,0 +1,7 @@
+src/f64div.c  --benchmark-name=f64div  --top-fname=double_prec_division       --generate-tb="a=10.321453,b=-57.21543543"
+src/f64mul.c  --benchmark-name=f64mul  --top-fname=double_prec_multiplication --generate-tb="a=10.321453,b=-57.21543543"
+src/f64sub.c  --benchmark-name=f64sub  --top-fname=double_prec_subtraction    --generate-tb="a=10.321453,b=-57.21543543"
+src/f64sum.c  --benchmark-name=f64sum  --top-fname=double_prec_addition       --generate-tb="a=10.321453,b=-57.21543543"
+src/f64pow.c  --benchmark-name=f64pow  --top-fname=double_prec_pow  -lm       --generate-tb="a=1.21345,b=5.32146"
+src/f64sqrt.c --benchmark-name=f64sqrt --top-fname=double_prec_sqrt -lm       --generate-tb="a=4.346553"
+src/f64exp.c  --benchmark-name=f64exp  --top-fname=double_prec_exp  -lm       --generate-tb="a=3.72254"

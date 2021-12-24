@@ -34,7 +34,7 @@
  * @file APInt.hpp
  * @brief
  *
- * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -129,12 +129,13 @@ class APInt
    bw_t minBitwidth(bool sign) const;
 
    template <typename T>
-   T cast_to(typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr) const
+   typename std::enable_if<std::is_arithmetic<T>::value, T>::type cast_to() const
    {
       using U = typename std::make_unsigned<T>::type;
       if(_data < 0)
       {
-         return static_cast<T>(static_cast<U>(static_cast<U>(_data.convert_to<long long>()) & std::numeric_limits<U>::max()));
+         return static_cast<T>(
+             static_cast<U>(static_cast<U>(_data.convert_to<long long>()) & std::numeric_limits<U>::max()));
       }
       return static_cast<T>(static_cast<U>(_data.convert_to<unsigned long long>() & std::numeric_limits<U>::max()));
    }

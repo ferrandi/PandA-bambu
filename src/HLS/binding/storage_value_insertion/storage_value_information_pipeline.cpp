@@ -32,7 +32,8 @@
  */
 /**
  * @file storage_value_information.cpp
- * @brief This package is used to define the storage value scheme adopted when register replication for pipelining is required.
+ * @brief This package is used to define the storage value scheme adopted when register replication for pipelining is
+ * required.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -41,7 +42,9 @@
 /// Header include
 #include "storage_value_information_pipeline.hpp"
 
-StorageValueInformationPipeline::StorageValueInformationPipeline(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) : StorageValueInformation::StorageValueInformation(_HLS_mgr, _function_id)
+StorageValueInformationPipeline::StorageValueInformationPipeline(const HLS_managerConstRef _HLS_mgr,
+                                                                 const unsigned int _function_id)
+    : StorageValueInformation::StorageValueInformation(_HLS_mgr, _function_id)
 {
 }
 
@@ -54,7 +57,8 @@ bool StorageValueInformationPipeline::is_a_storage_value(vertex state, unsigned 
 
 unsigned int StorageValueInformationPipeline::get_storage_value_index(vertex state, unsigned int var_index)
 {
-   THROW_ASSERT(storage_index_double_map.find(std::make_pair(state, var_index)) != storage_index_double_map.end(), "the storage value is missing");
+   THROW_ASSERT(storage_index_double_map.find(std::make_pair(state, var_index)) != storage_index_double_map.end(),
+                "the storage value is missing");
    return storage_index_double_map.find(std::make_pair(state, var_index))->second;
 }
 

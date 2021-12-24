@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "soft-fp.h"
-
-CMPtype __ledf2(DFtype a, DFtype b)
+static __FORCE_INLINE CMPtype __ledf2(DFtype a, DFtype b)
 {
    FP_DECL_EX;
    FP_DECL_D(A);
@@ -50,8 +47,3 @@ CMPtype __ledf2(DFtype a, DFtype b)
 }
 
 strong_alias(__ledf2, __ltdf2);
-
-CMPtype __float64_leif(DFtype a, DFtype b)
-{
-   return __ledf2(a, b);
-}

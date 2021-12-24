@@ -76,9 +76,12 @@
 /// HLS/module_allocation
 #include "allocation_information.hpp"
 
-Scheduling::Scheduling(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
+Scheduling::Scheduling(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                       const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
                        const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization), speculation(_Param->getOption<bool>(OPT_speculative))
+    : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type,
+                      _hls_flow_step_specialization),
+      speculation(_Param->getOption<bool>(OPT_speculative))
 {
 }
 
@@ -106,7 +109,8 @@ void Scheduling::Initialize()
    }
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> Scheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+Scheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -116,13 +120,17 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
          if(parameters->getOption<bool>(OPT_parse_pragma))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          else
 #endif
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
+         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -151,7 +159,8 @@ unsigned int Scheduling::compute_b_tag_size(const OpGraphConstRef cdg, vertex co
    }
    else if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_SWITCH)
    {
-      THROW_ASSERT(switch_map_size.find(controlling_vertex) != switch_map_size.end(), "missing a controlling_vertex from the switch_map_size");
+      THROW_ASSERT(switch_map_size.find(controlling_vertex) != switch_map_size.end(),
+                   "missing a controlling_vertex from the switch_map_size");
       return switch_map_size.find(controlling_vertex)->second;
    }
    else
@@ -161,7 +170,9 @@ unsigned int Scheduling::compute_b_tag_size(const OpGraphConstRef cdg, vertex co
    return 0;
 }
 
-unsigned int Scheduling::compute_b_tag(const EdgeDescriptor& e, const OpGraphConstRef cdg, CustomOrderedSet<unsigned int>::const_iterator& switch_it, CustomOrderedSet<unsigned int>::const_iterator& switch_it_end) const
+unsigned int Scheduling::compute_b_tag(const EdgeDescriptor& e, const OpGraphConstRef cdg,
+                                       CustomOrderedSet<unsigned int>::const_iterator& switch_it,
+                                       CustomOrderedSet<unsigned int>::const_iterator& switch_it_end) const
 {
    vertex controlling_vertex = boost::source(e, *cdg);
    if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_ENTRY)
@@ -205,7 +216,8 @@ unsigned int Scheduling::b_tag_normalize(vertex controlling_vertex, unsigned int
 void Scheduling::init_switch_maps(vertex controlling_vertex, const OpGraphConstRef cdg)
 {
    unsigned int curr_b_tag = 0;
-   switch_normalizing_map.insert(std::pair<vertex, CustomUnorderedMapUnstable<unsigned int, unsigned int>>(controlling_vertex, CustomUnorderedMapUnstable<unsigned int, unsigned int>()));
+   switch_normalizing_map.insert(std::pair<vertex, CustomUnorderedMapUnstable<unsigned int, unsigned int>>(
+       controlling_vertex, CustomUnorderedMapUnstable<unsigned int, unsigned int>()));
    auto snp_it = switch_normalizing_map.find(controlling_vertex);
    OutEdgeIterator eo, eo_end;
    for(boost::tie(eo, eo_end) = boost::out_edges(controlling_vertex, *cdg); eo != eo_end; eo++)
@@ -239,21 +251,27 @@ ControlStep Scheduling::anticipate_operations(const OpGraphConstRef dependence_g
    for(v = operations.begin(); v != v_end; ++v)
    {
       /// Checking if operations is time zero
-      double execution_time = HLS->allocation_information->get_execution_time(HLS->Rfu->get_assign(*v), *v, dependence_graph);
+      double execution_time =
+          HLS->allocation_information->get_execution_time(HLS->Rfu->get_assign(*v), *v, dependence_graph);
       if(execution_time == 0.0)
       {
          InEdgeIterator ei, ei_end;
          for(boost::tie(ei, ei_end) = boost::in_edges(*v, *dependence_graph); ei != ei_end; ei++)
          {
             vertex source = boost::source(*ei, *dependence_graph);
-            const auto ending_time = HLS->Rsch->get_cstep(source).second + HLS->allocation_information->op_et_to_cycles(HLS->allocation_information->get_execution_time(HLS->Rfu->get_assign(source), source, dependence_graph), clock_cycle);
+            const auto ending_time = HLS->Rsch->get_cstep(source).second +
+                                     HLS->allocation_information->op_et_to_cycles(
+                                         HLS->allocation_information->get_execution_time(HLS->Rfu->get_assign(source),
+                                                                                         source, dependence_graph),
+                                         clock_cycle);
             /// Operation can not be anticipated
             if(ending_time > HLS->Rsch->get_cstep(*v).second)
             {
                break;
             }
 
-            if(ending_time == HLS->Rsch->get_cstep(*v).second && (GET_TYPE(dependence_graph, source) & (TYPE_IF | TYPE_WHILE | TYPE_FOR | TYPE_SWITCH)))
+            if(ending_time == HLS->Rsch->get_cstep(*v).second &&
+               (GET_TYPE(dependence_graph, source) & (TYPE_IF | TYPE_WHILE | TYPE_FOR | TYPE_SWITCH)))
             {
                break;
             }

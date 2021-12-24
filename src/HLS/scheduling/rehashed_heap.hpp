@@ -72,7 +72,8 @@ struct rehashed_heap : public std::priority_queue<vertex, std::vector<vertex>, p
     * Constructor
     * @param pri is the priority functor.
     */
-   rehashed_heap(const priority_compare_functor<_Type>& _comp) : std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>(_comp)
+   rehashed_heap(const priority_compare_functor<_Type>& _comp)
+       : std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>(_comp)
    {
    }
    /**
@@ -80,7 +81,8 @@ struct rehashed_heap : public std::priority_queue<vertex, std::vector<vertex>, p
     */
    void rehash()
    {
-      std::make_heap(std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>::c.begin(), std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>::c.end(),
+      std::make_heap(std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>::c.begin(),
+                     std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>::c.end(),
                      std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>::comp);
    }
 
@@ -108,7 +110,9 @@ struct tree_rehashed_heap : public CustomUnorderedMap<vertex, std::vector<rehash
     * @param b_tag filled with the branch tag when found is true.
     * @param found is true when there exists a queue with candidate vertices.
     */
-   typename std::vector<rehashed_heap<_Type>>::iterator top(const CustomUnorderedMap<vertex, CustomOrderedSet<unsigned int>>& curren_black_list, const priority_data<_Type>& priority_functor, vertex& controlling_vertex, unsigned int& b_tag, bool& found)
+   typename std::vector<rehashed_heap<_Type>>::iterator
+   top(const CustomUnorderedMap<vertex, CustomOrderedSet<unsigned int>>& curren_black_list,
+       const priority_data<_Type>& priority_functor, vertex& controlling_vertex, unsigned int& b_tag, bool& found)
    {
       found = false;
       typename std::vector<rehashed_heap<_Type>>::iterator res;
@@ -120,7 +124,8 @@ struct tree_rehashed_heap : public CustomUnorderedMap<vertex, std::vector<rehash
          bool cv_not_in_bl = curren_black_list.find(it->first) == curren_black_list.end();
          for(typename std::vector<rehashed_heap<_Type>>::iterator vit = it->second.begin(); vit != vit_end; ++vit, ++i)
          {
-            if(!vit->empty() && (cv_not_in_bl || curren_black_list.find(it->first)->second.find(i) == curren_black_list.find(it->first)->second.end()))
+            if(!vit->empty() && (cv_not_in_bl || curren_black_list.find(it->first)->second.find(i) ==
+                                                     curren_black_list.find(it->first)->second.end()))
             {
                if(!found)
                {

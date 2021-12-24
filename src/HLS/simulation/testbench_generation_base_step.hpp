@@ -116,7 +116,8 @@ class TestbenchGenerationBaseStep : public HLS_step
     * @param xilinx_isim Xilinx isim?
     * @param TreeM Tree Manager of the design under test.
     */
-   void write_hdl_testbench(std::string simulation_values_path, bool generate_vcd_output, bool xilinx_isim, const tree_managerConstRef TreeM) const;
+   void write_hdl_testbench(std::string simulation_values_path, bool generate_vcd_output, bool xilinx_isim,
+                            const tree_managerConstRef TreeM) const;
 
    void write_hdl_testbench_prolog() const;
 
@@ -164,9 +165,11 @@ class TestbenchGenerationBaseStep : public HLS_step
 
    void write_sim_time_calc() const;
 
-   void write_underlying_testbench(std::string simulation_values_path, bool generate_vcd_output, bool xilinx_isim, const tree_managerConstRef TreeM) const;
+   void write_underlying_testbench(std::string simulation_values_path, bool generate_vcd_output, bool xilinx_isim,
+                                   const tree_managerConstRef TreeM) const;
 
-   void write_initial_block(const std::string& simulation_values_path, bool withMemory, const tree_managerConstRef TreeM, bool generate_vcd_output) const;
+   void write_initial_block(const std::string& simulation_values_path, bool withMemory,
+                            const tree_managerConstRef TreeM, bool generate_vcd_output) const;
 
    /**
     * Generates and execute the Verilator testbench file associated with the given component
@@ -204,7 +207,8 @@ class TestbenchGenerationBaseStep : public HLS_step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Constructor.
@@ -212,7 +216,9 @@ class TestbenchGenerationBaseStep : public HLS_step
     * Declared protected to prevent direct instantiation. Use
     * Create() factory methods instead.
     */
-   TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, std::string c_testbench_basename = "values");
+   TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                               const DesignFlowManagerConstRef design_flow_manager,
+                               const HLSFlowStep_Type hls_flow_step_type, std::string c_testbench_basename = "values");
 
  public:
    /**

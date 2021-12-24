@@ -32,7 +32,8 @@
  */
 /**
  * @file raw_writer.hpp
- * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the raw format.
+ * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the raw
+ * format.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$

@@ -50,9 +50,12 @@
 #include "math_function.hpp"
 #include "utility.hpp"
 
-mem_dominator_allocation_cs::mem_dominator_allocation_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization,
-                                                         const HLSFlowStep_Type _hls_flow_step_type)
-    : mem_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_specialization, _hls_flow_step_type)
+mem_dominator_allocation_cs::mem_dominator_allocation_cs(
+    const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+    const DesignFlowManagerConstRef _design_flow_manager,
+    const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization, const HLSFlowStep_Type _hls_flow_step_type)
+    : mem_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_specialization,
+                               _hls_flow_step_type)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }

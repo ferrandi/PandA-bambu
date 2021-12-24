@@ -72,11 +72,14 @@
 
 /// tree include
 #include "tree_node.hpp"
+#include "tree_reindex.hpp"
 
-/// we start to allocate from internal_base_address_alignment byte to align address to internal_base_address_alignment bits
-/// we can use address 0 in some cases but it is not safe in general.
+/// we start to allocate from internal_base_address_alignment byte to align address to internal_base_address_alignment
+/// bits we can use address 0 in some cases but it is not safe in general.
 
-memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned long long int initial_internal_address, const unsigned& _bus_addr_bitsize)
+memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
+               bool _null_pointer_check, bool initial_internal_address_p,
+               unsigned long long int initial_internal_address, const unsigned& _bus_addr_bitsize)
     : TreeM(_TreeM),
       maximum_private_memory_size(0),
       total_amount_of_private_memory(0),
@@ -95,7 +98,8 @@ memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_ad
       parameter_alignment(16),
       null_pointer_check(_null_pointer_check),
       packed_vars(false),
-      bus_addr_bitsize(_bus_addr_bitsize)
+      bus_addr_bitsize(_bus_addr_bitsize),
+      enable_hls_bit_value(false)
 {
    unsigned int max_bus_size = 2 * max_bram;
    external_base_address_alignment = internal_base_address_alignment = max_bus_size / 8;
@@ -116,16 +120,20 @@ memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_ad
 
 memory::~memory() = default;
 
-memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned long long _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p,
-                                unsigned int initial_internal_address, const unsigned int& _address_bitsize)
+memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM,
+                                unsigned long long _off_base_address, unsigned int max_bram, bool _null_pointer_check,
+                                bool initial_internal_address_p, unsigned int initial_internal_address,
+                                const unsigned int& _address_bitsize)
 {
    if(_parameters->isOption(OPT_context_switch))
    {
-      return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
+      return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check,
+                                     initial_internal_address_p, initial_internal_address, _address_bitsize));
    }
    else
    {
-      return memoryRef(new memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
+      return memoryRef(new memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p,
+                                  initial_internal_address, _address_bitsize));
    }
 }
 
@@ -136,19 +144,19 @@ std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() cons
 
 void memory::compute_next_base_address(unsigned long long int& address, unsigned int var, unsigned int alignment)
 {
-   const tree_nodeRef node = TreeM->get_tree_node_const(var);
+   const auto node = TreeM->CGetTreeReindex(var);
    unsigned int size = 0;
 
    // The __builtin_wait_call associate an address to the call site to
    // identify it.  For this case we are allocating a word.
-   if(GetPointer<gimple_call>(node))
+   if(GetPointer<const gimple_call>(GET_CONST_NODE(node)))
    {
       size = (bus_addr_bitsize % 8 == 0) ? bus_addr_bitsize / 8 : (bus_addr_bitsize / 8) + 1;
    }
    else
    {
       /// compute the next base address
-      size = compute_n_bytes(tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, var)));
+      size = compute_n_bytes(tree_helper::Size(tree_helper::CGetType(node)));
    }
    address += size;
    /// align the memory address
@@ -224,10 +232,11 @@ void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, con
    {
       THROW_WARNING("The variable " + STR(var) + " has been already set as a parameter");
    }
-   THROW_ASSERT(in_vars.find(var) == in_vars.end() || is_private_memory(var), "variable already allocated inside this module");
+   THROW_ASSERT(in_vars.find(var) == in_vars.end() || is_private_memory(var),
+                "variable already allocated inside this module");
 
    internal[funID_scope][var] = m_sym;
-   if(GetPointer<gimple_call>(TreeM->get_tree_node_const(var)))
+   if(GetPointer<const gimple_call>(TreeM->CGetTreeNode(var)))
    {
       callSites[var] = m_sym;
    }
@@ -238,7 +247,7 @@ void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, con
 
    if(is_private_memory(var))
    {
-      unsigned long long int allocated_memory = compute_n_bytes(tree_helper::size(TreeM, var));
+      unsigned long long int allocated_memory = compute_n_bytes(tree_helper::Size(TreeM->CGetTreeReindex(var)));
       rangesize[var] = allocated_memory;
       align(rangesize[var], internal_base_address_alignment);
       total_amount_of_private_memory += allocated_memory;
@@ -343,7 +352,8 @@ unsigned long long int memory::get_memory_address() const
 
 bool memory::is_internal_variable(unsigned int funID_scope, unsigned int var) const
 {
-   return internal.find(funID_scope) != internal.end() && internal.find(funID_scope)->second.find(var) != internal.find(funID_scope)->second.end();
+   return internal.find(funID_scope) != internal.end() &&
+          internal.find(funID_scope)->second.find(var) != internal.find(funID_scope)->second.end();
 }
 
 bool memory::is_external_variable(unsigned int var) const
@@ -369,7 +379,8 @@ bool memory::has_sds_var(unsigned int var) const
 
 bool memory::is_parameter(unsigned int funID_scope, unsigned int var) const
 {
-   return parameter.find(funID_scope) != parameter.end() && parameter.find(funID_scope)->second.find(var) != parameter.find(funID_scope)->second.end();
+   return parameter.find(funID_scope) != parameter.end() &&
+          parameter.find(funID_scope)->second.find(var) != parameter.find(funID_scope)->second.end();
 }
 
 unsigned long long int memory::get_callSite_base_address(unsigned int var) const
@@ -393,7 +404,8 @@ unsigned long long int memory::get_external_base_address(unsigned int var) const
 unsigned long long int memory::get_parameter_base_address(unsigned int funId, unsigned int var) const
 {
    THROW_ASSERT(parameter.find(funId) != parameter.end(), "Function not yet allocated");
-   THROW_ASSERT(parameter.find(funId)->second.find(var) != parameter.find(funId)->second.end(), "Function not yet allocated");
+   THROW_ASSERT(parameter.find(funId)->second.find(var) != parameter.find(funId)->second.end(),
+                "Function not yet allocated");
    return parameter.find(funId)->second.find(var)->second->get_address();
 }
 
@@ -442,7 +454,8 @@ bool memory::has_parameter_base_address(unsigned int var, unsigned int funId) co
 
 bool memory::has_base_address(unsigned int var) const
 {
-   return external.find(var) != external.end() || in_vars.find(var) != in_vars.end() || params.find(var) != params.end() || callSites.find(var) != callSites.end();
+   return external.find(var) != external.end() || in_vars.find(var) != in_vars.end() ||
+          params.find(var) != params.end() || callSites.find(var) != callSites.end();
 }
 
 unsigned long long memory::get_base_address(unsigned int var, unsigned int funId) const
@@ -500,7 +513,8 @@ unsigned long long int memory::get_last_address(unsigned int funId, const applic
       unsigned int var = internalVar.first;
       if(!is_private_memory(var) && !has_parameter_base_address(var, funId) && has_base_address(var))
       {
-         maxAddress = std::max(maxAddress, internalVar.second->get_address() + tree_helper::size(TreeM, var) / 8);
+         maxAddress = std::max(maxAddress,
+                               internalVar.second->get_address() + tree_helper::Size(TreeM->CGetTreeReindex(var)) / 8);
       }
    }
    if(AppMgr->hasToBeInterfaced(funId))
@@ -509,7 +523,8 @@ unsigned long long int memory::get_last_address(unsigned int funId, const applic
       for(const auto& itr : paramsVar)
       {
          unsigned int var = itr.first;
-         maxAddress = std::max(maxAddress, itr.second->get_address() + tree_helper::size(TreeM, var) / 8);
+         maxAddress =
+             std::max(maxAddress, itr.second->get_address() + tree_helper::Size(TreeM->CGetTreeReindex(var)) / 8);
       }
    }
    for(unsigned int Itr : calledSet)
@@ -601,7 +616,9 @@ void memory::add_actual_parm_loaded(unsigned int var)
 
 void memory::set_internal_base_address_alignment(unsigned int _internal_base_address_alignment)
 {
-   THROW_ASSERT(_internal_base_address_alignment && !(_internal_base_address_alignment & (_internal_base_address_alignment - 1)), "alignment must be a power of two");
+   THROW_ASSERT(_internal_base_address_alignment &&
+                    !(_internal_base_address_alignment & (_internal_base_address_alignment - 1)),
+                "alignment must be a power of two");
    internal_base_address_alignment = _internal_base_address_alignment;
    align(internal_base_address_start, internal_base_address_alignment);
    next_base_address = internal_base_address_start;
@@ -613,7 +630,8 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
 
    if(src->ExistsParameter(MEMORY_PARAMETER))
    {
-      std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(src->GetParameter(MEMORY_PARAMETER), ";");
+      std::vector<std::string> current_src_parameters =
+          convert_string_to_vector<std::string>(src->GetParameter(MEMORY_PARAMETER), ";");
       for(const auto& current_src_parameter : current_src_parameters)
       {
          std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_src_parameter, "=");
@@ -630,10 +648,12 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
          structural_objectRef subModule = srcModule->get_internal_object(i);
          if(subModule->ExistsParameter(MEMORY_PARAMETER))
          {
-            std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(subModule->GetParameter(MEMORY_PARAMETER), ";");
+            std::vector<std::string> current_src_parameters =
+                convert_string_to_vector<std::string>(subModule->GetParameter(MEMORY_PARAMETER), ";");
             for(const auto& current_src_parameter : current_src_parameters)
             {
-               std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_src_parameter, "=");
+               std::vector<std::string> current_parameter =
+                   convert_string_to_vector<std::string>(current_src_parameter, "=");
                res_parameters[current_parameter[0]] = current_parameter[1];
             }
          }
@@ -644,13 +664,16 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
    {
       tgt->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }
-   std::vector<std::string> current_tgt_parameters = convert_string_to_vector<std::string>(tgt->get_circ()->GetParameter(MEMORY_PARAMETER), ";");
+   std::vector<std::string> current_tgt_parameters =
+       convert_string_to_vector<std::string>(tgt->get_circ()->GetParameter(MEMORY_PARAMETER), ";");
    for(auto& current_tgt_parameter : current_tgt_parameters)
    {
       std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameter, "=");
-      if(res_parameters.find(current_parameter[0]) != res_parameters.end() && res_parameters[current_parameter[0]] != current_parameter[1])
+      if(res_parameters.find(current_parameter[0]) != res_parameters.end() &&
+         res_parameters[current_parameter[0]] != current_parameter[1])
       {
-         THROW_ERROR("The parameter \"" + current_parameter[0] + "\" has been set with (at least) two different values");
+         THROW_ERROR("The parameter \"" + current_parameter[0] +
+                     "\" has been set with (at least) two different values");
       }
       res_parameters[current_parameter[0]] = current_parameter[1];
    }
@@ -690,7 +713,8 @@ void memory::add_memory_parameter(const structural_managerRef SM, const std::str
          {
             return;
          }
-         THROW_ERROR("The parameter \"" + name + "\" has been set with (at least) two different values: " + value + " != " + current_parameter[1]);
+         THROW_ERROR("The parameter \"" + name + "\" has been set with (at least) two different values: " + value +
+                     " != " + current_parameter[1]);
       }
    }
    memory_parameters += name + "=" + value;
@@ -792,7 +816,8 @@ bool memory::notEQ(refcount<memory> ref) const
    {
       return true;
    }
-   auto neEQMapSymbolRef = [](const std::map<unsigned int, memory_symbolRef>& ref1, const std::map<unsigned int, memory_symbolRef>& ref2) -> bool {
+   auto neEQMapSymbolRef = [](const std::map<unsigned int, memory_symbolRef>& ref1,
+                              const std::map<unsigned int, memory_symbolRef>& ref2) -> bool {
       if(ref1.size() != ref2.size())
       {
          return true;
@@ -814,7 +839,9 @@ bool memory::notEQ(refcount<memory> ref) const
       }
       return false;
    };
-   auto neEQ2MapSymbolRef = [&neEQMapSymbolRef](const std::map<unsigned int, std::map<unsigned int, memory_symbolRef>>& ref1, const std::map<unsigned int, std::map<unsigned int, memory_symbolRef>>& ref2) -> bool {
+   auto neEQ2MapSymbolRef =
+       [&neEQMapSymbolRef](const std::map<unsigned int, std::map<unsigned int, memory_symbolRef>>& ref1,
+                           const std::map<unsigned int, std::map<unsigned int, memory_symbolRef>>& ref2) -> bool {
       if(ref1.size() != ref2.size())
       {
          return true;

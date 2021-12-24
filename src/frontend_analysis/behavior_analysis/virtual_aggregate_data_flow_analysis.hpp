@@ -52,7 +52,8 @@ class VirtualAggregateDataFlowAnalysis : public DataDependenceComputation
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -62,7 +63,9 @@ class VirtualAggregateDataFlowAnalysis : public DataDependenceComputation
     * @param function_index is the index of the function
     * @param parameters is the set of the parameters
     */
-   VirtualAggregateDataFlowAnalysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const unsigned int _function_index, const ParameterConstRef parameters);
+   VirtualAggregateDataFlowAnalysis(const application_managerRef AppM,
+                                    const DesignFlowManagerConstRef design_flow_manager,
+                                    const unsigned int _function_index, const ParameterConstRef parameters);
 
    /**
     *  Destructor

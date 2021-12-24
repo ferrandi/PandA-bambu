@@ -56,13 +56,17 @@
 /// STL include
 #include <vector>
 
-SimulationTool::SimulationTool(const ParameterConstRef& _Param) : Param(_Param), debug_level(Param->getOption<int>(OPT_debug_level)), output_level(Param->getOption<unsigned int>(OPT_output_level))
+SimulationTool::SimulationTool(const ParameterConstRef& _Param)
+    : Param(_Param),
+      debug_level(Param->getOption<int>(OPT_debug_level)),
+      output_level(Param->getOption<unsigned int>(OPT_output_level))
 {
 }
 
 SimulationTool::~SimulationTool() = default;
 
-SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const ParameterConstRef& _Param, const std::string& suffix)
+SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const ParameterConstRef& _Param,
+                                                       const std::string& suffix)
 {
    switch(type)
    {
@@ -117,7 +121,8 @@ unsigned long long int SimulationTool::Simulate(unsigned long long int& accum_cy
    ToolManagerRef tool(new ToolManager(Param));
    tool->configure(generated_script, "");
    std::vector<std::string> parameters, input_files, output_files;
-   tool->execute(parameters, input_files, output_files, Param->getOption<std::string>(OPT_output_temporary_directory) + "/simulation_output");
+   tool->execute(parameters, input_files, output_files,
+                 Param->getOption<std::string>(OPT_output_temporary_directory) + "/simulation_output");
 
    if(!log_file.empty() && output_level == OUTPUT_LEVEL_VERBOSE)
    {
@@ -195,18 +200,31 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
             {
                if(filevalues[2] == "ns")
                {
-                  sim_cycles = static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / Param->getOption<long double>(OPT_clock_period));
+                  if(Param->getOption<std::string>(OPT_simulator) == "VERILATOR")
+                  {
+                     sim_cycles = (static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / 2)) - 2;
+                  }
+                  else
+                  {
+                     sim_cycles =
+                         (static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) /
+                                                              Param->getOption<long double>(OPT_clock_period))) -
+                         2;
+                  }
                }
                else if(filevalues[2] == "ps")
                {
-                  sim_cycles = static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / 1000 / Param->getOption<long double>(OPT_clock_period));
+                  sim_cycles = static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / 1000 /
+                                                                   Param->getOption<long double>(OPT_clock_period));
                }
                else
                {
                   THROW_ERROR("Unexpected time unit: " + filevalues[2]);
                }
             }
-            PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, (i + 1) << ". Simulation completed with SUCCESS; Execution time " << sim_cycles << " cycles;");
+            PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                          (i + 1) << ". Simulation completed with SUCCESS; Execution time " << sim_cycles
+                                  << " cycles;");
             num_cycles += sim_cycles;
             i++;
          }
@@ -314,7 +332,8 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
             }
             else
             {
-               THROW_ASSERT(prev_state == 2 || first_iteration, "Something wrong happen during the reading of the profiling results");
+               THROW_ASSERT(prev_state == 2 || first_iteration,
+                            "Something wrong happen during the reading of the profiling results");
 #if HAVE_ASSERTS
                prev_state = 3;
 #endif
@@ -327,7 +346,9 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
          }
          num_cycles = static_cast<unsigned long long int>(std::round(time_stamp / clock_period));
          i = i / 2;
-         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Simulation completed with SUCCESS; Total Execution time " << num_cycles << " cycles; Number of executions " << i << ";");
+         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                       "Simulation completed with SUCCESS; Total Execution time "
+                           << num_cycles << " cycles; Number of executions " << i << ";");
       }
       else
       {
@@ -340,7 +361,8 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
    {
       if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
       {
-         THROW_ERROR("Expected a number of cycles different from zero. Something wrong happened during the simulation!");
+         THROW_ERROR(
+             "Expected a number of cycles different from zero. Something wrong happened during the simulation!");
       }
       else
       {
@@ -352,7 +374,8 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
    return num_cycles / i;
 }
 
-std::string SimulationTool::GenerateSimulationScript(const std::string& top_filename, const std::list<std::string>& file_list)
+std::string SimulationTool::GenerateSimulationScript(const std::string& top_filename,
+                                                     const std::list<std::string>& file_list)
 {
    std::ostringstream script;
    script << "#!/bin/bash" << std::endl;
@@ -381,7 +404,9 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    parameters.emplace_back("+x");
    parameters.push_back(generated_script);
    input_files.push_back(generated_script);
-   tool->execute(parameters, input_files, output_files, Param->getOption<std::string>(OPT_output_temporary_directory) + "/simulation_generation_scripts_output");
+   tool->execute(parameters, input_files, output_files,
+                 Param->getOption<std::string>(OPT_output_temporary_directory) +
+                     "/simulation_generation_scripts_output");
 
    return generated_script;
 }

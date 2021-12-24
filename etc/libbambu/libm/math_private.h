@@ -257,7 +257,7 @@ extern double __hide_ieee754_y1(double);
 extern double __hide_ieee754_jn(int, double);
 extern double __hide_ieee754_yn(int, double);
 extern double __hide_ieee754_remainder(double, double);
-extern int __hide_ieee754_rem_pio2(double, double*);
+//extern int __hide_ieee754_rem_pio2(double, double*);
 #ifdef _SCALB_INT
 extern double __hide_ieee754_scalb(double, int);
 #else

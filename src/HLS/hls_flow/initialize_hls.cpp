@@ -53,7 +53,6 @@
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-
 #include "memory_allocation.hpp"
 
 /// technology include
@@ -62,19 +61,21 @@
 /// technology/physical_library include
 #include "technology_node.hpp"
 
-/// tree include
+#include "call_graph_manager.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 
-InitializeHLS::InitializeHLS(const ParameterConstRef _parameters, const HLS_managerRef _HLS_mgr, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+InitializeHLS::InitializeHLS(const ParameterConstRef _parameters, const HLS_managerRef _HLS_mgr,
+                             unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_parameters, _HLS_mgr, _function_id, _design_flow_manager, HLSFlowStep_Type::INITIALIZE_HLS)
 {
 }
 
 InitializeHLS::~InitializeHLS() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> InitializeHLS::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+InitializeHLS::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -89,11 +90,13 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       }
       case PRECEDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-         ret.insert(
-             std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm),
-                             HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy), parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type))),
-                             HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(
+                                        parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy),
+                                        parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type))),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          break;
       }
       default:
@@ -124,7 +127,8 @@ DesignFlowStep_Status InitializeHLS::InternalExec()
    if(GetPointer<const function_decl>(HLSMgr->get_tree_manager()->CGetTreeNode(funId))->omp_for_wrapper)
    {
       HLS->controller_type = HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR;
-      HLS->module_binding_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
+      HLS->module_binding_algorithm =
+          static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
       HLS->liveness_algorithm = HLSFlowStep_Type::CHAINING_BASED_LIVENESS;
       HLS->chaining_algorithm = HLSFlowStep_Type::EPDG_SCHED_CHAINING;
    }
@@ -136,7 +140,8 @@ DesignFlowStep_Status InitializeHLS::InternalExec()
       {
          HLS->controller_type = HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR;
       }
-      HLS->module_binding_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
+      HLS->module_binding_algorithm =
+          static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
       HLS->liveness_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_liveness_algorithm));
       HLS->chaining_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_chaining_algorithm));
    }
