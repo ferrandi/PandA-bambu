@@ -418,7 +418,8 @@ namespace llvm
       const void* gimple_assign_rhs_getelementptr(const void* g);
       const void* gimple_assign_rhs_insertvalue(const void* g);
       const void* gimple_assign_rhs_extractvalue(const void* g);
-      bool temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited, const llvm::TargetLibraryInfo& TLI);
+      bool temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited,
+                                const llvm::TargetLibraryInfo& TLI);
       const void* getOperand(const llvm::Value* operand, const llvm::Function* currentFunction);
       const void* gimple_assign_lhs(const void* g);
       const void* gimple_assign_rhs_alloca(const void* g);

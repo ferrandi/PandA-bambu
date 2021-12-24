@@ -225,7 +225,8 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                   store_candidate = true;
                }
             }
-            if(!gm->clobber && !gm->init_assignment && op0_type && op1_type && op1->get_kind() != insertvalue_expr_K && op1->get_kind() != extractvalue_expr_K &&
+            if(!gm->clobber && !gm->init_assignment && op0_type && op1_type && op1->get_kind() != insertvalue_expr_K &&
+               op1->get_kind() != extractvalue_expr_K &&
                ((GET_CONST_NODE(op0_type)->get_kind() == record_type_K &&
                  GET_CONST_NODE(op1_type)->get_kind() == record_type_K && op1->get_kind() != view_convert_expr_K) ||
                 (GET_CONST_NODE(op0_type)->get_kind() == union_type_K &&

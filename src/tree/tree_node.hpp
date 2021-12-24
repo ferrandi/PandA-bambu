@@ -575,7 +575,7 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case ternary_mp_expr_K:      \
    case ternary_mm_expr_K:      \
    case fshl_expr_K:            \
-   case fshr_expr_K \
+   case fshr_expr_K:            \
    case insertvalue_expr_K
 
 /**
@@ -6186,10 +6186,11 @@ CREATE_TREE_NODE_CLASS(fshl_expr, ternary_expr);
  * This struct specifies the fshr_expr node.
  * Simple arithmetic.
  */
-CREATE_TREE_NODE_CLASS(fshr_expr, ternary_expr); 
+CREATE_TREE_NODE_CLASS(fshr_expr, ternary_expr);
 
+/**
  * This struct specifies the extractvalue_expr node.
- * extract a value from an aggregate. 
+ * extract a value from an aggregate.
  */
 CREATE_TREE_NODE_CLASS(extractvalue_expr, binary_expr);
 

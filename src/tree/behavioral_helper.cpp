@@ -1772,7 +1772,8 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          unsigned int right_op = GET_INDEX_NODE(be->op1);
          unsigned int return_index;
          tree_helper::get_type_node(node, return_index);
-         res += "(" + tree_helper::print_type(TM, return_index) + ")(" + print_node(left_op, v, vppf) + " >> " + print_node(right_op, v, vppf) + ");";
+         res += "(" + tree_helper::print_type(TM, return_index) + ")(" + print_node(left_op, v, vppf) + " >> " +
+                print_node(right_op, v, vppf) + ");";
          break;
       }
       case insertvalue_expr_K:
@@ -1787,7 +1788,8 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          tree_helper::get_type_node(node, return_index);
          res += "(" + tree_helper::print_type(TM, return_index) + ")";
          res += "(((" + print_node(op0, v, vppf) + " >> (" + STR(op2_size) + " + " + print_node(op2, v, vppf) + "))";
-         res += " << (" + STR(op2_size) + " + " + print_node(op2, v, vppf) + ")) | (( " + print_node(op1, v, vppf) + " << ";
+         res += " << (" + STR(op2_size) + " + " + print_node(op2, v, vppf) + ")) | (( " + print_node(op1, v, vppf) +
+                " << ";
          res += print_node(op2, v, vppf) + ") | ((" + print_node(op0, v, vppf) + " << " + print_node(op2, v, vppf);
          res += ") >> " + print_node(op2, v, vppf) + ")))";
          break;

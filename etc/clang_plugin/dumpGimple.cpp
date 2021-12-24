@@ -136,14 +136,28 @@ namespace llvm
 #include "gcc/cp-tree.def"
 #include "gcc/gimple.def"
 #include "gcc/tree.def"
-      DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS) DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
-          DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
-              DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
-                  DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                      DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                          DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
-                          DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3) DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                          DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)
+      DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(
+          GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS) DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
+          DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS) DEFGSCODE(
+              GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+              DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
+                  DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
+                      DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+                          DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
+                              DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
+                                  DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+                                      DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+                                          DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+                                              DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+                                                  DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
+                                                      DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                                                          DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                                                              DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
+                                                                  DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
+                                                                      DEFTREECODE(INSERTVALUE, "insertvalue_expr",
+                                                                                  tcc_expression, 3)
+                                                                          DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
+                                                                                      tcc_expression, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -155,14 +169,29 @@ namespace llvm
 #include "gcc/cp-tree.def"
 #include "gcc/gimple.def"
 #include "gcc/tree.def"
-       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS) DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
-           DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
-               DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
-                   DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
-                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3) DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                           DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 2) DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)};
+       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign",
+                                                                      GSS_WITH_MEM_OPS)
+           DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
+               DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign",
+                         GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration,
+                                                   0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
+                   DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
+                               0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+                       DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
+                           DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
+                               DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+                                   DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+                                       DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+                                           DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+                                               DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
+                                                   DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                                                       DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                                                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
+                                                               DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
+                                                                   DEFTREECODE(INSERTVALUE, "insertvalue_expr",
+                                                                               tcc_expression, 2)
+                                                                       DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
+                                                                                   tcc_expression, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) TYPE,
@@ -172,14 +201,29 @@ namespace llvm
 #include "gcc/cp-tree.def"
 #include "gcc/gimple.def"
 #include "gcc/tree.def"
-       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS) DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
-           DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
-               DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
-                   DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
-                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3) DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                           DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)};
+       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign",
+                                                                      GSS_WITH_MEM_OPS)
+           DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
+               DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign",
+                         GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration,
+                                                   0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
+                   DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
+                               0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+                       DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
+                           DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
+                               DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+                                   DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+                                       DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+                                           DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+                                               DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
+                                                   DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                                                       DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                                                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
+                                                               DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
+                                                                   DEFTREECODE(INSERTVALUE, "insertvalue_expr",
+                                                                               tcc_expression, 3)
+                                                                       DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
+                                                                                   tcc_expression, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) NARGS,
@@ -189,14 +233,29 @@ namespace llvm
 #include "gcc/cp-tree.def"
 #include "gcc/gimple.def"
 #include "gcc/tree.def"
-       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS) DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
-           DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
-               DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
-                   DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
-                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3) DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                           DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)};
+       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign",
+                                                                      GSS_WITH_MEM_OPS)
+           DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
+               DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign",
+                         GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration,
+                                                   0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
+                   DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
+                               0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+                       DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
+                           DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
+                               DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+                                   DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+                                       DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+                                           DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+                                               DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
+                                                   DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                                                       DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                                                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
+                                                               DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
+                                                                   DEFTREECODE(INSERTVALUE, "insertvalue_expr",
+                                                                               tcc_expression, 3)
+                                                                       DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
+                                                                                   tcc_expression, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 
@@ -227,14 +286,29 @@ namespace llvm
 #include "gcc/cp-tree.def"
 #include "gcc/gimple.def"
 #include "gcc/tree.def"
-       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS) DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
-           DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
-               DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
-                   DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
-                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3) DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                           DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)};
+       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign",
+                                                                      GSS_WITH_MEM_OPS)
+           DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
+               DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign",
+                         GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration,
+                                                   0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
+                   DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
+                               0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+                       DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
+                           DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
+                               DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+                                   DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+                                       DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+                                           DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+                                               DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
+                                                   DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                                                       DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                                                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
+                                                               DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
+                                                                   DEFTREECODE(INSERTVALUE, "insertvalue_expr",
+                                                                               tcc_expression, 3)
+                                                                       DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
+                                                                                   tcc_expression, 2)};
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
 
@@ -1378,41 +1452,41 @@ namespace llvm
       llvm::Function* currentFunction = inst->getFunction();
       return LowerGetElementPtr(inst->getType(), inst, currentFunction);
    }
-   template<class insert_or_extract>
-   void accumulateConstantOffset(const llvm::DataLayout *DL, llvm::APInt &Offset, insert_or_extract* ioe)
+   template <class insert_or_extract>
+   void accumulateConstantOffset(const llvm::DataLayout* DL, llvm::APInt& Offset, insert_or_extract* ioe)
    {
       auto AccumulateOffset = [&](uint64_t Index, uint64_t Size) {
-         llvm::APInt step = APInt(Offset.getBitWidth(), Index*Size);
+         llvm::APInt step = APInt(Offset.getBitWidth(), Index * Size);
          // For array or vector indices, scale the index by the size of the type.
          Offset += step;
       };
       auto currTy = ioe->getType();
-      StructType *STy = dyn_cast<llvm::StructType>(ioe->getType());
-      for (auto idx: ioe->indices()) {
-
-            if (idx == 0)
-               continue;
-            if (STy)
-            {
-               const StructLayout *SL = DL->getStructLayout(STy);
-               AccumulateOffset(SL->getElementOffsetInBits(idx), 1);
-               currTy = STy->getStructElementType(idx);
-               continue;
-            }
-            if(llvm::isa<llvm::ArrayType>(currTy))
-            {
-               currTy = llvm::cast<llvm::ArrayType>(currTy)->getElementType();
-            }
-            else if(llvm::isa<llvm::StructType>(currTy))
-            {
-               currTy = llvm::dyn_cast<llvm::StructType>(currTy)->getElementType(idx);
-            }
-            else
-            {
-               llvm_unreachable("type not supported");
-            }
-            AccumulateOffset(idx, DL->getTypeSizeInBits(currTy));
+      StructType* STy = dyn_cast<llvm::StructType>(ioe->getType());
+      for(auto idx : ioe->indices())
+      {
+         if(idx == 0)
             continue;
+         if(STy)
+         {
+            const StructLayout* SL = DL->getStructLayout(STy);
+            AccumulateOffset(SL->getElementOffsetInBits(idx), 1);
+            currTy = STy->getStructElementType(idx);
+            continue;
+         }
+         if(llvm::isa<llvm::ArrayType>(currTy))
+         {
+            currTy = llvm::cast<llvm::ArrayType>(currTy)->getElementType();
+         }
+         else if(llvm::isa<llvm::StructType>(currTy))
+         {
+            currTy = llvm::dyn_cast<llvm::StructType>(currTy)->getElementType(idx);
+         }
+         else
+         {
+            llvm_unreachable("type not supported");
+         }
+         AccumulateOffset(idx, DL->getTypeSizeInBits(currTy));
+         continue;
       }
    }
    const void* DumpGimpleRaw::gimple_assign_rhs_insertvalue(const void* g)
@@ -1425,7 +1499,7 @@ namespace llvm
       auto op0 = getOperand(op0Value, currentFunction);
       auto op1 = getOperand(inst->getInsertedValueOperand(), currentFunction);
       llvm::APInt Offset(DL->getPointerTypeSizeInBits(op0Value->getType()), 0);
-      accumulateConstantOffset(DL,Offset, inst);
+      accumulateConstantOffset(DL, Offset, inst);
       auto offset_node = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), Offset));
       return build3(GT(INSERTVALUE), type, op0, op1, offset_node);
    }
@@ -1439,12 +1513,13 @@ namespace llvm
       auto op0 = getOperand(inst->getAggregateOperand(), currentFunction);
       auto op0Value = inst->getAggregateOperand();
       llvm::APInt Offset(DL->getPointerTypeSizeInBits(op0Value->getType()), 0);
-      accumulateConstantOffset(DL,Offset, inst);
+      accumulateConstantOffset(DL, Offset, inst);
       auto offset_node = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), Offset));
       return build2(GT(EXTRACTVALUE), type, op0, offset_node);
    }
 
-   bool DumpGimpleRaw::temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited, const llvm::TargetLibraryInfo& TLI)
+   bool DumpGimpleRaw::temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited,
+                                            const llvm::TargetLibraryInfo& TLI)
    {
       for(auto U : inst->users())
       {
@@ -4579,7 +4654,6 @@ namespace llvm
                serialize_child("op", gimple_assign_lhs(g));
                auto rhs = gimple_assign_rhs_insertvalue(g);
                serialize_child("op", rhs);
-
             }
             else if(gimple_expr_code(g) == GT(EXTRACTVALUE))
             {
