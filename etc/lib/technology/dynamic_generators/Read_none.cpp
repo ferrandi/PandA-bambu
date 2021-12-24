@@ -29,15 +29,14 @@
  *   Free Software Foundation, Inc.,
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA.
  *
-*/
+ */
 /**
  * @file Read_none.cpp
  * @brief Snippet for the Read_none dynamic generator.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 
-std::cout << "assign " << _ports_out[0].name << " = "<< _ports_in[1].name <<" >> (8*"<< _ports_in[0].name <<");" <<std::endl;
-
-
+std::cout << "assign " << _ports_out[0].name << " = " << _ports_in[1].name << " >> (8*" << _ports_in[0].name << ");"
+          << std::endl;

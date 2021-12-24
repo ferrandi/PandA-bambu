@@ -1,24 +1,24 @@
-name: 'Docker runner'
-description: 'Launch a given script in docker container'
+name: "Docker runner"
+description: "Launch a given script in docker container"
 inputs:
   script:
-    description: 'Script to launch'
+    description: "Script to launch"
     required: true
   args:
-    description: 'Script arguments'
+    description: "Script arguments"
     required: false
-    default: ''
+    default: ""
   working-directory:
-    description: 'Working directory from where the script is executed'
+    description: "Working directory from where the script is executed"
     required: false
     default: .
   jobs:
-    description: 'Parallel jobs'
+    description: "Parallel jobs"
     required: false
-    default: '1'
+    default: "1"
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: "docker"
+  image: "Dockerfile"
   env:
     J: ${{inputs.jobs}}
   args:

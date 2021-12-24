@@ -120,7 +120,8 @@ using namespace std;
 
 namespace ac_math
 {
-   template <ac_q_mode q_mode_temp = AC_TRN, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2, ac_o_mode o2>
+   template <ac_q_mode q_mode_temp = AC_TRN, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2,
+             ac_o_mode o2>
    void ac_inverse_sqrt_pwl(const ac_fixed<W1, I1, false, q1, o1>& input, ac_fixed<W2, I2, false, q2, o2>& output)
    {
       // Use a macro to activate the AC_ASSERT
@@ -143,35 +144,40 @@ namespace ac_math
       normalized_exp = ac_math::ac_normalize(input, normalized_input);
 
       // Start of code outputted by ac_inverse_sqrt_pwl_lutgen.cpp
-      // Note that the LUT generator file also outputs values for x_max_lut (upper limit of PWL domain) and sc_constant_lut (scaling factor used to scale the input from
-      // 0 to n_segments_lut). However, these values aren't explicitly considered in the header file because it has been optimized to work with an 8-segment PWL model that
-      // covers the domain of [0.5, 1). For other PWL implementations, the user will probably have to take these values into account explicitly. Guidelines for doing so
-      // are given in the comments.
-      // In addition, some of the slope values here are modified slightly in order to ensure monotonicity of the PWL function as the input crosses segment boundaries.
-      // The user might want to take care to ensure that for their own PWL versions.
+      // Note that the LUT generator file also outputs values for x_max_lut (upper limit of PWL domain) and
+      // sc_constant_lut (scaling factor used to scale the input from 0 to n_segments_lut). However, these values aren't
+      // explicitly considered in the header file because it has been optimized to work with an 8-segment PWL model that
+      // covers the domain of [0.5, 1). For other PWL implementations, the user will probably have to take these values
+      // into account explicitly. Guidelines for doing so are given in the comments. In addition, some of the slope
+      // values here are modified slightly in order to ensure monotonicity of the PWL function as the input crosses
+      // segment boundaries. The user might want to take care to ensure that for their own PWL versions.
 
       static const ac_fixed<1, 0, false> x_min_lut = 0.5;
-      // The number of fractional bits for the LUT values is chosen by first finding the maximum absolute error over the domain of the PWL
-      // when double-precision values are used for LUT values. This error will correspond to a number of fractional bits that are always
-      // guaranteed to be error-free, for fixed-point PWL outputs.
-      // This number of error-free fractional bits is found out by the formula:
-      // nbits = abs(ceil(log2(abs_error_max)).
-      // The number of fractional bits hereafter used to store the LUT values is nbits + 2.
-      // For this particular PWL implementation, the number of fractional bits is 12.
+      // The number of fractional bits for the LUT values is chosen by first finding the maximum absolute error over the
+      // domain of the PWL when double-precision values are used for LUT values. This error will correspond to a number
+      // of fractional bits that are always guaranteed to be error-free, for fixed-point PWL outputs. This number of
+      // error-free fractional bits is found out by the formula: nbits = abs(ceil(log2(abs_error_max)). The number of
+      // fractional bits hereafter used to store the LUT values is nbits + 2. For this particular PWL implementation,
+      // the number of fractional bits is 12.
       const int n_frac_bits = 12;
       // slope and intercept value array
-      static const ac_fixed<n_frac_bits, 0, true> m[n_segments_lut] = {-.080810546875, -.068115234375, -.05859375, -.05126953125, -.045166015625, -.040283203125, -.0361328125, -.03271484375};
-      static const ac_fixed<n_frac_bits + 1, 1, false> c[n_segments_lut] = {1.413330078125, 1.33251953125, 1.26416015625, 1.20556640625, 1.154296875, 1.109130859375, 1.06884765625, 1.032470703125};
+      static const ac_fixed<n_frac_bits, 0, true> m[n_segments_lut] = {-.080810546875, -.068115234375, -.05859375,
+                                                                       -.05126953125,  -.045166015625, -.040283203125,
+                                                                       -.0361328125,   -.03271484375};
+      static const ac_fixed<n_frac_bits + 1, 1, false> c[n_segments_lut] = {
+          1.413330078125, 1.33251953125,  1.26416015625, 1.20556640625,
+          1.154296875,    1.109130859375, 1.06884765625, 1.032470703125};
 
       // End of code outputted by ac_inverse_sqrt_pwl_lutgen.cpp
 
       const int int_bits = ac::nbits<n_segments_lut - 1>::val;
       // Scale the normalized input from 0 to n_segments_lut
       // Note that this equation is optimized for a domain of [0.5, 1) and 8 segments. Any other PWL implementation
-      // with a different number of segments/domain should be scaled according to the formula: x_in_sc = (normalized_input - x_min_lut) * sc_constant_lut
-      // where sc_constant_lut = n_segments_lut / (x_max_lut - x_min_lut)
-      // (x_min_lut and and x_max_lut are the lower and upper limits of the domain)
-      ac_fixed<n_frac_bits + int_bits, int_bits, false> input_sc = ((ac_fixed<n_frac_bits + int_bits + 4, int_bits, false>)(normalized_input - x_min_lut)) << 4;
+      // with a different number of segments/domain should be scaled according to the formula: x_in_sc =
+      // (normalized_input - x_min_lut) * sc_constant_lut where sc_constant_lut = n_segments_lut / (x_max_lut -
+      // x_min_lut) (x_min_lut and and x_max_lut are the lower and upper limits of the domain)
+      ac_fixed<n_frac_bits + int_bits, int_bits, false> input_sc =
+          ((ac_fixed<n_frac_bits + int_bits + 4, int_bits, false>)(normalized_input - x_min_lut)) << 4;
       // Take out the fractional bits of the scaled input
       ac_fixed<n_frac_bits, 0, false> input_sc_frac(0);
       input_sc_frac.set_slc(0, input_sc.template slc<n_frac_bits>(0));
@@ -179,8 +185,9 @@ namespace ac_math
       ac_int<int_bits, false> index = input_sc.to_int();
       // normalized output provides square root of normalized value
       // The output of the PWL approximation should have the same signedness as the output of the function.
-      // The precision given below will ensure that there is no precision lost in the assignment to output_pwl, hence rounding for the variable is switched off by default.
-      // However, if the user uses less fractional bits and turn rounding on instead, they are welcome to do so by giving a different value for q_mode_temp.
+      // The precision given below will ensure that there is no precision lost in the assignment to output_pwl, hence
+      // rounding for the variable is switched off by default. However, if the user uses less fractional bits and turn
+      // rounding on instead, they are welcome to do so by giving a different value for q_mode_temp.
       ac_fixed<2 * n_frac_bits + 1, 1, false, q_mode_temp> normalized_output = m[index] * input_sc_frac + c[index];
       // store the initial exponent value in temporary variable
       normalized_exp_temp2 = normalized_exp;
@@ -188,17 +195,20 @@ namespace ac_math
       ac_fixed<2 * n_frac_bits, 0, false, q_mode_temp> normalized_output_temp = normalized_output * inverseroot2;
       // Right shift the exponent by 1 to divide by 2
       normalized_exp = normalized_exp >> 1;
-      ac_fixed<2 * n_frac_bits + 1, 1, false> m1 = (normalized_exp_temp2 % 2 == 0) ? normalized_output : (ac_fixed<2 * n_frac_bits + 1, 1, false, q_mode_temp>)normalized_output_temp;
+      ac_fixed<2 * n_frac_bits + 1, 1, false> m1 =
+          (normalized_exp_temp2 % 2 == 0) ?
+              normalized_output :
+              (ac_fixed<2 * n_frac_bits + 1, 1, false, q_mode_temp>)normalized_output_temp;
       ac_fixed<W2, I2, false, q2, o2> output_temp;
       // "De-normalize" the output by performing a right-shift and cancel out the effects of the previous normalization.
       ac_math::ac_shift_right(m1, normalized_exp, output_temp);
 
-      // If a zero input is encountered, the output must saturate regardless of whether the assert has been activated or not.
-      // Assign a variable that stores the saturated output value.
+      // If a zero input is encountered, the output must saturate regardless of whether the assert has been activated or
+      // not. Assign a variable that stores the saturated output value.
       ac_fixed<W2, I2, false, q2, o2> output_temp_max(0);
       output_temp_max.template set_val<AC_VAL_MAX>();
-      // Use a ternary operator to decide whether the output should store the PWL-calculated value or the saturated value, based
-      // on whether a zero was passed or not.
+      // Use a ternary operator to decide whether the output should store the PWL-calculated value or the saturated
+      // value, based on whether a zero was passed or not.
       output = input != 0 ? output_temp : output_temp_max;
 
 #if !defined(__BAMBU__) && defined(AC_INVERSE_SQRT_PWL_H_DEBUG)
@@ -236,8 +246,10 @@ namespace ac_math
    //
    // ---------------------------------------------------------------------------
 
-   template <ac_q_mode q_mode_temp = AC_TRN, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2, ac_o_mode o2>
-   void ac_inverse_sqrt_pwl(const ac_complex<ac_fixed<W1, I1, true, q1, o1>>& input, ac_complex<ac_fixed<W2, I2, true, q2, o2>>& output)
+   template <ac_q_mode q_mode_temp = AC_TRN, int W1, int I1, ac_q_mode q1, ac_o_mode o1, int W2, int I2, ac_q_mode q2,
+             ac_o_mode o2>
+   void ac_inverse_sqrt_pwl(const ac_complex<ac_fixed<W1, I1, true, q1, o1>>& input,
+                            ac_complex<ac_fixed<W2, I2, true, q2, o2>>& output)
    {
       // Calculate bitwidths for storing the square root of the conjugated input.
       const int W_1 = find_rt_sqrt_pwl<(2 * (W1 - I1)), (2 * I1 - 1)>::W1;
@@ -262,20 +274,21 @@ namespace ac_math
       // compute final result
       output_temp.i() = sqrt_conj.i() * inverse_sqrt;
       output_temp.r() = sqrt_conj.r() * inverse_sqrt;
-      // One corner case isn't covered by the above formula. This case happens when the real part of the input is negative and the imaginary part is zero.
-      // In such a case, the output imaginary part won't have the correct sign. The line below corrects this.
+      // One corner case isn't covered by the above formula. This case happens when the real part of the input is
+      // negative and the imaginary part is zero. In such a case, the output imaginary part won't have the correct sign.
+      // The line below corrects this.
       output_temp.i() = (input.r() < 0 && input.i() == 0) ? (output_temp_type)-output_temp.i() : output_temp.i();
 
-      // If a zero input is encountered, the real part of the output must saturate regardless of whether the assert has been activated or not.
-      // Assign a variable that stores the saturated output value.
+      // If a zero input is encountered, the real part of the output must saturate regardless of whether the assert has
+      // been activated or not. Assign a variable that stores the saturated output value.
       ac_fixed<W2, I2, true, q2, o2> output_temp_max;
       output_temp_max.template set_val<AC_VAL_MAX>();
       bool non_zero_input = input.r() != 0 || input.i() != 0;
-      // Use a ternary operator to decide whether the output real part should store the PWL-calculated value or the saturated value, based
-      // on whether a zero was passed or not at the input.
+      // Use a ternary operator to decide whether the output real part should store the PWL-calculated value or the
+      // saturated value, based on whether a zero was passed or not at the input.
       output.r() = non_zero_input ? (ac_fixed<W2, I2, true, q2, o2>)output_temp.r() : output_temp_max;
-      // Use a ternary operator to decide whether the output imaginary part should store the PWL-calculated value or a zero value, based
-      // on whether a zero was passed or not at the input.
+      // Use a ternary operator to decide whether the output imaginary part should store the PWL-calculated value or a
+      // zero value, based on whether a zero was passed or not at the input.
       output.i() = non_zero_input ? (ac_fixed<W2, I2, true, q2, o2>)output_temp.i() : output_temp_max;
 
 #if !defined(__BAMBU__) && defined(AC_INVERSE_SQRT_PWL_H_DEBUG)
@@ -291,10 +304,11 @@ namespace ac_math
 #endif
    }
 
-   // This struct provides parameterized bitwidths to ensure a lossless return type for the monotonous PWL function provided by default,
-   // that operates with 8 segments and uses 12 fractional bits to store slope and intercept values.
-   // n_f_b is the number of fractional bits and I is the number of integer bits in the input. The input and output are assumed to be
-   // unsigned. Other PWL implementations might require different calculations for the parameterized bitwidths.
+   // This struct provides parameterized bitwidths to ensure a lossless return type for the monotonous PWL function
+   // provided by default, that operates with 8 segments and uses 12 fractional bits to store slope and intercept
+   // values. n_f_b is the number of fractional bits and I is the number of integer bits in the input. The input and
+   // output are assumed to be unsigned. Other PWL implementations might require different calculations for the
+   // parameterized bitwidths.
    template <int n_f_b, int I>
    struct find_rt_inv_sqrt_pwl
    {
@@ -337,15 +351,16 @@ namespace ac_math
       ac_fixed<W_2 + 1, I_2 + 1, true, q_mode_temp> output2_mant;
       ac_fixed<W1, I1, false> m1 = input.m;
       ac_int<AC_MAX(E1, 2), true> e1 = input.e;
-      // The exponent without normalization will be the additive inverse of the input exponent right-shifted by 1/divided by 2. This follows the formula:
-      // 1 / sqrt(mant * (2^exp)) = (1 / sqrt(mant)) * (2^(-exp/2))
+      // The exponent without normalization will be the additive inverse of the input exponent right-shifted by
+      // 1/divided by 2. This follows the formula: 1 / sqrt(mant * (2^exp)) = (1 / sqrt(mant)) * (2^(-exp/2))
       ac_int<AC_MAX(E1, 2), true> e2 = -(e1 >> 1);
       ac_inverse_sqrt_pwl<q_mode_temp>(m1, output2);
 
-      output2_mant = (input.e % 2 == 0) ? (ac_fixed<W_2 + 1, I_2 + 1, true, q2>)output2 : (ac_fixed<W_2 + 1, I_2 + 1, true, q2>)(output2 * inverseroot2);
-      // The mantissa without normalization will be either the inverse square root of the original mantissa, or that inverse square root multiplied by 1/sqrt(2),
-      // depending upon whether the input exponent is even or not.
-      // These two values are passed to an ac_float constructor that takes care of normalization.
+      output2_mant = (input.e % 2 == 0) ? (ac_fixed<W_2 + 1, I_2 + 1, true, q2>)output2 :
+                                          (ac_fixed<W_2 + 1, I_2 + 1, true, q2>)(output2 * inverseroot2);
+      // The mantissa without normalization will be either the inverse square root of the original mantissa, or that
+      // inverse square root multiplied by 1/sqrt(2), depending upon whether the input exponent is even or not. These
+      // two values are passed to an ac_float constructor that takes care of normalization.
       ac_float<W2, I2, E2, q2> output_temp(output2_mant, e2, true);
 
       // If input is zero, set output to max possible value.

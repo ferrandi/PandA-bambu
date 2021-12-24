@@ -140,7 +140,8 @@ namespace ac_math
 {
 #pragma calypto_flag DIV0_CHECK DIVISOR = 2
    template <int NW, int DW, int QW, int RW>
-   bool ac_div(ac_int<NW, false> dividend, ac_int<DW, false> divisor, ac_int<QW, false>& quotient, ac_int<RW, false>& remainder)
+   bool ac_div(ac_int<NW, false> dividend, ac_int<DW, false> divisor, ac_int<QW, false>& quotient,
+               ac_int<RW, false>& remainder)
    {
       // Use a macro to activate the AC_ASSERT
       // If AC_ASSERT is activated: the program will stop running as soon as a zero divisor
@@ -205,7 +206,8 @@ namespace ac_math
 
 #pragma calypto_flag DIV0_CHECK DIVISOR = 2
    template <int NW, int DW, int QW, int RW>
-   bool ac_div(ac_int<NW, true> dividend, ac_int<DW, true> divisor, ac_int<QW, true>& quotient, ac_int<RW, true>& remainder)
+   bool ac_div(ac_int<NW, true> dividend, ac_int<DW, true> divisor, ac_int<QW, true>& quotient,
+               ac_int<RW, true>& remainder)
    {
       // Use a macro to activate the AC_ASSERT
       // If AC_ASSERT is activated: the program will stop running as soon as a zero divisor
@@ -273,8 +275,10 @@ namespace ac_math
    //-------------------------------------------------------------------------
 
 #pragma calypto_flag DIV0_CHECK DIVISOR = 2
-   template <int NW, int NI, ac_q_mode NQ, ac_o_mode NO, int DW, int DI, ac_q_mode DQ, ac_o_mode DO, int QW, int QI, ac_q_mode QQ, ac_o_mode QO>
-   bool ac_div(ac_fixed<NW, NI, false, NQ, NO> dividend, ac_fixed<DW, DI, false, DQ, DO> divisor, ac_fixed<QW, QI, false, QQ, QO>& quotient)
+   template <int NW, int NI, ac_q_mode NQ, ac_o_mode NO, int DW, int DI, ac_q_mode DQ, ac_o_mode DO, int QW, int QI,
+             ac_q_mode QQ, ac_o_mode QO>
+   bool ac_div(ac_fixed<NW, NI, false, NQ, NO> dividend, ac_fixed<DW, DI, false, DQ, DO> divisor,
+               ac_fixed<QW, QI, false, QQ, QO>& quotient)
    {
       // Use a macro to activate the AC_ASSERT
       // If AC_ASSERT is activated: the program will stop running as soon as a zero divisor
@@ -354,8 +358,10 @@ namespace ac_math
    //-------------------------------------------------------------------------
 
 #pragma calypto_flag DIV0_CHECK DIVISOR = 2
-   template <int NW, int NI, ac_q_mode NQ, ac_o_mode NO, int DW, int DI, ac_q_mode DQ, ac_o_mode DO, int QW, int QI, ac_q_mode QQ, ac_o_mode QO>
-   bool ac_div(ac_fixed<NW, NI, true, NQ, NO> dividend, ac_fixed<DW, DI, true, DQ, DO> divisor, ac_fixed<QW, QI, true, QQ, QO>& quotient)
+   template <int NW, int NI, ac_q_mode NQ, ac_o_mode NO, int DW, int DI, ac_q_mode DQ, ac_o_mode DO, int QW, int QI,
+             ac_q_mode QQ, ac_o_mode QO>
+   bool ac_div(ac_fixed<NW, NI, true, NQ, NO> dividend, ac_fixed<DW, DI, true, DQ, DO> divisor,
+               ac_fixed<QW, QI, true, QQ, QO>& quotient)
    {
       // Use a macro to activate the AC_ASSERT
       // If AC_ASSERT is activated: the program will stop running as soon as a zero divisor
@@ -441,7 +447,8 @@ namespace ac_math
    //
    //-------------------------------------------------------------------------
 
-   template <int NW, int NI, int NE, ac_q_mode NQ, int DW, int DI, int DE, ac_q_mode DQ, int QW, int QI, int QE, ac_q_mode QQ>
+   template <int NW, int NI, int NE, ac_q_mode NQ, int DW, int DI, int DE, ac_q_mode DQ, int QW, int QI, int QE,
+             ac_q_mode QQ>
    bool ac_div(ac_float<NW, NI, NE, NQ> dividend, ac_float<DW, DI, DE, DQ> divisor, ac_float<QW, QI, QE, QQ>& quotient)
    {
       // Use a macro to activate the AC_ASSERT

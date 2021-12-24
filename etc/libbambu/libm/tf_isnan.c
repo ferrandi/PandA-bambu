@@ -48,7 +48,8 @@
 
 #include "math_privatetf.h"
 
-int __isnan(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+int __isnan(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding,
+            _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
    if(__nan)
    {

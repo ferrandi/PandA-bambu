@@ -364,7 +364,9 @@ if BUILD_BAMBU
       frontend_analysis/IR_manipulation/un_comparison_lowering.cpp
    lib_IR_manipulation_la_CPPFLAGS += \
       -I$(top_srcdir)/src/intermediate_representations \
-      -I$(top_srcdir)/src/intermediate_representations/hls
+      -I$(top_srcdir)/src/intermediate_representations/hls \
+      -I$(top_srcdir)/src/technology \
+      -I$(top_srcdir)/src/technology/target_device
 if BUILD_LIB_FROM_AADL_ASN
    lib_IR_manipulation_la_CPPFLAGS += \
       -I$(top_srcdir)/src/parser

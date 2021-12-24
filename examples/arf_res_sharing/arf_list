@@ -1,0 +1,1 @@
+module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/test.xml

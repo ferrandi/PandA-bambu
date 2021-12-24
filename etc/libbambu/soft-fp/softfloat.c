@@ -79,49 +79,56 @@
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE integer-to-floating-point conversion routines.
 *----------------------------------------------------------------------------*/
-__float32 __int32_to_float32(__int32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float32 __int32_to_float32(__int32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                             __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    union _FP_UNION_S ur;
    ur.flt = __floatsisf(a);
    return ur.bits.coded;
 }
 
-__float32 __uint32_to_float32(__uint32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float32 __uint32_to_float32(__uint32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                              __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    union _FP_UNION_S ur;
    ur.flt = __floatunsisf(a);
    return ur.bits.coded;
 }
 
-__float64 __int32_to_float64(__int32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float64 __int32_to_float64(__int32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                             __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    union _FP_UNION_D ur;
    ur.flt = __floatsidf(a);
    return ur.bits.coded;
 }
 
-__float64 __uint32_to_float64(__uint32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float64 __uint32_to_float64(__uint32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                              __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    union _FP_UNION_D ur;
    ur.flt = __floatunsidf(a);
    return ur.bits.coded;
 }
 
-__float32 __int64_to_float32(__int64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float32 __int64_to_float32(__int64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                             __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    union _FP_UNION_S ur;
    ur.flt = __floatdisf(a);
    return ur.bits.coded;
 }
 
-__float64 __int64_to_float64(__int64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float64 __int64_to_float64(__int64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                             __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    union _FP_UNION_D ur;
    ur.flt = __floatdidf(a);
    return ur.bits.coded;
 }
 
-__float64 __uint64_to_float64(__uint64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float64 __uint64_to_float64(__uint64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                              __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    union _FP_UNION_D ur;
    ur.flt = __floatundidf(a);
@@ -131,28 +138,36 @@ __float64 __uint64_to_float64(__uint64 a, __bits8 __exp_bits, __bits8 __frac_bit
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE single-precision conversion routines.
 *----------------------------------------------------------------------------*/
-__int32 __float32_to_int32_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__int32 __float32_to_int32_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                                         __flag __rounding, __flag __nan, __flag __one, __flag __subnorm,
+                                         __sbits8 __sign)
 {
    union _FP_UNION_D ua;
    ua.bits.coded = a;
    return __fixsfsi(ua.flt);
 }
 
-__uint32 __float32_to_uint32_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__uint32 __float32_to_uint32_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                                           __flag __rounding, __flag __nan, __flag __one, __flag __subnorm,
+                                           __sbits8 __sign)
 {
    union _FP_UNION_D ua;
    ua.bits.coded = a;
    return __fixunssfsi(ua.flt);
 }
 
-__int64 __float32_to_int64_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__int64 __float32_to_int64_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                                         __flag __rounding, __flag __nan, __flag __one, __flag __subnorm,
+                                         __sbits8 __sign)
 {
    union _FP_UNION_D ua;
    ua.bits.coded = a;
    return __fixsfdi(ua.flt);
 }
 
-__uint64 __float32_to_uint64_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__uint64 __float32_to_uint64_round_to_zero(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                                           __flag __rounding, __flag __nan, __flag __one, __flag __subnorm,
+                                           __sbits8 __sign)
 {
    union _FP_UNION_D ua;
    ua.bits.coded = a;
@@ -162,28 +177,36 @@ __uint64 __float32_to_uint64_round_to_zero(__float32 a, __bits8 __exp_bits, __bi
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE double-precision conversion routines.
 *----------------------------------------------------------------------------*/
-__int32 __float64_to_int32_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__int32 __float64_to_int32_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                                         __flag __rounding, __flag __nan, __flag __one, __flag __subnorm,
+                                         __sbits8 __sign)
 {
    union _FP_UNION_D ua;
    ua.bits.coded = a;
    return __fixdfsi(ua.flt);
 }
 
-__uint32 __float64_to_uint32_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__uint32 __float64_to_uint32_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                                           __flag __rounding, __flag __nan, __flag __one, __flag __subnorm,
+                                           __sbits8 __sign)
 {
    union _FP_UNION_D ua;
    ua.bits.coded = a;
    return __fixunsdfsi(ua.flt);
 }
 
-__int64 __float64_to_int64_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__int64 __float64_to_int64_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                                         __flag __rounding, __flag __nan, __flag __one, __flag __subnorm,
+                                         __sbits8 __sign)
 {
    union _FP_UNION_D ua;
    ua.bits.coded = a;
    return __fixdfdi(ua.flt);
 }
 
-__uint64 __float64_to_uint64_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__uint64 __float64_to_uint64_round_to_zero(__float64 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                                           __flag __rounding, __flag __nan, __flag __one, __flag __subnorm,
+                                           __sbits8 __sign)
 {
    union _FP_UNION_D ua;
    ua.bits.coded = a;
@@ -193,8 +216,11 @@ __uint64 __float64_to_uint64_round_to_zero(__float64 a, __bits8 __exp_bits, __bi
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE arbitrary precision conversion routines.
 *----------------------------------------------------------------------------*/
-__float __float_cast(__float bits, __bits8 __in_exp_bits, __bits8 __in_frac_bits, __int32 __in_exp_bias, __flag __in_has_rounding, __flag __in_has_nan, __flag __in_has_one, __flag __in_has_subnorm, __sbits8 __in_sign, __bits8 __out_exp_bits,
-                     __bits8 __out_frac_bits, __int32 __out_exp_bias, __flag __out_has_rounding, __flag __out_has_nan, __flag __out_has_one, __flag __out_has_subnorm, __sbits8 __out_sign)
+__float __float_cast(__float bits, __bits8 __in_exp_bits, __bits8 __in_frac_bits, __int32 __in_exp_bias,
+                     __flag __in_has_rounding, __flag __in_has_nan, __flag __in_has_one, __flag __in_has_subnorm,
+                     __sbits8 __in_sign, __bits8 __out_exp_bits, __bits8 __out_frac_bits, __int32 __out_exp_bias,
+                     __flag __out_has_rounding, __flag __out_has_nan, __flag __out_has_one, __flag __out_has_subnorm,
+                     __sbits8 __out_sign)
 {
    __bits8 __in_bw = __in_exp_bits + __in_frac_bits + (__in_sign == -1);
    __bits8 __out_bw = __out_exp_bits + __out_frac_bits + (__out_sign == -1);
@@ -220,7 +246,8 @@ __float __float_cast(__float bits, __bits8 __in_exp_bits, __bits8 __in_frac_bits
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE arbitrary precision operations.
 *----------------------------------------------------------------------------*/
-__float __float_add(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float __float_add(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                    __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)
@@ -242,7 +269,8 @@ __float __float_add(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
    return 0;
 }
 
-__float __float_sub(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float __float_sub(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                    __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)
@@ -264,7 +292,8 @@ __float __float_sub(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
    return 0;
 }
 
-__float __float_mul(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float __float_mul(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                    __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)
@@ -286,7 +315,8 @@ __float __float_mul(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
    return 0;
 }
 
-__float __float_divSRT4(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float __float_divSRT4(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                        __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)
@@ -308,7 +338,8 @@ __float __float_divSRT4(__float a, __float b, __bits8 __exp_bits, __bits8 __frac
    return 0;
 }
 
-__flag __float_eq(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__flag __float_eq(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                  __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)
@@ -328,7 +359,8 @@ __flag __float_eq(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits,
    return 0;
 }
 
-__flag __float_le(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__flag __float_le(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                  __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)
@@ -348,7 +380,8 @@ __flag __float_le(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits,
    return 0;
 }
 
-__flag __float_lt(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__flag __float_lt(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                  __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)
@@ -368,7 +401,8 @@ __flag __float_lt(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits,
    return 0;
 }
 
-__flag __float_ge(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__flag __float_ge(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                  __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)
@@ -388,7 +422,8 @@ __flag __float_ge(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits,
    return 0;
 }
 
-__flag __float_gt(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__flag __float_gt(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                  __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)
@@ -408,7 +443,8 @@ __flag __float_gt(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits,
    return 0;
 }
 
-__flag __float_ltgt_quiet(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__flag __float_ltgt_quiet(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                          __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)

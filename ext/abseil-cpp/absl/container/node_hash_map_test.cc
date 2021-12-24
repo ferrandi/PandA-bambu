@@ -223,36 +223,54 @@ TEST(NodeHashMap, EraseIf) {
   // Erase all elements.
   {
     node_hash_map<int, int> s = {{1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
-    erase_if(s, [](std::pair<const int, int>) { return true; });
+    EXPECT_EQ(erase_if(s, [](std::pair<const int, int>) { return true; }), 5);
     EXPECT_THAT(s, IsEmpty());
   }
   // Erase no elements.
   {
     node_hash_map<int, int> s = {{1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
-    erase_if(s, [](std::pair<const int, int>) { return false; });
+    EXPECT_EQ(erase_if(s, [](std::pair<const int, int>) { return false; }), 0);
     EXPECT_THAT(s, UnorderedElementsAre(Pair(1, 1), Pair(2, 2), Pair(3, 3),
                                         Pair(4, 4), Pair(5, 5)));
   }
   // Erase specific elements.
   {
     node_hash_map<int, int> s = {{1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
-    erase_if(s,
-             [](std::pair<const int, int> kvp) { return kvp.first % 2 == 1; });
+    EXPECT_EQ(erase_if(s,
+                       [](std::pair<const int, int> kvp) {
+                         return kvp.first % 2 == 1;
+                       }),
+              3);
     EXPECT_THAT(s, UnorderedElementsAre(Pair(2, 2), Pair(4, 4)));
   }
   // Predicate is function reference.
   {
     node_hash_map<int, int> s = {{1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
-    erase_if(s, FirstIsEven);
+    EXPECT_EQ(erase_if(s, FirstIsEven), 2);
     EXPECT_THAT(s, UnorderedElementsAre(Pair(1, 1), Pair(3, 3), Pair(5, 5)));
   }
   // Predicate is function pointer.
   {
     node_hash_map<int, int> s = {{1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
-    erase_if(s, &FirstIsEven);
+    EXPECT_EQ(erase_if(s, &FirstIsEven), 2);
     EXPECT_THAT(s, UnorderedElementsAre(Pair(1, 1), Pair(3, 3), Pair(5, 5)));
   }
 }
+
+// This test requires std::launder for mutable key access in node handles.
+#if defined(__cpp_lib_launder) && __cpp_lib_launder >= 201606
+TEST(NodeHashMap, NodeHandleMutableKeyAccess) {
+  node_hash_map<std::string, std::string> map;
+
+  map["key1"] = "mapped";
+
+  auto nh = map.extract(map.begin());
+  nh.key().resize(3);
+  map.insert(std::move(nh));
+
+  EXPECT_THAT(map, testing::ElementsAre(Pair("key", "mapped")));
+}
+#endif
 
 }  // namespace
 }  // namespace container_internal

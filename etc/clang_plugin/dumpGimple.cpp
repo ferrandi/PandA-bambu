@@ -200,17 +200,26 @@ namespace llvm
 #undef DEFTREECODE
 #undef DEFGSCODE
 
-#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                                                                                                                                                  \
-   ((TYPE) == tcc_unary                                                                              ? GIMPLE_UNARY_RHS :                                                                                                                      \
-    ((TYPE) == tcc_binary || (TYPE) == tcc_comparison)                                               ? GIMPLE_BINARY_RHS :                                                                                                                     \
-    ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference)                 ? GIMPLE_SINGLE_RHS :                                                                                                                     \
-    (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ? GIMPLE_BINARY_RHS :                                                                                                                     \
-    GT(SYM) == GT(TRUTH_NOT_EXPR)                                                                    ? GIMPLE_UNARY_RHS :                                                                                                                      \
-    (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) || GT(SYM) == GT(VEC_COND_EXPR) || \
-     GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) || GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR)) ?                                                                                      \
-                                                                                                                                                                                        GIMPLE_TERNARY_RHS :                                   \
-    (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) || GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ? GIMPLE_SINGLE_RHS :                                    \
-                                                                                                                                                                                        GIMPLE_INVALID_RHS),
+#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                       \
+   ((TYPE) == tcc_unary ?                                                                                           \
+        GIMPLE_UNARY_RHS :                                                                                          \
+        ((TYPE) == tcc_binary || (TYPE) == tcc_comparison) ?                                                        \
+        GIMPLE_BINARY_RHS :                                                                                         \
+        ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ?                          \
+        GIMPLE_SINGLE_RHS :                                                                                         \
+        (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
+        GIMPLE_BINARY_RHS :                                                                                         \
+        GT(SYM) == GT(TRUTH_NOT_EXPR) ?                                                                             \
+        GIMPLE_UNARY_RHS :                                                                                          \
+        (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
+         GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
+         GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
+         GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR)) ?                         \
+        GIMPLE_TERNARY_RHS :                                                                                        \
+        (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
+         GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
+        GIMPLE_SINGLE_RHS :                                                                                         \
+        GIMPLE_INVALID_RHS),
 #define END_OF_BASE_TREE_CODES GIMPLE_INVALID_RHS,
 #define DEFGSCODE(SYM, NAME, GSSCODE) GIMPLE_INVALID_RHS,
    const DumpGimpleRaw::gimple_rhs_class DumpGimpleRaw::gimple_rhs_class_table[] = {
@@ -251,7 +260,8 @@ namespace llvm
          if(name.size() > (2 + strlen("_finite")))
          {
             const auto name_nofinite = name.substr(2, name_finite_pos - 2);
-            if(builtinsNames.find(std::string("__builtin_") + name_nofinite) != builtinsNames.end() || builtinsNames.find(name_nofinite) != builtinsNames.end())
+            if(builtinsNames.find(std::string("__builtin_") + name_nofinite) != builtinsNames.end() ||
+               builtinsNames.find(name_nofinite) != builtinsNames.end())
             {
                return name_nofinite;
             }
@@ -283,7 +293,8 @@ namespace llvm
       return declname;
    }
 
-   DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string, std::vector<std::string>>* _fun2params, bool early)
+   DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals,
+                                std::map<std::string, std::vector<std::string>>* _fun2params, bool early)
        : earlyAnalysis(early),
          outdir_name(_outdir_name),
          InFile(_InFile),
@@ -399,7 +410,8 @@ namespace llvm
                llvm_obj->print(llvm::errs(), true);
                llvm::errs() << "\n";
                stream.close();
-               llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
+               llvm_unreachable(
+                   (std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
          case llvm::Value::ConstantExprVal:
@@ -407,7 +419,8 @@ namespace llvm
             auto type = assignCodeType(llvm_obj->getType());
             if(cast<llvm::ConstantExpr>(llvm_obj)->getOpcode() == llvm::Instruction::GetElementPtr)
                return LowerGetElementPtr(type, cast<llvm::ConstantExpr>(llvm_obj), nullptr);
-            else if(cast<llvm::ConstantExpr>(llvm_obj)->getOpcode() == llvm::Instruction::IntToPtr || cast<llvm::ConstantExpr>(llvm_obj)->getOpcode() == llvm::Instruction::PtrToInt)
+            else if(cast<llvm::ConstantExpr>(llvm_obj)->getOpcode() == llvm::Instruction::IntToPtr ||
+                    cast<llvm::ConstantExpr>(llvm_obj)->getOpcode() == llvm::Instruction::PtrToInt)
             {
                auto op = cast<llvm::ConstantExpr>(llvm_obj)->getOperand(0);
                return build1(GT(NOP_EXPR), type, getOperand(op, nullptr));
@@ -423,7 +436,8 @@ namespace llvm
                llvm::errs() << "\n";
                llvm::errs() << cast<llvm::ConstantExpr>(llvm_obj)->getOpcodeName() << "\n";
                stream.close();
-               llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
+               llvm_unreachable(
+                   (std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
 
@@ -751,7 +765,8 @@ namespace llvm
             char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
             if(status == 0)
             {
-               if(std::string(demangled_outbuffer).find(':') == std::string::npos && std::string(demangled_outbuffer).find('(') != std::string::npos)
+               if(std::string(demangled_outbuffer).find(':') == std::string::npos &&
+                  std::string(demangled_outbuffer).find('(') != std::string::npos)
                {
                   declname = demangled_outbuffer;
                   auto parPos = declname.find('(');
@@ -887,8 +902,10 @@ namespace llvm
    {
       const llvm::MDNode* llvm_obj = reinterpret_cast<const llvm::MDNode*>(i);
       expanded_location res;
-      if(dyn_cast<llvm::DIExpression>(llvm_obj) || dyn_cast<llvm::DIEnumerator>(llvm_obj) || dyn_cast<llvm::DITemplateParameter>(llvm_obj) || dyn_cast<llvm::DIEnumerator>(llvm_obj) || dyn_cast<llvm::DISubrange>(llvm_obj) ||
-         dyn_cast<llvm::GenericDINode>(llvm_obj) || dyn_cast<llvm::MDTuple>(llvm_obj))
+      if(dyn_cast<llvm::DIExpression>(llvm_obj) || dyn_cast<llvm::DIEnumerator>(llvm_obj) ||
+         dyn_cast<llvm::DITemplateParameter>(llvm_obj) || dyn_cast<llvm::DIEnumerator>(llvm_obj) ||
+         dyn_cast<llvm::DISubrange>(llvm_obj) || dyn_cast<llvm::GenericDINode>(llvm_obj) ||
+         dyn_cast<llvm::MDTuple>(llvm_obj))
       {
       }
       else if(auto* di = dyn_cast<llvm::DIGlobalVariableExpression>(llvm_obj))
@@ -1036,7 +1053,8 @@ namespace llvm
       return ssa->ptr_info.valid ? &ssa->ptr_info : nullptr;
    }
 
-   void DumpGimpleRaw::dump_pt_solution(const DumpGimpleRaw::pt_solution* pt, const char* first_tag, const char* second_tag)
+   void DumpGimpleRaw::dump_pt_solution(const DumpGimpleRaw::pt_solution* pt, const char* first_tag,
+                                        const char* second_tag)
    {
       if(pt->anything)
          serialize_string_field(first_tag, "anything");
@@ -1267,7 +1285,8 @@ namespace llvm
             return GT(EXTRACTVALUE);
          }
          default:
-            llvm::errs() << "gimple_expr_code kind not supported: " << ValueTyNames[llvm::Value::InstructionVal + opcode] << "\n";
+            llvm::errs() << "gimple_expr_code kind not supported: "
+                         << ValueTyNames[llvm::Value::InstructionVal + opcode] << "\n";
             stream.close();
             llvm_unreachable("Plugin Error");
       }
@@ -1304,7 +1323,8 @@ namespace llvm
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          std::string funName = getName(store.getFunction());
          auto demangled = getDemangled(funName);
-         bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
+         bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) &&
+                                   (funName == TopFunctionName || demangled == TopFunctionName);
          if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
@@ -1325,7 +1345,8 @@ namespace llvm
          std::set<const llvm::User*> visited;
          visited.insert(inst);
 #if __clang_major__ >= 10
-         const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*inst->getFunction());
+         const llvm::TargetLibraryInfo& TLI =
+             modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*inst->getFunction());
 #else
          const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
 #endif
@@ -1437,8 +1458,12 @@ namespace llvm
                if(U->getOperand(0) == inst)
                   return false;
             }
-            else if(isa<llvm::PHINode>(U) || isa<llvm::GetElementPtrInst>(U) || isa<llvm::BitCastInst>(U) || isa<llvm::PtrToIntInst>(U) || isa<llvm::IntToPtrInst>(U) || cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Sub ||
-                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Add || cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::AShr || cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::And ||
+            else if(isa<llvm::PHINode>(U) || isa<llvm::GetElementPtrInst>(U) || isa<llvm::BitCastInst>(U) ||
+                    isa<llvm::PtrToIntInst>(U) || isa<llvm::IntToPtrInst>(U) ||
+                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Sub ||
+                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Add ||
+                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::AShr ||
+                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::And ||
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Or)
             {
                if(isa<llvm::PHINode>(U)
@@ -1514,7 +1539,8 @@ namespace llvm
             else if(dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
             else if(dyn_cast<InstructionOrConstantExpr>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
-               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) &&
+                      isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
             else
                return false;
          }
@@ -1529,7 +1555,8 @@ namespace llvm
             else if(dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
             else if(dyn_cast<InstructionOrConstantExpr>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
-               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) &&
+                      isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
             else
                return false;
          }
@@ -1704,9 +1731,12 @@ namespace llvm
       }
    }
 
-   const void* DumpGimpleRaw::getSSA(const llvm::Value* operand, const void* def_stmt, const llvm::Function* currentFunction, bool isDefault)
+   const void* DumpGimpleRaw::getSSA(const llvm::Value* operand, const void* def_stmt,
+                                     const llvm::Function* currentFunction, bool isDefault)
    {
-      auto isVirtual = operand->getValueID() == llvm::Value::MemoryDefVal || operand->getValueID() == llvm::Value::MemoryUseVal || operand->getValueID() == llvm::Value::MemoryPhiVal;
+      auto isVirtual = operand->getValueID() == llvm::Value::MemoryDefVal ||
+                       operand->getValueID() == llvm::Value::MemoryUseVal ||
+                       operand->getValueID() == llvm::Value::MemoryPhiVal;
       auto key = std::make_pair(def_stmt, isVirtual);
       if(index2ssa_name.find(key) == index2ssa_name.end())
       {
@@ -1751,9 +1781,11 @@ namespace llvm
             {
                auto varId = PtoSets_AA->PE(operand);
 #if __clang_major__ >= 10
-               const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*currentFunction);
+               const llvm::TargetLibraryInfo& TLI =
+                   modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*currentFunction);
 #else
-               const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+               const llvm::TargetLibraryInfo& TLI =
+                   modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
 #endif
                if(is_PTS(varId, TLI, true))
                {
@@ -1793,7 +1825,9 @@ namespace llvm
                         {
                            val->print(llvm::errs());
                            stream.close();
-                           llvm_unreachable(("unexpected pointer to variable " + std::string(ValueTyNames[val->getValueID()])).c_str());
+                           llvm_unreachable(
+                               ("unexpected pointer to variable " + std::string(ValueTyNames[val->getValueID()]))
+                                   .c_str());
                         }
                      }
                   }
@@ -1845,7 +1879,9 @@ namespace llvm
       return ssa->isDefault;
    }
 
-   const void* DumpGimpleRaw::LowerGetElementPtrOffset(const llvm::GEPOperator* gep_op, const llvm::Function* currentFunction, const void*& base_node, bool& isZero)
+   const void* DumpGimpleRaw::LowerGetElementPtrOffset(const llvm::GEPOperator* gep_op,
+                                                       const llvm::Function* currentFunction, const void*& base_node,
+                                                       bool& isZero)
    {
       if(gep_op->hasAllConstantIndices())
       {
@@ -1858,7 +1894,8 @@ namespace llvm
       else
       {
          llvm::APInt ConstantIndexOffset(DL->getPointerTypeSizeInBits(gep_op->getType()), 0);
-         for(llvm::gep_type_iterator GTI = llvm::gep_type_begin(gep_op), GTE = llvm::gep_type_end(gep_op); GTI != GTE; ++GTI)
+         for(llvm::gep_type_iterator GTI = llvm::gep_type_begin(gep_op), GTE = llvm::gep_type_end(gep_op); GTI != GTE;
+             ++GTI)
          {
             llvm::ConstantInt* OpC = dyn_cast<llvm::ConstantInt>(GTI.getOperand());
             if(!OpC)
@@ -1872,7 +1909,8 @@ namespace llvm
                auto index = getOperand(GTI.getOperand(), currentFunction);
                auto index_type = TREE_TYPE(index);
                bool isSignedIndexType = CheckSignedTag(index_type);
-               auto array_elmt_size = llvm::APInt(ConstantIndexOffset.getBitWidth(), DL->getTypeAllocSize(GTI.getIndexedType()));
+               auto array_elmt_size =
+                   llvm::APInt(ConstantIndexOffset.getBitWidth(), DL->getTypeAllocSize(GTI.getIndexedType()));
                auto array_elmt_sizeCI = llvm::ConstantInt::get(gep_op->getContext(), array_elmt_size);
                auto array_elmt_sizeCI_type = array_elmt_sizeCI->getType();
                auto array_elmt_size_node = assignCodeAuto(array_elmt_sizeCI);
@@ -1889,7 +1927,9 @@ namespace llvm
                   else
                      array_elmt_size_node = &index2integer_cst_signed.find(array_elmt_size_node)->second;
                }
-               auto index_times_size = build2(GT(MULT_EXPR), isSignedIndexType ? AddSignedTag(array_elmt_sizeCI_type) : array_elmt_sizeCI_type, index, array_elmt_size_node);
+               auto index_times_size = build2(
+                   GT(MULT_EXPR), isSignedIndexType ? AddSignedTag(array_elmt_sizeCI_type) : array_elmt_sizeCI_type,
+                   index, array_elmt_size_node);
                if(isSignedIndexType)
                   index_times_size = build1(GT(NOP_EXPR), array_elmt_sizeCI_type, index_times_size);
                auto accu = build2(GT(POINTER_PLUS_EXPR), TREE_TYPE(base_node), base_node, index_times_size);
@@ -1910,14 +1950,16 @@ namespace llvm
 
             // For array or vector indices, scale the index by the size of the type.
             llvm::APInt Index = OpC->getValue().sextOrTrunc(ConstantIndexOffset.getBitWidth());
-            ConstantIndexOffset += Index * llvm::APInt(ConstantIndexOffset.getBitWidth(), DL->getTypeAllocSize(GTI.getIndexedType()));
+            ConstantIndexOffset +=
+                Index * llvm::APInt(ConstantIndexOffset.getBitWidth(), DL->getTypeAllocSize(GTI.getIndexedType()));
          }
          isZero = !ConstantIndexOffset;
          return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), ConstantIndexOffset));
       }
    }
 
-   const void* DumpGimpleRaw::LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function* currentFunction)
+   const void* DumpGimpleRaw::LowerGetElementPtr(const void* type, const llvm::User* gep,
+                                                 const llvm::Function* currentFunction)
    {
       assert(TREE_CODE(type) == GT(POINTER_TYPE));
       // auto mem_ref_type = TREE_TYPE(type);
@@ -1976,11 +2018,14 @@ namespace llvm
             auto tec = tree_expr_code(ce);
             if(get_gimple_rhs_class(tec) == GIMPLE_TERNARY_RHS)
             {
-               return build3(tec, resType, getSignedOperandIndex(ce, 0, currentFunction), getSignedOperandIndex(ce, 1, currentFunction), getSignedOperandIndex(ce, 2, currentFunction));
+               return build3(tec, resType, getSignedOperandIndex(ce, 0, currentFunction),
+                             getSignedOperandIndex(ce, 1, currentFunction),
+                             getSignedOperandIndex(ce, 2, currentFunction));
             }
             else if(get_gimple_rhs_class(tec) == GIMPLE_BINARY_RHS)
             {
-               return build2(tec, resType, getSignedOperandIndex(ce, 0, currentFunction), getSignedOperandIndex(ce, 1, currentFunction));
+               return build2(tec, resType, getSignedOperandIndex(ce, 0, currentFunction),
+                             getSignedOperandIndex(ce, 1, currentFunction));
             }
             else if(get_gimple_rhs_class(tec) == GIMPLE_UNARY_RHS)
             {
@@ -2017,17 +2062,20 @@ namespace llvm
             operand->print(llvm::errs(), true);
             llvm::errs() << "\n";
             stream.close();
-            llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
+            llvm_unreachable(
+                (std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
          }
       }
-      else if(isa<llvm::ConstantDataArray>(operand) || isa<llvm::ConstantDataVector>(operand) || isa<llvm::ConstantStruct>(operand) || isa<llvm::ConstantArray>(operand))
+      else if(isa<llvm::ConstantDataArray>(operand) || isa<llvm::ConstantDataVector>(operand) ||
+              isa<llvm::ConstantStruct>(operand) || isa<llvm::ConstantArray>(operand))
          return assignCodeAuto(operand);
       else
       {
          operand->print(llvm::errs(), true);
          llvm::errs() << "\n";
          stream.close();
-         llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
+         llvm_unreachable(
+             (std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
       }
    }
 
@@ -2068,7 +2116,8 @@ namespace llvm
          return op;
    }
    template <class InstructionOrConstantExpr>
-   const void* DumpGimpleRaw::getSignedOperandIndex(const InstructionOrConstantExpr* inst, unsigned index, const llvm::Function* currentFunction)
+   const void* DumpGimpleRaw::getSignedOperandIndex(const InstructionOrConstantExpr* inst, unsigned index,
+                                                    const llvm::Function* currentFunction)
    {
       auto op = getOperand(inst->getOperand(index), currentFunction);
       return getSignedOperand(inst, op, index);
@@ -2091,14 +2140,16 @@ namespace llvm
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          std::string funName = getName(load.getFunction());
          auto demangled = getDemangled(funName);
-         bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
+         bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) &&
+                                   (funName == TopFunctionName || demangled == TopFunctionName);
 
          if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()) && !is_a_top_parameter)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
       }
-      else if(isa<llvm::SExtInst>(inst) && cast<const llvm::SExtInst>(*inst).getType()->isIntegerTy() && cast<const llvm::SExtInst>(*inst).getOperand(0)->getType()->isIntegerTy() &&
+      else if(isa<llvm::SExtInst>(inst) && cast<const llvm::SExtInst>(*inst).getType()->isIntegerTy() &&
+              cast<const llvm::SExtInst>(*inst).getOperand(0)->getType()->isIntegerTy() &&
               cast<const llvm::SExtInst>(*inst).getOperand(0)->getType()->getIntegerBitWidth() == 1)
       {
          assert(index == 0);
@@ -2106,7 +2157,8 @@ namespace llvm
          auto MSB_pos = sext.getType()->getIntegerBitWidth() - 1;
          assert(MSB_pos > 0);
          if(uicTable.find(MSB_pos) == uicTable.end())
-            uicTable[MSB_pos] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(inst->getContext()), MSB_pos, false));
+            uicTable[MSB_pos] =
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(inst->getContext()), MSB_pos, false));
          const void* MSB_posNode = uicTable.find(MSB_pos)->second;
          auto type = AddSignedTag(assignCodeType(sext.getType()));
          auto casted = build1(GT(NOP_EXPR), type, getOperand(inst->getOperand(index), currentFunction));
@@ -2122,7 +2174,8 @@ namespace llvm
          {
             auto mask = (1ULL << bw) - 1;
             if(uicTable.find(mask) == uicTable.end())
-               uicTable[mask] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), mask, false));
+               uicTable[mask] =
+                   assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), mask, false));
             const void* maskNode = uicTable.find(mask)->second;
             auto type = assignCodeType(tI.getType());
             return build2(GT(BIT_AND_EXPR), type, getOperand(inst->getOperand(index), currentFunction), maskNode);
@@ -2293,10 +2346,13 @@ namespace llvm
          auto BB = case_expr.getCaseSuccessor();
          assert(index2label_decl.find(BB) != index2label_decl.end());
          const void* op3 = &index2label_decl.find(BB)->second;
-         tree_vec_element.data.push_back(build3(GT(CASE_LABEL_EXPR), llvm::Type::getVoidTy(si->getFunction()->getContext()), op1, op2, op3));
+         tree_vec_element.data.push_back(
+             build3(GT(CASE_LABEL_EXPR), llvm::Type::getVoidTy(si->getFunction()->getContext()), op1, op2, op3));
       }
       assert(index2label_decl.find(si->getDefaultDest()) != index2label_decl.end());
-      tree_vec_element.data.push_back(build3(GT(CASE_LABEL_EXPR), llvm::Type::getVoidTy(si->getFunction()->getContext()), nullptr, nullptr, &index2label_decl.find(si->getDefaultDest())->second));
+      tree_vec_element.data.push_back(build3(GT(CASE_LABEL_EXPR),
+                                             llvm::Type::getVoidTy(si->getFunction()->getContext()), nullptr, nullptr,
+                                             &index2label_decl.find(si->getDefaultDest())->second));
       return res;
    }
 
@@ -2354,19 +2410,23 @@ namespace llvm
             {
                bool isDefault = false;
                const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
-               gpv.def_edfe_pairs.push_back(std::make_pair(getSSA(val, def_stmt, currentFunction, isDefault), getBB_index(mp->getIncomingBlock(index))));
+               gpv.def_edfe_pairs.push_back(std::make_pair(getSSA(val, def_stmt, currentFunction, isDefault),
+                                                           getBB_index(mp->getIncomingBlock(index))));
             }
             else
             {
                assert(val->getValueID() == llvm::Value::MemoryPhiVal);
-               gpv.def_edfe_pairs.push_back(std::make_pair(gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(val), MSSA)), getBB_index(mp->getIncomingBlock(index))));
+               gpv.def_edfe_pairs.push_back(
+                   std::make_pair(gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(val), MSSA)),
+                                  getBB_index(mp->getIncomingBlock(index))));
             }
          }
       }
       return &index2gimple_phi_virtual.find(BB)->second;
    }
 
-   const void* DumpGimpleRaw::build3(DumpGimpleRaw::tree_codes tc, const void* type, const void* op1, const void* op2, const void* op3)
+   const void* DumpGimpleRaw::build3(DumpGimpleRaw::tree_codes tc, const void* type, const void* op1, const void* op2,
+                                     const void* op3)
    {
       index2tree_expr.push_front(tree_expr());
       auto& te = index2tree_expr.front();
@@ -2461,7 +2521,8 @@ namespace llvm
             return false;
       }
       const llvm::GlobalValue* llvm_obj = reinterpret_cast<const llvm::GlobalValue*>(t);
-      return llvm_obj->hasDefaultVisibility() && !llvm_obj->hasInternalLinkage() && llvm_obj->getLinkage() != llvm::GlobalValue::PrivateLinkage;
+      return llvm_obj->hasDefaultVisibility() && !llvm_obj->hasInternalLinkage() &&
+             llvm_obj->getLinkage() != llvm::GlobalValue::PrivateLinkage;
    }
 
    bool DumpGimpleRaw::TREE_STATIC(const void* t) const
@@ -2490,7 +2551,8 @@ namespace llvm
             declname = getIntrinsicName(fd);
          else
             declname = std::string(getName(fd));
-         if(builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() || builtinsNames.find(declname) != builtinsNames.end())
+         if(builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() ||
+            builtinsNames.find(declname) != builtinsNames.end())
             return true;
       }
       return false;
@@ -2594,7 +2656,8 @@ namespace llvm
 
    int DumpGimpleRaw::TREE_USED(const void* t) const
    {
-      assert(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL));
+      assert(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL) ||
+             TREE_CODE(t) == GT(ORIGVAR_DECL));
       if(TREE_CODE(t) == GT(PARM_DECL))
          return 1;
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
@@ -2798,7 +2861,8 @@ namespace llvm
             case llvm::Type::TokenTyID:
             case llvm::Type::IntegerTyID:
             case llvm::Type::StructTyID:
-               llvm::errs() << "TREE_TYPE kind not supported: type of type: " << GET_TREE_CODE_NAME(TREE_CODE(t)) << ":" << typeId << "\n";
+               llvm::errs() << "TREE_TYPE kind not supported: type of type: " << GET_TREE_CODE_NAME(TREE_CODE(t)) << ":"
+                            << typeId << "\n";
                stream.close();
                llvm_unreachable("Plugin Error");
 
@@ -2979,14 +3043,16 @@ namespace llvm
       {
          auto obj_size = 32u;
          if(uicTable.find(obj_size) == uicTable.end())
-            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
+            uicTable[obj_size] =
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
       else if(ty->isFunctionTy())
       {
          auto obj_size = 8u;
          if(uicTable.find(obj_size) == uicTable.end())
-            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
+            uicTable[obj_size] =
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
       else if(ty->isVoidTy())
@@ -2995,7 +3061,8 @@ namespace llvm
       {
          auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          if(uicTable.find(obj_size) == uicTable.end())
-            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
+            uicTable[obj_size] =
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
    }
@@ -3098,7 +3165,8 @@ namespace llvm
          std::string fdName = buffer;
          if(identifierTable.find(fdName) == identifierTable.end())
             identifierTable.insert(fdName);
-         index2field_decl[std::make_pair(scpe, pos)].name = assignCode(identifierTable.find(fdName)->c_str(), GT(IDENTIFIER_NODE));
+         index2field_decl[std::make_pair(scpe, pos)].name =
+             assignCode(identifierTable.find(fdName)->c_str(), GT(IDENTIFIER_NODE));
          assert(CheckSignedTag(reinterpret_cast<const llvm::Type*>(t)) == 0);
          index2field_decl[std::make_pair(scpe, pos)].type = assignCodeType(scty->getElementType(pos));
          index2field_decl[std::make_pair(scpe, pos)].scpe = assignCodeAuto(scpe);
@@ -3106,7 +3174,8 @@ namespace llvm
          index2field_decl[std::make_pair(scpe, pos)].algn = TYPE_ALIGN(t);
          uint64_t offset = DL->getStructLayout(const_cast<llvm::StructType*>(scty))->getElementOffsetInBits(pos);
          if(uicTable.find(offset) == uicTable.end())
-            uicTable[offset] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(scty->getContext()), offset, false));
+            uicTable[offset] =
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(scty->getContext()), offset, false));
          index2field_decl[std::make_pair(scpe, pos)].bpos = uicTable.find(offset)->second;
       }
       return assignCode(&index2field_decl.find(std::make_pair(scpe, pos))->second, GT(FIELD_DECL));
@@ -3126,7 +3195,8 @@ namespace llvm
    {
       const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
       bool nameAreKnown = false;
-      if(fd->hasName() && fun2params->find(getName(fd)) != fun2params->end() && fun2params->find(getName(fd))->second.size() == fd->arg_size())
+      if(fd->hasName() && fun2params->find(getName(fd)) != fun2params->end() &&
+         fun2params->find(getName(fd))->second.size() == fd->arg_size())
       {
          nameAreKnown = true;
       }
@@ -3210,13 +3280,16 @@ namespace llvm
       return MSSA.getMemoryAccess(inst);
    }
 
-   const void* DumpGimpleRaw::getVirtualDefStatement(llvm::MemoryAccess* defAccess, bool& isDefault, const llvm::MemorySSA& MSSA, const llvm::Function* currentFunction)
+   const void* DumpGimpleRaw::getVirtualDefStatement(llvm::MemoryAccess* defAccess, bool& isDefault,
+                                                     const llvm::MemorySSA& MSSA, const llvm::Function* currentFunction)
    {
       if(MSSA.isLiveOnEntryDef(defAccess))
       {
          isDefault = true;
          assert(defAccess->getValueID() == llvm::Value::MemoryDefVal);
-         return getGimpleNop(currentFunction, currentFunction); /// LiveOnEntry is identified by the function and has scope the function again
+         return getGimpleNop(
+             currentFunction,
+             currentFunction); /// LiveOnEntry is identified by the function and has scope the function again
       }
       else
       {
@@ -3256,8 +3329,8 @@ namespace llvm
    //       // Note that this explicitly *does* allow the free reordering of monotonic (or
    //       // weaker) loads of the same address.
    //       bool SeqCstUse = Use->getOrdering() == llvm::AtomicOrdering::SequentiallyConsistent;
-   //       bool MayClobberIsAcquire = isAtLeastOrStrongerThan(MayClobber->getOrdering(), llvm::AtomicOrdering::Acquire);
-   //       return !(SeqCstUse || MayClobberIsAcquire);
+   //       bool MayClobberIsAcquire = isAtLeastOrStrongerThan(MayClobber->getOrdering(),
+   //       llvm::AtomicOrdering::Acquire); return !(SeqCstUse || MayClobberIsAcquire);
    //    }
 
    void DumpGimpleRaw::serialize_vops(const void* g)
@@ -3318,7 +3391,10 @@ namespace llvm
       }
    }
 
-   void DumpGimpleRaw::serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA, std::set<llvm::MemoryAccess*>& visited, const llvm::Function* currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag)
+   void DumpGimpleRaw::serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA,
+                                                              std::set<llvm::MemoryAccess*>& visited,
+                                                              const llvm::Function* currentFunction,
+                                                              const llvm::MemoryLocation* OrigLoc, const char* tag)
    {
       llvm::MemoryAccess* defMA = nullptr;
       if(MA->getValueID() != llvm::Value::MemoryPhiVal)
@@ -3417,7 +3493,8 @@ namespace llvm
       const ssa_name* ssa = reinterpret_cast<const ssa_name*>(t);
       if(ssa->var || ssa->isVirtual)
          return nullptr;
-      llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(ssa->def_stmts));
+      llvm::Instruction* inst =
+          const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(ssa->def_stmts));
       if(inst->getType()->isIntegerTy())
       {
          if(RA)
@@ -3430,13 +3507,18 @@ namespace llvm
                if(isSigned)
                   llvm::errs() << "Range: <" << varRange.getSignedMin() << "," << varRange.getSignedMax() << "> ";
                else
-                  llvm::errs() << "Range: <" << varRange.getUnsignedMin().getZExtValue() << "," << varRange.getUnsignedMax().getZExtValue() << "> ";
+                  llvm::errs() << "Range: <" << varRange.getUnsignedMin().getZExtValue() << ","
+                               << varRange.getUnsignedMax().getZExtValue() << "> ";
                inst->print(llvm::errs());
                llvm::errs() << "\n";
-               assert(isSigned ? (varRange.getSignedMin().sextOrTrunc(64).getSExtValue() <= varRange.getSignedMax().sextOrTrunc(64).getSExtValue()) :
-                                 (varRange.getUnsignedMin().zextOrTrunc(64).getZExtValue() <= varRange.getUnsignedMax().zextOrTrunc(64).getZExtValue()));
+               assert(isSigned ? (varRange.getSignedMin().sextOrTrunc(64).getSExtValue() <=
+                                  varRange.getSignedMax().sextOrTrunc(64).getSExtValue()) :
+                                 (varRange.getUnsignedMin().zextOrTrunc(64).getZExtValue() <=
+                                  varRange.getUnsignedMax().zextOrTrunc(64).getZExtValue()));
 #endif
-               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? varRange.getSignedMin().sextOrTrunc(64) : varRange.getUnsignedMin().zextOrTrunc(64))));
+               return assignCodeAuto(llvm::ConstantInt::get(
+                   inst->getContext(),
+                   (isSigned ? varRange.getSignedMin().sextOrTrunc(64) : varRange.getUnsignedMin().zextOrTrunc(64))));
             }
             else
                return nullptr;
@@ -3447,9 +3529,11 @@ namespace llvm
             llvm::Function* currentFunction = inst->getFunction();
             assert(modulePass);
 #if __clang_major__ >= 11
-            llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
+            llvm::LazyValueInfo& LVI =
+                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
 #else
-            llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
+            llvm::LazyValueInfo& LVI =
+                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
 #endif
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
@@ -3465,8 +3549,10 @@ namespace llvm
 #else
             //         llvm::APInt KnownZero;
             //         llvm::APInt KnownOne;
-            //         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-            //         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+            //         auto AC =
+            //         modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+            //         const auto& DT =
+            //         modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
             //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
             //         zeroMask = KnownZero.getZExtValue();
 #endif
@@ -3540,28 +3626,32 @@ namespace llvm
                   //               range.print(llvm::errs());
                   //               llvm::errs() << range.getBitWidth() << "\n";
                   //               auto low = range.getLower();
-                  //               llvm::errs() << "Min: " << (low.isMinValue()?"Tmin":"Fmin") << " " << (low.isMaxValue()?"Tmax":"Fmax") << "\n";
-                  //               llvm::errs() << "Min: " << (low.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " << (low.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n";
-                  //               llvm::errs() << "Min: " << (range.getUnsignedMin()).getZExtValue() << "\n";
-                  //               llvm::errs() << "Min: " << (range.getSignedMin()) << "\n";
-                  //               low.print(llvm::errs(), isSigned);
-                  //               llvm::errs() << (isSigned?"T":"F") << "\n";
-                  //               auto upper = range.getUpper()-1;
-                  //               llvm::errs() << "Max: " << (upper.isMinValue()?"Tmin":"Fmin") << " " << (upper.isMaxValue()?"Tmax":"Fmax") << "\n";
-                  //               llvm::errs() << "Max: " << (upper.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " << (upper.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n";
-                  //               llvm::errs() << "Max: " << (range.getUnsignedMax()).getZExtValue() << "\n";
-                  //               llvm::errs() << "Max: " << (range.getSignedMax()) << "\n";
-                  //               upper.print(llvm::errs(), isSigned);
-                  //               llvm::errs() << (isSigned?"T":"F") << "\n";
+                  //               llvm::errs() << "Min: " << (low.isMinValue()?"Tmin":"Fmin") << " " <<
+                  //               (low.isMaxValue()?"Tmax":"Fmax") << "\n"; llvm::errs() << "Min: " <<
+                  //               (low.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " <<
+                  //               (low.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n"; llvm::errs() << "Min: "
+                  //               << (range.getUnsignedMin()).getZExtValue() << "\n"; llvm::errs() << "Min: " <<
+                  //               (range.getSignedMin()) << "\n"; low.print(llvm::errs(), isSigned); llvm::errs() <<
+                  //               (isSigned?"T":"F") << "\n"; auto upper = range.getUpper()-1; llvm::errs() << "Max: "
+                  //               << (upper.isMinValue()?"Tmin":"Fmin") << " " << (upper.isMaxValue()?"Tmax":"Fmax") <<
+                  //               "\n"; llvm::errs() << "Max: " <<
+                  //               (upper.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " <<
+                  //               (upper.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n"; llvm::errs() << "Max:
+                  //               " << (range.getUnsignedMax()).getZExtValue() << "\n"; llvm::errs() << "Max: " <<
+                  //               (range.getSignedMax()) << "\n"; upper.print(llvm::errs(), isSigned); llvm::errs() <<
+                  //               (isSigned?"T":"F") << "\n";
 #ifdef DEBUG_RA
                   if(isSigned)
                      llvm::errs() << "Range: <" << range.getSignedMin() << "," << range.getSignedMax() << "> ";
                   else
-                     llvm::errs() << "Range: <" << range.getUnsignedMin().getZExtValue() << "," << range.getUnsignedMax().getZExtValue() << "> ";
+                     llvm::errs() << "Range: <" << range.getUnsignedMin().getZExtValue() << ","
+                                  << range.getUnsignedMax().getZExtValue() << "> ";
                   inst->print(llvm::errs());
                   llvm::errs() << "\n";
 #endif
-                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? range.getSignedMin().sextOrTrunc(64) : range.getUnsignedMin().zextOrTrunc(64))));
+                  return assignCodeAuto(llvm::ConstantInt::get(
+                      inst->getContext(),
+                      (isSigned ? range.getSignedMin().sextOrTrunc(64) : range.getUnsignedMin().zextOrTrunc(64))));
                }
                else
                   return nullptr;
@@ -3576,7 +3666,8 @@ namespace llvm
       const ssa_name* ssa = reinterpret_cast<const ssa_name*>(t);
       if(ssa->var || ssa->isVirtual)
          return nullptr;
-      llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(ssa->def_stmts));
+      llvm::Instruction* inst =
+          const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(ssa->def_stmts));
       if(inst->getType()->isIntegerTy())
       {
          if(RA)
@@ -3585,7 +3676,9 @@ namespace llvm
             if(!varRange.isMaxRange())
             {
                auto isSigned = CheckSignedTag(TREE_TYPE(t));
-               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? varRange.getSignedMax().sextOrTrunc(64) : varRange.getUnsignedMax().zextOrTrunc(64))));
+               return assignCodeAuto(llvm::ConstantInt::get(
+                   inst->getContext(),
+                   (isSigned ? varRange.getSignedMax().sextOrTrunc(64) : varRange.getUnsignedMax().zextOrTrunc(64))));
             }
             else
                return nullptr;
@@ -3596,16 +3689,19 @@ namespace llvm
             llvm::Function* currentFunction = inst->getFunction();
             assert(modulePass);
 #if __clang_major__ >= 11
-            llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
+            llvm::LazyValueInfo& LVI =
+                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
 #else
-            llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
+            llvm::LazyValueInfo& LVI =
+                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
 #endif
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
             auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
 #if __clang_major__ >= 11
-            const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
+            const auto& DT =
+                modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
 #else
             const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
 #endif
@@ -3614,8 +3710,10 @@ namespace llvm
 #else
             //         llvm::APInt KnownZero;
             //         llvm::APInt KnownOne;
-            //         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-            //         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+            //         auto AC =
+            //         modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+            //         const auto& DT =
+            //         modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
             //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
             //         zeroMask = KnownZero.getZExtValue();
 #endif
@@ -3682,11 +3780,13 @@ namespace llvm
                inst->print(llvm::errs());
                llvm::errs() << "\n";
 #endif
-               // auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
+               // auto maxvalue =
+               // llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
                auto maxvalue = val;
                auto context = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
                if(uicTable.find(maxvalue) == uicTable.end())
-                  uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), maxvalue, false));
+                  uicTable[maxvalue] =
+                      assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), maxvalue, false));
                return uicTable.find(maxvalue)->second;
             }
             else
@@ -3694,7 +3794,9 @@ namespace llvm
                if(!range.isFullSet())
                {
                   auto isSigned = CheckSignedTag(TREE_TYPE(t));
-                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? range.getSignedMax().sextOrTrunc(64) : range.getUnsignedMax().zextOrTrunc(64))));
+                  return assignCodeAuto(llvm::ConstantInt::get(
+                      inst->getContext(),
+                      (isSigned ? range.getSignedMax().sextOrTrunc(64) : range.getUnsignedMax().zextOrTrunc(64))));
                }
                else
                {
@@ -3724,7 +3826,8 @@ namespace llvm
                for(unsigned index = 0; index < val->getNumElements(); ++index)
                {
                   if(uicTable.find(index) == uicTable.end())
-                     uicTable[index] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
+                     uicTable[index] = assignCodeAuto(
+                         llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
                   const void* idx = uicTable.find(index)->second;
                   const void* valu = getOperand(val->getSequentialElement(), nullptr);
                   res.push_back(std::make_pair(idx, valu));
@@ -3763,7 +3866,8 @@ namespace llvm
             for(unsigned index = 0; index < val->getNumElements(); ++index)
             {
                if(uicTable.find(index) == uicTable.end())
-                  uicTable[index] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
+                  uicTable[index] = assignCodeAuto(
+                      llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
                const void* idx = uicTable.find(index)->second;
                const void* valu = getOperand(val->getElementAsConstant(index), nullptr);
                res.push_back(std::make_pair(idx, valu));
@@ -3776,7 +3880,8 @@ namespace llvm
             for(unsigned index = 0; index < val->getNumOperands(); ++index)
             {
                if(uicTable.find(index) == uicTable.end())
-                  uicTable[index] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
+                  uicTable[index] = assignCodeAuto(
+                      llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
                const void* idx = uicTable.find(index)->second;
                auto elmnt = val->getOperand(index);
                const void* valu = getOperand(elmnt, nullptr);
@@ -3911,7 +4016,8 @@ namespace llvm
          llvm_unreachable("unexpected floating point format in real_to_hexadecimal");
 
       unsigned ExpBiased = API.lshr(nbitsMan).getZExtValue() & ((1U << nbitsExp) - 1);
-      int ExpUnbiased = (llvm::APInt::getNullValue(API.getBitWidth()) == APIAbs) ? 0 : (ExpBiased - ((1U << (nbitsExp - 1)) - 2));
+      int ExpUnbiased =
+          (llvm::APInt::getNullValue(API.getBitWidth()) == APIAbs) ? 0 : (ExpBiased - ((1U << (nbitsExp - 1)) - 2));
 
       snprintf(buffer, size_buff, "p%+d", ExpUnbiased);
 
@@ -3973,7 +4079,8 @@ namespace llvm
       else
       {
          bool isDouble = &d.getSemantics() == &llvm::APFloat::IEEEdouble();
-         snprintf(buffer, LOCAL_BUFFER_LEN, "%.*g", (isDouble ? __DBL_DECIMAL_DIG__ : __FLT_DECIMAL_DIG__), (isDouble ? d.convertToDouble() : d.convertToFloat()));
+         snprintf(buffer, LOCAL_BUFFER_LEN, "%.*g", (isDouble ? __DBL_DECIMAL_DIG__ : __FLT_DECIMAL_DIG__),
+                  (isDouble ? d.convertToDouble() : d.convertToFloat()));
          std::string literalReal = std::string(buffer);
          if(literalReal.find('.') == std::string::npos && literalReal.find('e') == std::string::npos)
             literalReal = literalReal + ".";
@@ -4202,7 +4309,8 @@ namespace llvm
       queue_and_serialize_index("type", TREE_TYPE(t));
    }
 
-   static void computeLoopLabels(std::map<const llvm::Loop*, unsigned>& loopLabes, llvm::Loop* curLoop, unsigned int& label)
+   static void computeLoopLabels(std::map<const llvm::Loop*, unsigned>& loopLabes, llvm::Loop* curLoop,
+                                 unsigned int& label)
    {
       loopLabes[curLoop] = label;
       label++;
@@ -4314,7 +4422,8 @@ namespace llvm
             visited.insert(currInst);
 #if __clang_major__ >= 10
             auto castInst = reinterpret_cast<const llvm::Instruction*>(g);
-            const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*castInst->getFunction());
+            const llvm::TargetLibraryInfo& TLI =
+                modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*castInst->getFunction());
 #else
             const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
 #endif
@@ -4337,7 +4446,8 @@ namespace llvm
                auto lhs = gimple_assign_lhs(g);
                auto tc = gimple_assign_rhs_code(g);
                serialize_child("op", lhs);
-               serialize_child("op", build3(tc, TREE_TYPE(lhs), gimple_assign_rhs1(g), gimple_assign_rhs2(g), gimple_assign_rhs3(g)));
+               serialize_child("op", build3(tc, TREE_TYPE(lhs), gimple_assign_rhs1(g), gimple_assign_rhs2(g),
+                                            gimple_assign_rhs3(g)));
             }
             else if(get_gimple_rhs_class(gimple_expr_code(g)) == GIMPLE_BINARY_RHS)
             {
@@ -4371,7 +4481,9 @@ namespace llvm
                serialize_child("op", gimple_assign_lhs(g));
                serialize_child("op", build_custom_function_call_expr(g));
             }
-            else if(gimple_expr_code(g) == GT(FCMP_OEQ) || gimple_expr_code(g) == GT(FCMP_ONE) || gimple_expr_code(g) == GT(FCMP_ORD) || gimple_expr_code(g) == GT(FCMP_UEQ) || gimple_expr_code(g) == GT(FCMP_UNE) || gimple_expr_code(g) == GT(FCMP_UNO))
+            else if(gimple_expr_code(g) == GT(FCMP_OEQ) || gimple_expr_code(g) == GT(FCMP_ONE) ||
+                    gimple_expr_code(g) == GT(FCMP_ORD) || gimple_expr_code(g) == GT(FCMP_UEQ) ||
+                    gimple_expr_code(g) == GT(FCMP_UNE) || gimple_expr_code(g) == GT(FCMP_UNO))
             {
                const llvm::FCmpInst* cmpInst = reinterpret_cast<const llvm::FCmpInst*>(g);
 
@@ -4389,8 +4501,14 @@ namespace llvm
                auto op1 = gimple_assign_rhs1(g);
                auto op2 = gimple_assign_rhs2(g);
                auto vcType = assignCodeType(intObjType);
-               auto vc_op1 = isOp1Const ? assignCodeAuto(llvm::ConstantInt::get(intObjType, cast<llvm::ConstantFP>(llvm_op1)->getValueAPF().bitcastToAPInt())) : build1(GT(VIEW_CONVERT_EXPR), vcType, op1);
-               auto vc_op2 = isOp2Const ? assignCodeAuto(llvm::ConstantInt::get(intObjType, cast<llvm::ConstantFP>(llvm_op2)->getValueAPF().bitcastToAPInt())) : build1(GT(VIEW_CONVERT_EXPR), vcType, op2);
+               auto vc_op1 = isOp1Const ?
+                                 assignCodeAuto(llvm::ConstantInt::get(
+                                     intObjType, cast<llvm::ConstantFP>(llvm_op1)->getValueAPF().bitcastToAPInt())) :
+                                 build1(GT(VIEW_CONVERT_EXPR), vcType, op1);
+               auto vc_op2 = isOp2Const ?
+                                 assignCodeAuto(llvm::ConstantInt::get(
+                                     intObjType, cast<llvm::ConstantFP>(llvm_op2)->getValueAPF().bitcastToAPInt())) :
+                                 build1(GT(VIEW_CONVERT_EXPR), vcType, op2);
                auto constOne = assignCodeAuto(llvm::ConstantInt::get(intObjType, 1, false));
                auto lshift_op1 = build2(GT(LSHIFT_EXPR), vcType, vc_op1, constOne);
                auto abs_op1 = build2(GT(RSHIFT_EXPR), vcType, lshift_op1, constOne);
@@ -4574,7 +4692,8 @@ namespace llvm
                         - the successor basic block
                         - list of statement
                      + otherwise it prints only the list of statements */
-      const llvm::Function::BasicBlockListType& bblist = *reinterpret_cast<const llvm::Function::BasicBlockListType*>(t);
+      const llvm::Function::BasicBlockListType& bblist =
+          *reinterpret_cast<const llvm::Function::BasicBlockListType*>(t);
       llvm::Function* currentFunction = const_cast<llvm::Function*>(bblist.front().getParent());
       assert(modulePass);
 #if __clang_major__ >= 11
@@ -4622,7 +4741,8 @@ namespace llvm
          if(MSSA.getMemoryAccess(&BB))
             llvm::errs() << "|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) << "\n";
 #endif
-         if(!LI.empty() && LI.getLoopFor(&BB) && LI.getLoopFor(&BB)->getHeader() == &BB && LI.getLoopFor(&BB)->isAnnotatedParallel())
+         if(!LI.empty() && LI.getLoopFor(&BB) && LI.getLoopFor(&BB)->getHeader() == &BB &&
+            LI.getLoopFor(&BB)->isAnnotatedParallel())
             serialize_string("hpl");
          if(LI.empty() || !LI.getLoopFor(&BB))
             serialize_int("loop_id", 0);
@@ -4691,7 +4811,8 @@ namespace llvm
                serialize_gimple_child("phi", assignCodeAuto(&inst));
             else
             {
-               if(isa<llvm::BranchInst>(inst) && cast<llvm::BranchInst>(inst).isUnconditional() && isa<llvm::BasicBlock>(*cast<llvm::BranchInst>(inst).getOperand(0)))
+               if(isa<llvm::BranchInst>(inst) && cast<llvm::BranchInst>(inst).isUnconditional() &&
+                  isa<llvm::BasicBlock>(*cast<llvm::BranchInst>(inst).getOperand(0)))
                   ; /// goto to basic blocks can be skipped
                else
                {
@@ -4721,33 +4842,55 @@ namespace llvm
             declname = getIntrinsicName(fd);
          else
             declname = std::string(getName(fd));
-         if(declname == "acos" or declname == "acosh" or declname == "asin" or declname == "asinh" or declname == "atan" or declname == "atanh" or declname == "atan2" or declname == "cbrt" or declname == "ceil" or declname == "copysign" or
-            declname == "cos" or declname == "cosh" or declname == "erf" or declname == "erfc" or declname == "exp" or declname == "exp2" or declname == "expm1" or declname == "fabs" or declname == "fdim" or declname == "floor" or declname == "fma" or
-            declname == "fmax" or declname == "fmin" or declname == "fmod" or declname == "frexp" or declname == "hypot" or declname == "ilogb" or declname == "ldexp" or declname == "lgamma" or declname == "llrint" or declname == "llround" or
-            declname == "log" or declname == "log10" or declname == "log1p" or declname == "log2" or declname == "logb" or declname == "lrint" or declname == "lround" or declname == "modf" or declname == "nan" or declname == "nearbyint" or
-            declname == "nextafter" or declname == "nexttoward" or declname == "pow" or declname == "remainder" or declname == "remquo" or declname == "rint" or declname == "round" or declname == "scalbln" or declname == "scalbn" or declname == "sin" or
-            declname == "sinh" or declname == "sincos" or declname == "sqrt" or declname == "tan" or declname == "tanh" or declname == "tgamma" or declname == "trunc" or declname == "isinf" or declname == "isinf_sign" or declname == "isnan" or
+         if(declname == "acos" or declname == "acosh" or declname == "asin" or declname == "asinh" or
+            declname == "atan" or declname == "atanh" or declname == "atan2" or declname == "cbrt" or
+            declname == "ceil" or declname == "copysign" or declname == "cos" or declname == "cosh" or
+            declname == "erf" or declname == "erfc" or declname == "exp" or declname == "exp2" or declname == "expm1" or
+            declname == "fabs" or declname == "fdim" or declname == "floor" or declname == "fma" or
+            declname == "fmax" or declname == "fmin" or declname == "fmod" or declname == "frexp" or
+            declname == "hypot" or declname == "ilogb" or declname == "ldexp" or declname == "lgamma" or
+            declname == "llrint" or declname == "llround" or declname == "log" or declname == "log10" or
+            declname == "log1p" or declname == "log2" or declname == "logb" or declname == "lrint" or
+            declname == "lround" or declname == "modf" or declname == "nan" or declname == "nearbyint" or
+            declname == "nextafter" or declname == "nexttoward" or declname == "pow" or declname == "remainder" or
+            declname == "remquo" or declname == "rint" or declname == "round" or declname == "scalbln" or
+            declname == "scalbn" or declname == "sin" or declname == "sinh" or declname == "sincos" or
+            declname == "sqrt" or declname == "tan" or declname == "tanh" or declname == "tgamma" or
+            declname == "trunc" or declname == "isinf" or declname == "isinf_sign" or declname == "isnan" or
             declname == "isnormal" or declname == "isfinite" or declname == "huge_val")
             return "/usr/include/math.h";
-         else if(declname == "cabs" or declname == "cacos" or declname == "cacosh" or declname == "carg" or declname == "casin" or declname == "casinh" or declname == "catan" or declname == "catanh" or declname == "ccos" or declname == "ccosh" or
-                 declname == "cexp" or declname == "cimag" or declname == "clog" or declname == "conj" or declname == "cpow" or declname == "cproj" or declname == "creal" or declname == "csin" or declname == "csinh" or declname == "csqrt" or
+         else if(declname == "cabs" or declname == "cacos" or declname == "cacosh" or declname == "carg" or
+                 declname == "casin" or declname == "casinh" or declname == "catan" or declname == "catanh" or
+                 declname == "ccos" or declname == "ccosh" or declname == "cexp" or declname == "cimag" or
+                 declname == "clog" or declname == "conj" or declname == "cpow" or declname == "cproj" or
+                 declname == "creal" or declname == "csin" or declname == "csinh" or declname == "csqrt" or
                  declname == "ctan" or declname == "ctanh")
             return "/usr/include/complex.h";
-         else if(declname == "memchr" or declname == "memcmp" or declname == "memcpy" or declname == "memmove" or declname == "memset" or declname == "strcat" or declname == "strchr" or declname == "strcmp" or declname == "strcpy" or
-                 declname == "strcspn" or declname == "strlen" or declname == "strncat" or declname == "strncmp" or declname == "strncpy" or declname == "strpbrk" or declname == "strrchr" or declname == "strspn" or declname == "strstr")
+         else if(declname == "memchr" or declname == "memcmp" or declname == "memcpy" or declname == "memmove" or
+                 declname == "memset" or declname == "strcat" or declname == "strchr" or declname == "strcmp" or
+                 declname == "strcpy" or declname == "strcspn" or declname == "strlen" or declname == "strncat" or
+                 declname == "strncmp" or declname == "strncpy" or declname == "strpbrk" or declname == "strrchr" or
+                 declname == "strspn" or declname == "strstr")
             return "/usr/include/string.h";
-         else if(declname == "fprintf" or declname == "putc" or declname == "fputc" or declname == "fputs" or declname == "fscanf" or declname == "fwrite" or declname == "printf" or declname == "putchar" or declname == "puts" or declname == "scanf" or
-                 declname == "snprintf" or declname == "sprintf" or declname == "sscanf" or declname == "vfprintf" or declname == "vfscanf" or declname == "vprintf" or declname == "vscanf" or declname == "vsnprintf" or declname == "vsprintf" or
-                 declname == "vsscanf")
+         else if(declname == "fprintf" or declname == "putc" or declname == "fputc" or declname == "fputs" or
+                 declname == "fscanf" or declname == "fwrite" or declname == "printf" or declname == "putchar" or
+                 declname == "puts" or declname == "scanf" or declname == "snprintf" or declname == "sprintf" or
+                 declname == "sscanf" or declname == "vfprintf" or declname == "vfscanf" or declname == "vprintf" or
+                 declname == "vscanf" or declname == "vsnprintf" or declname == "vsprintf" or declname == "vsscanf")
             return "/usr/include/stdio.h";
-         else if(declname == "isalnum" or declname == "isalpha" or declname == "isblank" or declname == "iscntrl" or declname == "isdigit" or declname == "isgraph" or declname == "islower" or declname == "isprint" or declname == "ispunct" or
-                 declname == "isspace" or declname == "isupper" or declname == "isxdigit" or declname == "tolower" or declname == "toupper")
+         else if(declname == "isalnum" or declname == "isalpha" or declname == "isblank" or declname == "iscntrl" or
+                 declname == "isdigit" or declname == "isgraph" or declname == "islower" or declname == "isprint" or
+                 declname == "ispunct" or declname == "isspace" or declname == "isupper" or declname == "isxdigit" or
+                 declname == "tolower" or declname == "toupper")
             return "/usr/include/ctype.h";
-         else if(declname == "iswalnum" or declname == "iswalpha" or declname == "iswblank" or declname == "iswcntrl" or declname == "iswdigit" or declname == "iswgraph" or declname == "iswlower" or declname == "iswprint" or declname == "iswpunct" or
-                 declname == "iswspace" or declname == "iswupper" or declname == "iswxdigit" or declname == "towlower" or declname == "towupper")
+         else if(declname == "iswalnum" or declname == "iswalpha" or declname == "iswblank" or declname == "iswcntrl" or
+                 declname == "iswdigit" or declname == "iswgraph" or declname == "iswlower" or declname == "iswprint" or
+                 declname == "iswpunct" or declname == "iswspace" or declname == "iswupper" or
+                 declname == "iswxdigit" or declname == "towlower" or declname == "towupper")
             return "/usr/include/wctype.h";
-         else if(declname == "abort" or declname == "abs" or declname == "calloc" or declname == "exit" or declname == "free" or declname == "labs" or declname == "llabs" or declname == "malloc" or declname == "realloc" or declname == "_exit2" or
-                 declname == "aligned_alloc")
+         else if(declname == "abort" or declname == "abs" or declname == "calloc" or declname == "exit" or
+                 declname == "free" or declname == "labs" or declname == "llabs" or declname == "malloc" or
+                 declname == "realloc" or declname == "_exit2" or declname == "aligned_alloc")
             return "/usr/include/stdlib.h";
          else if(declname == "imaxabs")
             return "/usr/include/inttypes.h";
@@ -4798,7 +4941,8 @@ namespace llvm
          if(EXPR_HAS_LOCATION(t))
          {
             serialize_maybe_newline();
-            snprintf(buffer, LOCAL_BUFFER_LEN, "srcp: \"%s\":%-d:%-6d ", EXPR_FILENAME(t), EXPR_LINENO(t), EXPR_COLUMNNO(t));
+            snprintf(buffer, LOCAL_BUFFER_LEN, "srcp: \"%s\":%-d:%-6d ", EXPR_FILENAME(t), EXPR_LINENO(t),
+                     EXPR_COLUMNNO(t));
             column += 12 + strlen(EXPR_FILENAME(t)) + 8;
          }
          switch(code_class)
@@ -4844,7 +4988,8 @@ namespace llvm
             /// with clang/llvm there is no type definition
             snprintf(buffer, LOCAL_BUFFER_LEN, "srcp: \"");
             stream << buffer;
-            if(code == GT(FUNCTION_DECL) && is_builtin_fn(t) && reinterpret_cast<const llvm::Function*>(t)->getBasicBlockList().empty())
+            if(code == GT(FUNCTION_DECL) && is_builtin_fn(t) &&
+               reinterpret_cast<const llvm::Function*>(t)->getBasicBlockList().empty())
             {
                auto headerFile = getHeaderForBuiltin(t);
                if(headerFile != "")
@@ -5047,7 +5192,8 @@ namespace llvm
                if(DECL_FIELD_OFFSET(t))
                   serialize_child("bpos", bit_position(t));
             }
-            else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL))
+            else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL) ||
+                    TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL))
             {
                serialize_int("used", TREE_USED(t));
                if(DECL_REGISTER(t))
@@ -5090,7 +5236,8 @@ namespace llvm
          case GT(STRING_CST):
             llvm_unreachable("Unexpected. Strings should be converted in standard arrays");
             //           if (TREE_TYPE (t))
-            //             serialize_string_cst("strg" , TREE_STRING_POINTER (t), TREE_STRING_LENGTH (t), TYPE_ALIGN(TREE_TYPE (t)));
+            //             serialize_string_cst("strg" , TREE_STRING_POINTER (t), TREE_STRING_LENGTH (t),
+            //             TYPE_ALIGN(TREE_TYPE (t)));
             //           else
             //             serialize_string_cst("strg" , TREE_STRING_POINTER (t), TREE_STRING_LENGTH (t), 8);
             break;
@@ -5283,7 +5430,8 @@ namespace llvm
       {
          srcType = llvm::cast<llvm::BitCastInst>(DstAddr)->getSrcTy();
       }
-      else if(llvm::dyn_cast<llvm::ConstantExpr>(DstAddr) && cast<llvm::ConstantExpr>(DstAddr)->getOpcode() == llvm::Instruction::BitCast)
+      else if(llvm::dyn_cast<llvm::ConstantExpr>(DstAddr) &&
+              cast<llvm::ConstantExpr>(DstAddr)->getOpcode() == llvm::Instruction::BitCast)
       {
          srcType = cast<llvm::ConstantExpr>(DstAddr)->getOperand(0)->getType();
       }
@@ -5315,7 +5463,10 @@ namespace llvm
       return Type->getPrimitiveSizeInBits() / 8;
    }
 
-   static llvm::Type* getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext& Context, llvm::ConstantInt* Length, unsigned SrcAlign, unsigned DestAlign, llvm::Value* SrcAddr, llvm::Value* DstAddr, const llvm::DataLayout* DL, bool isVolatile, bool& Optimize)
+   static llvm::Type* getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext& Context, llvm::ConstantInt* Length,
+                                                     unsigned SrcAlign, unsigned DestAlign, llvm::Value* SrcAddr,
+                                                     llvm::Value* DstAddr, const llvm::DataLayout* DL, bool isVolatile,
+                                                     bool& Optimize)
    {
       if(!isVolatile)
       {
@@ -5347,13 +5498,17 @@ namespace llvm
       return llvm::Type::getInt8Ty(Context);
    }
 
-   static void getMemcpyLoopResidualLoweringTypeLocal(llvm::SmallVectorImpl<llvm::Type*>& OpsOut, llvm::LLVMContext& Context, unsigned RemainingBytes, unsigned SrcAlign, unsigned DestAlign)
+   static void getMemcpyLoopResidualLoweringTypeLocal(llvm::SmallVectorImpl<llvm::Type*>& OpsOut,
+                                                      llvm::LLVMContext& Context, unsigned RemainingBytes,
+                                                      unsigned SrcAlign, unsigned DestAlign)
    {
       for(unsigned i = 0; i != RemainingBytes; ++i)
          OpsOut.push_back(llvm::Type::getInt8Ty(Context));
    }
 
-   static void createMemCpyLoopKnownSizeLocal(llvm::Instruction* InsertBefore, llvm::Value* SrcAddr, llvm::Value* DstAddr, llvm::ConstantInt* CopyLen, unsigned SrcAlign, unsigned DestAlign, bool SrcIsVolatile, bool DstIsVolatile,
+   static void createMemCpyLoopKnownSizeLocal(llvm::Instruction* InsertBefore, llvm::Value* SrcAddr,
+                                              llvm::Value* DstAddr, llvm::ConstantInt* CopyLen, unsigned SrcAlign,
+                                              unsigned DestAlign, bool SrcIsVolatile, bool DstIsVolatile,
                                               const llvm::DataLayout* DL)
    {
       // No need to expand zero length copies.
@@ -5367,7 +5522,8 @@ namespace llvm
 
       bool PeelCandidate = false;
       llvm::Type* TypeOfCopyLen = CopyLen->getType();
-      llvm::Type* LoopOpType = getMemcpyLoopLoweringTypeLocal(Ctx, CopyLen, SrcAlign, DestAlign, SrcAddr, DstAddr, DL, SrcIsVolatile || DstIsVolatile, PeelCandidate);
+      llvm::Type* LoopOpType = getMemcpyLoopLoweringTypeLocal(Ctx, CopyLen, SrcAlign, DestAlign, SrcAddr, DstAddr, DL,
+                                                              SrcIsVolatile || DstIsVolatile, PeelCandidate);
 
       unsigned LoopOpSize = getLoopOperandSizeInBytesLocal(LoopOpType);
       uint64_t LoopEndCount = CopyLen->getZExtValue() / LoopOpSize;
@@ -5386,30 +5542,42 @@ namespace llvm
 #endif
       bool srcIsAlloca = false;
       bool srcIsGlobal = false;
-      if(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr) && dyn_cast<llvm::AllocaInst>(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0)))
+      if(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr) &&
+         dyn_cast<llvm::AllocaInst>(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0)))
       {
          srcIsAlloca = true;
          do_unrolling = do_unrolling && (LoopEndCount <= PEEL_THRESHOLD);
       }
-      else if(llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)))
+      else if(llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) &&
+              cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast &&
+              dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)))
       {
          srcIsGlobal = true;
-         do_unrolling = do_unrolling && (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() || (LoopEndCount <= PEEL_THRESHOLD));
+         do_unrolling =
+             do_unrolling &&
+             (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() ||
+              (LoopEndCount <= PEEL_THRESHOLD));
       }
       else if(LoopEndCount == 1)
          do_unrolling = true;
-      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
+      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) &&
+         llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
       {
          llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
          llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
          llvm::IRBuilder<> Builder(InsertBefore);
-         auto srcAddress = Builder.CreateBitCast(srcIsAlloca ? llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0) : cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0), SrcOpType);
+         auto srcAddress =
+             Builder.CreateBitCast(srcIsAlloca ? llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0) :
+                                                 cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0),
+                                   SrcOpType);
          auto dstAddress = Builder.CreateBitCast(llvm::dyn_cast<llvm::BitCastInst>(DstAddr)->getOperand(0), DstOpType);
          for(auto LI = 0u; LI < LoopEndCount; ++LI)
          {
-            llvm::Value* SrcGEP = Builder.CreateInBoundsGEP(LoopOpType, srcAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
+            llvm::Value* SrcGEP =
+                Builder.CreateInBoundsGEP(LoopOpType, srcAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
             llvm::Value* Load = Builder.CreateLoad(SrcGEP, SrcIsVolatile);
-            llvm::Value* DstGEP = Builder.CreateInBoundsGEP(LoopOpType, dstAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
+            llvm::Value* DstGEP =
+                Builder.CreateInBoundsGEP(LoopOpType, dstAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
             Builder.CreateStore(Load, DstGEP, DstIsVolatile);
          }
       }
@@ -5471,14 +5639,18 @@ namespace llvm
             assert(GepIndex * OperandSize == BytesCopied && "Division should have no Remainder!");
             // Cast source to operand type and load
             llvm::PointerType* SrcPtrType = llvm::PointerType::get(OpTy, SrcAS);
-            llvm::Value* CastedSrc = SrcAddr->getType() == SrcPtrType ? SrcAddr : RBuilder.CreateBitCast(SrcAddr, SrcPtrType);
-            llvm::Value* SrcGEP = RBuilder.CreateInBoundsGEP(OpTy, CastedSrc, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
+            llvm::Value* CastedSrc =
+                SrcAddr->getType() == SrcPtrType ? SrcAddr : RBuilder.CreateBitCast(SrcAddr, SrcPtrType);
+            llvm::Value* SrcGEP =
+                RBuilder.CreateInBoundsGEP(OpTy, CastedSrc, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
             llvm::Value* Load = RBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
 
             // Cast destination to operand type and store.
             llvm::PointerType* DstPtrType = llvm::PointerType::get(OpTy, DstAS);
-            llvm::Value* CastedDst = DstAddr->getType() == DstPtrType ? DstAddr : RBuilder.CreateBitCast(DstAddr, DstPtrType);
-            llvm::Value* DstGEP = RBuilder.CreateInBoundsGEP(OpTy, CastedDst, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
+            llvm::Value* CastedDst =
+                DstAddr->getType() == DstPtrType ? DstAddr : RBuilder.CreateBitCast(DstAddr, DstPtrType);
+            llvm::Value* DstGEP =
+                RBuilder.CreateInBoundsGEP(OpTy, CastedDst, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
             RBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
 
             BytesCopied += OperandSize;
@@ -5508,7 +5680,8 @@ namespace llvm
       addrIsOfIntArrayType(DstAddr, Align, DL);
 
       bool AlignCanBeUsed = false;
-      if(isa<llvm::ConstantInt>(CopyLen) && isa<llvm::Constant>(SetValue) && cast<llvm::Constant>(SetValue)->isNullValue() && Align > 1 && Align <= 8 && SetValue->getType()->isIntegerTy())
+      if(isa<llvm::ConstantInt>(CopyLen) && isa<llvm::Constant>(SetValue) &&
+         cast<llvm::Constant>(SetValue)->isNullValue() && Align > 1 && Align <= 8 && SetValue->getType()->isIntegerTy())
          AlignCanBeUsed = true;
       if(AlignCanBeUsed)
       {
@@ -5524,7 +5697,11 @@ namespace llvm
 #endif
       llvm::IRBuilder<> Builder(OrigBB->getTerminator());
 
-      auto ActualCopyLen = AlignCanBeUsed ? llvm::ConstantInt::get(TypeOfCopyLen, cast<llvm::ConstantInt>(CopyLen)->getValue().udiv(llvm::APInt(TypeOfCopyLen->getIntegerBitWidth(), Align))) : CopyLen;
+      auto ActualCopyLen =
+          AlignCanBeUsed ?
+              llvm::ConstantInt::get(TypeOfCopyLen, cast<llvm::ConstantInt>(CopyLen)->getValue().udiv(
+                                                        llvm::APInt(TypeOfCopyLen->getIntegerBitWidth(), Align))) :
+              CopyLen;
 
       // Cast pointer to the type of value getting stored
       unsigned dstAS = cast<llvm::PointerType>(DstAddr->getType())->getAddressSpace();
@@ -5540,13 +5717,17 @@ namespace llvm
       if(AlignCanBeUsed)
       {
 #if __clang_major__ >= 11
-         LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), llvm::MaybeAlign(Align), IsVolatile);
+         LoopBuilder.CreateAlignedStore(SetValue,
+                                        LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
+                                        llvm::MaybeAlign(Align), IsVolatile);
 #else
-         LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), Align, IsVolatile);
+         LoopBuilder.CreateAlignedStore(
+             SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), Align, IsVolatile);
 #endif
       }
       else
-         LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), IsVolatile);
+         LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
+                                 IsVolatile);
 
       llvm::Value* NewIndex = LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1));
       LoopIndex->addIncoming(NewIndex, LoopBB);
@@ -5600,7 +5781,8 @@ namespace llvm
       {
          auto& F = *currFuncIterator;
 #if __clang_major__ != 4
-         const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+         const llvm::TargetTransformInfo& TTI =
+             modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
 #endif
          auto fname = std::string(getName(&F));
          llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
@@ -5690,7 +5872,8 @@ namespace llvm
       if(llvm::ConstantExpr* CE = dyn_cast<llvm::ConstantExpr>(C))
       {
          // Handle a constantexpr gep.
-         if(CE->getOpcode() == llvm::Instruction::GetElementPtr && isa<llvm::GlobalVariable>(CE->getOperand(0)) && cast<llvm::GEPOperator>(CE)->isInBounds())
+         if(CE->getOpcode() == llvm::Instruction::GetElementPtr && isa<llvm::GlobalVariable>(CE->getOperand(0)) &&
+            cast<llvm::GEPOperator>(CE)->isInBounds())
          {
             llvm::GlobalVariable* GV = cast<llvm::GlobalVariable>(CE->getOperand(0));
             // Do not allow weak/*_odr/linkonce/dllimport/dllexport linkage or
@@ -5726,7 +5909,8 @@ namespace llvm
    }
 
    /// This is a customized/local version of EvaluateStoreIntoLocal taken from lib/Analysis/ConstantFolding.cpp
-   static llvm::Constant* ConstantFoldLoadThroughBitcastLocal(llvm::Constant* C, llvm::Type* DestTy, const llvm::DataLayout& DL)
+   static llvm::Constant* ConstantFoldLoadThroughBitcastLocal(llvm::Constant* C, llvm::Type* DestTy,
+                                                              const llvm::DataLayout& DL)
    {
       do
       {
@@ -5764,7 +5948,8 @@ namespace llvm
    }
 
    /// This is a customized/local version of EvaluateStoreIntoLocal taken from lib/Transforms/IPO/GlobalOpt.cpp
-   static llvm::Constant* EvaluateStoreIntoLocal(llvm::Constant* Init, llvm::Constant* Val, llvm::ConstantExpr* Addr, unsigned OpNo)
+   static llvm::Constant* EvaluateStoreIntoLocal(llvm::Constant* Init, llvm::Constant* Val, llvm::ConstantExpr* Addr,
+                                                 unsigned OpNo)
    {
       // Base case of the recursion.
       if(OpNo == Addr->getNumOperands())
@@ -5925,7 +6110,8 @@ namespace llvm
       commitAndSetupCache(CurrentGV, true);
    }
 
-   static bool removableStore(llvm::StoreInst* SI, llvm::GlobalVariable* GV, llvm::TargetLibraryInfo& TLI, const llvm::DataLayout& DL, llvm::Constant*& Ptr, llvm::Constant*& Val, bool firstPart)
+   static bool removableStore(llvm::StoreInst* SI, llvm::GlobalVariable* GV, llvm::TargetLibraryInfo& TLI,
+                              const llvm::DataLayout& DL, llvm::Constant*& Ptr, llvm::Constant*& Val, bool firstPart)
    {
       if(!SI->isSimple())
       {
@@ -6026,7 +6212,9 @@ namespace llvm
       return GV && GV->hasDefinitiveInitializer() ? GV->getInitializer() : nullptr;
    }
 
-   llvm::Constant* ComputeLoadResultLocal(llvm::Constant* P, llvm::DenseMap<llvm::Constant*, llvm::Constant*>& MutatedMemory, const llvm::DataLayout& DL)
+   llvm::Constant* ComputeLoadResultLocal(llvm::Constant* P,
+                                          llvm::DenseMap<llvm::Constant*, llvm::Constant*>& MutatedMemory,
+                                          const llvm::DataLayout& DL)
    {
       // If this memory location has been recently stored, use the stored value: it
       // is the most up-to-date.
@@ -6065,7 +6253,9 @@ namespace llvm
       return nullptr; // don't know how to evaluate.
    }
 
-   static void updateLoads(llvm::GlobalVariable* GV, llvm::DenseMap<llvm::Constant*, llvm::Constant*>& MutatedMemory, llvm::TargetLibraryInfo& TLI, const llvm::DataLayout& DL, std::list<llvm::Instruction*>& deadList)
+   static void updateLoads(llvm::GlobalVariable* GV, llvm::DenseMap<llvm::Constant*, llvm::Constant*>& MutatedMemory,
+                           llvm::TargetLibraryInfo& TLI, const llvm::DataLayout& DL,
+                           std::list<llvm::Instruction*>& deadList)
    {
       for(auto user : GV->users())
       {
@@ -6147,7 +6337,9 @@ namespace llvm
                               {
                                  llvm::Constant* Val;
                                  llvm::Constant* Ptr;
-                                 assert(dyn_cast<llvm::StoreInst>(CurInst) && removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false));
+                                 assert(
+                                     dyn_cast<llvm::StoreInst>(CurInst) &&
+                                     removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false));
                                  MutatedMemory[Ptr] = Val;
 
                                  auto me = CurInst;
@@ -6186,14 +6378,16 @@ namespace llvm
                                        {
                                           std::string declname = std::string(GVi->getName());
                                           int status;
-                                          char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
+                                          char* demangled_outbuffer =
+                                              abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
                                           if(status == 0)
                                           {
                                              declname = demangled_outbuffer;
                                              if(declname.find("guard variable for") != std::string::npos)
                                              {
                                                 std::string declname1 = std::string(GV->getName());
-                                                char* demangled_outbuffer1 = abi::__cxa_demangle(declname1.c_str(), nullptr, nullptr, &status);
+                                                char* demangled_outbuffer1 =
+                                                    abi::__cxa_demangle(declname1.c_str(), nullptr, nullptr, &status);
                                                 if(status == 0)
                                                 {
                                                    declname1 = demangled_outbuffer1;
@@ -6250,7 +6444,8 @@ namespace llvm
                I->eraseFromParent();
          if(!deadList.empty())
          {
-            const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+            const llvm::TargetTransformInfo& TTI =
+                modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
@@ -6287,7 +6482,8 @@ namespace llvm
                {
                   auto& ci = cast<llvm::CallInst>(*curInstIterator);
                   llvm::Function* Callee = ci.getCalledFunction();
-                  if(Callee && Callee->isIntrinsic() && (!skipIntrinsic(Callee->getIntrinsicID()) || fname == getIntrinsicName(Callee)))
+                  if(Callee && Callee->isIntrinsic() &&
+                     (!skipIntrinsic(Callee->getIntrinsicID()) || fname == getIntrinsicName(Callee)))
                   {
                      res = true;
                      auto me = curInstIterator;
@@ -6411,7 +6607,8 @@ namespace llvm
                      {
                         if(R.isConstant())
                         {
-                           llvm::errs() << "the value associated with this instruction is constant and could be propagated: ";
+                           llvm::errs()
+                               << "the value associated with this instruction is constant and could be propagated: ";
                            I->print(llvm::errs());
                            llvm::errs() << " -> ";
                            R.print(llvm::errs());
@@ -6424,13 +6621,15 @@ namespace llvm
                         }
                         else
                         {
-                           auto nbitU = RangeAnalysis::Range_base::neededBits(R.getUnsignedMin(), R.getUnsignedMax(), false);
+                           auto nbitU =
+                               RangeAnalysis::Range_base::neededBits(R.getUnsignedMin(), R.getUnsignedMax(), false);
                            auto nbitS = RangeAnalysis::Range_base::neededBits(R.getSignedMin(), R.getSignedMax(), true);
                            auto bw = R.getBitWidth();
                            if(nbitS < nbitU && nbitS < bw && !isSignedResult(I))
                            {
                               assert(bw > nbitS);
-                              llvm::errs() << "the range associated with this unsigned instruction could be reduced with the signed range: ";
+                              llvm::errs() << "the range associated with this unsigned instruction could be reduced "
+                                              "with the signed range: ";
                               I->print(llvm::errs());
                               llvm::errs() << " -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ";
                               R.print(llvm::errs());
@@ -6454,7 +6653,8 @@ namespace llvm
                   I->eraseFromParent();
             if(!deadList.empty())
             {
-               //               const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+               //               const llvm::TargetTransformInfo& TTI =
+               //               modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
                for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                   llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
                //               for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
@@ -6487,7 +6687,8 @@ namespace llvm
                llvm::Instruction* I = &*curInstIterator;
                if(dyn_cast<llvm::StoreInst>(I) || dyn_cast<llvm::LoadInst>(I))
                {
-                  auto PO = dyn_cast<llvm::StoreInst>(I) ? dyn_cast<llvm::StoreInst>(I)->getPointerOperand() : dyn_cast<llvm::LoadInst>(I)->getPointerOperand();
+                  auto PO = dyn_cast<llvm::StoreInst>(I) ? dyn_cast<llvm::StoreInst>(I)->getPointerOperand() :
+                                                           dyn_cast<llvm::LoadInst>(I)->getPointerOperand();
                   auto PTS = PtoSets_AA->pointsToSet(PO);
                   if(PTS->size() > 1)
                   {
@@ -6501,7 +6702,8 @@ namespace llvm
                            break;
                         }
                         auto vid = varValue->getValueID();
-                        if(vid != llvm::Value::InstructionVal + llvm::Instruction::Alloca && vid != llvm::Value::GlobalVariableVal)
+                        if(vid != llvm::Value::InstructionVal + llvm::Instruction::Alloca &&
+                           vid != llvm::Value::GlobalVariableVal)
                         {
                            res = false;
                            break;
@@ -6720,10 +6922,15 @@ namespace llvm
       return changed;
    }
 
-   void DumpGimpleRaw::computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass)
+   void DumpGimpleRaw::computeMAEntryDefs(
+       const llvm::Function* F,
+       std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>&
+           CurrentListofMAEntryDef,
+       llvm::ModulePass* modulePass)
    {
 #if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F), &changed).getMSSA();
+      auto& MSSA =
+          modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F), &changed).getMSSA();
 #else
       auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F)).getMSSA();
 #endif
@@ -6738,7 +6945,9 @@ namespace llvm
                if(MSSA.isLiveOnEntryDef(defMA))
                   CurrentListofMAEntryDef[F][nullptr].insert(&inst);
                else if(defMA->getValueID() == llvm::Value::MemoryPhiVal)
-                  CurrentListofMAEntryDef[F][gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA))].insert(&inst);
+                  CurrentListofMAEntryDef[F][gimple_phi_virtual_result(
+                                                 getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA))]
+                      .insert(&inst);
                else
                {
                   assert(defMA->getValueID() == llvm::Value::MemoryDefVal);
@@ -6836,7 +7045,8 @@ namespace llvm
          for(const auto& globalVar : M.getGlobalList())
          {
 #if PRINT_DBG_MSG
-            llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()] << "\n";
+            llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()]
+                         << "\n";
 #endif
             SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
          }
@@ -6848,7 +7058,8 @@ namespace llvm
             if(fun.isIntrinsic())
             {
 #if PRINT_DBG_MSG
-               llvm::errs() << "Function intrinsic skipped: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n";
+               llvm::errs() << "Function intrinsic skipped: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()]
+                            << "\n";
 #endif
             }
             else

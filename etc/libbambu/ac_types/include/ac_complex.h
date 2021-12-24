@@ -310,7 +310,10 @@ namespace __AC_NAMESPACE
             typedef ac_complex<typename ac::rt_2T<T, T2>::logic> logic;
             typedef ac_complex<typename ac::rt_2T<T, T2>::div> div;
             typedef ac_complex<typename ac::rt_2T<T, T2>::div2> div2;
-            typedef ac_complex<typename ac::rt_2T<typename ac::rt_2T<typename ac::rt_2T<T, T2>::mult, typename ac::rt_2T<T, T2>::mult>::plus, typename ac::rt_2T<typename ac::rt_2T<T, T2>::mult, typename ac::rt_2T<T, T2>::mult>::minus>::logic> mult;
+            typedef ac_complex<typename ac::rt_2T<
+                typename ac::rt_2T<typename ac::rt_2T<T, T2>::mult, typename ac::rt_2T<T, T2>::mult>::plus,
+                typename ac::rt_2T<typename ac::rt_2T<T, T2>::mult, typename ac::rt_2T<T, T2>::mult>::minus>::logic>
+                mult;
          };
       };
       // with T2 == ac_float
@@ -384,7 +387,8 @@ namespace __AC_NAMESPACE
    } // namespace ac_private
 
    template <typename T, typename T2>
-   inline typename ac_complex<T>::template rt_T<ac_complex<T2>>::plus operator+(const ac_complex<T>& op, const ac_complex<T2>& op2)
+   inline typename ac_complex<T>::template rt_T<ac_complex<T2>>::plus operator+(const ac_complex<T>& op,
+                                                                                const ac_complex<T2>& op2)
    {
       typename ac_complex<T>::template rt_T<ac_complex<T2>>::plus res(op.r() + op2.r(), op.i() + op2.i());
       return res;
@@ -405,7 +409,8 @@ namespace __AC_NAMESPACE
    }
 
    template <typename T, typename T2>
-   inline typename ac_complex<T>::template rt_T<ac_complex<T2>>::minus operator-(const ac_complex<T>& op, const ac_complex<T2>& op2)
+   inline typename ac_complex<T>::template rt_T<ac_complex<T2>>::minus operator-(const ac_complex<T>& op,
+                                                                                 const ac_complex<T2>& op2)
    {
       typename ac_complex<T>::template rt_T<ac_complex<T2>>::minus res(op.r() - op2.r(), op.i() - op2.i());
       return res;
@@ -426,9 +431,11 @@ namespace __AC_NAMESPACE
    }
 
    template <typename T, typename T2>
-   inline typename ac_complex<T>::template rt_T<ac_complex<T2>>::mult operator*(const ac_complex<T>& op, const ac_complex<T2>& op2)
+   inline typename ac_complex<T>::template rt_T<ac_complex<T2>>::mult operator*(const ac_complex<T>& op,
+                                                                                const ac_complex<T2>& op2)
    {
-      typename ac_complex<T>::template rt_T<ac_complex<T2>>::mult res(op.r() * op2.r() - op.i() * op2.i(), op.i() * op2.r() + op.r() * op2.i());
+      typename ac_complex<T>::template rt_T<ac_complex<T2>>::mult res(op.r() * op2.r() - op.i() * op2.i(),
+                                                                      op.i() * op2.r() + op.r() * op2.i());
       return res;
    }
 
@@ -447,10 +454,12 @@ namespace __AC_NAMESPACE
    }
 
    template <typename T, typename T2>
-   inline typename ac_complex<T>::template rt_T<ac_complex<T2>>::div operator/(const ac_complex<T>& op, const ac_complex<T2>& op2)
+   inline typename ac_complex<T>::template rt_T<ac_complex<T2>>::div operator/(const ac_complex<T>& op,
+                                                                               const ac_complex<T2>& op2)
    {
       typename ac_complex<T2>::rt_unary::mag_sqr d = op2.mag_sqr();
-      typename ac_complex<T>::template rt_T<ac_complex<T2>>::div res((op.r() * op2.r() + op.i() * op2.i()) / d, (op.i() * op2.r() - op.r() * op2.i()) / d);
+      typename ac_complex<T>::template rt_T<ac_complex<T2>>::div res((op.r() * op2.r() + op.i() * op2.i()) / d,
+                                                                     (op.i() * op2.r() - op.r() * op2.i()) / d);
       return res;
    }
 

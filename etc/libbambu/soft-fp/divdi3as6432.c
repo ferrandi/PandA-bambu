@@ -123,7 +123,8 @@ DWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functio
 }
 strong_alias(__divdi36432, __divdi36432_internal)
 
-    DWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions"))) __moddi36432(DWtype u, SItype v)
+    DWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions")))
+    __moddi36432(DWtype u, SItype v)
 {
    _Bool c = 0;
    DWtype w;
@@ -142,13 +143,15 @@ strong_alias(__divdi36432, __divdi36432_internal)
 }
 strong_alias(__moddi36432, __moddi36432_internal)
 
-    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions"))) __udivdi36432(UDWtype u, USItype v)
+    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions")))
+    __udivdi36432(UDWtype u, USItype v)
 {
    return __udivmoddi4(u, v, NULL);
 }
 strong_alias(__udivdi36432, __udivdi36432_internal)
 
-    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions"))) __umoddi36432(UDWtype u, USItype v)
+    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions")))
+    __umoddi36432(UDWtype u, USItype v)
 {
    UDWtype w;
 

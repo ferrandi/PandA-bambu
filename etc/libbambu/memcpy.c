@@ -34,7 +34,8 @@ void _llvm_memcpy_p0i8_p0i8_i32(void* dest, const void* src, unsigned int len, u
       *d++ = *s++;
 }
 
-void _llvm_memcpy_p0i8_p0i8_i64(void* dest, const void* src, unsigned long long int len, unsigned int align, _Bool isvolatile)
+void _llvm_memcpy_p0i8_p0i8_i64(void* dest, const void* src, unsigned long long int len, unsigned int align,
+                                _Bool isvolatile)
 {
    char* d = dest;
    const char* s = src;

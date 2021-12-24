@@ -116,11 +116,16 @@
       X##_f[0] |= _sticky;                  \
    } while(0)
 
-#define _FP_FRAC_ADD_4(R, X, Y) __FP_FRAC_ADD_4(R##_f[3], R##_f[2], R##_f[1], R##_f[0], X##_f[3], X##_f[2], X##_f[1], X##_f[0], Y##_f[3], Y##_f[2], Y##_f[1], Y##_f[0])
+#define _FP_FRAC_ADD_4(R, X, Y)                                                                                        \
+   __FP_FRAC_ADD_4(R##_f[3], R##_f[2], R##_f[1], R##_f[0], X##_f[3], X##_f[2], X##_f[1], X##_f[0], Y##_f[3], Y##_f[2], \
+                   Y##_f[1], Y##_f[0])
 
-#define _FP_FRAC_SUB_4(R, X, Y) __FP_FRAC_SUB_4(R##_f[3], R##_f[2], R##_f[1], R##_f[0], X##_f[3], X##_f[2], X##_f[1], X##_f[0], Y##_f[3], Y##_f[2], Y##_f[1], Y##_f[0])
+#define _FP_FRAC_SUB_4(R, X, Y)                                                                                        \
+   __FP_FRAC_SUB_4(R##_f[3], R##_f[2], R##_f[1], R##_f[0], X##_f[3], X##_f[2], X##_f[1], X##_f[0], Y##_f[3], Y##_f[2], \
+                   Y##_f[1], Y##_f[0])
 
-#define _FP_FRAC_DEC_4(X, Y) __FP_FRAC_DEC_4(X##_f[3], X##_f[2], X##_f[1], X##_f[0], Y##_f[3], Y##_f[2], Y##_f[1], Y##_f[0])
+#define _FP_FRAC_DEC_4(X, Y) \
+   __FP_FRAC_DEC_4(X##_f[3], X##_f[2], X##_f[1], X##_f[0], Y##_f[3], Y##_f[2], Y##_f[1], Y##_f[0])
 
 #define _FP_FRAC_ADDI_4(X, I) __FP_FRAC_ADDI_4(X##_f[3], X##_f[2], X##_f[1], X##_f[0], I)
 
@@ -134,11 +139,20 @@
 #define _FP_FRAC_HIGHBIT_DW_4(fs, X) (_FP_FRAC_HIGH_DW_##fs(X) & _FP_HIGHBIT_DW_##fs)
 #define _FP_FRAC_CLEAR_OVERP_4(fs, X) (_FP_FRAC_HIGH_##fs(X) &= ~_FP_OVERFLOW_##fs)
 
-#define _FP_FRAC_EQ_4(X, Y) (X##_f[0] == Y##_f[0] && X##_f[1] == Y##_f[1] && X##_f[2] == Y##_f[2] && X##_f[3] == Y##_f[3])
+#define _FP_FRAC_EQ_4(X, Y) \
+   (X##_f[0] == Y##_f[0] && X##_f[1] == Y##_f[1] && X##_f[2] == Y##_f[2] && X##_f[3] == Y##_f[3])
 
-#define _FP_FRAC_GT_4(X, Y) (X##_f[3] > Y##_f[3] || (X##_f[3] == Y##_f[3] && (X##_f[2] > Y##_f[2] || (X##_f[2] == Y##_f[2] && (X##_f[1] > Y##_f[1] || (X##_f[1] == Y##_f[1] && X##_f[0] > Y##_f[0]))))))
+#define _FP_FRAC_GT_4(X, Y)  \
+   (X##_f[3] > Y##_f[3] ||   \
+    (X##_f[3] == Y##_f[3] && \
+     (X##_f[2] > Y##_f[2] || \
+      (X##_f[2] == Y##_f[2] && (X##_f[1] > Y##_f[1] || (X##_f[1] == Y##_f[1] && X##_f[0] > Y##_f[0]))))))
 
-#define _FP_FRAC_GE_4(X, Y) (X##_f[3] > Y##_f[3] || (X##_f[3] == Y##_f[3] && (X##_f[2] > Y##_f[2] || (X##_f[2] == Y##_f[2] && (X##_f[1] > Y##_f[1] || (X##_f[1] == Y##_f[1] && X##_f[0] >= Y##_f[0]))))))
+#define _FP_FRAC_GE_4(X, Y)  \
+   (X##_f[3] > Y##_f[3] ||   \
+    (X##_f[3] == Y##_f[3] && \
+     (X##_f[2] > Y##_f[2] || \
+      (X##_f[2] == Y##_f[2] && (X##_f[1] > Y##_f[1] || (X##_f[1] == Y##_f[1] && X##_f[0] >= Y##_f[0]))))))
 
 #define _FP_FRAC_CLZ_4(R, X)       \
    do                              \
@@ -220,60 +234,76 @@
 
 /* Given a 1W * 1W => 2W primitive, do the extended multiplication.  */
 
-#define _FP_MUL_MEAT_DW_4_wide(wfracbits, R, X, Y, doit)                                                                                                                          \
-   do                                                                                                                                                                             \
-   {                                                                                                                                                                              \
-      _FP_FRAC_DECL_2(_b);                                                                                                                                                        \
-      _FP_FRAC_DECL_2(_c);                                                                                                                                                        \
-      _FP_FRAC_DECL_2(_d);                                                                                                                                                        \
-      _FP_FRAC_DECL_2(_e);                                                                                                                                                        \
-      _FP_FRAC_DECL_2(_f);                                                                                                                                                        \
-                                                                                                                                                                                  \
-      doit(_FP_FRAC_WORD_8(R, 1), _FP_FRAC_WORD_8(R, 0), X##_f[0], Y##_f[0]);                                                                                                     \
-      doit(_b_f1, _b_f0, X##_f[0], Y##_f[1]);                                                                                                                                     \
-      doit(_c_f1, _c_f0, X##_f[1], Y##_f[0]);                                                                                                                                     \
-      doit(_d_f1, _d_f0, X##_f[1], Y##_f[1]);                                                                                                                                     \
-      doit(_e_f1, _e_f0, X##_f[0], Y##_f[2]);                                                                                                                                     \
-      doit(_f_f1, _f_f0, X##_f[2], Y##_f[0]);                                                                                                                                     \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), _FP_FRAC_WORD_8(R, 1), 0, _b_f1, _b_f0, 0, 0, _FP_FRAC_WORD_8(R, 1));                                         \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), _FP_FRAC_WORD_8(R, 1), 0, _c_f1, _c_f0, _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), _FP_FRAC_WORD_8(R, 1)); \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), 0, _d_f1, _d_f0, 0, _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2));                     \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), 0, _e_f1, _e_f0, _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2)); \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), 0, _f_f1, _f_f0, _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2)); \
-      doit(_b_f1, _b_f0, X##_f[0], Y##_f[3]);                                                                                                                                     \
-      doit(_c_f1, _c_f0, X##_f[3], Y##_f[0]);                                                                                                                                     \
-      doit(_d_f1, _d_f0, X##_f[1], Y##_f[2]);                                                                                                                                     \
-      doit(_e_f1, _e_f0, X##_f[2], Y##_f[1]);                                                                                                                                     \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), 0, _b_f1, _b_f0, 0, _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3));                     \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), 0, _c_f1, _c_f0, _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3)); \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), 0, _d_f1, _d_f0, _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3)); \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), 0, _e_f1, _e_f0, _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3)); \
-      doit(_b_f1, _b_f0, X##_f[2], Y##_f[2]);                                                                                                                                     \
-      doit(_c_f1, _c_f0, X##_f[1], Y##_f[3]);                                                                                                                                     \
-      doit(_d_f1, _d_f0, X##_f[3], Y##_f[1]);                                                                                                                                     \
-      doit(_e_f1, _e_f0, X##_f[2], Y##_f[3]);                                                                                                                                     \
-      doit(_f_f1, _f_f0, X##_f[3], Y##_f[2]);                                                                                                                                     \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), 0, _b_f1, _b_f0, 0, _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4));                     \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), 0, _c_f1, _c_f0, _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4)); \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), 0, _d_f1, _d_f0, _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4)); \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 7), _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), 0, _e_f1, _e_f0, 0, _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5));                     \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 7), _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), 0, _f_f1, _f_f0, _FP_FRAC_WORD_8(R, 7), _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5)); \
-      doit(_b_f1, _b_f0, X##_f[3], Y##_f[3]);                                                                                                                                     \
-      __FP_FRAC_ADD_2(_FP_FRAC_WORD_8(R, 7), _FP_FRAC_WORD_8(R, 6), _b_f1, _b_f0, _FP_FRAC_WORD_8(R, 7), _FP_FRAC_WORD_8(R, 6));                                                  \
+#define _FP_MUL_MEAT_DW_4_wide(wfracbits, R, X, Y, doit)                                                          \
+   do                                                                                                             \
+   {                                                                                                              \
+      _FP_FRAC_DECL_2(_b);                                                                                        \
+      _FP_FRAC_DECL_2(_c);                                                                                        \
+      _FP_FRAC_DECL_2(_d);                                                                                        \
+      _FP_FRAC_DECL_2(_e);                                                                                        \
+      _FP_FRAC_DECL_2(_f);                                                                                        \
+                                                                                                                  \
+      doit(_FP_FRAC_WORD_8(R, 1), _FP_FRAC_WORD_8(R, 0), X##_f[0], Y##_f[0]);                                     \
+      doit(_b_f1, _b_f0, X##_f[0], Y##_f[1]);                                                                     \
+      doit(_c_f1, _c_f0, X##_f[1], Y##_f[0]);                                                                     \
+      doit(_d_f1, _d_f0, X##_f[1], Y##_f[1]);                                                                     \
+      doit(_e_f1, _e_f0, X##_f[0], Y##_f[2]);                                                                     \
+      doit(_f_f1, _f_f0, X##_f[2], Y##_f[0]);                                                                     \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), _FP_FRAC_WORD_8(R, 1), 0, _b_f1, _b_f0, 0, 0, \
+                      _FP_FRAC_WORD_8(R, 1));                                                                     \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), _FP_FRAC_WORD_8(R, 1), 0, _c_f1, _c_f0,       \
+                      _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), _FP_FRAC_WORD_8(R, 1));                       \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), 0, _d_f1, _d_f0, 0,    \
+                      _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2));                                              \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), 0, _e_f1, _e_f0,       \
+                      _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2));                       \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2), 0, _f_f1, _f_f0,       \
+                      _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), _FP_FRAC_WORD_8(R, 2));                       \
+      doit(_b_f1, _b_f0, X##_f[0], Y##_f[3]);                                                                     \
+      doit(_c_f1, _c_f0, X##_f[3], Y##_f[0]);                                                                     \
+      doit(_d_f1, _d_f0, X##_f[1], Y##_f[2]);                                                                     \
+      doit(_e_f1, _e_f0, X##_f[2], Y##_f[1]);                                                                     \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), 0, _b_f1, _b_f0, 0,    \
+                      _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3));                                              \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), 0, _c_f1, _c_f0,       \
+                      _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3));                       \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), 0, _d_f1, _d_f0,       \
+                      _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3));                       \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3), 0, _e_f1, _e_f0,       \
+                      _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), _FP_FRAC_WORD_8(R, 3));                       \
+      doit(_b_f1, _b_f0, X##_f[2], Y##_f[2]);                                                                     \
+      doit(_c_f1, _c_f0, X##_f[1], Y##_f[3]);                                                                     \
+      doit(_d_f1, _d_f0, X##_f[3], Y##_f[1]);                                                                     \
+      doit(_e_f1, _e_f0, X##_f[2], Y##_f[3]);                                                                     \
+      doit(_f_f1, _f_f0, X##_f[3], Y##_f[2]);                                                                     \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), 0, _b_f1, _b_f0, 0,    \
+                      _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4));                                              \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), 0, _c_f1, _c_f0,       \
+                      _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4));                       \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4), 0, _d_f1, _d_f0,       \
+                      _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), _FP_FRAC_WORD_8(R, 4));                       \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 7), _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), 0, _e_f1, _e_f0, 0,    \
+                      _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5));                                              \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_8(R, 7), _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5), 0, _f_f1, _f_f0,       \
+                      _FP_FRAC_WORD_8(R, 7), _FP_FRAC_WORD_8(R, 6), _FP_FRAC_WORD_8(R, 5));                       \
+      doit(_b_f1, _b_f0, X##_f[3], Y##_f[3]);                                                                     \
+      __FP_FRAC_ADD_2(_FP_FRAC_WORD_8(R, 7), _FP_FRAC_WORD_8(R, 6), _b_f1, _b_f0, _FP_FRAC_WORD_8(R, 7),          \
+                      _FP_FRAC_WORD_8(R, 6));                                                                     \
    } while(0)
 
-#define _FP_MUL_MEAT_4_wide(wfracbits, R, X, Y, doit)                                                                     \
-   do                                                                                                                     \
-   {                                                                                                                      \
-      _FP_FRAC_DECL_8(_z);                                                                                                \
-                                                                                                                          \
-      _FP_MUL_MEAT_DW_4_wide(wfracbits, _z, X, Y, doit);                                                                  \
-                                                                                                                          \
-      /* Normalize since we know where the msb of the multiplicands                                                       \
-    were (bit B), we know that the msb of the of the product is                                                           \
-    at either 2B or 2B-1.  */                                                                                             \
-      _FP_FRAC_SRS_8(_z, wfracbits - 1, 2 * wfracbits);                                                                   \
-      __FP_FRAC_SET_4(R, _FP_FRAC_WORD_8(_z, 3), _FP_FRAC_WORD_8(_z, 2), _FP_FRAC_WORD_8(_z, 1), _FP_FRAC_WORD_8(_z, 0)); \
+#define _FP_MUL_MEAT_4_wide(wfracbits, R, X, Y, doit)                                            \
+   do                                                                                            \
+   {                                                                                             \
+      _FP_FRAC_DECL_8(_z);                                                                       \
+                                                                                                 \
+      _FP_MUL_MEAT_DW_4_wide(wfracbits, _z, X, Y, doit);                                         \
+                                                                                                 \
+      /* Normalize since we know where the msb of the multiplicands                              \
+    were (bit B), we know that the msb of the of the product is                                  \
+    at either 2B or 2B-1.  */                                                                    \
+      _FP_FRAC_SRS_8(_z, wfracbits - 1, 2 * wfracbits);                                          \
+      __FP_FRAC_SET_4(R, _FP_FRAC_WORD_8(_z, 3), _FP_FRAC_WORD_8(_z, 2), _FP_FRAC_WORD_8(_z, 1), \
+                      _FP_FRAC_WORD_8(_z, 0));                                                   \
    } while(0)
 
 #define _FP_MUL_MEAT_DW_4_gmp(wfracbits, R, X, Y) \
@@ -282,18 +312,19 @@
       mpn_mul_n(R##_f, _x_f, _y_f, 4);            \
    } while(0)
 
-#define _FP_MUL_MEAT_4_gmp(wfracbits, R, X, Y)                                                                            \
-   do                                                                                                                     \
-   {                                                                                                                      \
-      _FP_FRAC_DECL_8(_z);                                                                                                \
-                                                                                                                          \
-      _FP_MUL_MEAT_DW_4_gmp(wfracbits, _z, X, Y);                                                                         \
-                                                                                                                          \
-      /* Normalize since we know where the msb of the multiplicands                                                       \
-    were (bit B), we know that the msb of the of the product is                                                           \
-    at either 2B or 2B-1.  */                                                                                             \
-      _FP_FRAC_SRS_8(_z, wfracbits - 1, 2 * wfracbits);                                                                   \
-      __FP_FRAC_SET_4(R, _FP_FRAC_WORD_8(_z, 3), _FP_FRAC_WORD_8(_z, 2), _FP_FRAC_WORD_8(_z, 1), _FP_FRAC_WORD_8(_z, 0)); \
+#define _FP_MUL_MEAT_4_gmp(wfracbits, R, X, Y)                                                   \
+   do                                                                                            \
+   {                                                                                             \
+      _FP_FRAC_DECL_8(_z);                                                                       \
+                                                                                                 \
+      _FP_MUL_MEAT_DW_4_gmp(wfracbits, _z, X, Y);                                                \
+                                                                                                 \
+      /* Normalize since we know where the msb of the multiplicands                              \
+    were (bit B), we know that the msb of the of the product is                                  \
+    at either 2B or 2B-1.  */                                                                    \
+      _FP_FRAC_SRS_8(_z, wfracbits - 1, 2 * wfracbits);                                          \
+      __FP_FRAC_SET_4(R, _FP_FRAC_WORD_8(_z, 3), _FP_FRAC_WORD_8(_z, 2), _FP_FRAC_WORD_8(_z, 1), \
+                      _FP_FRAC_WORD_8(_z, 0));                                                   \
    } while(0)
 
 /*
@@ -315,70 +346,71 @@
  * Division algorithms:
  */
 
-#define _FP_DIV_MEAT_4_udiv(fs, R, X, Y)                                                                                                      \
-   do                                                                                                                                         \
-   {                                                                                                                                          \
-      int _i;                                                                                                                                 \
-      _FP_FRAC_DECL_4(_n);                                                                                                                    \
-      _FP_FRAC_DECL_4(_m);                                                                                                                    \
-      _FP_FRAC_SET_4(_n, _FP_ZEROFRAC_4);                                                                                                     \
-      if(_FP_FRAC_GE_4(X, Y))                                                                                                                 \
-      {                                                                                                                                       \
-         _n_f[3] = X##_f[0] << (_FP_W_TYPE_SIZE - 1);                                                                                         \
-         _FP_FRAC_SRL_4(X, 1);                                                                                                                \
-      }                                                                                                                                       \
-      else                                                                                                                                    \
-         R##_e--;                                                                                                                             \
-                                                                                                                                              \
-      /* Normalize, i.e. make the most significant bit of the                                                                                 \
-    denominator set. */                                                                                                                       \
-      _FP_FRAC_SLL_4(Y, _FP_WFRACXBITS_##fs);                                                                                                 \
-                                                                                                                                              \
-      for(_i = 3;; _i--)                                                                                                                      \
-      {                                                                                                                                       \
-         if(X##_f[3] == Y##_f[3])                                                                                                             \
-         {                                                                                                                                    \
-            /* This is a special case, not an optimization                                                                                    \
-          (X##_f[3]/Y##_f[3] would not fit into UWtype).                                                                                      \
-          As X## is guaranteed to be < Y,  R##_f[_i] can be either                                                                            \
-          (UWtype)-1 or (UWtype)-2.  */                                                                                                       \
-            R##_f[_i] = -1;                                                                                                                   \
-            if(!_i)                                                                                                                           \
-               break;                                                                                                                         \
-            __FP_FRAC_SUB_4(X##_f[3], X##_f[2], X##_f[1], X##_f[0], Y##_f[2], Y##_f[1], Y##_f[0], 0, X##_f[2], X##_f[1], X##_f[0], _n_f[_i]); \
-            _FP_FRAC_SUB_4(X, Y, X);                                                                                                          \
-            if(X##_f[3] > Y##_f[3])                                                                                                           \
-            {                                                                                                                                 \
-               R##_f[_i] = -2;                                                                                                                \
-               _FP_FRAC_ADD_4(X, Y, X);                                                                                                       \
-            }                                                                                                                                 \
-         }                                                                                                                                    \
-         else                                                                                                                                 \
-         {                                                                                                                                    \
-            udiv_qrnnd(R##_f[_i], X##_f[3], X##_f[3], X##_f[2], Y##_f[3]);                                                                    \
-            umul_ppppmnnn(_m_f[3], _m_f[2], _m_f[1], _m_f[0], R##_f[_i], Y##_f[2], Y##_f[1], Y##_f[0]);                                       \
-            X##_f[2] = X##_f[1];                                                                                                              \
-            X##_f[1] = X##_f[0];                                                                                                              \
-            X##_f[0] = _n_f[_i];                                                                                                              \
-            if(_FP_FRAC_GT_4(_m, X))                                                                                                          \
-            {                                                                                                                                 \
-               R##_f[_i]--;                                                                                                                   \
-               _FP_FRAC_ADD_4(X, Y, X);                                                                                                       \
-               if(_FP_FRAC_GE_4(X, Y) && _FP_FRAC_GT_4(_m, X))                                                                                \
-               {                                                                                                                              \
-                  R##_f[_i]--;                                                                                                                \
-                  _FP_FRAC_ADD_4(X, Y, X);                                                                                                    \
-               }                                                                                                                              \
-            }                                                                                                                                 \
-            _FP_FRAC_DEC_4(X, _m);                                                                                                            \
-            if(!_i)                                                                                                                           \
-            {                                                                                                                                 \
-               if(!_FP_FRAC_EQ_4(X, _m))                                                                                                      \
-                  R##_f[0] |= _FP_WORK_STICKY;                                                                                                \
-               break;                                                                                                                         \
-            }                                                                                                                                 \
-         }                                                                                                                                    \
-      }                                                                                                                                       \
+#define _FP_DIV_MEAT_4_udiv(fs, R, X, Y)                                                                       \
+   do                                                                                                          \
+   {                                                                                                           \
+      int _i;                                                                                                  \
+      _FP_FRAC_DECL_4(_n);                                                                                     \
+      _FP_FRAC_DECL_4(_m);                                                                                     \
+      _FP_FRAC_SET_4(_n, _FP_ZEROFRAC_4);                                                                      \
+      if(_FP_FRAC_GE_4(X, Y))                                                                                  \
+      {                                                                                                        \
+         _n_f[3] = X##_f[0] << (_FP_W_TYPE_SIZE - 1);                                                          \
+         _FP_FRAC_SRL_4(X, 1);                                                                                 \
+      }                                                                                                        \
+      else                                                                                                     \
+         R##_e--;                                                                                              \
+                                                                                                               \
+      /* Normalize, i.e. make the most significant bit of the                                                  \
+    denominator set. */                                                                                        \
+      _FP_FRAC_SLL_4(Y, _FP_WFRACXBITS_##fs);                                                                  \
+                                                                                                               \
+      for(_i = 3;; _i--)                                                                                       \
+      {                                                                                                        \
+         if(X##_f[3] == Y##_f[3])                                                                              \
+         {                                                                                                     \
+            /* This is a special case, not an optimization                                                     \
+          (X##_f[3]/Y##_f[3] would not fit into UWtype).                                                       \
+          As X## is guaranteed to be < Y,  R##_f[_i] can be either                                             \
+          (UWtype)-1 or (UWtype)-2.  */                                                                        \
+            R##_f[_i] = -1;                                                                                    \
+            if(!_i)                                                                                            \
+               break;                                                                                          \
+            __FP_FRAC_SUB_4(X##_f[3], X##_f[2], X##_f[1], X##_f[0], Y##_f[2], Y##_f[1], Y##_f[0], 0, X##_f[2], \
+                            X##_f[1], X##_f[0], _n_f[_i]);                                                     \
+            _FP_FRAC_SUB_4(X, Y, X);                                                                           \
+            if(X##_f[3] > Y##_f[3])                                                                            \
+            {                                                                                                  \
+               R##_f[_i] = -2;                                                                                 \
+               _FP_FRAC_ADD_4(X, Y, X);                                                                        \
+            }                                                                                                  \
+         }                                                                                                     \
+         else                                                                                                  \
+         {                                                                                                     \
+            udiv_qrnnd(R##_f[_i], X##_f[3], X##_f[3], X##_f[2], Y##_f[3]);                                     \
+            umul_ppppmnnn(_m_f[3], _m_f[2], _m_f[1], _m_f[0], R##_f[_i], Y##_f[2], Y##_f[1], Y##_f[0]);        \
+            X##_f[2] = X##_f[1];                                                                               \
+            X##_f[1] = X##_f[0];                                                                               \
+            X##_f[0] = _n_f[_i];                                                                               \
+            if(_FP_FRAC_GT_4(_m, X))                                                                           \
+            {                                                                                                  \
+               R##_f[_i]--;                                                                                    \
+               _FP_FRAC_ADD_4(X, Y, X);                                                                        \
+               if(_FP_FRAC_GE_4(X, Y) && _FP_FRAC_GT_4(_m, X))                                                 \
+               {                                                                                               \
+                  R##_f[_i]--;                                                                                 \
+                  _FP_FRAC_ADD_4(X, Y, X);                                                                     \
+               }                                                                                               \
+            }                                                                                                  \
+            _FP_FRAC_DEC_4(X, _m);                                                                             \
+            if(!_i)                                                                                            \
+            {                                                                                                  \
+               if(!_FP_FRAC_EQ_4(X, _m))                                                                       \
+                  R##_f[0] |= _FP_WORK_STICKY;                                                                 \
+               break;                                                                                          \
+            }                                                                                                  \
+         }                                                                                                     \
+      }                                                                                                        \
    } while(0)
 
 /*
@@ -387,78 +419,79 @@
  * should be added for those machines where division is fast.
  */
 
-#define _FP_SQRT_MEAT_4(R, S, T, X, q)                                                                                                \
-   do                                                                                                                                 \
-   {                                                                                                                                  \
-      while(q)                                                                                                                        \
-      {                                                                                                                               \
-         T##_f[3] = S##_f[3] + q;                                                                                                     \
-         if(T##_f[3] <= X##_f[3])                                                                                                     \
-         {                                                                                                                            \
-            S##_f[3] = T##_f[3] + q;                                                                                                  \
-            X##_f[3] -= T##_f[3];                                                                                                     \
-            R##_f[3] += q;                                                                                                            \
-         }                                                                                                                            \
-         _FP_FRAC_SLL_4(X, 1);                                                                                                        \
-         q >>= 1;                                                                                                                     \
-      }                                                                                                                               \
-      q = (_FP_W_TYPE)1 << (_FP_W_TYPE_SIZE - 1);                                                                                     \
-      while(q)                                                                                                                        \
-      {                                                                                                                               \
-         T##_f[2] = S##_f[2] + q;                                                                                                     \
-         T##_f[3] = S##_f[3];                                                                                                         \
-         if(T##_f[3] < X##_f[3] || (T##_f[3] == X##_f[3] && T##_f[2] <= X##_f[2]))                                                    \
-         {                                                                                                                            \
-            S##_f[2] = T##_f[2] + q;                                                                                                  \
-            S##_f[3] += (T##_f[2] > S##_f[2]);                                                                                        \
-            __FP_FRAC_DEC_2(X##_f[3], X##_f[2], T##_f[3], T##_f[2]);                                                                  \
-            R##_f[2] += q;                                                                                                            \
-         }                                                                                                                            \
-         _FP_FRAC_SLL_4(X, 1);                                                                                                        \
-         q >>= 1;                                                                                                                     \
-      }                                                                                                                               \
-      q = (_FP_W_TYPE)1 << (_FP_W_TYPE_SIZE - 1);                                                                                     \
-      while(q)                                                                                                                        \
-      {                                                                                                                               \
-         T##_f[1] = S##_f[1] + q;                                                                                                     \
-         T##_f[2] = S##_f[2];                                                                                                         \
-         T##_f[3] = S##_f[3];                                                                                                         \
-         if(T##_f[3] < X##_f[3] || (T##_f[3] == X##_f[3] && (T##_f[2] < X##_f[2] || (T##_f[2] == X##_f[2] && T##_f[1] <= X##_f[1])))) \
-         {                                                                                                                            \
-            S##_f[1] = T##_f[1] + q;                                                                                                  \
-            S##_f[2] += (T##_f[1] > S##_f[1]);                                                                                        \
-            S##_f[3] += (T##_f[2] > S##_f[2]);                                                                                        \
-            __FP_FRAC_DEC_3(X##_f[3], X##_f[2], X##_f[1], T##_f[3], T##_f[2], T##_f[1]);                                              \
-            R##_f[1] += q;                                                                                                            \
-         }                                                                                                                            \
-         _FP_FRAC_SLL_4(X, 1);                                                                                                        \
-         q >>= 1;                                                                                                                     \
-      }                                                                                                                               \
-      q = (_FP_W_TYPE)1 << (_FP_W_TYPE_SIZE - 1);                                                                                     \
-      while(q != _FP_WORK_ROUND)                                                                                                      \
-      {                                                                                                                               \
-         T##_f[0] = S##_f[0] + q;                                                                                                     \
-         T##_f[1] = S##_f[1];                                                                                                         \
-         T##_f[2] = S##_f[2];                                                                                                         \
-         T##_f[3] = S##_f[3];                                                                                                         \
-         if(_FP_FRAC_GE_4(X, T))                                                                                                      \
-         {                                                                                                                            \
-            S##_f[0] = T##_f[0] + q;                                                                                                  \
-            S##_f[1] += (T##_f[0] > S##_f[0]);                                                                                        \
-            S##_f[2] += (T##_f[1] > S##_f[1]);                                                                                        \
-            S##_f[3] += (T##_f[2] > S##_f[2]);                                                                                        \
-            _FP_FRAC_DEC_4(X, T);                                                                                                     \
-            R##_f[0] += q;                                                                                                            \
-         }                                                                                                                            \
-         _FP_FRAC_SLL_4(X, 1);                                                                                                        \
-         q >>= 1;                                                                                                                     \
-      }                                                                                                                               \
-      if(!_FP_FRAC_ZEROP_4(X))                                                                                                        \
-      {                                                                                                                               \
-         if(_FP_FRAC_GT_4(X, S))                                                                                                      \
-            R##_f[0] |= _FP_WORK_ROUND;                                                                                               \
-         R##_f[0] |= _FP_WORK_STICKY;                                                                                                 \
-      }                                                                                                                               \
+#define _FP_SQRT_MEAT_4(R, S, T, X, q)                                                                         \
+   do                                                                                                          \
+   {                                                                                                           \
+      while(q)                                                                                                 \
+      {                                                                                                        \
+         T##_f[3] = S##_f[3] + q;                                                                              \
+         if(T##_f[3] <= X##_f[3])                                                                              \
+         {                                                                                                     \
+            S##_f[3] = T##_f[3] + q;                                                                           \
+            X##_f[3] -= T##_f[3];                                                                              \
+            R##_f[3] += q;                                                                                     \
+         }                                                                                                     \
+         _FP_FRAC_SLL_4(X, 1);                                                                                 \
+         q >>= 1;                                                                                              \
+      }                                                                                                        \
+      q = (_FP_W_TYPE)1 << (_FP_W_TYPE_SIZE - 1);                                                              \
+      while(q)                                                                                                 \
+      {                                                                                                        \
+         T##_f[2] = S##_f[2] + q;                                                                              \
+         T##_f[3] = S##_f[3];                                                                                  \
+         if(T##_f[3] < X##_f[3] || (T##_f[3] == X##_f[3] && T##_f[2] <= X##_f[2]))                             \
+         {                                                                                                     \
+            S##_f[2] = T##_f[2] + q;                                                                           \
+            S##_f[3] += (T##_f[2] > S##_f[2]);                                                                 \
+            __FP_FRAC_DEC_2(X##_f[3], X##_f[2], T##_f[3], T##_f[2]);                                           \
+            R##_f[2] += q;                                                                                     \
+         }                                                                                                     \
+         _FP_FRAC_SLL_4(X, 1);                                                                                 \
+         q >>= 1;                                                                                              \
+      }                                                                                                        \
+      q = (_FP_W_TYPE)1 << (_FP_W_TYPE_SIZE - 1);                                                              \
+      while(q)                                                                                                 \
+      {                                                                                                        \
+         T##_f[1] = S##_f[1] + q;                                                                              \
+         T##_f[2] = S##_f[2];                                                                                  \
+         T##_f[3] = S##_f[3];                                                                                  \
+         if(T##_f[3] < X##_f[3] ||                                                                             \
+            (T##_f[3] == X##_f[3] && (T##_f[2] < X##_f[2] || (T##_f[2] == X##_f[2] && T##_f[1] <= X##_f[1])))) \
+         {                                                                                                     \
+            S##_f[1] = T##_f[1] + q;                                                                           \
+            S##_f[2] += (T##_f[1] > S##_f[1]);                                                                 \
+            S##_f[3] += (T##_f[2] > S##_f[2]);                                                                 \
+            __FP_FRAC_DEC_3(X##_f[3], X##_f[2], X##_f[1], T##_f[3], T##_f[2], T##_f[1]);                       \
+            R##_f[1] += q;                                                                                     \
+         }                                                                                                     \
+         _FP_FRAC_SLL_4(X, 1);                                                                                 \
+         q >>= 1;                                                                                              \
+      }                                                                                                        \
+      q = (_FP_W_TYPE)1 << (_FP_W_TYPE_SIZE - 1);                                                              \
+      while(q != _FP_WORK_ROUND)                                                                               \
+      {                                                                                                        \
+         T##_f[0] = S##_f[0] + q;                                                                              \
+         T##_f[1] = S##_f[1];                                                                                  \
+         T##_f[2] = S##_f[2];                                                                                  \
+         T##_f[3] = S##_f[3];                                                                                  \
+         if(_FP_FRAC_GE_4(X, T))                                                                               \
+         {                                                                                                     \
+            S##_f[0] = T##_f[0] + q;                                                                           \
+            S##_f[1] += (T##_f[0] > S##_f[0]);                                                                 \
+            S##_f[2] += (T##_f[1] > S##_f[1]);                                                                 \
+            S##_f[3] += (T##_f[2] > S##_f[2]);                                                                 \
+            _FP_FRAC_DEC_4(X, T);                                                                              \
+            R##_f[0] += q;                                                                                     \
+         }                                                                                                     \
+         _FP_FRAC_SLL_4(X, 1);                                                                                 \
+         q >>= 1;                                                                                              \
+      }                                                                                                        \
+      if(!_FP_FRAC_ZEROP_4(X))                                                                                 \
+      {                                                                                                        \
+         if(_FP_FRAC_GT_4(X, S))                                                                               \
+            R##_f[0] |= _FP_WORK_ROUND;                                                                        \
+         R##_f[0] |= _FP_WORK_STICKY;                                                                          \
+      }                                                                                                        \
    } while(0)
 
 /*

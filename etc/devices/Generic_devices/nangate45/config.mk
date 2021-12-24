@@ -1,6 +1,26 @@
 # Process node
 export PROCESS = 45
 
+#-----------------------------------------------------
+# Tech/Libs
+# ----------------------------------------------------
+export TECH_LEF = $(PLATFORM_DIR)/lef/NangateOpenCellLibrary.tech.lef
+export SC_LEF = $(PLATFORM_DIR)/lef/NangateOpenCellLibrary.macro.mod.lef
+
+export LIB_FILES = $(PLATFORM_DIR)/lib/NangateOpenCellLibrary_typical.lib \
+                     $(ADDITIONAL_LIBS)
+export GDS_FILES = $(sort $(wildcard $(PLATFORM_DIR)/gds/*.gds)) \
+                     $(ADDITIONAL_GDS)
+# Dont use cells to ease congestion
+# Specify at least one filler cell if none
+export DONT_USE_CELLS = TAPCELL_X1 FILLCELL_X1 AOI211_X1 OAI211_X1
+
+# Fill cells used in fill cell insertion
+export FILL_CELLS = FILLCELL_X1 FILLCELL_X2 FILLCELL_X4 FILLCELL_X8 FILLCELL_X16 FILLCELL_X32
+
+# -----------------------------------------------------
+#  Yosys
+#  ----------------------------------------------------
 # Set the TIEHI/TIELO cells
 # These are used in yosys synthesis to avoid logical 1/0's in the netlist
 export TIEHI_CELL_AND_PORT = LOGIC1_X1 Z
@@ -12,68 +32,88 @@ export MIN_BUF_CELL_AND_PORTS = BUF_X1 A Z
 # Used in synthesis
 export MAX_FANOUT = 100
 
-# Blackbox verilog file
-# List all standard cells and cells yosys should treat as blackboxes here
-export BLACKBOX_V_FILE = ./platforms/$(PLATFORM)/NangateOpenCellLibrary.blackbox.v
-
 # Yosys mapping files
-export LATCH_MAP_FILE = ./platforms/$(PLATFORM)/cells_latch.v
-export BLACKBOX_MAP_TCL = ./platforms/$(PLATFORM)/blackbox_map.tcl
+export LATCH_MAP_FILE = $(PLATFORM_DIR)/cells_latch.v
+export CLKGATE_MAP_FILE = $(PLATFORM_DIR)/cells_clkgate.v
+export ADDER_MAP_FILE ?= $(PLATFORM_DIR)/cells_adders.v
+#
+# Set yosys-abc clock period to first "-period" found in sdc file
+export ABC_CLOCK_PERIOD_IN_PS ?= $(shell grep -E -o -m 1 "\-period\s+\S+" $(SDC_FILE) | awk '{print $$2*1000}')
+export ABC_DRIVER_CELL = BUF_X1
+# BUF_X1, pin (A) = 0.974659. Arbitrarily multiply by 4
+export ABC_LOAD_IN_FF = 3.898
+
+#--------------------------------------------------------
+# Floorplan
+# -------------------------------------------------------
 
 # Placement site for core cells
 # This can be found in the technology lef
 export PLACE_SITE = FreePDK45_38x28_10R_NP_162NW_34O
-
-# Track information for generating DEF tracks
-export TRACKS_INFO_FILE = ./platforms/$(PLATFORM)/tracks.info
-
-export IP_GLOBAL_CFG = ./platforms/$(PLATFORM)/IP_global.cfg
-
-export TECH_LEF = ./platforms/$(PLATFORM)/lef/NangateOpenCellLibrary.tech.lef
-export SC_LEF = ./platforms/$(PLATFORM)/lef/NangateOpenCellLibrary.macro.mod.lef
-
-export LIB_FILES = ./platforms/$(PLATFORM)/lib/NangateOpenCellLibrary_typical.lib \
-                     $(ADDITIONAL_LIBS)
-export GDS_FILES = $(wildcard ./platforms/$(PLATFORM)/gds/*.gds) \
-                     $(ADDITIONAL_GDS_FILES)
-
-# Cell padding in SITE widths to ease rout-ability
-export CELL_PAD_IN_SITES = 8
-
-# Endcap and Welltie cells
-export TAPCELL_TCL = ./platforms/$(PLATFORM)/tapcell.tcl
-
-# TritonCTS options
-export CTS_BUF_CELL   = BUF_X4
-export CTS_TECH_DIR   = ./platforms/$(PLATFORM)/tritonCTS
-
-# FastRoute options
-export MAX_ROUTING_LAYER = 10
-
+#
 # IO Pin fix margin
 export IO_PIN_MARGIN = 70
+#
+# IO Placer pin layers
+export IO_PLACER_H = metal3
+export IO_PLACER_V = metal2
 
+# Define default PDN config
+export PDN_CFG ?= $(PLATFORM_DIR)/pdn.cfg
+
+# Endcap and Welltie cells
+export TAPCELL_TCL = $(PLATFORM_DIR)/tapcell.tcl
+
+export MACRO_PLACE_HALO ?= 22.4 15.12
+export MACRO_PLACE_CHANNEL ?= 18.8 19.95
+
+#---------------------------------------------------------
+# Place
+# --------------------------------------------------------
 # Layer to use for parasitics estimations
 export WIRE_RC_LAYER = metal3
 
-# Resizer options
-export RESIZER_BUF_CELL = BUF_X4
+# Cell padding in SITE widths to ease rout-ability.  Applied to both sides
+export CELL_PAD_IN_SITES_GLOBAL_PLACEMENT ?= 2
+export CELL_PAD_IN_SITES_DETAIL_PLACEMENT ?= 1
+#
+# resizer repair_long_wires -max_length
+export MAX_WIRE_LENGTH = 1000
+
+export PLACE_DENSITY ?= 0.30
+
+# --------------------------------------------------------
+#  CTS
+#  -------------------------------------------------------
+# TritonCTS options
+export CTS_BUF_CELL   = BUF_X4
+export CTS_TECH_DIR   = $(PLATFORM_DIR)/tritonCTS
+
+
+# ---------------------------------------------------------
+#  Route
+# ---------------------------------------------------------
+# FastRoute options
+export MIN_ROUTING_LAYER = metal2
+export MAX_ROUTING_LAYER = metal10
+
+# Define fastRoute tcl
+export FASTROUTE_TCL = $(PLATFORM_DIR)/fastroute.tcl
+
 
 # KLayout technology file
-export KLAYOUT_TECH_FILE = ./platforms/$(PLATFORM)/FreePDK45.lyt
+export KLAYOUT_TECH_FILE = $(PLATFORM_DIR)/FreePDK45.lyt
 
-# Dont use cells to ease congestion
-# Specify at least one filler cell if none
-export DONT_USE_CELLS = FILLCELL_X1 AOI211_X1 OAI211_X1
+# KLayout DRC ruledeck
+export KLAYOUT_DRC_FILE = $(PLATFORM_DIR)/drc/FreePDK45.lydrc
 
-# Define default PDN config
-export PDN_CFG ?= ./platforms/$(PLATFORM)/pdn.cfg
+# KLayout LVS ruledeck
+export KLAYOUT_LVS_FILE = $(PLATFORM_DIR)/lvs/FreePDK45.lylvs
+
+export CDL_FILE = $(PLATFORM_DIR)/cdl/NangateOpenCellLibrary.cdl
 
 # Template definition for power grid analysis
-export TEMPLATE_PGA_CFG ?= ./platforms/nangate45/template_pga.cfg
+export TEMPLATE_PGA_CFG ?= $(PLATFORM_DIR)/template_pga.cfg
 
-export PLACE_DENSITY ?= 0.70
-
-# IO Placer pin layers
-export IO_PLACER_H = 3
-export IO_PLACER_V = 2
+# OpenRCX extRules
+export RCX_RULES                           = ./platforms/$(PLATFORM)/rcx_patterns.rules

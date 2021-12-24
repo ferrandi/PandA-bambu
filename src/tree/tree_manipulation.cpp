@@ -82,6 +82,7 @@ tree_manipulation::tree_manipulation(const tree_managerRef& _TreeM, const Parame
       debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
 {
 }
+
 tree_manipulation::tree_manipulation(const tree_managerRef& _TreeM, const ParameterConstRef& _parameters, bool _reuse,
                                      const application_managerRef _AppM)
     : TreeM(_TreeM),
@@ -2911,7 +2912,8 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       return mlid;
    }();
    const auto inline_fd = GetPointerS<const function_decl>(GET_CONST_NODE(fn));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, OUTPUT_LEVEL_MINIMUM,
+   auto output_level = parameters->getOption<int>(OPT_output_level);
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "Function call to " + tree_helper::print_function_name(TreeM, inline_fd) + " inlined in " +
                       tree_helper::print_function_name(TreeM, fd));
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;

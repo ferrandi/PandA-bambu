@@ -106,36 +106,37 @@ using namespace std;
 
 namespace ac_math
 {
-   template <ac_q_mode pwl_Q = AC_TRN, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, ac_q_mode outQ, ac_o_mode outO>
+   template <ac_q_mode pwl_Q = AC_TRN, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI,
+             ac_q_mode outQ, ac_o_mode outO>
    void ac_sigmoid_pwl(const ac_fixed<W, I, S, Q, O>& input, ac_fixed<outW, outI, false, outQ, outO>& output)
    {
       // Start of code outputted by ac_sigmoid_pwl_lutgen.cpp
-      // Note that the LUT generator file also outputs a value for x_min_lut (lower limit of PWL domain). However, this values isn't explicitly considered in the header
-      // file because it has been optimized to work with an 8-segment PWL model that covers the domain of [0, 5). For other PWL implementations, the user will probably
-      // have to take this value into account explicitly. Guidelines for doing so are given in the comments.
+      // Note that the LUT generator file also outputs a value for x_min_lut (lower limit of PWL domain). However, this
+      // values isn't explicitly considered in the header file because it has been optimized to work with an 8-segment
+      // PWL model that covers the domain of [0, 5). For other PWL implementations, the user will probably have to take
+      // this value into account explicitly. Guidelines for doing so are given in the comments.
 
-      // The number of fractional bits for the LUT values is chosen by first finding the maximum absolute error over the domain of the PWL
-      // when double-precision values are used for LUT values. This error will correspond to a number of fractional bits that are always
-      // guaranteed to be error-free, for fixed-point PWL outputs.
-      // This number of fractional bits is found out by the formula:
-      // nbits = abs(ceil(log2(abs_error_max)) - 1
-      // The number of fractional bits hereafter used to store the LUT values is nbits + 2.
-      // For this particular PWL implementation, the number of fractional bits is 10.
-      // Initialization for PWL LUT
+      // The number of fractional bits for the LUT values is chosen by first finding the maximum absolute error over the
+      // domain of the PWL when double-precision values are used for LUT values. This error will correspond to a number
+      // of fractional bits that are always guaranteed to be error-free, for fixed-point PWL outputs. This number of
+      // fractional bits is found out by the formula: nbits = abs(ceil(log2(abs_error_max)) - 1 The number of fractional
+      // bits hereafter used to store the LUT values is nbits + 2. For this particular PWL implementation, the number of
+      // fractional bits is 10. Initialization for PWL LUT
       static const unsigned n_segments_lut = 8;
 
       const int n_frac_bits = 10;
 
       // slope and intercept value array
-      static const ac_fixed<n_frac_bits - 1, -1, false> m_lut[n_segments_lut] = {.1513671875, .126953125, .08984375, .056640625, .033203125, .0185546875, .009765625, .005859375};
-      static const ac_fixed<n_frac_bits, 0, false> c_lut[n_segments_lut] = {.5009765625, .65234375, .779296875, .869140625, .92578125, .958984375, .9775390625, .98828125};
+      static const ac_fixed<n_frac_bits - 1, -1, false> m_lut[n_segments_lut] = {
+          .1513671875, .126953125, .08984375, .056640625, .033203125, .0185546875, .009765625, .005859375};
+      static const ac_fixed<n_frac_bits, 0, false> c_lut[n_segments_lut] = {
+          .5009765625, .65234375, .779296875, .869140625, .92578125, .958984375, .9775390625, .98828125};
       // Domain of PWL
       static const ac_fixed<3, 3, false> x_max_lut = 5.0;
       // Scaling constant used to scale the normalized input from 0 to n_segments_lut
-      // Note that this scaling constant is optimized for 8 segments and a domain of [0, 5). For any other domain and number of segments,
-      // the user should use the following formula:
-      // sc_constant_lut = n_segments_lut / (x_max_lut - x_min_lut)
-      // Where x_max_lut and x_min_lut are the upper and lower limits of the PWL domain, respectively.
+      // Note that this scaling constant is optimized for 8 segments and a domain of [0, 5). For any other domain and
+      // number of segments, the user should use the following formula: sc_constant_lut = n_segments_lut / (x_max_lut -
+      // x_min_lut) Where x_max_lut and x_min_lut are the upper and lower limits of the PWL domain, respectively.
       static const ac_fixed<n_frac_bits, 1, false> sc_constant_lut = 1.599609375;
 
       // End of code outputted by ac_sigmoid_pwl_lutgen.cpp
@@ -162,9 +163,9 @@ namespace ac_math
 
       // Compute the sigmoid function using pwl
       // Scale the normalized input from 0 to n_segments_lut. Any other PWL implementation
-      // with a different number of segments/domain should be scaled according to the formula: x_in_sc = (input_frac_part - x_min_lut) * sc_constant_lut
-      // where sc_constant_lut = n_segments_lut / (x_max_lut - x_min_lut)
-      // (x_min_lut and and x_max_lut are the lower and upper limits of the domain)
+      // with a different number of segments/domain should be scaled according to the formula: x_in_sc =
+      // (input_frac_part - x_min_lut) * sc_constant_lut where sc_constant_lut = n_segments_lut / (x_max_lut -
+      // x_min_lut) (x_min_lut and and x_max_lut are the lower and upper limits of the domain)
       ac_fixed<int_bits + n_frac_bits + 1, int_bits + 1, false> x_in_sc = input_pwl * sc_constant_lut;
 
       // Take out the fractional bits of the scaled input
@@ -174,8 +175,9 @@ namespace ac_math
       // The integer part of the input is the index of the LUT table
       index = x_in_sc.to_int();
 
-      // The precision given below will ensure that there is no precision lost in the assignment to output_pwl, hence rounding for the variable is switched off by default.
-      // However, if the user wishes to use less fractional bits and turn rounding on instead, they are welcome to do so by giving a different value for pwl_Q.
+      // The precision given below will ensure that there is no precision lost in the assignment to output_pwl, hence
+      // rounding for the variable is switched off by default. However, if the user wishes to use less fractional bits
+      // and turn rounding on instead, they are welcome to do so by giving a different value for pwl_Q.
       ac_fixed<n_frac_bits * 2, 0, false, pwl_Q> output_pwl = m_lut[index] * x_in_sc_frac + c_lut[index];
 
       // If the input is outside the pwl domain then saturate output

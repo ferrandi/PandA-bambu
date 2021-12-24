@@ -77,7 +77,8 @@ class Expandability
    {
    }
 
-   Expandability(bool expandability, double area_profit, double latency_profit) : expandability(expandability), area_profit(area_profit), latency_profit(latency_profit)
+   Expandability(bool expandability, double area_profit, double latency_profit)
+       : expandability(expandability), area_profit(area_profit), latency_profit(latency_profit)
    {
    }
 
@@ -135,7 +136,8 @@ class Expandability
 
    std::string get_string() const
    {
-      std::string ret = "<" + std::to_string(expandability) + "," + std::to_string(area_profit) + "," + std::to_string(latency_profit) + ">";
+      std::string ret = "<" + std::to_string(expandability) + "," + std::to_string(area_profit) + "," +
+                        std::to_string(latency_profit) + ">";
       return ret;
    }
 };
@@ -151,11 +153,14 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
    const std::string kernel_name;
 
  public:
-   explicit CustomScalarReplacementOfAggregatesPass(const std::string& _kernel_name, char& _ID, unsigned short _sroa_phase) : llvm::ModulePass(_ID), sroa_phase(_sroa_phase), kernel_name(_kernel_name)
+   explicit CustomScalarReplacementOfAggregatesPass(const std::string& _kernel_name, char& _ID,
+                                                    unsigned short _sroa_phase)
+       : llvm::ModulePass(_ID), sroa_phase(_sroa_phase), kernel_name(_kernel_name)
    {
    }
 
-   explicit CustomScalarReplacementOfAggregatesPass(const std::string& _kernel_name, unsigned short _sroa_phase) : llvm::ModulePass(ID), sroa_phase(_sroa_phase), kernel_name(_kernel_name)
+   explicit CustomScalarReplacementOfAggregatesPass(const std::string& _kernel_name, unsigned short _sroa_phase)
+       : llvm::ModulePass(ID), sroa_phase(_sroa_phase), kernel_name(_kernel_name)
    {
    }
 

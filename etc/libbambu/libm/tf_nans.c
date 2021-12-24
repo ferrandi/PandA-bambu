@@ -43,7 +43,8 @@
 
 #include "math_privatetf.h"
 
-unsigned long long __nans(const char* unused, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+unsigned long long __nans(const char* unused, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
+                          _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
    if(__frac_bits > 1)
    {

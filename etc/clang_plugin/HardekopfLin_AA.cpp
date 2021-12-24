@@ -1433,7 +1433,13 @@ class Worklist
    }
 };
 
-Andersen_AA::Andersen_AA(std::string _TopFunctionName) : BDD_INIT_DONE(false), TopFunctionName(std::move(_TopFunctionName)), last_obj_node(0), gep2pts(nullptr), extinfo(nullptr), WL(nullptr)
+Andersen_AA::Andersen_AA(std::string _TopFunctionName)
+    : BDD_INIT_DONE(false),
+      TopFunctionName(std::move(_TopFunctionName)),
+      last_obj_node(0),
+      gep2pts(nullptr),
+      extinfo(nullptr),
+      WL(nullptr)
 {
 }
 
@@ -2033,7 +2039,8 @@ u32 Andersen_AA::get_val_node_cptr(const llvm::Value* V)
 //(seen) maps the values visited by the current trace to the return value.
 // Pass empty sets for both (src) and (seen) when calling from the outside.
 //(depth) is the current recursion level; do not set from the outside.
-bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Value*>& src, llvm::DenseMap<const llvm::Value*, bool>& seen, u32 depth)
+bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Value*>& src,
+                            llvm::DenseMap<const llvm::Value*, bool>& seen, u32 depth)
 {
    auto i_seen = seen.find(V);
    if(i_seen != seen.end())
@@ -2249,7 +2256,8 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
          }
 
          assert(opcode == llvm::Instruction::BitCast && "invalid operand for int insn");
-         assert(TR->getTypeID() == llvm::Type::FloatTyID || TR->getTypeID() == llvm::Type::DoubleTyID && "invalid cast to int");
+         assert(TR->getTypeID() == llvm::Type::FloatTyID ||
+                TR->getTypeID() == llvm::Type::DoubleTyID && "invalid cast to int");
          seen[V] = true;
          return true;
       }
@@ -3170,7 +3178,8 @@ void Andersen_AA::print_metrics() const
       }
    }
    pts_seen.clear();
-   double avg_pts = n_pts ? sum_pts / static_cast<double>(n_pts) : 0, avg_pts_uniq = n_pts_uniq ? sum_pts_uniq / static_cast<double>(n_pts_uniq) : 0;
+   double avg_pts = n_pts ? sum_pts / static_cast<double>(n_pts) : 0,
+          avg_pts_uniq = n_pts_uniq ? sum_pts_uniq / static_cast<double>(n_pts_uniq) : 0;
    llvm::errs() << "Points-to edges: " << sum_pts << " in " << n_pts << " sets, avg " << avg_pts << "\n";
    llvm::errs() << "- unique points-to: " << sum_pts_uniq << " in " << n_pts_uniq << ", avg " << avg_pts_uniq << "\n";
 }
@@ -3236,7 +3245,8 @@ void Andersen_AA::proc_gep_ce(u32 vnE)
    const llvm::Value* R = E->getOperand(0);
    // Strip bitcasts from the RHS, until we get to GEP, i2p, or non-CE value.
    bool nested = false;
-   for(auto ER = llvm::dyn_cast<const llvm::ConstantExpr>(R); ER && !nested; ER = llvm::dyn_cast_or_null<const llvm::ConstantExpr>(R))
+   for(auto ER = llvm::dyn_cast<const llvm::ConstantExpr>(R); ER && !nested;
+       ER = llvm::dyn_cast_or_null<const llvm::ConstantExpr>(R))
    {
       switch(ER->getOpcode())
       {
@@ -3355,7 +3365,8 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
    //  set C=0 in case of int->ptr (which we don't trace for globals)
    //  and exit on a ptr->int (a non-ptr single value).
    bool done = false;
-   for(auto E = llvm::dyn_cast<const llvm::ConstantExpr>(C); E && !done; E = llvm::dyn_cast_or_null<const llvm::ConstantExpr>(C))
+   for(auto E = llvm::dyn_cast<const llvm::ConstantExpr>(C); E && !done;
+       E = llvm::dyn_cast_or_null<const llvm::ConstantExpr>(C))
    {
       switch(E->getOpcode())
       {
@@ -3811,7 +3822,8 @@ void Andersen_AA::id_i2p_insn(const llvm::Value* V)
    }
    else if(auto GI = llvm::dyn_cast<const llvm::GetElementPtrInst>(V))
    {
-      assert(llvm::isa<llvm::ConstantPointerNull>(GI->getOperand(0)) && GI->getNumOperands() == 2 && "only single-index GEP of null is used for i2p");
+      assert(llvm::isa<llvm::ConstantPointerNull>(GI->getOperand(0)) && GI->getNumOperands() == 2 &&
+             "only single-index GEP of null is used for i2p");
       vnD = get_val_node(GI);
       op = GI->getOperand(1);
    }
@@ -3828,7 +3840,8 @@ void Andersen_AA::id_i2p_insn(const llvm::Value* V)
       }
       else if(E->getOpcode() == llvm::Instruction::GetElementPtr)
       {
-         assert(llvm::isa<llvm::ConstantPointerNull>(E->getOperand(0)) && E->getNumOperands() == 2 && "only single-index GEP of null is used for i2p");
+         assert(llvm::isa<llvm::ConstantPointerNull>(E->getOperand(0)) && E->getNumOperands() == 2 &&
+                "only single-index GEP of null is used for i2p");
          op = E->getOperand(1);
       }
       else
@@ -4053,7 +4066,9 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
       // An indirect call may refer to an is_alloc external.
       // Also, realloc does a normal alloc if arg0 is null.
    }
-   else if(!F || extinfo->is_alloc(F) || (extinfo->get_type(F) == EFT_REALLOC && llvm::isa<llvm::ConstantPointerNull>(llvm::dyn_cast<llvm::CallInst>(I)->getArgOperand(0))))
+   else if(!F || extinfo->is_alloc(F) ||
+           (extinfo->get_type(F) == EFT_REALLOC &&
+            llvm::isa<llvm::ConstantPointerNull>(llvm::dyn_cast<llvm::CallInst>(I)->getArgOperand(0))))
    {
       if(DEBUG_AA)
       {
@@ -5551,7 +5566,8 @@ void Andersen_AA::add_off_edges(std::vector<u32>& main2off, std::vector<OffNode>
    }
    if(DEBUG_AA)
    {
-      llvm::errs() << "  " << n_copy << " copy, " << n_load << " load, " << n_store << " store, " << n_impl_addr << " impl. addr_of, " << n_impl_copy << " impl. copy\n";
+      llvm::errs() << "  " << n_copy << " copy, " << n_load << " load, " << n_store << " store, " << n_impl_addr
+                   << " impl. addr_of, " << n_impl_copy << " impl. copy\n";
    }
 }
 
@@ -5620,7 +5636,8 @@ static u32 merge_off_nodes(std::vector<OffNode>& off_nodes, u32 n1, u32 n2)
 // Part of HVN: using Tarjan's algorithm, collapse cycles in the offline graph
 //  and assign pointer-equivalence labels to the offline nodes.
 // The DFS starts from (n); (do_union) is passed on to hvn_label().
-void Andersen_AA::hvn_dfs(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u32>& dfs_stk, u32& curr_dfs, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n, bool do_union)
+void Andersen_AA::hvn_dfs(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u32>& dfs_stk, u32& curr_dfs,
+                          std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n, bool do_union)
 {
    assert(n);
    OffNode* N = &off_nodes[n];
@@ -5679,7 +5696,8 @@ void Andersen_AA::hvn_dfs(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u3
 //------------------------------------------------------------------------------
 // Look at the offline constraint edge from (n) to (dest) and possibly
 //  continue the DFS along it; (do_union) is passed on to hvn_label().
-void Andersen_AA::hvn_check_edge(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u32>& dfs_stk, u32& curr_dfs, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n, u32 dest, bool do_union)
+void Andersen_AA::hvn_check_edge(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u32>& dfs_stk, u32& curr_dfs,
+                                 std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n, u32 dest, bool do_union)
 {
    OffNode* N = &off_nodes[n];
    assert(N->is_rep());
@@ -5706,7 +5724,8 @@ void Andersen_AA::hvn_check_edge(std::unordered_map<bitmap, u32>& lbl2pe, std::s
 
 //------------------------------------------------------------------------------
 // Label a node based on its neighbors' labels (for HVN).
-void Andersen_AA::hvn_label(std::unordered_map<bitmap, u32>& lbl2pe, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n)
+void Andersen_AA::hvn_label(std::unordered_map<bitmap, u32>& lbl2pe, std::vector<OffNode>& off_nodes, u32& next_ptr_eq,
+                            u32 n)
 {
    OffNode* N = &off_nodes[n];
    bitmap& pe = N->ptr_eq;
@@ -6170,7 +6189,8 @@ void Andersen_AA::factor_ls()
 
 //------------------------------------------------------------------------------
 // Factor a cons. of the form (other = *ref + off) or (*ref + off = other).
-void Andersen_AA::factor_ls(llvm::DenseMap<Constraint, u32>& factored_cons, const std::set<u32>& other, u32 ref, u32 off, bool load)
+void Andersen_AA::factor_ls(llvm::DenseMap<Constraint, u32>& factored_cons, const std::set<u32>& other, u32 ref,
+                            u32 off, bool load)
 {
    auto szo = other.size();
    assert(szo);
@@ -6226,7 +6246,8 @@ static std::map<u32, std::pair<u32, std::vector<u32>*>> bv_cache;
 static u32 bv_time = 0;
 // priority_queue puts the greatest element at the top, but we need the
 //  lowest time at the top, so use the reverse comparator.
-static std::priority_queue<std::pair<u32, u32>, std::vector<std::pair<u32, u32>>, std::greater<std::pair<u32, u32>>> bv_lru;
+static std::priority_queue<std::pair<u32, u32>, std::vector<std::pair<u32, u32>>, std::greater<std::pair<u32, u32>>>
+    bv_lru;
 
 //------------------------------------------------------------------------------
 // This bdd_allsat callback puts all assignments of bit vector (v)
@@ -6821,7 +6842,8 @@ void Andersen_AA::solve_node(u32 n)
 //  all the other args are local vars in solve_node().
 // Note that (C) will be updated in place with the node reps.
 // Returns true if (C) became redundant.
-bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, const bdd& d_points_to, std::set<Constraint>& cons_seen, Constraint& C)
+bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, const bdd& d_points_to, std::set<Constraint>& cons_seen,
+                                Constraint& C)
 {
    bool load = C.get_type() == load_cons;
    assert(load || C.get_type() == store_cons);
@@ -6973,7 +6995,8 @@ bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, const bdd& d_points_to, std:
 // The main loop of solve_ls_cons(), separated for profiling.
 // The first version is for load/store with offset, and the second
 //  is for normal load/store (offset 0).
-void Andersen_AA::solve_ls_off(const bdd& d_points_to, bool load, u32 dest, u32 src, u32 off, const std::set<const llvm::Instruction*>* I)
+void Andersen_AA::solve_ls_off(const bdd& d_points_to, bool load, u32 dest, u32 src, u32 off,
+                               const std::set<const llvm::Instruction*>* I)
 {
    // Remove points-to members too small for the offset.
    // However, if this is an ind. call, we must keep all ext. function nodes
@@ -8572,7 +8595,7 @@ class DFG
       std::map<size_t, size_t> np2p, p2ne;
       u32 t1 = 0, t3 = 0, t4 = 0;
 
-      for(const auto &i : tp_nodes)
+      for(const auto& i : tp_nodes)
       {
          t1 += i.succ.size();
       }
@@ -8794,7 +8817,8 @@ class OffNodeSFS
    OffNodeSFS() = default;
 };
 
-Staged_Flow_Sensitive_AA::Staged_Flow_Sensitive_AA(const std::string& _TopFunctionName) : Andersen_AA(_TopFunctionName), PRE(_TopFunctionName), prog_start_node(0), num_tmp(0), pe_lbl(0), dfs_num(0)
+Staged_Flow_Sensitive_AA::Staged_Flow_Sensitive_AA(const std::string& _TopFunctionName)
+    : Andersen_AA(_TopFunctionName), PRE(_TopFunctionName), prog_start_node(0), num_tmp(0), pe_lbl(0), dfs_num(0)
 {
    dfg = new DFG;
 }

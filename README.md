@@ -18,7 +18,7 @@ released under the GNU General Public License version 3 and being
 developed at Politecnico di Milano (Italy).
 
 The source files currently distributed mainly cover the high-level synthesis 
-of C based descriptions. In particular, the tool Bambu provides a research environment to experiment with new ideas across HLS, high-level verification and debugging, FPGA/ASIC design, design flow space exploration, and parallel hardware accelerator design.
+of C/C++ based descriptions. In particular, the tool Bambu provides a research environment to experiment with new ideas across HLS, high-level verification and debugging, FPGA/ASIC design, design flow space exploration, and parallel hardware accelerator design.
 Bambu accepts as input standard C/C++ specifications and compiler intermediate representations coming from the well-known Clang/LLVM and GCC compilers.
 The broad spectrum and flexibility of input formats allow the electronic design automation research community to explore and integrate new transformations and optimizations.
 

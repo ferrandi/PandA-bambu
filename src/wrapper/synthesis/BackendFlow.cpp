@@ -341,10 +341,13 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    const technology_managerRef TM = target->get_technology_manager();
    std::string library = TM->get_library(resource_name);
    bool is_combinational = false;
+   auto is_time_unit_PS = target->get_target_device()->has_parameter("USE_TIME_UNIT_PS") &&
+                          target->get_target_device()->get_parameter<int>("USE_TIME_UNIT_PS") == 1;
    if(library.size())
    {
       const technology_nodeRef tn = TM->get_fu(resource_name, library);
-      actual_parameters->parameter_values[PARAM_clk_period] = STR(GetPointer<functional_unit>(tn)->get_clock_period());
+      actual_parameters->parameter_values[PARAM_clk_period] =
+          STR((is_time_unit_PS ? 1000 : 1) * GetPointer<functional_unit>(tn)->get_clock_period());
       actual_parameters->parameter_values[PARAM_clk_period_ps] =
           STR(1000 * GetPointer<functional_unit>(tn)->get_clock_period());
       if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
@@ -359,7 +362,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       {
          const technology_nodeRef tn = TM->get_fu(fu_name, library);
          actual_parameters->parameter_values[PARAM_clk_period] =
-             STR(GetPointer<functional_unit>(tn)->get_clock_period());
+             STR((is_time_unit_PS ? 1000 : 1) * GetPointer<functional_unit>(tn)->get_clock_period());
          actual_parameters->parameter_values[PARAM_clk_period_ps] =
              STR(1000 * GetPointer<functional_unit>(tn)->get_clock_period());
          if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
@@ -386,11 +389,13 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(time_constrained);
    if(!time_constrained)
    {
-      actual_parameters->parameter_values[PARAM_clk_period] = STR(PARAM_clk_period_default);
+      actual_parameters->parameter_values[PARAM_clk_period] =
+          STR((is_time_unit_PS ? 1000 : 1) * PARAM_clk_period_default);
       actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000 * PARAM_clk_period_default);
    }
    actual_parameters->parameter_values[PARAM_clk_freq] =
-       STR(1000 / boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]));
+       STR((is_time_unit_PS ? 1000 : 1) * 1000 /
+           boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]));
 
    if(Param->isOption(OPT_clock_name))
    {

@@ -274,6 +274,11 @@ void Bit_Value_opt::propagateValue(const ssa_name* ssa, tree_managerRef TM, tree
 
 void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_manipulationRef IRman)
 {
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
+   const auto hls_target = GetPointerS<const HLS_manager>(AppM)->get_HLS_target();
+   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
+   const auto max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+
    /// in case propagate constants from parameters
    for(const auto& parm_decl_node : fd->list_of_args)
    {
@@ -2573,22 +2578,69 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                        }
                                        if(res_value)
                                        {
-                                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                                         "---replace extract_bit_expr usage before: " +
-                                                             stmt->ToString());
-                                          const auto precision = BitLatticeManipulator::Size(ebe_op0_ssa->type);
-                                          unsigned int log2;
-                                          for(log2 = 1; precision > (1u << log2); ++log2)
+                                          if(max_lut_size > 0)
                                           {
-                                             ;
-                                          }
-                                          tree_nodeRef op1, op2, op3, op4, op5, op6, op7, op8;
-                                          for(auto i = 0u; i < log2; ++i)
-                                          {
-                                             const auto new_pos =
-                                                 TM->CreateUniqueIntegerCst(i, tree_helper::CGetType(ebe->op1));
+                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                                            "---replace extract_bit_expr usage before: " +
+                                                                stmt->ToString());
+                                             const auto precision = BitLatticeManipulator::Size(ebe_op0_ssa->type);
+                                             unsigned int log2;
+                                             for(log2 = 1; precision > (1u << log2); ++log2)
+                                             {
+                                                ;
+                                             }
+                                             tree_nodeRef op1, op2, op3, op4, op5, op6, op7, op8;
+                                             for(auto i = 0u; i < log2; ++i)
+                                             {
+                                                const auto new_pos =
+                                                    TM->CreateUniqueIntegerCst(i, tree_helper::CGetType(ebe->op1));
+                                                const auto eb_op =
+                                                    IRman->create_extract_bit_expr(rse->op1, new_pos, srcp_default);
+                                                const auto eb_ga = IRman->CreateGimpleAssign(
+                                                    ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                                    TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id, B_id,
+                                                    srcp_default);
+                                                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                                               "---Created " + STR(eb_ga));
+                                                B->PushBefore(eb_ga, stmt, AppM);
+                                                const auto eb_ga_ssa_var =
+                                                    GetPointerS<const gimple_assign>(GET_CONST_NODE(eb_ga))->op0;
+                                                if(i == 0)
+                                                {
+                                                   op1 = eb_ga_ssa_var;
+                                                }
+                                                else if(i == 1)
+                                                {
+                                                   op2 = eb_ga_ssa_var;
+                                                }
+                                                else if(i == 2)
+                                                {
+                                                   op3 = eb_ga_ssa_var;
+                                                }
+                                                else if(i == 3)
+                                                {
+                                                   op4 = eb_ga_ssa_var;
+                                                }
+                                                else if(i == 4)
+                                                {
+                                                   op5 = eb_ga_ssa_var;
+                                                }
+                                                else if(i == 5)
+                                                {
+                                                   op6 = eb_ga_ssa_var;
+                                                }
+                                                else
+                                                {
+                                                   THROW_ERROR("unexpected condition");
+                                                }
+                                             }
+                                             const auto LutConstType = IRman->GetUnsignedLongLongType();
+
+                                             const auto lut_constant_node =
+                                                 TM->CreateUniqueIntegerCst(res_value, LutConstType);
                                              const auto eb_op =
-                                                 IRman->create_extract_bit_expr(rse->op1, new_pos, srcp_default);
+                                                 IRman->create_lut_expr(ebe->type, lut_constant_node, op1, op2, op3,
+                                                                        op4, op5, op6, op7, op8, srcp_default);
                                              const auto eb_ga = IRman->CreateGimpleAssign(
                                                  ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id, B_id,
@@ -2596,63 +2648,26 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---Created " + STR(eb_ga));
                                              B->PushBefore(eb_ga, stmt, AppM);
-                                             const auto eb_ga_ssa_var =
-                                                 GetPointerS<const gimple_assign>(GET_CONST_NODE(eb_ga))->op0;
-                                             if(i == 0)
-                                             {
-                                                op1 = eb_ga_ssa_var;
-                                             }
-                                             else if(i == 1)
-                                             {
-                                                op2 = eb_ga_ssa_var;
-                                             }
-                                             else if(i == 2)
-                                             {
-                                                op3 = eb_ga_ssa_var;
-                                             }
-                                             else if(i == 3)
-                                             {
-                                                op4 = eb_ga_ssa_var;
-                                             }
-                                             else if(i == 4)
-                                             {
-                                                op5 = eb_ga_ssa_var;
-                                             }
-                                             else if(i == 5)
-                                             {
-                                                op6 = eb_ga_ssa_var;
-                                             }
-                                             else
-                                             {
-                                                THROW_ERROR("unexpected condition");
-                                             }
+                                             const auto bit_mask_constant_node =
+                                                 TM->CreateUniqueIntegerCst(1, ebe->type);
+                                             const auto masking = IRman->create_binary_operation(
+                                                 ebe->type,
+                                                 GetPointerS<const gimple_assign>(GET_CONST_NODE(eb_ga))->op0,
+                                                 bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                                             TM->ReplaceTreeNode(stmt, ga->op1,
+                                                                 masking); /// replaced with redundant code to restart
+                                                                           /// lut_transformation
+                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                                            "---replace extract_bit_expr usage after: " +
+                                                                stmt->ToString());
+                                             modified = true;
+                                             AppM->RegisterTransformation(GetName(), stmt);
                                           }
-                                          const auto LutConstType = IRman->GetUnsignedLongLongType();
-
-                                          const auto lut_constant_node =
-                                              TM->CreateUniqueIntegerCst(res_value, LutConstType);
-                                          const auto eb_op =
-                                              IRman->create_lut_expr(ebe->type, lut_constant_node, op1, op2, op3, op4,
-                                                                     op5, op6, op7, op8, srcp_default);
-                                          const auto eb_ga = IRman->CreateGimpleAssign(
-                                              ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                              TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id, B_id,
-                                              srcp_default);
-                                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                                         "---Created " + STR(eb_ga));
-                                          B->PushBefore(eb_ga, stmt, AppM);
-                                          const auto bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, ebe->type);
-                                          const auto masking = IRman->create_binary_operation(
-                                              ebe->type, GetPointerS<const gimple_assign>(GET_CONST_NODE(eb_ga))->op0,
-                                              bit_mask_constant_node, srcp_default, truth_and_expr_K);
-                                          TM->ReplaceTreeNode(
-                                              stmt, ga->op1,
-                                              masking); /// replaced with redundant code to restart lut_transformation
-                                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                                         "---replace extract_bit_expr usage after: " +
-                                                             stmt->ToString());
-                                          modified = true;
-                                          AppM->RegisterTransformation(GetName(), stmt);
+                                          else
+                                          {
+                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                                            "---No lut allowed, lut replacement skipped...");
+                                          }
                                        }
                                        else
                                        {
@@ -2815,12 +2830,6 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  }
                                  else if(prev_code1 == plus_expr_K)
                                  {
-                                    THROW_ASSERT(GetPointerS<const HLS_manager>(AppM)->get_HLS_target(),
-                                                 "unexpected condition");
-                                    const auto hls_target = GetPointerS<const HLS_manager>(AppM)->get_HLS_target();
-                                    THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "");
-                                    const auto max_lut_size =
-                                        hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
                                     const auto pe = GetPointerS<const plus_expr>(GET_CONST_NODE(prev_ga->op1));
                                     if(GET_CONST_NODE(pe->op1)->get_kind() == integer_cst_K &&
                                        BitLatticeManipulator::Size(ebe->op0) <= max_lut_size)

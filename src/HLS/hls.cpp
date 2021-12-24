@@ -306,7 +306,8 @@ static void computeResources(const structural_objectRef circ, const technology_m
          {
             core_cir = GetPointer<functional_unit>(tn)->CM->get_circ();
          }
-         else if(tn->get_kind() == functional_unit_template_K && GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU))
+         else if(tn->get_kind() == functional_unit_template_K &&
+                 GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU))
          {
             core_cir = GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->CM->get_circ();
          }

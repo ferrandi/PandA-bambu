@@ -182,7 +182,8 @@ template <class T, T start, loop_limit limit, T end, class F>
 __FORCE_INLINE constexpr void loop(F&& f)
 {
    constexpr T range = (start < end) ? end - start : start - end;
-   detail::loop<(start > end), T, start>(std::make_integer_sequence<T, range + (limit == loop_limit::include)>{}, std::forward<F>(f));
+   detail::loop<(start > end), T, start>(std::make_integer_sequence<T, range + (limit == loop_limit::include)>{},
+                                         std::forward<F>(f));
 }
 
 #define LOOP(ctype, cname, start, limit, end, body) loop<ctype, start, limit, end>([&](ctype cname) { body });
@@ -204,20 +205,22 @@ __FORCE_INLINE constexpr void loop(F&& f)
       }                                                                                \
    }
 #elif defined(__clang__)
-#define LOOP(ctype, cname, start, limit, end, body)                                                                       \
-   if(start <= end)                                                                                                       \
-   {                                                                                                                      \
-      _Pragma("clang loop unroll(full)") for(ctype cname = start; cname < end + (limit == loop_limit::include); ++cname)  \
-      {                                                                                                                   \
-         body                                                                                                             \
-      }                                                                                                                   \
-   }                                                                                                                      \
-   else                                                                                                                   \
-   {                                                                                                                      \
-      _Pragma("clang loop unroll(full)") for(ctype cname = start; cname >= end + (limit == loop_limit::exclude); --cname) \
-      {                                                                                                                   \
-         body                                                                                                             \
-      }                                                                                                                   \
+#define LOOP(ctype, cname, start, limit, end, body)                                                              \
+   if(start <= end)                                                                                              \
+   {                                                                                                             \
+      _Pragma("clang loop unroll(full)") for(ctype cname = start; cname < end + (limit == loop_limit::include);  \
+                                             ++cname)                                                            \
+      {                                                                                                          \
+         body                                                                                                    \
+      }                                                                                                          \
+   }                                                                                                             \
+   else                                                                                                          \
+   {                                                                                                             \
+      _Pragma("clang loop unroll(full)") for(ctype cname = start; cname >= end + (limit == loop_limit::exclude); \
+                                             --cname)                                                            \
+      {                                                                                                          \
+         body                                                                                                    \
+      }                                                                                                          \
    }
 #else
 #define LOOP(ctype, cname, start, limit, end, body)                                    \
@@ -342,7 +345,9 @@ typedef signed long long Slong;
             {
                X2 = X >> N,
                N_div_2 = N >> 1,
-               nbits = X ? (X2 ? N + (int)s_N<N_div_2>::template s_X<X2>::nbits : (int)s_N<N_div_2>::template s_X<X>::nbits) : 0
+               nbits = X ? (X2 ? N + (int)s_N<N_div_2>::template s_X<X2>::nbits :
+                                 (int)s_N<N_div_2>::template s_X<X>::nbits) :
+                           0
             };
          };
       };
@@ -467,7 +472,8 @@ typedef signed long long Slong;
          __FORCE_INLINE constexpr void bit_adjust()
          {
             constexpr const unsigned rem = (32 - W) & 31;
-            set(N - 1, S ? (((int)(((unsigned)v[N - 1]) << rem)) >> rem) : (rem ? ((unsigned)v[N - 1] << rem) >> rem : 0));
+            set(N - 1,
+                S ? (((int)(((unsigned)v[N - 1]) << rem)) >> rem) : (rem ? ((unsigned)v[N - 1] << rem) >> rem : 0));
          }
 
          __FORCE_INLINE void assign_int64(Slong l)
@@ -642,7 +648,8 @@ typedef signed long long Slong;
          constexpr void bit_adjust()
          {
             constexpr const unsigned rem = (64 - W) & 63;
-            v = S ? (((long long int)(((unsigned long long)v) << rem)) >> rem) : (rem ? ((unsigned long long)v << rem) >> rem : 0);
+            v = S ? (((long long int)(((unsigned long long)v) << rem)) >> rem) :
+                    (rem ? ((unsigned long long)v << rem) >> rem : 0);
          }
          void assign_int64(Slong l)
          {
@@ -743,7 +750,8 @@ typedef signed long long Slong;
          __FORCE_INLINE constexpr void bit_adjust()
          {
             constexpr const unsigned rem = (64 - W) & 63;
-            v2 = S ? (((long long int)(((unsigned long long)v2) << rem)) >> rem) : (rem ? ((unsigned long long)v2 << rem) >> rem : 0);
+            v2 = S ? (((long long int)(((unsigned long long)v2) << rem)) >> rem) :
+                     (rem ? ((unsigned long long)v2 << rem) >> rem : 0);
          }
          void assign_int64(Slong l)
          {
@@ -865,7 +873,8 @@ typedef signed long long Slong;
          __FORCE_INLINE constexpr void bit_adjust()
          {
             constexpr const unsigned rem = (64 - W) & 63;
-            vb = S ? (((long long int)(((unsigned long long)vb) << rem)) >> rem) : (rem ? ((unsigned long long)vb << rem) >> rem : 0);
+            vb = S ? (((long long int)(((unsigned long long)vb) << rem)) >> rem) :
+                     (rem ? ((unsigned long long)vb << rem) >> rem : 0);
          }
          void assign_int64(Slong l)
          {
@@ -1042,8 +1051,10 @@ typedef signed long long Slong;
          const int M2 = AC_MIN(N1, N2);
          const bool M1C1 = N1 >= N2 ? C1 : C2;
          const bool M2C1 = N1 >= N2 ? C2 : C1;
-         const iv_base<M1, M1C1>& OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
-         const iv_base<M2, M2C1>& OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
+         const iv_base<M1, M1C1>& OP1 =
+             N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
+         const iv_base<M2, M2C1>& OP2 =
+             N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
 
          bool retval = true;
          LOOP(int, i, 0, exclude, M2, { retval &= OP1[i] == OP2[i]; });
@@ -1097,9 +1108,11 @@ typedef signed long long Slong;
          const int M1 = AC_MAX(N1, N2);
          const int M2 = AC_MIN(N1, N2);
          const bool M1C1 = N1 >= N2 ? C1 : C2;
-         const iv_base<M1, M1C1>& OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
+         const iv_base<M1, M1C1>& OP1 =
+             N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
          const bool M2C1 = N1 >= N2 ? C2 : C1;
-         const iv_base<M2, M2C1>& OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
+         const iv_base<M2, M2C1>& OP2 =
+             N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
          const bool b = (N1 >= N2) == greater;
          int ext = OP2[M2 - 1] < 0 ? ~0 : 0;
          int i2 = M1 > M2 ? ext : OP2[M1 - 1];
@@ -1210,8 +1223,10 @@ typedef signed long long Slong;
             constexpr int T1 = AC_MIN(M2 - 1, Nr);
             constexpr int T2 = AC_MIN(M1 - 1, Nr);
             constexpr int T3 = AC_MIN(M1 + M2 - 2, Nr);
-            const iv_base<M1, M1C1> OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
-            const iv_base<M2, M2C1> OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
+            const iv_base<M1, M1C1> OP1 =
+                N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
+            const iv_base<M2, M2C1> OP2 =
+                N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
 
             Ulong l1 = 0;
             Slong l2 = 0;
@@ -1334,8 +1349,10 @@ typedef signed long long Slong;
             constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
             constexpr int T1 = AC_MIN(M2 - 1, Nr);
             constexpr int T2 = AC_MIN(M1, Nr);
-            const iv_base<M1, M1C1> OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
-            const iv_base<M2, M2C1> OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
+            const iv_base<M1, M1C1> OP1 =
+                N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
+            const iv_base<M2, M2C1> OP2 =
+                N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
 
             bool carry = iv_uadd_n<T1>(OP1, OP2, r);
             carry = iv_add_int_carry<T1>(OP1, OP2[T1], carry, r);
@@ -1461,8 +1478,10 @@ typedef signed long long Slong;
          }
       }
 
-      template <int N, int D, int Q, int R, typename uw2, typename sw4, typename uw4, int w1_length, int Nn, bool Cn, int Nd, bool Cd, int Nq, bool Cq, int Nr, bool Cr>
-      __FORCE_INLINE void iv_udiv(const iv_base<Nn, Cn>& n, const iv_base<Nd, Cd>& d, iv_base<Nq, Cq>& q, iv_base<Nr, Cr>& r)
+      template <int N, int D, int Q, int R, typename uw2, typename sw4, typename uw4, int w1_length, int Nn, bool Cn,
+                int Nd, bool Cd, int Nq, bool Cq, int Nr, bool Cr>
+      __FORCE_INLINE void iv_udiv(const iv_base<Nn, Cn>& n, const iv_base<Nd, Cd>& d, iv_base<Nq, Cq>& q,
+                                  iv_base<Nr, Cr>& r)
       {
          constexpr int w2_length = 2 * w1_length;
          int d_msi = D - 1; // most significant int for d
@@ -1516,7 +1535,9 @@ typedef signed long long Slong;
                   int k_msi = k >> 1;
                   bool odd = k & 1;
                   uw2 r1m1 = k_msi > 0 ? r1[k_msi - 1] : (uw2)0;
-                  uw4 n1 = odd ? (uw4)((r1[k_msi + 1] << w1_length) | (r1[k_msi] >> w1_length)) << w2_length | ((r1[k_msi] << w1_length) | (r1m1 >> w1_length)) : (uw4)r1[k_msi] << w2_length | r1m1;
+                  uw4 n1 = odd ? (uw4)((r1[k_msi + 1] << w1_length) | (r1[k_msi] >> w1_length)) << w2_length |
+                                     ((r1[k_msi] << w1_length) | (r1m1 >> w1_length)) :
+                                 (uw4)r1[k_msi] << w2_length | r1m1;
                   uw2 q1 = n1 / d1;
                   if(q1 >> w1_length)
                      q1--;
@@ -1697,9 +1718,11 @@ typedef signed long long Slong;
          const int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
          const int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
          const bool M1C1 = N1 > N2 ? C1 : C2;
-         const iv_base<AC_MAX(N1, N2), M1C1>& OP1 = N1 > N2 ? static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op1) : static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op2);
+         const iv_base<AC_MAX(N1, N2), M1C1>& OP1 = N1 > N2 ? static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op1) :
+                                                              static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op2);
          const bool M2C1 = N1 > N2 ? C2 : C1;
-         const iv_base<AC_MIN(N1, N2), M2C1>& OP2 = N1 > N2 ? static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op2) : static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op1);
+         const iv_base<AC_MIN(N1, N2), M2C1>& OP2 = N1 > N2 ? static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op2) :
+                                                              static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op1);
 
          iv_bitwise_and_n<M2>(op1, op2, r);
          if(OP2[M2 - 1] < 0)
@@ -1721,9 +1744,11 @@ typedef signed long long Slong;
          const int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
          const int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
          const bool M1C1 = N1 >= N2 ? C1 : C2;
-         const iv_base<M1, M1C1>& OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
+         const iv_base<M1, M1C1>& OP1 =
+             N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
          const bool M2C1 = N1 >= N2 ? C2 : C1;
-         const iv_base<M2, M2C1>& OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
+         const iv_base<M2, M2C1>& OP2 =
+             N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
 
          iv_bitwise_or_n<M2>(op1, op2, r);
          if(OP2[M2 - 1] < 0)
@@ -1746,8 +1771,10 @@ typedef signed long long Slong;
          const int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
          const bool M1C1 = N1 >= N2 ? C1 : C2;
          const bool M2C1 = N1 >= N2 ? C2 : C1;
-         const iv_base<AC_MAX(N1, N2), M1C1>& OP1 = N1 >= N2 ? static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op1) : static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op2);
-         const iv_base<AC_MIN(N1, N2), M2C1>& OP2 = N1 >= N2 ? static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op2) : static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op1);
+         const iv_base<AC_MAX(N1, N2), M1C1>& OP1 = N1 >= N2 ? static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op1) :
+                                                               static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op2);
+         const iv_base<AC_MIN(N1, N2), M2C1>& OP2 = N1 >= N2 ? static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op2) :
+                                                               static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op1);
 
          iv_bitwise_xor_n<M2>(op1, op2, r);
          if(OP2[M2 - 1] < 0)
@@ -1892,7 +1919,8 @@ typedef signed long long Slong;
       }
 
       template <int N, bool C>
-      __FORCE_INLINE constexpr void iv_conv_from_fraction(const double d, iv_base<N, C>& r, bool* qb, bool* rbits, bool* o)
+      __FORCE_INLINE constexpr void iv_conv_from_fraction(const double d, iv_base<N, C>& r, bool* qb, bool* rbits,
+                                                          bool* o)
       {
          bool b = d < 0;
          double d2 = b ? -d : d;
@@ -1916,7 +1944,8 @@ typedef signed long long Slong;
       }
 
       template <int N, bool C>
-      __FORCE_INLINE constexpr void iv_conv_from_fraction(const float d, iv_base<N, C>& r, bool* qb, bool* rbits, bool* o)
+      __FORCE_INLINE constexpr void iv_conv_from_fraction(const float d, iv_base<N, C>& r, bool* qb, bool* rbits,
+                                                          bool* o)
       {
          bool b = d < 0;
          float d2 = b ? -d : d;
@@ -2132,7 +2161,8 @@ typedef signed long long Slong;
             {
                static constexpr size_t HfindChar(const char (&str)[NN])
                {
-                  return (str[begin] == charToFind) * (begin + 1) + HfindCharImpl<begin - 1, charToFind, NN>::HfindChar(str);
+                  return (str[begin] == charToFind) * (begin + 1) +
+                         HfindCharImpl<begin - 1, charToFind, NN>::HfindChar(str);
                }
             };
             template <char charToFind, size_t NN>
@@ -2166,7 +2196,9 @@ typedef signed long long Slong;
             // Unportable, but will work for ANSI charset
             static constexpr int HhexDigit(char c)
             {
-               return '0' <= c && c <= '9' ? c - '0' : 'a' <= c && c <= 'f' ? c - 'a' + 0xa : 'A' <= c && c <= 'F' ? c - 'A' + 0xA : 0;
+               return '0' <= c && c <= '9' ?
+                          c - '0' :
+                          'a' <= c && c <= 'f' ? c - 'a' + 0xa : 'A' <= c && c <= 'F' ? c - 'A' + 0xA : 0;
             }
 
             static constexpr double Hscalbn(const double value, const int exponent)
@@ -2216,7 +2248,10 @@ typedef signed long long Slong;
             template <size_t NN>
             __FORCE_INLINE static constexpr int Hexponent(const char (&str)[NN], const size_t mantissa_end)
             {
-               return mantissa_end == NN ? 0 : (str[mantissa_end + 1] == '-' ? -1 : 1) * getNumberImpl<NN - 1, 10, int, NN>::getNumber(str, mantissa_end + 1 + HisSign(mantissa_end + 1), NN - 1);
+               return mantissa_end == NN ? 0 :
+                                           (str[mantissa_end + 1] == '-' ? -1 : 1) *
+                                               getNumberImpl<NN - 1, 10, int, NN>::getNumber(
+                                                   str, mantissa_end + 1 + HisSign(mantissa_end + 1), NN - 1);
             }
 
             static constexpr bool HisSign(char ch)
@@ -2229,24 +2264,29 @@ typedef signed long long Slong;
                return HisSign(str[0]) + 2 * (str[HisSign(str[0])] == '0' && str[HisSign(str[0]) + 1] == 'x');
             }
             template <size_t NN>
-            __FORCE_INLINE static constexpr unsigned long long HbeforePoint(const char (&str)[NN], const size_t point_pos)
+            __FORCE_INLINE static constexpr unsigned long long HbeforePoint(const char (&str)[NN],
+                                                                            const size_t point_pos)
             {
                return getNumberImpl<NN - 1, 16, unsigned long long, NN>::getNumber(str, HmantissaBegin(str), point_pos);
             }
 
             template <size_t NN>
-            __FORCE_INLINE static constexpr unsigned long long Hfraction(const char (&str)[NN], const size_t point_pos, const size_t mantissa_end)
+            __FORCE_INLINE static constexpr unsigned long long Hfraction(const char (&str)[NN], const size_t point_pos,
+                                                                         const size_t mantissa_end)
             {
                return getNumberImpl<NN - 1, 16, unsigned long long, NN>::getNumber(str, point_pos + 1, mantissa_end);
             }
 
             template <size_t NN>
-            __FORCE_INLINE static constexpr double get0(const char (&str)[NN], const size_t mantissa_end, const size_t point_pos, const size_t exp)
+            __FORCE_INLINE static constexpr double get0(const char (&str)[NN], const size_t mantissa_end,
+                                                        const size_t point_pos, const size_t exp)
             {
                //            printf("%d\n", mantissa_end);
                //            printf("%d\n", point_pos);
                //            printf("%d\n", exp);
-               return (str[0] == '-' ? -1 : 1) * (Hscalbn(HbeforePoint(str, point_pos), exp) + Hscalbn(Hfraction(str, point_pos, mantissa_end), exp - 4 * (mantissa_end - point_pos - 1)));
+               return (str[0] == '-' ? -1 : 1) *
+                      (Hscalbn(HbeforePoint(str, point_pos), exp) +
+                       Hscalbn(Hfraction(str, point_pos, mantissa_end), exp - 4 * (mantissa_end - point_pos - 1)));
             }
             template <size_t NN>
             __FORCE_INLINE static constexpr double get1(const char (&str)[NN], const size_t mantissa_end)
@@ -2504,7 +2544,8 @@ typedef signed long long Slong;
             if(N2 == 1)
             {
                if(msb_v == lsb_v)
-                  v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & ((WS == 32 ? ~0 : ((1u << WS) - 1)) << lsb_b)));
+                  v.set(lsb_v,
+                        v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & ((WS == 32 ? ~0 : ((1u << WS) - 1)) << lsb_b)));
                else
                {
                   v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
@@ -2515,7 +2556,8 @@ typedef signed long long Slong;
             else
             {
                v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
-               LOOP(int, i, 1, exclude, N2 - 1, { v.set(lsb_v + i, (op2.v[i] << lsb_b) | (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b))); });
+               LOOP(int, i, 1, exclude, N2 - 1,
+                    { v.set(lsb_v + i, (op2.v[i] << lsb_b) | (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b))); });
                unsigned t = (op2.v[N2 - 1] << lsb_b) | (((unsigned)op2.v[N2 - 2] >> 1) >> (31 - lsb_b));
                unsigned m = t;
                if(msb_v - lsb_v == N2)
@@ -2542,7 +2584,8 @@ typedef signed long long Slong;
             if(N2 == 1)
             {
                if(msb_v == lsb_v)
-                  v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & ((WS == 32 ? ~0 : ((1u << WS) - 1)) << lsb_b)));
+                  v.set(lsb_v,
+                        v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & ((WS == 32 ? ~0 : ((1u << WS) - 1)) << lsb_b)));
                else
                {
                   v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
@@ -2553,7 +2596,8 @@ typedef signed long long Slong;
             else
             {
                v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
-               LOOP(int, i, 1, exclude, N2 - 1, { v.set(lsb_v + i, (op2.v[i] << lsb_b) | (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b))); });
+               LOOP(int, i, 1, exclude, N2 - 1,
+                    { v.set(lsb_v + i, (op2.v[i] << lsb_b) | (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b))); });
                unsigned t = (op2.v[N2 - 1] << lsb_b) | (((unsigned)op2.v[N2 - 2] >> 1) >> (31 - lsb_b));
                unsigned m = 0;
                if(static_cast<int>(msb_v - lsb_v) == N2)
@@ -4874,7 +4918,9 @@ typedef signed long long Slong;
       std::string str;
       in >> str;
       const std::ios_base::fmtflags basefield = in.flags() & std::ios_base::basefield;
-      unsigned radix = (basefield == std::ios_base::dec) ? 0 : ((basefield == std::ios_base::oct) ? 8 : ((basefield == std::ios_base::hex) ? 16 : 0));
+      unsigned radix = (basefield == std::ios_base::dec) ?
+                           0 :
+                           ((basefield == std::ios_base::oct) ? 8 : ((basefield == std::ios_base::hex) ? 16 : 0));
       // x = convert a char * str.c_str() with specified radix into ac_int; //TODO
 #endif
       return in;
@@ -4883,16 +4929,18 @@ typedef signed long long Slong;
    // Macros for Binary Operators with Integers
    // --------------------------------------------
 
-#define BIN_OP_WITH_INT(BIN_OP, C_TYPE, WI, SI, RTYPE)                                                                   \
-   template <int W, bool S>                                                                                              \
-   __FORCE_INLINE typename ac_int<WI, SI>::template rt<W, S>::RTYPE operator BIN_OP(C_TYPE i_op, const ac_int<W, S>& op) \
-   {                                                                                                                     \
-      return ac_int<WI, SI>(i_op).operator BIN_OP(op);                                                                   \
-   }                                                                                                                     \
-   template <int W, bool S>                                                                                              \
-   __FORCE_INLINE typename ac_int<W, S>::template rt<WI, SI>::RTYPE operator BIN_OP(const ac_int<W, S>& op, C_TYPE i_op) \
-   {                                                                                                                     \
-      return op.operator BIN_OP(ac_int<WI, SI>(i_op));                                                                   \
+#define BIN_OP_WITH_INT(BIN_OP, C_TYPE, WI, SI, RTYPE)                                                      \
+   template <int W, bool S>                                                                                 \
+   __FORCE_INLINE typename ac_int<WI, SI>::template rt<W, S>::RTYPE operator BIN_OP(C_TYPE i_op,            \
+                                                                                    const ac_int<W, S>& op) \
+   {                                                                                                        \
+      return ac_int<WI, SI>(i_op).operator BIN_OP(op);                                                      \
+   }                                                                                                        \
+   template <int W, bool S>                                                                                 \
+   __FORCE_INLINE typename ac_int<W, S>::template rt<WI, SI>::RTYPE operator BIN_OP(const ac_int<W, S>& op, \
+                                                                                    C_TYPE i_op)            \
+   {                                                                                                        \
+      return op.operator BIN_OP(ac_int<WI, SI>(i_op));                                                      \
    }
 
 #define REL_OP_WITH_INT(REL_OP, C_TYPE, W2, S2)                            \
@@ -4948,21 +4996,24 @@ typedef signed long long Slong;
 // Integers
 
 // --- Macro for range_ref
-#define OP_BIN_RANGE(BIN_OP, RTYPE)                                                                                                               \
-   template <int W1, bool S1, int W2, bool S2>                                                                                                    \
-   __FORCE_INLINE typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE operator BIN_OP(const range_ref<W1, S1>& op1, const range_ref<W2, S2>& op2) \
-   {                                                                                                                                              \
-      return ac_int<W1, false>(op1) BIN_OP(ac_int<W2, false>(op2));                                                                               \
-   }                                                                                                                                              \
-   template <int W1, bool S1, int W2, bool S2>                                                                                                    \
-   __FORCE_INLINE typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE operator BIN_OP(const range_ref<W1, S1>& op1, const ac_int<W2, S2>& op2)    \
-   {                                                                                                                                              \
-      return ac_int<W1, false>(op1) BIN_OP(op2);                                                                                                  \
-   }                                                                                                                                              \
-   template <int W1, bool S1, int W2, bool S2>                                                                                                    \
-   __FORCE_INLINE typename ac_int<W1, S1>::template RType<W2, S2>::RTYPE operator BIN_OP(const ac_int<W1, S1>& op1, const range_ref<W2, S2>& op2) \
-   {                                                                                                                                              \
-      return op1 BIN_OP(ac_int<W2, false>(op2));                                                                                                  \
+#define OP_BIN_RANGE(BIN_OP, RTYPE)                                                                                    \
+   template <int W1, bool S1, int W2, bool S2>                                                                         \
+   __FORCE_INLINE typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE operator BIN_OP(const range_ref<W1, S1>& op1,    \
+                                                                                      const range_ref<W2, S2>& op2)    \
+   {                                                                                                                   \
+      return ac_int<W1, false>(op1) BIN_OP(ac_int<W2, false>(op2));                                                    \
+   }                                                                                                                   \
+   template <int W1, bool S1, int W2, bool S2>                                                                         \
+   __FORCE_INLINE typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE operator BIN_OP(const range_ref<W1, S1>& op1,    \
+                                                                                      const ac_int<W2, S2>& op2)       \
+   {                                                                                                                   \
+      return ac_int<W1, false>(op1) BIN_OP(op2);                                                                       \
+   }                                                                                                                   \
+   template <int W1, bool S1, int W2, bool S2>                                                                         \
+   __FORCE_INLINE typename ac_int<W1, S1>::template RType<W2, S2>::RTYPE operator BIN_OP(const ac_int<W1, S1>& op1,    \
+                                                                                         const range_ref<W2, S2>& op2) \
+   {                                                                                                                   \
+      return op1 BIN_OP(ac_int<W2, false>(op2));                                                                       \
    }
 
 #define OP_REL_RANGE(REL_OP)                                                                       \

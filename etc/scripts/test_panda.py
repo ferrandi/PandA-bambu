@@ -72,6 +72,8 @@ def execute_tests(named_list, thread_index):
     global children
     global failure
     lines = open(named_list).readlines()
+    env_regex = re.compile(
+        r"BENCHMARK_ENV=(\w+=\'[^\']*\'|\w+=|\w+)(,\w+=\'[^\']*\'|,\w+=|,\w+)*")
     with lock:
         local_index = line_index
         line_index += 1
@@ -108,6 +110,13 @@ def execute_tests(named_list, thread_index):
         local_args = lines[local_index]
         if local_args[0] == "\"":
             local_args = local_args[1:-1]
+        env_export = ""
+        env_vars = env_regex.search(local_args)
+        if env_vars:
+            local_args = env_regex.sub("", local_args)
+            for env_var in env_vars.groups():
+                env_export += "export " + env_var.strip(',') + "; "
+
         if args.tool != "bambu" and args.tool != "zebu":
             tokens = shlex.split(lines[local_index])
             args_without_benchmark_name = ""
@@ -116,7 +125,7 @@ def execute_tests(named_list, thread_index):
                     args_without_benchmark_name += token + " "
             local_args = args_without_benchmark_name
         local_command = "ulimit " + args.ulimit + \
-            "; exec timeout " + args.timeout + " " + tool_exe
+            "; " + env_export + "exec timeout " + args.timeout + " " + tool_exe
         local_command = local_command + " " + local_args
         output_file.write("#" * 80 + "\n")
         output_file.write("cd " + cwd + "; ")
@@ -833,24 +842,24 @@ if not args.restart:
     # Check if file lists exist
     abs_lists = []
     if args.benchmarks_list != None:
-        for relative_list in args.benchmarks_list:
+        for list_name in args.benchmarks_list[-1]:
             # First look in the current directory
-            if os.path.exists(os.path.abspath("../" + relative_list[0])):
-                abs_lists.append(os.path.abspath("../" + relative_list[0]))
+            if os.path.exists(os.path.abspath("../" + list_name)):
+                abs_lists.append(os.path.abspath("../" + list_name))
             # Then look in script directory
-            elif os.path.exists(os.path.join(os.path.dirname(abs_script), relative_list[0])):
+            elif os.path.exists(os.path.join(os.path.dirname(abs_script), list_name)):
                 abs_lists.append(os.path.join(
-                    os.path.dirname(abs_script), relative_list[0]))
+                    os.path.dirname(abs_script), list_name))
             # Then look in configuration directory
-            elif os.path.exists(os.path.join(abs_configuration_dir, relative_list[0])):
+            elif os.path.exists(os.path.join(abs_configuration_dir, list_name)):
                 abs_lists.append(os.path.join(
-                    abs_configuration_dir, relative_list[0]))
+                    abs_configuration_dir, list_name))
             # Then look in benchmarks root
-            elif os.path.exists(os.path.join(abs_benchmarks_root, relative_list[0])):
+            elif os.path.exists(os.path.join(abs_benchmarks_root, list_name)):
                 abs_lists.append(os.path.join(
-                    abs_benchmarks_root, relative_list[0]))
+                    abs_benchmarks_root, list_name))
             else:
-                logging.error(relative_list[0] + " does not exist")
+                logging.error(list_name + " does not exist")
                 sys.exit(1)
     files_list = []
     # Create temp list with arg
@@ -897,13 +906,14 @@ if not args.restart:
                 continue
             tokens = shlex.split(line)
             parameters = list()
-            escape_pattern = "(-|_|\{|\}|=|!|\$|#|&|\"|\'|\(|\)|\||<|>|`|\\\|;|\.|,)"
+            escape_regex = re.compile(
+                "(-|_|\{|\}|=|!|\$|#|&|\"|\'|\(|\)|\||<|>|`|\\\|;|\.|,)")
             # Flag used to ad-hoc manage --param arg
             follow_param = False
             for token in tokens:
                 if token[0] == '-':
                     parameters.append(
-                        re.sub(escape_pattern, r"\\\1", token))
+                        escape_regex.sub(r"\\\1", token))
                     if token.find("--param") != -1:
                         follow_param = True
                     else:
@@ -911,13 +921,25 @@ if not args.restart:
                 else:
                     if follow_param == True:
                         parameters.append(
-                            re.sub(escape_pattern, r"\\\1", token))
+                            escape_regex.sub(r"\\\1", token))
+                    elif token.find("BENCHMARK_ENV") == 0:
+                        vars = token[14:-1].split(',')
+                        escaped_vars = []
+                        for var in vars:
+                            if var.find("=") != -1:
+                                escaped_var = re.sub("=", "=\\\'", var)
+                                escaped_var += "\\\'"
+                                escaped_vars.append(escaped_var)
+                            else:
+                                escaped_vars.append(var)
+                        reordered_list.write(
+                            "BENCHMARK_ENV=" + ','.join(escaped_vars) + " ")
                     else:
                         reordered_list.write(token + " ")
                     follow_param = False
             for parameter in parameters:
                 reordered_list.write(
-                    re.sub(escape_pattern, r"\\\1", parameter) + " ")
+                    escape_regex.sub(r"\\\1", parameter) + " ")
             reordered_list.write("\n")
     reordered_list.close()
 

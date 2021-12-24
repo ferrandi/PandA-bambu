@@ -467,14 +467,21 @@
 
 #define UDATATYPE unsigned long long
 #define BOOLTYPE _Bool
-#define VAL_RESIZE(VAR, nbit) ((UDATATYPE)(BOOST_PP_IF(BOOST_PP_LESS(nbit, UDATATYPE_BITSIZE), ((VAR) & ((UDATATYPE)(BOOST_PP_CAT(POW2(nbit), ULL) - 1))), VAR)))
+#define VAL_RESIZE(VAR, nbit)                                       \
+   ((UDATATYPE)(BOOST_PP_IF(BOOST_PP_LESS(nbit, UDATATYPE_BITSIZE), \
+                            ((VAR) & ((UDATATYPE)(BOOST_PP_CAT(POW2(nbit), ULL) - 1))), VAR)))
 
 #define MACRO_BIT_RESIZE(VAR, nbit) VAR = VAL_RESIZE(VAR, nbit)
 #define BIT_RESIZE(VAR, nbit) WHEN(BOOST_PP_NOT(IS_CONSTANT(VAR)))(MACRO_BIT_RESIZE(VAR, nbit))
 #define SELECT_BIT(VAR, bit) (((VAR) >> (bit)) & 1)
-#define SET_BIT(VAR, bit, value) VAR = ((UDATATYPE)((VAR) & ~(BOOST_PP_CAT(POW2(bit), ULL)))) | ((UDATATYPE)((((UDATATYPE)(value)) & 1ULL) << (bit)))
+#define SET_BIT(VAR, bit, value) \
+   VAR = ((UDATATYPE)((VAR) & ~(BOOST_PP_CAT(POW2(bit), ULL)))) | ((UDATATYPE)((((UDATATYPE)(value)) & 1ULL) << (bit)))
 #define SELECT_RANGE(var, high, low) VAL_RESIZE(((UDATATYPE)(var)) >> (low), BOOST_PP_ADD(BOOST_PP_SUB(high, low), 1))
-#define SET_RANGE(VAR, val, high, low) VAR = BOOST_PP_IF(BOOST_PP_LESS(BITSIZE(high, low), UDATATYPE_BITSIZE), (VAR & ~(UDATATYPE)((BOOST_PP_CAT(POW2(BITSIZE(high, low)), ULL) - 1) << low)) | ((VAL_RESIZE(val, BITSIZE(high, low))) << low), val)
+#define SET_RANGE(VAR, val, high, low)                                                                \
+   VAR = BOOST_PP_IF(BOOST_PP_LESS(BITSIZE(high, low), UDATATYPE_BITSIZE),                            \
+                     (VAR & ~(UDATATYPE)((BOOST_PP_CAT(POW2(BITSIZE(high, low)), ULL) - 1) << low)) | \
+                         ((VAL_RESIZE(val, BITSIZE(high, low))) << low),                              \
+                     val)
 #define CONCAT(var1, var2, var2bitsize) ((((UDATATYPE)(var1)) << (var2bitsize)) | VAL_RESIZE(var2, var2bitsize))
 
 #define MACRO_DEVECTORIZE_VALUE(z, n, text) _Bool BOOST_PP_CAT(text, BOOST_PP_CAT(_, n)) = (text >> n) & 1;
@@ -486,288 +493,317 @@
 #define MACRO_VECTORIZE_DECL(z, n, text) _Bool BOOST_PP_CAT(text, BOOST_PP_CAT(_, n));
 #define VECTORIZE_DECL(var, nbits) BOOST_PP_REPEAT_FROM_TO(0, nbits, MACRO_VECTORIZE_DECL, var)
 
-#define RUNTIME_CEIL_LOG2(var) (var <= 32 ? (var <= 16 ? (var <= 8 ? (var <= 4 ? (var <= 2 ? (var <= 1 ? 0 : 1) : 2) : 3) : 4) : 5) : 6)
+#define RUNTIME_CEIL_LOG2(var) \
+   (var <= 32 ? (var <= 16 ? (var <= 8 ? (var <= 4 ? (var <= 2 ? (var <= 1 ? 0 : 1) : 2) : 3) : 4) : 5) : 6)
 
-#define count_leading_zero_macro(man_bits, MAN_IN_ORIG, SHIFT)                                                                                                                                            \
-   {                                                                                                                                                                                                      \
-      BOOLTYPE _result_5 = 0;                                                                                                                                                                             \
-      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                                                                                                                     \
-      UDATATYPE _val4, _val8;                                                                                                                                                                             \
-      UDATATYPE _result = 0;                                                                                                                                                                              \
-      UDATATYPE MAN_IN;                                                                                                                                                                                   \
-      if(man_bits <= 32)                                                                                                                                                                                  \
-      {                                                                                                                                                                                                   \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(32, man_bits);                                                                                                                                 \
-         BIT_RESIZE(MAN_IN, 32);                                                                                                                                                                          \
-      }                                                                                                                                                                                                   \
-      else                                                                                                                                                                                                \
-      {                                                                                                                                                                                                   \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(64, man_bits);                                                                                                                                 \
-      }                                                                                                                                                                                                   \
-      _result_5 = man_bits <= 32 || SELECT_RANGE(MAN_IN, 63, 32) == 0;                                                                                                                                    \
-      _result_4 = (_result_5 ? SELECT_RANGE(MAN_IN, 31, 16) : SELECT_RANGE(MAN_IN, 63, 48)) == 0;                                                                                                         \
-      _result_3 = (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56))) == 0;                \
-      _result_2 = (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 4) : SELECT_RANGE(MAN_IN, 39, 36)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 20) : SELECT_RANGE(MAN_IN, 55, 52))) :        \
-                               (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 12) : SELECT_RANGE(MAN_IN, 47, 44)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 28) : SELECT_RANGE(MAN_IN, 63, 60)))) == 0; \
-      _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 0) : SELECT_RANGE(MAN_IN, 39, 32)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 16) : SELECT_RANGE(MAN_IN, 55, 48))) :             \
-                          (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56)));             \
-      _val4 = _result_2 ? _val8 & 15 : (_val8 >> 4) & 15;                                                                                                                                                 \
-      _result_1 = _val4 >> 2 == 0;                                                                                                                                                                        \
-      _result_0 = _result_1 ? (~((_val4 & 2) >> 1)) & 1 : (~((_val4 & 8) >> 3)) & 1;                                                                                                                      \
-      if(man_bits <= 32)                                                                                                                                                                                  \
-      {                                                                                                                                                                                                   \
-         VECTORIZE_VALUE(_result, 5)                                                                                                                                                                      \
-         SHIFT = _result;                                                                                                                                                                                 \
-      }                                                                                                                                                                                                   \
-      else                                                                                                                                                                                                \
-      {                                                                                                                                                                                                   \
-         VECTORIZE_VALUE(_result, 6)                                                                                                                                                                      \
-         SHIFT = _result;                                                                                                                                                                                 \
-      }                                                                                                                                                                                                   \
-      BIT_RESIZE(SHIFT, CEIL_LOG2(man_bits));                                                                                                                                                             \
+#define count_leading_zero_macro(man_bits, MAN_IN_ORIG, SHIFT)                                                        \
+   {                                                                                                                  \
+      BOOLTYPE _result_5 = 0;                                                                                         \
+      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                                 \
+      UDATATYPE _val4, _val8;                                                                                         \
+      UDATATYPE _result = 0;                                                                                          \
+      UDATATYPE MAN_IN;                                                                                               \
+      if(man_bits <= 32)                                                                                              \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(32, man_bits);                                             \
+         BIT_RESIZE(MAN_IN, 32);                                                                                      \
+      }                                                                                                               \
+      else                                                                                                            \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(64, man_bits);                                             \
+      }                                                                                                               \
+      _result_5 = man_bits <= 32 || SELECT_RANGE(MAN_IN, 63, 32) == 0;                                                \
+      _result_4 = (_result_5 ? SELECT_RANGE(MAN_IN, 31, 16) : SELECT_RANGE(MAN_IN, 63, 48)) == 0;                     \
+      _result_3 = (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) :             \
+                               (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56))) == 0;       \
+      _result_2 =                                                                                                     \
+          (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 4) : SELECT_RANGE(MAN_IN, 39, 36)) :         \
+                                    (_result_5 ? SELECT_RANGE(MAN_IN, 23, 20) : SELECT_RANGE(MAN_IN, 55, 52))) :      \
+                       (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 12) : SELECT_RANGE(MAN_IN, 47, 44)) :       \
+                                    (_result_5 ? SELECT_RANGE(MAN_IN, 31, 28) : SELECT_RANGE(MAN_IN, 63, 60)))) == 0; \
+      _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 0) : SELECT_RANGE(MAN_IN, 39, 32)) :      \
+                                       (_result_5 ? SELECT_RANGE(MAN_IN, 23, 16) : SELECT_RANGE(MAN_IN, 55, 48))) :   \
+                          (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) :     \
+                                       (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56)));    \
+      _val4 = _result_2 ? _val8 & 15 : (_val8 >> 4) & 15;                                                             \
+      _result_1 = _val4 >> 2 == 0;                                                                                    \
+      _result_0 = _result_1 ? (~((_val4 & 2) >> 1)) & 1 : (~((_val4 & 8) >> 3)) & 1;                                  \
+      if(man_bits <= 32)                                                                                              \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 5)                                                                                  \
+         SHIFT = _result;                                                                                             \
+      }                                                                                                               \
+      else                                                                                                            \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 6)                                                                                  \
+         SHIFT = _result;                                                                                             \
+      }                                                                                                               \
+      BIT_RESIZE(SHIFT, CEIL_LOG2(man_bits));                                                                         \
    }
 
-#define count_leading_zero_runtime_macro(man_bits, MAN_IN_ORIG, SHIFT)                                                                                                                                                     \
-   {                                                                                                                                                                                                                       \
-      BOOLTYPE _result_5 = 0;                                                                                                                                                                                              \
-      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                                                                                                                                      \
-      UDATATYPE _val4, _val8;                                                                                                                                                                                              \
-      UDATATYPE _result = 0;                                                                                                                                                                                               \
-      UDATATYPE MAN_IN;                                                                                                                                                                                                    \
-      if(man_bits <= 1)                                                                                                                                                                                                    \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (1 - man_bits);                                                                                                                                                              \
-         BIT_RESIZE(MAN_IN, 1);                                                                                                                                                                                            \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 2)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (2 - man_bits);                                                                                                                                                              \
-         BIT_RESIZE(MAN_IN, 2);                                                                                                                                                                                            \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 4)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (4 - man_bits);                                                                                                                                                              \
-         BIT_RESIZE(MAN_IN, 4);                                                                                                                                                                                            \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 8)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (8 - man_bits);                                                                                                                                                              \
-         BIT_RESIZE(MAN_IN, 8);                                                                                                                                                                                            \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 16)                                                                                                                                                                                              \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (16 - man_bits);                                                                                                                                                             \
-         BIT_RESIZE(MAN_IN, 16);                                                                                                                                                                                           \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 32)                                                                                                                                                                                              \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (32 - man_bits);                                                                                                                                                             \
-         BIT_RESIZE(MAN_IN, 32);                                                                                                                                                                                           \
-      }                                                                                                                                                                                                                    \
-      else                                                                                                                                                                                                                 \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (64 - man_bits);                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      _result_5 = man_bits <= 32 || SELECT_RANGE(MAN_IN, 63, 32) == 0;                                                                                                                                                     \
-      _result_4 = man_bits <= 16 || (_result_5 ? SELECT_RANGE(MAN_IN, 31, 16) : SELECT_RANGE(MAN_IN, 63, 48)) == 0;                                                                                                        \
-      _result_3 = man_bits <= 8 || (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56))) == 0;                \
-      _result_2 = man_bits <= 4 || (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 4) : SELECT_RANGE(MAN_IN, 39, 36)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 20) : SELECT_RANGE(MAN_IN, 55, 52))) :        \
-                                                (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 12) : SELECT_RANGE(MAN_IN, 47, 44)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 28) : SELECT_RANGE(MAN_IN, 63, 60)))) == 0; \
-      _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 0) : SELECT_RANGE(MAN_IN, 39, 32)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 16) : SELECT_RANGE(MAN_IN, 55, 48))) :                              \
-                          (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56)));                              \
-      _val4 = _result_2 ? _val8 & 15 : (_val8 >> 4) & 15;                                                                                                                                                                  \
-      _result_1 = man_bits <= 2 || _val4 >> 2 == 0;                                                                                                                                                                        \
-      _result_0 = man_bits <= 1 || _result_1 ? (~((_val4 & 2) >> 1)) & 1 : (~((_val4 & 8) >> 3)) & 1;                                                                                                                      \
-      if(man_bits <= 1)                                                                                                                                                                                                    \
-      {                                                                                                                                                                                                                    \
-         SHIFT = 0;                                                                                                                                                                                                        \
-         BIT_RESIZE(SHIFT, 1);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 2)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 1)                                                                                                                                                                                       \
-         SHIFT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(SHIFT, 1);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 4)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 2)                                                                                                                                                                                       \
-         SHIFT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(SHIFT, 2);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 8)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 3)                                                                                                                                                                                       \
-         SHIFT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(SHIFT, 3);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 16)                                                                                                                                                                                              \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 4)                                                                                                                                                                                       \
-         SHIFT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(SHIFT, 4);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 32)                                                                                                                                                                                              \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 5)                                                                                                                                                                                       \
-         SHIFT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(SHIFT, 5);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else                                                                                                                                                                                                                 \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 6)                                                                                                                                                                                       \
-         SHIFT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(SHIFT, 6);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
+#define count_leading_zero_runtime_macro(man_bits, MAN_IN_ORIG, SHIFT)                                                \
+   {                                                                                                                  \
+      BOOLTYPE _result_5 = 0;                                                                                         \
+      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                                 \
+      UDATATYPE _val4, _val8;                                                                                         \
+      UDATATYPE _result = 0;                                                                                          \
+      UDATATYPE MAN_IN;                                                                                               \
+      if(man_bits <= 1)                                                                                               \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (1 - man_bits);                                                         \
+         BIT_RESIZE(MAN_IN, 1);                                                                                       \
+      }                                                                                                               \
+      else if(man_bits <= 2)                                                                                          \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (2 - man_bits);                                                         \
+         BIT_RESIZE(MAN_IN, 2);                                                                                       \
+      }                                                                                                               \
+      else if(man_bits <= 4)                                                                                          \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (4 - man_bits);                                                         \
+         BIT_RESIZE(MAN_IN, 4);                                                                                       \
+      }                                                                                                               \
+      else if(man_bits <= 8)                                                                                          \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (8 - man_bits);                                                         \
+         BIT_RESIZE(MAN_IN, 8);                                                                                       \
+      }                                                                                                               \
+      else if(man_bits <= 16)                                                                                         \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (16 - man_bits);                                                        \
+         BIT_RESIZE(MAN_IN, 16);                                                                                      \
+      }                                                                                                               \
+      else if(man_bits <= 32)                                                                                         \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (32 - man_bits);                                                        \
+         BIT_RESIZE(MAN_IN, 32);                                                                                      \
+      }                                                                                                               \
+      else                                                                                                            \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (64 - man_bits);                                                        \
+      }                                                                                                               \
+      _result_5 = man_bits <= 32 || SELECT_RANGE(MAN_IN, 63, 32) == 0;                                                \
+      _result_4 = man_bits <= 16 || (_result_5 ? SELECT_RANGE(MAN_IN, 31, 16) : SELECT_RANGE(MAN_IN, 63, 48)) == 0;   \
+      _result_3 = man_bits <= 8 ||                                                                                    \
+                  (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) :             \
+                               (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56))) == 0;       \
+      _result_2 =                                                                                                     \
+          man_bits <= 4 ||                                                                                            \
+          (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 4) : SELECT_RANGE(MAN_IN, 39, 36)) :         \
+                                    (_result_5 ? SELECT_RANGE(MAN_IN, 23, 20) : SELECT_RANGE(MAN_IN, 55, 52))) :      \
+                       (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 12) : SELECT_RANGE(MAN_IN, 47, 44)) :       \
+                                    (_result_5 ? SELECT_RANGE(MAN_IN, 31, 28) : SELECT_RANGE(MAN_IN, 63, 60)))) == 0; \
+      _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 0) : SELECT_RANGE(MAN_IN, 39, 32)) :      \
+                                       (_result_5 ? SELECT_RANGE(MAN_IN, 23, 16) : SELECT_RANGE(MAN_IN, 55, 48))) :   \
+                          (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) :     \
+                                       (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56)));    \
+      _val4 = _result_2 ? _val8 & 15 : (_val8 >> 4) & 15;                                                             \
+      _result_1 = man_bits <= 2 || _val4 >> 2 == 0;                                                                   \
+      _result_0 = man_bits <= 1 || _result_1 ? (~((_val4 & 2) >> 1)) & 1 : (~((_val4 & 8) >> 3)) & 1;                 \
+      if(man_bits <= 1)                                                                                               \
+      {                                                                                                               \
+         SHIFT = 0;                                                                                                   \
+         BIT_RESIZE(SHIFT, 1);                                                                                        \
+      }                                                                                                               \
+      else if(man_bits <= 2)                                                                                          \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 1)                                                                                  \
+         SHIFT = _result;                                                                                             \
+         BIT_RESIZE(SHIFT, 1);                                                                                        \
+      }                                                                                                               \
+      else if(man_bits <= 4)                                                                                          \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 2)                                                                                  \
+         SHIFT = _result;                                                                                             \
+         BIT_RESIZE(SHIFT, 2);                                                                                        \
+      }                                                                                                               \
+      else if(man_bits <= 8)                                                                                          \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 3)                                                                                  \
+         SHIFT = _result;                                                                                             \
+         BIT_RESIZE(SHIFT, 3);                                                                                        \
+      }                                                                                                               \
+      else if(man_bits <= 16)                                                                                         \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 4)                                                                                  \
+         SHIFT = _result;                                                                                             \
+         BIT_RESIZE(SHIFT, 4);                                                                                        \
+      }                                                                                                               \
+      else if(man_bits <= 32)                                                                                         \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 5)                                                                                  \
+         SHIFT = _result;                                                                                             \
+         BIT_RESIZE(SHIFT, 5);                                                                                        \
+      }                                                                                                               \
+      else                                                                                                            \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 6)                                                                                  \
+         SHIFT = _result;                                                                                             \
+         BIT_RESIZE(SHIFT, 6);                                                                                        \
+      }                                                                                                               \
    }
 
-#define count_leading_zero_lshift_macro(man_bits, MAN_IN_ORIG, COUNT, SHIFTED)                                                                                                                            \
-   {                                                                                                                                                                                                      \
-      BOOLTYPE _result_5 = 0;                                                                                                                                                                             \
-      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                                                                                                                     \
-      UDATATYPE _val4, _val8;                                                                                                                                                                             \
-      UDATATYPE _result = 0, _result_lshifted;                                                                                                                                                            \
-      UDATATYPE MAN_IN;                                                                                                                                                                                   \
-      if(man_bits <= 32)                                                                                                                                                                                  \
-      {                                                                                                                                                                                                   \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(32, man_bits);                                                                                                                                 \
-         BIT_RESIZE(MAN_IN, 32);                                                                                                                                                                          \
-      }                                                                                                                                                                                                   \
-      else                                                                                                                                                                                                \
-      {                                                                                                                                                                                                   \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(64, man_bits);                                                                                                                                 \
-      }                                                                                                                                                                                                   \
-      _result_lshifted = MAN_IN;                                                                                                                                                                          \
-      _result_5 = man_bits <= 32 || SELECT_RANGE(MAN_IN, 63, 32) == 0;                                                                                                                                    \
-      _result_lshifted = _result_5 ? (_result_lshifted << 32) : _result_lshifted;                                                                                                                         \
-      _result_4 = (_result_5 ? SELECT_RANGE(MAN_IN, 31, 16) : SELECT_RANGE(MAN_IN, 63, 48)) == 0;                                                                                                         \
-      _result_lshifted = _result_4 ? _result_lshifted << 16 : _result_lshifted;                                                                                                                           \
-      _result_3 = (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56))) == 0;                \
-      _result_lshifted = _result_3 ? _result_lshifted << 8 : _result_lshifted;                                                                                                                            \
-      _result_2 = (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 4) : SELECT_RANGE(MAN_IN, 39, 36)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 20) : SELECT_RANGE(MAN_IN, 55, 52))) :        \
-                               (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 12) : SELECT_RANGE(MAN_IN, 47, 44)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 28) : SELECT_RANGE(MAN_IN, 63, 60)))) == 0; \
-      _result_lshifted = _result_2 ? _result_lshifted << 4 : _result_lshifted;                                                                                                                            \
-      _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 0) : SELECT_RANGE(MAN_IN, 39, 32)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 16) : SELECT_RANGE(MAN_IN, 55, 48))) :             \
-                          (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56)));             \
-      _val4 = _result_2 ? _val8 & 15 : (_val8 >> 4) & 15;                                                                                                                                                 \
-      _result_1 = _val4 >> 2 == 0;                                                                                                                                                                        \
-      _result_lshifted = _result_1 ? _result_lshifted << 2 : _result_lshifted;                                                                                                                            \
-      _result_0 = _result_1 ? (~((_val4 & 2) >> 1)) & 1 : (~((_val4 & 8) >> 3)) & 1;                                                                                                                      \
-      _result_lshifted = _result_0 ? _result_lshifted << 1 : _result_lshifted;                                                                                                                            \
-      if(man_bits <= 32)                                                                                                                                                                                  \
-      {                                                                                                                                                                                                   \
-         VECTORIZE_VALUE(_result, 5)                                                                                                                                                                      \
-         COUNT = _result;                                                                                                                                                                                 \
-      }                                                                                                                                                                                                   \
-      else                                                                                                                                                                                                \
-      {                                                                                                                                                                                                   \
-         VECTORIZE_VALUE(_result, 6)                                                                                                                                                                      \
-         COUNT = _result;                                                                                                                                                                                 \
-      }                                                                                                                                                                                                   \
-      SHIFTED = _result_lshifted >> (BOOST_PP_SUB(64, man_bits));                                                                                                                                         \
-      BIT_RESIZE(COUNT, CEIL_LOG2(man_bits));                                                                                                                                                             \
+#define count_leading_zero_lshift_macro(man_bits, MAN_IN_ORIG, COUNT, SHIFTED)                                        \
+   {                                                                                                                  \
+      BOOLTYPE _result_5 = 0;                                                                                         \
+      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                                 \
+      UDATATYPE _val4, _val8;                                                                                         \
+      UDATATYPE _result = 0, _result_lshifted;                                                                        \
+      UDATATYPE MAN_IN;                                                                                               \
+      if(man_bits <= 32)                                                                                              \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(32, man_bits);                                             \
+         BIT_RESIZE(MAN_IN, 32);                                                                                      \
+      }                                                                                                               \
+      else                                                                                                            \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(64, man_bits);                                             \
+      }                                                                                                               \
+      _result_lshifted = MAN_IN;                                                                                      \
+      _result_5 = man_bits <= 32 || SELECT_RANGE(MAN_IN, 63, 32) == 0;                                                \
+      _result_lshifted = _result_5 ? (_result_lshifted << 32) : _result_lshifted;                                     \
+      _result_4 = (_result_5 ? SELECT_RANGE(MAN_IN, 31, 16) : SELECT_RANGE(MAN_IN, 63, 48)) == 0;                     \
+      _result_lshifted = _result_4 ? _result_lshifted << 16 : _result_lshifted;                                       \
+      _result_3 = (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) :             \
+                               (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56))) == 0;       \
+      _result_lshifted = _result_3 ? _result_lshifted << 8 : _result_lshifted;                                        \
+      _result_2 =                                                                                                     \
+          (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 4) : SELECT_RANGE(MAN_IN, 39, 36)) :         \
+                                    (_result_5 ? SELECT_RANGE(MAN_IN, 23, 20) : SELECT_RANGE(MAN_IN, 55, 52))) :      \
+                       (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 12) : SELECT_RANGE(MAN_IN, 47, 44)) :       \
+                                    (_result_5 ? SELECT_RANGE(MAN_IN, 31, 28) : SELECT_RANGE(MAN_IN, 63, 60)))) == 0; \
+      _result_lshifted = _result_2 ? _result_lshifted << 4 : _result_lshifted;                                        \
+      _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 0) : SELECT_RANGE(MAN_IN, 39, 32)) :      \
+                                       (_result_5 ? SELECT_RANGE(MAN_IN, 23, 16) : SELECT_RANGE(MAN_IN, 55, 48))) :   \
+                          (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) :     \
+                                       (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56)));    \
+      _val4 = _result_2 ? _val8 & 15 : (_val8 >> 4) & 15;                                                             \
+      _result_1 = _val4 >> 2 == 0;                                                                                    \
+      _result_lshifted = _result_1 ? _result_lshifted << 2 : _result_lshifted;                                        \
+      _result_0 = _result_1 ? (~((_val4 & 2) >> 1)) & 1 : (~((_val4 & 8) >> 3)) & 1;                                  \
+      _result_lshifted = _result_0 ? _result_lshifted << 1 : _result_lshifted;                                        \
+      if(man_bits <= 32)                                                                                              \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 5)                                                                                  \
+         COUNT = _result;                                                                                             \
+      }                                                                                                               \
+      else                                                                                                            \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 6)                                                                                  \
+         COUNT = _result;                                                                                             \
+      }                                                                                                               \
+      SHIFTED = _result_lshifted >> (BOOST_PP_SUB(64, man_bits));                                                     \
+      BIT_RESIZE(COUNT, CEIL_LOG2(man_bits));                                                                         \
    }
 
-#define count_leading_zero_lshift_runtime_macro(man_bits, MAN_IN_ORIG, COUNT, SHIFTED)                                                                                                                                     \
-   {                                                                                                                                                                                                                       \
-      BOOLTYPE _result_5 = 0;                                                                                                                                                                                              \
-      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                                                                                                                                      \
-      UDATATYPE _val4, _val8, __count_bits;                                                                                                                                                                                \
-      UDATATYPE _result = 0, _result_lshifted;                                                                                                                                                                             \
-      UDATATYPE MAN_IN;                                                                                                                                                                                                    \
-      if(man_bits <= 1)                                                                                                                                                                                                    \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (1 - man_bits);                                                                                                                                                              \
-         BIT_RESIZE(MAN_IN, 1);                                                                                                                                                                                            \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 2)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (2 - man_bits);                                                                                                                                                              \
-         BIT_RESIZE(MAN_IN, 2);                                                                                                                                                                                            \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 4)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (4 - man_bits);                                                                                                                                                              \
-         BIT_RESIZE(MAN_IN, 4);                                                                                                                                                                                            \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 8)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (8 - man_bits);                                                                                                                                                              \
-         BIT_RESIZE(MAN_IN, 8);                                                                                                                                                                                            \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 16)                                                                                                                                                                                              \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (16 - man_bits);                                                                                                                                                             \
-         BIT_RESIZE(MAN_IN, 16);                                                                                                                                                                                           \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 32)                                                                                                                                                                                              \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (32 - man_bits);                                                                                                                                                             \
-         BIT_RESIZE(MAN_IN, 32);                                                                                                                                                                                           \
-      }                                                                                                                                                                                                                    \
-      else                                                                                                                                                                                                                 \
-      {                                                                                                                                                                                                                    \
-         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (64 - man_bits);                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      _result_lshifted = MAN_IN;                                                                                                                                                                                           \
-      _result_5 = man_bits <= 32 || SELECT_RANGE(MAN_IN, 63, 32) == 0;                                                                                                                                                     \
-      _result_lshifted = _result_5 ? (_result_lshifted << 32) : _result_lshifted;                                                                                                                                          \
-      _result_4 = man_bits <= 16 || (_result_5 ? SELECT_RANGE(MAN_IN, 31, 16) : SELECT_RANGE(MAN_IN, 63, 48)) == 0;                                                                                                        \
-      _result_lshifted = _result_4 ? _result_lshifted << 16 : _result_lshifted;                                                                                                                                            \
-      _result_3 = man_bits <= 8 || (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56))) == 0;                \
-      _result_lshifted = _result_3 ? _result_lshifted << 8 : _result_lshifted;                                                                                                                                             \
-      _result_2 = man_bits <= 4 || (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 4) : SELECT_RANGE(MAN_IN, 39, 36)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 20) : SELECT_RANGE(MAN_IN, 55, 52))) :        \
-                                                (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 12) : SELECT_RANGE(MAN_IN, 47, 44)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 28) : SELECT_RANGE(MAN_IN, 63, 60)))) == 0; \
-      _result_lshifted = _result_2 ? _result_lshifted << 4 : _result_lshifted;                                                                                                                                             \
-      _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 0) : SELECT_RANGE(MAN_IN, 39, 32)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 16) : SELECT_RANGE(MAN_IN, 55, 48))) :                              \
-                          (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56)));                              \
-      _val4 = _result_2 ? _val8 & 15 : (_val8 >> 4) & 15;                                                                                                                                                                  \
-      _result_1 = man_bits <= 2 || _val4 >> 2 == 0;                                                                                                                                                                        \
-      _result_lshifted = _result_1 ? _result_lshifted << 2 : _result_lshifted;                                                                                                                                             \
-      _result_0 = man_bits <= 1 || _result_1 ? (~((_val4 & 2) >> 1)) & 1 : (~((_val4 & 8) >> 3)) & 1;                                                                                                                      \
-      _result_lshifted = _result_0 ? _result_lshifted << 1 : _result_lshifted;                                                                                                                                             \
-      if(man_bits <= 1)                                                                                                                                                                                                    \
-      {                                                                                                                                                                                                                    \
-         COUNT = 0;                                                                                                                                                                                                        \
-         BIT_RESIZE(COUNT, 1);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 2)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 1)                                                                                                                                                                                       \
-         COUNT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(COUNT, 1);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 4)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 2)                                                                                                                                                                                       \
-         COUNT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(COUNT, 2);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 8)                                                                                                                                                                                               \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 3)                                                                                                                                                                                       \
-         COUNT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(COUNT, 3);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 16)                                                                                                                                                                                              \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 4)                                                                                                                                                                                       \
-         COUNT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(COUNT, 4);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else if(man_bits <= 32)                                                                                                                                                                                              \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 5)                                                                                                                                                                                       \
-         COUNT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(COUNT, 5);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      else                                                                                                                                                                                                                 \
-      {                                                                                                                                                                                                                    \
-         VECTORIZE_VALUE(_result, 6)                                                                                                                                                                                       \
-         COUNT = _result;                                                                                                                                                                                                  \
-         BIT_RESIZE(COUNT, 6);                                                                                                                                                                                             \
-      }                                                                                                                                                                                                                    \
-      SHIFTED = _result_lshifted >> (64 - man_bits);                                                                                                                                                                       \
+#define count_leading_zero_lshift_runtime_macro(man_bits, MAN_IN_ORIG, COUNT, SHIFTED)                                \
+   {                                                                                                                  \
+      BOOLTYPE _result_5 = 0;                                                                                         \
+      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                                 \
+      UDATATYPE _val4, _val8, __count_bits;                                                                           \
+      UDATATYPE _result = 0, _result_lshifted;                                                                        \
+      UDATATYPE MAN_IN;                                                                                               \
+      if(man_bits <= 1)                                                                                               \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (1 - man_bits);                                                         \
+         BIT_RESIZE(MAN_IN, 1);                                                                                       \
+      }                                                                                                               \
+      else if(man_bits <= 2)                                                                                          \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (2 - man_bits);                                                         \
+         BIT_RESIZE(MAN_IN, 2);                                                                                       \
+      }                                                                                                               \
+      else if(man_bits <= 4)                                                                                          \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (4 - man_bits);                                                         \
+         BIT_RESIZE(MAN_IN, 4);                                                                                       \
+      }                                                                                                               \
+      else if(man_bits <= 8)                                                                                          \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (8 - man_bits);                                                         \
+         BIT_RESIZE(MAN_IN, 8);                                                                                       \
+      }                                                                                                               \
+      else if(man_bits <= 16)                                                                                         \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (16 - man_bits);                                                        \
+         BIT_RESIZE(MAN_IN, 16);                                                                                      \
+      }                                                                                                               \
+      else if(man_bits <= 32)                                                                                         \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (32 - man_bits);                                                        \
+         BIT_RESIZE(MAN_IN, 32);                                                                                      \
+      }                                                                                                               \
+      else                                                                                                            \
+      {                                                                                                               \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << (64 - man_bits);                                                        \
+      }                                                                                                               \
+      _result_lshifted = MAN_IN;                                                                                      \
+      _result_5 = man_bits <= 32 || SELECT_RANGE(MAN_IN, 63, 32) == 0;                                                \
+      _result_lshifted = _result_5 ? (_result_lshifted << 32) : _result_lshifted;                                     \
+      _result_4 = man_bits <= 16 || (_result_5 ? SELECT_RANGE(MAN_IN, 31, 16) : SELECT_RANGE(MAN_IN, 63, 48)) == 0;   \
+      _result_lshifted = _result_4 ? _result_lshifted << 16 : _result_lshifted;                                       \
+      _result_3 = man_bits <= 8 ||                                                                                    \
+                  (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) :             \
+                               (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56))) == 0;       \
+      _result_lshifted = _result_3 ? _result_lshifted << 8 : _result_lshifted;                                        \
+      _result_2 =                                                                                                     \
+          man_bits <= 4 ||                                                                                            \
+          (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 4) : SELECT_RANGE(MAN_IN, 39, 36)) :         \
+                                    (_result_5 ? SELECT_RANGE(MAN_IN, 23, 20) : SELECT_RANGE(MAN_IN, 55, 52))) :      \
+                       (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 12) : SELECT_RANGE(MAN_IN, 47, 44)) :       \
+                                    (_result_5 ? SELECT_RANGE(MAN_IN, 31, 28) : SELECT_RANGE(MAN_IN, 63, 60)))) == 0; \
+      _result_lshifted = _result_2 ? _result_lshifted << 4 : _result_lshifted;                                        \
+      _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 0) : SELECT_RANGE(MAN_IN, 39, 32)) :      \
+                                       (_result_5 ? SELECT_RANGE(MAN_IN, 23, 16) : SELECT_RANGE(MAN_IN, 55, 48))) :   \
+                          (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) :     \
+                                       (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56)));    \
+      _val4 = _result_2 ? _val8 & 15 : (_val8 >> 4) & 15;                                                             \
+      _result_1 = man_bits <= 2 || _val4 >> 2 == 0;                                                                   \
+      _result_lshifted = _result_1 ? _result_lshifted << 2 : _result_lshifted;                                        \
+      _result_0 = man_bits <= 1 || _result_1 ? (~((_val4 & 2) >> 1)) & 1 : (~((_val4 & 8) >> 3)) & 1;                 \
+      _result_lshifted = _result_0 ? _result_lshifted << 1 : _result_lshifted;                                        \
+      if(man_bits <= 1)                                                                                               \
+      {                                                                                                               \
+         COUNT = 0;                                                                                                   \
+         BIT_RESIZE(COUNT, 1);                                                                                        \
+      }                                                                                                               \
+      else if(man_bits <= 2)                                                                                          \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 1)                                                                                  \
+         COUNT = _result;                                                                                             \
+         BIT_RESIZE(COUNT, 1);                                                                                        \
+      }                                                                                                               \
+      else if(man_bits <= 4)                                                                                          \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 2)                                                                                  \
+         COUNT = _result;                                                                                             \
+         BIT_RESIZE(COUNT, 2);                                                                                        \
+      }                                                                                                               \
+      else if(man_bits <= 8)                                                                                          \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 3)                                                                                  \
+         COUNT = _result;                                                                                             \
+         BIT_RESIZE(COUNT, 3);                                                                                        \
+      }                                                                                                               \
+      else if(man_bits <= 16)                                                                                         \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 4)                                                                                  \
+         COUNT = _result;                                                                                             \
+         BIT_RESIZE(COUNT, 4);                                                                                        \
+      }                                                                                                               \
+      else if(man_bits <= 32)                                                                                         \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 5)                                                                                  \
+         COUNT = _result;                                                                                             \
+         BIT_RESIZE(COUNT, 5);                                                                                        \
+      }                                                                                                               \
+      else                                                                                                            \
+      {                                                                                                               \
+         VECTORIZE_VALUE(_result, 6)                                                                                  \
+         COUNT = _result;                                                                                             \
+         BIT_RESIZE(COUNT, 6);                                                                                        \
+      }                                                                                                               \
+      SHIFTED = _result_lshifted >> (64 - man_bits);                                                                  \
    }
 
 #define count_leading_zero_lshift64_macro(man_bits, MAN_IN_ORIG, COUNT, SHIFTED)                              \

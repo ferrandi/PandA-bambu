@@ -169,12 +169,6 @@ class lut_transformation : public FunctionFrontendFlowStep
     */
    void ComputeRelationships(DesignFlowStepSet& relationship,
                              const DesignFlowStep::RelationshipType relationship_type) override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 };
 
 #endif
