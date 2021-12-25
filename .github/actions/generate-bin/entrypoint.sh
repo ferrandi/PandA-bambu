@@ -115,12 +115,9 @@ echo "::group::Package Appimage"
 echo "Inflating libraries..."
 mkdir dist/lib
 mkdir dist/lib/x86_64-linux-gnu/
-cp /lib/x86_64-linux-gnu/libtinfo.so.5.* dist/lib/x86_64-linux-gnu/
-ln -s /lib/x86_64-linux-gnu/libtinfo.so.5.* dist/lib/x86_64-linux-gnu/libtinfo.so.5
-cp /usr/lib/libbdd.so.0.0.0 dist/usr/lib/libbdd.so.0.0.0
-cd dist/usr/lib/
-ln -s libbdd.so.0.0.0 libbdd.so.0
-cd ../../..
+cp -d /lib/x86_64-linux-gnu/libtinfo.so* dist/lib/x86_64-linux-gnu/
+cp -d /usr/lib/x86_64-linux-gnu/libicu*.so* dist/lib/x86_64-linux-gnu/
+cp -d /usr/lib/libbdd.so* dist/usr/lib/
 
 echo "Inflating metadata..."
 cp style/img/panda.png.in dist/bambu.png
