@@ -256,10 +256,10 @@
 #define OPT_SIMULATE (1 + OPT_SILP)
 #define OPT_SKIP_PIPE_PARAMETER (1 + OPT_SIMULATE)
 #define OPT_SOFT_FLOAT (1 + OPT_SKIP_PIPE_PARAMETER)
-#define OPT_SOFTFLOAT_SUBNORMAL (1 + OPT_SOFT_FLOAT)
-#define OPT_SOFTFLOAT_NOROUNDING (1 + OPT_SOFTFLOAT_SUBNORMAL)
-#define OPT_SOFTFLOAT_NOEXCEPTION (1 + OPT_SOFTFLOAT_NOROUNDING)
-#define OPT_SOFT_FP (1 + OPT_SOFTFLOAT_NOEXCEPTION)
+#define OPT_FP_SUB (1 + OPT_SOFT_FLOAT)
+#define OPT_FP_RND (1 + OPT_FP_SUB)
+#define OPT_FP_EXC (1 + OPT_FP_RND)
+#define OPT_SOFT_FP (1 + OPT_FP_EXC)
 #define OPT_STG (1 + OPT_SOFT_FP)
 #define OPT_SPECULATIVE (1 + OPT_STG)
 #define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_SPECULATIVE)
@@ -756,37 +756,41 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --no-iob\n"
       << "        Disconnect primary ports from the IOB (the default is to connect\n"
       << "        primary input and outpur ports to IOBs).\n\n"
-      << "    --soft-float\n"
+      << "    --soft-float (default)\n"
       << "        Enable the soft-based implementation of floating-point operations.\n"
       << "        Bambu uses as default a faithfully rounded version of softfloat with rounding mode\n"
-      << "        equal to round to nearest even.\n\n"
-      << "        This is the default for bambu.\n\n"
+      << "        equal to round to nearest even. Subnormal numbers are disabled by default.\n"
+      << "        Default FP format are e8m23b-127nih and e11m52b-1023nih for single and double \n"
+      << "        precision floating-point types respectively.\n\n"
 #if HAVE_FLOPOCO
       << "    --flopoco\n"
       << "        Enable the flopoco-based implementation of floating-point operations.\n\n"
 #endif
-      << "    --softfloat-subnormal\n"
-      << "        Enable the soft-based implementation of floating-point operations with\n"
-      << "        subnormals support.\n\n"
-      << "    --softfloat-noexception\n"
-      << "        Enable the soft-base implementation of floating-point operations without\n"
-      << "        infinity and NaN handling.\n\n"
-      << "    --softfloat-norounding\n"
-      << "        Enable the soft-based implementation of floating-point operations without rounding.\n\n"
       << "    --libm-std-rounding\n"
       << "        Enable the use of classical libm. This library combines a customized version of \n"
       << "        glibc, newlib and musl libm implementations into a single libm library synthetizable\n"
       << "        with bambu.\n"
       << "        Without this option, Bambu uses as default a faithfully rounded version of libm.\n\n"
       << "    --soft-fp\n"
-      << "        Enable the use of soft_fp GCC library instead of bambu customized version of John R. Hauser "
-         "softfloat library.\n\n"
+      << "        Enable the use of soft_fp GCC library instead of bambu customized version of softfloat library.\n\n"
       << "    --max-ulp\n"
       << "        Define the maximal ULP (Unit in the last place, i.e., is the spacing\n"
       << "        between floating-point numbers) accepted.\n\n"
-      << "    --fp-format=<func_name>*<exp_bits>*<frac_bits>*<exp_bias>[*<round>][*<nan>][*<one>][*<sub>][*<sign>]\n"
+      << "    --fp-subnormal\n"
+      << "        Enable the soft-based implementation of floating-point operations with\n"
+      << "        subnormals support.\n\n"
+      << "    --fp-exception-mode=<ieee|saturation|overflow>\n"
+      << "        Set the soft-based exception handling mode:\n"
+      << "              ieee    - IEEE754 standard exceptions (default)\n"
+      << "           saturation - Inf is replaced with max value, Nan becomes undefined behaviour\n"
+      << "            overflow  - Inf and Nan results in undefined behaviour\n\n"
+      << "    --fp-rounding-mode=<nearest_even|truncate>\n"
+      << "        Set the soft-based rounding handling mode:\n"
+      << "           nearest_even - IEEE754 standard rounding mode (default)\n"
+      << "              truncate  - No rounding is applied\n\n"
+      << "    --fp-format=<func_name>*e<exp_bits>m<frac_bits>b<exp_bias><rnd_mode><exc_mode><?spec><?sign>\n"
       << "        Define arbitrary precision floating-point format by function (use comma separated\n"
-      << "        list for multiple definitions).\n"
+      << "        list for multiple definitions). (i.e.: e8m27b-127nihs represent IEEE754 single precision FP)\n"
       << "           func_name - Set arbitrary floating-point format for a specific function (using\n"
       << "                       @ symbol here will resolve to the top function)\n"
       << "                       (Arbitrary floating-point format will apply to specified function\n"
@@ -794,11 +798,20 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            exp_bits - Number of bits used by the exponent\n"
       << "           frac_bits - Number of bits used by the fractional value\n"
       << "            exp_bias - Bias applied to the unsigned value represented by the exponent bits\n"
-      << "             round   - Floating-point operations for this type will include rounding (default=1)\n"
-      << "              nan    - Floating-point operations for this type can result in NaN/Inf/-Inf (default=1)\n"
-      << "              one    - Floating-point representation will exploit hidden-one convention (default=1)\n"
-      << "              sub    - Floating-point representation will exploit subnormals (default=0)\n"
-      << "           sign_bit  - Set sign bit to a fixed value (1 or 0) or leave it data dependant (default=U)\n\n"
+      << "            rnd_mode - Rounding mode (exclusive option):\n"
+      << "                          n - nearest_even: IEEE754 standard rounding mode\n"
+      << "                          t - truncate    : no rounding is applied\n"
+      << "            exc_mode - Exception mode (exclusive option):\n"
+      << "                          i - ieee      : IEEE754 standard exceptions\n"
+      << "                          a - saturation: Inf is replaced with max value, Nan becomes undefined behaviour\n"
+      << "                          o - overflow  : Inf and Nan results in undefined behaviour\n"
+      << "              spec   - Floating-point specialization string (multiple choice):\n"
+      << "                          h - hidden one: IEEE754 standard representation with hidden one\n"
+      << "                          s - subnormals: IEEE754 subnormal numbers"
+      << "              sign   - Static sign representation (exclusive option):\n"
+      << "                            - IEEE754 dynamic sign is used if omitted\n"
+      << "                          1 - all values are considered as negative numbers\n"
+      << "                          0 - all values are considered as positive numbers\n\n"
       << "    --fp-format=inline-math\n"
       << "        The \"inline-math\" flag may be added to fp-format option to force floating-point\n"
       << "        arithmetic operators always inline policy\n\n"
@@ -1216,9 +1229,9 @@ int BambuParameter::Exec()
 #if HAVE_FLOPOCO
       {"flopoco", no_argument, nullptr, OPT_FLOPOCO},
 #endif
-      {"softfloat-subnormal", no_argument, nullptr, OPT_SOFTFLOAT_SUBNORMAL},
-      {"softfloat-norounding", no_argument, nullptr, OPT_SOFTFLOAT_NOROUNDING},
-      {"softfloat-noexception", no_argument, nullptr, OPT_SOFTFLOAT_NOEXCEPTION},
+      {"fp-subnormal", no_argument, nullptr, OPT_FP_SUB},
+      {"fp-rounding-mode", required_argument, nullptr, OPT_FP_RND},
+      {"fp-exception-mode", required_argument, nullptr, OPT_FP_EXC},
       {"libm-std-rounding", no_argument, nullptr, OPT_LIBM_STD_ROUNDING},
       {"soft-fp", no_argument, nullptr, OPT_SOFT_FP},
       {"hls-div", optional_argument, nullptr, OPT_HLS_DIV},
@@ -2045,19 +2058,19 @@ int BambuParameter::Exec()
             break;
          }
 #endif
-         case OPT_SOFTFLOAT_SUBNORMAL:
+         case OPT_FP_SUB:
          {
-            setOption(OPT_softfloat_subnormal, true);
+            setOption(OPT_fp_subnormal, true);
             break;
          }
-         case OPT_SOFTFLOAT_NOROUNDING:
+         case OPT_FP_RND:
          {
-            setOption(OPT_softfloat_norounding, true);
+            setOption(OPT_fp_rounding_mode, std::string(optarg));
             break;
          }
-         case OPT_SOFTFLOAT_NOEXCEPTION:
+         case OPT_FP_EXC:
          {
-            setOption(OPT_softfloat_noexception, true);
+            setOption(OPT_fp_exception_mode, std::string(optarg));
             break;
          }
          case OPT_LIBM_STD_ROUNDING:
@@ -3857,7 +3870,7 @@ void BambuParameter::CheckParameters()
       {
          THROW_ERROR("--hls-fpdiv=SF requires --soft-fp option");
       }
-      else if(isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal))
+      else if(isOption(OPT_fp_subnormal) && getOption<bool>(OPT_fp_subnormal))
       {
          add_bambu_library("softfloat_subnormals");
       }
@@ -4463,7 +4476,7 @@ void BambuParameter::add_bambu_library(std::string lib)
 {
    auto preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
    std::string archive_files;
-   bool is_subnormals = isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal);
+   bool is_subnormals = isOption(OPT_fp_subnormal) && getOption<bool>(OPT_fp_subnormal);
    std::string VSuffix = "";
    if(is_subnormals && lib == "m")
    {

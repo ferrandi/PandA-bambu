@@ -48,6 +48,8 @@ these four paragraphs for those parts of this code that are retained.
 #define __float32 __bits32
 #define __float64 __bits64
 #define __float __bits64
+#define FLOAT_RND_TYPE __bits8
+#define FLOAT_EXC_TYPE __bits8
 #ifdef FLOATX80
 typedef struct
 {
@@ -118,24 +120,36 @@ void __float_raise(__int8);
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE integer-to-floating-point conversion routines.
 *----------------------------------------------------------------------------*/
-__float32 __int32_to_float32(__int32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __int16_to_float32(__int16, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __int8_to_float32(__int8, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __uint32_to_float32(__uint32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __uint16_to_float32(__uint16, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __uint8_to_float32(__uint8, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float64 __int32_to_float64(__int32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float64 __uint32_to_float64(__uint32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__float32 __int32_to_float32(__int32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                             __sbits8);
+__float32 __int16_to_float32(__int16, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                             __sbits8);
+__float32 __int8_to_float32(__int8, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                            __sbits8);
+__float32 __uint32_to_float32(__uint32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                              __sbits8);
+__float32 __uint16_to_float32(__uint16, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                              __sbits8);
+__float32 __uint8_to_float32(__uint8, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                             __sbits8);
+__float64 __int32_to_float64(__int32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                             __sbits8);
+__float64 __uint32_to_float64(__uint32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                              __sbits8);
 #ifdef FLOATX80
 __floatx80 __int32_to_floatx80_ieee(__int32);
 #endif
 #ifdef FLOAT128
 __float128 __int32_to_float128_ieee(__int32);
 #endif
-__float32 __int64_to_float32(__int64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __uint64_to_float32(__uint64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float64 __int64_to_float64(__int64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float64 __uint64_to_float64(__uint64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__float32 __int64_to_float32(__int64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                             __sbits8);
+__float32 __uint64_to_float32(__uint64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                              __sbits8);
+__float64 __int64_to_float64(__int64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                             __sbits8);
+__float64 __uint64_to_float64(__uint64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                              __sbits8);
 #ifdef FLOATX80
 __floatx80 __int64_to_floatx80_ieee(__int64);
 #endif
@@ -146,17 +160,19 @@ __float128 __int64_to_float128_ieee(__int64);
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE single-precision conversion routines.
 *----------------------------------------------------------------------------*/
-__int32 __float32_to_int32(__float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__int32 __float32_to_int32_round_to_zero(__float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag,
-                                         __sbits8);
-__uint32 __float32_to_uint32_round_to_zero(__float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag,
-                                           __sbits8);
-__int64 __float32_to_int64(__float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__int64 __float32_to_int64_round_to_zero(__float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag,
-                                         __sbits8);
-__uint64 __float32_to_uint64_round_to_zero(__float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag,
-                                           __sbits8);
-__float64 __float32_to_float64_ieee(__float32, __flag, __flag);
+__int32 __float32_to_int32(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                           __sbits8);
+__int32 __float32_to_int32_round_to_zero(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
+                                         __flag, __sbits8);
+__uint32 __float32_to_uint32_round_to_zero(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
+                                           __flag, __sbits8);
+__int64 __float32_to_int64(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                           __sbits8);
+__int64 __float32_to_int64_round_to_zero(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
+                                         __flag, __sbits8);
+__uint64 __float32_to_uint64_round_to_zero(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
+                                           __flag, __sbits8);
+__float64 __float32_to_float64_ieee(__float32, FLOAT_EXC_TYPE, __flag);
 #ifdef FLOATX80
 __floatx80 __float32_to_floatx80_ieee(__float32);
 #endif
@@ -174,17 +190,19 @@ __float32 __float32_round_to_int_ieee(__float32);
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE double-precision conversion routines.
 *----------------------------------------------------------------------------*/
-__int32 __float64_to_int32(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__int32 __float64_to_int32_round_to_zero(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag,
-                                         __sbits8);
-__uint32 __float64_to_uint32_round_to_zero(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag,
-                                           __sbits8);
-__int64 __float64_to_int64(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__int64 __float64_to_int64_round_to_zero(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag,
-                                         __sbits8);
-__uint64 __float64_to_uint64_round_to_zero(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag,
-                                           __sbits8);
-__float32 __float64_to_float32_ieee(__float64, __flag, __flag);
+__int32 __float64_to_int32(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                           __sbits8);
+__int32 __float64_to_int32_round_to_zero(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
+                                         __flag, __sbits8);
+__uint32 __float64_to_uint32_round_to_zero(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
+                                           __flag, __sbits8);
+__int64 __float64_to_int64(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                           __sbits8);
+__int64 __float64_to_int64_round_to_zero(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
+                                         __flag, __sbits8);
+__uint64 __float64_to_uint64_round_to_zero(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
+                                           __flag, __sbits8);
+__float32 __float64_to_float32_ieee(__float64, FLOAT_EXC_TYPE, __flag);
 #ifdef FLOATX80
 __floatx80 __float64_to_floatx80_ieee(__float64);
 #endif
@@ -195,24 +213,36 @@ __float128 __float64_to_float128_ieee(__float64);
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE arbitrary precision conversion routines.
 *----------------------------------------------------------------------------*/
-__float __float_cast(__float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8, __bits8, __bits8,
-                     __int32, __flag, __flag, __flag, __flag, __sbits8);
+__float __float_cast(__float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag, __sbits8,
+                     __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag, __sbits8);
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE arbitrary precision operations.
 *----------------------------------------------------------------------------*/
-__float __float_add(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float __float_sub(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float __float_mul(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float __float_divSRT4(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float __float_divG(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float_eq(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float_le(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float_lt(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float_ge(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float_gt(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float_is_signaling_nan(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__flag __float_ltgt_quiet(__float, __float, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
+__float __float_add(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                    __sbits8);
+__float __float_sub(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                    __sbits8);
+__float __float_mul(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                    __sbits8);
+__float __float_divSRT4(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                        __sbits8);
+__float __float_divG(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                     __sbits8);
+__flag __float_eq(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                  __sbits8);
+__flag __float_le(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                  __sbits8);
+__flag __float_lt(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                  __sbits8);
+__flag __float_ge(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                  __sbits8);
+__flag __float_gt(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                  __sbits8);
+__flag __float_is_signaling_nan(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                                __sbits8);
+__flag __float_ltgt_quiet(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
+                          __sbits8);
 
 #ifdef FLOATX80
 
