@@ -451,8 +451,8 @@ if BUILD_SIMIT
 endif
 
 if BUILD_FLOPOCO
-   SUBDIRS += flopoco
-   DIST_SUBDIRS += sollya flopoco libfplll-4.0.3
+   SUBDIRS +=  libfplll-4.0.3 sollya flopoco
+   DIST_SUBDIRS += libfplll-4.0.3 sollya flopoco
 endif
 
 if BUILD_VFLIB
