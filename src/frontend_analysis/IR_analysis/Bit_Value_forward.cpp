@@ -1820,6 +1820,10 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          break;
       }
       // Unary expressions
+      case fix_ceil_expr_K:
+      case fix_floor_expr_K:
+      case fix_round_expr_K:
+      case fix_trunc_expr_K:
       case imagpart_expr_K:
       case realpart_expr_K:
       // Binary expressions
@@ -1877,10 +1881,6 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case cleanup_point_expr_K:
       case conj_expr_K:
       case exit_expr_K:
-      case fix_ceil_expr_K:
-      case fix_floor_expr_K:
-      case fix_round_expr_K:
-      case fix_trunc_expr_K:
       case float_expr_K:
       case indirect_ref_K:
       case misaligned_indirect_ref_K:
