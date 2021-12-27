@@ -28,7 +28,7 @@ libm-tests/test-float.c --top-fname=isfinite_test --benchmark-name=isfinitef --g
 libm-tests/test-float.c --top-fname=isnormal_test --benchmark-name=isnormalf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.isnormal.xml
 libm-tests/test-float.c --top-fname=ldexpf_test --benchmark-name=ldexpf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.ldexp.xml
 libm-tests/test-float.c --top-fname=lgammaf_test --benchmark-name=lgammaf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.lgamma.xml
-libm-tests/test-float.c --top-fname=log10f_test --benchmark-name=log10f --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log10.xml
+libm-tests/test-float.c --top-fname=log10f_test --benchmark-name=log10f --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log10.xml --max-ulp=2
 libm-tests/test-float.c --top-fname=log1pf_test --benchmark-name=log1pf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log1p.xml
 libm-tests/test-float.c --top-fname=logbf_test --benchmark-name=logbf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.logb.xml
 libm-tests/test-float.c --top-fname=logf_test --benchmark-name=logf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log.xml
