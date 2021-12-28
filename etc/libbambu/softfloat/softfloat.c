@@ -3338,14 +3338,14 @@ static __FORCE_INLINE __float __addsubFloat(__float a, __float b, __flag bSign, 
    _Bool bExp_null = bExp == 0;
    aExpMax = aExp == ((1ULL << __exp_bits) - 1);
    a_c_zero = aExp_null && aSig_null;
-   a_c_zero = __subnorm ? aExp_null : a_c_zero;
+   a_c_zero = (__subnorm || __exc != FLOAT_EXC_SAT) ? aExp_null : a_c_zero;
    a_c_nan = aExpMax && !aSig_null;
    a_c_nan = (__exc == FLOAT_EXC_STD) ? a_c_nan : 0;
    a_c_normal = !a_c_zero /*&& !aExpMax*/; /// not really needed the second condition
    a_c_normal = __one ? a_c_normal : 0;
    bExpMax = bExp == ((1ULL << __exp_bits) - 1);
    b_c_zero = bExp_null && bSig_null;
-   b_c_zero = __subnorm ? bExp_null : b_c_zero;
+   b_c_zero = (__subnorm || __exc != FLOAT_EXC_SAT) ? bExp_null : b_c_zero;
    b_c_nan = bExpMax && !bSig_null;
    b_c_nan = (__exc == FLOAT_EXC_STD) ? b_c_nan : 0;
    b_c_normal = !b_c_zero /*&& !bExpMax*/; /// not really needed the second condition
@@ -3562,7 +3562,7 @@ __float __float_mul(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
 
    aExpMax = aExp == ((1ULL << __exp_bits) - 1);
    a_c_zero = (aExp == 0) && (aSig == 0);
-   a_c_zero = __subnorm ? (aExp == 0) : a_c_zero;
+   a_c_zero = (__subnorm || __exc != FLOAT_EXC_SAT) ? (aExp == 0) : a_c_zero;
    a_c_inf = aExpMax && aSig == 0;
    a_c_inf = (__exc == FLOAT_EXC_STD) ? a_c_inf : 0;
    a_c_nan = aExpMax && aSig != 0;
@@ -3574,7 +3574,7 @@ __float __float_mul(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
 
    bExpMax = bExp == ((1ULL << __exp_bits) - 1);
    b_c_zero = (bExp == 0) && (bSig == 0);
-   b_c_zero = __subnorm ? (bExp == 0) : b_c_zero;
+   b_c_zero = (__subnorm || __exc != FLOAT_EXC_SAT) ? (bExp == 0) : b_c_zero;
    b_c_inf = bExpMax && bSig == 0;
    b_c_inf = (__exc == FLOAT_EXC_STD) ? b_c_inf : 0;
    b_c_nan = bExpMax && bSig != 0;
@@ -3833,7 +3833,7 @@ __float __float_divSRT4(__float a, __float b, __bits8 __exp_bits, __bits8 __frac
    _Bool bSig_null = bSig == 0;
 
    a_c_zero = aExp_null && aSig_null;
-   a_c_zero = __subnorm ? aExp_null : a_c_zero;
+   a_c_zero = (__subnorm || __exc != FLOAT_EXC_SAT) ? aExp_null : a_c_zero;
    a_c_inf = aExpMax && aSig_null;
    a_c_inf = (__exc == FLOAT_EXC_STD) ? a_c_inf : 0;
    a_c_nan = aExpMax && !aSig_null;
@@ -3844,7 +3844,7 @@ __float __float_divSRT4(__float a, __float b, __bits8 __exp_bits, __bits8 __frac
          ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
 
    b_c_zero = (__exc != FLOAT_EXC_OVF) && bExp_null && bSig_null;
-   b_c_zero = __subnorm ? bExp_null : b_c_zero;
+   b_c_zero = (__subnorm || __exc != FLOAT_EXC_SAT) ? bExp_null : b_c_zero;
    b_c_inf = bExpMax && bSig_null;
    b_c_inf = (__exc == FLOAT_EXC_STD) ? b_c_inf : 0;
    b_c_nan = bExpMax && !bSig_null;
@@ -3999,7 +3999,7 @@ __float __float_divG(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bi
    _Bool bSig_null = bSig == 0;
 
    a_c_zero = aExp_null && aSig_null;
-   a_c_zero = __subnorm ? a_c_zero : aExp_null;
+   a_c_zero = (__subnorm || __exc != FLOAT_EXC_SAT) ? a_c_zero : aExp_null;
    a_c_inf = aExpMax && aSig_null;
    a_c_inf = (__exc == FLOAT_EXC_STD) ? a_c_inf : 0;
    a_c_nan = aExpMax && !aSig_null;
@@ -4010,7 +4010,7 @@ __float __float_divG(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bi
          ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
 
    b_c_zero = (__exc != FLOAT_EXC_OVF) && bExp_null && bSig_null;
-   b_c_zero = __subnorm ? b_c_zero : bExp_null;
+   b_c_zero = (__subnorm || __exc != FLOAT_EXC_SAT) ? b_c_zero : bExp_null;
    b_c_inf = bExpMax && bSig_null;
    b_c_inf = (__exc == FLOAT_EXC_STD) ? b_c_inf : 0;
    b_c_nan = bExpMax && !bSig_null;

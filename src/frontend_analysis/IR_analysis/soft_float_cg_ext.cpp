@@ -2795,15 +2795,14 @@ FloatFormatRef FloatFormat::FromString(std::string ff_str)
    boost::cmatch what;
    if(boost::regex_search(ff_str.data(), what, fp_format))
    {
-      const auto e = boost::lexical_cast<uint8_t>(
+      const auto e = boost::lexical_cast<int>(
           what[FP_FORMAT_EXP].first, static_cast<size_t>(what[FP_FORMAT_EXP].second - what[FP_FORMAT_EXP].first));
-      const auto m = boost::lexical_cast<uint8_t>(
+      const auto m = boost::lexical_cast<int>(
           what[FP_FORMAT_SIG].first, static_cast<size_t>(what[FP_FORMAT_SIG].second - what[FP_FORMAT_SIG].first));
       const auto b = boost::lexical_cast<int32_t>(
           what[FP_FORMAT_BIAS].first, static_cast<size_t>(what[FP_FORMAT_BIAS].second - what[FP_FORMAT_BIAS].first));
-      FloatFormatRef ff(new FloatFormat(e, m, b));
-      const auto rnd_mode = boost::lexical_cast<char>(what[FP_FORMAT_RND].first, 1);
-      switch(rnd_mode)
+      FloatFormatRef ff(new FloatFormat(static_cast<uint8_t>(e), static_cast<uint8_t>(m), b));
+      switch(*what[FP_FORMAT_RND].first)
       {
          case 't':
             ff->rounding_mode = FPRounding_Truncate;
@@ -2814,8 +2813,7 @@ FloatFormatRef FloatFormat::FromString(std::string ff_str)
          default:
             break;
       }
-      const auto exc_mode = boost::lexical_cast<char>(what[FP_FORMAT_EXC].first, 1);
-      switch(exc_mode)
+      switch(*what[FP_FORMAT_EXC].first)
       {
          case 'i':
             ff->exception_mode = FPException_IEEE;
@@ -2845,7 +2843,7 @@ FloatFormatRef FloatFormat::FromString(std::string ff_str)
                break;
          }
       }
-      if(what[FP_FORMAT_SIGN].first)
+      if(what[FP_FORMAT_SIGN].second - what[FP_FORMAT_SIGN].first)
       {
          const auto sign = boost::lexical_cast<bool>(what[FP_FORMAT_SIGN].first, 1);
          ff->sign = sign ? bit_lattice::ONE : bit_lattice::ZERO;
