@@ -760,7 +760,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Enable the soft-based implementation of floating-point operations.\n"
       << "        Bambu uses as default a faithfully rounded version of softfloat with rounding mode\n"
       << "        equal to round to nearest even. Subnormal numbers are disabled by default.\n"
-      << "        Default FP format are e8m23b-127nih and e11m52b-1023nih for single and double \n"
+      << "        Default FP formats are e8m23b-127nih and e11m52b-1023nih for single and double \n"
       << "        precision floating-point types respectively.\n\n"
 #if HAVE_FLOPOCO
       << "    --flopoco\n"

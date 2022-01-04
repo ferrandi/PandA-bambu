@@ -3296,22 +3296,21 @@ __float64 __float64_round_to_int_ieee(__float64 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float __addsubFloat(__float a, __float b, __flag bSign, __bits8 __exp_bits, __bits8 __frac_bits,
+static __FORCE_INLINE __float __addsubFloat(__float _a, __float _b, __flag sub, __bits8 __exp_bits, __bits8 __frac_bits,
                                             __sbits32 __exp_bias, FLOAT_RND_TYPE __rnd, FLOAT_EXC_TYPE __exc,
                                             __flag __one, __flag __subnorm, __sbits8 __sign)
 {
+   __bits64 a, b;
    __bits64 aSig, bSig, shift_0;
    __bits64 aExp, bExp, expDiff;
    __bits16 nZeros;
-   _Bool a_c_zero, b_c_zero, a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign;
+   _Bool a_c_zero, b_c_zero, a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign, bSign;
    __bits64 abs_a, abs_b;
    __bits64 fA, fB, fB_shifted;
    __bits64 fB_shifted_low, fBleft_shifted;
    _Bool LSB_bit, Guard_bit, Round_bit, Sticky_bit, round, sb;
    _Bool ge_frac_bits;
-   _Bool tmp_sign;
-   __bits64 tmp_exp;
-   __bits64 tmp_sig;
+   // __bits64 tmp_x;
    _Bool subnormal_exp_correction;
    __bits64 fB_shifted1;
    __bits64 fR0;
@@ -3320,52 +3319,49 @@ static __FORCE_INLINE __float __addsubFloat(__float a, __float b, __flag bSign, 
    __bits64 RSig0, RSig1, RSig2, RSig3;
    __bits64 RExp0RSig1, Rrounded;
    _Bool overflow_to_infinite, saturation;
-   _Bool aExpMax, bExpMax;
+   _Bool aExpMax, bExpMax, aExp_null, bExp_null, aSig_not, bSig_not;
    __bits8 __frac_shift, __frac_full, __frac_almost, __exp_shift, __nzeros_bits;
 
    __frac_shift = (__rnd == FLOAT_RND_NEVN) ? 2 : 0;
    __frac_almost = __frac_bits + __frac_shift + 1;
    __frac_full = __frac_almost + 1;
 
-   aSign = __extractFloatSign(a, __exp_bits, __frac_bits, __sign);
+   abs_a = _a & ((1ULL << (__exp_bits + __frac_bits)) - 1);
+   abs_b = _b & ((1ULL << (__exp_bits + __frac_bits)) - 1);
+   swap = abs_a < abs_b;
+
+   // Faster, but more area (~0.35 slice/bit more than COND_EXPR_MACRO64)
+   // tmp_x = (_a ^ _b) & ((__bits64)((((__sbits64)(swap)) << 63) >> 63));
+   // a = _a ^ tmp_x;
+   // b = _b ^ tmp_x;
+   // Slower, but less area
+   a = COND_EXPR_MACRO64(swap, _b, _a);
+   b = COND_EXPR_MACRO64(swap, _a, _b);
+
+   aSign = __extractFloatSign(a, __exp_bits, __frac_bits, __sign) ^ (sub & swap);
    aSig = __extractFloatFrac(a, __frac_bits);
    aExp = __extractFloatExp(a, __exp_bits, __frac_bits);
+   bSign = __extractFloatSign(b, __exp_bits, __frac_bits, __sign) ^ (sub & !swap);
    bSig = __extractFloatFrac(b, __frac_bits);
    bExp = __extractFloatExp(b, __exp_bits, __frac_bits);
-   _Bool aSig_null = aSig == 0;
-   _Bool bSig_null = bSig == 0;
-   _Bool aExp_null = aExp == 0;
-   _Bool bExp_null = bExp == 0;
+   aExp_null = aExp == 0;
+   bExp_null = bExp == 0;
+   aSig_not = aSig != 0;
+   bSig_not = bSig != 0;
    aExpMax = aExp == ((1ULL << __exp_bits) - 1);
-   a_c_zero = aExp_null && aSig_null;
-   a_c_zero = (__subnorm || __exc != FLOAT_EXC_SAT) ? aExp_null : a_c_zero;
-   a_c_nan = aExpMax && !aSig_null;
-   a_c_nan = (__exc == FLOAT_EXC_STD) ? a_c_nan : 0;
-   a_c_normal = !a_c_zero /*&& !aExpMax*/; /// not really needed the second condition
-   a_c_normal = __one ? a_c_normal : 0;
    bExpMax = bExp == ((1ULL << __exp_bits) - 1);
-   b_c_zero = bExp_null && bSig_null;
-   b_c_zero = (__subnorm || __exc != FLOAT_EXC_SAT) ? bExp_null : b_c_zero;
-   b_c_nan = bExpMax && !bSig_null;
-   b_c_nan = (__exc == FLOAT_EXC_STD) ? b_c_nan : 0;
-   b_c_normal = !b_c_zero /*&& !bExpMax*/; /// not really needed the second condition
-   b_c_normal = __one ? b_c_normal : 0;
+   a_c_zero = aExp_null & ((__subnorm || __exc != FLOAT_EXC_SAT) ? 1 : !aSig_not);
+   a_c_nan = (__exc == FLOAT_EXC_STD) ? (aExpMax && aSig_not) : 0;
+   a_c_normal = __one ? !a_c_zero : 0;
+   b_c_zero = bExp_null & ((__subnorm || __exc != FLOAT_EXC_SAT) ? 1 : !bSig_not);
+   b_c_nan = (__exc == FLOAT_EXC_STD) ? (bExpMax && bSig_not) : 0;
+   b_c_normal = __one ? !b_c_zero : 0;
 
    sAB = aSign ^ bSign;
 
-   abs_a = a & ((1ULL << (__exp_bits + __frac_bits)) - 1);
-   abs_b = b & ((1ULL << (__exp_bits + __frac_bits)) - 1);
-
-   swap = (a_c_nan == b_c_nan && abs_a < abs_b) || a_c_nan < b_c_nan;
-
-   subnormal_exp_correction = (aExp_null && !aSig_null) ^ (bExp_null && !bSig_null);
-
-   tmp_exp = bExp;
-   bExp = COND_EXPR_MACRO64(swap, aExp, bExp);
-   aExp = COND_EXPR_MACRO64(swap, tmp_exp, aExp);
-
    if(__subnorm)
    {
+      subnormal_exp_correction = (aExp_null && (aSig_not)) ^ (bExp_null && (bSig_not));
       expDiff = aExp - bExp - subnormal_exp_correction;
    }
    else
@@ -3373,18 +3369,6 @@ static __FORCE_INLINE __float __addsubFloat(__float a, __float b, __flag bSign, 
       expDiff = aExp - bExp;
    }
    expDiff = expDiff & ((1ULL << __exp_bits) - 1);
-
-   tmp_sig = bSig;
-   bSig = COND_EXPR_MACRO64(swap, aSig, bSig);
-   aSig = COND_EXPR_MACRO64(swap, tmp_sig, aSig);
-
-   tmp_sign = bSign;
-   // bSign = swap ? aSign : bSign;
-   aSign = swap ? tmp_sign : aSign;
-
-   tmp_c_normal = b_c_normal;
-   b_c_normal = swap ? a_c_normal : b_c_normal;
-   a_c_normal = swap ? tmp_c_normal : a_c_normal;
 
    fA = (aSig | (((__bits64)a_c_normal) << __frac_bits)) << __frac_shift;
    fB = (bSig | (((__bits64)b_c_normal) << __frac_bits)) << __frac_shift;
@@ -3426,13 +3410,13 @@ static __FORCE_INLINE __float __addsubFloat(__float a, __float b, __flag bSign, 
 
    if(__subnorm)
    {
-      RExp0 = R_c_zero || aExp < nZeros ? ((aExp_null) && (bExp_null) && nZeros == 1) : aExp - nZeros + 1;
-      RSig0 = aExp < nZeros ? ((aExp_null) && (bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
+      RExp0 = (R_c_zero || aExp < nZeros) ? (aExp_null && bExp_null && nZeros == 1) : (aExp - nZeros + 1);
+      RSig0 = aExp < nZeros ? ((aExp_null && bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
    }
    else
    {
       R_c_zero = R_c_zero || aExp < nZeros;
-      RExp0 = R_c_zero ? 0 : aExp - nZeros + 1;
+      RExp0 = R_c_zero ? 0 : (aExp - nZeros + 1);
       RSig0 = shift_0;
    }
    RExp0 = RExp0 & ((1ULL << __exp_bits) - 1);
@@ -3501,8 +3485,7 @@ static __FORCE_INLINE __float __addsubFloat(__float a, __float b, __flag bSign, 
 __float __float_add(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
                     FLOAT_RND_TYPE __rnd, FLOAT_EXC_TYPE __exc, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-   __flag bSign = __extractFloatSign(b, __exp_bits, __frac_bits, __sign);
-   return __addsubFloat(a, b, bSign, __exp_bits, __frac_bits, __exp_bias, __rnd, __exc, __one, __subnorm, __sign);
+   return __addsubFloat(a, b, 0, __exp_bits, __frac_bits, __exp_bias, __rnd, __exc, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -3514,8 +3497,7 @@ __float __float_add(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
 __float __float_sub(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
                     FLOAT_RND_TYPE __rnd, FLOAT_EXC_TYPE __exc, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-   __flag bSign = __extractFloatSign(b, __exp_bits, __frac_bits, __sign) ^ 1;
-   return __addsubFloat(a, b, bSign, __exp_bits, __frac_bits, __exp_bias, __rnd, __exc, __one, __subnorm, __sign);
+   return __addsubFloat(a, b, 1, __exp_bits, __frac_bits, __exp_bias, __rnd, __exc, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
