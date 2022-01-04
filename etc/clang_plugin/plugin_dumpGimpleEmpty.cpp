@@ -41,6 +41,12 @@
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/LazyValueInfo.h"
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/MemoryDependenceAnalysis.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
@@ -48,6 +54,11 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
+#if __clang_major__ != 4
+#include "llvm/Analysis/MemorySSA.h"
+#else
+#include "llvm/Transforms/Utils/MemorySSA.h"
+#endif
 #if __clang_major__ >= 10
 #include "llvm/Support/CommandLine.h"
 #endif
@@ -63,7 +74,13 @@ namespace llvm
       static char ID;
       CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)() : ModulePass(ID)
       {
-         initializeLoopPassPass(*PassRegistry::getPassRegistry());
+         initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());            //
+         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());       //
+         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());           //
+         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry()); //
+         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());   //
+         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());         //
+         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
       }
       bool runOnModule(Module& M) override
       {
@@ -83,7 +100,14 @@ namespace llvm
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
          AU.setPreservesAll();
-         getLoopAnalysisUsage(AU);
+         AU.addRequired<LoopInfoWrapperPass>(); //
+         AU.addPreserved<MemorySSAWrapperPass>();
+         AU.addRequired<MemorySSAWrapperPass>();           //
+         AU.addRequired<LazyValueInfoWrapperPass>();       //
+         AU.addRequired<TargetTransformInfoWrapperPass>(); //
+         AU.addRequired<TargetLibraryInfoWrapperPass>();   //
+         AU.addRequired<AssumptionCacheTracker>();         //
+         AU.addRequired<DominatorTreeWrapperPass>();       //
       }
    };
 
