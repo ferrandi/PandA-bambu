@@ -133,7 +133,9 @@ namespace llvm
 {
    class DumpGimpleRaw
    {
+#if __clang_major__ >= 11
       bool changed;
+#endif
       bool earlyAnalysis;
       /* Serialize column control */
       const int SOL_COLUMN = 25;       /* Start of line column.  */

@@ -1444,6 +1444,8 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case sat_minus_expr_K:
          case extractvalue_expr_K:
          case insertvalue_expr_K:
+         case extractelement_expr_K:
+         case insertelement_expr_K:
          case CASE_TYPE_NODES:
          default:
             THROW_ERROR("determine_connection pattern not supported: " + std::string(tn->get_kind_text()) + " @" +
@@ -2563,6 +2565,8 @@ void mux_connection_binding::create_connections()
                   case sat_minus_expr_K:
                   case extractvalue_expr_K:
                   case insertvalue_expr_K:
+                  case extractelement_expr_K:
+                  case insertelement_expr_K:
                   default:
                      THROW_ERROR("MEMORY REFERENCE/LOAD-STORE type not supported: " + var_node->get_kind_text() + " " +
                                  STR(node_id));

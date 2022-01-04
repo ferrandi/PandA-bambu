@@ -158,6 +158,10 @@ namespace llvm
                                                                                   tcc_expression, 3)
                                                                           DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
                                                                                       tcc_expression, 2)
+                                                                              DEFTREECODE(INSERTELEMENT, "insertelement_expr",
+                                                                                          tcc_expression, 3)
+                                                                                  DEFTREECODE(EXTRACTELEMENT, "extractelement_expr",
+                                                                                              tcc_binary, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -191,7 +195,12 @@ namespace llvm
                                                                    DEFTREECODE(INSERTVALUE, "insertvalue_expr",
                                                                                tcc_expression, 2)
                                                                        DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
-                                                                                   tcc_expression, 2)};
+                                                                                   tcc_expression, 2)
+                                                                           DEFTREECODE(INSERTELEMENT, "insertelement_expr",
+                                                                                       tcc_expression, 3)
+                                                                               DEFTREECODE(EXTRACTELEMENT, "extractelement_expr",
+                                                                                           tcc_binary, 2)
+   };
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) TYPE,
@@ -223,7 +232,12 @@ namespace llvm
                                                                    DEFTREECODE(INSERTVALUE, "insertvalue_expr",
                                                                                tcc_expression, 3)
                                                                        DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
-                                                                                   tcc_expression, 2)};
+                                                                                   tcc_binary, 2)
+                                                                           DEFTREECODE(INSERTELEMENT, "insertelement_expr",
+                                                                                       tcc_expression, 3)
+                                                                               DEFTREECODE(EXTRACTELEMENT, "extractelement_expr",
+                                                                                           tcc_binary, 2)
+   };
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) NARGS,
@@ -252,10 +266,11 @@ namespace llvm
                                                        DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
                                                            DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
                                                                DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                                                                   DEFTREECODE(INSERTVALUE, "insertvalue_expr",
-                                                                               tcc_expression, 3)
-                                                                       DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
-                                                                                   tcc_expression, 2)};
+                                                                   DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3)
+                                                                       DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_binary, 2)
+                                                                           DEFTREECODE(INSERTELEMENT, "insertelement_expr", tcc_expression, 3)
+                                                                               DEFTREECODE(EXTRACTELEMENT, "extractelement_expr", tcc_binary, 2)
+   };
 #undef DEFTREECODE
 #undef DEFGSCODE
 
@@ -273,7 +288,7 @@ namespace llvm
         (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
          GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
          GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
-         GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR)) ?                         \
+         GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) || GT(SYM) == GT(INSERTELEMENT)) ?                         \
         GIMPLE_TERNARY_RHS :                                                                                        \
         (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
          GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
@@ -308,7 +323,12 @@ namespace llvm
                                                                    DEFTREECODE(INSERTVALUE, "insertvalue_expr",
                                                                                tcc_expression, 3)
                                                                        DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
-                                                                                   tcc_expression, 2)};
+                                                                                   tcc_expression, 2)
+                                                                           DEFTREECODE(INSERTELEMENT, "insertelement_expr",
+                                                                                       tcc_expression, 3)
+                                                                               DEFTREECODE(EXTRACTELEMENT, "extractelement_expr",
+                                                                                           tcc_binary, 2)
+   };
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
 
@@ -382,6 +402,7 @@ namespace llvm
          fun2params(_fun2params),
          DL(nullptr),
          modulePass(nullptr),
+         moduleContext(nullptr),
          last_used_index(0),
          column(0),
          PtoSets_AA(nullptr),
@@ -514,7 +535,8 @@ namespace llvm
                    (std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
-
+         case llvm::Value::ConstantVectorVal:
+            return assignCode(t, GT(VECTOR_CST));
 #define HANDLE_BINARY_INST(N, OPC, CLASS)                     \
    case llvm::Value::InstructionVal + llvm::Instruction::OPC: \
       return assignCode(t, GT(GIMPLE_ASSIGN));
@@ -631,6 +653,12 @@ namespace llvm
          case llvm::Value::InstructionVal + llvm::Instruction::InsertValue:
             return assignCode(t, GT(GIMPLE_ASSIGN));
          case llvm::Value::InstructionVal + llvm::Instruction::ExtractValue:
+            return assignCode(t, GT(GIMPLE_ASSIGN));
+         case llvm::Value::InstructionVal + llvm::Instruction::InsertElement:
+            return assignCode(t, GT(GIMPLE_ASSIGN));
+         case llvm::Value::InstructionVal + llvm::Instruction::ExtractElement:
+            return assignCode(t, GT(GIMPLE_ASSIGN));
+         case llvm::Value::InstructionVal + llvm::Instruction::ShuffleVector:
             return assignCode(t, GT(GIMPLE_ASSIGN));
          default:
             llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
@@ -1169,6 +1197,7 @@ namespace llvm
       return ce->getPredicate();
    }
 
+#if __clang_major__ > 7
    static Intrinsic::ID getIntrinsicIDTEC(const llvm::Instruction* inst)
    {
       auto ci = llvm::dyn_cast<const llvm::CallInst>(inst);
@@ -1195,6 +1224,7 @@ namespace llvm
 #endif
       return (Intrinsic::ID)0;
    }
+#endif
 
    template <class InstructionOrConstantExpr>
    DumpGimpleRaw::tree_codes DumpGimpleRaw::tree_expr_code(InstructionOrConstantExpr* inst)
@@ -1344,7 +1374,12 @@ namespace llvm
          }
 
          case llvm::Instruction::Select:
-            return GT(COND_EXPR);
+         {
+            if(inst->getType()->isVectorTy())
+               return GT(VEC_COND_EXPR);
+            else
+               return GT(COND_EXPR);
+         }
          case llvm::Instruction::Br:
          {
             assert(cast<const llvm::BranchInst>(inst)->isConditional());
@@ -1357,6 +1392,18 @@ namespace llvm
          case llvm::Instruction::ExtractValue:
          {
             return GT(EXTRACTVALUE);
+         }
+         case llvm::Instruction::InsertElement:
+         {
+            return GT(INSERTELEMENT);
+         }
+         case llvm::Instruction::ExtractElement:
+         {
+            return GT(EXTRACTELEMENT);
+         }
+         case llvm::Instruction::ShuffleVector:
+         {
+            return GT(VEC_PERM_EXPR);
          }
          default:
             llvm::errs() << "gimple_expr_code kind not supported: "
@@ -1393,14 +1440,18 @@ namespace llvm
          const void* zero = uicTable.find(0)->second;
          auto addr = getOperand(store.getPointerOperand(), currentFunction);
          auto ty = store.getValueOperand()->getType();
+         auto isVecType = ty->isVectorTy();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          std::string funName = getName(store.getFunction());
          auto demangled = getDemangled(funName);
          bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) &&
                                    (funName == TopFunctionName || demangled == TopFunctionName);
-         if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter)
+         if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter && !isVecType)
+         {
+            llvm::errs() << "MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlignment() << "\n";
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
+         }
          else
             return build2(GT(MEM_REF), type, addr, zero);
       }
@@ -2142,7 +2193,7 @@ namespace llvm
          }
       }
       else if(isa<llvm::ConstantDataArray>(operand) || isa<llvm::ConstantDataVector>(operand) ||
-              isa<llvm::ConstantStruct>(operand) || isa<llvm::ConstantArray>(operand))
+              isa<llvm::ConstantStruct>(operand) || isa<llvm::ConstantArray>(operand) || isa<llvm::ConstantVector>(operand))
          return assignCodeAuto(operand);
       else
       {
@@ -2211,6 +2262,7 @@ namespace llvm
          const void* zero = uicTable.find(0)->second;
          auto addr = getOperand(load.getPointerOperand(), currentFunction);
          auto ty = load.getType();
+         auto isVecType = ty->isVectorTy();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          std::string funName = getName(load.getFunction());
@@ -2218,7 +2270,7 @@ namespace llvm
          bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) &&
                                    (funName == TopFunctionName || demangled == TopFunctionName);
 
-         if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()) && !is_a_top_parameter)
+         if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()) && !is_a_top_parameter && !isVecType)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -2255,6 +2307,16 @@ namespace llvm
             auto type = assignCodeType(tI.getType());
             return build2(GT(BIT_AND_EXPR), type, getOperand(inst->getOperand(index), currentFunction), maskNode);
          }
+      }
+      else if(isa<llvm::ShuffleVectorInst>(inst) && index == 2)
+      {
+         const auto& svi = cast<const llvm::ShuffleVectorInst>(*inst);
+#if __clang_major__ >= 11
+         auto op = getOperand(svi.getShuffleMaskForBitcode(), currentFunction);
+#else
+         auto op = getOperand(svi.getMask(), currentFunction);
+#endif
+         return op;
       }
       return getSignedOperandIndex(inst, index, currentFunction);
    }
@@ -2919,6 +2981,8 @@ namespace llvm
       tree_codes_class code_class = TREE_CODE_CLASS(code);
       if(code_class == tcc_type)
       {
+         bool isSigned = CheckSignedTag(t);
+         t=NormalizeSignedTag(t);
          const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
          auto typeId = ty->getTypeID();
          switch(typeId)
@@ -2937,7 +3001,7 @@ namespace llvm
             case llvm::Type::IntegerTyID:
             case llvm::Type::StructTyID:
                llvm::errs() << "TREE_TYPE kind not supported: type of type: " << GET_TREE_CODE_NAME(TREE_CODE(t)) << ":"
-                            << typeId << "\n";
+                            << typeId << " ptr " << (unsigned long long)t << "\n";
                stream.close();
                llvm_unreachable("Plugin Error");
 
@@ -2953,7 +3017,10 @@ namespace llvm
 #else
             case llvm::Type::VectorTyID:
 #endif
-               return assignCodeType(cast<llvm::VectorType>(ty)->getElementType());
+            {
+               const auto eltType = cast<const llvm::VectorType>(ty)->getElementType();
+               return assignCodeType(isSigned ? AddSignedTag(eltType) : eltType);
+            }
             default:
             {
                llvm::errs() << "type id not managed\n";
@@ -4521,8 +4588,10 @@ namespace llvm
                auto lhs = gimple_assign_lhs(g);
                auto tc = gimple_assign_rhs_code(g);
                serialize_child("op", lhs);
-               serialize_child("op", build3(tc, TREE_TYPE(lhs), gimple_assign_rhs1(g), gimple_assign_rhs2(g),
-                                            gimple_assign_rhs3(g)));
+               auto op0 = gimple_assign_rhs1(g);
+               auto op1 = gimple_assign_rhs2(g);
+               auto op2 = gimple_assign_rhs3(g);
+               serialize_child("op", build3(tc, TREE_TYPE(lhs), op0, op1, op2));
             }
             else if(get_gimple_rhs_class(gimple_expr_code(g)) == GIMPLE_BINARY_RHS)
             {
@@ -4589,7 +4658,7 @@ namespace llvm
                auto abs_op1 = build2(GT(RSHIFT_EXPR), vcType, lshift_op1, constOne);
                auto lshift_op2 = build2(GT(LSHIFT_EXPR), vcType, vc_op2, constOne);
                auto abs_op2 = build2(GT(RSHIFT_EXPR), vcType, lshift_op2, constOne);
-               const void* constNAN;
+               const void* constNAN=nullptr;
                if(prec1 == 32)
                   constNAN = assignCodeAuto(llvm::ConstantInt::get(intObjType, 0x7f800000, false));
                else if(prec1 == 64)
@@ -4601,7 +4670,7 @@ namespace llvm
                }
                auto isNAN_op1 = build2(GT(GT_EXPR), btype, abs_op1, constNAN);
                auto isNAN_op2 = build2(GT(GT_EXPR), btype, abs_op2, constNAN);
-               const void* rhs;
+               const void* rhs=nullptr;
                auto gcode = gimple_expr_code(g);
                if(gcode == GT(FCMP_ORD) || gcode == GT(FCMP_OEQ) || gcode == GT(FCMP_ONE))
                {
@@ -5329,6 +5398,18 @@ namespace llvm
             //           serialize_fixed ("valu", TREE_FIXED_CST_PTR (t));
             //           break;
 
+         case GT(VECTOR_CST):
+         {
+            auto val = reinterpret_cast<const llvm::ConstantVector*>(t);
+            for(unsigned indexCV = 0; indexCV < val->getNumOperands(); ++indexCV)
+            {
+               auto op = val->getOperand(indexCV);
+               const void* valu = getOperand(op, nullptr);
+               serialize_child("valu", valu);
+            }
+            break;
+         }
+
          case GT(TRUTH_NOT_EXPR):
          case GT(ADDR_EXPR):
          case GT(VIEW_CONVERT_EXPR):
@@ -5343,6 +5424,11 @@ namespace llvm
             serialize_child("op", TREE_OPERAND(t, 0));
             break;
          case GT(COND_EXPR):
+            serialize_child("op", TREE_OPERAND(t, 0));
+            serialize_child("op", TREE_OPERAND(t, 1));
+            serialize_child("op", TREE_OPERAND(t, 2));
+            break;
+         case GT(VEC_COND_EXPR):
             serialize_child("op", TREE_OPERAND(t, 0));
             serialize_child("op", TREE_OPERAND(t, 1));
             serialize_child("op", TREE_OPERAND(t, 2));
@@ -5410,6 +5496,20 @@ namespace llvm
          {
             serialize_child("op", TREE_OPERAND(t, 0));
             serialize_child("op", TREE_OPERAND(t, 1));
+            break;
+         }
+         case GT(INSERTELEMENT):
+         {
+            serialize_child("op", TREE_OPERAND(t, 0));
+            serialize_child("op", TREE_OPERAND(t, 1));
+            serialize_child("op", TREE_OPERAND(t, 2));
+            break;
+         }
+         case GT(VEC_PERM_EXPR):
+         {
+            serialize_child("op", TREE_OPERAND(t, 0));
+            serialize_child("op", TREE_OPERAND(t, 1));
+            serialize_child("op", TREE_OPERAND(t, 2));
             break;
          }
          default:

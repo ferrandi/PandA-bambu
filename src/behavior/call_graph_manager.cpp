@@ -830,6 +830,8 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       case ternary_mm_expr_K:
       case fshl_expr_K:
       case fshr_expr_K:
+      case insertvalue_expr_K:
+      case insertelement_expr_K:
       case bit_ior_concat_expr_K:
       {
          auto* te = GetPointer<ternary_expr>(curr_tn);

@@ -179,6 +179,12 @@ enum class TargetDevice_Type;
 #define IIDATA_CONVERTER_STD "IIdata_converter_FU"
 #define BIVECTOR_CONVERTER_STD "BIvector_converter_FU"
 #define BUVECTOR_CONVERTER_STD "BUvector_converter_FU"
+#define UBVECTOR_CONVERTER_STD "UBvector_converter_FU"
+#define IIVECTOR_CONVERTER_STD "IIvector_converter_FU"
+#define UUVECTOR_CONVERTER_STD "UUvector_converter_FU"
+#define UIVECTOR_CONVERTER_STD "UIvector_converter_FU"
+#define IUVECTOR_CONVERTER_STD "IUvector_converter_FU"
+
 #define FFDATA_CONVERTER_STD "FFdata_converter_FU"
 #define SF_FFDATA_CONVERTER_32_64_STD "sf_FFdata_converter_FU_32_64"
 #define SF_FFDATA_CONVERTER_64_32_STD "sf_FFdata_converter_FU_64_32"

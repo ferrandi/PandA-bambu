@@ -2308,6 +2308,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                case sat_plus_expr_K:
                case sat_minus_expr_K:
                case extractvalue_expr_K:
+               case extractelement_expr_K:
                {
                   add_call = false;
                   break;

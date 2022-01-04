@@ -1688,12 +1688,21 @@ DesignFlowStep_Status allocation::InternalExec()
             const auto vector_boolR =
                 tree_helper::IsVectorType(right_type) &&
                 tree_helper::IsBooleanType(tree_helper::CGetElements(tree_helper::CGetType(right_type)));
+            const auto vector_boolL =
+                tree_helper::IsVectorType(left_type) &&
+                tree_helper::IsBooleanType(tree_helper::CGetElements(tree_helper::CGetType(left_type)));
             const auto vector_intL =
                 tree_helper::IsVectorType(left_type) &&
                 tree_helper::IsSignedIntegerType(tree_helper::CGetElements(tree_helper::CGetType(left_type)));
             const auto vector_unsignedL =
                 tree_helper::IsVectorType(left_type) &&
                 tree_helper::IsUnsignedIntegerType(tree_helper::CGetElements(tree_helper::CGetType(left_type)));
+            const auto vector_intR =
+                tree_helper::IsVectorType(right_type) &&
+                tree_helper::IsSignedIntegerType(tree_helper::CGetElements(tree_helper::CGetType(right_type)));
+            const auto vector_unsignedR =
+                tree_helper::IsVectorType(right_type) &&
+                tree_helper::IsUnsignedIntegerType(tree_helper::CGetElements(tree_helper::CGetType(right_type)));
 
             if((unsignedR || is_a_pointerR || boolR) && (unsignedL || is_a_pointerL || boolL))
             {
@@ -1735,6 +1744,26 @@ DesignFlowStep_Status allocation::InternalExec()
             else if(vector_boolR && vector_unsignedL)
             {
                current_fu = get_fu(BUVECTOR_CONVERTER_STD);
+            }
+            else if(vector_unsignedR && vector_boolL)
+            {
+               current_fu = get_fu(UBVECTOR_CONVERTER_STD);
+            }
+            else if(vector_unsignedR && vector_unsignedL)
+            {
+               current_fu = get_fu(UUVECTOR_CONVERTER_STD);
+            }
+            else if(vector_intR && vector_unsignedL)
+            {
+               current_fu = get_fu(IUVECTOR_CONVERTER_STD);
+            }
+            else if(vector_unsignedR && vector_intL)
+            {
+               current_fu = get_fu(UIVECTOR_CONVERTER_STD);
+            }
+            else if(vector_intR && vector_intL)
+            {
+               current_fu = get_fu(IIVECTOR_CONVERTER_STD);
             }
             else
             {

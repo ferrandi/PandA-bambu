@@ -493,9 +493,11 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
          /// second, create the gimple assignment
          const auto res_type = tree_helper::CGetType(mc_phi->res);
+         auto condition_type = tree_helper::CGetType(cond1);
+         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
          const auto cond_expr_node =
              tree_man->create_ternary_operation(res_type, cond1, op1, op2, BUILTIN_SRCP,
-                                                (tree_helper::IsVectorType(res_type) ? vec_cond_expr_K : cond_expr_K));
+                                                (isAVectorType ? vec_cond_expr_K : cond_expr_K));
          const auto created_stmt =
              tree_man->CreateGimpleAssign(res_type, nullptr, nullptr, cond_expr_node, function_id, bb1, BUILTIN_SRCP);
          const auto ssa_cond_node = GetPointer<const gimple_assign>(GET_CONST_NODE(created_stmt))->op0;

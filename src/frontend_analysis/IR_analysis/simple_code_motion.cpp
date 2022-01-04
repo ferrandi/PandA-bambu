@@ -411,6 +411,8 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case extractvalue_expr_K:
       case insertvalue_expr_K:
       case extract_bit_expr_K:
+      case extractelement_expr_K:
+      case insertelement_expr_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;

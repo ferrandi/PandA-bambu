@@ -42919,7 +42919,7 @@
         <template name="vec_single_cond_expr_FU" parameter="0 16 8 16 8 16 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:39:26</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:16" execution_time="1.0860000000000001"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:16" execution_time="1.0860000000000001"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_0_1_128_1_128_1_128</name>
@@ -42931,7 +42931,7 @@
         <template name="vec_single_cond_expr_FU" parameter="0 1 128 1 128 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:39:30</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:1" execution_time="1.0860000000000001"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:1" execution_time="1.0860000000000001"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_0_32_4_32_4_32_4</name>
@@ -42943,7 +42943,7 @@
         <template name="vec_single_cond_expr_FU" parameter="0 32 4 32 4 32 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:39:37</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:32" execution_time="1.0860000000000001"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:32" execution_time="1.0860000000000001"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_0_64_2_64_2_64_2</name>
@@ -42955,7 +42955,7 @@
         <template name="vec_single_cond_expr_FU" parameter="0 64 2 64 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:39:41</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:64" execution_time="1.0860000000000001"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:64" execution_time="1.0860000000000001"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_0_8_16_8_16_8_16</name>
@@ -42967,7 +42967,7 @@
         <template name="vec_single_cond_expr_FU" parameter="0 8 16 8 16 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:40:01</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:8" execution_time="1.0860000000000001"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:8" execution_time="1.0860000000000001"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_16_0_16_8_16_8</name>
@@ -42979,7 +42979,7 @@
         <template name="vec_single_cond_expr_FU" parameter="16 0 16 8 16 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:40:25</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:16" execution_time="1.587"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:16" execution_time="1.587"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_16_16_8_0_16_8</name>
@@ -42991,7 +42991,7 @@
         <template name="vec_single_cond_expr_FU" parameter="16 16 8 0 16 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:40:27</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:16" execution_time="1.5840000000000001"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:16" execution_time="1.5840000000000001"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_16_16_8_16_8_16_8</name>
@@ -43002,7 +43002,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">131</attribute>
         <template name="vec_single_cond_expr_FU" parameter="16 16 8 16 8 16 8"/>
         <characterization_timestamp>2021-08-21T14:40:48</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:16" execution_time="1.6539999999999999"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:16" execution_time="1.6539999999999999"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_1_0_1_128_1_128</name>
@@ -43014,7 +43014,7 @@
         <template name="vec_single_cond_expr_FU" parameter="1 0 1 128 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:40:32</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:1" execution_time="1.5529999999999999"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:1" execution_time="1.5529999999999999"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_1_1_128_0_1_128</name>
@@ -43026,7 +43026,7 @@
         <template name="vec_single_cond_expr_FU" parameter="1 1 128 0 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:40:35</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:1" execution_time="1.5780000000000001"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:1" execution_time="1.5780000000000001"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_1_1_128_1_128_1_128</name>
@@ -43037,7 +43037,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
         <template name="vec_single_cond_expr_FU" parameter="1 1 128 1 128 1 128"/>
         <characterization_timestamp>2021-08-21T14:40:32</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:1" execution_time="1.702"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:1" execution_time="1.702"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_32_0_32_4_32_4</name>
@@ -43049,7 +43049,7 @@
         <template name="vec_single_cond_expr_FU" parameter="32 0 32 4 32 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:40:49</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:32" execution_time="1.5489999999999999"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:32" execution_time="1.5489999999999999"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_32_32_4_0_32_4</name>
@@ -43061,7 +43061,7 @@
         <template name="vec_single_cond_expr_FU" parameter="32 32 4 0 32 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:40:52</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:32" execution_time="1.607"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:32" execution_time="1.607"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_32_32_4_32_4_32_4</name>
@@ -43072,7 +43072,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
         <template name="vec_single_cond_expr_FU" parameter="32 32 4 32 4 32 4"/>
         <characterization_timestamp>2021-08-21T14:40:39</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:32" execution_time="1.762"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:32" execution_time="1.762"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_64_0_64_2_64_2</name>
@@ -43084,7 +43084,7 @@
         <template name="vec_single_cond_expr_FU" parameter="64 0 64 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:40:56</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:64" execution_time="1.575"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:64" execution_time="1.575"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_64_64_2_0_64_2</name>
@@ -43096,7 +43096,7 @@
         <template name="vec_single_cond_expr_FU" parameter="64 64 2 0 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:41:09</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:64" execution_time="1.6060000000000001"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:64" execution_time="1.6060000000000001"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_64_64_2_64_2_64_2</name>
@@ -43107,7 +43107,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">131</attribute>
         <template name="vec_single_cond_expr_FU" parameter="64 64 2 64 2 64 2"/>
         <characterization_timestamp>2021-08-21T14:40:52</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:64" execution_time="1.6140000000000001"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:64" execution_time="1.6140000000000001"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_8_0_8_16_8_16</name>
@@ -43119,7 +43119,7 @@
         <template name="vec_single_cond_expr_FU" parameter="8 0 8 16 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:41:00</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:8" execution_time="1.51"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:8" execution_time="1.51"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_8_8_16_0_8_16</name>
@@ -43131,7 +43131,7 @@
         <template name="vec_single_cond_expr_FU" parameter="8 8 16 0 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-08-21T14:40:49</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:8" execution_time="1.532"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:8" execution_time="1.532"/>
       </cell>
       <cell>
         <name>vec_single_cond_expr_FU_8_8_16_8_16_8_16</name>
@@ -43142,7 +43142,242 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
         <template name="vec_single_cond_expr_FU" parameter="8 8 16 8 16 8 16"/>
         <characterization_timestamp>2021-08-21T14:41:02</characterization_timestamp>
-        <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:8" execution_time="1.5900000000000001"/>
+        <operation operation_name="cond_expr" supported_types="VECTOR_INT:8" execution_time="1.5900000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_0_16_8_16_8_16_8</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">384</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">101</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="0 16 8 16 8 16 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:39:26</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:16" execution_time="1.0860000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_0_1_128_1_128_1_128</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">384</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">101</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="0 1 128 1 128 1 128"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:39:30</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:1" execution_time="1.0860000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_0_32_4_32_4_32_4</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">384</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">101</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="0 32 4 32 4 32 4"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:39:37</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:32" execution_time="1.0860000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_0_64_2_64_2_64_2</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">384</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">101</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="0 64 2 64 2 64 2"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:39:41</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:64" execution_time="1.0860000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_0_8_16_8_16_8_16</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">384</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">101</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="0 8 16 8 16 8 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:40:01</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:8" execution_time="1.0860000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_16_0_16_8_16_8</name>
+        <attribute name="area" value_type="float64">129</attribute>
+        <attribute name="REGISTERS" value_type="float64">272</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">129</attribute>
+        <attribute name="SLICE" value_type="float64">76</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">129</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="16 0 16 8 16 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:40:25</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:16" execution_time="1.587"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_16_16_8_0_16_8</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">272</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">72</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="16 16 8 0 16 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:40:27</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:16" execution_time="1.5840000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_16_16_8_16_8_16_8</name>
+        <attribute name="area" value_type="float64">131</attribute>
+        <attribute name="REGISTERS" value_type="float64">400</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">131</attribute>
+        <attribute name="SLICE" value_type="float64">97</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">131</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="16 16 8 16 8 16 8"/>
+        <characterization_timestamp>2021-08-21T14:40:48</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:16" execution_time="1.6539999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_1_0_1_128_1_128</name>
+        <attribute name="area" value_type="float64">129</attribute>
+        <attribute name="REGISTERS" value_type="float64">257</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">129</attribute>
+        <attribute name="SLICE" value_type="float64">79</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">129</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="1 0 1 128 1 128"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:40:32</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:1" execution_time="1.5529999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_1_1_128_0_1_128</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">257</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">74</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="1 1 128 0 1 128"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:40:35</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:1" execution_time="1.5780000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_1_1_128_1_128_1_128</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">385</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">96</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="1 1 128 1 128 1 128"/>
+        <characterization_timestamp>2021-08-21T14:40:32</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:1" execution_time="1.702"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_32_0_32_4_32_4</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">288</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">87</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="32 0 32 4 32 4"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:40:49</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:32" execution_time="1.5489999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_32_32_4_0_32_4</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">288</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">81</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="32 32 4 0 32 4"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:40:52</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:32" execution_time="1.607"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_32_32_4_32_4_32_4</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">416</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">103</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="32 32 4 32 4 32 4"/>
+        <characterization_timestamp>2021-08-21T14:40:39</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:32" execution_time="1.762"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_64_0_64_2_64_2</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">320</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">103</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="64 0 64 2 64 2"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:40:56</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:64" execution_time="1.575"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_64_64_2_0_64_2</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">320</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">96</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="64 64 2 0 64 2"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:41:09</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:64" execution_time="1.6060000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_64_64_2_64_2_64_2</name>
+        <attribute name="area" value_type="float64">131</attribute>
+        <attribute name="REGISTERS" value_type="float64">448</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">131</attribute>
+        <attribute name="SLICE" value_type="float64">120</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">131</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="64 64 2 64 2 64 2"/>
+        <characterization_timestamp>2021-08-21T14:40:52</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:64" execution_time="1.6140000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_8_0_8_16_8_16</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">264</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">72</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="8 0 8 16 8 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:41:00</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:8" execution_time="1.51"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_8_8_16_0_8_16</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">264</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="8 8 16 0 8 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2021-08-21T14:40:49</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:8" execution_time="1.532"/>
+      </cell>
+      <cell>
+        <name>ui_vec_single_cond_expr_FU_8_8_16_8_16_8_16</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">392</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">100</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_vec_single_cond_expr_FU" parameter="8 8 16 8 16 8 16"/>
+        <characterization_timestamp>2021-08-21T14:41:02</characterization_timestamp>
+        <operation operation_name="cond_expr" supported_types="VECTOR_UINT:8" execution_time="1.5900000000000001"/>
       </cell>
       <cell>
         <name>vec_unpack_hi_expr_FU_16_8_32_4</name>

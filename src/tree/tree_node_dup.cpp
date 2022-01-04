@@ -679,6 +679,10 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
          CREATE_TREE_NODE_CASE_BODY(extractvalue_expr, node_id)
       case insertvalue_expr_K:
          CREATE_TREE_NODE_CASE_BODY(insertvalue_expr, node_id)
+      case extractelement_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extractelement_expr, node_id)
+      case insertelement_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(insertelement_expr, node_id)
       case do_stmt_K:
       case if_stmt_K:
       case for_stmt_K:

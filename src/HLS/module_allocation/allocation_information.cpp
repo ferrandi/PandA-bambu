@@ -1334,6 +1334,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                       tree_helper::is_concat_bit_ior_expr(TreeM, g->CGetOpNodeInfo(node)->GetNodeId())) &&
                      !is_constrained && !is_second_constant && vars_read.size() != 1 && current_op != "mult_expr" &&
                      current_op != "widen_mult_expr" &&
+                     current_op != "insertelement_expr" && current_op != "extractelement_expr" &&
                      (index == 1 || current_op != "lut_expr" || current_op != "extract_bit_expr")))
       {
          info->input_prec.push_back(0);

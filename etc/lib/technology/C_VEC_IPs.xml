@@ -24,7 +24,13 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != 0 ? $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) : $signed(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != 0 ? $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) : $signed(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -50,7 +56,13 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != 0 ? $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) : $signed(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != 0 ? $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) : $signed(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -60,7 +72,7 @@
       <circuit>
         <component_o id="vec_single_cond_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2021-2022 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="vec_single_cond_expr_FU"/>
@@ -76,7 +88,45 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_single_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[0] != 0 ? $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) : $signed(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_single_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1 != 0 ? $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) : $signed(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]);
+  end
+endgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_single_cond_expr_FU</name>
+      <operation operation_name="cond_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_single_cond_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2021-2022 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_single_cond_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_single_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1 != 0 ? in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] : in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -99,7 +149,13 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_min_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) ? $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) : $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_min_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) ? $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) : $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -122,7 +178,13 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_min_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &lt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] ? in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] : in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_min_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &lt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] ? in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] : in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -145,7 +207,13 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_max_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) ? $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) : $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_max_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) ? $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) : $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -168,7 +236,13 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_max_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &gt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] ? in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] : in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_max_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &gt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] ? in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] : in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -219,7 +293,13 @@ genvar o1;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_plus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) + $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_plus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) + $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -242,7 +322,13 @@ genvar o1;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_plus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] + in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_plus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] + in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -262,7 +348,13 @@ genvar o1;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_negate_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = -$signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_negate_expr_FU in1 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = -$signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -282,7 +374,13 @@ genvar o1;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_negate_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = -in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_negate_expr_FU in1 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = -in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -305,7 +403,13 @@ genvar o1;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_minus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) - $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_minus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) - $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -328,7 +432,13 @@ genvar o1;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_minus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] - in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_minus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] - in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -355,7 +465,13 @@ genvar o1;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]));\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]));
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -382,7 +498,13 @@ genvar o1;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    ui_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]));\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    ui_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]));
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -409,7 +531,13 @@ genvar o1;
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_widen_mult_hi_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU,widen_mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_widen_mult_hi_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU,widen_mult_expr_FU" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -436,7 +564,13 @@ genvar o1;
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_widen_mult_hi_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU,ui_widen_mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    ui_widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_widen_mult_hi_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU,ui_widen_mult_expr_FU" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    ui_widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -463,7 +597,13 @@ genvar o1;
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_widen_mult_lo_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU,widen_mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1)*BITSIZE_in1+BITSIZE_in1-1:(o1)*BITSIZE_in1]), .in2(in2[(o1)*BITSIZE_in2+BITSIZE_in2-1:(o1)*BITSIZE_in2]));\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_widen_mult_lo_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU,widen_mult_expr_FU" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1)*BITSIZE_in1+BITSIZE_in1-1:(o1)*BITSIZE_in1]), .in2(in2[(o1)*BITSIZE_in2+BITSIZE_in2-1:(o1)*BITSIZE_in2]));
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -490,7 +630,13 @@ genvar o1;
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_widen_mult_lo_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU,ui_widen_mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    ui_widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1)*BITSIZE_in1+BITSIZE_in1-1:(o1)*BITSIZE_in1]), .in2(in2[(o1)*BITSIZE_in2+BITSIZE_in2-1:(o1)*BITSIZE_in2]));\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_widen_mult_lo_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU,ui_widen_mult_expr_FU" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    ui_widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1)*BITSIZE_in1+BITSIZE_in1-1:(o1)*BITSIZE_in1]), .in2(in2[(o1)*BITSIZE_in2+BITSIZE_in2-1:(o1)*BITSIZE_in2]));
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -514,7 +660,28 @@ genvar o1;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2\n  function integer log2;\n     input integer value;\n     integer temp_value;\n    begin\n      temp_value = value-1;\n      for (log2=0; temp_value&gt;0; log2=log2+1)\n        temp_value = temp_value&gt;&gt;1;\n    end\n  endfunction\n`endif\n`ifdef _SIM_HAVE_CLOG2\n  parameter arg2_bitsize = $clog2(PRECISION);\n`else\n  parameter arg2_bitsize = log2(PRECISION);\n`endif\ngenerate\n  if(BITSIZE_in2 &gt; arg2_bitsize)\n    assign out1 = in1 &gt;&gt;&gt; (in2[arg2_bitsize-1:0]);\n  else\n    assign out1 = in1 &gt;&gt;&gt; in2;\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  parameter arg2_bitsize = $clog2(PRECISION);
+`else
+  parameter arg2_bitsize = log2(PRECISION);
+`endif
+generate
+  if(BITSIZE_in2 &gt; arg2_bitsize)
+    assign out1 = in1 &gt;&gt;&gt; (in2[arg2_bitsize-1:0]);
+  else
+    assign out1 = in1 &gt;&gt;&gt; in2;
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -585,7 +752,28 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2\n  function integer log2;\n     input integer value;\n     integer temp_value;\n    begin\n      temp_value = value-1;\n      for (log2=0; temp_value&gt;0; log2=log2+1)\n        temp_value = temp_value&gt;&gt;1;\n    end\n  endfunction\n`endif\n`ifdef _SIM_HAVE_CLOG2\n  parameter arg2_bitsize = $clog2(PRECISION);\n`else\n  parameter arg2_bitsize = log2(PRECISION);\n`endif\ngenerate\n  if(BITSIZE_in2 &gt; arg2_bitsize)\n    assign out1 = in1 &lt;&lt;&lt; in2[arg2_bitsize-1:0];\n  else\n    assign out1 = in1 &lt;&lt;&lt; in2;\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  parameter arg2_bitsize = $clog2(PRECISION);
+`else
+  parameter arg2_bitsize = log2(PRECISION);
+`endif
+generate
+  if(BITSIZE_in2 &gt; arg2_bitsize)
+    assign out1 = in1 &lt;&lt;&lt; in2[arg2_bitsize-1:0];
+  else
+    assign out1 = in1 &lt;&lt;&lt; in2;
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -609,7 +797,28 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2\n  function integer log2;\n     input integer value;\n     integer temp_value;\n    begin\n      temp_value = value-1;\n      for (log2=0; temp_value&gt;0; log2=log2+1)\n        temp_value = temp_value&gt;&gt;1;\n    end\n  endfunction\n`endif\n`ifdef _SIM_HAVE_CLOG2\n  parameter arg2_bitsize = $clog2(PRECISION);\n`else\n  parameter arg2_bitsize = log2(PRECISION);\n`endif\ngenerate\n  if(BITSIZE_in2 &gt; arg2_bitsize)\n    assign out1 = in1 &lt;&lt; in2[arg2_bitsize-1:0];\n  else\n    assign out1 = in1 &lt;&lt; in2;\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  parameter arg2_bitsize = $clog2(PRECISION);
+`else
+  parameter arg2_bitsize = log2(PRECISION);
+`endif
+generate
+  if(BITSIZE_in2 &gt; arg2_bitsize)
+    assign out1 = in1 &lt;&lt; in2[arg2_bitsize-1:0];
+  else
+    assign out1 = in1 &lt;&lt; in2;
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -632,7 +841,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) != $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) != $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -655,7 +870,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -678,7 +899,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_lt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_lt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -701,7 +928,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_lt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &lt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_lt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &lt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -724,7 +957,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_gt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_gt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -747,7 +986,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_gt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &gt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_gt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &gt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -770,7 +1015,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_le_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt;= $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_le_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt;= $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -793,7 +1044,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_le_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &lt;= in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_le_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &lt;= in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -816,7 +1073,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_ge_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt;= $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_ge_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt;= $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -839,7 +1102,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_ge_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &gt;= in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_ge_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &gt;= in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -866,7 +1135,14 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_perm_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3] % (2*NUM_ELEM_out1)) &lt; NUM_ELEM_out1 ? (in1 >> (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]*BITSIZE_out1)) : (in2 >> ((in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]-NUM_ELEM_out1)*BITSIZE_out1));\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_perm_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="
+generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3] % (2*NUM_ELEM_in1)) &lt; NUM_ELEM_in1 ? (in1 >> (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]*BITSIZE_out1)) : (in2 >> ((in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]-NUM_ELEM_in1)*BITSIZE_out1));
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -892,7 +1168,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_perm_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3] % (2*NUM_ELEM_out1)) &lt; NUM_ELEM_out1 ? (in1 >> (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]*BITSIZE_out1)) : (in2 >> ((in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]-NUM_ELEM_out1)*BITSIZE_out1));\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_perm_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3] % (2*NUM_ELEM_in1)) &lt; NUM_ELEM_in1 ? (in1 >> (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]*BITSIZE_out1)) : (in2 >> ((in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]-NUM_ELEM_in1)*BITSIZE_out1));
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -915,7 +1197,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_bit_xor_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) ^ $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_bit_xor_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) ^ $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -938,7 +1226,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_bit_xor_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] ^ in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_bit_xor_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] ^ in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -961,7 +1255,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_bit_ior_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) | $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_bit_ior_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) | $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -984,7 +1284,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_bit_ior_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] | in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_bit_ior_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] | in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1007,7 +1313,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_bit_and_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &amp; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_bit_and_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &amp; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1030,7 +1342,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_bit_and_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &amp; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_bit_and_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &amp; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1050,7 +1368,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_bit_not_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = ~$signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_bit_not_expr_FU in1 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = ~$signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1070,7 +1394,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_bit_not_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = ~in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_bit_not_expr_FU in1 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = ~in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1093,7 +1423,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_in1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) == $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_in1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) == $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1116,7 +1452,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_in1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] == in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_in1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] == in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1140,7 +1482,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec1_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt;&gt;&gt; (in2%PRECISION);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec1_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt;&gt;&gt; (in2%PRECISION);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1164,7 +1512,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec1_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]  &gt;&gt; (in2%PRECISION);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec1_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]  &gt;&gt; (in2%PRECISION);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1188,7 +1542,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec1_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt;&lt;&lt; (in2%PRECISION);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec1_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt;&lt;&lt; (in2%PRECISION);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1212,7 +1572,13 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec1_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]  &lt;&lt; (in2%PRECISION);\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec1_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]  &lt;&lt; (in2%PRECISION);
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1238,7 +1604,20 @@ endgenerate
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="vec_pack_trunc_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : packing_lo\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_out1-1:o1*BITSIZE_in1];\n  end\nendgenerate\ngenerate\ngenvar o2;\n  for (o2=0; o2&lt;NUM_ELEM_out1/2; o2=o2+1)\n  begin  : packing_hi\n    assign out1[(NUM_ELEM_out1/2+o2+1)*BITSIZE_out1-1:(NUM_ELEM_out1/2+o2)*BITSIZE_out1] = in2[o2*BITSIZE_in2+BITSIZE_out1-1:o2*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_pack_trunc_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)
+  begin  : packing_lo
+    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_out1-1:o1*BITSIZE_in1];
+  end
+endgenerate
+generate
+genvar o2;
+  for (o2=0; o2&lt;NUM_ELEM_out1/2; o2=o2+1)
+  begin  : packing_hi
+    assign out1[(NUM_ELEM_out1/2+o2+1)*BITSIZE_out1-1:(NUM_ELEM_out1/2+o2)*BITSIZE_out1] = in2[o2*BITSIZE_in2+BITSIZE_out1-1:o2*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1264,7 +1643,20 @@ endgenerate
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_pack_trunc_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : packing_lo\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_out1-1:o1*BITSIZE_in1];\n  end\nendgenerate\ngenerate\ngenvar o2;\n  for (o2=0; o2&lt;NUM_ELEM_out1/2; o2=o2+1)\n  begin  : packing_hi\n    assign out1[(NUM_ELEM_out1/2+o2+1)*BITSIZE_out1-1:(NUM_ELEM_out1/2+o2)*BITSIZE_out1] = in2[o2*BITSIZE_in2+BITSIZE_out1-1:o2*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_pack_trunc_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)
+  begin  : packing_lo
+    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_out1-1:o1*BITSIZE_in1];
+  end
+endgenerate
+generate
+genvar o2;
+  for (o2=0; o2&lt;NUM_ELEM_out1/2; o2=o2+1)
+  begin  : packing_hi
+    assign out1[(NUM_ELEM_out1/2+o2+1)*BITSIZE_out1-1:(NUM_ELEM_out1/2+o2)*BITSIZE_out1] = in2[o2*BITSIZE_in2+BITSIZE_out1-1:o2*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1286,7 +1678,13 @@ endgenerate
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="vec_unpack_hi_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : unpacking_hi\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{in1[(NUM_ELEM_out1+o1+1)*BITSIZE_in1-1]}}, in1[(NUM_ELEM_out1+o1+1)*BITSIZE_in1-1:(NUM_ELEM_out1+o1)*BITSIZE_in1]};\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_unpack_hi_expr_FU in1 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : unpacking_hi
+    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{in1[(NUM_ELEM_out1+o1+1)*BITSIZE_in1-1]}}, in1[(NUM_ELEM_out1+o1+1)*BITSIZE_in1-1:(NUM_ELEM_out1+o1)*BITSIZE_in1]};
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1308,7 +1706,13 @@ endgenerate
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_unpack_hi_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : unpacking_hi\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{1&apos;b0}}, in1[(NUM_ELEM_out1+o1+1)*BITSIZE_in1-1:(NUM_ELEM_out1+o1)*BITSIZE_in1]};\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_unpack_hi_expr_FU in1 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : unpacking_hi
+    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{1&apos;b0}}, in1[(NUM_ELEM_out1+o1+1)*BITSIZE_in1-1:(NUM_ELEM_out1+o1)*BITSIZE_in1]};
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1330,7 +1734,13 @@ endgenerate
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="vec_unpack_lo_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : unpacking_lo\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{in1[(o1+1)*BITSIZE_in1-1]}}, in1[(o1+1)*BITSIZE_in1-1:o1*BITSIZE_in1]};\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_unpack_lo_expr_FU in1 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : unpacking_lo
+    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{in1[(o1+1)*BITSIZE_in1-1]}}, in1[(o1+1)*BITSIZE_in1-1:o1*BITSIZE_in1]};
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1352,7 +1762,13 @@ endgenerate
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_unpack_lo_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : unpacking_lo\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{1&apos;b0}}, in1[(o1+1)*BITSIZE_in1-1:o1*BITSIZE_in1]};\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_unpack_lo_expr_FU in1 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : unpacking_lo
+    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{1&apos;b0}}, in1[(o1+1)*BITSIZE_in1-1:o1*BITSIZE_in1]};
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1382,7 +1798,17 @@ endgenerate
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_dot_prod_expr_FU in1 in2 in3 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU,widen_mult_expr_FU,dot_prod_expr_FU" VERILOG_PROVIDED="wire signed [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_mult;\nwire signed [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_dotprod;\ngenerate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    dot_prod_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) dp1 (.out1(tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]), .in3(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]));\n    widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(tmp_mult[(o1)*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = tmp_mult[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] + tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_dot_prod_expr_FU in1 in2 in3 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU,widen_mult_expr_FU,dot_prod_expr_FU" VERILOG_PROVIDED="wire signed [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_mult;
+wire signed [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_dotprod;
+generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    dot_prod_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) dp1 (.out1(tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]), .in3(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]));
+    widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(tmp_mult[(o1)*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = tmp_mult[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] + tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1412,7 +1838,17 @@ endgenerate
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_dot_prod_expr_FU in1 in2 in3 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU,ui_widen_mult_expr_FU,ui_dot_prod_expr_FU" VERILOG_PROVIDED="wire [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_mult;\nwire [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_dotprod;\ngenerate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    ui_dot_prod_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) dp1 (.out1(tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]), .in3(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]));\n    ui_widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(tmp_mult[(o1)*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = tmp_mult[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] + tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_dot_prod_expr_FU in1 in2 in3 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU,ui_widen_mult_expr_FU,ui_dot_prod_expr_FU" VERILOG_PROVIDED="wire [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_mult;
+wire [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_dotprod;
+generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    ui_dot_prod_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) dp1 (.out1(tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]), .in3(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]));
+    ui_widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(tmp_mult[(o1)*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = tmp_mult[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] + tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1435,7 +1871,14 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_extracteven_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2)*BITSIZE_in1+BITSIZE_in1-1:(o1*2)*BITSIZE_in1];\n    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2)*BITSIZE_in2+BITSIZE_in2-1:(o1*2)*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_extracteven_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2)*BITSIZE_in1+BITSIZE_in1-1:(o1*2)*BITSIZE_in1];
+    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2)*BITSIZE_in2+BITSIZE_in2-1:(o1*2)*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1458,7 +1901,14 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_extracteven_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2)*BITSIZE_in1+BITSIZE_in1-1:(o1*2)*BITSIZE_in1];\n    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2)*BITSIZE_in2+BITSIZE_in2-1:(o1*2)*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_extracteven_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2)*BITSIZE_in1+BITSIZE_in1-1:(o1*2)*BITSIZE_in1];
+    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2)*BITSIZE_in2+BITSIZE_in2-1:(o1*2)*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1481,7 +1931,14 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_extractodd_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2+1)*BITSIZE_in1+BITSIZE_in1-1:(o1*2+1)*BITSIZE_in1];\n    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2+1)*BITSIZE_in2+BITSIZE_in2-1:(o1*2+1)*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_extractodd_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2+1)*BITSIZE_in1+BITSIZE_in1-1:(o1*2+1)*BITSIZE_in1];
+    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2+1)*BITSIZE_in2+BITSIZE_in2-1:(o1*2+1)*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1504,7 +1961,14 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_extractodd_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2+1)*BITSIZE_in1+BITSIZE_in1-1:(o1*2+1)*BITSIZE_in1];\n    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2+1)*BITSIZE_in2+BITSIZE_in2-1:(o1*2+1)*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_extractodd_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2+1)*BITSIZE_in1+BITSIZE_in1-1:(o1*2+1)*BITSIZE_in1];
+    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2+1)*BITSIZE_in2+BITSIZE_in2-1:(o1*2+1)*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1527,7 +1991,14 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_interleavehigh_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)\n  begin  : vec_expr\n    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1];\n    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_interleavehigh_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)
+  begin  : vec_expr
+    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1];
+    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1550,7 +2021,14 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_interleavehigh_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)\n  begin  : vec_expr\n    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1];\n    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_interleavehigh_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)
+  begin  : vec_expr
+    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1];
+    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1573,7 +2051,14 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_interleavelow_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)\n  begin  : vec_expr\n    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2)*BITSIZE_in1];\n    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2)*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="vec_interleavelow_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)
+  begin  : vec_expr
+    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2)*BITSIZE_in1];
+    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2)*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
@@ -1596,9 +2081,136 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_interleavelow_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)\n  begin  : vec_expr\n    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2)*BITSIZE_in1];\n    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2)*BITSIZE_in2];\n  end\nendgenerate"/>
+          <NP_functionality LIBRARY="ui_vec_interleavelow_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)
+  begin  : vec_expr
+    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2)*BITSIZE_in1];
+    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2)*BITSIZE_in2];
+  end
+endgenerate"/>
         </component_o>
       </circuit>
     </template>
+    <cell>
+      <name>ui_insertelement_expr_FU</name>
+      <operation operation_name="insertelement_expr" supported_types="VECTOR_UINT:*"/>
+      <circuit>
+        <component_o id="ui_insertelement_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2021-2022 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_insertelement_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1" />
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_insertelement_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED=
+"generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = o1 == in3 ? in2 : in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];
+  end
+endgenerate"
+ VHDL_PROVIDED="begin
+  process(in1)
+  begin
+    for index in 0 to NUM_ELEM_out1-1 loop
+      if(BITSIZE_out1 &gt; BITSIZE_in1) then
+        out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in2), BITSIZE_out1)) when (o1 = in3) else std_logic_vector(resize(unsigned(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1)), BITSIZE_out1));
+      else
+        out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= in2(BITSIZE_out1-1+index*BITSIZE_in2 downto index*BITSIZE_in2) when (o1 = in3) else in1(BITSIZE_out1-1+index*BITSIZE_in1 downto index*BITSIZE_in1);
+      end if;
+    end loop;
+  end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>insertelement_expr_FU</name>
+      <operation operation_name="insertelement_expr" supported_types="VECTOR_INT:*"/>
+      <circuit>
+        <component_o id="insertelement_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2021-2022 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="insertelement_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="INT" size="1" />
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="insertelement_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED=
+"generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    if (BITSIZE_out1 &lt;= BITSIZE_in1)
+    begin
+      assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = o1 == in3 ? in2 : in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];
+    end
+    else
+    begin
+      assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = o1 == in3 ? in2 :  {{(BITSIZE_out1-BITSIZE_in1){in1[o1*BITSIZE_in1+BITSIZE_in1-1]}},in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]};
+    end
+  end
+endgenerate"
+ VHDL_PROVIDED="begin
+  process(in1)
+  begin
+    for index in 0 to NUM_ELEM_out1-1 loop
+      if(BITSIZE_out1 &gt; BITSIZE_in1) then
+        out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= resize(in2, BITSIZE_out1) when (o1 = in3) else resize(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1), BITSIZE_out1);
+      else
+        out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= in2(BITSIZE_out1-1+index*BITSIZE_in2 downto index*BITSIZE_in2) when (o1 = in3) else in1(BITSIZE_out1-1+index*BITSIZE_in1 downto index*BITSIZE_in1);
+      end if;
+    end loop;
+  end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ui_extractelement_expr_FU</name>
+      <operation operation_name="extractelement_expr" supported_types="VECTOR_UINT:*"/>
+      <circuit>
+        <component_o id="ui_extractelement_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2021-2022 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_extractelement_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_extractelement_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1[BITSIZE_out1-1:0] = in1[in2*BITSIZE_in1 +: BITSIZE_in1];"/>
+        </component_o>
+      </circuit>
+    </cell>
   </library>
 </technology>

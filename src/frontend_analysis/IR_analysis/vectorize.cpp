@@ -578,7 +578,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          const auto* be = GetPointer<const binary_expr>(tree_node);
          if(tree_node->get_kind() == mem_ref_K or tree_node->get_kind() == trunc_div_expr_K or
             tree_node->get_kind() == trunc_mod_expr_K or tree_node->get_kind() == widen_mult_expr_K or
-            tree_node->get_kind() == mult_expr_K or tree_node->get_kind() == lut_expr_K or
+            tree_node->get_kind() == mult_expr_K or
             tree_node->get_kind() == extract_bit_expr_K)
          {
             transformations[tree_node->index] = SCALAR;
@@ -910,6 +910,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case vec_cond_expr_K:
       case vec_perm_expr_K:
       case dot_prod_expr_K:
+      case insertelement_expr_K:
       case CASE_TYPE_NODES:
       {
          THROW_UNREACHABLE("Not supported tree node " + tree_node->get_kind_text());
@@ -3195,6 +3196,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             case bit_ior_concat_expr_K:
             case error_mark_K:
             case insertvalue_expr_K:
+            case insertelement_expr_K:
             {
                if(debug_level >= DEBUG_LEVEL_PEDANTIC)
                {
