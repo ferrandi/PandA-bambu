@@ -820,9 +820,9 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(condition);
          auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
-         const auto cond_expr_node = tree_man->create_ternary_operation(
-             type_node, condition, true_value, false_value, BUILTIN_SRCP,
-             (isAVectorType ? vec_cond_expr_K : cond_expr_K));
+         const auto cond_expr_node =
+             tree_man->create_ternary_operation(type_node, condition, true_value, false_value, BUILTIN_SRCP,
+                                                (isAVectorType ? vec_cond_expr_K : cond_expr_K));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
 
@@ -1051,9 +1051,9 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(condition);
          auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
-         const auto cond_expr_node = tree_man->create_ternary_operation(
-             type_node, condition, true_value, false_value, BUILTIN_SRCP,
-             (isAVectorType ? vec_cond_expr_K : cond_expr_K));
+         const auto cond_expr_node =
+             tree_man->create_ternary_operation(type_node, condition, true_value, false_value, BUILTIN_SRCP,
+                                                (isAVectorType ? vec_cond_expr_K : cond_expr_K));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
 
@@ -1246,9 +1246,9 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(first_condition.first);
          auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
-         const auto cond_expr_node = tree_man->create_ternary_operation(
-             type_node, first_condition.first, first_value, second_value, BUILTIN_SRCP,
-             (isAVectorType ? vec_cond_expr_K : cond_expr_K));
+         const auto cond_expr_node =
+             tree_man->create_ternary_operation(type_node, first_condition.first, first_value, second_value,
+                                                BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
 
          /// Create the assign
          gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP,
@@ -1505,9 +1505,9 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(first_condition.first);
          auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
-         const auto cond_expr_node = tree_man->create_ternary_operation(
-             type_node, first_condition.first, first_value, second_value, BUILTIN_SRCP,
-             (isAVectorType ? vec_cond_expr_K : cond_expr_K));
+         const auto cond_expr_node =
+             tree_man->create_ternary_operation(type_node, first_condition.first, first_value, second_value,
+                                                BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
 
          /// Create the assign
          new_gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP,
@@ -1785,9 +1785,9 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             /// Create the cond expr
             auto condition_type = tree_helper::CGetType(condition);
             auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
-            const auto cond_expr_node = tree_man->create_ternary_operation(
-                type_node, condition, first_value, second_value, BUILTIN_SRCP,
-                (isAVectorType ? vec_cond_expr_K : cond_expr_K));
+            const auto cond_expr_node =
+                tree_man->create_ternary_operation(type_node, condition, first_value, second_value, BUILTIN_SRCP,
+                                                   (isAVectorType ? vec_cond_expr_K : cond_expr_K));
 
             /// Create the assign
             /// Workaround: we need to consider the overhead due to multiplexers associated with the phi; for this

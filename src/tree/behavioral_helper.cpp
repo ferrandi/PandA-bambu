@@ -3690,7 +3690,6 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                      res += PrintNode(fn, v, vppf) + " = ";
                   }
                   res += tree_helper::print_function_name(TM, local_fd);
-
                }
                else
                {

@@ -1452,7 +1452,8 @@ void CompilerWrapper::InitializeCompilerParameters()
                   if(optimization_flags.find("tree-pre") != optimization_flags.end())
                   {
                      optimization_flags.erase(optimization_flags.find("tree-pre"));
-                  }if(optimization_flags.find("tree-pre") != optimization_flags.end())
+                  }
+                  if(optimization_flags.find("tree-pre") != optimization_flags.end())
                   {
                      optimization_flags.erase(optimization_flags.find("tree-pre"));
                   }
@@ -1639,7 +1640,7 @@ void CompilerWrapper::SetBambuDefault()
    const CompilerWrapper_OptimizationSet opt_level =
        Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    CompilerWrapper_CompilerTarget compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
-   bool is_clang =  false;
+   bool is_clang = false;
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
@@ -1667,10 +1668,10 @@ void CompilerWrapper::SetBambuDefault()
 #if HAVE_I386_CLANG6_COMPILER
       || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
-      )
+   )
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      is_clang =  true;
+      is_clang = true;
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
@@ -1681,17 +1682,17 @@ void CompilerWrapper::SetBambuDefault()
       }
       return;
    }
-   if( false
+   if(false
 #if HAVE_I386_CLANG7_COMPILER
-       || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
       || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
-       )
+   )
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      is_clang =  true;
+      is_clang = true;
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
@@ -1710,10 +1711,10 @@ void CompilerWrapper::SetBambuDefault()
 #if HAVE_I386_CLANG12_COMPILER
       || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
-      )
+   )
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      is_clang =  true;
+      is_clang = true;
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
@@ -1724,7 +1725,7 @@ void CompilerWrapper::SetBambuDefault()
    if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      is_clang =  true;
+      is_clang = true;
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;

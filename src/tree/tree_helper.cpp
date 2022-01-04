@@ -8588,7 +8588,8 @@ void tree_helper::get_required_values(std::vector<std::tuple<unsigned int, unsig
             get_required_values(required, te->op1);
             get_required_values(required, te->op2);
          }
-         else if(tn_kind == obj_type_ref_K || tn_kind == save_expr_K || tn_kind == vtable_ref_K || tn_kind == with_cleanup_expr_K)
+         else if(tn_kind == obj_type_ref_K || tn_kind == save_expr_K || tn_kind == vtable_ref_K ||
+                 tn_kind == with_cleanup_expr_K)
          {
             THROW_ERROR("Operation not yet supported: " + std::string(tn->get_kind_text()));
          }

@@ -1098,7 +1098,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                else
                {
                   auto op_node = GET_NODE(def_edge.first);
-                  const auto en_type = GetPointer<expr_node>(op_node) ? GetPointerS<expr_node>(op_node)->type : GetPointer<constructor>(op_node)->type;
+                  const auto en_type = GetPointer<expr_node>(op_node) ? GetPointerS<expr_node>(op_node)->type :
+                                                                        GetPointer<constructor>(op_node)->type;
                   op_ga = tree_man->CreateGimpleAssign(en_type, tree_nodeRef(), tree_nodeRef(), def_edge.first,
                                                        function_id, def_edge.second, srcp_default);
                }
@@ -1173,7 +1174,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
 
             const auto extract_expr = [&](tree_nodeRef& op, bool set_temp_addr) {
                auto op_node = GET_NODE(op);
-               const auto en_type = GetPointer<expr_node>(op_node) ? GetPointerS<expr_node>(op_node)->type : GetPointer<constructor>(op_node)->type;
+               const auto en_type = GetPointer<expr_node>(op_node) ? GetPointerS<expr_node>(op_node)->type :
+                                                                     GetPointer<constructor>(op_node)->type;
                const auto new_ga = tree_man->CreateGimpleAssign(en_type, tree_nodeRef(), tree_nodeRef(), op,
                                                                 function_id, block.first, srcp_default);
                const auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
@@ -1286,16 +1288,19 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                if(GetPointer<ternary_expr>(GET_NODE(ga->op1))) /// required by the CLANG/LLVM plugin
                {
                   auto te = GetPointer<ternary_expr>(GET_NODE(ga->op1));
-                  if(GetPointer<unary_expr>(GET_NODE(te->op0)) || GetPointer<binary_expr>(GET_NODE(te->op0)) || GetPointer<constructor>(GET_NODE(te->op0)))
+                  if(GetPointer<unary_expr>(GET_NODE(te->op0)) || GetPointer<binary_expr>(GET_NODE(te->op0)) ||
+                     GetPointer<constructor>(GET_NODE(te->op0)))
                   {
                      extract_expr(te->op0, false);
                   }
-                  if(GetPointer<unary_expr>(GET_NODE(te->op1)) || GetPointer<binary_expr>(GET_NODE(te->op1)) || GetPointer<constructor>(GET_NODE(te->op1)))
+                  if(GetPointer<unary_expr>(GET_NODE(te->op1)) || GetPointer<binary_expr>(GET_NODE(te->op1)) ||
+                     GetPointer<constructor>(GET_NODE(te->op1)))
                   {
                      extract_expr(te->op1, false);
                   }
                   if(te->op2 &&
-                     (GetPointer<unary_expr>(GET_NODE(te->op2)) || GetPointer<binary_expr>(GET_NODE(te->op2)) || GetPointer<constructor>(GET_NODE(te->op2))))
+                     (GetPointer<unary_expr>(GET_NODE(te->op2)) || GetPointer<binary_expr>(GET_NODE(te->op2)) ||
+                      GetPointer<constructor>(GET_NODE(te->op2))))
                   {
                      extract_expr(te->op2, false);
                   }

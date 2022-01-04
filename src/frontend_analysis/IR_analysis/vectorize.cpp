@@ -578,8 +578,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          const auto* be = GetPointer<const binary_expr>(tree_node);
          if(tree_node->get_kind() == mem_ref_K or tree_node->get_kind() == trunc_div_expr_K or
             tree_node->get_kind() == trunc_mod_expr_K or tree_node->get_kind() == widen_mult_expr_K or
-            tree_node->get_kind() == mult_expr_K or
-            tree_node->get_kind() == extract_bit_expr_K)
+            tree_node->get_kind() == mult_expr_K or tree_node->get_kind() == extract_bit_expr_K)
          {
             transformations[tree_node->index] = SCALAR;
          }
