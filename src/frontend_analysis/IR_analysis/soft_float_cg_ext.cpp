@@ -253,16 +253,6 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             THROW_ERROR("Function " + format[0] + " already specialized.");
          }
 
-         if(!f_node)
-         {
-            THROW_ERROR("Function " + format[0] + " does not exists. (Maybe it has been inlined)");
-         }
-         const auto function_v = CGM->GetVertex(f_node->index);
-         if(funcFF.count(function_v))
-         {
-            THROW_ERROR("Function " + format[0] + " already specialized.");
-         }
-
          const auto userFF = FloatFormat::FromString(format[1]);
          THROW_ASSERT(userFF, "FP format for function " + STR(format[0]) + " not valid");
          funcFF.insert({function_v, FunctionVersionRef(new FunctionVersion(function_v, userFF))});
