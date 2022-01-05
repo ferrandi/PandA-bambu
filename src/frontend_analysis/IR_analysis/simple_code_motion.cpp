@@ -229,6 +229,11 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because right part is constant");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
+   if(GET_NODE(ga->op0)->get_kind() == ssa_name_K && GET_NODE(ga->op1)->get_kind() == constructor_K)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment with a constructor");
+      return FunctionFrontendFlowStep_Movable::MOVABLE;
+   }
    if(GET_NODE(ga->op0)->get_kind() == ssa_name_K && GET_NODE(ga->op1)->get_kind() == ssa_name_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment");
@@ -268,6 +273,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case convert_expr_K:
       case view_convert_expr_K:
       case ssa_name_K:
+      case constructor_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
@@ -615,7 +621,6 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case target_mem_ref_K:
       case binfo_K:
       case block_K:
-      case constructor_K:
       case identifier_node_K:
       case CASE_PRAGMA_NODES:
       case statement_list_K:
