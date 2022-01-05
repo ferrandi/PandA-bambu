@@ -128,11 +128,11 @@ if BUILD_LIB_POLIXML
                  -I$(top_srcdir)/src/parser/polixml
 endif
 
-program_tests_LDADD = -lboost_unit_test_framework ../src/lib_bambu.la @PTHREAD_HACK@ ../src/bambu-BambuParameter.o ../src/bambu-Parameter.o ../src/bambu-global_variables.o
+program_tests_LDADD = -lboost_unit_test_framework ../src/lib_bambu.la ../src/lib_utility.la @PTHREAD_HACK@ ../src/bambu-BambuParameter.o ../src/bambu-Parameter.o ../src/bambu-global_variables.o
 program_tests_LDFLAGS = $(BOOST_LDFLAGS)
 program_tests_SOURCES = \
      main_tests.cpp \
      frontend_analysis/IR_analysis/Range.cpp \
-     frontend_analysis/IR_analysis/APInt.cpp
+     utility/APInt.cpp
 
 TESTS = program_tests

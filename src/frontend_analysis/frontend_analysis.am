@@ -144,7 +144,6 @@ BUILT_SOURCES =
 
 if BUILD_BAMBU
   noinst_HEADERS += \
-     frontend_analysis/IR_analysis/APInt.hpp \
      frontend_analysis/IR_analysis/bit_lattice.hpp \
      frontend_analysis/IR_analysis/Bit_Value.hpp \
      frontend_analysis/IR_analysis/Bit_Value_opt.hpp \
@@ -188,7 +187,6 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/vectorize.hpp \
      frontend_analysis/IR_analysis/virtual_phi_nodes_split.hpp
   lib_IR_analysis_la_SOURCES += \
-     frontend_analysis/IR_analysis/APInt.cpp \
      frontend_analysis/IR_analysis/IR_lowering.cpp \
      frontend_analysis/IR_analysis/IR_lowering_exec.cpp \
      frontend_analysis/IR_analysis/bit_lattice.cpp \
