@@ -65,10 +65,13 @@ class APInt
  public:
    APInt();
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
    template <typename T>
    APInt(T val, typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr) : _data(val)
    {
    }
+#pragma GCC diagnostic pop
 
    friend bool operator<(const APInt& lhs, const APInt& rhs);
    friend bool operator>(const APInt& lhs, const APInt& rhs);
@@ -139,7 +142,7 @@ class APInt
       }
       return static_cast<T>(static_cast<U>(_data.convert_to<unsigned long long>() & std::numeric_limits<U>::max()));
    }
-   std::string str() const;
+   std::string str(int base = 10) const;
 
    static APInt getMaxValue(bw_t bw);
    static APInt getMinValue(bw_t bw);

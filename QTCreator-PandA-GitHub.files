@@ -1985,8 +1985,6 @@ src/design_flows/technology/technology_flow_step_factory.hpp
 src/design_flows/technology/write_technology.cpp
 src/design_flows/technology/write_technology.hpp
 src/eucalyptus.cpp
-src/frontend_analysis/IR_analysis/APInt.cpp
-src/frontend_analysis/IR_analysis/APInt.hpp
 src/frontend_analysis/IR_analysis/BitValueIPA.cpp
 src/frontend_analysis/IR_analysis/BitValueIPA.hpp
 src/frontend_analysis/IR_analysis/BitValueRange.cpp
@@ -2357,6 +2355,8 @@ src/tree/type_casting.cpp
 src/tree/type_casting.hpp
 src/tree/var_pp_functor.cpp
 src/tree/var_pp_functor.hpp
+src/utility/APInt.hpp
+src/utility/APInt.cpp
 src/utility/Lexer_utilities.hpp
 src/utility/Statistics.cpp
 src/utility/Statistics.hpp

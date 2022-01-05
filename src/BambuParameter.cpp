@@ -760,7 +760,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Enable the soft-based implementation of floating-point operations.\n"
       << "        Bambu uses as default a faithfully rounded version of softfloat with rounding mode\n"
       << "        equal to round to nearest even. Subnormal numbers are disabled by default.\n"
-      << "        Default FP format are e8m23b-127nih and e11m52b-1023nih for single and double \n"
+      << "        Default FP formats are e8m23b-127nih and e11m52b-1023nih for single and double \n"
       << "        precision floating-point types respectively.\n\n"
 #if HAVE_FLOPOCO
       << "    --flopoco\n"
@@ -807,7 +807,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                          o - overflow  : Inf and Nan results in undefined behaviour\n"
       << "              spec   - Floating-point specialization string (multiple choice):\n"
       << "                          h - hidden one: IEEE754 standard representation with hidden one\n"
-      << "                          s - subnormals: IEEE754 subnormal numbers"
+      << "                          s - subnormals: IEEE754 subnormal numbers\n"
       << "              sign   - Static sign representation (exclusive option):\n"
       << "                            - IEEE754 dynamic sign is used if omitted\n"
       << "                          1 - all values are considered as negative numbers\n"
