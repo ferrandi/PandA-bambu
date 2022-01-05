@@ -1287,22 +1287,26 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                if(GetPointer<ternary_expr>(GET_NODE(ga->op1))) /// required by the CLANG/LLVM plugin
                {
-                  auto te = GetPointer<ternary_expr>(GET_NODE(ga->op1));
-                  if(GetPointer<unary_expr>(GET_NODE(te->op0)) || GetPointer<binary_expr>(GET_NODE(te->op0)) ||
-                     GetPointer<constructor>(GET_NODE(te->op0)))
+                  auto op1_kind = GET_NODE(ga->op1)->get_kind();
+                  if(op1_kind != component_ref_K && op1_kind != bit_field_ref_K)
                   {
-                     extract_expr(te->op0, false);
-                  }
-                  if(GetPointer<unary_expr>(GET_NODE(te->op1)) || GetPointer<binary_expr>(GET_NODE(te->op1)) ||
-                     GetPointer<constructor>(GET_NODE(te->op1)))
-                  {
-                     extract_expr(te->op1, false);
-                  }
-                  if(te->op2 &&
-                     (GetPointer<unary_expr>(GET_NODE(te->op2)) || GetPointer<binary_expr>(GET_NODE(te->op2)) ||
-                      GetPointer<constructor>(GET_NODE(te->op2))))
-                  {
-                     extract_expr(te->op2, false);
+                     auto te = GetPointer<ternary_expr>(GET_NODE(ga->op1));
+                     if(GetPointer<unary_expr>(GET_NODE(te->op0)) || GetPointer<binary_expr>(GET_NODE(te->op0)) ||
+                        GetPointer<constructor>(GET_NODE(te->op0)))
+                     {
+                        extract_expr(te->op0, false);
+                     }
+                     if(GetPointer<unary_expr>(GET_NODE(te->op1)) || GetPointer<binary_expr>(GET_NODE(te->op1)) ||
+                        GetPointer<constructor>(GET_NODE(te->op1)))
+                     {
+                        extract_expr(te->op1, false);
+                     }
+                     if(te->op2 &&
+                        (GetPointer<unary_expr>(GET_NODE(te->op2)) || GetPointer<binary_expr>(GET_NODE(te->op2)) ||
+                         GetPointer<constructor>(GET_NODE(te->op2))))
+                     {
+                        extract_expr(te->op2, false);
+                     }
                   }
                }
 
