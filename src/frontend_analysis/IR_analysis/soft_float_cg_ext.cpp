@@ -240,24 +240,24 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       {
          auto format = SplitString(opt, "*");
 
-         const auto f_node = format[0] == "@" ?
-                                 TreeM->GetTreeNode(*AppM->CGetCallGraphManager()->GetRootFunctions().begin()) :
-                                 TreeM->GetFunction(format[0]);
-         if(!f_node)
-         {
-            THROW_ERROR("Function " + format[0] + " does not exists. (Maybe it has been inlined)");
-         }
-         const auto function_v = CGM->GetVertex(f_node->index);
-         if(funcFF.count(function_v))
-         {
-            THROW_ERROR("Function " + format[0] + " already specialized.");
-         }
+         const auto f_index = [&]() -> unsigned int {
+            if(format[0] == "@")
+            {
+               if(AppM->CGetCallGraphManager()->GetRootFunctions().size() > 1)
+               {
+                  THROW_WARNING("Multiple top functions defined, @ is replaced with first.");
+               }
+               return *AppM->CGetCallGraphManager()->GetRootFunctions().begin();
+            }
+            const auto f_node = TreeM->GetFunction(format[0]);
+            return f_node ? f_node->index : 0;
+         }();
 
-         if(!f_node)
+         if(!f_index)
          {
             THROW_ERROR("Function " + format[0] + " does not exists. (Maybe it has been inlined)");
          }
-         const auto function_v = CGM->GetVertex(f_node->index);
+         const auto function_v = CGM->GetVertex(f_index);
          if(funcFF.count(function_v))
          {
             THROW_ERROR("Function " + format[0] + " already specialized.");
