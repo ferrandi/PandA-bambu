@@ -1,4 +1,30 @@
-EXTRA_DIST = GRLIB/grlib/amba/amba.vhd GRLIB/grlib/amba/devices.vhd GRLIB/grlib/amba/ahbctrl.vhd GRLIB/grlib/amba/apbctrl.vhd GRLIB/grlib/stdlib/stdlib.vhd GRLIB/grlib/stdlib/version.vhd GRLIB/techmap/maps/inpad.vhd GRLIB/techmap/maps/outpad.vhd GRLIB/techmap/maps/clkpad.vhd GRLIB/techmap/maps/iopad.vhd GRLIB/techmap/maps/allclkgen.vhd GRLIB/techmap/maps/iodpad.vhd GRLIB/techmap/maps/toutpad.vhd GRLIB/techmap/maps/allpads.vhd GRLIB/techmap/maps/odpad.vhd GRLIB/techmap/maps/clkgen.vhd GRLIB/techmap/gencomp GRLIB/techmap/gencomp/gencomp.vhd GRLIB/techmap/unisim/clkgen_unisim.vhd GRLIB/techmap/unisim/pads_unisim.vhd GRLIB/gaisler/misc/misc.vhd GRLIB/gaisler/misc/ahbmst.vhd GRLIB/gaisler/misc/rstgen.vhd GRLIB/gaisler/pci/pci.vhd GRLIB/gaisler/pci/pci_target.vhd GRLIB/gaisler/pci/pcipads.vhd\
+EXTRA_DIST = \
+GRLIB/grlib/amba/amba.vhd \
+GRLIB/grlib/amba/devices.vhd \
+GRLIB/grlib/amba/ahbctrl.vhd \
+GRLIB/grlib/amba/apbctrl.vhd \
+GRLIB/grlib/stdlib/stdlib.vhd \
+GRLIB/grlib/stdlib/version.vhd \
+GRLIB/techmap/maps/inpad.vhd \
+GRLIB/techmap/maps/outpad.vhd \
+GRLIB/techmap/maps/clkpad.vhd \
+GRLIB/techmap/maps/iopad.vhd \
+GRLIB/techmap/maps/allclkgen.vhd \
+GRLIB/techmap/maps/iodpad.vhd \
+GRLIB/techmap/maps/toutpad.vhd \
+GRLIB/techmap/maps/allpads.vhd \
+GRLIB/techmap/maps/odpad.vhd \
+GRLIB/techmap/maps/clkgen.vhd \
+GRLIB/techmap/gencomp \
+GRLIB/techmap/gencomp/gencomp.vhd \
+GRLIB/techmap/unisim/clkgen_unisim.vhd \
+GRLIB/techmap/unisim/pads_unisim.vhd \
+GRLIB/gaisler/misc/misc.vhd \
+GRLIB/gaisler/misc/ahbmst.vhd \
+GRLIB/gaisler/misc/rstgen.vhd \
+GRLIB/gaisler/pci/pci.vhd \
+GRLIB/gaisler/pci/pci_target.vhd \
+GRLIB/gaisler/pci/pcipads.vhd\
 mockturtle/experiments/experiments.hpp\
 mockturtle/include/mockturtle/algorithms/aig_resub.hpp\
 mockturtle/include/mockturtle/algorithms/akers_synthesis.hpp\
@@ -451,8 +477,8 @@ if BUILD_SIMIT
 endif
 
 if BUILD_FLOPOCO
-   SUBDIRS += flopoco
-   DIST_SUBDIRS += sollya flopoco libfplll-4.0.3
+   SUBDIRS +=  libfplll-4.0.3 sollya flopoco
+   DIST_SUBDIRS += libfplll-4.0.3 sollya flopoco
 endif
 
 if BUILD_VFLIB

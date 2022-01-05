@@ -17,7 +17,6 @@ env:
 
 jobs:
   build:
-    if: github.event.pull_request.merged == true
     runs-on: [self-hosted, long, classA]
     steps:
       - name: Checkout repository
@@ -82,7 +81,6 @@ jobs:
           storage-compression: false
 
   example-altera:
-    if: github.event.pull_request.merged == true
     needs: [build]
     runs-on: [self-hosted, long, altera, intelFPGA]
     timeout-minutes: 600
@@ -126,6 +124,7 @@ jobs:
           - basename: omp_simd
             script: ./examples/omp_simd/generic_omp_simd.sh
             compiler: I386_GCC49
+            args: "--skip_list inline_blackscholes8,blackscholes8"
             batch: "5SGXEA7N2F45C1_10.0"
     steps:
       - name: Checkout repository
@@ -184,7 +183,6 @@ jobs:
           path: ${{steps.batch.outputs.test-reports-dir}}
 
   example-xilinx:
-    if: github.event.pull_request.merged == true
     needs: [build]
     runs-on: [self-hosted, long, xilinx]
     timeout-minutes: 600
@@ -232,6 +230,7 @@ jobs:
           - basename: omp_simd
             script: ./examples/omp_simd/generic_omp_simd.sh
             compiler: I386_GCC49
+            args: "--skip_list inline_blackscholes8,blackscholes8"
             batch: "xc7vx690t-3ffg1930-VVD_10.0"
           - basename: parallel_queries
             script: ./examples/parallel_queries/context_switch_xilinx_10_1DB_simulate.sh
@@ -295,7 +294,6 @@ jobs:
           path: ${{steps.batch.outputs.test-reports-dir}}
 
   example-lattice:
-    if: github.event.pull_request.merged == true
     needs: [build]
     runs-on: [self-hosted, long, lattice]
     env:
