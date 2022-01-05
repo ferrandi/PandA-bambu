@@ -1375,7 +1375,7 @@ namespace llvm
 
          case llvm::Instruction::Select:
          {
-            if(inst->getType()->isVectorTy())
+            if(inst->getOperand(0)->getType()->isVectorTy())
                return GT(VEC_COND_EXPR);
             else
                return GT(COND_EXPR);
