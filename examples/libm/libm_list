@@ -19,7 +19,7 @@ test-float.c -lm --top-fname=tgammaf_test --benchmark-name=tgammaf --generate-tb
 test-float.c -lm --top-fname=hypotf_test  --benchmark-name=hypotf  --generate-tb="a=12.4,b=0.7"
 test-float.c -lm --top-fname=ilogbf_test  --benchmark-name=ilogbf  --generate-tb="a=-2000"
 test-float.c -lm --top-fname=ldexpf_test  --benchmark-name=ldexpf  --generate-tb="a=0.8,b=4"
-test-float.c -lm --top-fname=log10f_test  --benchmark-name=log10f  --generate-tb="a=0.75"
+test-float.c -lm --top-fname=log10f_test  --benchmark-name=log10f  --generate-tb="a=0.75" --max-ulp=2
 test-float.c -lm --top-fname=log1pf_test  --benchmark-name=log1pf  --generate-tb="a=-0.25"
 test-float.c -lm --top-fname=logbf_test   --benchmark-name=logbf   --generate-tb="a=-2000"
 test-float.c -lm --top-fname=logf_test    --benchmark-name=logf    --generate-tb="a=0.75"
