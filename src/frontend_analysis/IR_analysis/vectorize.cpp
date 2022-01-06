@@ -336,8 +336,9 @@ void Vectorize::ClassifyLoop(const LoopConstRef loop, const size_t parallel_degr
 
    /// FIXME: the parallel degree is set to default for doall loop and not read from pragma
    const auto potential_parallel_degree = parameters->getOption<size_t>(OPT_gcc_openmp_simd);
-   const size_t current_parallel_degree =
-       parallel_degree != 0 ? parallel_degree : (loop->loop_type & DOALL_LOOP) ? potential_parallel_degree : 0;
+   const size_t current_parallel_degree = parallel_degree != 0           ? parallel_degree :
+                                          (loop->loop_type & DOALL_LOOP) ? potential_parallel_degree :
+                                                                           0;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loop parallel degree: " + STR(current_parallel_degree));
 
    if(loop->loop_type & DOALL_LOOP)
