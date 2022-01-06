@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1445,6 +1445,14 @@ void CompilerWrapper::InitializeCompilerParameters()
                if(isClangCheck(compiler))
                {
                   /// sanitize CLANG/LLVM options by removing unsupported GCC options
+                  if(optimization_flags.find("tree-dominator-opts") != optimization_flags.end())
+                  {
+                     optimization_flags.erase(optimization_flags.find("tree-dominator-opts"));
+                  }
+                  if(optimization_flags.find("tree-pre") != optimization_flags.end())
+                  {
+                     optimization_flags.erase(optimization_flags.find("tree-pre"));
+                  }
                   if(optimization_flags.find("tree-pre") != optimization_flags.end())
                   {
                      optimization_flags.erase(optimization_flags.find("tree-pre"));
@@ -1632,6 +1640,7 @@ void CompilerWrapper::SetBambuDefault()
    const CompilerWrapper_OptimizationSet opt_level =
        Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    CompilerWrapper_CompilerTarget compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+   bool is_clang = false;
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
@@ -1645,43 +1654,24 @@ void CompilerWrapper::SetBambuDefault()
       flag_cpp = false;
    }
 #endif
+
+   /// parameters with enable
+   optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
+
+   if(false
 #if HAVE_I386_CLANG4_COMPILER
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG4)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
-      optimization_flags["builtin-memset"] = false;
-      optimization_flags["builtin-memcpy"] = false;
-      optimization_flags["builtin-memmove"] = false;
-      if(!flag_cpp)
-      {
-         optimization_flags["unroll-loops"] =
-             false; // it is preferable to have unrolling disabled by default as with GCC
-      }
-      return;
-   }
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG5)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
-      optimization_flags["builtin-memset"] = false;
-      optimization_flags["builtin-memcpy"] = false;
-      optimization_flags["builtin-memmove"] = false;
-      if(!flag_cpp)
-      {
-         optimization_flags["unroll-loops"] =
-             false; // it is preferable to have unrolling disabled by default as with GCC
-      }
-      return;
-   }
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG6)
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+#endif
+   )
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
+      is_clang = true;
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
@@ -1692,82 +1682,50 @@ void CompilerWrapper::SetBambuDefault()
       }
       return;
    }
-#endif
+   if(false
 #if HAVE_I386_CLANG7_COMPILER
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG7)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
-      optimization_flags["builtin-memset"] = false;
-      optimization_flags["builtin-memcpy"] = false;
-      optimization_flags["builtin-memmove"] = false;
-      return;
-   }
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG8)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
-      optimization_flags["builtin-memset"] = false;
-      optimization_flags["builtin-memcpy"] = false;
-      optimization_flags["builtin-memmove"] = false;
-      return;
-   }
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
-#if HAVE_I386_CLANG9_COMPILER
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG9)
+   )
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
+      is_clang = true;
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
-      optimization_flags["builtin-bcmp"] = false;
       return;
    }
+   if(false
+#if HAVE_I386_CLANG9_COMPILER
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG10)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
-      optimization_flags["builtin-memset"] = false;
-      optimization_flags["builtin-memcpy"] = false;
-      optimization_flags["builtin-memmove"] = false;
-      optimization_flags["builtin-bcmp"] = false;
-      return;
-   }
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
-      optimization_flags["builtin-memset"] = false;
-      optimization_flags["builtin-memcpy"] = false;
-      optimization_flags["builtin-memmove"] = false;
-      optimization_flags["builtin-bcmp"] = false;
-      return;
-   }
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if HAVE_I386_CLANG12_COMPILER
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG12)
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
+   )
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
+      is_clang = true;
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
       optimization_flags["builtin-bcmp"] = false;
       return;
    }
-#endif
 #if HAVE_I386_CLANGVVD_COMPILER
    if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
+      is_clang = true;
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
@@ -1777,16 +1735,16 @@ void CompilerWrapper::SetBambuDefault()
    }
 #endif
 
-   /// parameters with enable
-
-   /// builtin function;
-   // optimization_flags["builtin"] = false;
-   // optimization_flags["ipa-type-escape"] = true; /// no more supported starting from gcc 4.6.1
-   optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
-   optimization_flags["tree-copy-prop"] =
-       true; /// FIXME: this has been always active with gcc >= 4.6; produced c code in bambu for example
-             /// gcc_regression_simple/20040307-1.c when disabled
-   optimization_flags["ipa-pta"] = true;
+   if(!is_clang)
+   {
+      /// builtin function;
+      // optimization_flags["builtin"] = false;
+      // optimization_flags["ipa-type-escape"] = true; /// no more supported starting from gcc 4.6.1
+      optimization_flags["tree-copy-prop"] =
+          true; /// FIXME: this has been always active with gcc >= 4.6; produced c code in bambu for example
+      /// gcc_regression_simple/20040307-1.c when disabled
+      optimization_flags["ipa-pta"] = true;
+   }
 
    /// NOTE: the false here is used to be sure that the first operand of the first or always exists
    if(false
@@ -1958,7 +1916,7 @@ void CompilerWrapper::SetBambuDefault()
       optimization_flags["tree-ch"] = false;
    }
 
-   if(Param->getOption<int>(OPT_gcc_openmp_simd))
+   if(Param->getOption<int>(OPT_gcc_openmp_simd) && !is_clang)
    {
       /// Disable optimizations which break loops patterns
       optimization_flags["tree-pre"] = false;

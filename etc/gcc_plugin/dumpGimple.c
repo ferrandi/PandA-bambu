@@ -12,7 +12,7 @@
 *                       Politecnico di Milano - DEIB
 *                        System Architectures Group
 *             ***********************************************
-*              Copyright (C) 2004-2021 Politecnico di Milano
+*              Copyright (C) 2004-2022 Politecnico di Milano
 *
 *   This file is part of the PandA framework.
 *
@@ -2685,6 +2685,7 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
     case REALPART_EXPR:
     case IMAGPART_EXPR:
     case VIEW_CONVERT_EXPR:
+    case ALIGNOF_EXPR:
       /* These nodes are unary, but do not have code class `1'.  */
       serialize_child ("op", TREE_OPERAND (t, 0));
       break;

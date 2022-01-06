@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,12 +57,12 @@
 
 #define TREE_NODE_KIND(r, data, elem) BOOST_PP_CAT(elem, _K),
 
-#define UNARY_EXPRESSION_TREE_NODES                                                                                   \
-   (abs_expr)(addr_expr)(arrow_expr)(bit_not_expr)(buffer_ref)(card_expr)(cleanup_point_expr)(conj_expr)(             \
-       convert_expr)(exit_expr)(fix_ceil_expr)(fix_floor_expr)(fix_round_expr)(fix_trunc_expr)(float_expr)(           \
-       imagpart_expr)(indirect_ref)(misaligned_indirect_ref)(loop_expr)(negate_expr)(non_lvalue_expr)(nop_expr)(      \
-       realpart_expr)(reference_expr)(reinterpret_cast_expr)(sizeof_expr)(static_cast_expr)(throw_expr)(              \
-       truth_not_expr)(unsave_expr)(va_arg_expr)(view_convert_expr)(reduc_max_expr)(reduc_min_expr)(reduc_plus_expr)( \
+#define UNARY_EXPRESSION_TREE_NODES                                                                                    \
+   (abs_expr)(addr_expr)(alignof_expr)(arrow_expr)(bit_not_expr)(buffer_ref)(card_expr)(cleanup_point_expr)(           \
+       conj_expr)(convert_expr)(exit_expr)(fix_ceil_expr)(fix_floor_expr)(fix_round_expr)(fix_trunc_expr)(float_expr)( \
+       imagpart_expr)(indirect_ref)(misaligned_indirect_ref)(loop_expr)(negate_expr)(non_lvalue_expr)(nop_expr)(       \
+       realpart_expr)(reference_expr)(reinterpret_cast_expr)(sizeof_expr)(static_cast_expr)(throw_expr)(               \
+       truth_not_expr)(unsave_expr)(va_arg_expr)(view_convert_expr)(reduc_max_expr)(reduc_min_expr)(reduc_plus_expr)(  \
        vec_unpack_hi_expr)(vec_unpack_lo_expr)(vec_unpack_float_hi_expr)(vec_unpack_float_lo_expr)(paren_expr)
 
 #define BINARY_EXPRESSION_TREE_NODES                                                                                   \
@@ -77,12 +77,12 @@
        widen_sum_expr)(widen_mult_expr)(with_size_expr)(vec_lshift_expr)(vec_rshift_expr)(widen_mult_hi_expr)(         \
        widen_mult_lo_expr)(vec_pack_trunc_expr)(vec_pack_sat_expr)(vec_pack_fix_trunc_expr)(vec_extracteven_expr)(     \
        vec_extractodd_expr)(vec_interleavehigh_expr)(vec_interleavelow_expr)(extract_bit_expr)(sat_plus_expr)(         \
-       sat_minus_expr)
+       sat_minus_expr)(extractvalue_expr)(extractelement_expr)
 
 #define TERNARY_EXPRESSION_TREE_NODES                                                                              \
    (bit_field_ref)(bit_ior_concat_expr)(component_ref)(cond_expr)(vec_cond_expr)(vec_perm_expr)(dot_prod_expr)(    \
        obj_type_ref)(save_expr)(ternary_plus_expr)(ternary_pm_expr)(ternary_mp_expr)(ternary_mm_expr)(vtable_ref)( \
-       with_cleanup_expr)(fshl_expr)(fshr_expr)
+       with_cleanup_expr)(fshl_expr)(fshr_expr)(insertvalue_expr)(insertelement_expr)
 
 #define QUATERNARY_EXPRESSION_TREE_NODES (array_range_ref)(array_ref)
 

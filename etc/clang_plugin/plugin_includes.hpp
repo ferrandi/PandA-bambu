@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2021 Politecnico di Milano
+ *              Copyright (C) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -133,7 +133,9 @@ namespace llvm
 {
    class DumpGimpleRaw
    {
+#if __clang_major__ >= 11
       bool changed;
+#endif
       bool earlyAnalysis;
       /* Serialize column control */
       const int SOL_COLUMN = 25;       /* Start of line column.  */
@@ -416,6 +418,8 @@ namespace llvm
                                            const void*& base_node, bool& isZero);
       const void* LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function* currentFunction);
       const void* gimple_assign_rhs_getelementptr(const void* g);
+      const void* gimple_assign_rhs_insertvalue(const void* g);
+      const void* gimple_assign_rhs_extractvalue(const void* g);
       bool temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited,
                                 const llvm::TargetLibraryInfo& TLI);
       const void* getOperand(const llvm::Value* operand, const llvm::Function* currentFunction);

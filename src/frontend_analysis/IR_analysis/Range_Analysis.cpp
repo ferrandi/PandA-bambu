@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -263,6 +263,8 @@ namespace
          case extract_bit_expr_K:
          case sat_plus_expr_K:
          case sat_minus_expr_K:
+         case extractvalue_expr_K:
+         case extractelement_expr_K:
          case CASE_UNARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -375,6 +377,8 @@ namespace
          case extract_bit_expr_K:
          case sat_plus_expr_K:
          case sat_minus_expr_K:
+         case extractvalue_expr_K:
+         case extractelement_expr_K:
          case CASE_UNARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -488,6 +492,8 @@ namespace
          case extract_bit_expr_K:
          case sat_plus_expr_K:
          case sat_minus_expr_K:
+         case extractvalue_expr_K:
+         case extractelement_expr_K:
          case CASE_UNARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -736,6 +742,7 @@ namespace
                // Unary case
                case addr_expr_K:
                case paren_expr_K:
+               case alignof_expr_K:
                case arrow_expr_K:
                case buffer_ref_K:
                case card_expr_K:
@@ -829,6 +836,9 @@ namespace
                case vec_interleavehigh_expr_K:
                case vec_interleavelow_expr_K:
                case extract_bit_expr_K:
+               case extractvalue_expr_K:
+               case extractelement_expr_K:
+
                // Ternary case
                case component_ref_K:
                case bit_field_ref_K:
@@ -872,6 +882,8 @@ namespace
                case tree_vec_K:
                case call_expr_K:
                case vector_cst_K:
+               case insertvalue_expr_K:
+               case insertelement_expr_K:
                default:
                   return false;
             }
@@ -1797,6 +1809,8 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case extractelement_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -1934,6 +1948,8 @@ void SymbRange::print(std::ostream& OS) const
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case extractelement_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -2635,6 +2651,7 @@ RangeRef UnaryOpNode::eval() const
          }
          case addr_expr_K:
          case paren_expr_K:
+         case alignof_expr_K:
          case arrow_expr_K:
          case buffer_ref_K:
          case card_expr_K:
@@ -3285,6 +3302,8 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
       case vec_interleavehigh_expr_K:
       case vec_interleavelow_expr_K:
       case extract_bit_expr_K:
+      case extractvalue_expr_K:
+      case extractelement_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:

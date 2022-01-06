@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -384,6 +384,7 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
 #define CASE_UNARY_EXPRESSION       \
    abs_expr_K:                      \
    case addr_expr_K:                \
+   case alignof_expr_K:             \
    case arrow_expr_K:               \
    case bit_not_expr_K:             \
    case buffer_ref_K:               \
@@ -430,6 +431,7 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  */
 #define CASE_NON_ADDR_UNARY_EXPRESSION \
    abs_expr_K:                         \
+   case alignof_expr_K:                \
    case arrow_expr_K:                  \
    case bit_not_expr_K:                \
    case buffer_ref_K:                  \
@@ -550,7 +552,9 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case vec_interleavelow_expr_K:  \
    case extract_bit_expr_K:        \
    case sat_plus_expr_K:           \
-   case sat_minus_expr_K
+   case sat_minus_expr_K:          \
+   case extractvalue_expr_K:       \
+   case extractelement_expr_K
 
 /**
  * This macro collects all case labels for ternary_expr objects.
@@ -572,7 +576,9 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case ternary_mp_expr_K:      \
    case ternary_mm_expr_K:      \
    case fshl_expr_K:            \
-   case fshr_expr_K
+   case fshr_expr_K:            \
+   case insertvalue_expr_K:     \
+   case insertelement_expr_K
 
 /**
  * This macro collects all case labels for quaternary_expr objects.
@@ -1598,6 +1604,11 @@ struct array_type : public type_node
       GETID(domn)
    };
 };
+
+/**
+ * This struct represent alignof_expr
+ */
+CREATE_TREE_NODE_CLASS(alignof_expr, unary_expr);
 
 /**
  * This struct represent arrow_expr
@@ -6178,5 +6189,29 @@ CREATE_TREE_NODE_CLASS(fshl_expr, ternary_expr);
  * Simple arithmetic.
  */
 CREATE_TREE_NODE_CLASS(fshr_expr, ternary_expr);
+
+/**
+ * This struct specifies the extractvalue_expr node.
+ * extract a value from an aggregate.
+ */
+CREATE_TREE_NODE_CLASS(extractvalue_expr, binary_expr);
+
+/**
+ * This struct specifies the insertvalue_expr node.
+ * insert a value into an aggregate.
+ */
+CREATE_TREE_NODE_CLASS(insertvalue_expr, ternary_expr);
+
+/**
+ * This struct specifies the extractelement_expr node.
+ * extract a value from a vector.
+ */
+CREATE_TREE_NODE_CLASS(extractelement_expr, binary_expr);
+
+/**
+ * This struct specifies the insertelement_expr node.
+ * insert a value into a vector.
+ */
+CREATE_TREE_NODE_CLASS(insertelement_expr, ternary_expr);
 
 #endif

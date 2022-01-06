@@ -12,7 +12,7 @@
  *                      Microarchitectures Laboratory
  *                       Politecnico di Milano - DEIB
  *             ***********************************************
- *              Copyright (c) 2015-2021 Politecnico di Milano
+ *              Copyright (c) 2015-2022 Politecnico di Milano
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by

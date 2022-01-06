@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1990,6 +1990,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                case paren_expr_K:
                   break;
                case addr_expr_K:
+               case alignof_expr_K:
                case arrow_expr_K:
                case bit_not_expr_K:
                case buffer_ref_K:
@@ -2122,6 +2123,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                case CASE_TYPE_NODES:
                case abs_expr_K:
                case addr_expr_K:
+               case alignof_expr_K:
                case arrow_expr_K:
                case bit_not_expr_K:
                case buffer_ref_K:
@@ -2340,6 +2342,8 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                case extract_bit_expr_K:
                case sat_plus_expr_K:
                case sat_minus_expr_K:
+               case extractvalue_expr_K:
+               case extractelement_expr_K:
                {
                   add_call = false;
                   break;

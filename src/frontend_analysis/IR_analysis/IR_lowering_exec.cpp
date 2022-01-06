@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1030,6 +1030,8 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
             case extract_bit_expr_K:
             case sat_plus_expr_K:
             case sat_minus_expr_K:
+            case extractvalue_expr_K:
+            case extractelement_expr_K:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
             case CASE_DECL_NODES:
@@ -1076,7 +1078,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             {
                const auto def_kind = GET_NODE(def_edge.first)->get_kind();
                if(def_kind == addr_expr_K || def_kind == view_convert_expr_K || def_kind == nop_expr_K ||
-                  def_kind == pointer_plus_expr_K || def_kind == minus_expr_K)
+                  def_kind == pointer_plus_expr_K || def_kind == minus_expr_K || def_kind == constructor_K)
                {
                   to_be_replaced.push_back(def_edge);
                }
@@ -1095,8 +1097,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else
                {
-                  const auto be = GetPointerS<binary_expr>(GET_NODE(def_edge.first));
-                  op_ga = tree_man->CreateGimpleAssign(be->type, tree_nodeRef(), tree_nodeRef(), def_edge.first,
+                  auto op_node = GET_NODE(def_edge.first);
+                  const auto en_type = GetPointer<expr_node>(op_node) ? GetPointerS<expr_node>(op_node)->type :
+                                                                        GetPointer<constructor>(op_node)->type;
+                  op_ga = tree_man->CreateGimpleAssign(en_type, tree_nodeRef(), tree_nodeRef(), def_edge.first,
                                                        function_id, def_edge.second, srcp_default);
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1169,8 +1173,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             }();
 
             const auto extract_expr = [&](tree_nodeRef& op, bool set_temp_addr) {
-               auto* en = GetPointer<expr_node>(GET_NODE(op));
-               const auto new_ga = tree_man->CreateGimpleAssign(en->type, tree_nodeRef(), tree_nodeRef(), op,
+               auto op_node = GET_NODE(op);
+               const auto en_type = GetPointer<expr_node>(op_node) ? GetPointerS<expr_node>(op_node)->type :
+                                                                     GetPointer<constructor>(op_node)->type;
+               const auto new_ga = tree_man->CreateGimpleAssign(en_type, tree_nodeRef(), tree_nodeRef(), op,
                                                                 function_id, block.first, srcp_default);
                const auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                op = ssa_vd;
@@ -1255,11 +1261,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                                             GET_NODE(be->op0)->get_kind() == nop_expr_K,
                                         false);
                   }
-                  if(GetPointer<binary_expr>(GET_NODE(be->op0)))
+                  if(GetPointer<binary_expr>(GET_NODE(be->op0)) || GetPointer<constructor>(GET_NODE(be->op0)))
                   {
                      extract_expr(be->op0, ga->temporary_address || code1 == mem_ref_K);
                   }
-                  if(GetPointer<binary_expr>(GET_NODE(be->op1)))
+                  if(GetPointer<binary_expr>(GET_NODE(be->op1)) || GetPointer<constructor>(GET_NODE(be->op1)))
                   {
                      extract_expr(be->op1, false);
                   }
@@ -1281,19 +1287,23 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                if(GetPointer<ternary_expr>(GET_NODE(ga->op1))) /// required by the CLANG/LLVM plugin
                {
-                  if(GET_NODE(ga->op1)->get_kind() == cond_expr_K)
+                  auto op1_kind = GET_NODE(ga->op1)->get_kind();
+                  if(op1_kind != component_ref_K && op1_kind != bit_field_ref_K)
                   {
                      auto te = GetPointer<ternary_expr>(GET_NODE(ga->op1));
-                     if(GetPointer<unary_expr>(GET_NODE(te->op0)) || GetPointer<binary_expr>(GET_NODE(te->op0)))
+                     if(GetPointer<unary_expr>(GET_NODE(te->op0)) || GetPointer<binary_expr>(GET_NODE(te->op0)) ||
+                        GetPointer<constructor>(GET_NODE(te->op0)))
                      {
                         extract_expr(te->op0, false);
                      }
-                     if(GetPointer<unary_expr>(GET_NODE(te->op1)) || GetPointer<binary_expr>(GET_NODE(te->op1)))
+                     if(GetPointer<unary_expr>(GET_NODE(te->op1)) || GetPointer<binary_expr>(GET_NODE(te->op1)) ||
+                        GetPointer<constructor>(GET_NODE(te->op1)))
                      {
                         extract_expr(te->op1, false);
                      }
                      if(te->op2 &&
-                        (GetPointer<unary_expr>(GET_NODE(te->op2)) || GetPointer<binary_expr>(GET_NODE(te->op2))))
+                        (GetPointer<unary_expr>(GET_NODE(te->op2)) || GetPointer<binary_expr>(GET_NODE(te->op2)) ||
+                         GetPointer<constructor>(GET_NODE(te->op2))))
                      {
                         extract_expr(te->op2, false);
                      }
