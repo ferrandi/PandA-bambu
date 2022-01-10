@@ -2,17 +2,26 @@ name: Delete old workflow runs
 on:
   schedule:
     - cron: "0 3 * * *"
-  # Run dayly, at 03:00 .
+    # Run dayly, at 03:00 .
   workflow_dispatch:
+    inputs:
+      days:
+        description: "Number of days."
+        required: true
+        default: "3"
+      minimum_runs:
+        description: "The minimum runs to keep for each workflow."
+        required: true
+        default: "3"
 
 jobs:
   del_runs:
     runs-on: [self-hosted]
     steps:
       - name: Delete workflow runs
-        uses: Ansaya/delete-workflow-runs@keep_min_runs-fix
+        uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
-          retain_days: 2
-          keep_minimum_runs: 3
+          retain_days: ${{ github.event.inputs.days }}
+          keep_minimum_runs: ${{ github.event.inputs.minimum_runs }}
