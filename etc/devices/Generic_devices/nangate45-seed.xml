@@ -27,9 +27,6 @@
     <!-- # Used in synthesis -->
     <MIN_BUF_CELL_AND_PORTS is_bash_var="1" value="BUF_X1 A Z"/>
 
-    <!-- # Used in synthesis -->
-    <MAX_FANOUT is_bash_var="1" value="100"/>
-
     <LATCH_MAP_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/cells_latch.v"/>
     <CLKGATE_MAP_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/cells_clkgate.v"/>
     <ADDER_MAP_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/cells_adders.v"/>
@@ -58,10 +55,6 @@
     <!-- # This can be found in the technology lef -->
     <PLACE_SITE is_bash_var="1" value="FreePDK45_38x28_10R_NP_162NW_34O"/>
 
-    <!-- # IO Pin fix margin -->
-
-    <IO_PIN_MARGIN is_bash_var="1" value="70"/>
-
     <!-- # IO Placer pin layers -->
     <IO_PLACER_H is_bash_var="1" value="metal3"/>
     <IO_PLACER_V is_bash_var="1" value="metal2"/>
@@ -80,11 +73,8 @@
     <WIRE_RC_LAYER is_bash_var="1" value="metal3"/>
 
     <!-- # Cell padding in SITE widths to ease rout-ability.  Applied to both sides -->
-    <CELL_PAD_IN_SITES_GLOBAL_PLACEMENT is_bash_var="1" value="2"/>
-    <CELL_PAD_IN_SITES_DETAIL_PLACEMENT is_bash_var="1" value="1"/>
-
-    <!-- # resizer repair_long_wires -max_length -->
-    <MAX_WIRE_LENGTH is_bash_var="1" value="1000"/>
+    <CELL_PAD_IN_SITES_GLOBAL_PLACEMENT is_bash_var="1" value="0"/>
+    <CELL_PAD_IN_SITES_DETAIL_PLACEMENT is_bash_var="1" value="0"/>
 
     <PLACE_DENSITY is_bash_var="1" value="0.30"/>
 
@@ -109,6 +99,9 @@
 
     <!-- # KLayout LVS ruledeck -->
     <KLAYOUT_LVS_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/lvs/FreePDK45.lylvs"/>
+
+    <!-- # Allow empty GDS cell -->
+    <GDS_ALLOW_EMPTY is_bash_var="1" value="fakeram.*"/>
 
     <CDL_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/cdl/NangateOpenCellLibrary.cdl"/>
 

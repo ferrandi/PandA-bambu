@@ -23,6 +23,12 @@
       <cmd name=": ${FLOW_VARIANT:=base}"/>
       <cmd name="export FLOW_VARIANT"/>
 
+      <cmd name=": ${GPL_TIMING_DRIVEN:=1}"/>
+      <cmd name="export GPL_TIMING_DRIVEN"/>
+
+      <cmd name=": ${GPL_ROUTABILITY_DRIVEN:=1}"/>
+      <cmd name="export GPL_ROUTABILITY_DRIVEN"/>
+
       <cmd name="# Setup working directories"/>
       <cmd name="export DESIGN_DIR=${CURR_WORKDIR}"/>
       <cmd name="export LOG_DIR=${CURR_WORKDIR}/OpenROAD_logs/${PLATFORM}/${DESIGN_NICKNAME}/${FLOW_VARIANT}"/>
@@ -203,6 +209,12 @@
       <cmd name="export VERILOG_FILES=&quot;${__generic_sources_macro_list__}&quot;"/>
       <cmd name=": ${FLOW_VARIANT:=base}"/>
       <cmd name="export FLOW_VARIANT"/>
+
+      <cmd name=": ${GPL_TIMING_DRIVEN:=1}"/>
+      <cmd name="export GPL_TIMING_DRIVEN"/>
+
+      <cmd name=": ${GPL_ROUTABILITY_DRIVEN:=1}"/>
+      <cmd name="export GPL_ROUTABILITY_DRIVEN"/>
 
       <cmd name="# Setup working directories"/>
       <cmd name="export DESIGN_DIR=${CURR_WORKDIR}"/>
