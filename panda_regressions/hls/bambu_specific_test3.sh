@@ -10,6 +10,6 @@ $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=O3-nr2  --hls-div=nr2  -O3 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=O3-NR   --hls-div=NR   -O3 ${BATCH_ARGS[*]}" \
    -lbambu_specific_test3_list \
-   -o "output_${OUT_SUFFIX}" -b$script_dir \
+   -o "out_${OUT_SUFFIX}" -b$script_dir \
    --name="${OUT_SUFFIX}" "$@"
 exit $?

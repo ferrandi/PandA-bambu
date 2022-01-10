@@ -13,5 +13,5 @@ $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${compiler}-O2-wp-NN -O2 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${compiler}-O3-wp-NN -O3 ${BATCH_ARGS[*]}" \
    -lCHStone_list \
-   -o "output_${OUT_SUFFIX}" -b$script_dir \
+   -o "out_${OUT_SUFFIX}" -b$script_dir \
    --name="${OUT_SUFFIX}" "$@"
