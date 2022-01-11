@@ -908,4 +908,5 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           ./examples/cpp_examples/fir_filter/bambu.sh
+          ./examples/cpp_examples/gcd_example/bambu.sh
           ./examples/crypto_designs/multi.sh
