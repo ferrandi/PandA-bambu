@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -120,8 +120,8 @@ const int treeVocabularyTokenTypes::bisontokens[] = {
     TOK_BISON_VEC_PACK_TRUNC_EXPR, TOK_BISON_VEC_PACK_SAT_EXPR, TOK_BISON_VEC_PACK_FIX_TRUNC_EXPR,
     TOK_BISON_VEC_EXTRACTEVEN_EXPR, TOK_BISON_VEC_EXTRACTODD_EXPR, TOC_BISON_VEC_INTERLEAVEHIGH_EXPR,
     TOC_BISON_VEC_INTERLEAVELOW_EXPR, TOK_BISON_VEC_NEW_EXPR, TOK_BISON_OVERLOAD, TOK_BISON_REINTERPRET_CAST_EXPR,
-    TOK_BISON_TEMPLATE_ID_EXPR, TOK_BISON_THROW_EXPR, TOK_BISON_TRY_BLOCK, TOK_BISON_ARROW_EXPR, TOK_BISON_HANDLER,
-    TOK_BISON_BASELINK,
+    TOK_BISON_TEMPLATE_ID_EXPR, TOK_BISON_THROW_EXPR, TOK_BISON_TRY_BLOCK, TOK_BISON_ALIGNOF_EXPR, TOK_BISON_ARROW_EXPR,
+    TOK_BISON_HANDLER, TOK_BISON_BASELINK,
 
     TOK_BISON_NAME, TOK_BISON_TYPE, TOK_BISON_SRCP, TOK_BISON_ARG, TOK_BISON_BODY, TOK_BISON_STRG, TOK_BISON_LNGT,
     TOK_BISON_SIZE, TOK_BISON_ALGN, TOK_BISON_RETN, TOK_BISON_PRMS, TOK_BISON_SCPE, TOK_BISON_BB_INDEX, TOK_BISON_USED,
@@ -178,7 +178,8 @@ const int treeVocabularyTokenTypes::bisontokens[] = {
     NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN,
     NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, TOK_BISON_GIMPLE_PREDICT, TOK_BISON_CLB, TOK_BISON_CLB_VARS, TOK_BISON_USE,
     TOK_BISON_USE_VARS, TOK_BISON_PREDICATE, TOK_BISON_SLOT, TOK_BISON_SAT_PLUS_EXPR, TOK_BISON_SAT_MINUS_EXPR,
-    TOK_BISON_FSHL_EXPR, TOK_BISON_FSHR_EXPR,
+    TOK_BISON_FSHL_EXPR, TOK_BISON_FSHR_EXPR, TOK_BISON_EXTRACTVALUE_EXPR, TOK_BISON_INSERTVALUE_EXPR,
+    TOK_BISON_EXTRACTELEMENT_EXPR, TOK_BISON_INSERTELEMENT_EXPR,
 
     /// RTL token
     NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN, NO_TOKEN,
@@ -413,6 +414,7 @@ const char* treeVocabularyTokenTypes::tokenNames[] = {
     "template_id_expr",
     "throw_expr",
     "try_block",
+    "alignof_expr",
     "arrow_expr",
     "handler",
     "baselink",
@@ -742,6 +744,10 @@ const char* treeVocabularyTokenTypes::tokenNames[] = {
     "sat_minus_expr",
     "fshl_expr",
     "fshr_expr",
+    "extractvalue_expr",
+    "insertvalue_expr",
+    "extractelement_expr",
+    "insertelement_expr",
 
     /// RTL token
     "rtl",

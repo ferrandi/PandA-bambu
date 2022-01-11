@@ -2196,9 +2196,10 @@ typedef signed long long Slong;
             // Unportable, but will work for ANSI charset
             static constexpr int HhexDigit(char c)
             {
-               return '0' <= c && c <= '9' ?
-                          c - '0' :
-                          'a' <= c && c <= 'f' ? c - 'a' + 0xa : 'A' <= c && c <= 'F' ? c - 'A' + 0xA : 0;
+               return '0' <= c && c <= '9' ? c - '0' :
+                      'a' <= c && c <= 'f' ? c - 'a' + 0xa :
+                      'A' <= c && c <= 'F' ? c - 'A' + 0xA :
+                                             0;
             }
 
             static constexpr double Hscalbn(const double value, const int exponent)

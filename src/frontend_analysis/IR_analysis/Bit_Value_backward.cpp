@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -475,6 +475,8 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case target_mem_ref461_K:
       case tree_list_K:
       case tree_vec_K:
+      case extractvalue_expr_K:
+      case extractelement_expr_K:
       default:
       {
          THROW_UNREACHABLE("Unhandled lhs expression: " + ga->ToString() + " (" + tree_node::GetString(lhs_kind) + ")");
@@ -1242,6 +1244,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       }
       // Unary expressions
       case abs_expr_K:
+      case alignof_expr_K:
       // Binary expressions
       case eq_expr_K:
       case exact_div_expr_K:
@@ -1264,8 +1267,12 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case unle_expr_K:
       case unlt_expr_K:
       case unordered_expr_K:
+      case extractvalue_expr_K:
+      case extractelement_expr_K:
       // Ternary expressions
       case lut_expr_K:
+      case insertvalue_expr_K:
+      case insertelement_expr_K:
       {
          // Do nothing
          break;

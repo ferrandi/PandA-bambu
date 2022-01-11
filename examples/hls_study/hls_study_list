@@ -12,6 +12,6 @@ jpeg/not-optimized/main.c --benchmark-name=jpeg --generate-tb=BENCHMARKS_ROOT/jp
 mips/not-optimized/mips.c --benchmark-name=mips --generate-tb=BENCHMARKS_ROOT/mips/not-optimized/main.xml  --top-fname=main --top-rtldesign-name=mips_call   
 mm/not-optimized/module.c --benchmark-name=matrix --generate-tb=BENCHMARKS_ROOT/mm/not-optimized/test.xml  --top-fname=mm
 motion/not-optimized/mpeg2.c --benchmark-name=motion --generate-tb=BENCHMARKS_ROOT/motion/not-optimized/main.xml  --top-fname=main --top-rtldesign-name=motion_vectors   
-satd/not-optimized/main.c --benchmark-name=satd --generate-tb=BENCHMARKS_ROOT/satd/not-optimized/test.xml  --top-fname=satd -fpeel-loops --compiler=I386_GCC6
+satd/not-optimized/main.c --benchmark-name=satd --generate-tb=BENCHMARKS_ROOT/satd/not-optimized/test.xml  --top-fname=satd -fpeel-loops
 sha/not-optimized/sha_driver.c --benchmark-name=sha --generate-tb=BENCHMARKS_ROOT/sha/not-optimized/main.xml  --top-fname=main --top-rtldesign-name=sha_stream
 sobel/not-optimized/sobel.c --benchmark-name=sobel --generate-tb=BENCHMARKS_ROOT/sobel/not-optimized/test.xml --std=c99  --top-fname=sobel 

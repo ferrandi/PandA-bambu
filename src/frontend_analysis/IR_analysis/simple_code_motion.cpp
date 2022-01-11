@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -229,6 +229,11 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because right part is constant");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
+   if(GET_NODE(ga->op0)->get_kind() == ssa_name_K && GET_NODE(ga->op1)->get_kind() == constructor_K)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment with a constructor");
+      return FunctionFrontendFlowStep_Movable::MOVABLE;
+   }
    if(GET_NODE(ga->op0)->get_kind() == ssa_name_K && GET_NODE(ga->op1)->get_kind() == ssa_name_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment");
@@ -268,6 +273,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case convert_expr_K:
       case view_convert_expr_K:
       case ssa_name_K:
+      case constructor_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
@@ -408,7 +414,11 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
       }
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
       case extract_bit_expr_K:
+      case extractelement_expr_K:
+      case insertelement_expr_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
@@ -537,6 +547,18 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because is a division by a non constant");
          return FunctionFrontendFlowStep_Movable::UNMOVABLE;
       }
+      case abs_expr_K:
+      {
+         if(conservative)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No");
+            return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+         }
+         else
+         {
+            return FunctionFrontendFlowStep_Movable::MOVABLE;
+         }
+      }
       case catch_expr_K:
       case ceil_div_expr_K:
       case ceil_mod_expr_K:
@@ -599,7 +621,6 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case target_mem_ref_K:
       case binfo_K:
       case block_K:
-      case constructor_K:
       case identifier_node_K:
       case CASE_PRAGMA_NODES:
       case statement_list_K:
@@ -607,7 +628,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case tree_vec_K:
       case CASE_QUATERNARY_EXPRESSION:
       case CASE_TYPE_NODES:
-      case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case buffer_ref_K:
       case card_expr_K:

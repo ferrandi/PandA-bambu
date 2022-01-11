@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -128,7 +128,7 @@ enum class DiopsisInstrumentWriter_Type;
        datapath_interconnection_algorithm)(insert_memory_profile)(timing_simulation)(top_file)(assert_debug)(          \
        memory_allocation_algorithm)(memory_allocation_policy)(xml_memory_allocation)(rom_duplication)(base_address)(   \
        sync_reset)(level_reset)(reg_init_value)(clock_period_resource_fraction)(channels_type)(channels_number)(       \
-       memory_controller_type)(soft_float)(soft_fp)(softfloat_subnormal)(max_sim_cycles)(sparse_memory)(max_ulp)(      \
+       memory_controller_type)(soft_float)(soft_fp)(fp_subnormal)(max_sim_cycles)(sparse_memory)(max_ulp)(             \
        skip_pipe_parameter)(gcc_serialize_memory_accesses)(unaligned_access)(aligned_access)(                          \
        backend_script_extensions)(backend_sdc_extensions)(VHDL_library)(bitvalue_ipa)(use_asynchronous_memories)(      \
        do_not_chain_memories)(bram_high_latency)(cdfc_module_binding_algorithm)(function_allocation_algorithm)(        \
@@ -139,7 +139,7 @@ enum class DiopsisInstrumentWriter_Type;
        mem_delay_read)(mem_delay_write)(memory_banks_number)(mixed_design)(no_parse_c_python)(num_accelerators)(       \
        post_rescheduling)(technology_file)(testbench_extra_gcc_flags)(timing_violation_abort)(top_design_name)(        \
        visualizer)(serialize_output)(use_ALUs)(range_analysis_mode)(fp_format)(fp_format_propagate)(                   \
-       fp_format_interface)(softfloat_norounding)(softfloat_noexception)(parallel_backend)(interface_xml_filename)(    \
+       fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(interface_xml_filename)(            \
        lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_pmi_tdpbe)(lattice_pmi_mul)(xilinx_root)(              \
        xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(mentor_visualizer)(     \
        mentor_optimizer)(verilator)(verilator_l2_name)(verilator_timescale_override)(verilator_parallel)(icarus)(      \

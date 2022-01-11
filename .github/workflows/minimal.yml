@@ -143,11 +143,13 @@ jobs:
 
   specific-test:
     needs: [build, ACMath-tests]
-    runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
+    runs-on: [self-hosted]
     strategy:
       fail-fast: false
       matrix:
         id: ["", "2", "3", "4", "5", "6"]
+    env:
+      args: -c=--simulator=VERILATOR
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -171,7 +173,7 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv"
+          ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
@@ -645,7 +647,7 @@ jobs:
       outname: panda_bench_yosys
       script: ./examples/panda_bench_yosys.sh
       nproc: 4
-      parallel: 6
+      parallel: 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -757,14 +759,14 @@ jobs:
 
   omp-simd:
     needs: [build]
-    runs-on: [self-hosted, altera, intelFPGA, mentor, xilinx]
+    runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:
         device: [5SGXEA7N2F45C1, xc7vx690t-3ffg1930-VVD]
     env:
       outname: omp_simd_${{matrix.device}}
-      script: generic_omp_simd.sh
+      script: ./examples/omp_simd/generic_omp_simd.sh
       args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}}
     steps:
       - name: Checkout repository
@@ -789,7 +791,7 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          ./examples/omp_simd/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
@@ -908,4 +910,5 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           ./examples/cpp_examples/fir_filter/bambu.sh
+          ./examples/cpp_examples/gcd_example/bambu.sh
           ./examples/crypto_designs/multi.sh

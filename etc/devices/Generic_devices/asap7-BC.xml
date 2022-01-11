@@ -18,20 +18,17 @@
     <PLATFORM is_bash_var="1" value="asap7"/>
     <PROCESS is_bash_var="1" value="45"/>
 
-    <!-- YOSYS -->
+    <TECH_LEF is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/lef/asap7_tech_1x_201209.lef"/>
+    <SC_LEF is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/lef/asap7sc7p5t_27_R_1x_201211.lef"/>
+    <GDS_FILES is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/gds/asap7sc7p5t_27_R_1x_201211.gds ${ADDITIONAL_GDS}"/>
 
-    <!-- # Set the TIEHI/TIELO cells -->
-    <!-- # These are used in yosys synthesis to avoid logical 1/0's in the netlist -->
-    <TIEHI_CELL_AND_PORT is_bash_var="1" value="&quot;TIEHIx1_ASAP7_75t_R H&quot;"/>	
-    <TIELO_CELL_AND_PORT is_bash_var="1" value="&quot;TIELOx1_ASAP7_75t_R L&quot;"/>
+    <LIB_FILES is_bash_var="1" value="&quot;${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_AO_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_INVBUF_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_OA_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_SIMPLE_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_SEQ_RVT_FF_nldm_201020.lib ${ADDITIONAL_LIBS} &quot;"/>
+    <DFF_LIB_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_SEQ_RVT_FF_nldm_201020.lib"/>
+    <TEMPERATURE is_bash_var="1" value="25C"/>
 
-    <!-- # Used in synthesis -->
-    <MIN_BUF_CELL_AND_PORTS is_bash_var="1" value="&quot;BUFx2_ASAP7_75t_R A Y&quot;"/>
-
-    <!-- # Used in synthesis -->
-    <MAX_FANOUT is_bash_var="1" value="40"/>
-
-    <MAKE_TRACKS is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/openRoad/make_tracks.tcl"/>
+    <!-- # Dont use cells to ease congestion -->
+    <!-- # Specify at least one filler cell if none -->
+    <DONT_USE_CELLS is_bash_var="1" value="&quot;*x1_ASAP7* *x1p*_ASAP7* *xp*_ASAP7* SDF* ICG* DFFH*&quot;"/>
 
     <!-- # Yosys mapping files -->
     <!-- # Blackbox - list all standard cells and cells yosys should treat as blackboxes -->
@@ -41,74 +38,58 @@
     <ADDER_MAP_FILE   is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/yoSys/cells_adders.v"/>
     <BLACKBOX_MAP_TCL is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/yoSys/blackbox_map.tcl"/>
 
-    <LIB_FILES is_bash_var="1" value="&quot;${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_AO_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_INVBUF_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_OA_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_SIMPLE_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_SEQ_RVT_FF_nldm_201020.lib&quot;"/>
-    <DFF_LIB_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_SEQ_RVT_FF_nldm_201020.lib"/>
-    <USE_MERGE_LIB is_bash_var="1" value="1"/>
-    <TEMPERATURE is_bash_var="1" value="25C"/>
-
     <ABC_DRIVER_CELL is_bash_var="1" value="BUFx2_ASAP7_75t_R"/>
+
     <!-- # BUF_X1, pin (A) = 0.974659. Arbitrarily multiply by 4 -->
     <ABC_LOAD_IN_FF is_bash_var="1" value="3.898"/>
 
-    <SET_RC_TCL is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/setRC.tcl"/>
+    <!-- # Set the TIEHI/TIELO cells -->
+    <!-- # These are used in yosys synthesis to avoid logical 1/0's in the netlist -->
+    <TIEHI_CELL_AND_PORT is_bash_var="1" value="&quot;TIEHIx1_ASAP7_75t_R H&quot;"/>	
+    <TIELO_CELL_AND_PORT is_bash_var="1" value="&quot;TIELOx1_ASAP7_75t_R L&quot;"/>
 
-    <!-- OPENROAD -->
-
-    <TECH_LEF is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/lef/asap7_tech_1x_201209.lef"/>
-    <SC_LEF is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/lef/asap7sc7p5t_27_R_1x_201211.lef"/>
-    <GDS_FILES is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/gds/asap7sc7p5t_27_R_1x_201211.gds"/>
-
-    <DONT_USE_CELLS is_bash_var="1" value="&quot;*x1_ASAP7* *x1p*_ASAP7* *xp*_ASAP7* SDF* ICG* DFFH*&quot;"/>
-    <FILL_CELLS is_bash_var="1" value="&quot;FILLERxp5_ASAP7_75t_R&quot;"/>
-
-    <!-- # Floorplan -->
+    <!-- # Used in synthesis -->
+    <MIN_BUF_CELL_AND_PORTS is_bash_var="1" value="&quot;BUFx2_ASAP7_75t_R A Y&quot;"/>
 
     <!-- # Placement site for core cells -->
     <!-- # This can be found in the technology lef -->
     <PLACE_SITE is_bash_var="1" value="asap7sc7p5t"/>
 
-    <!-- # IO Pin fix margin -->
+    <MAKE_TRACKS is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/openRoad/make_tracks.tcl"/>
 
-    <IO_PIN_MARGIN is_bash_var="1" value="70"/>
+    <!-- # Define default PDN config -->
+    <PDN_CFG is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/openRoad/pdn/grid_strategy-M2-M5-M7.cfg"/>
 
     <!-- # IO Placer pin layers -->
     <IO_PLACER_H is_bash_var="1" value="M4"/>
     <IO_PLACER_V is_bash_var="1" value="M5"/>
 
-    <!-- # Define default PDN config -->
-    <PDN_CFG is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/openRoad/pdn/grid_strategy-M2-M5-M7.cfg"/>
-
-    <!-- # Endcap and Welltie cells -->
-    <TAPCELL_TCL is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/openRoad/tapcell.tcl"/>
-
-    <!-- # Place -->
-    <!-- # Layer to use for parasitics estimations -->
-    <WIRE_RC_LAYER is_bash_var="1" value="M3"/>
+    <MACRO_PLACE_HALO is_bash_var="1" value="&quot;10 10&quot;"/>
+    <MACRO_PLACE_CHANNEL is_bash_var="1" value="&quot;12 12&quot;"/>
 
     <!-- # Cell padding in SITE widths to ease rout-ability.  Applied to both sides -->
     <CELL_PAD_IN_SITES_GLOBAL_PLACEMENT is_bash_var="1" value="2"/>
     <CELL_PAD_IN_SITES_DETAIL_PLACEMENT is_bash_var="1" value="1"/>
 
-    <!-- # resizer repair_long_wires -max_length -->
-    <MAX_WIRE_LENGTH is_bash_var="1" value="1000"/>
-
     <PLACE_DENSITY is_bash_var="1" value="0.60"/>
 
-    <!-- #  CTS -->
+    <!-- # Layer to use for parasitics estimations -->
+    <WIRE_RC_LAYER is_bash_var="1" value="M3"/>
+
+    <!-- # Endcap and Welltie cells -->
+    <TAPCELL_TCL is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/openRoad/tapcell.tcl"/>
+
     <!-- # TritonCTS options -->
     <CTS_BUF_CELL is_bash_var="1" value="BUFx4_ASAP7_75t_R"/>
-    <!--<CTS_TECH_DIR is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/tritonCTS"/> -->
-    <CTS_SQR_CAP is_bash_var="1" value="2.28541e-4"/>
-    <CTS_SQR_RES is_bash_var="1" value="1.832146e-0"/>
-    <CTS_SLEW_INTER is_bash_var="1" value="7.5e-13"/>
-    <CTS_CAP_INTER is_bash_var="1" value="65.0e-17"/>
-    <CTS_MAX_SLEW is_bash_var="1" value="1.77e-9"/>
-    <CTS_MAX_CAP is_bash_var="1" value="0.968693e-12"/>
 
     <CTS_BUF_DISTANCE is_bash_var="1" value="60"/>
 
-    <!-- #  Route -->
-    <!-- # FastRoute options -->
+    <!-- #Fill cells used in fill cell insertion -->
+    <FILL_CELLS is_bash_var="1" value="&quot;FILLERxp5_ASAP7_75t_R&quot;"/>
+
+    <SET_RC_TCL is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/setRC.tcl"/>
+
+    <!-- #  Route options -->
     <MIN_ROUTING_LAYER is_bash_var="1" value="M2"/>
     <MAX_ROUTING_LAYER is_bash_var="1" value="M7"/>
 
@@ -3348,7 +3329,7 @@
         <template name="exact_div_expr_FU" parameter="0 1 1 0"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T21:09:20</characterization_timestamp>
-        <operation operation_name="exact_div_expr" supported_types="INT:1" pipe_parameters="0" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="exact_div_expr" supported_types="INT:1" pipe_parameters="0" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>exact_div_expr_FU_0_32_32_0</name>
@@ -6948,7 +6929,7 @@
         <template name="ge_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T21:33:36</characterization_timestamp>
-        <operation operation_name="ge_expr" supported_types="INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="ge_expr" supported_types="INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ge_expr_FU_1_1_1</name>
@@ -7016,7 +6997,7 @@
         <template name="gt_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T21:35:29</characterization_timestamp>
-        <operation operation_name="gt_expr" supported_types="INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="gt_expr" supported_types="INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>gt_expr_FU_0_32_32</name>
@@ -7137,7 +7118,7 @@
         <template name="le_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T21:38:06</characterization_timestamp>
-        <operation operation_name="le_expr" supported_types="INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="le_expr" supported_types="INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>le_expr_FU_0_32_32</name>
@@ -7414,7 +7395,7 @@
         <template name="lt_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T21:43:03</characterization_timestamp>
-        <operation operation_name="lt_expr" supported_types="INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="lt_expr" supported_types="INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>lt_expr_FU_1_1_1</name>
@@ -7472,7 +7453,7 @@
         <name>lut_expr_FU</name>
         <attribute name="area" value_type="float64">5598</attribute>
         <characterization_timestamp>2021-12-14T21:43:49</characterization_timestamp>
-        <operation operation_name="lut_expr" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="lut_expr" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>max_expr_FU_0_16_16</name>
@@ -7603,7 +7584,7 @@
         <template name="min_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T21:45:41</characterization_timestamp>
-        <operation operation_name="min_expr" commutative="1" supported_types="INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="min_expr" commutative="1" supported_types="INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>min_expr_FU_0_32_32</name>
@@ -7650,7 +7631,7 @@
         <template name="min_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T21:45:41</characterization_timestamp>
-        <operation operation_name="min_expr" commutative="1" supported_types="INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="min_expr" commutative="1" supported_types="INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>min_expr_FU_1_1_1</name>
@@ -8998,7 +8979,7 @@
         <template name="rshift_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>62</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:00:29</characterization_timestamp>
-        <operation operation_name="rshift_expr" supported_types="INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="rshift_expr" supported_types="INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>rshift_expr_FU_0_32_32</name>
@@ -9160,7 +9141,7 @@
         <template name="sat_minus_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:04:29</characterization_timestamp>
-        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>sat_minus_expr_FU_1_1_1</name>
@@ -9228,7 +9209,7 @@
         <template name="sat_plus_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:06:38</characterization_timestamp>
-        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>sat_plus_expr_FU_0_32_32</name>
@@ -9275,7 +9256,7 @@
         <template name="sat_plus_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:06:38</characterization_timestamp>
-        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>sat_plus_expr_FU_1_1_1</name>
@@ -10311,7 +10292,7 @@
         <template name="trunc_div_expr_FU" parameter="0 1 1 0"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:21:03</characterization_timestamp>
-        <operation operation_name="trunc_div_expr" supported_types="INT:1" pipe_parameters="0" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="trunc_div_expr" supported_types="INT:1" pipe_parameters="0" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>trunc_div_expr_FU_0_32_32_0</name>
@@ -12471,7 +12452,7 @@
         <template name="trunc_mod_expr_FU" parameter="1 0 1 0"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:36:35</characterization_timestamp>
-        <operation operation_name="trunc_mod_expr" supported_types="INT:1" pipe_parameters="0" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="trunc_mod_expr" supported_types="INT:1" pipe_parameters="0" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>trunc_mod_expr_FU_1_1_1_0</name>
@@ -13147,7 +13128,7 @@
         <template name="truth_or_expr_FU" parameter="0 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:49:38</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_0_1_1</name>
@@ -13155,7 +13136,7 @@
         <template name="truth_or_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:50:43</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_0_32_32</name>
@@ -13163,7 +13144,7 @@
         <template name="truth_or_expr_FU" parameter="0 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:50:46</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_0_64_64</name>
@@ -13171,7 +13152,7 @@
         <template name="truth_or_expr_FU" parameter="0 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:51:13</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_0_8_8</name>
@@ -13179,7 +13160,7 @@
         <template name="truth_or_expr_FU" parameter="0 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:51:46</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_16_0_16</name>
@@ -13187,7 +13168,7 @@
         <template name="truth_or_expr_FU" parameter="16 0 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:49:38</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_16_16_16</name>
@@ -13202,7 +13183,7 @@
         <template name="truth_or_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:50:43</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_1_1_1</name>
@@ -13217,7 +13198,7 @@
         <template name="truth_or_expr_FU" parameter="32 0 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:50:46</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_32_32_32</name>
@@ -13232,7 +13213,7 @@
         <template name="truth_or_expr_FU" parameter="64 0 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:51:13</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_64_64_64</name>
@@ -13247,7 +13228,7 @@
         <template name="truth_or_expr_FU" parameter="8 0 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:51:46</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_8_8_8</name>
@@ -13262,7 +13243,7 @@
         <template name="truth_orif_expr_FU" parameter="0 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:51:43</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_0_1_1</name>
@@ -13270,7 +13251,7 @@
         <template name="truth_orif_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:52:23</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_0_32_32</name>
@@ -13278,7 +13259,7 @@
         <template name="truth_orif_expr_FU" parameter="0 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:52:58</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_0_64_64</name>
@@ -13286,7 +13267,7 @@
         <template name="truth_orif_expr_FU" parameter="0 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:53:47</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_0_8_8</name>
@@ -13294,7 +13275,7 @@
         <template name="truth_orif_expr_FU" parameter="0 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:52:57</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_16_0_16</name>
@@ -13302,7 +13283,7 @@
         <template name="truth_orif_expr_FU" parameter="16 0 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:51:43</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_16_16_16</name>
@@ -13317,7 +13298,7 @@
         <template name="truth_orif_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:52:23</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_1_1_1</name>
@@ -13332,7 +13313,7 @@
         <template name="truth_orif_expr_FU" parameter="32 0 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:52:58</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_32_32_32</name>
@@ -13347,7 +13328,7 @@
         <template name="truth_orif_expr_FU" parameter="64 0 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:53:47</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_64_64_64</name>
@@ -13362,7 +13343,7 @@
         <template name="truth_orif_expr_FU" parameter="8 0 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T22:52:57</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_8_8_8</name>
@@ -15144,7 +15125,7 @@
         <template name="ui_fshl_expr_FU" parameter="1 1 0 1"/>
         <characterizing_constant_value>1</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T23:31:37</characterization_timestamp>
-        <operation operation_name="fshl_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="fshl_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_fshl_expr_FU_1_1_1_1</name>
@@ -15299,7 +15280,7 @@
         <template name="ui_fshr_expr_FU" parameter="1 1 0 1"/>
         <characterizing_constant_value>1</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T23:35:19</characterization_timestamp>
-        <operation operation_name="fshr_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="fshr_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_fshr_expr_FU_1_1_1_1</name>
@@ -15391,7 +15372,7 @@
         <template name="ui_ge_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T23:39:08</characterization_timestamp>
-        <operation operation_name="ge_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="ge_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_ge_expr_FU_0_32_32</name>
@@ -15553,7 +15534,7 @@
         <template name="ui_gt_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T23:44:04</characterization_timestamp>
-        <operation operation_name="gt_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="gt_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_gt_expr_FU_1_1_1</name>
@@ -15668,7 +15649,7 @@
         <template name="ui_le_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T23:47:55</characterization_timestamp>
-        <operation operation_name="le_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="le_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_le_expr_FU_1_1_1</name>
@@ -15966,7 +15947,7 @@
         <template name="ui_lt_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T23:54:24</characterization_timestamp>
-        <operation operation_name="lt_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="lt_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_lt_expr_FU_0_32_32</name>
@@ -16081,7 +16062,7 @@
         <template name="ui_max_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T23:56:32</characterization_timestamp>
-        <operation operation_name="max_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="max_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_max_expr_FU_0_32_32</name>
@@ -16128,7 +16109,7 @@
         <template name="ui_max_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-14T23:56:32</characterization_timestamp>
-        <operation operation_name="max_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="max_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_max_expr_FU_1_1_1</name>
@@ -17573,7 +17554,7 @@
         <template name="ui_rrotate_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>62</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T00:12:47</characterization_timestamp>
-        <operation operation_name="rrotate_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="rrotate_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_rrotate_expr_FU_0_32_32</name>
@@ -17850,7 +17831,7 @@
         <template name="ui_sat_minus_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T00:18:27</characterization_timestamp>
-        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_sat_minus_expr_FU_1_1_1</name>
@@ -17918,7 +17899,7 @@
         <template name="ui_sat_plus_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T00:19:14</characterization_timestamp>
-        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_sat_plus_expr_FU_0_32_32</name>
@@ -17965,7 +17946,7 @@
         <template name="ui_sat_plus_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T00:19:14</characterization_timestamp>
-        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_sat_plus_expr_FU_1_1_1</name>
@@ -18964,7 +18945,7 @@
         <template name="ui_trunc_div_expr_FU" parameter="0 1 1 0"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T00:34:25</characterization_timestamp>
-        <operation operation_name="trunc_div_expr" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="trunc_div_expr" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_trunc_div_expr_FU_0_32_32_0</name>
@@ -20124,7 +20105,7 @@
         <template name="ui_trunc_mod_expr_FU" parameter="1 0 1 0"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T00:55:54</characterization_timestamp>
-        <operation operation_name="trunc_mod_expr" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="trunc_mod_expr" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_trunc_mod_expr_FU_1_1_1_0</name>
@@ -24998,7 +24979,7 @@
         <template name="ui_vec_perm_expr_FU" parameter="16 8 16 8 0 16 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T03:11:08</characterization_timestamp>
-        <operation operation_name="vec_perm_expr" supported_types="VECTOR_UINT:16" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="vec_perm_expr" supported_types="VECTOR_UINT:16" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_vec_perm_expr_FU_16_8_16_8_16_8_16_8</name>
@@ -25044,7 +25025,7 @@
         <template name="ui_vec_perm_expr_FU" parameter="32 4 32 4 0 32 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T03:12:15</characterization_timestamp>
-        <operation operation_name="vec_perm_expr" supported_types="VECTOR_UINT:32" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="vec_perm_expr" supported_types="VECTOR_UINT:32" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_vec_perm_expr_FU_32_4_32_4_32_4_32_4</name>
@@ -25067,7 +25048,7 @@
         <template name="ui_vec_perm_expr_FU" parameter="64 2 64 2 0 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T03:10:47</characterization_timestamp>
-        <operation operation_name="vec_perm_expr" supported_types="VECTOR_UINT:64" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="vec_perm_expr" supported_types="VECTOR_UINT:64" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_vec_perm_expr_FU_64_2_64_2_64_2_64_2</name>
@@ -25090,7 +25071,7 @@
         <template name="ui_vec_perm_expr_FU" parameter="8 16 8 16 0 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T03:13:05</characterization_timestamp>
-        <operation operation_name="vec_perm_expr" supported_types="VECTOR_UINT:8" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="vec_perm_expr" supported_types="VECTOR_UINT:8" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>ui_vec_perm_expr_FU_8_16_8_16_8_16_8_16</name>
@@ -28075,7 +28056,7 @@
         <template name="vec1_rshift_expr_FU" parameter="0 1 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T04:14:57</characterization_timestamp>
-        <operation operation_name="rshift_expr" supported_types="VECTOR_INT:1" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="rshift_expr" supported_types="VECTOR_INT:1" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>vec1_rshift_expr_FU_0_32_32_4</name>
@@ -32415,7 +32396,7 @@
         <template name="vec_perm_expr_FU" parameter="16 8 16 8 0 16 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T06:16:46</characterization_timestamp>
-        <operation operation_name="vec_perm_expr" supported_types="VECTOR_INT:16" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="vec_perm_expr" supported_types="VECTOR_INT:16" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>vec_perm_expr_FU_16_8_16_8_16_8_16_8</name>
@@ -32461,7 +32442,7 @@
         <template name="vec_perm_expr_FU" parameter="32 4 32 4 0 32 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T06:17:17</characterization_timestamp>
-        <operation operation_name="vec_perm_expr" supported_types="VECTOR_INT:32" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="vec_perm_expr" supported_types="VECTOR_INT:32" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>vec_perm_expr_FU_32_4_32_4_32_4_32_4</name>
@@ -32484,7 +32465,7 @@
         <template name="vec_perm_expr_FU" parameter="64 2 64 2 0 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T06:15:37</characterization_timestamp>
-        <operation operation_name="vec_perm_expr" supported_types="VECTOR_INT:64" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="vec_perm_expr" supported_types="VECTOR_INT:64" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>vec_perm_expr_FU_64_2_64_2_64_2_64_2</name>
@@ -32507,7 +32488,7 @@
         <template name="vec_perm_expr_FU" parameter="8 16 8 16 0 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2021-12-15T06:17:36</characterization_timestamp>
-        <operation operation_name="vec_perm_expr" supported_types="VECTOR_INT:8" execution_time="-1.0000000190432692e+39"/>
+        <operation operation_name="vec_perm_expr" supported_types="VECTOR_INT:8" execution_time="0.069943865470957919"/>
       </cell>
       <cell>
         <name>vec_perm_expr_FU_8_16_8_16_8_16_8_16</name>

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -830,6 +830,8 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       case ternary_mm_expr_K:
       case fshl_expr_K:
       case fshr_expr_K:
+      case insertvalue_expr_K:
+      case insertelement_expr_K:
       case bit_ior_concat_expr_K:
       {
          auto* te = GetPointer<ternary_expr>(curr_tn);

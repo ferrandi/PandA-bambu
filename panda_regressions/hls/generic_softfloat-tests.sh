@@ -10,5 +10,5 @@ OUT_SUFFIX="${compiler}_softfloat-tests"
 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${compiler} ${BATCH_ARGS[*]}"\
    -lsoftfloat-tests_list \
-   -o "output_${OUT_SUFFIX}" -b$script_dir \
+   -o "out_${OUT_SUFFIX}" -b$script_dir \
    --name="${OUT_SUFFIX}" $ARGS

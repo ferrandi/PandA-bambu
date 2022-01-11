@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1289,6 +1289,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             break;
          }
          case abs_expr_K:
+         case alignof_expr_K:
          case arrow_expr_K:
          case bit_not_expr_K:
          case buffer_ref_K:
@@ -1441,6 +1442,10 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case extract_bit_expr_K:
          case sat_plus_expr_K:
          case sat_minus_expr_K:
+         case extractvalue_expr_K:
+         case insertvalue_expr_K:
+         case extractelement_expr_K:
+         case insertelement_expr_K:
          case CASE_TYPE_NODES:
          default:
             THROW_ERROR("determine_connection pattern not supported: " + std::string(tn->get_kind_text()) + " @" +
@@ -2521,6 +2526,7 @@ void mux_connection_binding::create_connections()
                   case bit_ior_concat_expr_K:
                   case abs_expr_K:
                   case addr_expr_K:
+                  case alignof_expr_K:
                   case arrow_expr_K:
                   case bit_not_expr_K:
                   case buffer_ref_K:
@@ -2557,6 +2563,10 @@ void mux_connection_binding::create_connections()
                   case extract_bit_expr_K:
                   case sat_plus_expr_K:
                   case sat_minus_expr_K:
+                  case extractvalue_expr_K:
+                  case insertvalue_expr_K:
+                  case extractelement_expr_K:
+                  case insertelement_expr_K:
                   default:
                      THROW_ERROR("MEMORY REFERENCE/LOAD-STORE type not supported: " + var_node->get_kind_text() + " " +
                                  STR(node_id));

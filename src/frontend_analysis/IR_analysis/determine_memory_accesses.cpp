@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -302,7 +302,8 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                   store_candidate = true;
                }
             }
-            if(!gm->clobber && !gm->init_assignment && op0_type && op1_type &&
+            if(!gm->clobber && !gm->init_assignment && op0_type && op1_type && op1->get_kind() != insertvalue_expr_K &&
+               op1->get_kind() != extractvalue_expr_K &&
                ((GET_CONST_NODE(op0_type)->get_kind() == record_type_K &&
                  GET_CONST_NODE(op1_type)->get_kind() == record_type_K && op1_kind != view_convert_expr_K) ||
                 (GET_CONST_NODE(op0_type)->get_kind() == union_type_K &&
@@ -930,6 +931,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                      case tree_list_K:
                      case tree_vec_K:
                      case abs_expr_K:
+                     case alignof_expr_K:
                      case arrow_expr_K:
                      case bit_not_expr_K:
                      case buffer_ref_K:
@@ -989,6 +991,8 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                      case target_expr_K:
                      case error_mark_K:
                      case lut_expr_K:
+                     case insertvalue_expr_K:
+                     case insertelement_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_DECL_NODES:
@@ -1169,6 +1173,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                      case tree_list_K:
                      case tree_vec_K:
                      case abs_expr_K:
+                     case alignof_expr_K:
                      case arrow_expr_K:
                      case bit_not_expr_K:
                      case buffer_ref_K:
@@ -1228,6 +1233,8 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                      case target_expr_K:
                      case error_mark_K:
                      case lut_expr_K:
+                     case insertvalue_expr_K:
+                     case insertelement_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_DECL_NODES:

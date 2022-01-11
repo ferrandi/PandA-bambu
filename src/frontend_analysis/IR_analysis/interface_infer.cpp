@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2021 Politecnico di Milano
+ *              Copyright (C) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1795,9 +1795,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
          const auto fd = GetPointer<const function_decl>(fnode);
          std::string fname;
          tree_helper::get_mangled_fname(fd, fname);
-         auto& DesignInterface = HLSMgr->design_interface;
-         const auto top_design_it = HLSMgr->design_interface.find(fname);
-         if(top_design_it == HLSMgr->design_interface.end())
+         if(HLSMgr->design_interface_typename.find(fname) == HLSMgr->design_interface_typename.end())
          {
             std::string dfname = string_demangle(fname);
             if(!dfname.empty())
@@ -1842,6 +1840,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
          if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
             HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
          {
+            auto& DesignInterface = HLSMgr->design_interface;
             bool modified = false;
             auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
             if(DesignInterface.find(fname) != DesignInterface.end())

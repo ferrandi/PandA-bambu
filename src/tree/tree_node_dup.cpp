@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -132,6 +132,8 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
          CREATE_TREE_NODE_CASE_BODY(array_ref, node_id)
       case array_type_K:
          RET_NODE_ID_CASE_BODY(array_type, node_id)
+      case alignof_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(alignof_expr, node_id)
       case arrow_expr_K:
          CREATE_TREE_NODE_CASE_BODY(arrow_expr, node_id)
       case gimple_asm_K:
@@ -673,6 +675,14 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
          CREATE_TREE_NODE_CASE_BODY(fshl_expr, node_id)
       case fshr_expr_K:
          CREATE_TREE_NODE_CASE_BODY(fshr_expr, node_id)
+      case extractvalue_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extractvalue_expr, node_id)
+      case insertvalue_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(insertvalue_expr, node_id)
+      case extractelement_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extractelement_expr, node_id)
+      case insertelement_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(insertelement_expr, node_id)
       case do_stmt_K:
       case if_stmt_K:
       case for_stmt_K:

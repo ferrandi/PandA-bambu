@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2021 Politecnico di Milano
+ *              Copyright (C) 2021-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -184,7 +184,7 @@ void FunctionCallOpt::Initialize()
 DesignFlowStep_Status FunctionCallOpt::InternalExec()
 {
    THROW_ASSERT(!parameters->IsParameter("function-opt") || parameters->GetParameter<bool>("function-opt"),
-                "Function call inlining should not be executed");
+                "Function call optimization should not be executed");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const auto TM = AppM->get_tree_manager();
    const auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
@@ -194,7 +194,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
    const auto opt_stmts = opt_call.find(function_id);
    if(opt_stmts != opt_call.end())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Performing call inlining:");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Performing call optimization:");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
       for(const auto& stmt_opt : opt_stmts->second)

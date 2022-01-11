@@ -676,39 +676,37 @@ namespace ac_math
          octanttype octant = posinput.template slc<3>(T_in::width - T_in::i_width - 3);
          lut_index = (octant[0] == 1) ? (lutindextype)(512 - lut_index) : (lutindextype)(lut_index);
          // imaginary part is sine
-         outputtemp.i() =
-             ((octant == 0) | (octant == 3)) ?
-                 (T_out)sincos[lut_index].i() :
-                 ((octant == 2) | (octant == 1)) ?
-                 (T_out)sincos[lut_index].r() :
-                 ((octant == 7) | (octant == 4)) ? (T_out)-sincos[lut_index].i() : (T_out)-sincos[lut_index].r();
+         outputtemp.i() = ((octant == 0) | (octant == 3)) ? (T_out)sincos[lut_index].i() :
+                          ((octant == 2) | (octant == 1)) ? (T_out)sincos[lut_index].r() :
+                          ((octant == 7) | (octant == 4)) ? (T_out)-sincos[lut_index].i() :
+                                                            (T_out)-sincos[lut_index].r();
          // real part is cosine
-         outputtemp.r() =
-             ((octant == 6) | (octant == 1)) ?
-                 (T_out)sincos[lut_index].i() :
-                 ((octant == 3) | (octant == 4)) ?
-                 (T_out)-sincos[lut_index].r() :
-                 ((octant == 2) | (octant == 5)) ? (T_out)-sincos[lut_index].i() : (T_out)sincos[lut_index].r();
+         outputtemp.r() = ((octant == 6) | (octant == 1)) ? (T_out)sincos[lut_index].i() :
+                          ((octant == 3) | (octant == 4)) ? (T_out)-sincos[lut_index].r() :
+                          ((octant == 2) | (octant == 5)) ? (T_out)-sincos[lut_index].i() :
+                                                            (T_out)sincos[lut_index].r();
          // Below two are the cases when the output corresponds to + or - (0 or 1) for which there is no entry in the
          // lookup table
-         output.i() = ((posinput == 0.125 | posinput == 0.375)) ?
-                          0.7071067811865475244008 :
-                          ((posinput == 0.625 | posinput == 0.875)) ? -0.7071067811865475244008 : outputtemp.i();
-         output.r() = ((posinput == 0.125 | posinput == 0.875)) ?
-                          0.7071067811865475244008 :
-                          ((posinput == 0.375 | posinput == 0.625)) ? -0.7071067811865475244008 : outputtemp.r();
+         output.i() = ((posinput == 0.125 | posinput == 0.375)) ? 0.7071067811865475244008 :
+                      ((posinput == 0.625 | posinput == 0.875)) ? -0.7071067811865475244008 :
+                                                                  outputtemp.i();
+         output.r() = ((posinput == 0.125 | posinput == 0.875)) ? 0.7071067811865475244008 :
+                      ((posinput == 0.375 | posinput == 0.625)) ? -0.7071067811865475244008 :
+                                                                  outputtemp.r();
       }
 
       if(T_in::width - T_in::i_width <= 2)
       {
-         output.i() = (posinput == 0) ? (T_out)0 :
-                                        (posinput == 0.25) ?
-                                        (T_out)1 :
-                                        (posinput == 0.5) ? (T_out)0 : (posinput == 0.75) ? (T_out)-1 : outputtemp.i();
-         output.r() = (posinput == 0) ? (T_out)1 :
-                                        (posinput == 0.25) ?
-                                        (T_out)0 :
-                                        (posinput == 0.5) ? (T_out)-1 : (posinput == 0.75) ? (T_out)0 : outputtemp.r();
+         output.i() = (posinput == 0)    ? (T_out)0 :
+                      (posinput == 0.25) ? (T_out)1 :
+                      (posinput == 0.5)  ? (T_out)0 :
+                      (posinput == 0.75) ? (T_out)-1 :
+                                           outputtemp.i();
+         output.r() = (posinput == 0)    ? (T_out)1 :
+                      (posinput == 0.25) ? (T_out)0 :
+                      (posinput == 0.5)  ? (T_out)-1 :
+                      (posinput == 0.75) ? (T_out)0 :
+                                           outputtemp.r();
       }
 
 #if !defined(__BAMBU__) && defined(SINCOS_DEBUG)

@@ -1,5 +1,4 @@
 EXTRA_DIST += \
-%D%/empty.c \
 %D%/generic_libm.sh \
 %D%/latex_format_bambu_results_simulate.xml \
 %D%/libm_5CSEMA5F31C6_06.6_OSF_sdc.tex \
@@ -25,4 +24,6 @@ EXTRA_DIST += \
 %D%/libm_xc7z020-1clg484-VVD_05.0_OSF_sdc_flopoco.tex \
 %D%/libm_xc7z020-1clg484-VVD_10.0_OSF_sdc.tex \
 %D%/libm_xc7z020-1clg484-VVD_10.0_OSF_sdc_flopoco.tex \
-%D%/README.txt
+%D%/libm-test.c \
+%D%/README.txt \
+%D%/test-float.c

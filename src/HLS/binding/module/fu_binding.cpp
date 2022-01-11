@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -3294,6 +3294,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             case ternary_mm_expr_K:
             case fshl_expr_K:
             case fshr_expr_K:
+            case insertvalue_expr_K:
+            case insertelement_expr_K:
             case bit_ior_concat_expr_K:
             case field_decl_K:
             case identifier_node_K:
@@ -3390,6 +3392,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case type_decl_K:
       case var_decl_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:

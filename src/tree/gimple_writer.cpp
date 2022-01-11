@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -170,6 +170,7 @@ void GimpleWriter::operator()(const unary_expr* obj, unsigned int& mask)
          os << ">";
          break;
       }
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -418,6 +419,22 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int& mask)
          obj->op1->visit(this);
          break;
       }
+      case extractvalue_expr_K:
+      {
+         obj->op0->visit(this);
+         const std::string op = "EXTRACTVALUE_EXPR";
+         os << " " << op << " ";
+         obj->op1->visit(this);
+         break;
+      }
+      case extractelement_expr_K:
+      {
+         obj->op0->visit(this);
+         const std::string op = "EXTRACTELEMENT_EXPR";
+         os << " " << op << " ";
+         obj->op1->visit(this);
+         break;
+      }
       case ltgt_expr_K:
       {
          obj->op0->visit(this);
@@ -593,6 +610,26 @@ void GimpleWriter::operator()(const ternary_expr* obj, unsigned int& mask)
       {
          obj->op0->visit(this);
          os << " | ";
+         obj->op1->visit(this);
+         os << " ( ";
+         obj->op2->visit(this);
+         os << " ) ";
+         break;
+      }
+      case insertvalue_expr_K:
+      {
+         obj->op0->visit(this);
+         os << " INSERTVALUE_EXPR ";
+         obj->op1->visit(this);
+         os << " ( ";
+         obj->op2->visit(this);
+         os << " ) ";
+         break;
+      }
+      case insertelement_expr_K:
+      {
+         obj->op0->visit(this);
+         os << " INSERTELEMENT_EXPR ";
          obj->op1->visit(this);
          os << " ( ";
          obj->op2->visit(this);
@@ -1463,6 +1500,28 @@ void GimpleWriter::operator()(const template_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->decl_node::visit(this);
+   os << "template_decl (";
+   if(obj->name)
+   {
+      obj->name->visit(this);
+   }
+   if(obj->rslt)
+   {
+      //   obj->rslt->visit(this);
+   }
+   if(obj->inst)
+   {
+      obj->inst->visit(this);
+   }
+   if(obj->spcs)
+   {
+      obj->spcs->visit(this);
+   }
+   if(obj->prms)
+   {
+      obj->prms->visit(this);
+   }
+   os << ")";
 }
 
 void GimpleWriter::operator()(const template_parm_index* obj, unsigned int& mask)

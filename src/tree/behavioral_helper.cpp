@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -511,6 +511,7 @@ std::string BehavioralHelper::PrintInit(const tree_nodeConstRef& _node, const va
       case using_decl_K:
       case type_decl_K:
       case identifier_node_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case reference_expr_K:
       case abs_expr_K:
@@ -525,6 +526,8 @@ std::string BehavioralHelper::PrintInit(const tree_nodeConstRef& _node, const va
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case extractelement_expr_K:
       default:
          THROW_ERROR("Currently not supported nodeID " + STR(node));
    }
@@ -1014,6 +1017,7 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
       case var_decl_K:
       case template_decl_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -1762,6 +1766,61 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          res += PrintNode(be->op1, v, vppf) + ") & 1)";
          break;
       }
+      case extractvalue_expr_K:
+      {
+         const auto be = GetPointerS<const extractvalue_expr>(node);
+         const auto return_type = tree_helper::CGetType(node);
+         res += "(" + tree_helper::PrintType(TM, return_type) + ")(" + PrintNode(be->op0, v, vppf) + " >> " +
+                PrintNode(be->op1, v, vppf) + ");";
+         break;
+      }
+      case insertvalue_expr_K:
+      {
+         const auto te = GetPointerS<const insertvalue_expr>(node);
+         unsigned int op2_size;
+         op2_size = tree_helper::Size(te->op2);
+         const auto return_type = tree_helper::CGetType(node);
+         res += "(" + tree_helper::PrintType(TM, return_type) + ")";
+         res +=
+             "(((" + PrintNode(te->op0, v, vppf) + " >> (" + STR(op2_size) + " + " + PrintNode(te->op2, v, vppf) + "))";
+         res += " << (" + STR(op2_size) + " + " + PrintNode(te->op2, v, vppf) + ")) | (( " +
+                PrintNode(te->op1, v, vppf) + " << ";
+         res += PrintNode(te->op2, v, vppf) + ") | ((" + PrintNode(te->op0, v, vppf) + " << " +
+                PrintNode(te->op2, v, vppf);
+         res += ") >> " + PrintNode(te->op2, v, vppf) + ")))";
+         break;
+      }
+      case extractelement_expr_K:
+      {
+         const auto be = GetPointerS<const extractvalue_expr>(node);
+         const auto return_type = tree_helper::CGetType(node);
+         res += "((" + tree_helper::PrintType(TM, return_type) + ")(" + PrintNode(be->op0, v, vppf) + "[" +
+                PrintNode(be->op1, v, vppf) + "]))";
+         break;
+      }
+      case insertelement_expr_K:
+      {
+         const auto iee = GetPointerS<const insertelement_expr>(node);
+         const auto element_type = tree_helper::CGetElements(iee->type);
+         const auto element_size = tree_helper::Size(element_type);
+         const auto size = tree_helper::Size(iee->type);
+         const auto vector_size = size / element_size;
+
+         res += "/*" + iee->get_kind_text() + "*/";
+         res += "(" + tree_helper::PrintType(TM, iee->type) + ") ";
+         res += "{";
+         for(unsigned int ind = 0; ind < vector_size; ++ind)
+         {
+            res += "(" + PrintNode(iee->op2, v, vppf) + " == " + STR(ind) + " ? " + PrintNode(iee->op1, v, vppf) +
+                   " : " + PrintNode(iee->op0, v, vppf) + "[" + STR(ind) + "])";
+            if(ind != vector_size - 1)
+            {
+               res += ", ";
+            }
+         }
+         res += "}";
+         break;
+      }
       case pointer_plus_expr_K:
       {
          const auto ppe = GetPointerS<const pointer_plus_expr>(node);
@@ -1871,7 +1930,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                      THROW_UNREACHABLE("");
                      break;
                   }
-                  case(mult_expr_K):
+                  case mult_expr_K:
                   {
                      const auto mult = GetPointerS<const mult_expr>(right_op_node);
                      if(GET_NODE(mult->op1)->get_kind() == integer_cst_K)
@@ -1994,6 +2053,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                   case tree_list_K:
                   case tree_vec_K:
                   case addr_expr_K:
+                  case alignof_expr_K:
                   case arrow_expr_K:
                   case bit_not_expr_K:
                   case buffer_ref_K:
@@ -2109,6 +2169,8 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                   case extract_bit_expr_K:
                   case sat_plus_expr_K:
                   case sat_minus_expr_K:
+                  case extractvalue_expr_K:
+                  case extractelement_expr_K:
                   case CASE_CPP_NODES:
                   case CASE_CST_NODES:
                   case CASE_DECL_NODES:
@@ -3142,7 +3204,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          const auto vpe = GetPointerS<const vec_perm_expr>(node);
          const auto element_type = tree_helper::CGetElements(vpe->type);
          const auto element_size = tree_helper::Size(element_type);
-         const auto size = tree_helper::Size(vpe->type);
+         const auto size = tree_helper::Size(vpe->op0);
          const auto vector_size = size / element_size;
          res += "/*" + vpe->get_kind_text() + "*/";
          res += "(" + tree_helper::PrintType(TM, vpe->type) + ") ";
@@ -3406,6 +3468,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             case tree_vec_K:
             case abs_expr_K:
             case addr_expr_K:
+            case alignof_expr_K:
             case arrow_expr_K:
             case bit_not_expr_K:
             case buffer_ref_K:
@@ -3501,6 +3564,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                case tree_vec_K:
                case abs_expr_K:
                case addr_expr_K:
+               case alignof_expr_K:
                case arrow_expr_K:
                case bit_not_expr_K:
                case buffer_ref_K:
@@ -3564,8 +3628,9 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
 
          // sizeof workaround
          bool is_sizeof = false;
+         auto op0_kind = op0->get_kind();
 
-         switch(op0->get_kind())
+         switch(op0_kind)
          {
             case addr_expr_K:
             {
@@ -3595,19 +3660,6 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                }
                break;
             }
-            case obj_type_ref_K:
-            {
-               const auto fn = tree_helper::find_obj_type_ref_function(ce->fn);
-               THROW_ASSERT(GET_CONST_NODE(fn)->get_kind(),
-                            "tree node not currently supported " + GET_CONST_NODE(fn)->get_kind_text());
-               const auto local_fd = GetPointerS<const function_decl>(GET_CONST_NODE(fn));
-               if(tree_helper::GetFunctionReturnType(fn))
-               {
-                  res += PrintNode(fn, v, vppf) + " = ";
-               }
-               res += tree_helper::print_function_name(TM, local_fd);
-               break;
-            }
             case ssa_name_K:
             {
                res += "(*" + PrintNode(ce->fn, v, vppf) + ")";
@@ -3625,22 +3677,26 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             case target_mem_ref461_K:
             case tree_list_K:
             case tree_vec_K:
-            case component_ref_K:
-            case bit_field_ref_K:
-            case vtable_ref_K:
-            case with_cleanup_expr_K:
-            case save_expr_K:
-            case cond_expr_K:
-            case dot_prod_expr_K:
-            case ternary_plus_expr_K:
-            case ternary_pm_expr_K:
-            case ternary_mp_expr_K:
-            case ternary_mm_expr_K:
-            case fshl_expr_K:
-            case fshr_expr_K:
-            case bit_ior_concat_expr_K:
-            case vec_cond_expr_K:
-            case vec_perm_expr_K:
+            case CASE_TERNARY_EXPRESSION:
+            {
+               if(op0_kind == obj_type_ref_K)
+               {
+                  const auto fn = tree_helper::find_obj_type_ref_function(ce->fn);
+                  THROW_ASSERT(GET_CONST_NODE(fn)->get_kind(),
+                               "tree node not currently supported " + GET_CONST_NODE(fn)->get_kind_text());
+                  const auto local_fd = GetPointerS<const function_decl>(GET_CONST_NODE(fn));
+                  if(tree_helper::GetFunctionReturnType(fn))
+                  {
+                     res += PrintNode(fn, v, vppf) + " = ";
+                  }
+                  res += tree_helper::print_function_name(TM, local_fd);
+               }
+               else
+               {
+                  THROW_ERROR(std::string("tree node not currently supported ") + op0->get_kind_text());
+               }
+               break;
+            }
             case target_expr_K:
             case error_mark_K:
             case paren_expr_K:
@@ -3656,7 +3712,9 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             case CASE_QUATERNARY_EXPRESSION:
             case CASE_TYPE_NODES:
             default:
+            {
                THROW_ERROR(std::string("tree node not currently supported ") + op0->get_kind_text());
+            }
          }
          /// Print parameters.
          res += "(";
@@ -3766,10 +3824,11 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          const auto op0 = GET_CONST_NODE(ce->fn);
          bool is_va_start_end = false;
 
-         // sizeof workaroung
+         // sizeof workaround
          bool is_sizeof = false;
+         auto op0_kind = op0->get_kind();
 
-         switch(op0->get_kind())
+         switch(op0_kind)
          {
             case addr_expr_K:
             {
@@ -3799,19 +3858,6 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                }
                break;
             }
-            case obj_type_ref_K:
-            {
-               const auto fn = tree_helper::find_obj_type_ref_function(ce->fn);
-               THROW_ASSERT(GET_CONST_NODE(fn)->get_kind() == function_decl_K,
-                            "tree node not currently supported " + fn->get_kind_text());
-               const auto local_fd = GetPointerS<const function_decl>(GET_CONST_NODE(fn));
-               if(tree_helper::GetFunctionReturnType(fn))
-               {
-                  res += PrintNode(fn, v, vppf) + " = ";
-               }
-               res += tree_helper::print_function_name(TM, local_fd);
-               break;
-            }
             case ssa_name_K:
             {
                res += "(*" + PrintNode(ce->fn, v, vppf) + ")";
@@ -3829,22 +3875,26 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             case target_mem_ref461_K:
             case tree_list_K:
             case tree_vec_K:
-            case component_ref_K:
-            case bit_field_ref_K:
-            case vtable_ref_K:
-            case with_cleanup_expr_K:
-            case save_expr_K:
-            case cond_expr_K:
-            case dot_prod_expr_K:
-            case ternary_plus_expr_K:
-            case ternary_pm_expr_K:
-            case ternary_mp_expr_K:
-            case ternary_mm_expr_K:
-            case fshl_expr_K:
-            case fshr_expr_K:
-            case bit_ior_concat_expr_K:
-            case vec_cond_expr_K:
-            case vec_perm_expr_K:
+            case CASE_TERNARY_EXPRESSION:
+            {
+               if(op0_kind == obj_type_ref_K)
+               {
+                  const auto fn = tree_helper::find_obj_type_ref_function(ce->fn);
+                  THROW_ASSERT(GET_CONST_NODE(fn)->get_kind() == function_decl_K,
+                               "tree node not currently supported " + fn->get_kind_text());
+                  const auto local_fd = GetPointerS<const function_decl>(GET_CONST_NODE(fn));
+                  if(tree_helper::GetFunctionReturnType(fn))
+                  {
+                     res += PrintNode(fn, v, vppf) + " = ";
+                  }
+                  res += tree_helper::print_function_name(TM, local_fd);
+               }
+               else
+               {
+                  THROW_ERROR(std::string("tree node not currently supported ") + op0->get_kind_text());
+               }
+               break;
+            }
             case target_expr_K:
             case error_mark_K:
             case paren_expr_K:
@@ -3860,7 +3910,9 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             case CASE_QUATERNARY_EXPRESSION:
             case CASE_TYPE_NODES:
             default:
+            {
                THROW_ERROR(std::string("tree node not currently supported ") + op0->get_kind_text());
+            }
          }
          /// Print parameters.
          res += "(";
@@ -4797,6 +4849,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
       case save_expr_K:
       case vtable_ref_K:
       case with_cleanup_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case buffer_ref_K:
       case card_expr_K:
@@ -5390,6 +5443,7 @@ bool BehavioralHelper::is_a_constant(unsigned int obj) const
       case type_decl_K:
       case var_decl_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -5620,6 +5674,7 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
             case tree_vec_K:
             case abs_expr_K:
             case addr_expr_K:
+            case alignof_expr_K:
             case arrow_expr_K:
             case bit_not_expr_K:
             case buffer_ref_K:
@@ -5757,6 +5812,8 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case extractelement_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -6465,6 +6522,8 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
             case extract_bit_expr_K:
             case sat_plus_expr_K:
             case sat_minus_expr_K:
+            case extractvalue_expr_K:
+            case extractelement_expr_K:
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Yes because it is a gimple_assign with " + GET_NODE(ga->op1)->get_kind_text() +

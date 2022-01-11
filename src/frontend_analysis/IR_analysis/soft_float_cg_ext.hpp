@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -237,60 +237,44 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    bool HasToBeExecuted() const override;
 };
 
-struct FloatFormat
+class FloatFormat
 {
  public:
+   enum FPRounding
+   {
+      FPRounding_Truncate = 0,
+      FPRounding_NearestEven = 1
+   };
+
+   enum FPException
+   {
+      FPException_Overflow = 0,
+      FPException_IEEE = 1,
+      FPException_Saturation = 2
+   };
+
    uint8_t exp_bits;
    uint8_t frac_bits;
    int32_t exp_bias;
-   bool has_rounding;
-   bool has_nan;
+   FPRounding rounding_mode;
+   FPException exception_mode;
    bool has_one;
    bool has_subnorm;
    bit_lattice sign;
 
-   FloatFormat(uint8_t _exp_bits, uint8_t _frac_bits, int32_t _exp_bias, bool _has_rounding = true,
-               bool _has_nan = true, bool _has_one = true, bool _has_subnorm = false,
-               bit_lattice _sign = bit_lattice::U)
-       : exp_bits(_exp_bits),
-         frac_bits(_frac_bits),
-         exp_bias(_exp_bias),
-         has_rounding(_has_rounding),
-         has_nan(_has_nan),
-         has_one(_has_one),
-         has_subnorm(_has_subnorm),
-         sign(_sign)
-   {
-   }
+   FloatFormat(uint8_t _exp_bits, uint8_t _frac_bits, int32_t _exp_bias,
+               FPRounding _rounding_mode = FPRounding_NearestEven, FPException _exception_mode = FPException_IEEE,
+               bool _has_one = true, bool _has_subnorm = false, bit_lattice _sign = bit_lattice::U);
 
-   bool operator==(const FloatFormat& other) const
-   {
-      return std::tie(exp_bits, frac_bits, exp_bias, has_rounding, has_nan, has_one, has_subnorm, sign) ==
-             std::tie(other.exp_bits, other.frac_bits, other.exp_bias, other.has_rounding, other.has_nan, other.has_one,
-                      other.has_subnorm, other.sign);
-   }
+   bool operator==(const FloatFormat& other) const;
 
-   bool operator!=(const FloatFormat& other) const
-   {
-      return std::tie(exp_bits, frac_bits, exp_bias, has_rounding, has_nan, has_one, has_subnorm, sign) !=
-             std::tie(other.exp_bits, other.frac_bits, other.exp_bias, other.has_rounding, other.has_nan, other.has_one,
-                      other.has_subnorm, other.sign);
-   }
+   bool operator!=(const FloatFormat& other) const;
 
-   bool ieee_format() const
-   {
-      return ((exp_bits == 8 && frac_bits == 23 && exp_bias == -127) ||
-              (exp_bits == 11 && frac_bits == 52 && exp_bias == -1023)) &&
-             (has_rounding && has_nan && has_one && !has_subnorm && sign == bit_lattice::U);
-   }
+   bool ieee_format() const;
 
-   std::string mngl() const
-   {
-      return "e" + STR(+exp_bits) + "m" + STR(+frac_bits) + "b" +
-             ((exp_bias < 0) ? ("_" + STR(-exp_bias)) : STR(exp_bias)) + (has_rounding ? "r" : "") +
-             (has_nan ? "n" : "") + (has_one ? "h" : "") + (has_subnorm ? "s" : "") +
-             (sign != bit_lattice::U ? bitstring_to_string({sign}) : "");
-   }
+   std::string ToString() const;
+
+   static FloatFormatRef FromString(std::string ff_str);
 };
 
 class FunctionVersion
@@ -308,52 +292,23 @@ class FunctionVersion
    // True if all caller functions share this function float format or if this is a standard ieee format function
    bool internal;
 
-   FunctionVersion() : function_vertex(nullptr), userRequired(nullptr), internal(true)
-   {
-   }
+   FunctionVersion();
 
-   FunctionVersion(CallGraph::vertex_descriptor func_v, const FloatFormatRef& userFormat = nullptr)
-       : function_vertex(func_v), userRequired(userFormat), internal(true)
-   {
-   }
+   FunctionVersion(CallGraph::vertex_descriptor func_v, const FloatFormatRef& userFormat = nullptr);
 
-   FunctionVersion(const FunctionVersion& other)
-       : function_vertex(other.function_vertex),
-         userRequired(other.ieee_format() ? nullptr : new FloatFormat(*other.userRequired)),
-         internal(other.internal)
-   {
-   }
+   FunctionVersion(const FunctionVersion& other);
 
-   ~FunctionVersion()
-   {
-   }
+   ~FunctionVersion();
 
-   int compare(const FunctionVersion& other, bool format_only = false) const
-   {
-      return ((function_vertex != other.function_vertex || internal != other.internal) && !format_only) ||
-             !((userRequired == nullptr && other.userRequired == nullptr) ||
-               (userRequired != nullptr && other.userRequired != nullptr && *userRequired == *other.userRequired));
-   }
+   int compare(const FunctionVersion& other, bool format_only = false) const;
 
-   bool operator==(const FunctionVersion& other) const
-   {
-      return compare(other) == 0;
-   }
+   bool operator==(const FunctionVersion& other) const;
 
-   bool operator!=(const FunctionVersion& other) const
-   {
-      return compare(other) != 0;
-   }
+   bool operator!=(const FunctionVersion& other) const;
 
-   bool ieee_format() const
-   {
-      return userRequired == nullptr /*|| userRequired->ieee_format()*/;
-   }
+   bool ieee_format() const;
 
-   std::string ToString() const
-   {
-      return STR(function_vertex) + (internal ? "_internal_" : "") + (userRequired ? userRequired->mngl() : "");
-   }
+   std::string ToString() const;
 };
 
 #endif

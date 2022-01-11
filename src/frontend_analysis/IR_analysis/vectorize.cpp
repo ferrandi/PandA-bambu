@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -336,8 +336,9 @@ void Vectorize::ClassifyLoop(const LoopConstRef loop, const size_t parallel_degr
 
    /// FIXME: the parallel degree is set to default for doall loop and not read from pragma
    const auto potential_parallel_degree = parameters->getOption<size_t>(OPT_gcc_openmp_simd);
-   const size_t current_parallel_degree =
-       parallel_degree != 0 ? parallel_degree : (loop->loop_type & DOALL_LOOP) ? potential_parallel_degree : 0;
+   const size_t current_parallel_degree = parallel_degree != 0           ? parallel_degree :
+                                          (loop->loop_type & DOALL_LOOP) ? potential_parallel_degree :
+                                                                           0;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loop parallel degree: " + STR(current_parallel_degree));
 
    if(loop->loop_type & DOALL_LOOP)
@@ -578,8 +579,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          const auto* be = GetPointer<const binary_expr>(tree_node);
          if(tree_node->get_kind() == mem_ref_K or tree_node->get_kind() == trunc_div_expr_K or
             tree_node->get_kind() == trunc_mod_expr_K or tree_node->get_kind() == widen_mult_expr_K or
-            tree_node->get_kind() == mult_expr_K or tree_node->get_kind() == lut_expr_K or
-            tree_node->get_kind() == extract_bit_expr_K)
+            tree_node->get_kind() == mult_expr_K or tree_node->get_kind() == extract_bit_expr_K)
          {
             transformations[tree_node->index] = SCALAR;
          }
@@ -816,6 +816,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case ternary_mm_expr_K:
       case fshl_expr_K:
       case fshr_expr_K:
+      case insertvalue_expr_K:
       {
          const auto te = GetPointer<const ternary_expr>(tree_node);
          ClassifyTreeNode(loop_id, GET_NODE(te->op0));
@@ -909,6 +910,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case vec_cond_expr_K:
       case vec_perm_expr_K:
       case dot_prod_expr_K:
+      case insertelement_expr_K:
       case CASE_TYPE_NODES:
       {
          THROW_UNREACHABLE("Not supported tree node " + tree_node->get_kind_text());
@@ -3193,6 +3195,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             case lut_expr_K:
             case bit_ior_concat_expr_K:
             case error_mark_K:
+            case insertvalue_expr_K:
+            case insertelement_expr_K:
             {
                if(debug_level >= DEBUG_LEVEL_PEDANTIC)
                {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -3504,6 +3504,7 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
       case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -3546,6 +3547,10 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
       case paren_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
+      case extractelement_expr_K:
+      case insertelement_expr_K:
       {
          return tree_nodeConstRef();
       }
@@ -4020,6 +4025,7 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node)
       case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -4058,6 +4064,10 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node)
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
+      case extractelement_expr_K:
+      case insertelement_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -4309,6 +4319,7 @@ bool tree_helper::IsPointerResolved(const tree_nodeConstRef& _node, CustomOrdere
       case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -4346,6 +4357,10 @@ bool tree_helper::IsPointerResolved(const tree_nodeConstRef& _node, CustomOrdere
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
+      case extractelement_expr_K:
+      case insertelement_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -4972,6 +4987,7 @@ std::string tree_helper::op_symbol(const tree_node* op)
       case min_expr_K:
          return "";
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case assert_expr_K:
       case binfo_K:
@@ -5050,6 +5066,8 @@ std::string tree_helper::op_symbol(const tree_node* op)
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case extractelement_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -6160,7 +6178,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                prmtrs.push_back(lnode->valu);
             }
          }
-         for(auto valu : prmtrs)
+         for(const auto& valu : prmtrs)
          {
             res += "," + PrintType(TM, valu, global, print_qualifiers);
          }
@@ -6176,6 +6194,12 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       {
          const auto tt = GetPointer<const typename_type>(node_type);
          res += PrintType(TM, tt->name, global, print_qualifiers);
+         break;
+      }
+      case template_decl_K:
+      {
+         const auto td = GetPointer<const template_decl>(node_type);
+         res += print_type(TM, GET_INDEX_NODE(td->name), global, print_qualifiers);
          break;
       }
       case binfo_K:
@@ -6201,7 +6225,6 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case target_mem_ref461_K:
       case type_argument_pack_K:
       case translation_unit_decl_K:
-      case template_decl_K:
       case using_decl_K:
       case tree_vec_K:
       case var_decl_K:
@@ -6223,6 +6246,8 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case bit_ior_concat_expr_K:
       case error_mark_K:
       case lut_expr_K:
+      case insertvalue_expr_K:
+      case insertelement_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -6796,6 +6821,7 @@ bool tree_helper::is_packed_access(const tree_managerConstRef& TreeM, unsigned i
       case fshr_expr_K:
       case bit_ior_concat_expr_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -6841,6 +6867,14 @@ bool tree_helper::is_packed_access(const tree_managerConstRef& TreeM, unsigned i
       case sat_minus_expr_K:
       {
          res = false;
+         break;
+      }
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
+      case extractelement_expr_K:
+      case insertelement_expr_K:
+      {
+         res = true;
          break;
       }
       default:
@@ -7267,6 +7301,10 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             case extract_bit_expr_K:
             case sat_plus_expr_K:
             case sat_minus_expr_K:
+            case extractvalue_expr_K:
+            case insertvalue_expr_K:
+            case extractelement_expr_K:
+            case insertelement_expr_K:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
@@ -7458,6 +7496,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case reference_type_K:
       case vector_type_K:
       case abs_expr_K:
+      case alignof_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
@@ -7577,6 +7616,10 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
+      case extractelement_expr_K:
+      case insertelement_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -8468,7 +8511,8 @@ void tree_helper::get_required_values(std::vector<std::tuple<unsigned int, unsig
                                       const tree_nodeRef& _tn)
 {
    const auto tn = _tn->get_kind() == tree_reindex_K ? GET_NODE(_tn) : _tn;
-   switch(tn->get_kind())
+   auto tn_kind = tn->get_kind();
+   switch(tn_kind)
    {
       case constructor_K:
       {
@@ -8529,22 +8573,33 @@ void tree_helper::get_required_values(std::vector<std::tuple<unsigned int, unsig
          }
          break;
       }
-      case ternary_plus_expr_K:
-      case ternary_pm_expr_K:
-      case ternary_mp_expr_K:
-      case ternary_mm_expr_K:
-      case fshl_expr_K:
-      case fshr_expr_K:
-      case bit_ior_concat_expr_K:
-      case cond_expr_K:
-      case vec_cond_expr_K:
-      case vec_perm_expr_K:
-      case dot_prod_expr_K:
+      case CASE_TERNARY_EXPRESSION:
       {
-         const auto te = GetPointerS<const ternary_expr>(tn);
-         get_required_values(required, te->op0);
-         get_required_values(required, te->op1);
-         get_required_values(required, te->op2);
+         if(tn_kind == component_ref_K)
+         {
+            const auto cr = GetPointerS<const component_ref>(tn);
+            required.emplace_back(GET_INDEX_CONST_NODE(cr->op0), 0);
+            get_required_values(required, cr->op1);
+         }
+         else if(tn_kind == bit_field_ref_K)
+         {
+            const auto te = GetPointerS<const ternary_expr>(tn);
+            required.emplace_back(GET_INDEX_CONST_NODE(te->op0), 0);
+            get_required_values(required, te->op1);
+            get_required_values(required, te->op2);
+         }
+         else if(tn_kind == obj_type_ref_K || tn_kind == save_expr_K || tn_kind == vtable_ref_K ||
+                 tn_kind == with_cleanup_expr_K)
+         {
+            THROW_ERROR("Operation not yet supported: " + std::string(tn->get_kind_text()));
+         }
+         else
+         {
+            const auto te = GetPointerS<const ternary_expr>(tn);
+            get_required_values(required, te->op0);
+            get_required_values(required, te->op1);
+            get_required_values(required, te->op2);
+         }
          break;
       }
       case lut_expr_K:
@@ -8820,21 +8875,6 @@ void tree_helper::get_required_values(std::vector<std::tuple<unsigned int, unsig
          }
          break;
       }
-      case component_ref_K:
-      {
-         const auto cr = GetPointerS<const component_ref>(tn);
-         required.emplace_back(GET_INDEX_CONST_NODE(cr->op0), 0);
-         get_required_values(required, cr->op1);
-         break;
-      }
-      case bit_field_ref_K:
-      {
-         const auto bfr = GetPointerS<const bit_field_ref>(tn);
-         required.emplace_back(GET_INDEX_CONST_NODE(bfr->op0), 0);
-         get_required_values(required, bfr->op1);
-         get_required_values(required, bfr->op2);
-         break;
-      }
       case field_decl_K:
       {
          const auto fd = GetPointerS<const field_decl>(tn);
@@ -8876,10 +8916,6 @@ void tree_helper::get_required_values(std::vector<std::tuple<unsigned int, unsig
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_TYPE_NODES:
-      case vtable_ref_K:
-      case with_cleanup_expr_K:
-      case obj_type_ref_K:
-      case save_expr_K:
       case gimple_bind_K:
       case gimple_for_K:
       case gimple_predict_K:

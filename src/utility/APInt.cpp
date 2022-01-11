@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2021 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -272,11 +272,11 @@ bool APInt::sign() const
 APInt& APInt::extOrTrunc(bw_t bw, bool sign)
 {
    THROW_ASSERT(bw, "Minimum bitwidth of 1 is required");
-   const APInt_internal mask((APInt_internal(1, nullptr) << bw) - APInt_internal(1, nullptr), nullptr);
+   const APInt_internal mask((APInt_internal(1) << bw) - APInt_internal(1), nullptr);
    _data &= mask;
    if(sign && bit_test(_data, static_cast<unsigned>(bw - 1)))
    {
-      _data += (APInt_internal(-1, nullptr) << bw);
+      _data += (APInt_internal(-1) << bw);
    }
    return *this;
 }
@@ -284,11 +284,11 @@ APInt& APInt::extOrTrunc(bw_t bw, bool sign)
 APInt APInt::extOrTrunc(bw_t bw, bool sign) const
 {
    THROW_ASSERT(bw, "Minimum bitwidth of 1 is required");
-   const APInt_internal mask((APInt_internal(1, nullptr) << bw) - APInt_internal(1, nullptr), nullptr);
+   const APInt_internal mask((APInt_internal(1) << bw) - APInt_internal(1), nullptr);
    APInt_internal val = _data & mask;
    if(sign && bit_test(val, static_cast<unsigned>(bw - 1)))
    {
-      val += (APInt_internal(-1, nullptr) << bw);
+      val += (APInt_internal(-1) << bw);
    }
    return APInt(val);
 }
@@ -338,9 +338,10 @@ APInt::bw_t APInt::minBitwidth(bool sign) const
                  (_data.sign() < 0 ? static_cast<bw_t>(std::numeric_limits<bw_t>::max()) : bw);
 }
 
-std::string APInt::str() const
+std::string APInt::str(int base) const
 {
-   return _data.str();
+   std::unique_ptr<char, void (*)(void*)> res(mpz_get_str(NULL, base, _data.backend().data()), std::free);
+   return std::string(res.get());
 }
 
 APInt APInt::getMaxValue(bw_t bw)

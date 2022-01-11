@@ -12,7 +12,7 @@
  *                      Micro Architecture Laboratory
  *                       Politecnico di Milano - DEIB
  *             **********************************************
- *             Copyright (C) 2004-2021 Politecnico di Milano
+ *             Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -272,6 +272,7 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_TEMPLATE_ID_EXPR,
    TOK_THROW_EXPR,
    TOK_TRY_BLOCK,
+   TOK_ALIGNOF_EXPR,
    TOK_ARROW_EXPR,
    TOK_HANDLER,
    TOK_BASELINK,
@@ -598,6 +599,10 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_SAT_MINUS_EXPR,
    TOK_FSHL_EXPR,
    TOK_FSHR_EXPR,
+   TOK_EXTRACTVALUE_EXPR,
+   TOK_INSERTVALUE_EXPR,
+   TOK_EXTRACTELEMENT_EXPR,
+   TOK_INSERTELEMENT_EXPR,
 
    /// RTL token
    TOK_RTL,
