@@ -1,6 +1,6 @@
 #!/bin/bash
 script_dir="$(dirname $(readlink -e $0))"
-BATCH_ARGS=("-lm" "--evaluation=TOTAL_CYCLES,CYCLES" "--experimental-setup=BAMBU" "--expose-globals" "--compiler=I386_GCC49")
+BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--expose-globals" "--compiler=I386_GCC49")
 OUT_SUFFIX="bambu_specific_test3"
 
 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \

@@ -1,6 +1,6 @@
 #!/bin/bash
 script_dir="$(dirname $(readlink -e $0))"
-BATCH_ARGS=("--evaluation=TOTAL_CYCLES,CYCLES" "--expose-globals")
+BATCH_ARGS=("--simulate" "--expose-globals")
 OUT_SUFFIX="bambu_specific_test5"
 
 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
