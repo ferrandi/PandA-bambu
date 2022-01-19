@@ -175,7 +175,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       }
       if(parameters->isOption(OPT_fp_rounding_mode))
       {
-         const auto rnd_mode = parameters->getOption<std::string>(OPT_fp_exception_mode);
+         const auto rnd_mode = parameters->getOption<std::string>(OPT_fp_rounding_mode);
          if(rnd_mode == "nearest_even")
          {
             float32FF->rounding_mode = FloatFormat::FPRounding_NearestEven;
