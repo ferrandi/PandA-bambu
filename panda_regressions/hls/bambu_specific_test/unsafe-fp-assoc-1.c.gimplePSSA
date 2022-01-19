@@ -1,0 +1,311 @@
+GCC_VERSION: "4.5.4"
+PLUGIN_VERSION: "0.12"
+
+;; Function main (main)
+
+;; main ()
+@1      function_decl    name: @2       type: @3       srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":33:5      
+                         uid : 1243     body: @4      
+@2      identifier_node  strg: "main" lngt: 4       
+@3      function_type    unql: @5       size: @6       algn: 8       
+                         retn: @7      
+@4      statement_list   
+                         bloc: 2        loop_id: 0        pred: ENTRY 
+                         succ: 3        succ: 7        true_edge: 3       
+                         false_edge: 7        stmt: @8       stmt: @9      
+                         stmt: @10      stmt: @11      stmt: @12     
+                         bloc: 3        loop_id: 0        pred: 2       
+                         succ: 4        succ: 5        true_edge: 4       
+                         false_edge: 5        stmt: @13      stmt: @14     
+                         stmt: @15     
+                         bloc: 4        loop_id: 0        pred: 3       
+                         stmt: @16     
+                         bloc: 5        loop_id: 0        pred: 3       
+                         succ: 6        succ: 7        true_edge: 6       
+                         false_edge: 7        stmt: @17      stmt: @18     
+                         stmt: @19      stmt: @20      stmt: @21     
+                         stmt: @22     
+                         bloc: 6        loop_id: 0        pred: 5       
+                         stmt: @23     
+                         bloc: 7        loop_id: 0        pred: 5       
+                         pred: 2        succ: EXIT  stmt: @24     
+                         stmt: @25     
+@5      function_type    size: @6       algn: 8        retn: @7      
+@6      integer_cst      type: @26      value: 8
+@7      integer_type     name: @27      size: @28      algn: 32      
+                         prec: 32       min : @29      max : @30     
+@8      gimple_assign    scpe: @1       bb_index: 2        memuse: @31     
+                         memdef: @32      vuse: @31      vdef: @32     
+                         vover: @32      srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":18:18     
+                         time_weight: 2        size_weight: 2        op  : @33     
+                         op  : @34     
+@9      gimple_assign    scpe: @1       bb_index: 2        memuse: @32     
+                         vuse: @32      srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":19:25     
+                         time_weight: 1        size_weight: 1        op  : @35     
+                         op  : @36     
+@10     gimple_assign    scpe: @1       bb_index: 2        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":19:13     
+                         time_weight: 1        size_weight: 1        op  : @37     
+                         op  : @38     
+@11     gimple_assign    scpe: @1       bb_index: 2        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":20:27     
+                         time_weight: 1        size_weight: 1        op  : @39     
+                         op  : @40     
+@12     gimple_cond      scpe: @1       bb_index: 2        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":20:10     
+                         time_weight: 2        size_weight: 2        op  : @41     
+@13     gimple_assign    scpe: @1       bb_index: 3        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":22:27     
+                         time_weight: 0        size_weight: 0        op  : @42     
+                         op  : @43     
+@14     gimple_assign    scpe: @1       bb_index: 3        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":22:21     
+                         time_weight: 1        size_weight: 1        op  : @44     
+                         op  : @45     
+@15     gimple_cond      scpe: @1       bb_index: 3        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":23:22     
+                         time_weight: 2        size_weight: 2        op  : @46     
+@16     gimple_call      scpe: @1       bb_index: 4        memuse: @32     
+                         vuse: @32      srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":24:12     
+                         time_weight: 10       size_weight: 1        fn  : @47     
+@17     gimple_assign    scpe: @1       bb_index: 5        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":25:21     
+                         time_weight: 0        size_weight: 0        op  : @48     
+                         op  : @49     
+@18     gimple_assign    scpe: @1       bb_index: 5        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":26:27     
+                         time_weight: 1        size_weight: 1        op  : @50     
+                         op  : @51     
+@19     gimple_assign    scpe: @1       bb_index: 5        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":26:21     
+                         time_weight: 1        size_weight: 1        op  : @52     
+                         op  : @53     
+@20     gimple_assign    scpe: @1       bb_index: 5        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":27:34     
+                         time_weight: 0        size_weight: 0        op  : @54     
+                         op  : @55     
+@21     gimple_assign    scpe: @1       bb_index: 5        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":27:46     
+                         time_weight: 1        size_weight: 1        op  : @56     
+                         op  : @57     
+@22     gimple_cond      scpe: @1       bb_index: 5        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":27:22     
+                         time_weight: 2        size_weight: 2        op  : @58     
+@23     gimple_call      scpe: @1       bb_index: 6        memuse: @32     
+                         vuse: @32      srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":28:12     
+                         time_weight: 10       size_weight: 1        fn  : @59     
+@24     gimple_assign    scpe: @1       bb_index: 7        srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":38:2      
+                         time_weight: 0        size_weight: 0        op  : @60     
+                         op  : @61     
+@25     gimple_return    scpe: @1       bb_index: 7        time_weight: 0       
+                         size_weight: 0        op  : @60     
+@26     integer_type     name: @62      size: @63      algn: 64      
+                         prec: 64       unsigned       min : @64     
+                         max : @65     
+@27     type_decl        name: @66      type: @7       srcp: "<built-in>":0:0 
+                         uid : 0       
+@28     integer_cst      type: @26      value: 32
+@29     integer_cst      type: @7       value: -2147483648
+@30     integer_cst      type: @7       value: 2147483647
+@31     ssa_name         type: @67      var : @68      vers: 2       
+                         def_stmt: @69      virtual        default       
+@32     ssa_name         type: @67      var : @68      vers: 15      
+                         def_stmt: @8       virtual       
+@33     component_ref    type: @70      srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":18:15     
+                         op  : @71      op  : @72     
+@34     real_cst         type: @70      valr: "1.0e+0" valx: "0x0.800000000000000000000000000000000000000000000000p+1"
+@35     ssa_name         type: @73      var : @74      vers: 4       
+                         def_stmt: @9      
+@36     component_ref    type: @73      srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":19:25     
+                         op  : @75      op  : @76     
+@37     ssa_name         type: @73      var : @77      vers: 5       
+                         def_stmt: @10     
+@38     bit_and_expr     type: @73      op  : @35      op  : @78     
+@39     ssa_name         type: @79      var : @80      vers: 6       
+                         def_stmt: @11     
+@40     le_expr          type: @79      op  : @37      op  : @81     
+@41     ne_expr          type: @82      op  : @39      op  : @83     
+@42     ssa_name         type: @70      var : @84      vers: 8       
+                         def_stmt: @13     
+@43     real_cst         type: @70      valr: "-4.503599627370495e+15" valx: "-0x0.fffffffffffff00000000000000000000000000000000000p+52"
+@44     ssa_name         type: @70      var : @85      vers: 9       
+                         def_stmt: @14     
+@45     plus_expr        type: @70      op  : @42      op  : @86     
+@46     ne_expr          type: @82      op  : @44      op  : @34     
+@47     addr_expr        type: @87      op  : @88     
+@48     ssa_name         type: @70      var : @89      vers: 10      
+                         def_stmt: @17     
+@49     real_cst         type: @70      valr: "5.0e-1" valx: "0x0.800000000000000000000000000000000000000000000000p+0"
+@50     ssa_name         type: @70      var : @90      vers: 11      
+                         def_stmt: @18     
+@51     minus_expr       type: @70      op  : @48      op  : @86     
+@52     ssa_name         type: @70      var : @85      vers: 12      
+                         def_stmt: @19     
+@53     plus_expr        type: @70      op  : @50      op  : @86     
+@54     ssa_name         type: @70      var : @84      vers: 13      
+                         def_stmt: @20     
+@55     real_cst         type: @70      valr: "-4.503599627370495e+15" valx: "-0x0.fffffffffffff00000000000000000000000000000000000p+52"
+@56     ssa_name         type: @70      var : @91      vers: 14      
+                         def_stmt: @21     
+@57     plus_expr        type: @70      op  : @54      op  : @86     
+@58     eq_expr          type: @82      op  : @52      op  : @56     
+@59     addr_expr        type: @87      op  : @88     
+@60     ssa_name         type: @7       var : @92      vers: 1       
+                         def_stmt: @24     
+@61     integer_cst      type: @7       value: 0
+@62     identifier_node  strg: "bit_size_type"        lngt: 13      
+@63     integer_cst      type: @26      value: 64
+@64     integer_cst      type: @26      value: 0
+@65     integer_cst      type: @26      value: -1
+@66     identifier_node  strg: "int" lngt: 3       
+@67     void_type        name: @93      algn: 8       
+@68     var_decl         name: @94      type: @67      srcp: "<built-in>":0:0      
+                         artificial     uid : 2016     extern        
+                         algn: 8        used: 1        addr_not_taken 
+@69     gimple_nop       scpe: @1       bb_index: 0        time_weight: 0       
+                         size_weight: 0       
+@70     real_type        name: @95      size: @63      algn: 64      
+                         prec: 64      
+@71     var_decl         name: @96      orig: @97      type: @98     
+                         scpe: @1       srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":15:17     
+                         uid : 2018     size: @63      algn: 32      
+                         used: 1        addr_not_taken 
+@72     field_decl       name: @99      type: @70      scpe: @100    
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":8:15     
+                         uid : 1233     size: @63      algn: 32      
+                         bpos: @64     
+@73     integer_type     name: @101     size: @28      algn: 32      
+                         prec: 32       unsigned       min : @102    
+                         max : @103    
+@74     var_decl         orig: @104     type: @73      scpe: @1      
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":19:25     
+                         artificial     uid : 2027     size: @28     
+                         algn: 32       used: 1        addr_not_taken 
+@75     component_ref    type: @105     srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":19:23     
+                         op  : @71      op  : @106    
+@76     field_decl       name: @107     type: @73      scpe: @105    
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":5:16     
+                         uid : 1230     size: @28      algn: 32      
+                         bpos: @64     
+@77     var_decl         name: @108     orig: @109     type: @73     
+                         scpe: @1       srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":17:20     
+                         uid : 2021     size: @28      algn: 32      
+                         used: 1        addr_not_taken 
+@78     integer_cst      type: @73      value: 2147483647
+@79     integer_type     name: @110     size: @28      algn: 32      
+                         prec: 32       min : @111     max : @112    
+@80     var_decl         orig: @113     type: @79      scpe: @1      
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":20:27     
+                         artificial     uid : 2025     size: @28     
+                         algn: 32       used: 1        addr_not_taken 
+@81     integer_cst      type: @73      value: 1127219199
+@82     boolean_type     name: @114     size: @6       algn: 8       
+@83     integer_cst      type: @79      value: 0
+@84     var_decl         orig: @115     type: @70      scpe: @1      
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":22:27     
+                         artificial     uid : 2024     size: @63     
+                         algn: 64       used: 1        addr_not_taken 
+@85     var_decl         name: @116     orig: @117     type: @70     
+                         scpe: @1       srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":16:23     
+                         uid : 2019     size: @63      algn: 64      
+                         used: 1        register       addr_not_taken 
+@86     real_cst         type: @70      valr: "4.503599627370496e+15" valx: "0x0.800000000000000000000000000000000000000000000000p+53"
+@87     pointer_type     size: @28      algn: 32       ptd : @118    
+@88     function_decl    name: @119     type: @118     srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":1:13     
+                         uid : 826      undefined      builtin       
+@89     var_decl         name: @120     orig: @121     type: @70     
+                         scpe: @1       srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":16:26     
+                         uid : 2020     size: @63      algn: 64      
+                         used: 1        register       addr_not_taken 
+@90     var_decl         orig: @122     type: @70      scpe: @1      
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":26:27     
+                         artificial     uid : 2023     size: @63     
+                         algn: 64       used: 1        addr_not_taken 
+@91     var_decl         orig: @123     type: @70      scpe: @1      
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":27:46     
+                         artificial     uid : 2022     size: @63     
+                         algn: 64       used: 1        addr_not_taken 
+@92     var_decl         type: @7       scpe: @1       srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":36:3      
+                         artificial     uid : 2000     size: @28     
+                         algn: 32       used: 1        addr_not_taken 
+@93     type_decl        name: @124     type: @67      srcp: "<built-in>":0:0 
+                         uid : 32      
+@94     identifier_node  strg: ".MEM" lngt: 4       
+@95     type_decl        name: @125     type: @70      srcp: "<built-in>":0:0 
+                         uid : 23      
+@96     identifier_node  strg: "argument"             lngt: 8       
+@97     var_decl         name: @96      type: @98      scpe: @126    
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":15:17     
+                         uid : 1239     size: @63      algn: 32      
+                         used: 1        addr_not_taken 
+@98     union_type       name: @127     unql: @100     size: @63     
+                         scpe: @128     algn: 32       union         
+                         flds: @106     flds: @72     
+@99     identifier_node  strg: "d" lngt: 1       
+@100    union_type       size: @63      scpe: @128     algn: 32      
+                         union          flds: @106     flds: @72     
+@101    type_decl        name: @129     type: @73      srcp: "<built-in>":0:0 
+                         uid : 3       
+@102    integer_cst      type: @73      value: 0
+@103    integer_cst      type: @73      value: 4294967295
+@104    var_decl         type: @73      scpe: @126     srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":19:25     
+                         artificial     uid : 2002     size: @28     
+                         algn: 32       used: 1        addr_not_taken 
+@105    record_type      size: @63      scpe: @128     algn: 32      
+                         struct         flds: @76      flds: @130    
+@106    field_decl       name: @131     type: @105     scpe: @100    
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":7:4      
+                         uid : 1232     size: @63      algn: 32      
+                         bpos: @64     
+@107    identifier_node  strg: "hi" lngt: 2       
+@108    identifier_node  strg: "xHead" lngt: 5       
+@109    var_decl         name: @108     type: @73      scpe: @126    
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":17:20     
+                         uid : 1242     size: @28      algn: 32      
+                         used: 1        addr_not_taken 
+@110    type_decl        name: @132     type: @79      srcp: "<built-in>":0:0 
+                         uid : 2       
+@111    integer_cst      type: @79      value: -2147483648
+@112    integer_cst      type: @79      value: 2147483647
+@113    var_decl         type: @79      scpe: @126     srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":20:27     
+                         artificial     uid : 2004     size: @28     
+                         algn: 32       used: 1        addr_not_taken 
+@114    type_decl        name: @133     type: @82      srcp: "<built-in>":0:0 
+                         uid : 1210    
+@115    var_decl         type: @70      scpe: @126     srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":22:27     
+                         artificial     uid : 2007     size: @63     
+                         algn: 64       used: 1        addr_not_taken 
+@116    identifier_node  strg: "y" lngt: 1       
+@117    var_decl         name: @116     type: @70      scpe: @126    
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":16:23     
+                         uid : 1240     size: @63      algn: 64      
+                         used: 1        register       addr_not_taken 
+@118    function_type    size: @6       algn: 8        retn: @67     
+                         prms: @134    
+@119    identifier_node  strg: "abort" lngt: 5       
+@120    identifier_node  strg: "z" lngt: 1       
+@121    var_decl         name: @120     type: @70      scpe: @126    
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":16:26     
+                         uid : 1241     size: @63      algn: 64      
+                         used: 1        register       addr_not_taken 
+@122    var_decl         type: @70      scpe: @126     srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":26:27     
+                         artificial     uid : 2010     size: @63     
+                         algn: 64       used: 1        addr_not_taken 
+@123    var_decl         type: @70      scpe: @126     srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":27:46     
+                         artificial     uid : 2011     size: @63     
+                         algn: 64       used: 1        addr_not_taken 
+@124    identifier_node  strg: "void" lngt: 4       
+@125    identifier_node  strg: "double"lngt: 6       
+@126    function_decl    name: @135     type: @136     srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":13:6      
+                         uid : 1237     arg : @137     static        
+@127    type_decl        name: @138     type: @98      srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":9:3      
+                         uid : 1234    
+@128    translation_unit_decl srcp: "<built-in>":0:0 uid : 1245    
+@129    identifier_node  strg: "unsigned int"         lngt: 12      
+@130    field_decl       name: @139     type: @73      scpe: @105    
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":6:16     
+                         uid : 1231     size: @28      algn: 32      
+                         bpos: @28     
+@131    identifier_node  strg: "i" lngt: 1       
+@132    identifier_node  strg: "long int"             lngt: 8       
+@133    identifier_node  strg: "_Bool" lngt: 5       
+@134    tree_list        valu: @67     
+@135    identifier_node  strg: "func" lngt: 4       
+@136    function_type    size: @6       algn: 8        retn: @67     
+                         prms: @140    
+@137    parm_decl        name: @141     type: @70      scpe: @126    
+                         srcp: "/workspaces/private-PandA-bambu/obj/../panda_regressions/hls/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c":13:20     
+                         uid : 1236     argt: @70      size: @63     
+                         algn: 64       used: 1       
+@138    identifier_node  strg: "hexdouble"            lngt: 9       
+@139    identifier_node  strg: "lo" lngt: 2       
+@140    tree_list        valu: @70      chan: @134    
+@141    identifier_node  strg: "x" lngt: 1       

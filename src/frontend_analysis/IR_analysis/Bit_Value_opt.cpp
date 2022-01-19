@@ -850,7 +850,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     constrainSSA(op0_ssa, TM);
                                  }
                               }
-                              if(trailing_zero_op1 != 0 and op0->index != op1->index)
+                              if(trailing_zero_op1 != 0 && op0->index != op1->index)
                               {
                                  const auto op1_type = tree_helper::CGetType(op1);
                                  const auto op1_const_node = TM->CreateUniqueIntegerCst(
@@ -961,7 +961,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  break;
                               }
                            }
-                           if(bit_values_op0 == "0")
+                           if(bit_values_op0.find_first_not_of('0') == std::string::npos)
                            {
                               is_op0_null = true;
                            }
@@ -1008,7 +1008,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  break;
                               }
                            }
-                           if(bit_values_op1 == "0")
+                           if(bit_values_op1.find_first_not_of('0') == std::string::npos)
                            {
                               is_op1_null = true;
                            }
@@ -1071,7 +1071,11 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            if(is_op0_const)
                            {
                               const auto int_const = GetPointer<const integer_cst>(op0);
-                              if(tree_helper::IsSignedIntegerType(op0))
+                              if(ssa->bit_values.size() <= shift_const)
+                              {
+                                 is_op0_null = true;
+                              }
+                              else if(tree_helper::IsSignedIntegerType(op0_type))
                               {
                                  if(static_cast<long long int>(int_const->value >> shift_const) == 0)
                                  {
@@ -1106,7 +1110,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  resulting_bit_values = GetPointer<const ssa_name>(op0)->bit_values.substr(
                                      0, GetPointer<const ssa_name>(op0)->bit_values.size() - shift_const);
                               }
-                              else if(tree_helper::IsSignedIntegerType(op0))
+                              else if(tree_helper::IsSignedIntegerType(op0_type))
                               {
                                  resulting_bit_values = GetPointer<const ssa_name>(op0)->bit_values.substr(0, 1);
                               }
@@ -1115,7 +1119,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  resulting_bit_values = "0";
                               }
 
-                              if(resulting_bit_values == "0" && GET_CONST_NODE(ga->op1)->get_kind() == plus_expr_K)
+                              if(resulting_bit_values.find_first_not_of('0') == std::string::npos &&
+                                 GET_CONST_NODE(ga->op1)->get_kind() == plus_expr_K)
                               {
                                  is_op0_null = true;
                               }
@@ -1160,7 +1165,11 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            if(is_op1_const)
                            {
                               const auto int_const = GetPointer<const integer_cst>(op1);
-                              if(tree_helper::is_int(TM, op1->index))
+                              if(ssa->bit_values.size() <= shift_const)
+                              {
+                                 is_op1_null = true;
+                              }
+                              else if(tree_helper::IsSignedIntegerType(op1_type))
                               {
                                  if(static_cast<long long int>(int_const->value >> shift_const) == 0)
                                  {
@@ -1195,7 +1204,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  resulting_bit_values = GetPointer<const ssa_name>(op1)->bit_values.substr(
                                      0, GetPointer<const ssa_name>(op1)->bit_values.size() - shift_const);
                               }
-                              else if(tree_helper::is_int(TM, op1->index))
+                              else if(tree_helper::IsSignedIntegerType(op1_type))
                               {
                                  resulting_bit_values = GetPointer<const ssa_name>(op1)->bit_values.substr(0, 1);
                               }
@@ -1204,7 +1213,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  resulting_bit_values = "0";
                               }
 
-                              if(resulting_bit_values == "0")
+                              if(resulting_bit_values.find_first_not_of('0') == std::string::npos)
                               {
                                  is_op1_null = true;
                               }
