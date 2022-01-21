@@ -735,7 +735,7 @@ jobs:
             script: ./examples/CHStone/generic_CHStone.sh --skip_list mips
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-BALANCED-MP
-            batch: "LFE335EA8FN484C_15.0 -O2 --aligned-access --experimental-setup=BAMBU-BALANCED-MP,LFE335EA8FN484C_15.0 -O3 --experimental-setup=BAMBU-PERFORMANCE-MP"
+            batch: "LFE335EA8FN484C_15.0 --aligned-access --experimental-setup=BAMBU-BALANCED-MP,LFE335EA8FN484C_15.0 --experimental-setup=BAMBU-PERFORMANCE-MP"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
