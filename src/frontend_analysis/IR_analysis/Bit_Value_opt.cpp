@@ -149,6 +149,10 @@ bool Bit_Value_opt::HasToBeExecuted() const
 
 DesignFlowStep_Status Bit_Value_opt::InternalExec()
 {
+   if(parameters->IsParameter("disable-BV-opt") && parameters->GetParameter<unsigned int>("disable-BV-opt") == 1)
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " --------- BIT_VALUE_OPT ----------");
    const auto TM = AppM->get_tree_manager();
    const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));

@@ -186,6 +186,10 @@ void CSE::Initialize()
 
 DesignFlowStep_Status CSE::InternalExec()
 {
+   if(parameters->IsParameter("disable-cse") && parameters->GetParameter<unsigned int>("disable-cse") == 1)
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
    bool IR_changed = false;
    restart_phi_opt = false;
    restart_bit_value = false;
