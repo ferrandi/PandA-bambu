@@ -6,14 +6,6 @@ check_PROGRAMS = sollya
 AM_YFLAGS = -d
 AM_LFLAGS = -o$(LEX_OUTPUT_ROOT).c
 
-BUILT_SOURCES = \
-miniparser.h \
-parser.h \
-internparser.h \
-lexer.c \
-minilexer.c \
-internlexer.c 
-
 bin_PROGRAMS = sollya
 sollya_SOURCES = \
 mpfi-compat.c \
