@@ -2297,8 +2297,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      auto ssa_var_decl = GetPointer<ssa_name>(GET_NODE(ssa_vd));
                      ssa_var_decl->use_set->Add(ga->op1);
                      tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, pt);
-                     tree_nodeRef mr =
-                         tree_man->create_binary_operation(type, ssa_vd, offset, srcp_default, mem_ref_K);
+                     tree_nodeRef mr = tree_man->create_binary_operation(type, ssa_vd, offset, srcp_default, mem_ref_K);
 
                      ga->op1 = mr;
                      block.second->PushBefore(new_ga, *it_los, AppM);
@@ -2313,7 +2312,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Reached max cfg transformations (" + GET_CONST_NODE(ga->op1)->get_kind_text() +
                                      ")");
-
                }
                else
                {
