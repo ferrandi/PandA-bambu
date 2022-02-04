@@ -79,7 +79,8 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     */
    void optimize(const function_decl* fd, tree_managerRef TM, tree_manipulationRef IRman);
 
-   void propagateValue(const ssa_name* ssa, tree_managerRef TM, tree_nodeRef old_val, tree_nodeRef new_val);
+   void propagateValue(const ssa_name* ssa, tree_managerRef TM, tree_nodeRef old_val, tree_nodeRef new_val,
+                       const std::string callSiteString);
 
  public:
    /**
