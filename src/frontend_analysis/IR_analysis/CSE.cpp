@@ -320,6 +320,10 @@ DesignFlowStep_Status CSE::InternalExec()
                {
                   same_range = true;
                }
+               if(ref_ssa->bit_values == dead_ssa->bit_values)
+               {
+                  same_range = true;
+               }
             }
             if(!same_range && ref_ssa->min && ref_ssa->max && GET_CONST_NODE(ga_op_type)->get_kind() == integer_type_K)
             {
