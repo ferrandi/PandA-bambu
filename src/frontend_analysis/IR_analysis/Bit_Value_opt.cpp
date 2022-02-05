@@ -1732,7 +1732,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  break;
                               }
                            }
-                           if(trailing_zero)
+                           auto min_size = std::min(s0.size(), s1.size());
+                           if(trailing_zero < min_size)
                            {
                               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                                              "---Bit Value Opt: " + std::string(GET_NODE(ga->op1)->get_kind_text()) +
