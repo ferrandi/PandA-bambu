@@ -600,7 +600,8 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                                var1 + "));\nexit(1);\n}\n");
                         }
                      }
-                     else if(binary_op_relation != basic_binary_operations_relation.end() && actual_args.size() >= 2)
+                     else if(binary_op_relation != basic_binary_operations_relation.end() && actual_args.size() >= 2 &&
+                             0)
                      {
                         const auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
                         const auto var2 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
