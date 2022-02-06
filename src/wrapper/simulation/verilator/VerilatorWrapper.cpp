@@ -106,6 +106,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
                               (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
                               (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
 
+   script << "export VM_PARALLEL_BUILDS=1\n";
    const auto output_directory = Param->getOption<std::string>(OPT_output_directory);
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_verilator.log";
 #if HAVE_EXPERIMENTAL
@@ -127,6 +128,8 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #endif
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
    script << " -O3";
+   // limit the file size
+   script << " --output-split 5000";
    if(!generate_vcd_output)
    {
       script << " --x-assign fast --x-initial fast --noassert";
