@@ -478,7 +478,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       }
 
       indented_output_stream->Append("\\n\");\n");
-
+#if 0
       /// check if we need to add a check for floating operation correctness
       if(g_as_node)
       {
@@ -511,53 +511,53 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                      // this piece of code should be updated accordingly
                      static const std::map<std::string, std::pair<unsigned int, std::string>>
                          basic_unary_operations_relation = {
-                             {"__int32_to_float32e8m23b_127rnh", {0, "(float)(int)"}},
-                             {"__int8_to_float32e8m23b_127rnh", {0, "(float)(int)"}},
-                             {"__int16_to_float32e8m23b_127rnh", {0, "(float)(int)"}},
-                             {"__int32_to_float64e11m52b_1023rnh", {1, "(double)(int)"}},
-                             {"__uint32_to_float32e8m23b_127rnh", {0, "(float)"}},
-                             {"__uint8_to_float32e8m23b_127rnh", {0, "(float)"}},
-                             {"__uint16_to_float32e8m23b_127rnh", {0, "(float)"}},
-                             {"__uint32_to_float64e11m52b_1023rnh", {1, "(double)"}},
-                             {"__int64_to_float32e8m23b_127rnh", {0, "(float)(long long int)"}},
-                             {"__int64_to_float64e11m52b_1023rnh", {1, "(double)(long long int)"}},
-                             {"__uint64_to_float32e8m23b_127rnh", {0, "(float)"}},
-                             {"__uint64_to_float64e11m52b_1023rnh", {1, "(double)"}},
+                             {"__int32_to_float32e8m23b_127nih", {0, "(float)(int)"}},
+                             {"__int8_to_float32e8m23b_127nih", {0, "(float)(int)"}},
+                             {"__int16_to_float32e8m23b_127nih", {0, "(float)(int)"}},
+                             {"__int32_to_float64e11m52b_1023nih", {1, "(double)(int)"}},
+                             {"__uint32_to_float32e8m23b_127nih", {0, "(float)"}},
+                             {"__uint8_to_float32e8m23b_127nih", {0, "(float)"}},
+                             {"__uint16_to_float32e8m23b_127nih", {0, "(float)"}},
+                             {"__uint32_to_float64e11m52b_1023nih", {1, "(double)"}},
+                             {"__int64_to_float32e8m23b_127nih", {0, "(float)(long long int)"}},
+                             {"__int64_to_float64e11m52b_1023nih", {1, "(double)(long long int)"}},
+                             {"__uint64_to_float32e8m23b_127nih", {0, "(float)"}},
+                             {"__uint64_to_float64e11m52b_1023nih", {1, "(double)"}},
                              {"__float64_to_float32_ieee", {2, "(float)"}},
                              {"__float32_to_float64_ieee", {3, "(double)"}},
-                             {"__float32_to_int32_round_to_zeroe8m23b_127rnh", {4, "(int)"}},
-                             {"__float32_to_int64_round_to_zeroe8m23b_127rnh", {5, "(long long int)"}},
-                             {"__float32_to_uint32_round_to_zeroe8m23b_127rnh", {4, "(unsigned int)"}},
-                             {"__float32_to_uint64_round_to_zeroe8m23b_127rnh", {5, "(unsigned long long int)"}},
-                             {"__float64_to_int32_round_to_zeroe11m52b_1023rnh", {4, "(int)"}},
-                             {"__float64_to_int64_round_to_zeroe11m52b_1023rnh", {5, "(long long int)"}},
-                             {"__float64_to_uint32_round_to_zeroe11m52b_1023rnh", {4, "(unsigned int)"}},
-                             {"__float64_to_uint64_round_to_zeroe11m52b_1023rnh", {5, "(unsigned long long int)"}},
+                             {"__float32_to_int32_round_to_zeroe8m23b_127nih", {4, "(int)"}},
+                             {"__float32_to_int64_round_to_zeroe8m23b_127nih", {5, "(long long int)"}},
+                             {"__float32_to_uint32_round_to_zeroe8m23b_127nih", {4, "(unsigned int)"}},
+                             {"__float32_to_uint64_round_to_zeroe8m23b_127nih", {5, "(unsigned long long int)"}},
+                             {"__float64_to_int32_round_to_zeroe11m52b_1023nih", {4, "(int)"}},
+                             {"__float64_to_int64_round_to_zeroe11m52b_1023nih", {5, "(long long int)"}},
+                             {"__float64_to_uint32_round_to_zeroe11m52b_1023nih", {4, "(unsigned int)"}},
+                             {"__float64_to_uint64_round_to_zeroe11m52b_1023nih", {5, "(unsigned long long int)"}},
                          };
                      static const std::map<std::string, std::pair<bool, std::string>> basic_binary_operations_relation =
                          {
-                             {"__float32_adde8m23b_127rnh", {false, "+"}},
-                             {"__float64_adde11m52b_1023rnh", {true, "+"}},
-                             {"__float32_sube8m23b_127rnh", {false, "-"}},
-                             {"__float64_sube11m52b_1023rnh", {true, "-"}},
-                             {"__float32_mule8m23b_127rnh", {false, "*"}},
-                             {"__float64_mule11m52b_1023rnh", {true, "*"}},
-                             {"__float32_divSRT4e8m23b_127rnh", {false, "/"}},
-                             {"__float32_divGe8m23b_127rnh", {false, "/"}},
-                             {"__float64_divSRT4e11m52b_1023rnh", {true, "/"}},
-                             {"__float64_divGe11m52b_1023rnh", {true, "/"}},
-                             {"__float32_lee8m23b_127rnh", {false, "<="}},
-                             {"__float64_lee11m52b_1023rnh", {true, "<="}},
-                             {"__float32_lte8m23b_127rnh", {false, "<"}},
-                             {"__float64_lte11m52b_1023rnh", {true, "<"}},
-                             {"__float32_gee8m23b_127rnh", {false, ">="}},
-                             {"__float64_gee11m52b_1023rnh", {true, ">="}},
-                             {"__float32_gte8m23b_127rnh", {false, ">"}},
-                             {"__float64_gte11m52b_1023rnh", {true, ">"}},
-                             {"__float32_eqe8m23b_127rnh", {false, "=="}},
-                             {"__float64_eqe11m52b_1023rnh", {true, "=="}},
-                             {"__float32_ltgt_quiete8m23b_127rnh", {false, "!="}},
-                             {"__float64_ltgt_quiete11m52b_1023rnh", {true, "!="}},
+                             {"__float_adde8m23b_127nih", {false, "+"}},
+                             {"__float_adde11m52b_1023nih", {true, "+"}},
+                             {"__float_sube8m23b_127nih", {false, "-"}},
+                             {"__float_sube11m52b_1023nih", {true, "-"}},
+                             {"__float_mule8m23b_127nih", {false, "*"}},
+                             {"__float_mule11m52b_1023nih", {true, "*"}},
+                             {"__float_divSRT4e8m23b_127nih", {false, "/"}},
+                             {"__float_divGe8m23b_127nih", {false, "/"}},
+                             {"__float_divSRT4e11m52b_1023nih", {true, "/"}},
+                             {"__float_divGe11m52b_1023nih", {true, "/"}},
+                             {"__float_lee8m23b_127nih", {false, "<="}},
+                             {"__float_lee11m52b_1023nih", {true, "<="}},
+                             {"__float_lte8m23b_127nih", {false, "<"}},
+                             {"__float_lte11m52b_1023nih", {true, "<"}},
+                             {"__float_gee8m23b_127nih", {false, ">="}},
+                             {"__float_gee11m52b_1023nih", {true, ">="}},
+                             {"__float_gte8m23b_127nih", {false, ">"}},
+                             {"__float_gte11m52b_1023nih", {true, ">"}},
+                             {"__float_eqe8m23b_127nih", {false, "=="}},
+                             {"__float_eqe11m52b_1023nih", {true, "=="}},
+                             {"__float_ltgt_quiete8m23b_127nih", {false, "!="}},
+                             {"__float_ltgt_quiete11m52b_1023nih", {true, "!="}},
                          };
                      const auto unary_op_relation = basic_unary_operations_relation.find(oper->get_name());
                      const auto binary_op_relation = basic_binary_operations_relation.find(oper->get_name());
@@ -600,7 +600,8 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                                var1 + "));\nexit(1);\n}\n");
                         }
                      }
-                     else if(binary_op_relation != basic_binary_operations_relation.end() && actual_args.size() >= 2)
+                     else if(binary_op_relation != basic_binary_operations_relation.end() && actual_args.size() >= 2 &&
+                             0)
                      {
                         const auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
                         const auto var2 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
@@ -623,6 +624,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
             }
          }
       }
+#endif
    }
 }
 

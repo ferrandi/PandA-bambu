@@ -108,7 +108,7 @@ jobs:
             batch: "5CSEMA5F31C6_6.6 --flopoco,5CSEMA5F31C6_7.5 --flopoco,5CSEMA5F31C6_10.0 --flopoco,5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_5.0 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: CHStone_O2
-            script: ./examples/CHStone/generic_CHStone.sh --skip_list mips
+            script: ./examples/CHStone/generic_CHStone.sh
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-BALANCED-MP
             batch: "5CSEMA5F31C6_10.0 --aligned-access,5CSEMA5F31C6_15.0 --aligned-access,5SGXEA7N2F45C1_5.0 --aligned-access,5SGXEA7N2F45C1_10.0 --aligned-access,EP2C70F896C6-R_10.0 --aligned-access,EP2C70F896C6-R_15.0 --aligned-access"
@@ -210,7 +210,7 @@ jobs:
             batch: "xc7vx330t-1ffg1157_10.0 --flopoco,xc7vx690t-3ffg1930-VVD_5.0 --flopoco,xc7vx690t-3ffg1930-VVD_10.0 --flopoco,xc7z020-1clg484-VVD_5.0 --flopoco,xc7z020-1clg484-VVD_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: CHStone_O2
-            script: ./examples/CHStone/generic_CHStone.sh --skip_list mips
+            script: ./examples/CHStone/generic_CHStone.sh
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-BALANCED-MP
             batch: "xc7vx330t-1ffg1157_10.0 --aligned-access,xc7vx690t-3ffg1930-VVD_5.0 --aligned-access,xc7vx690t-3ffg1930-VVD_10.0 --aligned-access,xc7z020-1clg484-VVD_10.0 --aligned-access,xc7z020-1clg484-VVD_15.0 --aligned-access"
@@ -316,10 +316,10 @@ jobs:
             batch: "LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: CHStone
-            script: ./examples/CHStone/generic_CHStone.sh --skip_list mips
+            script: ./examples/CHStone/generic_CHStone.sh -lchstone_ECP3_list
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-BALANCED-MP
-            batch: "LFE335EA8FN484C_15.0 -O2 --aligned-access --experimental-setup=BAMBU-BALANCED-MP,LFE335EA8FN484C_15.0 -O3 --experimental-setup=BAMBU-PERFORMANCE-MP"
+            batch: "LFE335EA8FN484C_15.0 --aligned-access --experimental-setup=BAMBU-BALANCED-MP,LFE335EA8FN484C_15.0 --experimental-setup=BAMBU-PERFORMANCE-MP"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2

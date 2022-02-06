@@ -235,7 +235,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             {
                changed = true;
                const auto mr = GetPointer<mem_ref>(op0);
-               THROW_ASSERT(mr, "unexpected condition");
+               THROW_ASSERT(mr, "unexpected condition " + gm->ToString());
                /// compute the size of memory to be set with memset
                const auto dst_type = tree_helper::CGetType(mr->op0);
                const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));

@@ -355,6 +355,10 @@ blocRef dead_code_elimination::move2emptyBB(const tree_managerRef& TM, const uns
 /// removed
 DesignFlowStep_Status dead_code_elimination::InternalExec()
 {
+   if(parameters->IsParameter("disable-dce") && parameters->GetParameter<unsigned int>("disable-dce") == 1)
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
    const auto TM = AppM->get_tree_manager();
    auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
    auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));

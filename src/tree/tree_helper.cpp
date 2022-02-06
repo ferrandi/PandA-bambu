@@ -474,7 +474,10 @@ unsigned int tree_helper::Size(const tree_nodeConstRef& _t)
                   --counter;
                   --index;
                }
-               ++counter;
+               if(((1ULL << index) & static_cast<long long unsigned int>(ic->value)) == 0)
+               {
+                  ++counter;
+               }
                return counter;
             }
             else

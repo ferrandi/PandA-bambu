@@ -1046,6 +1046,10 @@ void Bit_Value::Initialize()
 
 DesignFlowStep_Status Bit_Value::InternalExec()
 {
+   if(parameters->IsParameter("disable-BV") && parameters->GetParameter<unsigned int>("disable-BV") == 1)
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
    initialize();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing initial backward");
    backward();
