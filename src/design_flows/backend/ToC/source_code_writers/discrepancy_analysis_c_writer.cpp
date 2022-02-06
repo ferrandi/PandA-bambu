@@ -478,7 +478,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       }
 
       indented_output_stream->Append("\\n\");\n");
-
+#if 0
       /// check if we need to add a check for floating operation correctness
       if(g_as_node)
       {
@@ -624,6 +624,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
             }
          }
       }
+#endif
    }
 }
 
