@@ -87,6 +87,14 @@
 
 #include "Parameter.hpp"
 
+#define INT_TYPE 0
+#define UINT_TYPE 1
+#define FLOAT_TYPE 2
+#define DOUBLE_TYPE 3
+#define F_SIGN(out, in) (((out & 3) << 2) | (in & 3))
+#define F_TYPE_IN(f_sign) (f_sign & 3)
+#define F_TYPE_OUT(f_sign) ((f_sign >> 2) & 3)
+
 /*
  * Newer versions of gcc support integer variables larger than 64 bits.
  * These are not supported by bambu which treats them as vectors. But the
@@ -478,7 +486,6 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       }
 
       indented_output_stream->Append("\\n\");\n");
-#if 0
       /// check if we need to add a check for floating operation correctness
       if(g_as_node)
       {
@@ -504,127 +511,141 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                   const auto fn = GET_CONST_NODE(ue->op);
                   THROW_ASSERT(fn->get_kind() == function_decl_K,
                                "tree node not currently supported " + fn->get_kind_text());
-                  const auto* fd = GetPointerS<const function_decl>(fn);
+                  const auto fd = GetPointerS<const function_decl>(fn);
                   if(fd)
                   {
-                     // FIXME: soft_float_cg_ext is performing floating-point lowering to unsigned int/long long, thus
-                     // this piece of code should be updated accordingly
                      static const std::map<std::string, std::pair<unsigned int, std::string>>
                          basic_unary_operations_relation = {
-                             {"__int32_to_float32e8m23b_127nih", {0, "(float)(int)"}},
-                             {"__int8_to_float32e8m23b_127nih", {0, "(float)(int)"}},
-                             {"__int16_to_float32e8m23b_127nih", {0, "(float)(int)"}},
-                             {"__int32_to_float64e11m52b_1023nih", {1, "(double)(int)"}},
-                             {"__uint32_to_float32e8m23b_127nih", {0, "(float)"}},
-                             {"__uint8_to_float32e8m23b_127nih", {0, "(float)"}},
-                             {"__uint16_to_float32e8m23b_127nih", {0, "(float)"}},
-                             {"__uint32_to_float64e11m52b_1023nih", {1, "(double)"}},
-                             {"__int64_to_float32e8m23b_127nih", {0, "(float)(long long int)"}},
-                             {"__int64_to_float64e11m52b_1023nih", {1, "(double)(long long int)"}},
-                             {"__uint64_to_float32e8m23b_127nih", {0, "(float)"}},
-                             {"__uint64_to_float64e11m52b_1023nih", {1, "(double)"}},
-                             {"__float64_to_float32_ieee", {2, "(float)"}},
-                             {"__float32_to_float64_ieee", {3, "(double)"}},
-                             {"__float32_to_int32_round_to_zeroe8m23b_127nih", {4, "(int)"}},
-                             {"__float32_to_int64_round_to_zeroe8m23b_127nih", {5, "(long long int)"}},
-                             {"__float32_to_uint32_round_to_zeroe8m23b_127nih", {4, "(unsigned int)"}},
-                             {"__float32_to_uint64_round_to_zeroe8m23b_127nih", {5, "(unsigned long long int)"}},
-                             {"__float64_to_int32_round_to_zeroe11m52b_1023nih", {4, "(int)"}},
-                             {"__float64_to_int64_round_to_zeroe11m52b_1023nih", {5, "(long long int)"}},
-                             {"__float64_to_uint32_round_to_zeroe11m52b_1023nih", {4, "(unsigned int)"}},
-                             {"__float64_to_uint64_round_to_zeroe11m52b_1023nih", {5, "(unsigned long long int)"}},
+                             {"__int8_to_float32e8m23b_127nih", {F_SIGN(FLOAT_TYPE, INT_TYPE), "(float)(int)"}},
+                             {"__int16_to_float32e8m23b_127nih", {F_SIGN(FLOAT_TYPE, INT_TYPE), "(float)(int)"}},
+                             {"__int32_to_float32e8m23b_127nih", {F_SIGN(FLOAT_TYPE, INT_TYPE), "(float)(int)"}},
+                             {"__int32_to_float64e11m52b_1023nih", {F_SIGN(DOUBLE_TYPE, INT_TYPE), "(double)(int)"}},
+                             {"__uint8_to_float32e8m23b_127nih", {F_SIGN(FLOAT_TYPE, UINT_TYPE), "(float)"}},
+                             {"__uint16_to_float32e8m23b_127nih", {F_SIGN(FLOAT_TYPE, UINT_TYPE), "(float)"}},
+                             {"__uint32_to_float32e8m23b_127nih", {F_SIGN(FLOAT_TYPE, UINT_TYPE), "(float)"}},
+                             {"__uint32_to_float64e11m52b_1023nih", {F_SIGN(DOUBLE_TYPE, UINT_TYPE), "(double)"}},
+                             {"__int64_to_float32e8m23b_127nih",
+                              {F_SIGN(FLOAT_TYPE, INT_TYPE), "(float)(long long int)"}},
+                             {"__int64_to_float64e11m52b_1023nih",
+                              {F_SIGN(DOUBLE_TYPE, INT_TYPE), "(double)(long long int)"}},
+                             {"__uint64_to_float32e8m23b_127nih", {F_SIGN(FLOAT_TYPE, UINT_TYPE), "(float)"}},
+                             {"__uint64_to_float64e11m52b_1023nih", {F_SIGN(DOUBLE_TYPE, UINT_TYPE), "(double)"}},
+                             {"__float64_to_float32_ieee", {F_SIGN(FLOAT_TYPE, DOUBLE_TYPE), "(float)"}},
+                             {"__float32_to_float64_ieee", {F_SIGN(DOUBLE_TYPE, FLOAT_TYPE), "(double)"}},
+                             {"__float32_to_int32_round_to_zeroe8m23b_127nih", {F_SIGN(INT_TYPE, FLOAT_TYPE), "(int)"}},
+                             {"__float32_to_int64_round_to_zeroe8m23b_127nih",
+                              {F_SIGN(INT_TYPE, FLOAT_TYPE), "(long long int)"}},
+                             {"__float32_to_uint32_round_to_zeroe8m23b_127nih",
+                              {F_SIGN(UINT_TYPE, FLOAT_TYPE), "(unsigned int)"}},
+                             {"__float32_to_uint64_round_to_zeroe8m23b_127nih",
+                              {F_SIGN(UINT_TYPE, FLOAT_TYPE), "(unsigned long long int)"}},
+                             {"__float64_to_int32_round_to_zeroe11m52b_1023nih",
+                              {F_SIGN(INT_TYPE, DOUBLE_TYPE), "(int)"}},
+                             {"__float64_to_int64_round_to_zeroe11m52b_1023nih",
+                              {F_SIGN(INT_TYPE, DOUBLE_TYPE), "(long long int)"}},
+                             {"__float64_to_uint32_round_to_zeroe11m52b_1023nih",
+                              {F_SIGN(UINT_TYPE, DOUBLE_TYPE), "(unsigned int)"}},
+                             {"__float64_to_uint64_round_to_zeroe11m52b_1023nih",
+                              {F_SIGN(UINT_TYPE, DOUBLE_TYPE), "(unsigned long long int)"}},
                          };
                      static const std::map<std::string, std::pair<bool, std::string>> basic_binary_operations_relation =
                          {
                              {"__float_adde8m23b_127nih", {false, "+"}},
-                             {"__float_adde11m52b_1023nih", {true, "+"}},
                              {"__float_sube8m23b_127nih", {false, "-"}},
-                             {"__float_sube11m52b_1023nih", {true, "-"}},
                              {"__float_mule8m23b_127nih", {false, "*"}},
-                             {"__float_mule11m52b_1023nih", {true, "*"}},
                              {"__float_divSRT4e8m23b_127nih", {false, "/"}},
                              {"__float_divGe8m23b_127nih", {false, "/"}},
+                             {"__float_lee8m23b_127nih", {false, "<="}},
+                             {"__float_lte8m23b_127nih", {false, "<"}},
+                             {"__float_gee8m23b_127nih", {false, ">="}},
+                             {"__float_gte8m23b_127nih", {false, ">"}},
+                             {"__float_eqe8m23b_127nih", {false, "=="}},
+                             {"__float_ltgt_quiete8m23b_127nih", {false, "!="}},
+                             {"__float_adde11m52b_1023nih", {true, "+"}},
+                             {"__float_sube11m52b_1023nih", {true, "-"}},
+                             {"__float_mule11m52b_1023nih", {true, "*"}},
                              {"__float_divSRT4e11m52b_1023nih", {true, "/"}},
                              {"__float_divGe11m52b_1023nih", {true, "/"}},
-                             {"__float_lee8m23b_127nih", {false, "<="}},
                              {"__float_lee11m52b_1023nih", {true, "<="}},
-                             {"__float_lte8m23b_127nih", {false, "<"}},
                              {"__float_lte11m52b_1023nih", {true, "<"}},
-                             {"__float_gee8m23b_127nih", {false, ">="}},
                              {"__float_gee11m52b_1023nih", {true, ">="}},
-                             {"__float_gte8m23b_127nih", {false, ">"}},
                              {"__float_gte11m52b_1023nih", {true, ">"}},
-                             {"__float_eqe8m23b_127nih", {false, "=="}},
                              {"__float_eqe11m52b_1023nih", {true, "=="}},
-                             {"__float_ltgt_quiete8m23b_127nih", {false, "!="}},
                              {"__float_ltgt_quiete11m52b_1023nih", {true, "!="}},
                          };
                      const auto unary_op_relation = basic_unary_operations_relation.find(oper->get_name());
                      const auto binary_op_relation = basic_binary_operations_relation.find(oper->get_name());
-                     if(unary_op_relation != basic_unary_operations_relation.end() &&
-                        actual_args.size() >=
-                            1) // There could be no arguments if the function signature has been optimized
+                     // Also check actual args count since they could have been optimized out
+                     if(unary_op_relation != basic_unary_operations_relation.end() && actual_args.size() >= 1)
                      {
-                        const auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
-                        const std::string view_convert =
-                            (unary_op_relation->second.first & 1) ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
-                        const std::string in_view_convert =
-                            (unary_op_relation->second.first & 2) ?
-                                ((~unary_op_relation->second.first & 1) ? "_Int64_ViewConvert" : "_Int32_ViewConvert") :
-                                "";
-                        if(unary_op_relation->second.first < 4)
+                        const auto& f_sign = unary_op_relation->second.first;
+                        const auto& cast_op = unary_op_relation->second.second;
+                        auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
+                        auto res_name = var_name;
+                        if(F_TYPE_IN(f_sign) & FLOAT_TYPE)
                         {
-                           const auto computation =
-                               "(" + unary_op_relation->second.second + in_view_convert + "(" + var1 + "))";
-                           const auto check_string0 = view_convert + "(" + var_name + ")==" + computation;
+                           const std::string view_convert =
+                               F_TYPE_IN(f_sign) == FLOAT_TYPE ? "_Int32_ViewConvert" : "_Int64_ViewConvert";
+                           var1 = view_convert + "(" + var1 + ")";
+                        }
+                        if(F_TYPE_OUT(f_sign) & FLOAT_TYPE)
+                        {
+                           const std::string view_convert =
+                               F_TYPE_OUT(f_sign) == FLOAT_TYPE ? "_Int32_ViewConvert" : "_Int64_ViewConvert";
+                           res_name = view_convert + "(" + res_name + ")";
+                        }
+                        const auto computation = "(" + cast_op + "(" + var1 + "))";
+                        const auto check_string0 = "\"" + res_name + "==" + computation + "\"";
+                        if(F_TYPE_OUT(f_sign) & FLOAT_TYPE)
+                        {
                            const auto check_string1 =
-                               (unary_op_relation->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") +
-                               std::string("(") + computation + ", " + view_convert + "(" + var_name + ")," +
-                               STR(Param->getOption<double>(OPT_max_ulp)) + ")";
+                               (F_TYPE_OUT(f_sign) == FLOAT_TYPE ? "_FPs32Mismatch_(" : "_FPs64Mismatch_(") +
+                               computation + ", " + res_name + "," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
                            indented_output_stream->Append(
-                               (unary_op_relation->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") +
-                               std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," +
-                               view_convert + "(" + var_name + ")," + in_view_convert + "(" + var1 + "),0);\n");
+                               (F_TYPE_OUT(f_sign) == FLOAT_TYPE ? "_CheckBuiltinFPs32_(" : "_CheckBuiltinFPs64_(") +
+                               check_string0 + ", " + check_string1 + "," + computation + "," + var_name + "," + var1 +
+                               ",0);\n");
                         }
                         else
                         {
-                           const auto computation =
-                               "(" + unary_op_relation->second.second + view_convert + "(" + var1 + "))";
-                           const auto check_string0 = var_name + "==" + computation;
+                           const auto int_format = F_TYPE_OUT(f_sign) == INT_TYPE ? "%lld" : "%llu";
+                           const auto int_cast =
+                               F_TYPE_OUT(f_sign) == INT_TYPE ? "(long long int)" : "(long long unsigned int)";
+                           const auto fp_format = F_TYPE_IN(f_sign) == FLOAT_TYPE ? "%.20e" : "%.35e";
                            indented_output_stream->Append(
-                               "if(" + var_name + "!=" + computation +
+                               "if(" + res_name + "!=" + computation +
                                ") { printf(\"\\n\\n***********************************************************\\nERROR "
-                               "ON A BASIC FLOATING POINT OPERATION : %s : expected=%d res=%d "
-                               "a=%a\\n***********************************************************\\n\\n\", \"" +
-                               check_string0 + "\", " + computation + ", " + var_name + ", " + view_convert + "(" +
-                               var1 + "));\nexit(1);\n}\n");
+                               "ON A BASIC FLOATING POINT OPERATION : %s : expected=" +
+                               int_format + " res=" + int_format + "a=%a (" + fp_format +
+                               ")\\n***********************************************************\\n\\n\", " +
+                               check_string0 + ", " + int_cast + computation + ", " + int_cast + res_name + ", " +
+                               var1 + ", " + var1 + ");\nexit(1);\n}\n");
                         }
                      }
-                     else if(binary_op_relation != basic_binary_operations_relation.end() && actual_args.size() >= 2 &&
-                             0)
+                     else if(binary_op_relation != basic_binary_operations_relation.end() && actual_args.size() >= 2)
                      {
-                        const auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
-                        const auto var2 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
-                        const std::string view_convert =
-                            binary_op_relation->second.first ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
-                        const auto computation = "(" + view_convert + "(" + var1 + ")" +
-                                                 binary_op_relation->second.second + view_convert + "(" + var2 + "))";
-                        const auto check_string0 = var_name + "==" + computation;
-                        const auto check_string1 =
-                            (binary_op_relation->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") +
-                            std::string("(") + computation + ", " + var_name + "," +
-                            STR(Param->getOption<double>(OPT_max_ulp)) + ")";
+                        const auto& is_double_type = binary_op_relation->second.first;
+                        const auto& op_symbol = binary_op_relation->second.second;
+                        const std::string view_convert = is_double_type ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
+                        const auto var1 =
+                            view_convert + "(" + BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0))) + ")";
+                        const auto var2 =
+                            view_convert + "(" + BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1))) + ")";
+                        const auto res_name = view_convert + "(" + var_name + ")";
+                        const auto computation = "(" + var1 + op_symbol + var2 + ")";
+                        const auto check_string0 = "\"" + view_convert + "(" + var_name + ")==" + computation + "\"";
+                        const auto check_string1 = (is_double_type ? "_FPs64Mismatch_" : "_FPs32Mismatch_") +
+                                                   std::string("(") + computation + ", " + res_name + "," +
+                                                   STR(Param->getOption<double>(OPT_max_ulp)) + ")";
                         indented_output_stream->Append(
-                            (binary_op_relation->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") +
-                            std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," +
-                            var_name + "," + view_convert + "(" + var1 + ")," + view_convert + "(" + var2 + "));\n");
+                            (is_double_type ? "_CheckBuiltinFPs64_(" : "_CheckBuiltinFPs32_(") + check_string0 + ", " +
+                            check_string1 + "," + computation + "," + res_name + "," + var1 + "," + var2 + ");\n");
                      }
                   }
                }
             }
          }
       }
-#endif
    }
 }
 
