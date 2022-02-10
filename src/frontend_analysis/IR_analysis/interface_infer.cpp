@@ -1180,8 +1180,9 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       const structural_type_descriptorRef userType(new structural_type_descriptor("bool", 1));
       const structural_type_descriptorRef strbType(new structural_type_descriptor("bool", inputBitWidth / 8));
       const structural_type_descriptorRef respType(new structural_type_descriptor("bool", 2));
-
       const structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
+      std::string param_ports;
+
       CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port_vector(START_PORT_NAME, port_o::IN, n_resources, interface_top, bool_type);
@@ -1229,6 +1230,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       const auto Port_rdata =
           CM->add_port("_m_axi_" + portNameSpecializer + "_RDATA", port_o::IN, interface_top, Intype);
       GetPointerS<port_o>(Port_rdata)->set_port_interface(port_o::port_interface::M_AXI_RDATA);
+      param_ports += " _m_axi_" + portNameSpecializer + "_RDATA";
 
       const auto Port_rresp =
           CM->add_port("_m_axi_" + portNameSpecializer + "_RRESP", port_o::IN, interface_top, respType);
@@ -1256,6 +1258,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       const auto Port_awaddr =
           CM->add_port("_m_axi_" + portNameSpecializer + "_AWADDR", port_o::OUT, interface_top, address_interface_type);
       GetPointerS<port_o>(Port_awaddr)->set_port_interface(port_o::port_interface::M_AXI_AWADDR);
+      param_ports += " _m_axi_" + portNameSpecializer + "_AWADDR";
 
       const auto Port_awlen =
           CM->add_port("_m_axi_" + portNameSpecializer + "_AWLEN", port_o::OUT, interface_top, lenType);
@@ -1303,6 +1306,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       const auto Port_wdata =
           CM->add_port("_m_axi_" + portNameSpecializer + "_WDATA", port_o::OUT, interface_top, Intype);
       GetPointerS<port_o>(Port_wdata)->set_port_interface(port_o::port_interface::M_AXI_WDATA);
+      param_ports += " _m_axi_" + portNameSpecializer + "_WDATA";
 
       const auto Port_wstrb =
           CM->add_port("_m_axi_" + portNameSpecializer + "_WSTRB", port_o::OUT, interface_top, strbType);
@@ -1331,6 +1335,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       const auto Port_araddr =
           CM->add_port("_m_axi_" + portNameSpecializer + "_ARADDR", port_o::OUT, interface_top, address_interface_type);
       GetPointerS<port_o>(Port_araddr)->set_port_interface(port_o::port_interface::M_AXI_ARADDR);
+      param_ports += " _m_axi_" + portNameSpecializer + "_ARADDR";
 
       const auto Port_arlen =
           CM->add_port("_m_axi_" + portNameSpecializer + "_ARLEN", port_o::OUT, interface_top, lenType);
@@ -1399,7 +1404,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
          CM->add_port("_s_axi_AXILiteS_BRESP", port_o::OUT, interface_top, respType);
       }
 
-      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1");
+      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1" + param_ports);
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                "ReadWrite_" + interfaceType + ".cpp");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
@@ -1626,8 +1631,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
       bool is_top = top_functions.find(function_id) != top_functions.end();
       if(is_top)
       {
-         auto parseInterfaceXML = [&](const std::string& XMLfilename)
-         {
+         auto parseInterfaceXML = [&](const std::string& XMLfilename) {
             if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);

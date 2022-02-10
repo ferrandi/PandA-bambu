@@ -137,10 +137,11 @@ std::cout << "endgenerate\n";
 
 std::cout << R"(
 reg [2:0] _present_state, _next_state;
-
-reg [(PORTSIZE_in4*BITSIZE_in4)+(-1):0] axi_awaddr, next_axi_awaddr;
-reg [(PORTSIZE_in4*BITSIZE_in4)+(-1):0] axi_araddr, next_axi_araddr;
-reg [(PORTSIZE_in3*BITSIZE_in3)+(-1):0] axi_wdata, next_axi_wdata;
+)";
+std::cout << "reg [BITSIZE_" + _ports_out[AWADDR].name + "+(-1):0] axi_awaddr, next_axi_awaddr;\n";
+std::cout << "reg [BITSIZE_" + _ports_out[ARADDR].name + "+(-1):0] axi_araddr, next_axi_araddr;\n";
+std::cout << "reg [BITSIZE_" + _ports_out[WDATA].name + "+(-1):0] axi_wdata, next_axi_wdata;";
+std::cout << R"(
 reg axi_awvalid, next_axi_awvalid;
 reg axi_wlast, next_axi_wlast;
 reg axi_wvalid, next_axi_wvalid;
@@ -149,8 +150,8 @@ reg axi_arvalid, next_axi_arvalid;
 reg axi_rready, next_axi_rready;
 
 reg acc_done, next_acc_done;
-reg [(PORTSIZE_out1*BITSIZE_out1)+(-1):0] acc_rdata, next_acc_rdata;
 )";
+std::cout << "reg [BITSIZE_" + _ports_in[RDATA].name + "+(-1):0] acc_rdata, next_acc_rdata;\n";
 
 // Assign reg values
 std::cout << "assign " << _ports_out[AWADDR].name << " = axi_awaddr;\n";
