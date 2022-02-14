@@ -216,12 +216,12 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       if(pipeline_enabled && simple_pipeline)
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Reuired pipelining with II=1 for function: " + fname);
+                        "Required pipelining with II=1 for function: " + fname);
       }
       else if(pipeline_enabled)
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Reuired pipelining with II=" + STR(initiation_time) + " for function: " + fname);
+                        "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
       }
    }
    else
@@ -236,7 +236,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
          pipeline_enabled = true;
          simple_pipeline = true;
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Reuired pipelining with II=1 for function: " + fname);
+                        "Required pipelining with II=1 for function: " + fname);
       }
       else
       {
@@ -252,7 +252,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
                   pipeline_enabled = true;
                   simple_pipeline = true;
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                                 "Reuired pipelining with II=1 for function: " + fname);
+                                 "Required pipelining with II=1 for function: " + fname);
                }
                else if(splitted.size() == 2)
                {
@@ -263,7 +263,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
                      simple_pipeline = true;
                   }
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                                 "Reuired pipelining with II=" + STR(initiation_time) + " for function: " + fname);
+                                 "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
                }
             }
          }
