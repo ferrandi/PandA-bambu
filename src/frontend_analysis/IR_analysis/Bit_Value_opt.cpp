@@ -358,10 +358,21 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                   }
                   else
                   {
-                     const auto srcp_default =
-                         ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                     const auto srcp = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                     const auto& val_type = ssa->type;
+                     const auto val_type_bw = tree_helper::Size(ssa->type);
+                     const auto shift_offset = TM->CreateUniqueIntegerCst(val_type_bw - bw_op0, val_type);
+                     const auto shl_expr =
+                         IRman->create_binary_operation(val_type, val, shift_offset, srcp, lshift_expr_K);
+                     const auto shl =
+                         IRman->CreateGimpleAssign(val_type, nullptr, nullptr, shl_expr, function_id, B_id, srcp);
+                     const auto svar = GetPointerS<const gimple_assign>(GET_CONST_NODE(shl))->op0;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(shl));
+                     B->PushBefore(shl, stmt, AppM);
+                     const auto shr_expr =
+                         IRman->create_binary_operation(val_type, svar, shift_offset, srcp, rshift_expr_K);
                      const auto op0_ga =
-                         IRman->CreateGimpleAssign(ssa->type, ssa->min, ssa->max, val, function_id, B_id, srcp_default);
+                         IRman->CreateGimpleAssign(ssa->type, ssa->min, ssa->max, shr_expr, function_id, B_id, srcp);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                      B->PushBefore(op0_ga, stmt, AppM);
                      auto op0_ga_var = GetPointerS<gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
