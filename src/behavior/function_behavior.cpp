@@ -241,8 +241,12 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       else
       {
          const auto funcs_values = convert_string_to_vector<std::string>(tmp_string, ",");
-         for(const auto& fun_pipeline : funcs_values)
+         for(auto fun_pipeline : funcs_values)
          {
+            if(!fun_pipeline.empty() && fun_pipeline.at(0) == '=')
+            {
+               fun_pipeline = fun_pipeline.substr(1);
+            }
             const auto splitted = SplitString(fun_pipeline, "=");
             if(!splitted.empty() &&
                (fname == splitted.at(0) || (fname.find("__float") == 0 && fname.find(splitted.at(0)) == 0)))
