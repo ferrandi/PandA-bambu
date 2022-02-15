@@ -7,6 +7,8 @@
   abstract = {This paper presents the open-source high-level synthesis (HLS) research framework Bambu. Bambu provides a research environment to experiment with new ideas across HLS, high-level verification and debugging, FPGA/ASIC design, design flow space exploration, and parallel hardware accelerator design. The tool accepts as input standard C/C++ specifications and compiler intermediate representations (IRs) coming from the well-known Clang/LLVM and GCC compilers. The broad spectrum and flexibility of input formats allow the electronic design automation (EDA) research community to explore and integrate new transformations and optimizations. The easily extendable modular framework already includes many optimizations and HLS benchmarks used to evaluate the QoR of the tool against existing approaches [1]. The integration with synthesis and verification backends (commercial and open-source) allows researchers to quickly test any new finding and easily obtain performance and resource usage metrics for a given application. Different FPGA devices are supported from several different vendors: AMD/Xilinx, Intel/Altera, Lattice Semiconductor, and NanoXplore. Finally, integration with the OpenRoad open-source end-to-end silicon compiler perfectly fits with the recent push towards open-source EDA.},
   publisher={{IEEE}},
   doi={10.1109/DAC18074.2021.9586110},
+  ISSN={0738-100X},
+  month={Dec},
   pdf={https://re.public.polimi.it/retrieve/668507/dac21_bambu.pdf}
 }
 @inproceedings{SNN21,
@@ -34,19 +36,20 @@ series = {ICCAD '21}
   doi={10.1109/IPDPS49936.2021.00028},
   pdf={https://re.public.polimi.it/retrieve/handle/11311/1180263/647916/High-Level_Synthesis_of_Parallel_Specifications_Coupling_Static_and_Dynamic_Controllers.pdf}
 }
-@ARTICLE {TC_SVELTO2021,
-  author = {M. Minutoli and V. Castellana and N. Saporetti and S. Devecchi and M. Lattuada and P. Fezzardi and A. Tumeo and F. Ferrandi},
+@ARTICLE {TC_SVELTO2022,
+  author = {Minutoli, Marco and Castellana, Vito Giovanni and Saporetti, Nicola and Devecchi, Stefano and Lattuada, Marco and Fezzardi, Pietro and Tumeo, Antonino and Ferrandi, Fabrizio},
   journal = {IEEE Transactions on Computers},
   title = {Svelto: High-Level Synthesis of Multi-Threaded Accelerators for Graph Analytics},
-  year = {2021},
-  number = {01},
+  year={2022},
+  volume={71},
+  number={3},
+  pages={520-533},
   issn = {1557-9956},
-  pages = {1-14},
+  month={March},
   keywords = {task analysis;parallel processing;computer architecture;dynamic scheduling;hardware;field programmable gate arrays;memory management},
   doi = {10.1109/TC.2021.3057860},
   publisher = {IEEE Computer Society},
   address = {Los Alamitos, CA, USA},
-  month = {feb},
   abstract={Graph analytics are an emerging class of irregular applications. Operating on very large datasets, they present unique behaviors, such as fine-grained, unpredictable memory accesses, and highly unbalanced task-level parallelism, that make existing general-purpose processors or accelerators (e.g., GPUs) suboptimal or difficult to program. To address these issues, research and industry are more and more relying on designs based on reconfigurable devices (Field Programmable Gate Arrays), sometimes even partially employing High-Level Synthesis (HLS) methods to accelerate the development of the accelerators. In this paper, we propose a novel architecture template for the automatic generation of accelerators for graph analytics and irregular applications. The architecture template includes a dynamic task scheduler, a parallel array of accelerators that enables supporting task-level parallelism with context switching, and a related multi-channel memory interface that decouples communication from computation and provides support for fine-grained atomic memory operations. We discuss the integration of the architectural template in an HLS flow, presenting the necessary modifications to enable automatic generation of the accelerators starting from OpenMP annotated code. We evaluate our approach by synthesizing custom designs for a set of graph database benchmark queries. We compare the synthesized accelerators with previous state-of-the-art methodologies for the synthesis of parallel architectures.},
   pdf={https://re.public.polimi.it/retrieve/handle/11311/1161042/584239/tc_svelto.pdf}
 }
