@@ -1641,19 +1641,6 @@ void CompilerWrapper::SetBambuDefault()
        Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    CompilerWrapper_CompilerTarget compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    bool is_clang = false;
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
-   bool flag_cpp;
-   if(Param->isOption(OPT_input_format) &&
-      (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-       Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
-   {
-      flag_cpp = true;
-   }
-   else
-   {
-      flag_cpp = false;
-   }
-#endif
 
    /// parameters with enable
    optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
@@ -1675,6 +1662,10 @@ void CompilerWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
+      const auto flag_cpp =
+          Param->isOption(OPT_input_format) &&
+          (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
+           Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
       if(!flag_cpp)
       {
          optimization_flags["unroll-loops"] =

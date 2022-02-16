@@ -329,9 +329,9 @@ void HLSCWriter::WriteTestbenchHelperFunctions()
       indented_output_stream->Append("{\n");
       indented_output_stream->Append(
           "printf(\"\\n\\n***********************************************************\\nERROR ON A BASIC FLOATING "
-          "POINT OPERATION : %s : expected=%a res=%a a=%a "
-          "b=%a\\n***********************************************************\\n\\n\", chk_str, "
-          "par_expected, par_res, par_a, par_b);\n");
+          "POINT OPERATION : %s : expected=%a (%.20e) res=%a (%.20e) a=%a (%.20e) "
+          "b=%a (%.20e)\\n***********************************************************\\n\\n\", chk_str, "
+          "par_expected, par_expected, par_res, par_res, par_a, par_a, par_b, par_b);\n");
       indented_output_stream->Append("exit(1);\n");
       indented_output_stream->Append("}\n");
       indented_output_stream->Append("}\n\n");
@@ -342,9 +342,9 @@ void HLSCWriter::WriteTestbenchHelperFunctions()
       indented_output_stream->Append("{\n");
       indented_output_stream->Append(
           "printf(\"\\n\\n***********************************************************\\nERROR ON A BASIC FLOATING "
-          "POINT OPERATION : %s : expected=%a res=%a a=%a "
-          "b=%a\\n***********************************************************\\n\\n\", chk_str, "
-          "par_expected, par_res, par_a, par_b);\n");
+          "POINT OPERATION : %s : expected=%a (%.35e) res=%a (%.35e) a=%a (%.35e) "
+          "b=%a (%.35e)\\n***********************************************************\\n\\n\", chk_str, "
+          "par_expected, par_expected, par_res, par_res, par_a, par_a, par_b, par_b);\n");
       indented_output_stream->Append("exit(1);\n");
       indented_output_stream->Append("}\n");
       indented_output_stream->Append("}\n\n");

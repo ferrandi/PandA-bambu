@@ -221,7 +221,6 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       const auto CGM = AppM->CGetCallGraphManager();
       auto opts = SplitString(parameters->getOption<std::string>(OPT_fp_format), ",");
       const auto inline_math_it = std::find(opts.begin(), opts.end(), "inline-math");
-      const auto inline_conversion_it = std::find(opts.begin(), opts.end(), "inline-conversion");
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Soft-float fp format specialization required:");
       if(inline_math_it != opts.end())
       {
@@ -229,6 +228,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
          inline_math = true;
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Full inlining of floating-point arithmetic operators");
       }
+      const auto inline_conversion_it = std::find(opts.begin(), opts.end(), "inline-conversion");
       if(inline_conversion_it != opts.end())
       {
          opts.erase(inline_conversion_it);

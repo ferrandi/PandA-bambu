@@ -1,1 +1,9 @@
-internparser.c internparser.h miniparser.c miniparser.h parser.c parser.h lexer.c internlexer.c minilexer.c
+internparser.c
+internparser.h
+miniparser.c
+miniparser.h
+parser.c
+parser.h
+lexer.c
+internlexer.c
+minilexer.c

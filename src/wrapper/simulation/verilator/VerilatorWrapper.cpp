@@ -129,7 +129,8 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
    script << " -O3";
    // limit the file size
-   script << " --output-split 5000";
+   script << " --output-split-cfuncs 3000";
+   script << " --output-split-ctrace 3000";
    if(!generate_vcd_output)
    {
       script << " --x-assign fast --x-initial fast --noassert";
