@@ -216,12 +216,12 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       if(pipeline_enabled && simple_pipeline)
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Reuired pipelining with II=1 for function: " + fname);
+                        "Required pipelining with II=1 for function: " + fname);
       }
       else if(pipeline_enabled)
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Reuired pipelining with II=" + STR(initiation_time) + " for function: " + fname);
+                        "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
       }
    }
    else
@@ -236,13 +236,17 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
          pipeline_enabled = true;
          simple_pipeline = true;
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Reuired pipelining with II=1 for function: " + fname);
+                        "Required pipelining with II=1 for function: " + fname);
       }
       else
       {
          const auto funcs_values = convert_string_to_vector<std::string>(tmp_string, ",");
-         for(const auto& fun_pipeline : funcs_values)
+         for(auto fun_pipeline : funcs_values)
          {
+            if(!fun_pipeline.empty() && fun_pipeline.at(0) == '=')
+            {
+               fun_pipeline = fun_pipeline.substr(1);
+            }
             const auto splitted = SplitString(fun_pipeline, "=");
             if(!splitted.empty() &&
                (fname == splitted.at(0) || (fname.find("__float") == 0 && fname.find(splitted.at(0)) == 0)))
@@ -252,7 +256,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
                   pipeline_enabled = true;
                   simple_pipeline = true;
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                                 "Reuired pipelining with II=1 for function: " + fname);
+                                 "Required pipelining with II=1 for function: " + fname);
                }
                else if(splitted.size() == 2)
                {
@@ -263,7 +267,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
                      simple_pipeline = true;
                   }
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                                 "Reuired pipelining with II=" + STR(initiation_time) + " for function: " + fname);
+                                 "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
                }
             }
          }

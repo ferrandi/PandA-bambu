@@ -54,6 +54,8 @@ If you use Bambu in your research, please cite:
               towards open-source EDA.},
   publisher={{IEEE}},
   doi={10.1109/DAC18074.2021.9586110},
+  ISSN={0738-100X},
+  month={Dec},
   pdf={https://re.public.polimi.it/retrieve/668507/dac21_bambu.pdf}
 }
 ```

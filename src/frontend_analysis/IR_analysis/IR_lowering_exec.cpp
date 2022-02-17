@@ -2283,6 +2283,30 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   ga->op1 = mr;
                   restart_analysis = true;
                }
+               else if(code1 == var_decl_K && !ga->init_assignment)
+               {
+                  auto vd_expr1 = [&] {
+                     auto* vd = GetPointer<var_decl>(GET_NODE(ga->op1));
+                     tree_nodeRef type = vd->type;
+                     tree_nodeRef pt = tree_man->GetPointerType(type, GetPointer<type_node>(GET_NODE(type))->algn);
+                     tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op1, srcp_default, addr_expr_K);
+                     tree_nodeRef new_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), ae,
+                                                                        function_id, block.first, srcp_default);
+                     GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     auto ssa_var_decl = GetPointer<ssa_name>(GET_NODE(ssa_vd));
+                     ssa_var_decl->use_set->Add(ga->op1);
+                     tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, pt);
+                     tree_nodeRef mr = tree_man->create_binary_operation(type, ssa_vd, offset, srcp_default, mem_ref_K);
+
+                     ga->op1 = mr;
+                     block.second->PushBefore(new_ga, *it_los, AppM);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
+                  };
+                  vd_expr1();
+               }
                else if(reached_max_transformation_limit(*it_los))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -2625,31 +2649,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         }
                      };
                      wme_expr1();
-                  }
-                  else if(code1 == var_decl_K && !ga->init_assignment)
-                  {
-                     auto vd_expr1 = [&] {
-                        auto* vd = GetPointer<var_decl>(GET_NODE(ga->op1));
-                        tree_nodeRef type = vd->type;
-                        tree_nodeRef pt = tree_man->GetPointerType(type, GetPointer<type_node>(GET_NODE(type))->algn);
-                        tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op1, srcp_default, addr_expr_K);
-                        tree_nodeRef new_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), ae,
-                                                                           function_id, block.first, srcp_default);
-                        GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
-                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-                        auto ssa_var_decl = GetPointer<ssa_name>(GET_NODE(ssa_vd));
-                        ssa_var_decl->use_set->Add(ga->op1);
-                        tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, pt);
-                        tree_nodeRef mr =
-                            tree_man->create_binary_operation(type, ssa_vd, offset, srcp_default, mem_ref_K);
-
-                        ga->op1 = mr;
-                        block.second->PushBefore(new_ga, *it_los, AppM);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---adding statement " + GET_NODE(new_ga)->ToString());
-                        restart_analysis = true;
-                     };
-                     vd_expr1();
                   }
                   else if(code1 == lt_expr_K)
                   {
@@ -3273,7 +3272,9 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else if(reached_max_transformation_limit(*it_los))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached max cfg transformations");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "<--Examined statement " + GET_NODE(*it_los)->ToString());
                   it_los++;
                   continue;
                }
@@ -3522,7 +3523,9 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             {
                if(reached_max_transformation_limit(*it_los))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached max cfg transformations");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "<--Examined statement " + GET_NODE(*it_los)->ToString());
                   it_los++;
                   continue;
                }

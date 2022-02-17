@@ -1252,6 +1252,11 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       {
          return;
       }
+      if(parameters->getOption<bool>(OPT_disable_function_proxy) &&
+         HLS->allocation_information->get_fu_name(fu_id).second == WORK_LIBRARY)
+      {
+         return;
+      }
       technology_nodeRef tn = HLS->allocation_information->get_fu(fu_id);
       technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
           tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(*it)->GetOperation()));

@@ -431,7 +431,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
    cannotBeChained0 =
        (current_starting_time >= current_cycle_ending_time) ||
        ((!is_pipelined && !(curr_vertex_type & TYPE_RET) && n_cycles == 0 &&
-         current_starting_time > (current_cycle_starting_time)) &&
+         current_starting_time > (current_cycle_starting_time + EPSILON)) &&
         current_ending_time + setup_hold_time + phi_extra_time + (complex_op ? scheduling_mux_margins : 0) >
             current_cycle_ending_time);
    if(cannotBeChained0)
