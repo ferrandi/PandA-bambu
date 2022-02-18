@@ -497,7 +497,7 @@ void TestbenchGenerationBaseStep::init_extra_signals(bool withMemory) const
           M_Rdata_ram_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(M_Rdata_ram_port)->get_ports_size() : 1;
       for(unsigned int i = 0; i < M_Rdata_ram_port_n_ports; ++i)
       {
-         writer->write("reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] = 0;\n\n");
+         writer->write("reg_DataReady[" + STR(i) + "] = 0;\n\n");
       }
    }
 }
@@ -890,13 +890,11 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            {
                               writer->write(", ");
                            }
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" +
-                                         boost::lexical_cast<std::string>(bitsize / 8) + " + " +
-                                         boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) +
-                                         " - base_addr]");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + STR(bitsize / 8) + " + " +
+                                         STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("} == " + output_name + ", ");
-                        writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", " +
+                        writer->write(port_name + ", _i_*" + STR(bitsize / 8) + ", " +
                                       (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "({");
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
@@ -904,10 +902,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            {
                               writer->write(", ");
                            }
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" +
-                                         boost::lexical_cast<std::string>(bitsize / 8) + " + " +
-                                         boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) +
-                                         " - base_addr]");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + STR(bitsize / 8) + " + " +
+                                         STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" +
                                       output_name + "));\n");
@@ -925,10 +921,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                               {
                                  writer->write(", ");
                               }
-                              writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" +
-                                            boost::lexical_cast<std::string>(bitsize / 8) + " + " +
-                                            boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) +
-                                            " - base_addr]");
+                              writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + STR(bitsize / 8) +
+                                            " + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                            }
                            writer->write("}, " + output_name);
                            writer->write("));\n");
@@ -940,10 +934,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            {
                               writer->write(", ");
                            }
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" +
-                                         boost::lexical_cast<std::string>(bitsize / 8) + " + " +
-                                         boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) +
-                                         " - base_addr]");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + STR(bitsize / 8) + " + " +
+                                         STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("}, " + output_name);
                         writer->write(") > " + std::string(bitsize == 64 ? "64'd" : "") +
@@ -1136,7 +1128,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                                       port_to_be_compared + "), $bitstoreal(" + output_name + "));\n");
                         writer->write(R"($display(" FP error %f \n", compute_ulp64()" + port_to_be_compared + ", " +
                                       output_name + "));\n");
-                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > 64'd" +
+                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > " +
                                       STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
@@ -1482,13 +1474,11 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            {
                               writer->write(", ");
                            }
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" +
-                                         boost::lexical_cast<std::string>(bitsize / 8) + " + " +
-                                         boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) +
-                                         " - base_addr]");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + STR(bitsize / 8) + " + " +
+                                         STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("} == " + output_name + ", ");
-                        writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", " +
+                        writer->write(port_name + ", _i_*" + STR(bitsize / 8) + ", " +
                                       (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "({");
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
@@ -1496,10 +1486,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            {
                               writer->write(", ");
                            }
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" +
-                                         boost::lexical_cast<std::string>(bitsize / 8) + " + " +
-                                         boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) +
-                                         " - base_addr]");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + STR(bitsize / 8) + " + " +
+                                         STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" +
                                       output_name + "));\n");
@@ -1517,10 +1505,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                               {
                                  writer->write(", ");
                               }
-                              writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" +
-                                            boost::lexical_cast<std::string>(bitsize / 8) + " + " +
-                                            boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) +
-                                            " - base_addr]");
+                              writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + STR(bitsize / 8) +
+                                            " + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                            }
                            writer->write("}, " + output_name);
                            writer->write("));\n");
@@ -1532,10 +1518,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            {
                               writer->write(", ");
                            }
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" +
-                                         boost::lexical_cast<std::string>(bitsize / 8) + " + " +
-                                         boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) +
-                                         " - base_addr]");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + STR(bitsize / 8) + " + " +
+                                         STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("}, " + output_name);
                         writer->write(") > " + std::string(bitsize == 64 ? "64'd" : "") +
@@ -1673,7 +1657,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   writer->write(R"($display(" FP error %f \n", compute_ulp64(registered_)" +
                                 std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
                   writer->write("if (compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name +
-                                ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                                ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                }
                else
                {
@@ -1990,7 +1974,7 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
          else if(value.find('\"') != std::string::npos)
          {
             boost::replace_all(value, "\"", "");
-            value = boost::lexical_cast<std::string>(value.size()) + "'b" + value;
+            value = STR(value.size()) + "'b" + value;
          }
          writer->write(name + "=" + value);
       }
