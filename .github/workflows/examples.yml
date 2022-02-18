@@ -323,7 +323,7 @@ jobs:
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh
             compiler: I386_GCC49
-            args: -c= --experimental-setup=BAMBU-PERFORMANCE-MP -c=--aligned-access -lchstone_ECP3_list
+            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -c=--aligned-access -lchstone_ECP3_list
             batch: "LFE335EA8FN484C_15.0"
     steps:
       - name: Checkout repository
