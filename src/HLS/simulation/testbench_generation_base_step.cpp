@@ -539,7 +539,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DOUT)
                {
-                  const auto manage_pidout = [&](const std::string& portID) {
+                  const auto manage_pidout = [&](const std::string& portID)
+                  {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_d" + portID, "inconsistent interface");
@@ -639,7 +640,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DIN)
                {
-                  const auto manage_pidin = [&](const std::string& portID) {
+                  const auto manage_pidin = [&](const std::string& portID)
+                  {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_q" + portID, "inconsistent interface");
@@ -939,7 +941,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         writer->write("}, " + output_name);
                         if(bitsize == 64)
                         {
-                           writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ").0\n");
+                           writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ".0)\n");
                         }
                         else
                         {
