@@ -515,11 +515,11 @@ jobs:
             compiler: I386_GCC49
           - basename: libm
             script: ./examples/libm/generic_libm.sh
-            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_7.5,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0"
+            batch: "5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0"
             compiler: I386_GCC49
           - basename: libm-flopoco
             script: ./examples/libm/generic_libm.sh
-            batch: "5CSEMA5F31C6_6.6 --flopoco,5CSEMA5F31C6_7.5 --flopoco,5CSEMA5F31C6_10.0 --flopoco,5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_5.0 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco"
+            batch: "5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_5.0 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
