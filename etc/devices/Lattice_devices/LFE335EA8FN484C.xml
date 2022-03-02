@@ -7137,7 +7137,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">17</attribute>
         <template name="fp_ge_expr_FU" parameter="32 32 32 500"/>
         <characterization_timestamp>2021-08-21T18:55:49</characterization_timestamp>
-        <operation operation_name="ge_expr" supported_types="REAL:32" pipe_parameters="500" cycles="26" initiation_time="1" stage_period="0.62"/>
+        <operation operation_name="ge_expr" supported_types="REAL:32" pipe_parameters="500" cycles="26" initiation_time="1" stage_period="6.6870000000000003"/>
       </cell>
       <cell>
         <name>fp_ge_expr_FU_32_32_32_700</name>
@@ -7220,7 +7220,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <template name="fp_ge_expr_FU" parameter="64 64 64 500"/>
         <characterization_timestamp>2021-08-21T18:55:58</characterization_timestamp>
-        <operation operation_name="ge_expr" supported_types="REAL:64" pipe_parameters="500" cycles="39" initiation_time="1" stage_period="0.62"/>
+        <operation operation_name="ge_expr" supported_types="REAL:64" pipe_parameters="500" cycles="39" initiation_time="1" stage_period="5.2720000000000002"/>
       </cell>
       <cell>
         <name>fp_ge_expr_FU_64_64_64_700</name>
@@ -7647,7 +7647,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">17</attribute>
         <template name="fp_le_expr_FU" parameter="32 32 32 500"/>
         <characterization_timestamp>2021-08-21T18:56:21</characterization_timestamp>
-        <operation operation_name="le_expr" supported_types="REAL:32" pipe_parameters="500" cycles="26" initiation_time="1" stage_period="0.62"/>
+        <operation operation_name="le_expr" supported_types="REAL:32" pipe_parameters="500" cycles="26" initiation_time="1" stage_period="6.7649999999999997"/>
       </cell>
       <cell>
         <name>fp_le_expr_FU_32_32_32_700</name>
@@ -7730,7 +7730,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <template name="fp_le_expr_FU" parameter="64 64 64 500"/>
         <characterization_timestamp>2021-08-21T18:56:31</characterization_timestamp>
-        <operation operation_name="le_expr" supported_types="REAL:64" pipe_parameters="500" cycles="39" initiation_time="1" stage_period="0.62"/>
+        <operation operation_name="le_expr" supported_types="REAL:64" pipe_parameters="500" cycles="39" initiation_time="1" stage_period="5.2720000000000002"/>
       </cell>
       <cell>
         <name>fp_le_expr_FU_64_64_64_700</name>
