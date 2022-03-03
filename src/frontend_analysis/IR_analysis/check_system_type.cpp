@@ -121,7 +121,7 @@ CheckSystemType::ComputeFrontendRelationships(const DesignFlowStep::Relationship
       {
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FUNCTION_INTERFACE_INFER, SAME_FUNCTION));
 #endif
          break;
       }

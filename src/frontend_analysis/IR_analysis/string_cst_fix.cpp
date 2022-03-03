@@ -92,7 +92,7 @@ string_cst_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipT
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         // relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

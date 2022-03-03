@@ -31,14 +31,15 @@
  *
  */
 /**
- * @file interface_infer.hpp
+ * @file FunctionInterfaceInfer.hpp
  * @brief Restructure the top level function to adhere the specified interface.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-#ifndef INTERFACE_INFER_HPP
-#define INTERFACE_INFER_HPP
+#ifndef FUNCTION_INTERFACE_INFER_HPP
+#define FUNCTION_INTERFACE_INFER_HPP
 
 /// Superclass include
 #include "function_frontend_flow_step.hpp"
@@ -58,7 +59,7 @@ struct ssa_name;
 #include <list>
 #include <set>
 
-class interface_infer : public FunctionFrontendFlowStep
+class FunctionInterfaceInfer : public FunctionFrontendFlowStep
 {
  private:
    enum class m_axi_type
@@ -80,12 +81,14 @@ class interface_infer : public FunctionFrontendFlowStep
    void classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, const ssa_name* argSSA, const statement_list* sl,
                            bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt,
                            std::list<tree_nodeRef>& readStmt);
+
    void classifyArg(statement_list* sl, tree_nodeRef argSSANode, bool& isRead, bool& isWrite, bool& unkwown_pattern,
                     std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt);
 
    void create_Read_function(tree_nodeRef origStmt, const std::string& argName_string, const std::string& fdName,
                              tree_nodeRef aType, tree_nodeRef readType, const tree_manipulationRef tree_man,
                              const tree_managerRef TM, bool commonRWSignature);
+
    void create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, const std::string& fdName,
                               tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType,
                               const tree_manipulationRef tree_man, const tree_managerRef TM, bool commonRWSignature);
@@ -93,17 +96,24 @@ class interface_infer : public FunctionFrontendFlowStep
    void create_resource_Read_simple(const std::set<std::string>& operations, const std::string& argName_string,
                                     const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port,
                                     unsigned n_resources, unsigned rwBWsize);
+
    void create_resource_Write_simple(const std::set<std::string>& operations, const std::string& argName_string,
                                      const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port,
                                      bool isDiffSize, unsigned n_resources, bool is_real, unsigned rwBWsize);
+
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& argName_string, const std::string& interfaceType,
                               unsigned int inputBitWidth, unsigned int arraySize, unsigned n_resources,
                               unsigned alignment, bool is_real, unsigned rwBWsize);
+
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& argName_string, const std::string& portNameSpecializer,
                               const std::string& interfaceType, unsigned int inputBitWidth, unsigned n_resources,
                               m_axi_type mat, unsigned rwBWsize);
+
+   void create_resource_bundle(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
+                               const std::string& portNameSpecializer, unsigned n_resources, unsigned rwBWsize);
+
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                         const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth,
                         bool isDiffSize, const std::string& fname, unsigned n_resources, unsigned alignment,
@@ -120,23 +130,18 @@ class interface_infer : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   interface_infer(const application_managerRef AppM, unsigned int function_id,
-                   const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   FunctionInterfaceInfer(const application_managerRef AppM, unsigned int function_id,
+                          const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor
     */
-   ~interface_infer() override;
+   ~FunctionInterfaceInfer() override;
 
    /**
     * Performs the loops analysis
     */
    DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
 
    /**
     * Check if this step has actually to be executed
