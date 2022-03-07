@@ -607,7 +607,7 @@ namespace clang
                      Fun2ParamSize[funName][parName] = arraySize;
                   if(interfaceType == "m_axi" && UDIT_attribute2_p)
                      Fun2ParamAttribute2[funName][parName] = attribute2;
-                  if(interfaceType == "m_axi" && UDIT_attribute3_p)
+                  if((interfaceType == "m_axi" || interfaceType == "array") && UDIT_attribute3_p)
                      Fun2ParamAttribute3[funName][parName] = attribute3;
                   Fun2ParamInclude[funName].push_back(ParamTypeInclude);
                }
@@ -792,7 +792,7 @@ namespace clang
                   {
                      if(interface == "m_axi" && tokString == "=" && bundle_p)
                         equal_p = true;
-                     else if(interface == "m_axi" && tokString == "bundle")
+                     else if((interface == "m_axi" || interface == "array") && tokString == "bundle")
                      {
                         bundle_p = true;
                      }
@@ -805,9 +805,9 @@ namespace clang
                   }
                   else if(index == 4)
                   {
-                     if(interface == "m_axi" && bundle_p && equal_p)
+                     if((interface == "m_axi" || interface == "array") && bundle_p && equal_p)
                         Attribute3 = tokString;
-                     else if(interface == "m_axi" && tokString == "=" && bundle_p)
+                     else if((interface == "m_axi" || interface == "array") && tokString == "=" && bundle_p)
                         equal_p = true;
                      else
                      {
@@ -818,7 +818,7 @@ namespace clang
                   }
                   else if(index == 5)
                   {
-                     if(interface == "m_axi" && bundle_p && equal_p)
+                     if((interface == "m_axi" || interface == "array") && bundle_p && equal_p)
                         Attribute3 = tokString;
                      else
                      {
@@ -850,7 +850,7 @@ namespace clang
             {
                HLS_interface_PragmaMapAttribute2[filename][loc] = std::make_pair(par, Attribute2);
             }
-            if(interface == "m_axi" && Attribute3 != "")
+            if((interface == "m_axi" || interface == "array") && Attribute3 != "")
             {
                HLS_interface_PragmaMapAttribute3[filename][loc] = std::make_pair(par, Attribute3);
             }

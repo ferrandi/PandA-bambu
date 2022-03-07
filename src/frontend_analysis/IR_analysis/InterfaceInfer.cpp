@@ -175,11 +175,11 @@ InterfaceInfer::InterfaceInfer(const application_managerRef _AppM, const DesignF
                            {
                               HLSMgr->design_interface_arraysize[fname][argName] = interfaceSize;
                            }
-                           if((interfaceType == "m_axi" || interfaceType == "bundle") && interfaceAttribute2_p)
+                           if(interfaceType == "m_axi" && interfaceAttribute2_p)
                            {
                               HLSMgr->design_interface_attribute2[fname][argName] = interfaceAttribute2;
                            }
-                           if((interfaceType == "m_axi" || interfaceType == "bundle") && interfaceAttribute3_p)
+                           if((interfaceType == "m_axi" || interfaceType == "array") && interfaceAttribute3_p)
                            {
                               HLSMgr->design_interface_attribute3[fname][argName] = interfaceAttribute3;
                            }

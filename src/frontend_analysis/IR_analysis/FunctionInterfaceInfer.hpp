@@ -102,7 +102,7 @@ class FunctionInterfaceInfer : public FunctionFrontendFlowStep
                                      bool isDiffSize, unsigned n_resources, bool is_real, unsigned rwBWsize);
 
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                              const std::string& argName_string, const std::string& interfaceType,
+                              const std::string& portNameSpecializer, const std::string& interfaceType,
                               unsigned int inputBitWidth, unsigned int arraySize, unsigned n_resources,
                               unsigned alignment, bool is_real, unsigned rwBWsize);
 
@@ -110,9 +110,6 @@ class FunctionInterfaceInfer : public FunctionFrontendFlowStep
                               const std::string& argName_string, const std::string& portNameSpecializer,
                               const std::string& interfaceType, unsigned int inputBitWidth, unsigned n_resources,
                               m_axi_type mat, unsigned rwBWsize);
-
-   void create_resource_bundle(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                               const std::string& portNameSpecializer, unsigned n_resources, unsigned rwBWsize);
 
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                         const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth,

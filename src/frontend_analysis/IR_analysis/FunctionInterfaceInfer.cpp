@@ -963,18 +963,19 @@ void FunctionInterfaceInfer::create_resource_Write_simple(const std::set<std::st
 
 void FunctionInterfaceInfer::create_resource_array(const std::set<std::string>& operationsR,
                                                    const std::set<std::string>& operationsW,
-                                                   const std::string& argName_string, const std::string& interfaceType,
-                                                   unsigned int inputBitWidth, unsigned int arraySize,
-                                                   unsigned n_resources, unsigned alignment, bool is_real,
-                                                   unsigned rwBWsize)
+                                                   const std::string& portNameSpecializer,
+                                                   const std::string& interfaceType, unsigned int inputBitWidth,
+                                                   unsigned int arraySize, unsigned n_resources, unsigned alignment,
+                                                   bool is_real, unsigned rwBWsize)
 {
    const auto n_channels = parameters->getOption<unsigned int>(OPT_channels_number);
    const auto isDP = inputBitWidth <= 64 && n_resources == 1 && n_channels == 2;
    const auto NResources = isDP ? 2 : n_resources;
    const auto read_write_string = (isDP ? std::string("ReadWriteDP_") : std::string("ReadWrite_"));
-   const auto ResourceName = ENCODE_FDNAME(argName_string, "", "");
+   const auto ResourceName = ENCODE_FDNAME(portNameSpecializer, "", "");
    const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
    const auto HLS_T = HLSMgr->get_HLS_target();
+   const auto device_type = HLS_T->get_target_device()->get_type();
    const auto TechMan = HLS_T->get_technology_manager();
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
       !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
@@ -1027,52 +1028,56 @@ void FunctionInterfaceInfer::create_resource_array(const std::set<std::string>& 
       CM->add_port_vector("out1", port_o::OUT, NResources, interface_top, rwtype);
 
       const auto inPort_address =
-          CM->add_port("_" + argName_string + "_address0", port_o::OUT, interface_top, address_interface_type);
+          CM->add_port("_" + portNameSpecializer + "_address0", port_o::OUT, interface_top, address_interface_type);
       GetPointerS<port_o>(inPort_address)->set_port_interface(port_o::port_interface::PI_ADDRESS);
       GetPointerS<port_o>(inPort_address)->set_port_alignment(alignment);
       if(isDP)
       {
          const auto inPort_address1 =
-             CM->add_port("_" + argName_string + "_address1", port_o::OUT, interface_top, address_interface_type);
+             CM->add_port("_" + portNameSpecializer + "_address1", port_o::OUT, interface_top, address_interface_type);
          GetPointerS<port_o>(inPort_address1)->set_port_interface(port_o::port_interface::PI_ADDRESS);
          GetPointerS<port_o>(inPort_address1)->set_port_alignment(alignment);
       }
 
-      const auto inPort_ce = CM->add_port("_" + argName_string + "_ce0", port_o::OUT, interface_top, bool_type);
+      const auto inPort_ce = CM->add_port("_" + portNameSpecializer + "_ce0", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(inPort_ce)->set_port_interface(port_o::port_interface::PI_CHIPENABLE);
       if(isDP)
       {
-         const auto inPort_ce1 = CM->add_port("_" + argName_string + "_ce1", port_o::OUT, interface_top, bool_type);
+         const auto inPort_ce1 =
+             CM->add_port("_" + portNameSpecializer + "_ce1", port_o::OUT, interface_top, bool_type);
          GetPointerS<port_o>(inPort_ce1)->set_port_interface(port_o::port_interface::PI_CHIPENABLE);
       }
 
       if(!operationsW.empty())
       {
-         const auto inPort_we = CM->add_port("_" + argName_string + "_we0", port_o::OUT, interface_top, bool_type);
+         const auto inPort_we = CM->add_port("_" + portNameSpecializer + "_we0", port_o::OUT, interface_top, bool_type);
          GetPointerS<port_o>(inPort_we)->set_port_interface(port_o::port_interface::PI_WRITEENABLE);
          if(isDP)
          {
-            const auto inPort_we1 = CM->add_port("_" + argName_string + "_we1", port_o::OUT, interface_top, bool_type);
+            const auto inPort_we1 =
+                CM->add_port("_" + portNameSpecializer + "_we1", port_o::OUT, interface_top, bool_type);
             GetPointerS<port_o>(inPort_we1)->set_port_interface(port_o::port_interface::PI_WRITEENABLE);
          }
       }
       if(!operationsR.empty())
       {
-         const auto inPort_din = CM->add_port("_" + argName_string + "_q0", port_o::IN, interface_top, dataType);
+         const auto inPort_din = CM->add_port("_" + portNameSpecializer + "_q0", port_o::IN, interface_top, dataType);
          GetPointerS<port_o>(inPort_din)->set_port_interface(port_o::port_interface::PI_DIN);
          if(isDP)
          {
-            const auto inPort_din1 = CM->add_port("_" + argName_string + "_q1", port_o::IN, interface_top, dataType);
+            const auto inPort_din1 =
+                CM->add_port("_" + portNameSpecializer + "_q1", port_o::IN, interface_top, dataType);
             GetPointerS<port_o>(inPort_din1)->set_port_interface(port_o::port_interface::PI_DIN);
          }
       }
       if(!operationsW.empty())
       {
-         const auto inPort_dout = CM->add_port("_" + argName_string + "_d0", port_o::OUT, interface_top, dataType);
+         const auto inPort_dout = CM->add_port("_" + portNameSpecializer + "_d0", port_o::OUT, interface_top, dataType);
          GetPointerS<port_o>(inPort_dout)->set_port_interface(port_o::port_interface::PI_DOUT);
          if(isDP)
          {
-            const auto inPort_dout1 = CM->add_port("_" + argName_string + "_d1", port_o::OUT, interface_top, dataType);
+            const auto inPort_dout1 =
+                CM->add_port("_" + portNameSpecializer + "_d1", port_o::OUT, interface_top, dataType);
             GetPointerS<port_o>(inPort_dout1)->set_port_interface(port_o::port_interface::PI_DOUT);
          }
       }
@@ -1081,56 +1086,56 @@ void FunctionInterfaceInfer::create_resource_array(const std::set<std::string>& 
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                read_write_string + interfaceType + ".cpp");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
-      for(const auto& fdName : operationsR)
-      {
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-      }
-      for(const auto& fdName : operationsW)
-      {
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-      }
-      const auto fu = GetPointer<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      const auto device = HLS_T->get_target_device();
-      fu->area_m = area_model::create_model(device->get_type(), parameters);
+      const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      fu->area_m = area_model::create_model(device_type, parameters);
       fu->area_m->set_area_value(0);
 
-      const auto bram_f_unit = TechMan->get_fu(isDP ? ARRAY_1D_STD_BRAM_NN_SDS : ARRAY_1D_STD_BRAM_SDS, LIBRARY_STD_FU);
-      const auto bram_fu = GetPointer<functional_unit>(bram_f_unit);
-      const auto load_op_node = bram_fu->get_operation("LOAD");
-      const auto load_op = GetPointer<operation>(load_op_node);
-      const auto load_delay = load_op->time_m->get_execution_time();
-      const auto load_cycles = load_op->time_m->get_cycles();
-      const auto load_ii = load_op->time_m->get_initiation_time();
-      const auto load_sp = load_op->time_m->get_stage_period();
-      for(const auto& fdName : operationsR)
-      {
-         auto op = GetPointer<operation>(fu->get_operation(fdName));
-         op->time_m = time_model::create_model(device->get_type(), parameters);
-         op->bounded = true;
-         op->time_m->set_execution_time(load_delay, load_cycles);
-         op->time_m->set_initiation_time(load_ii);
-         op->time_m->set_stage_period(load_sp);
-         op->time_m->set_synthesis_dependent(true);
-      }
-      technology_nodeRef store_op_node = bram_fu->get_operation("STORE");
-      const auto store_op = GetPointer<operation>(store_op_node);
-      const auto store_delay = store_op->time_m->get_execution_time();
-      const auto store_cycles = store_op->time_m->get_cycles();
-      const auto store_ii = store_op->time_m->get_initiation_time();
-      const auto store_sp = store_op->time_m->get_stage_period();
-      for(const auto& fdName : operationsW)
-      {
-         auto op = GetPointer<operation>(fu->get_operation(fdName));
-         op->time_m = time_model::create_model(device->get_type(), parameters);
-         op->bounded = true;
-         op->time_m->set_execution_time(store_delay, store_cycles);
-         op->time_m->set_initiation_time(store_ii);
-         op->time_m->set_stage_period(store_sp);
-         op->time_m->set_synthesis_dependent(true);
-      }
       /// add constraint on resource
       HLSMgr->design_interface_constraints[function_id][INTERFACE_LIBRARY][ResourceName] = NResources;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created: ");
+   }
+   for(const auto& fdName : operationsR)
+   {
+      TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
+   }
+   for(const auto& fdName : operationsW)
+   {
+      TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
+   }
+   const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+   const auto bram_f_unit = TechMan->get_fu(isDP ? ARRAY_1D_STD_BRAM_NN_SDS : ARRAY_1D_STD_BRAM_SDS, LIBRARY_STD_FU);
+   const auto bram_fu = GetPointerS<functional_unit>(bram_f_unit);
+   const auto load_op_node = bram_fu->get_operation("LOAD");
+   const auto load_op = GetPointerS<operation>(load_op_node);
+   const auto load_delay = load_op->time_m->get_execution_time();
+   const auto load_cycles = load_op->time_m->get_cycles();
+   const auto load_ii = load_op->time_m->get_initiation_time();
+   const auto load_sp = load_op->time_m->get_stage_period();
+   for(const auto& fdName : operationsR)
+   {
+      const auto op = GetPointerS<operation>(fu->get_operation(fdName));
+      op->time_m = time_model::create_model(device_type, parameters);
+      op->bounded = true;
+      op->time_m->set_execution_time(load_delay, load_cycles);
+      op->time_m->set_initiation_time(load_ii);
+      op->time_m->set_stage_period(load_sp);
+      op->time_m->set_synthesis_dependent(true);
+   }
+   const auto store_op_node = bram_fu->get_operation("STORE");
+   const auto store_op = GetPointerS<operation>(store_op_node);
+   const auto store_delay = store_op->time_m->get_execution_time();
+   const auto store_cycles = store_op->time_m->get_cycles();
+   const auto store_ii = store_op->time_m->get_initiation_time();
+   const auto store_sp = store_op->time_m->get_stage_period();
+   for(const auto& fdName : operationsW)
+   {
+      const auto op = GetPointerS<operation>(fu->get_operation(fdName));
+      op->time_m = time_model::create_model(device_type, parameters);
+      op->bounded = true;
+      op->time_m->set_execution_time(store_delay, store_cycles);
+      op->time_m->set_initiation_time(store_ii);
+      op->time_m->set_stage_period(store_sp);
+      op->time_m->set_synthesis_dependent(true);
    }
 }
 
@@ -1480,119 +1485,6 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
    }
 }
 
-void FunctionInterfaceInfer::create_resource_bundle(const std::set<std::string>& operationsR,
-                                                    const std::set<std::string>& operationsW,
-                                                    const std::string& portNameSpecializer, unsigned n_resources,
-                                                    unsigned rwBWsize)
-{
-   const auto HLSMgr = GetPointer<HLS_manager>(AppM);
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto device_type = HLS_T->get_target_device()->get_type();
-   const auto set_op_time = [&](operation* op) {
-      op->time_m = time_model::create_model(device_type, parameters);
-      op->bounded = false;
-      op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
-      op->time_m->set_synthesis_dependent(true);
-   };
-
-   const auto ResourceName = ENCODE_FDNAME(portNameSpecializer, "", "");
-   const auto TechMan = HLS_T->get_technology_manager();
-   if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
-      !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "-->Creating bundle resource: " + INTERFACE_LIBRARY + ":" + ResourceName);
-      const structural_managerRef CM(new structural_manager(parameters));
-      const structural_type_descriptorRef module_type(new structural_type_descriptor(ResourceName));
-      CM->set_top_info(ResourceName, module_type);
-      const auto interface_top = CM->get_circ();
-      /// add description and license
-      GetPointerS<module>(interface_top)->set_description("Interface module for function: " + ResourceName);
-      GetPointerS<module>(interface_top)->set_copyright(GENERATED_COPYRIGHT);
-      GetPointerS<module>(interface_top)->set_authors("Component automatically generated by bambu");
-      GetPointerS<module>(interface_top)->set_license(GENERATED_LICENSE);
-      GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
-
-      const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto nbitDataSize = 32u - static_cast<unsigned>(__builtin_clz(rwBWsize));
-      const structural_type_descriptorRef address_interface_type(
-          new structural_type_descriptor("bool", address_bitsize));
-      const structural_type_descriptorRef size1(new structural_type_descriptor("bool", 1));
-      const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
-      const structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", rwBWsize));
-      const structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
-
-      CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
-      CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
-      CM->add_port_vector(START_PORT_NAME, port_o::IN, n_resources, interface_top, bool_type);
-
-      // when 0 is a read otherwise is a write
-      CM->add_port_vector("in1", port_o::IN, n_resources, interface_top, size1);
-      // bit-width size of the written or read data
-      CM->add_port_vector("in2", port_o::IN, n_resources, interface_top, rwsize);
-      // value written when the first operand is 1, 0 otherwise
-      CM->add_port_vector("in3", port_o::IN, n_resources, interface_top, rwtype);
-
-      const auto addrPort = CM->add_port_vector("in4", port_o::IN, n_resources, interface_top, address_interface_type);
-      GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
-
-      CM->add_port_vector(DONE_PORT_NAME, port_o::OUT, n_resources, interface_top, bool_type);
-      CM->add_port_vector("out1", port_o::OUT, n_resources, interface_top, rwtype);
-
-      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1");
-
-      TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
-      for(const auto& fdName : operationsR)
-      {
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-      }
-      for(const auto& fdName : operationsW)
-      {
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-      }
-      const auto fu = GetPointer<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      fu->area_m = area_model::create_model(device_type, parameters);
-      fu->area_m->set_area_value(0);
-
-      for(const auto& fdName : operationsR)
-      {
-         const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-         set_op_time(op);
-      }
-      for(const auto& fdName : operationsW)
-      {
-         const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-         set_op_time(op);
-      }
-      /// add constraint on resource
-      HLSMgr->design_interface_constraints[function_id][INTERFACE_LIBRARY][ResourceName] = n_resources;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Bundle resource created: ");
-   }
-   else
-   {
-      for(const auto& fdName : operationsR)
-      {
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-      }
-      for(const auto& fdName : operationsW)
-      {
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-      }
-      const auto fu = GetPointer<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-
-      for(const auto& fdName : operationsR)
-      {
-         const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-         set_op_time(op);
-      }
-      for(const auto& fdName : operationsW)
-      {
-         const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-         set_op_time(op);
-      }
-   }
-}
-
 void FunctionInterfaceInfer::ComputeResourcesAlignment(unsigned& n_resources, unsigned& alignment,
                                                        unsigned int inputBitWidth, bool is_acType, bool is_signed,
                                                        bool is_fixed)
@@ -1668,18 +1560,27 @@ void FunctionInterfaceInfer::create_resource(const std::set<std::string>& operat
    }
    else if(interfaceType == "array")
    {
-      auto HLSMgr = GetPointer<HLS_manager>(AppM);
+      const auto HLSMgr = GetPointer<HLS_manager>(AppM);
       THROW_ASSERT(HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() &&
                        HLSMgr->design_interface_arraysize.find(fname)->second.find(argName_string) !=
                            HLSMgr->design_interface_arraysize.find(fname)->second.end(),
                    "unexpected condition");
-      auto arraySizeSTR = HLSMgr->design_interface_arraysize.find(fname)->second.find(argName_string)->second;
-      auto arraySize = boost::lexical_cast<unsigned>(arraySizeSTR);
+      const auto arraySizeSTR = HLSMgr->design_interface_arraysize.at(fname).at(argName_string);
+      const auto arraySize = boost::lexical_cast<unsigned>(arraySizeSTR);
       if(arraySize == 0)
       {
          THROW_ERROR("array size equal to zero");
       }
-      create_resource_array(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, arraySize,
+
+      auto portNameSpecializer = argName_string;
+      if(HLSMgr->design_interface_attribute3.find(fname) != HLSMgr->design_interface_attribute3.end() &&
+         HLSMgr->design_interface_attribute3.at(fname).find(argName_string) !=
+             HLSMgr->design_interface_attribute3.at(fname).end())
+      {
+         portNameSpecializer = HLSMgr->design_interface_attribute3.at(fname).at(argName_string);
+      }
+
+      create_resource_array(operationsR, operationsW, portNameSpecializer, interfaceType, inputBitWidth, arraySize,
                             n_resources, alignment, isReal, rwBWsize);
    }
    else if(interfaceType == "m_axi")
@@ -1720,33 +1621,6 @@ void FunctionInterfaceInfer::create_resource(const std::set<std::string>& operat
       }
       create_resource_m_axi(operationsR, operationsW, argName_string, portNameSpecializer, interfaceType, inputBitWidth,
                             n_resources, mat, rwBWsize);
-   }
-   else if(interfaceType == "bundle")
-   {
-      auto portNameSpecializer = argName_string;
-      const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
-      if(HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() &&
-         HLSMgr->design_interface_attribute2.at(fname).find(argName_string) !=
-             HLSMgr->design_interface_attribute2.at(fname).end())
-      {
-         unsigned int channels;
-         const auto valid = boost::conversion::try_lexical_convert<unsigned int>(
-             HLSMgr->design_interface_attribute2.at(fname).at(argName_string), channels);
-         if(!valid)
-         {
-            THROW_ERROR("Bundle channels number syntax error: " +
-                        HLSMgr->design_interface_attribute2.at(fname).at(argName_string));
-         }
-         n_resources *= channels;
-      }
-      if(HLSMgr->design_interface_attribute3.find(fname) != HLSMgr->design_interface_attribute3.end() &&
-         HLSMgr->design_interface_attribute3.at(fname).find(argName_string) !=
-             HLSMgr->design_interface_attribute3.at(fname).end())
-      {
-         portNameSpecializer = HLSMgr->design_interface_attribute3.at(fname).at(argName_string);
-      }
-
-      create_resource_bundle(operationsR, operationsW, portNameSpecializer, n_resources, rwBWsize);
    }
    else
    {
