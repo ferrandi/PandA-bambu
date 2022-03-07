@@ -35,6 +35,7 @@
  * @brief Plugin analyzing the Clang AST retrieving useful information for PandA
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 
@@ -53,22 +54,9 @@
 #include "clang/Sema/Sema.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include <boost/algorithm/string/predicate.hpp>
-#include <cstdlib>
-#include <iostream>
-
-static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>>
-    HLS_interface_PragmaMap;
-static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>>
-    HLS_interface_PragmaMapArraySize;
-static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>>
-    HLS_interface_PragmaMapAttribute2;
-static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>>
-    HLS_interface_PragmaMapAttribute3;
-
-static std::map<std::string, std::vector<clang::SourceLocation>> HLS_pipeline_PragmaMap;
-static std::map<std::string, std::vector<clang::SourceLocation>> HLS_simple_pipeline_PragmaMap;
-static std::map<std::string, std::map<clang::SourceLocation, std::string>> HLS_stallable_pipeline_PragmaMap;
+static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::string>>> file_loc_attr;
+static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::map<std::string, std::string>>>>
+    file_loc_arg_attr;
 
 namespace clang
 {
@@ -80,25 +68,16 @@ namespace clang
       std::string InFile;
       clang::PrintingPolicy pp;
 
+      std::map<std::string, std::map<std::string, std::string>> fun_attr;
+      std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> fun_arg_attr;
+
       std::map<std::string, std::vector<std::string>> Fun2Params;
-      std::map<std::string, std::vector<std::string>> Fun2ParamType;
-      std::map<std::string, std::vector<std::string>> Fun2ParamTypeOrig;
-      std::map<std::string, std::map<std::string, std::string>> Fun2ParamSize;
-      std::map<std::string, std::map<std::string, std::string>> Fun2ParamAttribute2;
-      std::map<std::string, std::map<std::string, std::string>> Fun2ParamAttribute3;
-      std::map<std::string, std::vector<std::string>> Fun2ParamInclude;
       std::map<std::string, std::string> Fun2Demangled;
       std::map<std::string, clang::SourceLocation> prevLoc;
 
-      std::map<std::string, std::vector<std::string>> HLS_interfaceMap;
-      std::map<std::string, std::map<std::string, std::string>> HLS_interfaceArraySizeMap;
-      std::set<std::string> HLS_pipelineSet;
-      std::set<std::string> HLS_simple_pipelineSet;
-      std::map<std::string, std::string> HLS_stallable_pipelineMap;
-
       std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
       {
-         std::size_t found = original_filename.find_last_of("/\\");
+         const auto found = original_filename.find_last_of("/\\");
          std::string dump_base_name;
          if(found == std::string::npos)
          {
@@ -111,7 +90,7 @@ namespace clang
          return on + "/" + dump_base_name;
       }
 
-      void convert_unescaped(std::string& ioString) const
+      std::string convert_unescaped(std::string ioString) const
       {
          std::string::size_type lPos = 0;
          while((lPos = ioString.find_first_of("&<>'\"", lPos)) != std::string::npos)
@@ -139,6 +118,7 @@ namespace clang
                }
             }
          }
+         return ioString;
       }
 
       void writeXML_interfaceFile(const std::string& filename, const std::string& TopFunctionName) const
@@ -151,50 +131,27 @@ namespace clang
 #endif
          stream << "<?xml version=\"1.0\"?>\n";
          stream << "<module>\n";
-         for(auto funArgPair : Fun2Params)
+         for(const auto& function_attribute : fun_arg_attr)
          {
-            if(!TopFunctionName.empty() && Fun2Demangled.find(funArgPair.first)->second != TopFunctionName &&
-               funArgPair.first != TopFunctionName)
+            const auto& fname = function_attribute.first;
+            const auto& arg_attr = function_attribute.second;
+            if(!TopFunctionName.empty() && Fun2Demangled.at(fname) != TopFunctionName && fname != TopFunctionName)
             {
                continue;
             }
-            bool hasInterfaceType = HLS_interfaceMap.find(funArgPair.first) != HLS_interfaceMap.end();
-            if(hasInterfaceType)
+            stream << "  <function id=\"" << fname << "\">\n";
+            assert(Fun2Params.count(fname));
+            for(const auto& aname : Fun2Params.at(fname))
             {
-               stream << "  <function id=\"" << funArgPair.first << "\">\n";
-               const auto& interfaceTypeVec = HLS_interfaceMap.find(funArgPair.first)->second;
-               const auto& interfaceTypenameVec = Fun2ParamType.find(funArgPair.first)->second;
-               const auto& interfaceTypenameOrigVec = Fun2ParamTypeOrig.find(funArgPair.first)->second;
-               const auto& interfaceTypenameIncludeVec = Fun2ParamInclude.find(funArgPair.first)->second;
-               unsigned int ArgIndex = 0;
-               for(const auto& par : funArgPair.second)
+               stream << "    <arg id=\"" << aname << "\"";
+               assert(Fun2Params.count(aname));
+               for(const auto& attr_val : arg_attr.at(aname))
                {
-                  std::string typenameArg = interfaceTypenameVec.at(ArgIndex);
-                  std::string typenameOrigArg = interfaceTypenameOrigVec.at(ArgIndex);
-                  convert_unescaped(typenameArg);
-                  convert_unescaped(typenameOrigArg);
-                  stream << "    <arg id=\"" << par << "\" interface_type=\"" << interfaceTypeVec.at(ArgIndex)
-                         << "\" interface_typename=\"" << typenameArg << "\" interface_typename_orig=\""
-                         << typenameOrigArg << "\"";
-                  if(Fun2ParamSize.find(funArgPair.first) != Fun2ParamSize.end() &&
-                     Fun2ParamSize.find(funArgPair.first)->second.find(par) !=
-                         Fun2ParamSize.find(funArgPair.first)->second.end())
-                     stream << " size=\"" << Fun2ParamSize.find(funArgPair.first)->second.find(par)->second << "\"";
-                  if(Fun2ParamAttribute2.find(funArgPair.first) != Fun2ParamAttribute2.end() &&
-                     Fun2ParamAttribute2.find(funArgPair.first)->second.find(par) !=
-                         Fun2ParamAttribute2.find(funArgPair.first)->second.end())
-                     stream << " attribute2=\"" << Fun2ParamAttribute2.find(funArgPair.first)->second.find(par)->second
-                            << "\"";
-                  if(Fun2ParamAttribute3.find(funArgPair.first) != Fun2ParamAttribute3.end() &&
-                     Fun2ParamAttribute3.find(funArgPair.first)->second.find(par) !=
-                         Fun2ParamAttribute3.find(funArgPair.first)->second.end())
-                     stream << " attribute3=\"" << Fun2ParamAttribute3.find(funArgPair.first)->second.find(par)->second
-                            << "\"";
-                  stream << " interface_typename_include=\"" << interfaceTypenameIncludeVec.at(ArgIndex) << "\"/>\n";
-                  ++ArgIndex;
+                  stream << " " << attr_val.first << "=\"" << convert_unescaped(attr_val.second) << "\"";
                }
-               stream << "  </function>\n";
+               stream << "/>\n";
             }
+            stream << "  </function>\n";
          }
          stream << "</module>\n";
       }
@@ -209,32 +166,16 @@ namespace clang
 #endif
          stream << "<?xml version=\"1.0\"?>\n";
          stream << "<module>\n";
-         for(auto function : Fun2Params)
+         for(const auto& function_attributes : fun_attr)
          {
-            std::string function_name = function.first;
-            std::string is_pipelined = "no";
-            std::string simple_pipeline = "no";
-            std::string initiation_time = "1";
-            if(HLS_pipelineSet.find(function_name) != HLS_pipelineSet.end())
+            const auto& fname = function_attributes.first;
+            const auto& fattr = function_attributes.second;
+            stream << "  <function id=\"" << fname << "\"";
+            for(const auto& attr_val : fattr)
             {
-               is_pipelined = "yes";
-               if(HLS_simple_pipelineSet.find(function_name) != HLS_simple_pipelineSet.end())
-               {
-                  simple_pipeline = "yes";
-               }
-               else if(HLS_stallable_pipelineMap.find(function_name) != HLS_stallable_pipelineMap.end())
-               {
-                  initiation_time = HLS_stallable_pipelineMap.find(function_name)->second;
-               }
-               else
-               {
-                  DiagnosticsEngine& D = CI.getDiagnostics();
-                  D.Report(
-                      D.getCustomDiagID(DiagnosticsEngine::Error, "The defined pipeline is not simple nor stallable"));
-               }
-               stream << "  <function id=\"" << function_name << "\" is_pipelined=\"" << is_pipelined
-                      << "\" is_simple=\"" << simple_pipeline << "\" initiation_time=\"" << initiation_time << "\"/>\n";
+               stream << " " << attr_val.first << "=\"" << attr_val.second << "\"";
             }
+            stream << "/>\n";
          }
          stream << "</module>\n";
       }
@@ -247,11 +188,13 @@ namespace clang
 #else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
 #endif
-         for(auto fun2parms_el : Fun2Params)
+         for(const auto& fun2parms_el : Fun2Params)
          {
             stream << fun2parms_el.first;
-            for(auto par : fun2parms_el.second)
+            for(const auto& par : fun2parms_el.second)
+            {
                stream << " " << par;
+            }
             stream << "\n";
          }
       }
@@ -299,18 +242,22 @@ namespace clang
       std::string GetTypeNameCanonical(const QualType& t, const PrintingPolicy& pp) const
       {
          auto typeName = t->getCanonicalTypeInternal().getAsString(pp);
-         auto key = std::string("class ");
-         auto constkey = std::string("const class ");
+         const auto key = std::string("class ");
+         const auto constkey = std::string("const class ");
          if(typeName.find(key) == 0)
+         {
             typeName = typeName.substr(key.size());
+         }
          else if(typeName.find(constkey) == 0)
+         {
             typeName = typeName.substr(constkey.size());
+         }
          return typeName;
       }
 
       std::string getMangledName(const FunctionDecl* decl)
       {
-         auto mangleContext = decl->getASTContext().createMangleContext();
+         const auto mangleContext = decl->getASTContext().createMangleContext();
 
          if(!mangleContext->shouldMangleDeclName(decl))
          {
@@ -340,103 +287,91 @@ namespace clang
 
       void AnalyzeFunctionDecl(const FunctionDecl* FD)
       {
+         const auto print_error = [&](const std::string& msg) {
+            auto& D = CI.getDiagnostics();
+            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "%0")).AddString(msg);
+         };
+
          auto& SM = FD->getASTContext().getSourceManager();
          std::map<std::string, std::string> interface_PragmaMap;
          std::map<std::string, std::string> interface_PragmaMapArraySize;
          std::map<std::string, std::string> interface_PragmaMapAttribute2;
          std::map<std::string, std::string> interface_PragmaMapAttribute3;
-         auto locEnd = FD->getSourceRange().getEnd();
-         auto filename = SM.getPresumedLoc(locEnd, false).getFilename();
-         if(HLS_interface_PragmaMap.find(filename) != HLS_interface_PragmaMap.end())
+         const auto locEnd = FD->getSourceRange().getEnd();
+         const auto filename = SM.getPresumedLoc(locEnd, false).getFilename();
+         const auto fname = getMangledName(FD);
+         const auto loc_arg = file_loc_arg_attr.find(filename);
+         if(loc_arg != file_loc_arg_attr.end())
          {
-            SourceLocation prev;
-            if(prevLoc.find(filename) != prevLoc.end())
-            {
-               prev = prevLoc.find(filename)->second;
-            }
-            for(auto& loc2pair : HLS_interface_PragmaMap.find(filename)->second)
-            {
-               if((prev.isInvalid() || prev < loc2pair.first) && (loc2pair.first < locEnd))
+            const auto prev = [&]() -> SourceLocation {
+               const auto prev_it = prevLoc.find(filename);
+               if(prev_it != prevLoc.end())
                {
-                  interface_PragmaMap[loc2pair.second.first] = loc2pair.second.second;
+                  return prev_it->second;
+               }
+               return SourceLocation();
+            }();
+
+            for(const auto& location_argument : loc_arg->second)
+            {
+               const auto& loc = location_argument.first;
+               const auto& aattr = location_argument.second;
+               if((prev.isInvalid() || prev < loc) && (loc < locEnd))
+               {
+                  fun_arg_attr[fname].insert(aattr.begin(), aattr.end());
                }
             }
-            if(HLS_interface_PragmaMapArraySize.find(filename) != HLS_interface_PragmaMapArraySize.end())
-            {
-               for(auto& loc2pair : HLS_interface_PragmaMapArraySize.find(filename)->second)
+         }
+         const auto loc_attr = file_loc_attr.find(filename);
+         if(loc_attr != file_loc_attr.end())
+         {
+            const auto prev = [&]() -> SourceLocation {
+               const auto prev_it = prevLoc.find(filename);
+               if(prev_it != prevLoc.end())
                {
-                  if((prev.isInvalid() || prev < loc2pair.first) && (loc2pair.first < locEnd))
-                  {
-                     interface_PragmaMapArraySize[loc2pair.second.first] = loc2pair.second.second;
-                  }
+                  return prev_it->second;
                }
-            }
-            if(HLS_interface_PragmaMapAttribute2.find(filename) != HLS_interface_PragmaMapAttribute2.end())
+               return SourceLocation();
+            }();
+
+            for(const auto& location_attribute : loc_attr->second)
             {
-               for(auto& loc2pair : HLS_interface_PragmaMapAttribute2.find(filename)->second)
+               const auto& loc = location_attribute.first;
+               const auto& fattr = location_attribute.second;
+               if((prev.isInvalid() || prev < loc) && (loc < locEnd))
                {
-                  if((prev.isInvalid() || prev < loc2pair.first) && (loc2pair.first < locEnd))
-                  {
-                     interface_PragmaMapAttribute2[loc2pair.second.first] = loc2pair.second.second;
-                  }
-               }
-            }
-            if(HLS_interface_PragmaMapAttribute3.find(filename) != HLS_interface_PragmaMapAttribute3.end())
-            {
-               for(auto& loc2pair : HLS_interface_PragmaMapAttribute3.find(filename)->second)
-               {
-                  if((prev.isInvalid() || prev < loc2pair.first) && (loc2pair.first < locEnd))
-                  {
-                     interface_PragmaMapAttribute3[loc2pair.second.first] = loc2pair.second.second;
-                  }
+                  fun_attr[fname].insert(fattr.begin(), fattr.end());
                }
             }
          }
 
          if(!FD->isVariadic() && FD->hasBody())
          {
-            auto funName = getMangledName(FD);
-            Fun2Demangled[funName] = FD->getNameInfo().getName().getAsString();
-            // llvm::errs()<<"funName:"<<funName<<"\n";
+            Fun2Demangled[fname] = FD->getNameInfo().getName().getAsString();
+            // llvm::errs() << "function: " << fname << "\n";
+
             auto par_index = 0u;
             for(const auto par : FD->parameters())
             {
-               if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
+               if(const auto PVD = dyn_cast<ParmVarDecl>(par))
                {
-                  std::string interfaceType = "default";
-                  std::string arraySize;
-                  std::string attribute2;
-                  std::string attribute3;
-                  std::string UserDefinedInterfaceType;
+                  const auto pname = [&]() {
+                     const auto name = PVD->getNameAsString();
+                     if(name.empty())
+                     {
+                        return "P" + std::to_string(par_index);
+                     }
+                     return name;
+                  }();
+                  // llvm::errs() << "  arg: " << pname << "\n";
+
+                  auto& attr_val = fun_arg_attr[fname][pname];
+                  const auto argType = PVD->getType();
+                  std::string interface = "default";
                   std::string ParamTypeName;
                   std::string ParamTypeNameOrig;
                   std::string ParamTypeInclude;
-                  auto parName = ND->getNameAsString();
-                  bool UDIT_p = false;
-                  bool UDIT_attribute2_p = false;
-                  bool UDIT_attribute3_p = false;
-                  if(parName.empty())
-                  {
-                     parName = "P" + std::to_string(par_index);
-                  }
-
-                  if(interface_PragmaMap.find(parName) != interface_PragmaMap.end())
-                  {
-                     UserDefinedInterfaceType = interface_PragmaMap.find(parName)->second;
-                     UDIT_p = true;
-                     if(interface_PragmaMapAttribute2.find(parName) != interface_PragmaMapAttribute2.end())
-                     {
-                        attribute2 = interface_PragmaMapAttribute2.find(parName)->second;
-                        UDIT_attribute2_p = true;
-                     }
-                     if(interface_PragmaMapAttribute3.find(parName) != interface_PragmaMapAttribute3.end())
-                     {
-                        attribute3 = interface_PragmaMapAttribute3.find(parName)->second;
-                        UDIT_attribute3_p = true;
-                     }
-                  }
-                  auto argType = ND->getType();
-                  auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
+                  const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
                      auto OrigTotArraySize = CA->getSize();
                      std::string Dimensions;
                      if(!setInterfaceType)
@@ -446,221 +381,156 @@ namespace clang
                      while(CA->getElementType()->isConstantArrayType())
                      {
                         CA = cast<ConstantArrayType>(CA->getElementType());
-                        auto n_el = CA->getSize();
+                        const auto n_el = CA->getSize();
                         Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
                         OrigTotArraySize *= n_el;
                      }
-                     auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
+                     const auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
                      ParamTypeNameOrig =
                          paramTypeRemTD.getAsString(pp) + (Dimensions == "" ? " *" : " (*)" + Dimensions);
-                     if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                     if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                     {
                         ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                     }
                      if(setInterfaceType)
                      {
-                        interfaceType = "array";
-                        arraySize = OrigTotArraySize.toString(10, false);
-                        assert(arraySize != "0");
+                        interface = "array";
+                        const auto array_size = OrigTotArraySize.toString(10, false);
+                        assert(array_size != "0");
+                        attr_val["size"] = array_size;
                      }
                   };
-                  // argType->dump ();
                   if(isa<DecayedType>(argType))
                   {
-                     auto DT = cast<DecayedType>(argType);
+                     const auto DT = cast<DecayedType>(argType);
                      if(DT->getOriginalType().IgnoreParens()->isConstantArrayType())
                      {
                         manageArray(llvm::cast<ConstantArrayType>(DT->getOriginalType().IgnoreParens()), true);
                      }
                      else
                      {
-                        auto paramTypeRemTD = RemoveTypedef(argType);
+                        const auto paramTypeRemTD = RemoveTypedef(argType);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                        if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                        {
                            ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                     }
-                     if(UDIT_p)
-                     {
-                        if(UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "fifo" &&
-                           UserDefinedInterfaceType.find("array") == std::string::npos &&
-                           UserDefinedInterfaceType != "bus" && UserDefinedInterfaceType != "m_axi" &&
-                           UserDefinedInterfaceType != "axis")
-                        {
-                           DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                                      "#pragma HLS_interface non-consistent with parameter of constant "
-                                                      "array type, where user defined interface is: %0"))
-                               .AddString(UserDefinedInterfaceType);
                         }
-                        else
+                     }
+                     if(attr_val.find("interface_type") != attr_val.end())
+                     {
+                        interface = attr_val.at("interface_type");
+                        if(interface != "handshake" && interface != "fifo" &&
+                           interface.find("array") == std::string::npos && interface != "bus" && interface != "m_axi" &&
+                           interface != "axis")
                         {
-                           interfaceType = UserDefinedInterfaceType;
-                           if(interfaceType == "array")
-                           {
-                              if(interface_PragmaMapArraySize.find(parName) == interface_PragmaMapArraySize.end())
-                              {
-                                 DiagnosticsEngine& D = CI.getDiagnostics();
-                                 D.Report(D.getCustomDiagID(
-                                              DiagnosticsEngine::Error,
-                                              "#pragma HLS_interface inconsistent internal data structure: %0"))
-                                     .AddString(UserDefinedInterfaceType);
-                              }
-                              else
-                                 arraySize = interface_PragmaMapArraySize.find(parName)->second;
-                           }
+                           print_error("#pragma HLS_interface non-consistent with parameter of constant "
+                                       "array type, where user defined interface is: " +
+                                       interface);
+                        }
+                        else if(interface == "array" && attr_val.find("size") == attr_val.end())
+                        {
+                           print_error("#pragma HLS_interface inconsistent internal data structure: " + interface);
                         }
                      }
                   }
                   else if(argType->isPointerType() || argType->isReferenceType())
                   {
-                     if(auto PT = llvm::dyn_cast<PointerType>(argType))
+                     if(const auto PT = llvm::dyn_cast<PointerType>(argType))
                      {
-                        if(auto CA = llvm::dyn_cast<ConstantArrayType>(PT->getPointeeType().IgnoreParens()))
+                        if(const auto CA = llvm::dyn_cast<ConstantArrayType>(PT->getPointeeType().IgnoreParens()))
                         {
                            manageArray(CA, false);
                         }
                         else
                         {
-                           auto paramTypeRemTD = RemoveTypedef(PT->getPointeeType());
+                           const auto paramTypeRemTD = RemoveTypedef(PT->getPointeeType());
                            ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
                            ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + " *";
-                           if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                           if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                           {
                               ParamTypeInclude =
                                   SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                           }
                         }
                      }
-                     else if(auto RT = dyn_cast<ReferenceType>(argType))
+                     else if(const auto RT = dyn_cast<ReferenceType>(argType))
                      {
-                        auto paramTypeRemTD = RemoveTypedef(RT->getPointeeType());
+                        const auto paramTypeRemTD = RemoveTypedef(RT->getPointeeType());
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " &";
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + " &";
-                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                        if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                        {
                            ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                        }
                      }
                      else
                      {
-                        auto paramTypeRemTD = RemoveTypedef(argType);
+                        const auto paramTypeRemTD = RemoveTypedef(argType);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                        if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                        {
                            ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                     }
-                     interfaceType = "ptrdefault";
-                     if(UDIT_p)
-                     {
-                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" &&
-                           UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" &&
-                           UserDefinedInterfaceType != "ovalid" && UserDefinedInterfaceType != "acknowledge" &&
-                           UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType != "bus" &&
-                           UserDefinedInterfaceType != "m_axi" && UserDefinedInterfaceType != "axis")
-                        {
-                           DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                                      "#pragma HLS_interface non-consistent with parameter of pointer "
-                                                      "type, where user defined interface is: %0"))
-                               .AddString(UserDefinedInterfaceType);
                         }
-                        else
+                     }
+                     interface = "ptrdefault";
+                     if(attr_val.find("interface_type") != attr_val.end())
+                     {
+                        interface = attr_val.at("interface_type");
+                        if(interface != "ptrdefault" && interface != "none" && interface != "none_registered" &&
+                           interface != "handshake" && interface != "valid" && interface != "ovalid" &&
+                           interface != "acknowledge" && interface != "fifo" && interface != "bus" &&
+                           interface != "m_axi" && interface != "axis")
                         {
-                           interfaceType = UserDefinedInterfaceType;
+                           print_error("#pragma HLS_interface non-consistent with parameter of pointer "
+                                       "type, where user defined interface is: " +
+                                       interface);
                         }
                      }
                   }
                   else
                   {
-                     auto paramTypeRemTD = RemoveTypedef(argType);
+                     const auto paramTypeRemTD = RemoveTypedef(argType);
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
                      ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                     if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                     if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                     {
                         ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                     }
                      if(!argType->isBuiltinType() && !argType->isEnumeralType())
                      {
-                        interfaceType = "none";
+                        interface = "none";
                      }
-                     if(UDIT_p)
+                     if(attr_val.find("interface_type") != attr_val.end())
                      {
-                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" &&
-                           UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" &&
-                           UserDefinedInterfaceType != "ovalid" && UserDefinedInterfaceType != "acknowledge")
+                        interface = attr_val.at("interface_type");
+                        if(interface != "default" && interface != "none" && interface != "none_registered" &&
+                           interface != "handshake" && interface != "valid" && interface != "ovalid" &&
+                           interface != "acknowledge")
                         {
-                           DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                                      "#pragma HLS_interface non-consistent with parameter of builtin "
-                                                      "type, where user defined interface is: %0"))
-                               .AddString(UserDefinedInterfaceType);
+                           print_error("#pragma HLS_interface non-consistent with parameter of builtin "
+                                       "type, where user defined interface is: " +
+                                       interface);
                         }
-                        else
+                        if((argType->isBuiltinType() || argType->isEnumeralType()) && interface == "none")
                         {
-                           interfaceType = UserDefinedInterfaceType;
-                        }
-                        if((argType->isBuiltinType() || argType->isEnumeralType()) && interfaceType == "none")
-                        {
-                           interfaceType = "default";
+                           interface = "default";
                         }
                      }
                   }
-                  HLS_interfaceMap[funName].push_back(interfaceType);
-                  Fun2Params[funName].push_back(parName);
-                  Fun2ParamType[funName].push_back(ParamTypeName);
-                  Fun2ParamTypeOrig[funName].push_back(ParamTypeNameOrig);
-                  if(interfaceType == "array")
-                     Fun2ParamSize[funName][parName] = arraySize;
-                  if(interfaceType == "m_axi" && UDIT_attribute2_p)
-                     Fun2ParamAttribute2[funName][parName] = attribute2;
-                  if((interfaceType == "m_axi" || interfaceType == "array") && UDIT_attribute3_p)
-                     Fun2ParamAttribute3[funName][parName] = attribute3;
-                  Fun2ParamInclude[funName].push_back(ParamTypeInclude);
+                  Fun2Params[fname].push_back(pname);
+                  attr_val["interface_type"] = interface;
+                  attr_val["interface_typename"] = ParamTypeName;
+                  attr_val["interface_typename_orig"] = ParamTypeNameOrig;
+                  attr_val["interface_typename_include"] = ParamTypeInclude;
+                  // llvm::errs() << "      interface_type = " << interface << "\n";
+                  // llvm::errs() << "      interface_typename = " << ParamTypeName << "\n";
+                  // llvm::errs() << "      interface_typename_orig = " << ParamTypeNameOrig << "\n";
+                  // llvm::errs() << "      interface_typename_include = " << ParamTypeInclude << "\n";
                }
                ++par_index;
-            }
-
-            if(HLS_pipeline_PragmaMap.find(filename) != HLS_pipeline_PragmaMap.end())
-            {
-               SourceLocation prev;
-               if(prevLoc.find(filename) != prevLoc.end())
-               {
-                  prev = prevLoc.find(filename)->second;
-               }
-               for(auto& loc : HLS_pipeline_PragmaMap.find(filename)->second)
-               {
-                  if((prev.isInvalid() || prev < loc) && (loc < locEnd))
-                  {
-                     HLS_pipelineSet.insert(funName);
-                  }
-               }
-               if(HLS_simple_pipeline_PragmaMap.find(filename) != HLS_simple_pipeline_PragmaMap.end())
-               {
-                  if(prevLoc.find(filename) != prevLoc.end())
-                  {
-                     prev = prevLoc.find(filename)->second;
-                  }
-                  for(auto& loc : HLS_simple_pipeline_PragmaMap.find(filename)->second)
-                  {
-                     if((prev.isInvalid() || prev < loc) && (loc < locEnd))
-                     {
-                        HLS_simple_pipelineSet.insert(funName);
-                     }
-                  }
-               }
-               else if(HLS_stallable_pipeline_PragmaMap.find(filename) != HLS_stallable_pipeline_PragmaMap.end())
-               {
-                  if(prevLoc.find(filename) != prevLoc.end())
-                  {
-                     prev = prevLoc.find(filename)->second;
-                  }
-                  for(auto& loc_pair : HLS_stallable_pipeline_PragmaMap.find(filename)->second)
-                  {
-                     if((prev.isInvalid() || prev < loc_pair.first) && (loc_pair.first < locEnd))
-                     {
-                        HLS_stallable_pipelineMap[funName] = loc_pair.second;
-                     }
-                  }
-               }
-               else
-               {
-                  DiagnosticsEngine& D = CI.getDiagnostics();
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "Pipeline parser has an error"));
-               }
             }
          }
       }
@@ -674,26 +544,26 @@ namespace clang
 
       bool HandleTopLevelDecl(DeclGroupRef DG) override
       {
-         for(auto D : DG)
+         for(const auto& D : DG)
          {
             if(const auto* FD = dyn_cast<FunctionDecl>(D))
             {
                AnalyzeFunctionDecl(FD);
-               auto endLoc = FD->getSourceRange().getEnd();
-               auto& SM = FD->getASTContext().getSourceManager();
-               auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
+               const auto endLoc = FD->getSourceRange().getEnd();
+               const auto& SM = FD->getASTContext().getSourceManager();
+               const auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
                prevLoc[filename] = endLoc;
             }
             else if(const auto* LSD = dyn_cast<LinkageSpecDecl>(D))
             {
-               for(auto d : LSD->decls())
+               for(const auto& d : LSD->decls())
                {
-                  if(const FunctionDecl* fd = dyn_cast<FunctionDecl>(d))
+                  if(const auto* fd = dyn_cast<FunctionDecl>(d))
                   {
                      AnalyzeFunctionDecl(fd);
-                     auto endLoc = fd->getSourceRange().getEnd();
-                     auto& SM = fd->getASTContext().getSourceManager();
-                     auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
+                     const auto endLoc = fd->getSourceRange().getEnd();
+                     const auto& SM = fd->getASTContext().getSourceManager();
+                     const auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
                      prevLoc[filename] = endLoc;
                   }
                }
@@ -704,10 +574,10 @@ namespace clang
 
       void HandleTranslationUnit(ASTContext&) override
       {
-         auto baseFilename = create_file_basename_string(outdir_name, InFile);
-         std::string interface_fun2parms_filename = baseFilename + ".params.txt";
-         std::string interface_XML_filename = baseFilename + ".interface.xml";
-         std::string pipeline_XML_filename = baseFilename + ".pipeline.xml";
+         const auto baseFilename = create_file_basename_string(outdir_name, InFile);
+         const auto interface_fun2parms_filename = baseFilename + ".params.txt";
+         const auto interface_XML_filename = baseFilename + ".interface.xml";
+         const auto pipeline_XML_filename = baseFilename + ".pipeline.xml";
          writeFun2Params(interface_fun2parms_filename);
          writeXML_interfaceFile(interface_XML_filename, topfname);
          writeXML_pipelineFile(pipeline_XML_filename, topfname);
@@ -731,136 +601,112 @@ namespace clang
                         Token& PragmaTok) override
       {
          Token Tok{};
-         unsigned int index = 0;
-         std::string par;
+         const auto print_error = [&](const std::string& msg) {
+            auto& D = PP.getDiagnostics();
+            D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface %0"))
+                .AddString(msg);
+         };
+         std::string pname;
          std::string interface;
-         std::string ArraySize;
-         std::string Attribute2;
-         std::string Attribute3;
-         bool bundle_p = false;
-         bool equal_p = false;
-         auto loc = PragmaTok.getLocation();
-         while(Tok.isNot(tok::eod))
-         {
+         const auto loc = PragmaTok.getLocation();
+         const auto filename = PP.getSourceManager().getPresumedLoc(loc, false).getFilename();
+         const auto end_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::eod))
             {
-               if(index == 0)
-               {
-                  par = PP.getSpelling(Tok);
-               }
-               else if(index >= 1)
-               {
-                  auto tokString = PP.getSpelling(Tok);
-                  if(index == 1)
-                  {
-                     if(tokString != "none" && tokString != "none_registered" && tokString != "array" &&
-                        tokString != "bus" && tokString != "fifo" && tokString != "handshake" && tokString != "valid" &&
-                        tokString != "ovalid" && tokString != "acknowledge" && tokString != "m_axi" &&
-                        tokString != "axis")
-                     {
-                        DiagnosticsEngine& D = PP.getDiagnostics();
-                        unsigned ID = D.getCustomDiagID(
-                            DiagnosticsEngine::Error,
-                            "#pragma HLS_interface unexpected interface type. Currently accepted keywords are: "
-                            "none,none_registered,array,bus,fifo,handshake,valid,ovalid,acknowledge");
-                        D.Report(PragmaTok.getLocation(), ID);
-                     }
-                     interface += tokString;
-                  }
-                  else if(index == 2)
-                  {
-                     if((Tok.isNot(tok::numeric_constant) && interface == "array") ||
-                        ((tokString != "direct" && tokString != "axi_slave" && tokString != "bundle") &&
-                         interface == "m_axi") ||
-                        (interface != "array" && interface != "m_axi"))
-                     {
-                        DiagnosticsEngine& D = PP.getDiagnostics();
-                        unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed1");
-                        D.Report(PragmaTok.getLocation(), ID);
-                     }
-                     if(interface == "array")
-                        ArraySize = tokString;
-                     else if(interface == "m_axi" && tokString == "bundle")
-                     {
-                        bundle_p = true;
-                     }
-                     else if(interface == "m_axi")
-                        Attribute2 = tokString;
-                  }
-                  else if(index == 3)
-                  {
-                     if(interface == "m_axi" && tokString == "=" && bundle_p)
-                        equal_p = true;
-                     else if((interface == "m_axi" || interface == "array") && tokString == "bundle")
-                     {
-                        bundle_p = true;
-                     }
-                     else
-                     {
-                        DiagnosticsEngine& D = PP.getDiagnostics();
-                        unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed2");
-                        D.Report(PragmaTok.getLocation(), ID);
-                     }
-                  }
-                  else if(index == 4)
-                  {
-                     if((interface == "m_axi" || interface == "array") && bundle_p && equal_p)
-                        Attribute3 = tokString;
-                     else if((interface == "m_axi" || interface == "array") && tokString == "=" && bundle_p)
-                        equal_p = true;
-                     else
-                     {
-                        DiagnosticsEngine& D = PP.getDiagnostics();
-                        unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed2");
-                        D.Report(PragmaTok.getLocation(), ID);
-                     }
-                  }
-                  else if(index == 5)
-                  {
-                     if((interface == "m_axi" || interface == "array") && bundle_p && equal_p)
-                        Attribute3 = tokString;
-                     else
-                     {
-                        DiagnosticsEngine& D = PP.getDiagnostics();
-                        unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed2");
-                        D.Report(PragmaTok.getLocation(), ID);
-                     }
-                  }
-               }
-               ++index;
+               print_error("malformed");
             }
-         }
-         if(index >= 2)
+         };
+         const auto bundle_parse = [&]() {
+            PP.Lex(Tok);
+            if(Tok.is(tok::equal))
+            {
+               PP.Lex(Tok);
+            }
+            if(Tok.is(tok::eod))
+            {
+               print_error("malformed bundle");
+            }
+            const auto bundle = PP.getSpelling(Tok);
+            file_loc_arg_attr[filename][loc][pname]["attribute3"] = bundle;
+            // llvm::errs() << " bundle=" << bundle;
+         };
+         const auto array_parse = [&]() {
+            PP.Lex(Tok);
+            if(Tok.isNot(tok::numeric_constant))
+            {
+               print_error("array malformed");
+            }
+            const auto asize = PP.getSpelling(Tok);
+            file_loc_arg_attr[filename][loc][pname]["size"] = asize;
+            // llvm::errs() << " " << asize;
+
+            PP.Lex(Tok);
+            if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "bundle")
+            {
+               bundle_parse();
+               end_parse();
+            }
+            else if(Tok.isNot(tok::eod))
+            {
+               print_error("array malformed");
+            }
+         };
+         const auto axi_parse = [&]() {
+            PP.Lex(Tok);
+            if(Tok.isNot(tok::identifier))
+            {
+               print_error("axi malformed");
+            }
+            const auto tmp = PP.getSpelling(Tok);
+            if(tmp == "direct" || tmp == "axi_slave")
+            {
+               file_loc_arg_attr[filename][loc][pname]["attribute2"] = tmp;
+            }
+            else if(tmp == "bundle")
+            {
+               bundle_parse();
+            }
+            else
+            {
+               print_error("axi malformed");
+            }
+            end_parse();
+         };
+         const std::map<std::string, std::function<void()>> interface_parser = {
+             {"none", end_parse},      {"none_registered", end_parse},
+             {"bus", end_parse},       {"fifo", end_parse},
+             {"handshake", end_parse}, {"valid", end_parse},
+             {"ovalid", end_parse},    {"acknowledge", end_parse},
+             {"array", array_parse},   {"m_axi", axi_parse},
+             {"axis", end_parse}};
+
+         // llvm::errs() << "HLS_interface";
+         PP.Lex(Tok);
+         if(Tok.isNot(tok::identifier))
          {
-            auto& SM = PP.getSourceManager();
-            auto filename = SM.getPresumedLoc(loc, false).getFilename();
-            if(ArraySize != "" && ArraySize != "0" && interface != "array" && interface != "m_axi")
-            {
-               DiagnosticsEngine& D = PP.getDiagnostics();
-               unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed");
-               D.Report(PragmaTok.getLocation(), ID);
-            }
-            HLS_interface_PragmaMap[filename][loc] = std::make_pair(par, interface);
-            if(interface == "array")
-            {
-               HLS_interface_PragmaMapArraySize[filename][loc] = std::make_pair(par, ArraySize);
-            }
-            if(interface == "m_axi" && Attribute2 != "")
-            {
-               HLS_interface_PragmaMapAttribute2[filename][loc] = std::make_pair(par, Attribute2);
-            }
-            if((interface == "m_axi" || interface == "array") && Attribute3 != "")
-            {
-               HLS_interface_PragmaMapAttribute3[filename][loc] = std::make_pair(par, Attribute3);
-            }
+            print_error("malformed");
+         }
+         pname = PP.getSpelling(Tok);
+         // llvm::errs() << " " << pname;
+         PP.Lex(Tok);
+         if(Tok.isNot(tok::identifier))
+         {
+            print_error("missing interface type");
+         }
+         interface = PP.getSpelling(Tok);
+         // llvm::errs() << " " << interface;
+         const auto parser = interface_parser.find(interface);
+         if(parser != interface_parser.end())
+         {
+            file_loc_arg_attr[filename][loc][pname]["interface_type"] = interface;
+            parser->second();
          }
          else
          {
-            DiagnosticsEngine& D = PP.getDiagnostics();
-            unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed");
-            D.Report(PragmaTok.getLocation(), ID);
+            print_error("interface type not supported");
          }
+         // llvm::errs() << "\n";
       }
    };
 
@@ -891,12 +737,13 @@ namespace clang
             if(Tok.isNot(tok::eod))
             {
                DiagnosticsEngine& D = PP.getDiagnostics();
-               unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
+               unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_simple_pipeline malformed");
                D.Report(PragmaTok.getLocation(), ID);
             }
          }
-         HLS_pipeline_PragmaMap[filename].push_back(loc);
-         HLS_simple_pipeline_PragmaMap[filename].push_back(loc);
+         file_loc_attr[filename][loc]["is_pipelined"] = "yes";
+         file_loc_attr[filename][loc]["is_simple"] = "yes";
+         file_loc_attr[filename][loc]["initiation_time"] = "1";
       }
    };
 
@@ -948,8 +795,9 @@ namespace clang
                ++index;
             }
          }
-         HLS_pipeline_PragmaMap[filename].push_back(loc);
-         HLS_stallable_pipeline_PragmaMap[filename][loc] = time;
+         file_loc_attr[filename][loc]["is_pipelined"] = "yes";
+         file_loc_attr[filename][loc]["is_simple"] = "no";
+         file_loc_attr[filename][loc]["initiation_time"] = time;
       }
    };
 
