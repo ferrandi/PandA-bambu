@@ -425,7 +425,7 @@ soft_float_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FUNCTION_INTERFACE_INFER, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

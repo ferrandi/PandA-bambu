@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2019-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,47 +31,20 @@
  *
  */
 /**
- * @file parm2ssa.hpp
- * @brief Pre-analysis step computing the relation between parm_decl and the associated ssa_name.
+ * @file InterfaceInfer.hpp
+ * @brief Restructure the top level function to adhere the specified interface.
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-#ifndef PARM2SSA_HPP
-#define PARM2SSA_HPP
+#ifndef INTERFACE_INFER_HPP
+#define INTERFACE_INFER_HPP
 
-#include "function_frontend_flow_step.hpp"
+#include "application_frontend_flow_step.hpp"
 
-/// STL include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-/// Utility include
-#include "refcount.hpp"
-
-/**
- * @name forward declarations
- */
-//@{
-REF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_node);
-//@}
-
-/**
- * Pre-analysis step. computing the relation between parm_decl and the associated ssa_name.
- */
-class parm2ssa : public FunctionFrontendFlowStep
+class InterfaceInfer : public ApplicationFrontendFlowStep
 {
- protected:
-   /**
-    * Recursive tree node analysis
-    */
-   void recursive_analysis(const tree_nodeRef& tn, const std::string& srcp,
-                           CustomUnorderedSet<unsigned int>& already_visited_ae);
-
+ private:
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
@@ -81,23 +54,24 @@ class parm2ssa : public FunctionFrontendFlowStep
 
  public:
    /**
-    * Constructor.
+    * Constructor
     * @param AppM is the application manager
     * @param design_flow_manager is the design flow manager
-    * @param parameters is the set of input parameters
+    * @param _Param is the set of the parameters
     */
-   parm2ssa(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id,
-            const DesignFlowManagerConstRef design_flow_manager);
+   InterfaceInfer(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager,
+                  const ParameterConstRef parameters);
 
    /**
     * Destructor
     */
-   ~parm2ssa() override;
+   ~InterfaceInfer() override;
 
    /**
-    * Computes the relation between parameters and their SSA obj
+    * Execute this step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status Exec() override;
 };
+
 #endif

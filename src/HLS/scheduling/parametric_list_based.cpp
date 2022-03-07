@@ -733,7 +733,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    CustomUnorderedSet<vertex> RW_stmts;
    if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
    {
-      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_loads.find(fname)->second)
+      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_loads.at(fname))
       {
          for(const auto& arg2stms : bb2arg2stmtsR.second)
          {
@@ -744,7 +744,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
                                    flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
                                "unexpected condition: STMT=" + STR(stmt));
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
                }
             }
          }
@@ -752,7 +752,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    }
    if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
    {
-      for(const auto& bb2arg2stmtsW : HLSMgr->design_interface_stores.find(fname)->second)
+      for(const auto& bb2arg2stmtsW : HLSMgr->design_interface_stores.at(fname))
       {
          for(const auto& arg2stms : bb2arg2stmtsW.second)
          {
@@ -763,7 +763,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
                                    flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
                                "unexpected condition");
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
                }
             }
          }
