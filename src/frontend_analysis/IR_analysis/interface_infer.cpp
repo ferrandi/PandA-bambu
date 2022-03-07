@@ -245,17 +245,9 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, co
          }
          else if(GET_CONST_NODE(ga->op1)->get_kind() == mem_ref_K)
          {
-            if(ga->vdef)
-            {
-               unkwown_pattern = true;
-               THROW_WARNING("Pattern currently not supported: use of a volatile load " + use_stmt->ToString());
-            }
-            else
-            {
-               isRead = true;
-               readType = GetPointerS<const mem_ref>(GET_CONST_NODE(ga->op1))->type;
-               readStmt.push_back(par_use.first);
-            }
+            isRead = true;
+            readType = GetPointerS<const mem_ref>(GET_CONST_NODE(ga->op1))->type;
+            readStmt.push_back(par_use.first);
          }
          else if(GET_CONST_NODE(ga->op1)->get_kind() == call_expr_K)
          {
@@ -429,6 +421,49 @@ void interface_infer::classifyArg(statement_list* sl, tree_nodeRef argSSANode, b
    classifyArgRecurse(Visited, argSSA, sl, isRead, isWrite, unkwown_pattern, writeStmt, readStmt);
 }
 
+void interface_infer::FixReadWriteCall(const gimple_assign* ga, gimple_node* newGN, const tree_manipulationRef tree_man,
+                                       tree_nodeRef new_call, statement_list* sl, const tree_managerRef TM,
+                                       tree_nodeRef origStmt, unsigned int destBB, const std::string& fname,
+                                       const std::string& argName_string)
+{
+   newGN->memdef = ga->memdef;
+   newGN->memuse = ga->memuse;
+   if(ga->vdef)
+   {
+      auto ssaVDefVar = GetPointer<ssa_name>(GET_NODE(ga->vdef));
+      THROW_ASSERT(ssaVDefVar, "unexpected condition");
+      auto newSSAVdef =
+          tree_man->create_ssa_name(ssaVDefVar->var, ssaVDefVar->type, tree_nodeRef(), tree_nodeRef(), false, true);
+      newGN->vdef = newSSAVdef;
+      GetPointerS<ssa_name>(GET_NODE(newGN->vdef))->SetDefStmt(new_call);
+      const auto StmtVdefUses = ssaVDefVar->CGetUseStmts();
+      for(const auto& used : StmtVdefUses)
+      {
+         TM->ReplaceTreeNode(used.first, ga->vdef, newSSAVdef);
+      }
+   }
+   const auto StmtVusesUses = ga->vuses;
+   for(const auto& vUse : StmtVusesUses)
+   {
+      auto sn = GetPointer<ssa_name>(GET_NODE(vUse));
+      if(newGN->AddVuse(vUse))
+      {
+         sn->AddUseStmt(new_call);
+      }
+   }
+   for(const auto& vOver : ga->vovers)
+   {
+      auto sn = GetPointer<ssa_name>(GET_NODE(vOver));
+      if(newGN->AddVover(vOver))
+      {
+         sn->AddUseStmt(new_call);
+      }
+   }
+   sl->list_of_bloc[destBB]->RemoveStmt(origStmt, AppM);
+   GetPointer<HLS_manager>(AppM)->design_interface_loads[fname][destBB][argName_string].push_back(
+       GET_INDEX_NODE(new_call));
+}
+
 void interface_infer::create_Read_function(tree_nodeRef origStmt, const std::string& argName_string,
                                            const std::string& fdName, tree_nodeRef aType, tree_nodeRef readType,
                                            const tree_manipulationRef tree_man, const tree_managerRef TM,
@@ -489,9 +524,11 @@ void interface_infer::create_Read_function(tree_nodeRef origStmt, const std::str
    args.push_back(mr->op0);
 
    auto call_expr_node = tree_man->CreateCallExpr(function_decl_node, args, srcp);
-   auto new_assignment = tree_man->CreateGimpleAssign(readType, tree_nodeRef(), tree_nodeRef(), call_expr_node,
-                                                      GET_INDEX_NODE(ga->scpe), destBB, srcp); /// TO BE IMPROVED
-   auto newGN = GetPointer<gimple_assign>(GET_NODE(new_assignment));
+   auto new_call = tree_man->CreateGimpleAssign(readType, tree_nodeRef(), tree_nodeRef(), call_expr_node,
+                                                GET_INDEX_NODE(ga->scpe), destBB, srcp);
+   sl->list_of_bloc[destBB]->PushBefore(new_call, origStmt, AppM);
+
+   auto newGN = GetPointer<gimple_assign>(GET_NODE(new_call));
    tree_nodeRef temp_ssa_var = newGN->op0;
    auto ssaDefVar = GetPointer<ssa_name>(GET_NODE(ga->op0));
    THROW_ASSERT(ssaDefVar, "unexpected condition");
@@ -500,17 +537,9 @@ void interface_infer::create_Read_function(tree_nodeRef origStmt, const std::str
    {
       TM->ReplaceTreeNode(used.first, ga->op0, temp_ssa_var);
    }
-   THROW_ASSERT(!ga->memdef, "unexpected case");
-   THROW_ASSERT(!ga->vdef, "unexpected case");
-   THROW_ASSERT(ga->vovers.empty(), "unexpected case");
-   newGN->memuse = ga->memuse;
-   newGN->vuses = ga->vuses;
-   sl->list_of_bloc[destBB]->PushBefore(new_assignment, origStmt, AppM);
-   sl->list_of_bloc[destBB]->RemoveStmt(origStmt, AppM);
-   GetPointer<HLS_manager>(AppM)->design_interface_loads[fname][destBB][argName_string].push_back(
-       GET_INDEX_NODE(new_assignment));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                  "---LOAD STMT: " + new_assignment->ToString() + " in function " + fname);
+
+   FixReadWriteCall(ga, newGN, tree_man, new_call, sl, TM, origStmt, destBB, fname, argName_string);
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---LOAD STMT: " + new_call->ToString() + " in function " + fname);
 }
 
 void interface_infer::create_Write_function(const std::string& argName_string, tree_nodeRef origStmt,
@@ -577,45 +606,13 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    auto mr = GetPointer<mem_ref>(GET_NODE(ga->op0));
    args.push_back(mr->op0);
 
-   auto new_writecall = tree_man->create_gimple_call(function_decl_node, args, GET_INDEX_NODE(ga->scpe), srcp, destBB);
-   sl->list_of_bloc[destBB]->PushBefore(new_writecall, origStmt, AppM);
-   auto newGN = GetPointer<gimple_node>(GET_NODE(new_writecall));
-   newGN->memdef = ga->memdef;
-   newGN->memuse = ga->memuse;
-   THROW_ASSERT(ga->vdef, "unexpected case");
-   auto ssaVDefVar = GetPointer<ssa_name>(GET_NODE(ga->vdef));
-   THROW_ASSERT(ssaVDefVar, "unexpected condition");
-   auto newSSAVdef =
-       tree_man->create_ssa_name(ssaVDefVar->var, ssaVDefVar->type, tree_nodeRef(), tree_nodeRef(), false, true);
-   newGN->vdef = newSSAVdef;
-   GetPointerS<ssa_name>(GET_NODE(newGN->vdef))->SetDefStmt(new_writecall);
-   const auto StmtVdefUses = ssaVDefVar->CGetUseStmts();
-   for(const auto& used : StmtVdefUses)
-   {
-      TM->ReplaceTreeNode(used.first, ga->vdef, newSSAVdef);
-   }
-   const auto StmtVusesUses = ga->vuses;
-   for(const auto& vUse : StmtVusesUses)
-   {
-      auto sn = GetPointer<ssa_name>(GET_NODE(vUse));
-      if(newGN->AddVuse(vUse))
-      {
-         sn->AddUseStmt(new_writecall);
-      }
-   }
-   for(const auto& vOver : ga->vovers)
-   {
-      auto sn = GetPointer<ssa_name>(GET_NODE(vOver));
-      if(newGN->AddVover(vOver))
-      {
-         sn->AddUseStmt(new_writecall);
-      }
-   }
-   sl->list_of_bloc[destBB]->RemoveStmt(origStmt, AppM);
-   GetPointer<HLS_manager>(AppM)->design_interface_stores[fname][destBB][argName_string].push_back(
-       GET_INDEX_NODE(new_writecall));
+   auto new_call = tree_man->create_gimple_call(function_decl_node, args, GET_INDEX_NODE(ga->scpe), srcp, destBB);
+   sl->list_of_bloc[destBB]->PushBefore(new_call, origStmt, AppM);
+
+   auto newGN = GetPointer<gimple_node>(GET_NODE(new_call));
+   FixReadWriteCall(ga, newGN, tree_man, new_call, sl, TM, origStmt, destBB, fname, argName_string);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                  "---STORE STMT: " + new_writecall->ToString() + " in function " + fname);
+                  "---STORE STMT: " + new_call->ToString() + " in function " + fname);
 }
 
 void interface_infer::create_resource_Read_simple(const std::set<std::string>& operations,
