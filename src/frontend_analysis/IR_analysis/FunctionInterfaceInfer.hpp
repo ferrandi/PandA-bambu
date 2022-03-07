@@ -54,6 +54,8 @@ struct statement_list;
 struct function_decl;
 struct parm_decl;
 struct ssa_name;
+struct gimple_assign;
+struct gimple_node;
 
 #include "custom_set.hpp"
 #include <list>
@@ -118,6 +120,10 @@ class FunctionInterfaceInfer : public FunctionFrontendFlowStep
 
    void ComputeResourcesAlignment(unsigned& n_resources, unsigned& alignment, unsigned int inputBitWidth,
                                   bool is_acType, bool is_signed, bool is_fixed);
+
+   void FixReadWriteCall(const gimple_assign* ga, gimple_node* newGN, const tree_manipulationRef tree_man,
+                         tree_nodeRef new_call, statement_list* sl, const tree_managerRef TM, tree_nodeRef origStmt,
+                         unsigned int destBB, const std::string& fname, const std::string& argName_string);
 
  public:
    /**
