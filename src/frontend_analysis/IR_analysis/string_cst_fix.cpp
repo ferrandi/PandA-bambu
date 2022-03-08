@@ -92,7 +92,7 @@ string_cst_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipT
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         // relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -113,18 +113,18 @@ string_cst_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipT
 
 DesignFlowStep_Status string_cst_fix::Exec()
 {
-   const CallGraphManagerConstRef CG = AppM->CGetCallGraphManager();
-   const tree_managerRef TM = AppM->get_tree_manager();
+   const auto CG = AppM->CGetCallGraphManager();
+   const auto TM = AppM->get_tree_manager();
    const auto reached_body_fun_ids = CG->GetReachedBodyFunctions();
 
-   for(auto function_id : reached_body_fun_ids)
+   for(const auto& function_id : reached_body_fun_ids)
    {
-      const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
-      auto* fd = GetPointer<function_decl>(curr_tn);
-      auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+      const auto curr_tn = TM->GetTreeNode(function_id);
+      const auto fd = GetPointerS<function_decl>(curr_tn);
+      const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
       const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
 
-      for(auto arg : fd->list_of_args)
+      for(auto& arg : fd->list_of_args)
       {
          recursive_analysis(arg, srcp_default);
       }
