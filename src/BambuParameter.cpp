@@ -332,7 +332,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
    PrintGeneralOptionsUsage(os);
    PrintOutputOptionsUsage(os);
    os << "    --pretty-print=<file>\n"
-      << "        C-based pretty print of the internal IRx\\n"
+      << "        C-based pretty print of the internal IRx\n"
       << "    --writer,-w<language>\n"
       << "        Output RTL language:\n"
       << "            V - Verilog (default)\n"
