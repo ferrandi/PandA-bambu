@@ -166,7 +166,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
-      case INTERFACE_INFER:
+      case FUNCTION_INTERFACE_INFER:
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
@@ -300,6 +300,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case(BAMBU_FRONTEND_FLOW):
       case BIT_VALUE_IPA:
+      case INTERFACE_INFER:
 #endif
 #if HAVE_HOST_PROFILING_BUILT
       case BASIC_BLOCKS_PROFILING:

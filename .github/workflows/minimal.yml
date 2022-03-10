@@ -693,7 +693,7 @@ jobs:
 
   CHStone-memarch:
     needs: [build, CHStone-multi]
-    runs-on: [self-hosted, lattice, mentor]
+    runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
     strategy:
       fail-fast: false
       matrix:

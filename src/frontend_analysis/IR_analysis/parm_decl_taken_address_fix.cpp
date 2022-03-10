@@ -133,9 +133,9 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
       auto par = TM->CGetTreeReindex(par_index);
       const auto* pd = GetPointer<const parm_decl>(GET_NODE(par));
       THROW_ASSERT(pd, "unexpected condition");
-      const tree_nodeRef p_type = pd->type;
+      const auto& p_type = pd->type;
       const std::string srcp = pd->include_name + ":" + STR(pd->line_number) + ":" + STR(pd->column_number);
-      const std::string original_param_name =
+      const auto original_param_name =
           pd->name ? GetPointer<const identifier_node>(GET_NODE(pd->name))->strg : STR(par_index);
       const std::string local_var_name = "bambu_artificial_local_parameter_copy_" + original_param_name;
       const auto local_var_identifier = IRman->create_identifier_node(local_var_name);

@@ -69,7 +69,7 @@ class parm2ssa : public FunctionFrontendFlowStep
    /**
     * Recursive tree node analysis
     */
-   void recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
+   void recursive_analysis(const tree_nodeRef& tn, const std::string& srcp,
                            CustomUnorderedSet<unsigned int>& already_visited_ae);
 
    /**

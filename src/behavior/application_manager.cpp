@@ -431,9 +431,9 @@ unsigned application_manager::getSSAFromParm(unsigned int functionID, unsigned p
    THROW_ASSERT(parm_index, "unexpected null parm_decl index");
    THROW_ASSERT(Parm2SSA_map.find(functionID) != Parm2SSA_map.end(),
                 "relation not computed for function id: " + STR(functionID));
-   THROW_ASSERT(Parm2SSA_map.find(functionID)->second.find(parm_index) != Parm2SSA_map.find(functionID)->second.end(),
+   THROW_ASSERT(Parm2SSA_map.at(functionID).find(parm_index) != Parm2SSA_map.at(functionID).end(),
                 "unexpected condition " + STR(functionID) + " " + STR(parm_index));
-   return Parm2SSA_map.find(functionID)->second.find(parm_index)->second;
+   return Parm2SSA_map.at(functionID).at(parm_index);
 }
 
 void application_manager::setSSAFromParm(unsigned int functionID, unsigned int parm_index, unsigned ssa_index)
