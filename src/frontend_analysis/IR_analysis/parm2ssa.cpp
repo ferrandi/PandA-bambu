@@ -348,7 +348,7 @@ void parm2ssa::recursive_analysis(const tree_nodeRef& tn, const std::string& src
       case constructor_K:
       {
          const auto co = GetPointerS<constructor>(curr_tn);
-         for(const auto idx_valu : co->list_of_idx_valu)
+         for(const auto& idx_valu : co->list_of_idx_valu)
          {
             recursive_analysis(idx_valu.second, srcp, already_visited_ae);
          }
