@@ -115,37 +115,33 @@ parm2ssa::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType re
 
 DesignFlowStep_Status parm2ssa::InternalExec()
 {
-   const tree_managerRef TM = AppM->get_tree_manager();
-   const tree_manipulationRef IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
+   const auto TM = AppM->get_tree_manager();
+   const tree_manipulationRef IRman(new tree_manipulation(TM, parameters, AppM));
    /// Already visited address expression (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited_ae;
 
    const auto beforeParm2SSA = AppM->getACopyParm2SSA(function_id);
    AppM->clearParm2SSA(function_id);
 
-   const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
-   auto* fd = GetPointer<function_decl>(curr_tn);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const auto curr_tn = TM->GetTreeNode(function_id);
+   const auto fd = GetPointer<function_decl>(curr_tn);
+   const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
    const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Analyzing function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
 
-   for(auto arg : fd->list_of_args)
+   for(const auto& arg : fd->list_of_args)
    {
       recursive_analysis(arg, srcp_default, already_visited_ae);
    }
 
-   std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
-   std::map<unsigned int, blocRef>::iterator it, it_end;
-
-   it_end = blocks.end();
-   for(it = blocks.begin(); it != it_end; ++it)
+   for(const auto& bb : sl->list_of_bloc)
    {
-      for(auto stmt : it->second->CGetStmtList())
+      for(const auto& stmt : bb.second->CGetStmtList())
       {
          recursive_analysis(stmt, srcp_default, already_visited_ae);
       }
-      for(auto phi : it->second->CGetPhiList())
+      for(const auto& phi : bb.second->CGetPhiList())
       {
          recursive_analysis(phi, srcp_default, already_visited_ae);
       }
@@ -156,8 +152,8 @@ DesignFlowStep_Status parm2ssa::InternalExec()
       {
          if(beforeParm2SSA.find(GET_INDEX_CONST_NODE(arg)) == beforeParm2SSA.end())
          {
-            const auto* pd = GetPointer<const parm_decl>(GET_NODE(arg));
-            tree_nodeRef ssa_par = IRman->create_ssa_name(arg, pd->type, tree_nodeRef(), tree_nodeRef());
+            const auto pd = GetPointer<const parm_decl>(GET_NODE(arg));
+            const auto ssa_par = IRman->create_ssa_name(arg, pd->type, tree_nodeRef(), tree_nodeRef());
             AppM->setSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg), GET_INDEX_CONST_NODE(ssa_par));
          }
          else
@@ -170,7 +166,7 @@ DesignFlowStep_Status parm2ssa::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "<--Analyzed function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
    const auto afterParm2SSA = AppM->getACopyParm2SSA(function_id);
-   auto modified = afterParm2SSA != beforeParm2SSA;
+   const auto modified = afterParm2SSA != beforeParm2SSA;
    if(modified)
    {
       function_behavior->UpdateBBVersion();
@@ -178,12 +174,12 @@ DesignFlowStep_Status parm2ssa::InternalExec()
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
+void parm2ssa::recursive_analysis(const tree_nodeRef& tn, const std::string& srcp,
                                   CustomUnorderedSet<unsigned int>& already_visited_ae)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
-   const tree_managerRef TM = AppM->get_tree_manager();
-   const tree_nodeRef curr_tn = GET_NODE(tn);
+   const auto TM = AppM->get_tree_manager();
+   const auto curr_tn = GET_NODE(tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " +
                       curr_tn->ToString());
@@ -192,8 +188,8 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         auto* ce = GetPointer<call_expr>(curr_tn);
-         for(auto& arg : ce->args)
+         const auto ce = GetPointerS<call_expr>(curr_tn);
+         for(const auto& arg : ce->args)
          {
             recursive_analysis(arg, srcp, already_visited_ae);
          }
@@ -201,8 +197,8 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case gimple_call_K:
       {
-         auto* ce = GetPointer<gimple_call>(curr_tn);
-         for(auto& arg : ce->args)
+         const auto ce = GetPointerS<gimple_call>(curr_tn);
+         for(const auto& arg : ce->args)
          {
             recursive_analysis(arg, srcp, already_visited_ae);
          }
@@ -210,7 +206,7 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case gimple_assign_K:
       {
-         auto* gm = GetPointer<gimple_assign>(curr_tn);
+         const auto gm = GetPointerS<gimple_assign>(curr_tn);
          if(!gm->clobber)
          {
             if(!gm->init_assignment)
@@ -236,10 +232,10 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case ssa_name_K:
       {
-         auto* sn = GetPointer<ssa_name>(curr_tn);
+         const auto sn = GetPointerS<ssa_name>(curr_tn);
          if(sn->var)
          {
-            auto defStmt = sn->CGetDefStmt();
+            const auto defStmt = sn->CGetDefStmt();
             if(GET_NODE(sn->var)->get_kind() == parm_decl_K && GET_NODE(defStmt)->get_kind() == gimple_nop_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -253,11 +249,11 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case tree_list_K:
       {
-         tree_nodeRef current = tn;
+         auto current = tn;
          while(current)
          {
-            recursive_analysis(GetPointer<tree_list>(GET_NODE(current))->valu, srcp, already_visited_ae);
-            current = GetPointer<tree_list>(GET_NODE(current))->chan;
+            recursive_analysis(GetPointerS<tree_list>(GET_NODE(current))->valu, srcp, already_visited_ae);
+            current = GetPointerS<tree_list>(GET_NODE(current))->chan;
          }
          break;
       }
@@ -271,20 +267,20 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
             }
             already_visited_ae.insert(GET_INDEX_NODE(tn));
          }
-         auto* ue = GetPointer<unary_expr>(curr_tn);
+         const auto ue = GetPointerS<unary_expr>(curr_tn);
          recursive_analysis(ue->op, srcp, already_visited_ae);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
-         auto* be = GetPointer<binary_expr>(curr_tn);
+         const auto be = GetPointerS<binary_expr>(curr_tn);
          recursive_analysis(be->op0, srcp, already_visited_ae);
          recursive_analysis(be->op1, srcp, already_visited_ae);
          break;
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         auto* te = GetPointer<ternary_expr>(curr_tn);
+         const auto te = GetPointerS<ternary_expr>(curr_tn);
          recursive_analysis(te->op0, srcp, already_visited_ae);
          if(te->op1)
          {
@@ -298,7 +294,7 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         auto* qe = GetPointer<quaternary_expr>(curr_tn);
+         const auto qe = GetPointerS<quaternary_expr>(curr_tn);
          recursive_analysis(qe->op0, srcp, already_visited_ae);
          if(qe->op1)
          {
@@ -316,7 +312,7 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case lut_expr_K:
       {
-         auto* le = GetPointer<lut_expr>(curr_tn);
+         const auto le = GetPointerS<lut_expr>(curr_tn);
          recursive_analysis(le->op0, srcp, already_visited_ae);
          recursive_analysis(le->op1, srcp, already_visited_ae);
          if(le->op2)
@@ -351,31 +347,29 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case constructor_K:
       {
-         auto* co = GetPointer<constructor>(curr_tn);
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>& list_of_idx_valu = co->list_of_idx_valu;
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::iterator it, it_end = list_of_idx_valu.end();
-         for(it = list_of_idx_valu.begin(); it != it_end; ++it)
+         const auto co = GetPointerS<constructor>(curr_tn);
+         for(const auto idx_valu : co->list_of_idx_valu)
          {
-            recursive_analysis(it->second, srcp, already_visited_ae);
+            recursive_analysis(idx_valu.second, srcp, already_visited_ae);
          }
          break;
       }
       case gimple_cond_K:
       {
-         auto* gc = GetPointer<gimple_cond>(curr_tn);
+         const auto gc = GetPointerS<gimple_cond>(curr_tn);
          recursive_analysis(gc->op0, srcp, already_visited_ae);
          break;
       }
       case gimple_switch_K:
       {
-         auto* se = GetPointer<gimple_switch>(curr_tn);
+         auto se = GetPointer<gimple_switch>(curr_tn);
          recursive_analysis(se->op0, srcp, already_visited_ae);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
-         for(auto cond : gmwi->list_of_cond)
+         const auto gmwi = GetPointerS<gimple_multi_way_if>(curr_tn);
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {
@@ -386,7 +380,7 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case gimple_return_K:
       {
-         auto* re = GetPointer<gimple_return>(curr_tn);
+         const auto re = GetPointerS<gimple_return>(curr_tn);
          if(re->op)
          {
             recursive_analysis(re->op, srcp, already_visited_ae);
@@ -395,7 +389,7 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case gimple_for_K:
       {
-         auto* fe = GetPointer<gimple_for>(curr_tn);
+         const auto fe = GetPointerS<gimple_for>(curr_tn);
          recursive_analysis(fe->op0, srcp, already_visited_ae);
          recursive_analysis(fe->op1, srcp, already_visited_ae);
          recursive_analysis(fe->op2, srcp, already_visited_ae);
@@ -403,14 +397,14 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case gimple_while_K:
       {
-         auto* we = GetPointer<gimple_while>(curr_tn);
+         const auto we = GetPointerS<gimple_while>(curr_tn);
          recursive_analysis(we->op0, srcp, already_visited_ae);
          break;
       }
       case gimple_phi_K:
       {
-         auto* gp = GetPointer<gimple_phi>(curr_tn);
-         for(auto def_edge_pair : gp->list_of_def_edge)
+         const auto gp = GetPointerS<gimple_phi>(curr_tn);
+         for(const auto& def_edge_pair : gp->list_of_def_edge)
          {
             recursive_analysis(def_edge_pair.first, srcp, already_visited_ae);
          }
@@ -423,7 +417,7 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case target_mem_ref_K:
       {
-         auto* tmr = GetPointer<target_mem_ref>(curr_tn);
+         const auto tmr = GetPointerS<target_mem_ref>(curr_tn);
          if(tmr->symbol)
          {
             recursive_analysis(tmr->symbol, srcp, already_visited_ae);
@@ -440,7 +434,7 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       }
       case target_mem_ref461_K:
       {
-         auto* tmr = GetPointer<target_mem_ref461>(curr_tn);
+         const auto tmr = GetPointerS<target_mem_ref461>(curr_tn);
          if(tmr->base)
          {
             recursive_analysis(tmr->base, srcp, already_visited_ae);
@@ -496,7 +490,7 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp,
       case tree_reindex_K:
       case target_expr_K:
       {
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(curr_tn->get_kind_text()));
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + curr_tn->get_kind_text());
          break;
       }
       default:
