@@ -2,12 +2,12 @@
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
 
-rm -rf search
-mkdir -p search
-cd search
-echo "#simulation of search function"
-bambu $root_dir/tree.c --top-fname=main --top-rtldesign-name=search \
-   -DNDEBUG -DBAMBU_PROFILING \
-   -O3 --experimental-setup=BAMBU \
-   --generate-tb=$root_dir/test_search.xml --simulator=ICARUS --simulate \
-   --print-dot -v2 "$@" |& tee log.txt
+rm -rf keccak_V7
+mkdir keccak_V7
+cd keccak_V7
+clang-6.0 -O3 -fno-slp-vectorize -fno-vectorize $root_dir/Keccak.c -emit-llvm -S -o test.ll
+bambu test.ll --top-fname=kekka_coproc \
+   --clock-period=2.5 --device-name=xc7vx690t-3ffg1930-VVD \
+   --generate-tb=$root_dir/test.xml --simulate \
+   --compiler=I386_CLANG6 --no-iob \
+   --print-dot --pretty-print=a.c -v4 "$@" |& tee log.txt
