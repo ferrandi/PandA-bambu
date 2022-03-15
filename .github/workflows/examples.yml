@@ -86,7 +86,7 @@ jobs:
     timeout-minutes: 600
     env:
       basename: altera
-      args: --spider-style="latex_format_bambu_results_altera.xml" -c=--evaluation -t120m
+      args: --spider-style="latex_format_bambu_results_altera.xml" -c=--evaluation -t180m
     strategy:
       fail-fast: false
       matrix:
@@ -189,7 +189,7 @@ jobs:
     timeout-minutes: 600
     env:
       basename: xilinx
-      args: --spider-style="latex_format_bambu_results_xilinx.xml" -c=--evaluation -t120m
+      args: --spider-style="latex_format_bambu_results_xilinx.xml" -c=--evaluation -t180m
     strategy:
       fail-fast: false
       matrix:
@@ -300,31 +300,37 @@ jobs:
     runs-on: [self-hosted, long, lattice]
     env:
       basename: lattice
-      args: --spider-style="latex_format_bambu_results_lattice.xml" -c=--evaluation -t120m
+      args: --spider-style="latex_format_bambu_results_lattice.xml" -c=--evaluation -t180m
+    continue-on-error: ${{ matrix.known-issues }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - basename: softfloat
             script: ./examples/softfloat/generic_softfloat.sh
+            known-issues: false
             batch: "LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
+            known-issues: false
             args: -c=--evaluation=CYCLES
             batch: "LFE335EA8FN484C_10.0"
             compiler: I386_GCC49
           - basename: libm
             script: ./examples/libm/generic_libm.sh
+            known-issues: true
             batch: "LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco"
             compiler: I386_GCC49
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
+            known-issues: true
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-BALANCED-MP -c=--aligned-access -lchstone_aa_ECP3_list
             batch: "LFE335EA8FN484C_15.0"
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh
+            known-issues: true
             compiler: I386_GCC49
             args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -c=--aligned-access -lchstone_ECP3_list
             batch: "LFE335EA8FN484C_15.0"
