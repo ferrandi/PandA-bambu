@@ -511,6 +511,7 @@ jobs:
             compiler: I386_GCC49
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
+            args: -c=--evaluation=CYCLES
             batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0"
             compiler: I386_GCC49
           - basename: libm
@@ -614,6 +615,7 @@ jobs:
             compiler: I386_GCC49
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
+            args: -c=--evaluation=CYCLES
             batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0"
             compiler: I386_GCC49
           - basename: libm
@@ -725,6 +727,7 @@ jobs:
             compiler: I386_GCC49
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
+            args: -c=--evaluation=CYCLES
             batch: "LFE335EA8FN484C_10.0"
             compiler: I386_GCC49
           - basename: libm
