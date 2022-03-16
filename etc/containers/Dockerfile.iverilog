@@ -1,8 +1,8 @@
-ARG IMAGE=ubuntu:xenial
+ARG BASE=ubuntu:xenial
 
 #---
 
-FROM $IMAGE AS base
+FROM $BASE AS base
 RUN apt-get update -qq \
    && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
       g++ gcc make \
