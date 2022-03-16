@@ -3296,9 +3296,9 @@ __float64 __float64_round_to_int_ieee(__float64 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float __addsubFloat(__float _a, __float _b, __flag sub, __bits8 __exp_bits, __bits8 __frac_bits,
-                                            __sbits32 __exp_bias, FLOAT_RND_TYPE __rnd, FLOAT_EXC_TYPE __exc,
-                                            __flag __one, __flag __subnorm, __sbits8 __sign)
+static __FORCE_INLINE __float __float_addsub(__float _a, __float _b, __flag sub, __bits8 __exp_bits,
+                                             __bits8 __frac_bits, __sbits32 __exp_bias, FLOAT_RND_TYPE __rnd,
+                                             FLOAT_EXC_TYPE __exc, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits64 a, b;
    __bits64 aSig, bSig, shift_0;
@@ -3419,6 +3419,10 @@ static __FORCE_INLINE __float __addsubFloat(__float _a, __float _b, __flag sub, 
    }
    RExp0 = RExp0 & ((1ULL << __exp_bits) - 1);
 
+   RSig1 = (RSig0 >> (__frac_shift + 1)) & ((1ULL << __frac_bits) - 1);
+
+   RExp0RSig1 = (RExp0 << __frac_bits) | RSig1;
+
    if(__rnd == FLOAT_RND_NEVN)
    {
       LSB_bit = SELECT_BIT(RSig0, 3);
@@ -3426,14 +3430,6 @@ static __FORCE_INLINE __float __addsubFloat(__float _a, __float _b, __flag sub, 
       Round_bit = SELECT_BIT(RSig0, 1);
       Sticky_bit = SELECT_BIT(RSig0, 0) | sb;
       round = Guard_bit & (LSB_bit | Round_bit | Sticky_bit);
-   }
-
-   RSig1 = (RSig0 >> (__frac_shift + 1)) & ((1ULL << __frac_bits) - 1);
-
-   RExp0RSig1 = (RExp0 << __frac_bits) | RSig1;
-
-   if(__rnd == FLOAT_RND_NEVN)
-   {
       Rrounded = RExp0RSig1 + round;
    }
    else
@@ -3483,7 +3479,7 @@ static __FORCE_INLINE __float __addsubFloat(__float _a, __float _b, __flag sub, 
 __float __float_add(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
                     FLOAT_RND_TYPE __rnd, FLOAT_EXC_TYPE __exc, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-   return __addsubFloat(a, b, 0, __exp_bits, __frac_bits, __exp_bias, __rnd, __exc, __one, __subnorm, __sign);
+   return __float_addsub(a, b, 0, __exp_bits, __frac_bits, __exp_bias, __rnd, __exc, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------
@@ -3495,7 +3491,7 @@ __float __float_add(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
 __float __float_sub(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
                     FLOAT_RND_TYPE __rnd, FLOAT_EXC_TYPE __exc, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
-   return __addsubFloat(a, b, 1, __exp_bits, __frac_bits, __exp_bias, __rnd, __exc, __one, __subnorm, __sign);
+   return __float_addsub(a, b, 1, __exp_bits, __frac_bits, __exp_bias, __rnd, __exc, __one, __subnorm, __sign);
 }
 
 /*----------------------------------------------------------------------------

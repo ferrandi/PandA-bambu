@@ -1,6 +1,6 @@
-ARG IMAGE=ubuntu:focal
+ARG BASE=ubuntu:focal
 
-FROM $IMAGE AS base
+FROM $BASE AS base
 
 RUN apt-get update -qq \
    && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
