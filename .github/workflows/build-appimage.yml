@@ -14,11 +14,11 @@ on:
       compilers:
         description: "Comma separated list of compilers to include"
         required: true
-        default: "gcc7,clang11"
+        default: "gcc-7,clang-12"
       build-compiler:
         description: "Compiler used to build bambu (if not already included in compilers)"
         required: false
-        default: "gcc8"
+        default: "gcc-8"
       configure:
         description: "Bambu configuration options"
         required: true
@@ -80,31 +80,31 @@ jobs:
           inflate() {
             echo "Installing $1"
             case $1 in
-              clang12 )
+              clang-12 )
                 wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
                 ;;
-              clang11 )
+              clang-11 )
                 wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
                 ;;
-              clang10 )
+              clang-10 )
                 wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
                 ;;
-              clang9 )
+              clang-9 )
                 wget https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/clang+llvm-9.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
                 ;;
-              clang8 )
+              clang-8 )
                 wget https://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
                 ;;
-              clang7 )
+              clang-7 )
                 wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
                 ;;
-              clang6 )
+              clang-6 )
                 wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
                 ;;
-              clang5 )
+              clang-5 )
                 wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
                 ;;
-              clang4 )
+              clang-4 )
                 wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
                 ;;
               gcc-4.5 )

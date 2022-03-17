@@ -173,8 +173,9 @@
 #include "hls_div_cg_ext.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
+#include "FunctionInterfaceInfer.hpp"
 #include "IR_lowering.hpp"
-#include "interface_infer.hpp"
+#include "InterfaceInfer.hpp"
 #endif
 #if HAVE_ZEBU_BUILT
 #include "instruction_sequences_computation.hpp"
@@ -444,7 +445,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
-      case INTERFACE_INFER:
+      case FUNCTION_INTERFACE_INFER:
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
@@ -582,6 +583,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #if HAVE_BAMBU_BUILT
       case BAMBU_FRONTEND_FLOW:
       case BIT_VALUE_IPA:
+      case INTERFACE_INFER:
 #endif
       case(COMPLETE_CALL_GRAPH):
 #if HAVE_TASTE
@@ -655,6 +657,10 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case BIT_VALUE_IPA:
       {
          return DesignFlowStepRef(new BitValueIPA(AppM, design_flow_manager.lock(), parameters));
+      }
+      case INTERFACE_INFER:
+      {
+         return DesignFlowStepRef(new InterfaceInfer(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
       case(COMPLETE_CALL_GRAPH):
@@ -845,7 +851,7 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
-      case INTERFACE_INFER:
+      case FUNCTION_INTERFACE_INFER:
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
@@ -1249,9 +1255,10 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(new HWCallInjection(parameters, AppM, function_id, design_flow_manager.lock()));
       }
-      case INTERFACE_INFER:
+      case FUNCTION_INTERFACE_INFER:
       {
-         return DesignFlowStepRef(new interface_infer(AppM, function_id, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(
+             new FunctionInterfaceInfer(AppM, function_id, design_flow_manager.lock(), parameters));
       }
       case IR_LOWERING:
       {
@@ -1585,6 +1592,7 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
 #if HAVE_BAMBU_BUILT
       case BAMBU_FRONTEND_FLOW:
       case BIT_VALUE_IPA:
+      case INTERFACE_INFER:
 #endif
       case(COMPLETE_CALL_GRAPH):
 #if HAVE_TASTE
