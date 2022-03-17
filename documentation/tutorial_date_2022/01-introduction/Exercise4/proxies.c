@@ -3,7 +3,8 @@ int __attribute__ ((noinline)) funcC(int a[2]){
 }
 
 int __attribute__ ((noinline)) funcB(int a[2]){
-    for(int i=0; i<2; i++)
+    int i;
+    for(i=0; i<2; i++)
         a[i] = a[i] + 1;
     return funcC(a);
 }
