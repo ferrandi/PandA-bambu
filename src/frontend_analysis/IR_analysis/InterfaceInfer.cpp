@@ -31,10 +31,11 @@
  *
  */
 /**
- * @file InterfaceInfer.hpp
- * @brief Restructure the top level function to adhere the specified interface.
+ * @file InterfaceInfer.cpp
+ * @brief Load parsed protocol interface attributes
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 #include "InterfaceInfer.hpp"
