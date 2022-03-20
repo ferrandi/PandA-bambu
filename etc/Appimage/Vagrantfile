@@ -28,7 +28,6 @@ Vagrant.configure(2) do |config|
      chmod +x AppRun-x86_64
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
-     git checkout panda-0.9.7-dev
      make -f Makefile.init
      mkdir build
      cd build 

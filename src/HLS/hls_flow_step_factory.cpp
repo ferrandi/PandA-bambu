@@ -225,7 +225,6 @@
 #endif
 
 /// HLS/scheduling include
-#include "fixed_scheduling.hpp"
 #if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
 #include "ilp_scheduling.hpp"
 #include "ilp_scheduling_new.hpp"
@@ -490,12 +489,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          break;
       }
 #endif
-      case HLSFlowStep_Type::FIXED_SCHEDULING:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new fixed_scheduling(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::FSL_INTERFACE_GENERATION:
       {
@@ -1027,7 +1020,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW:
          case HLSFlowStep_Type::EXPORT_PCORE:
 #endif
-         case HLSFlowStep_Type::FIXED_SCHEDULING:
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::FSL_INTERFACE_GENERATION:
 #endif

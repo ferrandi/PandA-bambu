@@ -835,7 +835,6 @@ lib_scheduling_la_CPPFLAGS += \
 endif
 noinst_HEADERS += \
    scheduling/ASLAP.hpp \
-   scheduling/fixed_scheduling.hpp \
    scheduling/parametric_list_based.hpp \
    scheduling/priority.hpp \
    scheduling/rehashed_heap.hpp \
@@ -843,7 +842,6 @@ noinst_HEADERS += \
    scheduling/scheduling.hpp
 lib_scheduling_la_SOURCES = \
    scheduling/ASLAP.cpp \
-   scheduling/fixed_scheduling.cpp \
    scheduling/parametric_list_based.cpp \
    scheduling/priority.cpp \
    scheduling/schedule.cpp \

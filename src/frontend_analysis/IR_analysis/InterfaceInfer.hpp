@@ -32,7 +32,7 @@
  */
 /**
  * @file InterfaceInfer.hpp
- * @brief Restructure the top level function to adhere the specified interface.
+ * @brief Load parsed protocol interface attributes
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
