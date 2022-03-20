@@ -206,8 +206,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::EXPORT_PCORE:
          return "ExportPcore";
 #endif
-      case HLSFlowStep_Type::FIXED_SCHEDULING:
-         return "FixedScheduling";
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::FSL_INTERFACE_GENERATION:
          return "FslInterfaceGeneration";

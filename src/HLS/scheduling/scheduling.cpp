@@ -65,7 +65,6 @@
 #include "meilp_solver.hpp"
 #include "silp_scheduling.hpp"
 #endif
-#include "fixed_scheduling.hpp"
 
 #include "polixml.hpp"
 
