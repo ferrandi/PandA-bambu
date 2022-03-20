@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,13 +51,17 @@ struct filter_clique
    {
    }
 
-   virtual bool select_candidate_to_remove(const CustomOrderedSet<C_vertex>& candidate_clique, C_vertex& v, const std::map<C_vertex, vertex_type>& converter, const cc_compatibility_graph& cg) const = 0;
+   virtual bool select_candidate_to_remove(const CustomOrderedSet<C_vertex>& candidate_clique, C_vertex& v,
+                                           const CustomUnorderedMap<C_vertex, vertex_type>& converter,
+                                           const cc_compatibility_graph& cg) const = 0;
 };
 
 template <typename vertex_type>
 struct no_filter_clique : public filter_clique<vertex_type>
 {
-   bool select_candidate_to_remove(const CustomOrderedSet<C_vertex>&, C_vertex&, const std::map<C_vertex, vertex_type>&, const cc_compatibility_graph&) const override
+   bool select_candidate_to_remove(const CustomOrderedSet<C_vertex>&, C_vertex&,
+                                   const CustomUnorderedMap<C_vertex, vertex_type>&,
+                                   const cc_compatibility_graph&) const override
    {
       return false;
    }

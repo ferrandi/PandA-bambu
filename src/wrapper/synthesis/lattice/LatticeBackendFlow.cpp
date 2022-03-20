@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,15 +44,11 @@
 /// Header include
 #include "LatticeBackendFlow.hpp"
 
-#include "config_HAVE_LATTICE.hpp"
-#include "config_LATTICE_SETTINGS.hpp"
-#if HAVE_LATTICE
-#include "config_LATTICE_PMI_DEF.hpp"
-#endif
 #include "LUT_model.hpp"
 #include "LatticeWrapper.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "target_device.hpp"
 #include "target_manager.hpp"
 #include "time_model.hpp"
@@ -72,19 +68,22 @@
 #define LATTICE_DSP "LATTICE_DSPS"
 #define LATTICE_MEM "LATTICE_MEM"
 
-LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
+LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
+                                       const target_managerRef _target)
+    : BackendFlow(_Param, _flow_name, _target)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Lattice Backend Flow ::.");
 
-   default_data["LatticeECP3"] =
-#include "LatticeECP3.data"
-       ;
+   default_data["LatticeECP3"] = "LatticeECP3.data";
+   default_data["LatticeECP5"] = "LatticeECP5.data";
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
-      std::string xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
+      auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
       if(!boost::filesystem::exists(xml_file_path))
+      {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
+      }
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Importing scripts from file: " + xml_file_path);
       parser = XMLDomParserRef(new XMLDomParser(xml_file_path));
    }
@@ -93,13 +92,22 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
       std::string device_string;
       target_deviceRef device = target->get_target_device();
       if(device->has_parameter("family"))
+      {
          device_string = device->get_parameter<std::string>("family");
+      }
       else
-         device_string = "LatticeECP3";
+      {
+         device_string = "LatticeECP5";
+      }
       if(default_data.find(device_string) == default_data.end())
+      {
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(device_string, default_data[device_string]));
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                     "Importing default scripts for target device family: " + device_string);
+      parser = XMLDomParserRef(
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/lattice/") +
+                           default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -123,7 +131,9 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
          {
             const auto* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC)
+            {
                continue;
+            }
 
             if(EnodeC->get_name() == "application")
             {
@@ -132,13 +142,17 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
                {
                   const auto* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS)
+                  {
                      continue;
+                  }
 
                   if(nodeS->get_name() == "section")
                   {
                      std::string stringID;
                      if(CE_XVM(stringID, nodeS))
+                     {
                         LOAD_XVM(stringID, nodeS);
+                     }
                      if(stringID == "LATTICE_SYNTHESIS_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
@@ -146,10 +160,14 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
                         {
                            const auto* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item")
+                           {
                               continue;
+                           }
 
                            if(CE_XVM(stringID, nodeIt))
+                           {
                               LOAD_XVM(stringID, nodeIt);
+                           }
 
                            std::string value;
                            if(CE_XVM(value, nodeIt))
@@ -189,7 +207,7 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
 void LatticeBackendFlow::CheckSynthesisResults()
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Analyzing Lattice synthesis results");
-   std::string report_filename = actual_parameters->parameter_values[PARAM_lattice_report];
+   std::string report_filename = GetPath(actual_parameters->parameter_values[PARAM_lattice_report]);
    xparse_utilization(report_filename);
 
    THROW_ASSERT(design_values.find(LATTICE_SLICE) != design_values.end(), "Missing logic elements");
@@ -205,21 +223,29 @@ void LatticeBackendFlow::CheckSynthesisResults()
    time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
    auto* lut_m = GetPointer<LUT_model>(time_m);
    if(design_values[LATTICE_DELAY] != 0.0)
+   {
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[LATTICE_DELAY]);
+   }
    else
+   {
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
+   }
 }
 
 void LatticeBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
-   std::string setupscr = STR(LATTICE_SETTINGS);
-   if(setupscr.size() and setupscr != "0")
+   auto setupscr = Param->isOption(OPT_lattice_settings) ? Param->getOption<std::string>(OPT_lattice_settings) : "";
+   if(setupscr.size() && setupscr != "0")
    {
       script << "#configuration" << std::endl;
       if(boost::algorithm::starts_with(setupscr, "export"))
+      {
          script << setupscr + " >& /dev/null; ";
+      }
       else
+      {
          script << ". " << setupscr << " >& /dev/null; ";
+      }
       script << std::endl << std::endl;
    }
 }
@@ -232,14 +258,24 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
    std::ofstream sdc_file(sdc_filename.c_str());
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
-      sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      if(boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) || (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1))
-         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+      sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock +
+                      " [get_ports " + clock + "]\n";
+      if((boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) ||
+          (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) &&
+         !Param->isOption(OPT_backend_sdc_extensions))
+      {
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] +
+                         " -from [all_inputs] -to [all_outputs]\n";
+      }
    }
    else
+   {
       sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+   }
    if(Param->isOption(OPT_backend_sdc_extensions))
+   {
       sdc_file << "source " + Param->getOption<std::string>(OPT_backend_sdc_extensions) + "\n";
+   }
 
    sdc_file.close();
    dp->parameter_values[PARAM_sdc_file] = sdc_filename;
@@ -249,9 +285,11 @@ void LatticeBackendFlow::InitDesignParameters()
 {
    const target_deviceRef device = target->get_target_device();
    actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
-   std::string device_family = device->get_parameter<std::string>("family");
+   auto device_family = device->get_parameter<std::string>("family");
    if(device_family.find('-') != std::string::npos)
+   {
       device_family = device_family.substr(0, device_family.find('-'));
+   }
    actual_parameters->parameter_values[PARAM_target_family] = device_family;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
@@ -260,7 +298,9 @@ void LatticeBackendFlow::InitDesignParameters()
    bool has_vhdl_library = Param->isOption(OPT_VHDL_library);
    std::string vhdl_library;
    if(has_vhdl_library)
+   {
       vhdl_library = Param->getOption<std::string>(OPT_VHDL_library);
+   }
    for(auto& v : file_list)
    {
       boost::filesystem::path file_path(v);
@@ -268,18 +308,27 @@ void LatticeBackendFlow::InitDesignParameters()
       if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
       {
          if(has_vhdl_library)
+         {
             sources_macro_list += "prj_src add -format VHDL -work " + vhdl_library + " " + v + "\n";
+         }
          else
+         {
             sources_macro_list += "prj_src add -format VHDL " + v + "\n";
+         }
       }
       else if(extension == "v" || extension == "V" || extension == "sv" || extension == "SV")
+      {
          sources_macro_list += "prj_src add -format VERILOG " + v + "\n";
+      }
       else
+      {
          THROW_ERROR("Extension not recognized! " + extension);
+      }
    }
-#if HAVE_LATTICE
-   sources_macro_list += "prj_src add -format VERILOG " + std::string(LATTICE_PMI_DEF) + "\n";
-#endif
+   if(Param->isOption(OPT_lattice_pmi_def))
+   {
+      sources_macro_list += "prj_src add -format VERILOG " + Param->getOption<std::string>(OPT_lattice_pmi_def) + "\n";
+   }
    actual_parameters->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
 
    create_sdc(actual_parameters);
@@ -292,9 +341,5 @@ void LatticeBackendFlow::InitDesignParameters()
 
 void LatticeBackendFlow::ExecuteSynthesis()
 {
-#if HAVE_LATTICE
    BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("Lattice tools not configured; Execution of the synthesis flow is not possible");
-#endif
 }

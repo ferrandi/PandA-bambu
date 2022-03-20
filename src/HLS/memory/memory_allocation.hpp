@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,7 +59,6 @@ enum class MemoryAllocation_Policy
    ALL_BRAM,           /// all objects that need to be stored in memory are allocated on BRAMs
    NO_BRAM,            /// all objects that need to be stored in memory are allocated on an external memory
    EXT_PIPELINED_BRAM, /// all objects that need to be stored in memory are allocated on an external pipelined memory
-   INTERN_UNALIGNED,   /// all objects with an unaligned access are clustered on a single STD_BRAM
    NONE                /// no policy
 };
 
@@ -71,8 +70,8 @@ enum class MemoryAllocation_ChannelsType
    MEM_ACC_11 = 0, /// for each memory at maximum one direct access and one indirect access
    MEM_ACC_N1,     /// for each memory at maximum n parallel direct accesses and one indirect access
    MEM_ACC_NN,     /// for each memory at maximum n parallel direct accesses and n parallel indirect accesses
-   MEM_ACC_P1N,    /// only external memory access Datapath see only 1 memory port, while the bus manage parallel accesses
-   MEM_ACC_CS      /// memory architecture for non blocking request
+   MEM_ACC_P1N, /// only external memory access Datapath see only 1 memory port, while the bus manage parallel accesses
+   MEM_ACC_CS   /// memory architecture for non blocking request
 };
 
 /**
@@ -92,7 +91,8 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
     * @param memory_allocation_policy is the memory allocation policy
     * @param memory_allocation_channels_type is the number of channels
     */
-   MemoryAllocationSpecialization(const MemoryAllocation_Policy memory_allocation_policy, const MemoryAllocation_ChannelsType memory_allocation_channels_type);
+   MemoryAllocationSpecialization(const MemoryAllocation_Policy memory_allocation_policy,
+                                  const MemoryAllocation_ChannelsType memory_allocation_channels_type);
 
    /**
     * Return the string representation of this
@@ -127,7 +127,7 @@ class memory_allocation : public HLS_step
    std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
    /**
-    * Prepares the datastructures for the memory allocation
+    * Prepares the data structures for the memory allocation
     */
    void setup_memory_allocation();
 
@@ -141,7 +141,8 @@ class memory_allocation : public HLS_step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Execute the step
@@ -155,8 +156,10 @@ class memory_allocation : public HLS_step
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the algorithm to be used
     */
-   memory_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
-                     const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+   memory_allocation(
+       const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+       const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**
     * Destructor

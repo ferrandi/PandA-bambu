@@ -478,7 +478,8 @@ namespace __AC_NAMESPACE
       class vcd_ac_int_trace : public sc_core::vcd_trace
       {
        public:
-         vcd_ac_int_trace(const ac_int<W, S>& object_, const std::string& name_, const std::string& vcd_name_) : vcd_trace(name_, vcd_name_), object(object_)
+         vcd_ac_int_trace(const ac_int<W, S>& object_, const std::string& name_, const std::string& vcd_name_)
+             : vcd_trace(name_, vcd_name_), object(object_)
          {
             vcd_var_typ_name = "wire"; // SystemC does not expose vcd_types[] in sc_vcd_trace.h
             bit_width = W;             // bit_width defined in base class 'vcd_trace'
@@ -491,7 +492,8 @@ namespace __AC_NAMESPACE
 #if !defined(NCSC)
             remove_vcd_name_problems(namecopy);
 #endif
-            std::sprintf(buf, "$var %s  % 3d  %s  %s [%d:0]  $end\n", vcd_var_typ_name, bit_width, vcd_name.c_str(), namecopy.c_str(), bit_width - 1);
+            std::sprintf(buf, "$var %s  % 3d  %s  %s [%d:0]  $end\n", vcd_var_typ_name, bit_width, vcd_name.c_str(),
+                         namecopy.c_str(), bit_width - 1);
             std::fputs(buf, f);
          }
 
@@ -559,7 +561,9 @@ namespace __AC_NAMESPACE
       class vcd_ac_fixed_trace : public sc_core::vcd_trace
       {
        public:
-         vcd_ac_fixed_trace(const ac_fixed<W, I, S, Q, O>& object_, const std::string& name_, const std::string& vcd_name_) : vcd_trace(name_, vcd_name_), object(object_)
+         vcd_ac_fixed_trace(const ac_fixed<W, I, S, Q, O>& object_, const std::string& name_,
+                            const std::string& vcd_name_)
+             : vcd_trace(name_, vcd_name_), object(object_)
          {
             vcd_var_typ_name = "wire"; // SystemC does not expose vcd_types[] in sc_vcd_trace.h
             bit_width = W;             // bit_width defined in base class 'vcd_trace'
@@ -572,7 +576,8 @@ namespace __AC_NAMESPACE
 #if !defined(NCSC)
             remove_vcd_name_problems(namecopy);
 #endif
-            std::sprintf(buf, "$var %s  % 3d  %s  %s [%d:0]  $end\n", vcd_var_typ_name, bit_width, vcd_name.c_str(), namecopy.c_str(), bit_width - 1);
+            std::sprintf(buf, "$var %s  % 3d  %s  %s [%d:0]  $end\n", vcd_var_typ_name, bit_width, vcd_name.c_str(),
+                         namecopy.c_str(), bit_width - 1);
             std::fputs(buf, f);
          }
 
@@ -581,7 +586,8 @@ namespace __AC_NAMESPACE
             // The function to_string(AC_BIN) returns a string with the zero-radix
             // prefix (i.e. "0b"). Strip that prefix off because compose_line will add
             // its own.
-            std::fprintf(f, "%s", compose_line(((ac_fixed<W, I, false>)object).to_string(AC_BIN, true).substr(3)).c_str());
+            std::fprintf(f, "%s",
+                         compose_line(((ac_fixed<W, I, false>)object).to_string(AC_BIN, true).substr(3)).c_str());
             old_value = object;
          }
 
@@ -621,7 +627,8 @@ namespace __AC_NAMESPACE
             //   "No traces can be added once simulation has started.\n"
             //        "To add traces, create a new vcd trace file.", false );
             //}
-            vcd_trace* t = (vcd_trace*)new vcd_ac_fixed_trace<W, I, S, Q, O>(a, name, ((vcd_trace_file*)tf)->obtain_name());
+            vcd_trace* t =
+                (vcd_trace*)new vcd_ac_fixed_trace<W, I, S, Q, O>(a, name, ((vcd_trace_file*)tf)->obtain_name());
             ((vcd_trace_file*)tf)->traces.push_back(t);
          }
       }
@@ -638,7 +645,8 @@ namespace __AC_NAMESPACE
       class vcd_ac_float_trace : public sc_core::vcd_trace
       {
        public:
-         vcd_ac_float_trace(const ac_float<W, I, E, Q>& object_, const std::string& name_, const std::string& vcd_name_) : vcd_trace(name_, vcd_name_), object(object_)
+         vcd_ac_float_trace(const ac_float<W, I, E, Q>& object_, const std::string& name_, const std::string& vcd_name_)
+             : vcd_trace(name_, vcd_name_), object(object_)
          {
             vcd_var_typ_name = "wire"; // SystemC does not expose vcd_types[] in sc_vcd_trace.h
             bit_width = W;             // bit_width defined in base class 'vcd_trace'
@@ -651,7 +659,8 @@ namespace __AC_NAMESPACE
 #if !defined(NCSC)
             remove_vcd_name_problems(namecopy);
 #endif
-            std::sprintf(buf, "$var %s  % 3d  %s  %s [%d:0]  $end\n", vcd_var_typ_name, bit_width, vcd_name.c_str(), namecopy.c_str(), bit_width - 1);
+            std::sprintf(buf, "$var %s  % 3d  %s  %s [%d:0]  $end\n", vcd_var_typ_name, bit_width, vcd_name.c_str(),
+                         namecopy.c_str(), bit_width - 1);
             std::fputs(buf, f);
          }
 
@@ -700,7 +709,8 @@ namespace __AC_NAMESPACE
             //   "No traces can be added once simulation has started.\n"
             //        "To add traces, create a new vcd trace file.", false );
             //}
-            vcd_trace* t = (vcd_trace*)new vcd_ac_float_trace<W, I, E, Q>(a, name, ((vcd_trace_file*)tf)->obtain_name());
+            vcd_trace* t =
+                (vcd_trace*)new vcd_ac_float_trace<W, I, E, Q>(a, name, ((vcd_trace_file*)tf)->obtain_name());
             ((vcd_trace_file*)tf)->traces.push_back(t);
          }
       }

@@ -1,0 +1,69 @@
+ARG BASE=ubuntu:focal
+
+FROM $BASE AS base
+
+RUN apt-get update -qq \
+   && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
+      binutils curl graphviz libffi-dev libgomp1 libpython3.8 libreadline-dev \
+      libtcl8.6 python3 qt5-default qt5-image-formats-plugins \
+      tcl-dev tcl-tclreadline tzdata xdot \
+   && apt-get autoclean && apt-get clean && apt-get -y autoremove \
+   && rm -rf /var/lib/apt/lists \
+   && strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
+
+#---
+
+FROM base AS openroad
+
+COPY OpenROAD-dep-install.sh .
+
+RUN apt-get update -qq \
+   && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
+      automake autotools-dev bison ca-certificates clang flex \
+      g++ gcc git lcov libeigen3-dev libpcre3-dev libreadline-dev \
+      python3-dev tcl-dev tcllib tzdata wget zlib1g-dev \
+   && apt-get autoclean && apt-get clean && apt-get -y autoremove \
+   && update-ca-certificates \
+   && rm -rf /var/lib/apt/lists \
+   && bash OpenROAD-dep-install.sh
+
+RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git OpenROAD
+
+WORKDIR /OpenROAD
+
+RUN mkdir build \
+   && cd build \
+   && cmake .. -DCMAKE_INSTALL_PREFIX=/opt/openroad \
+   && make -j8 \
+   && make install
+
+#---
+
+FROM base as yosys
+
+RUN apt-get update -qq \
+   && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
+      bison ca-certificates clang curl flex g++ gawk gcc git libfl-dev pkg-config \
+   && apt-get autoclean && apt-get clean && apt-get -y autoremove \
+   && update-ca-certificates \
+   && rm -rf /var/lib/apt/lists
+
+RUN git clone https://github.com/The-OpenROAD-Project/yosys.git /yosys
+
+ENV PREFIX /opt/yosys
+
+RUN cd /yosys \
+   && make -j8 \
+   && make install
+
+#---
+
+FROM base
+
+COPY --from=yosys /opt/yosys /opt/yosys
+COPY --from=openroad /opt/openroad /opt/openroad
+
+ENV PATH /opt/openroad/bin:/opt/yosys/bin:$PATH
+
+RUN mkdir /workspace
+WORKDIR /workspace

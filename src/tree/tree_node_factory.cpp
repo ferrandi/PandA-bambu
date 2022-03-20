@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,7 +44,7 @@
 /// Autoheader include
 #include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// tree includes
@@ -84,6 +84,8 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          CREATE_TREE_NODE_CASE_BODY(array_ref, node_id)
       case array_type_K:
          CREATE_TREE_NODE_CASE_BODY(array_type, node_id)
+      case alignof_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(alignof_expr, node_id)
       case arrow_expr_K:
          CREATE_TREE_NODE_CASE_BODY(arrow_expr, node_id)
       case gimple_asm_K:
@@ -563,7 +565,8 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          }
          else if(tree_node_schema.find(TOK(TOK_OPERATOR)) != tree_node_schema.end())
          {
-            cur = tree_nodeRef(new identifier_node(node_id, boost::lexical_cast<bool>(tree_node_schema.find(TOK(TOK_OPERATOR))->second), &TM));
+            cur = tree_nodeRef(new identifier_node(
+                node_id, boost::lexical_cast<bool>(tree_node_schema.find(TOK(TOK_OPERATOR))->second), &TM));
          }
          else
          {
@@ -580,6 +583,22 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          CREATE_TREE_NODE_CASE_BODY(gimple_nop, node_id)
       case extract_bit_expr_K:
          CREATE_TREE_NODE_CASE_BODY(extract_bit_expr, node_id)
+      case sat_plus_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(sat_plus_expr, node_id)
+      case sat_minus_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(sat_minus_expr, node_id)
+      case fshl_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(fshl_expr, node_id)
+      case fshr_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(fshr_expr, node_id)
+      case extractvalue_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extractvalue_expr, node_id)
+      case insertvalue_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(insertvalue_expr, node_id)
+      case extractelement_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extractelement_expr, node_id)
+      case insertelement_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(insertelement_expr, node_id)
       case assert_expr_K:
       case do_stmt_K:
       case for_stmt_K:
@@ -591,7 +610,8 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
       case tree_reindex_K:
       case while_stmt_K:
       {
-         THROW_UNREACHABLE("Creation of tree node of type " + boost::lexical_cast<std::string>(tree_node_type) + " not implemented");
+         THROW_UNREACHABLE("Creation of tree node of type " + boost::lexical_cast<std::string>(tree_node_type) +
+                           " not implemented");
          break;
       }
       default:
@@ -616,12 +636,19 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
    // cppcheck-suppress unusedVariable
    bool attr_p;
 
-#define ATTR_SEQ                                                                                                                                                                                                                                              \
-   (TOK_NEW)(TOK_DELETE)(TOK_ASSIGN)(TOK_MEMBER)(TOK_PUBLIC)(TOK_PROTECTED)(TOK_PRIVATE)(TOK_NORETURN)(TOK_VOLATILE)(TOK_NOINLINE)(TOK_ALWAYS_INLINE)(TOK_USED)(TOK_UNUSED)(TOK_CONST)(TOK_TRANSPARENT_UNION)(TOK_CONSTRUCTOR)(TOK_DESTRUCTOR)(TOK_MODE)(     \
-       TOK_SECTION)(TOK_ALIGNED)(TOK_WEAK)(TOK_ALIAS)(TOK_NO_INSTRUMENT_FUNCTION)(TOK_MALLOC)(TOK_NO_STACK_LIMIT)(TOK_PURE)(TOK_DEPRECATED)(TOK_VECTOR_SIZE)(TOK_VISIBILITY)(TOK_TLS_MODEL)(TOK_NONNULL)(TOK_NOTHROW)(TOK_MAY_ALIAS)(TOK_WARN_UNUSED_RESULT)( \
-       TOK_FORMAT)(TOK_FORMAT_ARG)(TOK_NULL)(TOK_GLOBAL_INIT)(TOK_GLOBAL_FINI)(TOK_CONVERSION)(TOK_VIRTUAL)(TOK_LSHIFT)(TOK_MUTABLE)(TOK_PSEUDO_TMPL)(TOK_VECNEW)(TOK_VECDELETE)(TOK_POS)(TOK_NEG)(TOK_ADDR)(TOK_DEREF)(TOK_LNOT)(TOK_NOT)(TOK_PREINC)(       \
-       TOK_PREDEC)(TOK_PLUSASSIGN)(TOK_PLUS)(TOK_MINUSASSIGN)(TOK_MINUS)(TOK_MULTASSIGN)(TOK_MULT)(TOK_DIVASSIGN)(TOK_DIV)(TOK_MODASSIGN)(TOK_MOD)(TOK_ANDASSIGN)(TOK_AND)(TOK_ORASSIGN)(TOK_OR)(TOK_XORASSIGN)(TOK_XOR)(TOK_LSHIFTASSIGN)(TOK_RSHIFTASSIGN)( \
-       TOK_RSHIFT)(TOK_EQ)(TOK_NE)(TOK_LT)(TOK_GT)(TOK_LE)(TOK_GE)(TOK_LAND)(TOK_LOR)(TOK_COMPOUND)(TOK_MEMREF)(TOK_REF)(TOK_SUBS)(TOK_POSTINC)(TOK_POSTDEC)(TOK_CALL)(TOK_THUNK)(TOK_THIS_ADJUSTING)(TOK_RESULT_ADJUSTING)(TOK_BITFIELD)
+#define ATTR_SEQ                                                                                                      \
+   (TOK_NEW)(TOK_DELETE)(TOK_ASSIGN)(TOK_MEMBER)(TOK_PUBLIC)(TOK_PROTECTED)(TOK_PRIVATE)(TOK_NORETURN)(TOK_VOLATILE)( \
+       TOK_NOINLINE)(TOK_ALWAYS_INLINE)(TOK_USED)(TOK_UNUSED)(TOK_CONST)(TOK_TRANSPARENT_UNION)(TOK_CONSTRUCTOR)(     \
+       TOK_DESTRUCTOR)(TOK_MODE)(TOK_SECTION)(TOK_ALIGNED)(TOK_WEAK)(TOK_ALIAS)(TOK_NO_INSTRUMENT_FUNCTION)(          \
+       TOK_MALLOC)(TOK_NO_STACK_LIMIT)(TOK_PURE)(TOK_DEPRECATED)(TOK_VECTOR_SIZE)(TOK_VISIBILITY)(TOK_TLS_MODEL)(     \
+       TOK_NONNULL)(TOK_NOTHROW)(TOK_MAY_ALIAS)(TOK_WARN_UNUSED_RESULT)(TOK_FORMAT)(TOK_FORMAT_ARG)(TOK_NULL)(        \
+       TOK_GLOBAL_INIT)(TOK_GLOBAL_FINI)(TOK_CONVERSION)(TOK_VIRTUAL)(TOK_LSHIFT)(TOK_MUTABLE)(TOK_PSEUDO_TMPL)(      \
+       TOK_VECNEW)(TOK_VECDELETE)(TOK_POS)(TOK_NEG)(TOK_ADDR)(TOK_DEREF)(TOK_LNOT)(TOK_NOT)(TOK_PREINC)(TOK_PREDEC)(  \
+       TOK_PLUSASSIGN)(TOK_PLUS)(TOK_MINUSASSIGN)(TOK_MINUS)(TOK_MULTASSIGN)(TOK_MULT)(TOK_DIVASSIGN)(TOK_DIV)(       \
+       TOK_MODASSIGN)(TOK_MOD)(TOK_ANDASSIGN)(TOK_AND)(TOK_ORASSIGN)(TOK_OR)(TOK_XORASSIGN)(TOK_XOR)(                 \
+       TOK_LSHIFTASSIGN)(TOK_RSHIFTASSIGN)(TOK_RSHIFT)(TOK_EQ)(TOK_NE)(TOK_LT)(TOK_GT)(TOK_LE)(TOK_GE)(TOK_LAND)(     \
+       TOK_LOR)(TOK_COMPOUND)(TOK_MEMREF)(TOK_REF)(TOK_SUBS)(TOK_POSTINC)(TOK_POSTDEC)(TOK_CALL)(TOK_THUNK)(          \
+       TOK_THIS_ADJUSTING)(TOK_RESULT_ADJUSTING)(TOK_BITFIELD)
 #define ATTR_MACRO(r, data, elem)                                       \
    attr_p = tree_node_schema.find(TOK(elem)) != tree_node_schema.end(); \
    if(attr_p)                                                           \
@@ -639,31 +666,38 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
       dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                 \
    }
 
-#define SET_NODE_ID(token, field, type)                                                                                                               \
-   {                                                                                                                                                  \
-      THROW_ASSERT(tree_node_schema.find(TOK(token)) != tree_node_schema.end(), std::string("tree_node_schema must have ") + STOK(token) + " value"); \
-      auto node_id = boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(token))->second);                                                    \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                                                                    \
+#define SET_NODE_ID(token, field, type)                                                            \
+   {                                                                                               \
+      THROW_ASSERT(tree_node_schema.find(TOK(token)) != tree_node_schema.end(),                    \
+                   std::string("tree_node_schema must have ") + STOK(token) + " value");           \
+      auto node_id = boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(token))->second); \
+      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                 \
    }
 
-#define SET_VALUE_OPT(token, field, type, value_type)                                                                              \
-   if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                                                                 \
-   {                                                                                                                               \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field = boost::lexical_cast<value_type>(tree_node_schema.find(TOK(token))->second); \
+#define SET_VALUE_OPT(token, field, type, value_type)                                 \
+   if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                    \
+   {                                                                                  \
+      dynamic_cast<type*>(curr_tree_node_ptr)->field =                                \
+          boost::lexical_cast<value_type>(tree_node_schema.find(TOK(token))->second); \
    }
 
-#define SET_VALUE(token, field, type, value_type)                                                                                                  \
-   THROW_ASSERT(tree_node_schema.find(TOK(token)) != tree_node_schema.end(), std::string("tree node schema must have ") + STOK(token) + " value"); \
-   dynamic_cast<type*>(curr_tree_node_ptr)->field = boost::lexical_cast<value_type>(tree_node_schema.find(TOK(token))->second);
+#define SET_VALUE(token, field, type, value_type)                                     \
+   THROW_ASSERT(tree_node_schema.find(TOK(token)) != tree_node_schema.end(),          \
+                std::string("tree node schema must have ") + STOK(token) + " value"); \
+   dynamic_cast<type*>(curr_tree_node_ptr)->field =                                   \
+       boost::lexical_cast<value_type>(tree_node_schema.find(TOK(token))->second);
 
-#define TREE_NOT_YET_IMPLEMENTED(token) THROW_ASSERT(tree_node_schema.find(TOK(token)) == tree_node_schema.end(), std::string("field not yet supported ") + STOK(token))
+#define TREE_NOT_YET_IMPLEMENTED(token)                                      \
+   THROW_ASSERT(tree_node_schema.find(TOK(token)) == tree_node_schema.end(), \
+                std::string("field not yet supported ") + STOK(token))
 
 void tree_node_factory::operator()(const WeightedNode*, unsigned int&)
 {
 #if HAVE_CODE_ESTIMATION_BUILT
    /// FIXME: TOK_TIME_WEIGHT not supported
    SET_VALUE_OPT(TOK_SIZE_WEIGHT, weight_information->instruction_size, WeightedNode, unsigned int);
-   THROW_ASSERT(tree_node_schema.find(TOK(TOK_TIME_WEIGHT)) == tree_node_schema.end(), "Field time weight not supported");
+   THROW_ASSERT(tree_node_schema.find(TOK(TOK_TIME_WEIGHT)) == tree_node_schema.end(),
+                "Field time weight not supported");
    SET_VALUE_OPT(TOK_SIZE_WEIGHT, weight_information->instruction_size, WeightedNode, unsigned int);
 #if HAVE_RTL_BUILT
    SET_VALUE_OPT(TOK_RTL_SIZE_WEIGHT, weight_information->rtl_instruction_size, WeightedNode, unsigned int);
@@ -675,13 +709,16 @@ void tree_node_factory::operator()(const srcp* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == dynamic_cast<srcp*>(curr_tree_node_ptr), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   THROW_ASSERT(tree_node_schema.find(TOK(TOK_SRCP)) != tree_node_schema.end(), "tree_node_schema must have TOK_SRCP value");
+   THROW_ASSERT(tree_node_schema.find(TOK(TOK_SRCP)) != tree_node_schema.end(),
+                "tree_node_schema must have TOK_SRCP value");
    const std::string& srcp_str = tree_node_schema.find(TOK(TOK_SRCP))->second;
    std::string::size_type colon_pos2 = srcp_str.rfind(':');
    std::string::size_type colon_pos = srcp_str.rfind(':', colon_pos2 - 1);
    dynamic_cast<srcp*>(curr_tree_node_ptr)->include_name = srcp_str.substr(0, colon_pos);
-   dynamic_cast<srcp*>(curr_tree_node_ptr)->line_number = boost::lexical_cast<unsigned int>(srcp_str.substr(colon_pos + 1, colon_pos2 - colon_pos - 1));
-   dynamic_cast<srcp*>(curr_tree_node_ptr)->column_number = boost::lexical_cast<unsigned int>(srcp_str.substr(colon_pos2 + 1));
+   dynamic_cast<srcp*>(curr_tree_node_ptr)->line_number =
+       boost::lexical_cast<unsigned int>(srcp_str.substr(colon_pos + 1, colon_pos2 - colon_pos - 1));
+   dynamic_cast<srcp*>(curr_tree_node_ptr)->column_number =
+       boost::lexical_cast<unsigned int>(srcp_str.substr(colon_pos2 + 1));
 }
 
 void tree_node_factory::operator()(const decl_node* obj, unsigned int& mask)
@@ -764,7 +801,8 @@ void tree_node_factory::operator()(const type_node* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
    if(tree_node_schema.find(TOK(TOK_QUAL)) != tree_node_schema.end())
    {
-      dynamic_cast<type_node*>(curr_tree_node_ptr)->qual = static_cast<TreeVocabularyTokenTypes_TokenEnum>(boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(TOK_QUAL))->second));
+      dynamic_cast<type_node*>(curr_tree_node_ptr)->qual = static_cast<TreeVocabularyTokenTypes_TokenEnum>(
+          boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(TOK_QUAL))->second));
    }
    SET_NODE_ID_OPT(TOK_NAME, name, type_node);
    SET_NODE_ID_OPT(TOK_UNQL, unql, type_node);
@@ -845,7 +883,8 @@ void tree_node_factory::operator()(const binfo* obj, unsigned int& mask)
    SET_VALUE(TOK_BASES, bases, binfo, int);
    TREE_NOT_YET_IMPLEMENTED(TOK_BINF);
    // std::vector<std::pair< unsigned int, tree_nodeRef> >::const_iterator vend = obj->list_of_access_binf.end();
-   // for (std::vector<std::pair< unsigned int, tree_nodeRef> >::const_iterator i = obj->list_of_access_binf.begin(); i != vend; i++)
+   // for (std::vector<std::pair< unsigned int, tree_nodeRef> >::const_iterator i = obj->list_of_access_binf.begin(); i
+   // != vend; i++)
    //{
    //   WRITE_TOKEN2(os, i->first);
    //   write_when_not_null(STOK(TOK_BINF), i->second);
@@ -867,7 +906,8 @@ void tree_node_factory::operator()(const call_expr* obj, unsigned int& mask)
    SET_NODE_ID_OPT(TOK_FN, fn, call_expr);
    if(tree_node_schema.find(TOK(TOK_ARG)) != tree_node_schema.end())
    {
-      std::vector<unsigned int> args = convert_string_to_vector<unsigned int>(tree_node_schema.find(TOK(TOK_ARG))->second, "_");
+      std::vector<unsigned int> args =
+          convert_string_to_vector<unsigned int>(tree_node_schema.find(TOK(TOK_ARG))->second, "_");
       for(const auto arg : args)
       {
          dynamic_cast<call_expr*>(curr_tree_node_ptr)->args.push_back(TM.GetTreeReindex(arg));
@@ -890,7 +930,8 @@ void tree_node_factory::operator()(const gimple_call* obj, unsigned int& mask)
    SET_NODE_ID(TOK_FN, fn, gimple_call);
    if(tree_node_schema.find(TOK(TOK_ARG)) != tree_node_schema.end())
    {
-      std::vector<unsigned int> args = convert_string_to_vector<unsigned int>(tree_node_schema.find(TOK(TOK_ARG))->second, "_");
+      std::vector<unsigned int> args =
+          convert_string_to_vector<unsigned int>(tree_node_schema.find(TOK(TOK_ARG))->second, "_");
       for(const auto arg : args)
       {
          dynamic_cast<gimple_call*>(curr_tree_node_ptr)->args.push_back(TM.GetTreeReindex(arg));
@@ -953,7 +994,8 @@ void tree_node_factory::operator()(const constructor* obj, unsigned int& mask)
    TREE_NOT_YET_IMPLEMENTED(TOK_IDX);
    TREE_NOT_YET_IMPLEMENTED(TOK_VALU);
    // std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = obj->list_of_idx_valu.end();
-   // for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = obj->list_of_idx_valu.begin(); i != vend; i++)
+   // for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = obj->list_of_idx_valu.begin(); i !=
+   // vend; i++)
    //{
    //   write_when_not_null(STOK(TOK_IDX), i->first);
    //   write_when_not_null(STOK(TOK_VALU), i->second);
@@ -1018,6 +1060,17 @@ void tree_node_factory::operator()(const function_decl* obj, unsigned int& mask)
    SET_VALUE_OPT(TOK_STATIC, static_flag, function_decl, bool);
    SET_VALUE_OPT(TOK_HWCALL, hwcall_flag, function_decl, bool);
    SET_VALUE_OPT(TOK_REVERSE_RESTRICT, reverse_restrict_flag, function_decl, bool);
+   SET_VALUE_OPT(TOK_WRITING_MEMORY, writing_memory, function_decl, bool);
+   SET_VALUE_OPT(TOK_READING_MEMORY, reading_memory, function_decl, bool);
+   SET_VALUE_OPT(TOK_PIPELINE_ENABLED, pipeline_enabled, function_decl, bool);
+   SET_VALUE_OPT(TOK_SIMPLE_PIPELINE, simple_pipeline, function_decl, bool);
+   SET_VALUE_OPT(TOK_INITIATION_TIME, initiation_time, function_decl, int);
+#if HAVE_FROM_PRAGMA_BUILT
+   SET_VALUE_OPT(TOK_OMP_ATOMIC, omp_atomic, function_decl, bool);
+   SET_VALUE_OPT(TOK_OMP_BODY_LOOP, omp_body_loop, function_decl, bool);
+   SET_VALUE_OPT(TOK_OMP_CRITICAL_SESSION, omp_critical, function_decl, std::string);
+   SET_VALUE_OPT(TOK_OMP_FOR_WRAPPER, omp_for_wrapper, function_decl, size_t);
+#endif
    SET_NODE_ID_OPT(TOK_BODY, body, function_decl);
    SET_NODE_ID_OPT(TOK_INLINE_BODY, inline_body, function_decl);
 }
@@ -1038,7 +1091,6 @@ void tree_node_factory::operator()(const gimple_assign* obj, unsigned int& mask)
    SET_NODE_ID(TOK_OP0, op0, gimple_assign);
    SET_NODE_ID(TOK_OP1, op1, gimple_assign);
    SET_NODE_ID_OPT(TOK_PREDICATE, predicate, gimple_assign);
-   SET_NODE_ID_OPT(TOK_ORIG, orig, gimple_assign);
    SET_VALUE_OPT(TOK_INIT, init_assignment, gimple_assign, bool);
    SET_VALUE_OPT(TOK_CLOBBER, clobber, gimple_assign, bool);
    SET_VALUE_OPT(TOK_ADDR, temporary_address, gimple_assign, bool);
@@ -1139,7 +1191,8 @@ void tree_node_factory::operator()(const gimple_phi* obj, unsigned int& mask)
    // TREE_NOT_YET_IMPLEMENTED(TOK_DEF);
    // TREE_NOT_YET_IMPLEMENTED(TOK_EDGE);
    // std::vector<std::pair< tree_nodeRef, int> >::const_iterator vend = obj->list_of_def_edge.end();
-   // for (std::vector<std::pair< tree_nodeRef, int> >::const_iterator i = obj->list_of_def_edge.begin(); i != vend; i++)
+   // for (std::vector<std::pair< tree_nodeRef, int> >::const_iterator i = obj->list_of_def_edge.begin(); i != vend;
+   // i++)
    //{
    //   write_when_not_null(STOK(TOK_DEF), i->first);
    //   WRITE_NFIELD(os, STOK(TOK_EDGE), i->second);

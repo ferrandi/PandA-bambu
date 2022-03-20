@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,7 +57,9 @@
 
 #include <fstream>
 
-LatticeWrapper::LatticeWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec, const target_deviceRef& _device, const std::string& _output_dir, const std::string& _default_output_dir)
+LatticeWrapper::LatticeWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec,
+                               const target_deviceRef& _device, const std::string& _output_dir,
+                               const std::string& _default_output_dir)
     : SynthesisTool(_Param, _tool_exec, _device, _output_dir, _default_output_dir)
 {
 }
@@ -67,9 +69,8 @@ LatticeWrapper::~LatticeWrapper() = default;
 void LatticeWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
    // Export reserved (constant) values to design parameters
-   for(auto it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
+   for(auto& var : xml_reserved_vars)
    {
-      const xml_set_variable_tRef& var = (*it);
       dp->assign(var->name, getStringValue(var, dp), false);
    }
 

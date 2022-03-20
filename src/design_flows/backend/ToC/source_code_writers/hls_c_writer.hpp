@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,7 +75,10 @@ class HLSCWriter : public CWriter
     * used to print the equivalent memory initialization data for the HDL
     * simulator
     */
-   size_t WriteBinaryMemoryInit(const std::string& binary_string, const size_t data_size, std::string& bits_offset);
+   size_t WriteBinaryMemoryInit(const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset);
+
+   size_t WriteBinaryMemoryInitToFile(std::ofstream& parameter_init_file, const std::string& binary_string,
+                                      const size_t data_bitsize, std::string& bits_offset);
 
    /**
     * Write global variables needed by the tesbench
@@ -106,7 +109,8 @@ class HLSCWriter : public CWriter
     * removed when tesbench memory allocation and c testbench creation will
     * be executed as separate steps)
     */
-   void WriteParamInitialization(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned int vector_index);
+   void WriteParamInitialization(const BehavioralHelperConstRef behavioral_helper,
+                                 const std::map<std::string, std::string>& curr_test_vector, const unsigned int v_idx);
 
    /**
     * Writes a call to the top function to be tested, using its parameters.
@@ -121,7 +125,8 @@ class HLSCWriter : public CWriter
     * the tested function. The output is in a format that is recognized by
     * the HDL testbench generation
     */
-   void WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned v_idx);
+   void WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper,
+                             const std::map<std::string, std::string>& curr_test_vector, const unsigned v_idx);
 
    /**
     * Write some print statements used to dump the values used by the HDL to
@@ -147,18 +152,18 @@ class HLSCWriter : public CWriter
    /**
     * Writes the global declarations
     */
-   virtual void WriteGlobalDeclarations();
+   virtual void WriteGlobalDeclarations() override;
 
    /**
     * Write function implementation
     * @param function_id is the index of the function to be written
     */
-   virtual void WriteFunctionImplementation(unsigned int function_index);
+   virtual void WriteFunctionImplementation(unsigned int function_index) override;
 
    /**
     * Writes implementation of __builtin_wait_call
     */
-   virtual void WriteBuiltinWaitCall();
+   virtual void WriteBuiltinWaitCall() override;
 
    /**
     * Write the print to fill values.txt with values for t parameters
@@ -168,7 +173,8 @@ class HLSCWriter : public CWriter
     * @param nesting_level is the level of nesting of the currently printed field/element
     * @param input specifies if the input syntax must be used
     */
-   void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string& param, const unsigned int type, const unsigned int nesting_level, bool input);
+   void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string& param,
+                           const unsigned int type, const unsigned int nesting_level, bool input);
 
  public:
    /**
@@ -180,8 +186,9 @@ class HLSCWriter : public CWriter
     * @param Param is the set of parameters
     * @param verbose tells if annotations
     */
-   HLSCWriter(const HLSCBackendInformationConstRef hls_c_backend_information, const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param,
-              bool verbose = true);
+   HLSCWriter(const HLSCBackendInformationConstRef hls_c_backend_information, const application_managerConstRef _AppM,
+              const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream,
+              const ParameterConstRef _parameters, bool verbose = true);
 
    /**
     * Destructor
@@ -192,11 +199,11 @@ class HLSCWriter : public CWriter
     * Writes the final C file
     * @param file_name is the name of the file to be generated
     */
-   virtual void WriteFile(const std::string& file_name);
+   virtual void WriteFile(const std::string& file_name) override;
 
    /**
     * Writes the header of the file
     */
-   virtual void WriteHeader();
+   virtual void WriteHeader() override;
 };
 #endif

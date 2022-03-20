@@ -61,7 +61,8 @@ typedef float XFtype __attribute__((mode(XF)));
 
 #if _FP_W_TYPE_SIZE < 64
 
-union _FP_UNION_E {
+union _FP_UNION_E
+{
    XFtype flt;
    struct _FP_STRUCT_LAYOUT
    {
@@ -275,7 +276,8 @@ union _FP_UNION_E {
 #define _FP_FRAC_HIGH_DW_E(X) (X##_f[4])
 
 #else /* not _FP_W_TYPE_SIZE < 64 */
-union _FP_UNION_E {
+union _FP_UNION_E
+{
    XFtype flt;
    struct _FP_STRUCT_LAYOUT
    {

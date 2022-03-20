@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -84,8 +84,12 @@ class target_device
    /// Reference to the target technology which will be used in the target device
    target_technologyRef target;
 
-   /// Map containing all the parameters of the technology. All the values are stored as strings and they have correctly converted through the get_parameter template.
+   /// Map containing all the parameters of the technology. All the values are stored as strings and they have correctly
+   /// converted through the get_parameter template.
    std::map<std::string, std::string> parameters;
+
+   /// map with all the pairs variable/variable value used in the script as bash default values
+   std::map<std::string, std::string> bash_vars;
 
    /// Height of the core area dedicated for the design (in um).
    double core_height;
@@ -140,7 +144,8 @@ class target_device
     * @param TM is the reference to the current technology library
     * @param target is the reference to the current target technology
     */
-   static target_deviceRef create_device(const TargetDevice_Type type, const ParameterConstRef& Param, const technology_managerRef& TM);
+   static target_deviceRef create_device(const TargetDevice_Type type, const ParameterConstRef& Param,
+                                         const technology_managerRef& TM);
 
    /**
     * Returns the value of the specified parameter, if any. Otherwise, it throws an exception.
@@ -150,7 +155,9 @@ class target_device
    G get_parameter(const std::string& key) const
    {
       if(parameters.find(key) == parameters.end())
+      {
          THROW_ERROR("Parameter \"" + key + "\" not found in target device parameters' list");
+      }
       return boost::lexical_cast<G>(parameters.find(key)->second);
    }
 
@@ -172,6 +179,11 @@ class target_device
       return parameters.find(key) != parameters.end();
    }
 
+   const std::map<std::string, std::string>& get_bash_vars() const
+   {
+      return bash_vars;
+   }
+
    /**
     * Returns the height of the area dedicated for the implementation
     */
@@ -188,7 +200,7 @@ class target_device
    virtual void initialize() = 0;
 
    /**
-    * Returns the target technology datastructure
+    * Returns the target technology data structure
     */
    target_technologyRef get_target_technology() const;
 
@@ -206,6 +218,6 @@ class target_device
    }
 };
 /// refcount definition for the class
-typedef refcount<target_device> target_deviceRef;
+using target_deviceRef = refcount<target_device>;
 
 #endif

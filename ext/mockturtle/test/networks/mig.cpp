@@ -153,35 +153,40 @@ TEST_CASE( "create and use register in an MIG", "[mig]" )
   CHECK( mig.num_registers() == 0 );
   CHECK( mig.num_pis() == 4 );
   CHECK( mig.num_pos() == 0 );
+  CHECK( mig.is_combinational() );
 
-  const auto f1 = mig.create_maj(x1, x2, x3);
+  const auto f1 = mig.create_maj( x1, x2, x3 );
   mig.create_po( f1 );
   mig.create_po( !f1 );
 
-  const auto f2 = mig.create_maj(f1, x4, c0);
-  mig.create_ri(f2);
+  const auto f2 = mig.create_maj( f1, x4, c0 );
+  mig.create_ri( f2 );
 
   const auto ro = mig.create_ro();
   mig.create_po( ro );
 
   CHECK( mig.num_pos() == 3 );
   CHECK( mig.num_registers() == 1 );
+  CHECK( !mig.is_combinational() );
 
-  mig.foreach_po( [&]( auto s, auto i ){
+  mig.foreach_po( [&]( auto s, auto i ) {
     switch ( i )
     {
-        case 0:
-          CHECK ( s == f1);
-            break;
-        case 1:
-          CHECK ( s == !f1);
-            break;
-        case 2:
-          //check if the output (connected to the register) data is the same as the node data being registered.
-          CHECK ( f2.data == mig.po_at(i).data);
-            break;
+    case 0:
+      CHECK( s == f1 );
+      break;
+    case 1:
+      CHECK( s == !f1 );
+      break;
+    case 2:
+      // Check if the output (connected to the register) data is the same as the node data being registered.
+      CHECK( f2.data == mig.po_at( i ).data );
+      break;
+    default:
+      CHECK( false );
+      break;
     }
-  });
+  } );
 }
 
 TEST_CASE( "create unary operations in an MIG", "[mig]" )
@@ -463,6 +468,8 @@ TEST_CASE( "compute values in MIGs", "[mig]" )
 
   CHECK( has_compute_v<mig_network, bool> );
   CHECK( has_compute_v<mig_network, kitty::dynamic_truth_table> );
+  CHECK( has_compute_v<mig_network, kitty::partial_truth_table> );
+  CHECK( has_compute_inplace_v<mig_network, kitty::partial_truth_table> );
 
   const auto x1 = mig.create_pi();
   const auto x2 = mig.create_pi();
@@ -472,18 +479,117 @@ TEST_CASE( "compute values in MIGs", "[mig]" )
   mig.create_po( f1 );
   mig.create_po( f2 );
 
-  std::vector<bool> values{{true, false, true}};
+  {
+    std::vector<bool> values{{true, false, true}};
 
-  CHECK( mig.compute( mig.get_node( f1 ), values.begin(), values.end() ) == false );
-  CHECK( mig.compute( mig.get_node( f2 ), values.begin(), values.end() ) == true );
+    CHECK( mig.compute( mig.get_node( f1 ), values.begin(), values.end() ) == false );
+    CHECK( mig.compute( mig.get_node( f2 ), values.begin(), values.end() ) == true );
+  }
 
-  std::vector<kitty::dynamic_truth_table> xs{3, kitty::dynamic_truth_table( 3 )};
-  kitty::create_nth_var( xs[0], 0 );
-  kitty::create_nth_var( xs[1], 1 );
-  kitty::create_nth_var( xs[2], 2 );
+  {
+    std::vector<kitty::dynamic_truth_table> xs{3, kitty::dynamic_truth_table( 3 )};
+    kitty::create_nth_var( xs[0], 0 );
+    kitty::create_nth_var( xs[1], 1 );
+    kitty::create_nth_var( xs[2], 2 );
 
-  CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
-  CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+  }
+
+  {
+    std::vector<kitty::partial_truth_table> xs{3};
+
+    CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 0 ); xs[1].add_bit( 0 ); xs[2].add_bit( 0 );
+
+    CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 0 ); xs[1].add_bit( 0 ); xs[2].add_bit( 1 );
+
+    CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 0 ); xs[1].add_bit( 1 ); xs[2].add_bit( 0 );
+
+    CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 0 ); xs[1].add_bit( 1 ); xs[2].add_bit( 1 );
+
+    CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 1 ); xs[1].add_bit( 0 ); xs[2].add_bit( 0 );
+
+    CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 1 ); xs[1].add_bit( 0 ); xs[2].add_bit( 1 );
+
+    CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 1 ); xs[1].add_bit( 1 ); xs[2].add_bit( 0 );
+
+    CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 1 ); xs[1].add_bit( 1 ); xs[2].add_bit( 1 );
+
+    CHECK( mig.compute( mig.get_node( f1 ), xs.begin(), xs.end() ) == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    CHECK( mig.compute( mig.get_node( f2 ), xs.begin(), xs.end() ) == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+  }
+
+  {
+    std::vector<kitty::partial_truth_table> xs{3};
+    kitty::partial_truth_table result;
+
+    xs[0].add_bit( 0 ); xs[1].add_bit( 0 ); xs[2].add_bit( 0 );
+
+    mig.compute( mig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    mig.compute( mig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 0 ); xs[1].add_bit( 0 ); xs[2].add_bit( 1 );
+
+    mig.compute( mig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    mig.compute( mig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 0 ); xs[1].add_bit( 1 ); xs[2].add_bit( 0 );
+
+    mig.compute( mig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    mig.compute( mig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 0 ); xs[1].add_bit( 1 ); xs[2].add_bit( 1 );
+
+    mig.compute( mig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    mig.compute( mig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 1 ); xs[1].add_bit( 0 ); xs[2].add_bit( 0 );
+
+    mig.compute( mig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    mig.compute( mig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    mig.compute( mig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    mig.compute( mig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 1 ); xs[1].add_bit( 0 ); xs[2].add_bit( 1 );
+
+    mig.compute( mig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    mig.compute( mig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 1 ); xs[1].add_bit( 1 ); xs[2].add_bit( 0 );
+
+    mig.compute( mig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    mig.compute( mig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+
+    xs[0].add_bit( 1 ); xs[1].add_bit( 1 ); xs[2].add_bit( 1 );
+
+    mig.compute( mig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( ~xs[0] & xs[1] ) | ( ~xs[0] & xs[2] ) | ( xs[2] & xs[1] ) ) );
+    mig.compute( mig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( ( xs[0] & ~xs[1] ) | ( xs[0] & xs[2] ) | ( xs[2] & ~xs[1] ) ) );
+  }
 }
 
 TEST_CASE( "custom node values in MIGs", "[mig]" )
@@ -509,7 +615,7 @@ TEST_CASE( "custom node values in MIGs", "[mig]" )
   mig.clear_values();
   mig.foreach_node( [&]( auto n ) {
     CHECK( mig.value( n ) == 0 );
-    mig.set_value( n, n );
+    mig.set_value( n, static_cast<uint32_t>( n ) );
     CHECK( mig.value( n ) == n );
     CHECK( mig.incr_value( n ) == n );
     CHECK( mig.value( n ) == n + 1 );
@@ -543,7 +649,7 @@ TEST_CASE( "visited values in MIGs", "[mig]" )
   mig.clear_visited();
   mig.foreach_node( [&]( auto n ) {
     CHECK( mig.visited( n ) == 0 );
-    mig.set_visited( n, n );
+    mig.set_visited( n, static_cast<uint32_t>( n ) );
     CHECK( mig.visited( n ) == n );
   } );
   mig.clear_visited();

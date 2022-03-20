@@ -31,7 +31,8 @@ void _llvm_memset_p0i8_i32(void* dest, unsigned char val, size_t len, unsigned i
       *ptr++ = val;
 }
 
-void _llvm_memset_p0i8_i64(void* dest, unsigned char val, unsigned long long int len, unsigned int align, _Bool isvolatile)
+void _llvm_memset_p0i8_i64(void* dest, unsigned char val, unsigned long long int len, unsigned int align,
+                           _Bool isvolatile)
 {
    volatile unsigned char* ptr = dest;
    while(len-- > 0)

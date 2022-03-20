@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,7 +64,8 @@ class IcarusWrapper : public SimulationTool
    /**
     * Generates the proper simulation script
     */
-   void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) override;
+   void GenerateScript(std::ostringstream& script, const std::string& top_filename,
+                       const std::list<std::string>& file_list) override;
 
  public:
    /**
@@ -92,10 +93,11 @@ class IcarusWrapper : public SimulationTool
    /**
     * Parses a verilog file and converts it into the related XML description
     */
-   unsigned int convert_to_xml(const std::string& SourceFileName, const std::string& LibraryName, const std::string& TargetFileName);
+   unsigned int convert_to_xml(const std::string& SourceFileName, const std::string& LibraryName,
+                               const std::string& TargetFileName);
 #endif
 };
 /// Refcount definition for the IcarusWrapper class
-typedef refcount<IcarusWrapper> IcarusWrapperRef;
+using IcarusWrapperRef = refcount<IcarusWrapper>;
 
 #endif

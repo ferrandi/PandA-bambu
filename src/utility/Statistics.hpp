@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -105,7 +105,7 @@ boost::math::lognormal VarSum(boost::math::lognormal x, boost::math::lognormal y
  * @param y is the second random variable.
  * @param p is the correlation between x and y.
  */
-boost::math::lognormal VarSum(boost::math::lognormal x, boost::math::lognormal y, double p);
+boost::math::lognormal VarSum(boost::math::lognormal s1, boost::math::lognormal s2, double p);
 
 /**
  * @return return the max of two boost::math::normal random variables.
@@ -122,14 +122,16 @@ boost::math::normal VarMax(boost::math::normal x, boost::math::normal y, double 
 boost::math::normal VarMax(std::vector<boost::math::normal> v);
 
 /**
- * @return a boost::math::normal random variable representing the statististical delay of an operational vertex in the DFG.
+ * @return a boost::math::normal random variable representing the statististical delay of an operational vertex in the
+ * DFG.
  * @param d is the nominal delay of the operational vertex.
  * @param n is the number of random variables used to generate the statistical representation.
  */
 boost::math::normal ComputeStatisticalDelay(double d, int n);
 
 /**
- * @return a boost::math::normal random variable representing the statististical power consumption of an operational vertex in the DFG.
+ * @return a boost::math::normal random variable representing the statististical power consumption of an operational
+ * vertex in the DFG.
  * @param p is the nominal power consumption of the operational vertex.
  * @param n is the number of random variables used to generate the statistical representation.
  */
@@ -152,6 +154,7 @@ boost::math::normal CreateStatisticalAttribute(double a, int n);
  * @param mean_rand is mean of the boost::math::normal variable representing the random component.
  * @param st_dev_rand is standard deviation of the boost::math::normal  variable representing the random component.
  */
-boost::math::normal CreateStatisticalAttribute(double a, std::vector<int> d, double mean, double st_dev, int d_rand, double mean_rand, double st_dev_rand);
+boost::math::normal CreateStatisticalAttribute(double a, std::vector<int> d, double mean, double st_dev, int d_rand,
+                                               double mean_rand, double st_dev_rand);
 
 #endif

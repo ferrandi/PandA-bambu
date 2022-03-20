@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -114,7 +114,8 @@ class CWriter
    /// Contains the class used to write instructions
    const InstructionWriterRef instrWriter;
 
-   /// Counter of the invocations of writeRoutineInstructions; this counter allows to print different labels in differnt tasks to avoid problem due to multiple tasks inlineing
+   /// Counter of the invocations of writeRoutineInstructions; this counter allows to print different labels in differnt
+   /// tasks to avoid problem due to multiple tasks inlineing
    size_t bb_label_counter;
 
    /// Verbosity means that a comment is printed for each line in the output file
@@ -183,12 +184,14 @@ class CWriter
     * @param current_vertex is the first basic block of the loop
     * @param bracket tells if bracket should be added before and after this basic block
     */
-   virtual void WriteBodyLoop(const unsigned int function_index, const unsigned int, vertex current_vertex, bool bracket);
+   virtual void WriteBodyLoop(const unsigned int function_index, const unsigned int, vertex current_vertex,
+                              bool bracket);
 
    /**
     * Determines the instructions coming out from phi-node splitting
     */
-   void compute_phi_nodes(const FunctionBehaviorConstRef function_behavior, const OpVertexSet& instructions, var_pp_functorConstRef variableFunctor);
+   void compute_phi_nodes(const FunctionBehaviorConstRef function_behavior, const OpVertexSet& instructions,
+                          var_pp_functorConstRef variableFunctor);
 
    std::vector<std::string> additionalIncludes;
    CustomOrderedSet<std::string> writtenIncludes;
@@ -200,14 +203,20 @@ class CWriter
     *   "Practical Improvements to the Construction and Destruction of Static Single Assignment Form",
     *   Software -- Practice and Experience 1998
     */
-   void insert_copies(vertex b, const BBGraphConstRef bb_domGraph, const BBGraphConstRef bb_fcfgGraph, var_pp_functorConstRef variableFunctor, const CustomSet<unsigned int>& phi_instructions, std::map<unsigned int, unsigned int>& created_variables,
-                      std::map<unsigned int, std::string>& symbol_table, std::map<unsigned int, std::deque<std::string>>& array_of_stacks);
+   void insert_copies(vertex b, const BBGraphConstRef bb_domGraph, const BBGraphConstRef bb_fcfgGraph,
+                      var_pp_functorConstRef variableFunctor, const CustomSet<unsigned int>& phi_instructions,
+                      std::map<unsigned int, unsigned int>& created_variables,
+                      std::map<unsigned int, std::string>& symbol_table,
+                      std::map<unsigned int, std::deque<std::string>>& array_of_stacks);
 
    /**
     * insert copies according the algorithm described in Briggs et. al.
     */
-   void schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const BBGraphConstRef bb_fcfgGraph, var_pp_functorConstRef variableFunctor, const CustomSet<unsigned int>& phi_instructions, std::map<unsigned int, unsigned int>& created_variables,
-                        std::map<unsigned int, std::string>& symbol_table, std::list<unsigned int>& pushed, std::map<unsigned int, std::deque<std::string>>& array_of_stacks);
+   void schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const BBGraphConstRef bb_fcfgGraph,
+                        var_pp_functorConstRef variableFunctor, const CustomSet<unsigned int>& phi_instructions,
+                        std::map<unsigned int, unsigned int>& created_variables,
+                        std::map<unsigned int, std::string>& symbol_table, std::list<unsigned int>& pushed,
+                        std::map<unsigned int, std::deque<std::string>>& array_of_stacks);
 
    /**
     * create an identifier for the temporaries created by phi node destruction
@@ -223,7 +232,8 @@ class CWriter
     * @param pushed is the list of variables to be renamed
     * @param array_of_stacks is the array of stacks used by the phi node destruction procedure
     */
-   void push_stack(std::string symbol_name, unsigned int dest_i, std::list<unsigned int>& pushed, std::map<unsigned int, std::deque<std::string>>& array_of_stacks);
+   void push_stack(std::string symbol_name, unsigned int dest_i, std::list<unsigned int>& pushed,
+                   std::map<unsigned int, std::deque<std::string>>& array_of_stacks);
 
    /**
     * remove from the stack all the temporaries
@@ -254,7 +264,8 @@ class CWriter
     * @param Param is the set of parameters
     * @param verbose tells if annotations
     */
-   CWriter(const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param, bool verbose = true);
+   CWriter(const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer,
+           const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param, bool verbose = true);
 
  public:
    /**
@@ -271,8 +282,10 @@ class CWriter
     * @param parameters is the set of input parameters
     * @param verbose tells if produced source code has to be commented
     */
-   static CWriterRef CreateCWriter(const CBackend::Type type, const CBackendInformationConstRef c_backend_information, const application_managerConstRef app_man, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef parameters,
-                                   const bool verbose);
+   static CWriterRef CreateCWriter(const CBackend::Type type, const CBackendInformationConstRef c_backend_information,
+                                   const application_managerConstRef app_man,
+                                   const IndentedOutputStreamRef indented_output_stream,
+                                   const ParameterConstRef parameters, const bool verbose);
 
    /**
     * Initialize data structure
@@ -296,13 +309,13 @@ class CWriter
     * Write function implementation
     * @param function_id is the index of the function to be written
     */
-   virtual void WriteFunctionImplementation(unsigned int function_index);
+   virtual void WriteFunctionImplementation(unsigned int function_id);
 
    /**
     * Writes the body of the function to the specified stream
     * @param funId is the index of the function
     */
-   virtual void StartFunctionBody(const unsigned int funId);
+   virtual void StartFunctionBody(const unsigned int function_id);
 
    /**
     * Writes the body of a function
@@ -324,7 +337,9 @@ class CWriter
     * @param bb_start is the first basic block to be printed
     * @param bb_end is the set of first basic block not to be printed
     */
-   virtual void writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX, CustomOrderedSet<vertex> bb_end = CustomOrderedSet<vertex>());
+   virtual void writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions,
+                                         var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX,
+                                         CustomOrderedSet<vertex> bb_end = CustomOrderedSet<vertex>());
 
    /**
     * Writes the declaration of the function whose id in the tree is funId
@@ -352,12 +367,13 @@ class CWriter
     * is a non built_in type and, in case the non built_in type hasn't been
     * declared yet, it declares it; this method is used to declared new types
     * with scope limited to a routine (be it a function of a task)
-    * @param varType the index of the type to be declared
+    * @param varType the type to be declared
     * @param BH the behavioral helper associated to the function which declare type
     * @param locally_declared_type is the set of type already declared in this function
     * @param routine_name is the name of the routina (function or thread)
     */
-   virtual void DeclareType(unsigned int varType, const BehavioralHelperConstRef BH, CustomSet<std::string>& locally_declared_type);
+   virtual void DeclareType(const tree_nodeConstRef& varType, const BehavioralHelperConstRef& behavioral_helper,
+                            CustomSet<std::string>& locally_declared_type);
 
    /**
     * Declares the local variable; in case the variable used in the intialization of
@@ -368,7 +384,10 @@ class CWriter
     * @param behavioral_helper is the behavioral helper
     * @param varFunc is the printer functor
     */
-   virtual void DeclareVariable(unsigned int curVar, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& locally_declared_type, const BehavioralHelperConstRef behavioral_helper, const var_pp_functorConstRef varFunc);
+   virtual void DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigned int>& already_declared_variables,
+                                CustomSet<std::string>& locally_declared_type,
+                                const BehavioralHelperConstRef& behavioral_helper,
+                                const var_pp_functorConstRef& varFunc);
 
    /**
     * Declare all the types used in conversions
@@ -386,14 +405,17 @@ class CWriter
     * @param helper is the behavioral helper associated with the function
     * @param varFunc is the printer functor
     */
-   virtual void DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& locally_declared_type, const BehavioralHelperConstRef BH,
+   virtual void DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared,
+                                      CustomSet<unsigned int>& already_declared_variables,
+                                      CustomSet<std::string>& already_declared_types,
+                                      const BehavioralHelperConstRef behavioral_helper,
                                       const var_pp_functorConstRef varFunc);
 
    /**
     * Declares the types of the parameters of a function
     * @param fun_id is the index of the function
     */
-   virtual void DeclareFunctionTypes(const unsigned int);
+   virtual void DeclareFunctionTypes(const tree_nodeConstRef& tn);
 
    /**
     * Writes the final C file
@@ -407,6 +429,6 @@ class CWriter
    virtual void WriteBuiltinWaitCall();
 };
 
-typedef refcount<CWriter> CWriterRef;
+using CWriterRef = refcount<CWriter>;
 
 #endif

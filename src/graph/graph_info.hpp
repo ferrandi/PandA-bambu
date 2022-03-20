@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,7 +73,7 @@ struct GraphInfo
 /**
  * RefCount type definition of the GraphInfo class structure
  */
-typedef refcount<GraphInfo> GraphInfoRef;
-typedef refcount<const GraphInfo> GraphInfoConstRef;
+using GraphInfoRef = refcount<GraphInfo>;
+using GraphInfoConstRef = refcount<const GraphInfo>;
 
 #endif

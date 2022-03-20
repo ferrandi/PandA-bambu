@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,6 @@
 #include "mppb_instruction_writer.hpp"
 #endif
 #include "prettyPrintVertex.hpp"
-#include "simple_indent.hpp"
 
 /// Behavior include
 #include "basic_block.hpp"
@@ -100,13 +99,18 @@
 #include "refcount.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-InstructionWriter::InstructionWriter(const application_managerConstRef _AppM, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _parameters)
+InstructionWriter::InstructionWriter(const application_managerConstRef _AppM,
+                                     const IndentedOutputStreamRef _indented_output_stream,
+                                     const ParameterConstRef _parameters)
     : AppM(_AppM), indented_output_stream(_indented_output_stream), parameters(_parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-InstructionWriterRef InstructionWriter::CreateInstructionWriter(const ActorGraphBackend_Type actor_graph_backend_type, const application_managerConstRef AppM, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef parameters)
+InstructionWriterRef InstructionWriter::CreateInstructionWriter(const ActorGraphBackend_Type actor_graph_backend_type,
+                                                                const application_managerConstRef AppM,
+                                                                const IndentedOutputStreamRef indented_output_stream,
+                                                                const ParameterConstRef parameters)
 {
    switch(actor_graph_backend_type)
    {
@@ -126,7 +130,8 @@ InstructionWriterRef InstructionWriter::CreateInstructionWriter(const ActorGraph
 #if HAVE_GRAPH_PARTITIONING_BUILT
       case(ActorGraphBackend_Type::BA_PTHREAD):
       {
-         return InstructionWriterRef(new PThreadInstructionWriter(RefcountCast<const PartitioningManager>(AppM), indented_output_stream, parameters));
+         return InstructionWriterRef(new PThreadInstructionWriter(RefcountCast<const PartitioningManager>(AppM),
+                                                                  indented_output_stream, parameters));
       }
 #endif
       default:
@@ -143,18 +148,23 @@ void InstructionWriter::Initialize()
 {
 }
 
-void InstructionWriter::write(const FunctionBehaviorConstRef function_behavior, const vertex statement, const var_pp_functorConstRef varFunctor)
+void InstructionWriter::write(const FunctionBehaviorConstRef function_behavior, const vertex statement,
+                              const var_pp_functorConstRef varFunctor)
 {
-   const std::string statement_string = function_behavior->CGetBehavioralHelper()->print_vertex(function_behavior->CGetOpGraph(FunctionBehavior::CFG), statement, varFunctor);
+   const std::string statement_string = function_behavior->CGetBehavioralHelper()->print_vertex(
+       function_behavior->CGetOpGraph(FunctionBehavior::CFG), statement, varFunctor);
 
    if(statement_string.size())
+   {
       indented_output_stream->Append(statement_string);
+   }
 }
 
 void InstructionWriter::declareFunction(const unsigned int function_id)
 {
-   const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   indented_output_stream->Append(behavioral_helper->print_type(function_id, false, true, false, 0, var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper))));
+   const auto behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   indented_output_stream->Append(behavioral_helper->print_type(
+       function_id, false, true, false, 0, var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper))));
 }
 
 void InstructionWriter::write_declarations()

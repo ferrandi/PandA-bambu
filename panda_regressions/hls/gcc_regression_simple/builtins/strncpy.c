@@ -75,3 +75,9 @@ main_test (void)
   else
     exit(0);
 }
+
+int main()
+{
+   main_test();
+   return 0;
+}

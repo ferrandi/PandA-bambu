@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2020 Politecnico di Milano
+ *              Copyright (C) 2017-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,22 +58,18 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_helper.hpp"
 
-DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
-    : EvaluationBaseStep(_parameters, _HLSMgr, 0, _design_flow_manager, HLSFlowStep_Type::DRY_RUN_EVALUATION)
+DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                   const DesignFlowManagerConstRef _design_flow_manager)
+    : EvaluationBaseStep(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::DRY_RUN_EVALUATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 DryRunEvaluation::~DryRunEvaluation() = default;
 
-bool DryRunEvaluation::HasToBeExecuted() const
+DesignFlowStep_Status DryRunEvaluation::Exec()
 {
-   return true;
-}
-
-DesignFlowStep_Status DryRunEvaluation::InternalExec()
-{
-   std::string objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
+   auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    for(const auto& objective : objective_vector)
    {

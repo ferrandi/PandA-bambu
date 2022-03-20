@@ -50,16 +50,30 @@ using namespace ac_math;
 //   used to configure the bit-widths of the types.
 
 template <unsigned M, int Wfi, int Ifi, bool Sfi>
-void test_ac_determinant(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> A1[M][M], ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val), (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>& det1,
-                         const ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> A2[M][M], ac_complex<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val), (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>& det2,
-                         const ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M>& A3, ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val), (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>& det3,
-                         const ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M>& A4,
-                         ac_complex<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val), (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>& det4)
+void test_ac_determinant(
+    const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> A1[M][M],
+    ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val), (M * Ifi + ac::log2_floor<Factorial<M>::value>::val),
+             true, AC_TRN, AC_WRAP>& det1,
+    const ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> A2[M][M],
+    ac_complex<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val),
+                        (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>& det2,
+    const ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M>& A3,
+    ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val), (M * Ifi + ac::log2_floor<Factorial<M>::value>::val),
+             true, AC_TRN, AC_WRAP>& det3,
+    const ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M>& A4,
+    ac_complex<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val),
+                        (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>& det4)
 {
-   det1 = ac_determinant<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val), (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>(A1);
-   det2 = ac_determinant<ac_complex<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val), (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>>(A2);
-   det3 = ac_determinant<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val), (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>(A3);
-   det4 = ac_determinant<ac_complex<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val), (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>>(A4);
+   det1 = ac_determinant<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val),
+                                  (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>(A1);
+   det2 = ac_determinant<
+       ac_complex<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val),
+                           (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>>(A2);
+   det3 = ac_determinant<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val),
+                                  (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>(A3);
+   det4 = ac_determinant<
+       ac_complex<ac_fixed<(M * Wfi + ac::log2_floor<Factorial<M>::value>::val),
+                           (M * Ifi + ac::log2_floor<Factorial<M>::value>::val), true, AC_TRN, AC_WRAP>>>(A4);
 }
 
 // ==============================================================================
@@ -84,7 +98,8 @@ struct determinant_double
    template <typename T>
    static T determinant_comp(T a[M][M])
    {
-      // defining the arrays to store the determinant answers of smaller matrices and storing the answer of the accumulation output.
+      // defining the arrays to store the determinant answers of smaller matrices and storing the answer of the
+      // accumulation output.
       T c[M], temp1, b[M - 1][M - 1];
       unsigned j, p, q;
       int pr = -1;
@@ -104,7 +119,8 @@ struct determinant_double
          }
          // for sign alteration in the determinant computation.
          pr = (-1) * pr;
-         // The output of the function for M-1 dimension is stored in the accumulator array after doing sign adjustment via pr.
+         // The output of the function for M-1 dimension is stored in the accumulator array after doing sign adjustment
+         // via pr.
          c[j] = pr * determinant_double<M - 1>::template determinant_comp<T>(b);
       }
       // accumulator for loop to get the final output as accumulation of all internal submatrix determinant values.
@@ -159,21 +175,32 @@ T determinant_compute(T a[M][M])
 //   calling function.
 
 template <unsigned M, int Wfi, int Ifi, bool Sfi>
-int test_driver(double& cumulative_max_error, double& cumulative_max_error_cmplx, const double allowed_error, bool details = false)
+int test_driver(double& cumulative_max_error, double& cumulative_max_error_cmplx, const double allowed_error,
+                bool details = false)
 {
    bool passed = true;
 
-   typedef ac_fixed<M * Wfi + ac::log2_floor<Factorial<M>::value>::val, M * Ifi + ac::log2_floor<Factorial<M>::value>::val, true, AC_TRN, AC_WRAP> T_out;
+   typedef ac_fixed<M * Wfi + ac::log2_floor<Factorial<M>::value>::val,
+                    M * Ifi + ac::log2_floor<Factorial<M>::value>::val, true, AC_TRN, AC_WRAP>
+       T_out;
 
    ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> input_arr[M][M];
-   ac_fixed<M * Wfi + ac::log2_floor<Factorial<M>::value>::val, M * Ifi + ac::log2_floor<Factorial<M>::value>::val, true, AC_TRN, AC_WRAP> output_arr;
+   ac_fixed<M * Wfi + ac::log2_floor<Factorial<M>::value>::val, M * Ifi + ac::log2_floor<Factorial<M>::value>::val,
+            true, AC_TRN, AC_WRAP>
+       output_arr;
    ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>> input_cmplx_arr[M][M];
-   ac_complex<ac_fixed<M * Wfi + ac::log2_floor<Factorial<M>::value>::val, M * Ifi + ac::log2_floor<Factorial<M>::value>::val, true, AC_TRN, AC_WRAP>> output_cmplx_arr;
+   ac_complex<ac_fixed<M * Wfi + ac::log2_floor<Factorial<M>::value>::val,
+                       M * Ifi + ac::log2_floor<Factorial<M>::value>::val, true, AC_TRN, AC_WRAP>>
+       output_cmplx_arr;
 
    ac_matrix<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>, M, M> input;
-   ac_fixed<M * Wfi + ac::log2_floor<Factorial<M>::value>::val, M * Ifi + ac::log2_floor<Factorial<M>::value>::val, true, AC_TRN, AC_WRAP> output;
+   ac_fixed<M * Wfi + ac::log2_floor<Factorial<M>::value>::val, M * Ifi + ac::log2_floor<Factorial<M>::value>::val,
+            true, AC_TRN, AC_WRAP>
+       output;
    ac_matrix<ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>, M, M> input_cmplx;
-   ac_complex<ac_fixed<M * Wfi + ac::log2_floor<Factorial<M>::value>::val, M * Ifi + ac::log2_floor<Factorial<M>::value>::val, true, AC_TRN, AC_WRAP>> output_cmplx;
+   ac_complex<ac_fixed<M * Wfi + ac::log2_floor<Factorial<M>::value>::val,
+                       M * Ifi + ac::log2_floor<Factorial<M>::value>::val, true, AC_TRN, AC_WRAP>>
+       output_cmplx;
 
    double input_double[M][M];
    double output_double;
@@ -207,7 +234,8 @@ int test_driver(double& cumulative_max_error, double& cumulative_max_error_cmplx
       }
    }
 
-   test_ac_determinant(input_arr, output_arr, input_cmplx_arr, output_cmplx_arr, input, output, input_cmplx, output_cmplx);
+   test_ac_determinant(input_arr, output_arr, input_cmplx_arr, output_cmplx_arr, input, output, input_cmplx,
+                       output_cmplx);
 
    // call the c datatype equivalent of determinant function
    output_double = determinant_compute<M, double>(input_double);
@@ -279,7 +307,8 @@ int main(int argc, char* argv[])
    double allowed_error = 0.5;
 
    cout << "=============================================================================" << endl;
-   cout << "Testing function: ac_determinant(), for scalar and complex datatypes - allowed error = " << allowed_error << endl;
+   cout << "Testing function: ac_determinant(), for scalar and complex datatypes - allowed error = " << allowed_error
+        << endl;
 
    // template <unsigned M, int Wfi, int Ifi, int Sfi>
    test_driver<4, 16, 8, true>(max_error, cmplx_max_error, allowed_error);

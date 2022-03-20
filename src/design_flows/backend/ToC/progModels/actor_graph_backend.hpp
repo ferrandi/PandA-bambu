@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -118,7 +118,9 @@ class ActorGraphBackend
     * @param parameters is the set of input parameters
     * @param verbose specifies if comments have to be printed
     */
-   ActorGraphBackend(const PartitioningManagerConstRef& partitioning_manager, const CustomUnorderedMap<ActorGraph_Type, ActorGraphBackendRef>& actor_graph_backends, const CWriterRef& c_writer, const IndentedOutputStreamRef& indented_output_stream,
+   ActorGraphBackend(const PartitioningManagerConstRef& partitioning_manager,
+                     const CustomUnorderedMap<ActorGraph_Type, ActorGraphBackendRef>& actor_graph_backends,
+                     const CWriterRef& c_writer, const IndentedOutputStreamRef& indented_output_stream,
                      const ParameterConstRef& parameters, const bool verbose);
 
    /**
@@ -143,5 +145,5 @@ class ActorGraphBackend
     */
    virtual const ActorGraphWriterRef GetActorGraphWriter() = 0;
 };
-typedef refcount<ActorGraphBackend> ActorGraphBackendRef;
+using ActorGraphBackendRef = refcount<ActorGraphBackend>;
 #endif

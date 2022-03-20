@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,7 +47,9 @@
 #include <ostream>                // for operator<<, basic_ostream
 #include <utility>
 
-AuxDesignFlowStep::AuxDesignFlowStep(std::string _name, const AuxDesignFlowStepType _type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+AuxDesignFlowStep::AuxDesignFlowStep(std::string _name, const AuxDesignFlowStepType _type,
+                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                     const ParameterConstRef _parameters)
     : DesignFlowStep(_design_flow_manager, _parameters), type(_type), name(std::move(_name))
 {
 }

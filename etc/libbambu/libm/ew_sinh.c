@@ -96,7 +96,7 @@ double sinh(double x) /* wrapper sinh */
    z = __hide_ieee754_sinh(x);
    if(_LIB_VERSION == _IEEE_)
       return z;
-   if(!__finite(z) && __finite(x))
+   if(!finite(z) && finite(x))
    {
       return __hide_kernel_standard(x, x, 25); /* sinh overflow */
    }

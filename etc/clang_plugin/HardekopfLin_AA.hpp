@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright(C) 2018-2020 Politecnico di Milano
+ *              Copyright(C) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,6 +53,7 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/SparseBitVector.h"
+#include "llvm/ADT/StringMap.h"
 
 namespace llvm
 {
@@ -416,8 +417,10 @@ class Andersen_AA
 
  private:
    void id_call_obj(u32 vnI, const llvm::Function* F);
-   void id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function* F);
-   void id_ind_call(llvm::ImmutableCallSite CS);
+   template <class CallInstOrInvokeInst>
+   void id_dir_call(const CallInstOrInvokeInst* I, const llvm::Function* F);
+   template <class CallInstOrInvokeInst>
+   void id_ind_call(const CallInstOrInvokeInst* I);
 
    void id_global(const llvm::GlobalVariable* G);
    u32 get_ret_node(const llvm::Function* F) const;
@@ -445,18 +448,21 @@ class Andersen_AA
    virtual void visit_func(const llvm::Function* F);
 
  private:
-   bool trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Value*>& src, llvm::DenseMap<const llvm::Value*, bool>& seen, u32 depth = 0);
+   bool trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Value*>& src,
+                  llvm::DenseMap<const llvm::Value*, bool>& seen, u32 depth = 0);
 
  protected:
    void id_ret_insn(const llvm::Instruction* I);
-   void id_call_insn(const llvm::Instruction* I);
+   template <class CallInstOrInvokeInst>
+   void id_call_insn(const CallInstOrInvokeInst* I);
    void id_alloc_insn(const llvm::Instruction* I);
    void id_load_insn(const llvm::Instruction* I);
    void id_store_insn(const llvm::Instruction* I);
    void id_gep_insn(const llvm::User* gep);
 
  private:
-   void id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Function* F);
+   template <class CallInstOrInvokeInst>
+   void id_ext_call(const CallInstOrInvokeInst* I, const llvm::Function* F);
    void add_store2_cons(const llvm::Value* D, const llvm::Value* S, size_t sz = 0);
 
    void processBlock(const llvm::BasicBlock* BB, std::set<const llvm::BasicBlock*>& bb_seen);
@@ -469,15 +475,18 @@ class Andersen_AA
    void hr(bool do_union, u32 min_del);
    void make_off_nodes(std::vector<u32>& main2off, std::vector<OffNode>& off_nodes);
    void add_off_edges(std::vector<u32>& main2off, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, bool hcd = false);
-   void hvn_dfs(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u32>& dfs_stk, u32& curr_dfs, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n, bool do_union);
-   void hvn_check_edge(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u32>& dfs_stk, u32& curr_dfs, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n, u32 dest, bool do_union);
+   void hvn_dfs(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u32>& dfs_stk, u32& curr_dfs,
+                std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n, bool do_union);
+   void hvn_check_edge(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u32>& dfs_stk, u32& curr_dfs,
+                       std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n, u32 dest, bool do_union);
    void hvn_label(std::unordered_map<bitmap, u32>& lbl2pe, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n);
    void hu_label(std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n);
    void merge_ptr_eq(std::vector<u32>& main2off, std::vector<OffNode>& off_nodes);
    void hcd();
    void hcd_dfs(std::stack<u32>& dfs_stk, u32& curr_dfs, std::vector<OffNode>& off_nodes, u32 n);
    void factor_ls();
-   void factor_ls(llvm::DenseMap<Constraint, u32>& factored_cons, const std::set<u32>& other, u32 ref, u32 off, bool load);
+   void factor_ls(llvm::DenseMap<Constraint, u32>& factored_cons, const std::set<u32>& other, u32 ref, u32 off,
+                  bool load);
    void cons_opt();
 
    void pts_init();
@@ -486,12 +495,14 @@ class Andersen_AA
    void run_lcd();
    void solve_node(u32 n);
    bool solve_ls_cons(u32 n, u32 hcd_rep, const bdd& d_points_to, std::set<Constraint>& cons_seen, Constraint& C);
-   void solve_ls_off(const bdd& d_points_to, bool load, u32 dest, u32 src, u32 off, const std::set<const llvm::Instruction*>* I);
+   void solve_ls_off(const bdd& d_points_to, bool load, u32 dest, u32 src, u32 off,
+                     const std::set<const llvm::Instruction*>* I);
    void solve_ls_n(const u32* pdpts, const u32* edpts, bool load, u32 dest, u32 src);
    bool solve_gep_cons(u32 n, const bdd& d_points_to, std::set<Constraint>& cons_seen, Constraint& C);
    bool add_copy_edge(u32 src, u32 dest);
    void solve_prop(u32 n, const bdd& d_points_to);
-   void handle_ext(const llvm::Function* F, const llvm::Instruction* I);
+   template <class CallInstOrInvokeInst>
+   void handle_ext(const llvm::Function* F, const CallInstOrInvokeInst* I);
    void lcd_dfs(u32 n);
 
  protected:
@@ -642,14 +653,14 @@ class Staged_Flow_Sensitive_AA : public Andersen_AA
    std::vector<std::pair<const llvm::CallInst*, u32>> idr_calls; // <idr call, callsite> pairs
    std::vector<u32> idr_cons;                                    // indices of constraints from idr calls
    std::map<u32, std::vector<const llvm::Function*>> tgts;       // fun ptr PRE rep -> internal targets
-   u32 num_tmp;                                                  // number of temporary vars created by process_idr_cons()
-   std::vector<u32> defs;                                        //   store constraint -> node containing store
-   std::vector<u32> uses;                                        //    load constraint -> node containing load
-   std::vector<u32> topo;                                        // topological number -> node, found by T4
-   std::vector<u32> rq;                                          // RQ nodes found by T4 for T6
-   std::vector<u32> t5_reps;                                     // nodes made into reps by T5
-   std::vector<u32> not_nprq;                                    // !NP && !RQ nodes found by T6 for T5
-   std::map<u32, std::vector<u32>> gv2n;                         // global var -> DFG init nodes
+   u32 num_tmp;                          // number of temporary vars created by process_idr_cons()
+   std::vector<u32> defs;                //   store constraint -> node containing store
+   std::vector<u32> uses;                //    load constraint -> node containing load
+   std::vector<u32> topo;                // topological number -> node, found by T4
+   std::vector<u32> rq;                  // RQ nodes found by T4 for T6
+   std::vector<u32> t5_reps;             // nodes made into reps by T5
+   std::vector<u32> not_nprq;            // !NP && !RQ nodes found by T6 for T5
+   std::map<u32, std::vector<u32>> gv2n; // global var -> DFG init nodes
 
    std::set<u32> cons_strong;                 // store constraints that are strong updates
    std::map<u32, std::vector<u32>> cons_part; // constraint partitions

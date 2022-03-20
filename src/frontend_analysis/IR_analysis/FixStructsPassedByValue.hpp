@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file FixStructsPassedByValue.cpp
+ * @file FixStructsPassedByValue.hpp
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
@@ -55,13 +55,15 @@ class FixStructsPassedByValue : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
     * Constructor
     */
-   FixStructsPassedByValue(const ParameterConstRef params, const application_managerRef AM, unsigned int fun_id, const DesignFlowManagerConstRef dfm);
+   FixStructsPassedByValue(const ParameterConstRef params, const application_managerRef AM, unsigned int fun_id,
+                           const DesignFlowManagerConstRef dfm);
 
    /**
     * Destructor

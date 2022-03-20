@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,38 +58,45 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
+#include "tree_reindex.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "utility.hpp"
 
-MemoryInitializationWriter::MemoryInitializationWriter(std::ofstream& _output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes,
-                                                       const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters)
-    : MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter, _testbench_generation_memory_type, _parameters), output_stream(_output_stream)
+MemoryInitializationWriter::MemoryInitializationWriter(
+    std::ofstream& _output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper,
+    const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter,
+    const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters)
+    : MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter,
+                                     _testbench_generation_memory_type, _parameters),
+      output_stream(_output_stream)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 void MemoryInitializationWriter::Process(const std::string& content)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing " + content + " in binary form to initialize memory");
-   unsigned int base_type_index = 0;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Writing " + content + " in binary form to initialize memory");
+   tree_nodeConstRef base_type;
    /// Second, according to the type let's how many elements have to have been processed
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Currently writing " + status.back().first->get_kind_text());
-   switch(status.back().first->get_kind())
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Currently writing " + GET_CONST_NODE(status.back().first)->get_kind_text());
+   switch(GET_CONST_NODE(status.back().first)->get_kind())
    {
       case pointer_type_K:
-         base_type_index = tree_helper::get_pointed_type(TM, status.back().first->index);
+         base_type = tree_helper::CGetPointedType(status.back().first);
          break;
+      case real_type_K:
       case integer_type_K:
-         base_type_index = status.back().first->index;
+         base_type = status.back().first;
          break;
       case array_type_K:
       case boolean_type_K:
       case CharType_K:
       case enumeral_type_K:
-      case real_type_K:
       case complex_type_K:
       case record_type_K:
       case union_type_K:
@@ -107,7 +114,8 @@ void MemoryInitializationWriter::Process(const std::string& content)
       case type_pack_expansion_K:
       case vector_type_K:
       case void_type_K:
-         THROW_ERROR("Unexpected type in initializing parameter/variable: " + status.back().first->get_kind_text());
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " +
+                     GET_CONST_NODE(status.back().first)->get_kind_text());
          break;
       case aggr_init_expr_K:
       case binfo_K:
@@ -136,24 +144,27 @@ void MemoryInitializationWriter::Process(const std::string& content)
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(status.back().first->get_kind_text()));
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
+                          "Not supported node: " + GET_CONST_NODE(status.back().first)->get_kind_text());
    }
-   THROW_ASSERT(base_type_index != 0, "");
-   const auto base_type = TM->CGetTreeNode(base_type_index);
+   THROW_ASSERT(base_type, "");
    std::string binary_value = "";
    unsigned int size = 0;
-   switch(base_type->get_kind())
+   switch(GET_CONST_NODE(base_type)->get_kind())
    {
       case integer_type_K:
-         size = tree_helper::size(TM, base_type_index);
-         binary_value = ConvertInBinary(content, size, false, tree_helper::is_unsigned(TM, base_type_index));
+         size = tree_helper::Size(base_type);
+         binary_value = ConvertInBinary(content, size, false, tree_helper::IsUnsignedIntegerType(base_type));
+         break;
+      case real_type_K:
+         size = tree_helper::Size(base_type);
+         binary_value = ConvertInBinary(content, size, true, false);
          break;
       case pointer_type_K:
       case array_type_K:
       case boolean_type_K:
       case CharType_K:
       case enumeral_type_K:
-      case real_type_K:
       case complex_type_K:
       case record_type_K:
       case union_type_K:
@@ -171,7 +182,8 @@ void MemoryInitializationWriter::Process(const std::string& content)
       case type_pack_expansion_K:
       case vector_type_K:
       case void_type_K:
-         THROW_ERROR("Unexpected type in initializing parameter/variable: " + status.back().first->get_kind_text());
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " +
+                     GET_CONST_NODE(base_type)->get_kind_text());
          break;
       case aggr_init_expr_K:
       case binfo_K:
@@ -200,32 +212,38 @@ void MemoryInitializationWriter::Process(const std::string& content)
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(status.back().first->get_kind_text()));
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
+                          "Not supported node: " + GET_CONST_NODE(base_type)->get_kind_text());
    }
    THROW_ASSERT(binary_value.size() % 8 == 0, "");
    written_bytes += binary_value.size() / 8;
    switch(testbench_generation_memory_type)
    {
       case TestbenchGeneration_MemoryType::INPUT_PARAMETER:
-         output_stream << "//parameter: " << behavioral_helper->PrintVariable(function_parameter->index) << " value: " << content << std::endl;
+         output_stream << "//parameter: " << behavioral_helper->PrintVariable(function_parameter->index)
+                       << " value: " << content << std::endl;
          output_stream << "p" << binary_value << std::endl;
          break;
       case TestbenchGeneration_MemoryType::OUTPUT_PARAMETER:
-         output_stream << "//expected value for output " + behavioral_helper->PrintVariable(function_parameter->index) + ": " << content << std::endl;
+         output_stream << "//expected value for output " + behavioral_helper->PrintVariable(function_parameter->index) +
+                              ": "
+                       << content << std::endl;
          for(size_t bit = 0; bit < binary_value.size(); bit += 8)
          {
             output_stream << "o" << binary_value.substr(binary_value.size() - 8 - bit, 8) << std::endl;
          }
          break;
       case TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION:
-         output_stream << "//memory initialization for variable " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content << std::endl;
+         output_stream << "//memory initialization for variable " +
+                              behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content
+                       << std::endl;
          for(size_t bit = 0; bit < binary_value.size(); bit += 8)
          {
             output_stream << "m" << binary_value.substr(binary_value.size() - 8 - bit, 8) << std::endl;
          }
          break;
       case TestbenchGeneration_MemoryType::RETURN:
-         if(GetPointer<const type_node>(function_parameter))
+         if(GetPointer<const type_node>(GET_CONST_NODE(function_parameter)))
          {
             output_stream << "//expected value for return value" << std::endl;
             output_stream << "o" << binary_value << std::endl;
@@ -238,5 +256,7 @@ void MemoryInitializationWriter::Process(const std::string& content)
       default:
          THROW_UNREACHABLE("");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written " + content + " (" + STR(binary_value.size() / 8) + " bytes) in binary form to initialize memory");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--Written " + content + " (" + STR(binary_value.size() / 8) +
+                      " bytes) in binary form to initialize memory");
 }

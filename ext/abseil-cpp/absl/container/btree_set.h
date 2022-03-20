@@ -35,7 +35,9 @@
 //
 // However, these types should not be considered drop-in replacements for
 // `std::set` and `std::multiset` as there are some API differences, which are
-// noted in this header file.
+// noted in this header file. The most consequential differences with respect to
+// migrating to b-tree from the STL types are listed in the next paragraph.
+// Other API differences are minor.
 //
 // Importantly, insertions and deletions may invalidate outstanding iterators,
 // pointers, and references to elements. Such invalidations are typically only
@@ -51,6 +53,18 @@
 #include "absl/container/internal/btree_container.h"  // IWYU pragma: export
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
+
+namespace container_internal {
+
+template <typename Key>
+struct set_slot_policy;
+
+template <typename Key, typename Compare, typename Alloc, int TargetNodeSize,
+          bool Multi>
+struct set_params;
+
+}  // namespace container_internal
 
 // absl::btree_set<>
 //
@@ -182,7 +196,7 @@ class btree_set
   // template <typename K> size_type erase(const K& key):
   //
   //   Erases the element with the matching key, if it exists, returning the
-  //   number of elements erased.
+  //   number of elements erased (0 or 1).
   using Base::erase;
 
   // btree_set::insert()
@@ -262,7 +276,7 @@ class btree_set
   //   Extracts the element at the indicated position and returns a node handle
   //   owning that extracted data.
   //
-  // template <typename K> node_type extract(const K& x):
+  // template <typename K> node_type extract(const K& k):
   //
   //   Extracts the element with the key matching the passed key value and
   //   returns a node handle owning that extracted data. If the `btree_set`
@@ -299,8 +313,8 @@ class btree_set
   // Determines whether an element comparing equal to the given `key` exists
   // within the `btree_set`, returning `true` if so or `false` otherwise.
   //
-  // Supports heterogeneous lookup, provided that the set is provided a
-  // compatible heterogeneous comparator.
+  // Supports heterogeneous lookup, provided that the set has a compatible
+  // heterogeneous comparator.
   using Base::contains;
 
   // btree_set::count()
@@ -311,8 +325,8 @@ class btree_set
   // the `btree_set`. Note that this function will return either `1` or `0`
   // since duplicate elements are not allowed within a `btree_set`.
   //
-  // Supports heterogeneous lookup, provided that the set is provided a
-  // compatible heterogeneous comparator.
+  // Supports heterogeneous lookup, provided that the set has a compatible
+  // heterogeneous comparator.
   using Base::count;
 
   // btree_set::equal_range()
@@ -329,9 +343,31 @@ class btree_set
   //
   // Finds an element with the passed `key` within the `btree_set`.
   //
-  // Supports heterogeneous lookup, provided that the set is provided a
-  // compatible heterogeneous comparator.
+  // Supports heterogeneous lookup, provided that the set has a compatible
+  // heterogeneous comparator.
   using Base::find;
+
+  // btree_set::lower_bound()
+  //
+  // template <typename K> iterator lower_bound(const K& key):
+  // template <typename K> const_iterator lower_bound(const K& key) const:
+  //
+  // Finds the first element that is not less than `key` within the `btree_set`.
+  //
+  // Supports heterogeneous lookup, provided that the set has a compatible
+  // heterogeneous comparator.
+  using Base::lower_bound;
+
+  // btree_set::upper_bound()
+  //
+  // template <typename K> iterator upper_bound(const K& key):
+  // template <typename K> const_iterator upper_bound(const K& key) const:
+  //
+  // Finds the first element that is greater than `key` within the `btree_set`.
+  //
+  // Supports heterogeneous lookup, provided that the set has a compatible
+  // heterogeneous comparator.
+  using Base::upper_bound;
 
   // btree_set::get_allocator()
   //
@@ -357,6 +393,16 @@ class btree_set
 template <typename K, typename C, typename A>
 void swap(btree_set<K, C, A> &x, btree_set<K, C, A> &y) {
   return x.swap(y);
+}
+
+// absl::erase_if(absl::btree_set<>, Pred)
+//
+// Erases all elements that satisfy the predicate pred from the container.
+// Returns the number of erased elements.
+template <typename K, typename C, typename A, typename Pred>
+typename btree_set<K, C, A>::size_type erase_if(btree_set<K, C, A> &set,
+                                                Pred pred) {
+  return container_internal::btree_access::erase_if(set, std::move(pred));
 }
 
 // absl::btree_multiset<>
@@ -552,7 +598,7 @@ class btree_multiset
   //   Extracts the element at the indicated position and returns a node handle
   //   owning that extracted data.
   //
-  // template <typename K> node_type extract(const K& x):
+  // template <typename K> node_type extract(const K& k):
   //
   //   Extracts the element with the key matching the passed key value and
   //   returns a node handle owning that extracted data. If the `btree_multiset`
@@ -567,9 +613,8 @@ class btree_multiset
 
   // btree_multiset::merge()
   //
-  // Extracts elements from a given `source` btree_multiset into this
-  // `btree_multiset`. If the destination `btree_multiset` already contains an
-  // element with an equivalent key, that element is not extracted.
+  // Extracts all elements from a given `source` btree_multiset into this
+  // `btree_multiset`.
   using Base::merge;
 
   // btree_multiset::swap(btree_multiset& other)
@@ -589,8 +634,8 @@ class btree_multiset
   // Determines whether an element comparing equal to the given `key` exists
   // within the `btree_multiset`, returning `true` if so or `false` otherwise.
   //
-  // Supports heterogeneous lookup, provided that the set is provided a
-  // compatible heterogeneous comparator.
+  // Supports heterogeneous lookup, provided that the set has a compatible
+  // heterogeneous comparator.
   using Base::contains;
 
   // btree_multiset::count()
@@ -600,8 +645,8 @@ class btree_multiset
   // Returns the number of elements comparing equal to the given `key` within
   // the `btree_multiset`.
   //
-  // Supports heterogeneous lookup, provided that the set is provided a
-  // compatible heterogeneous comparator.
+  // Supports heterogeneous lookup, provided that the set has a compatible
+  // heterogeneous comparator.
   using Base::count;
 
   // btree_multiset::equal_range()
@@ -618,9 +663,33 @@ class btree_multiset
   //
   // Finds an element with the passed `key` within the `btree_multiset`.
   //
-  // Supports heterogeneous lookup, provided that the set is provided a
-  // compatible heterogeneous comparator.
+  // Supports heterogeneous lookup, provided that the set has a compatible
+  // heterogeneous comparator.
   using Base::find;
+
+  // btree_multiset::lower_bound()
+  //
+  // template <typename K> iterator lower_bound(const K& key):
+  // template <typename K> const_iterator lower_bound(const K& key) const:
+  //
+  // Finds the first element that is not less than `key` within the
+  // `btree_multiset`.
+  //
+  // Supports heterogeneous lookup, provided that the set has a compatible
+  // heterogeneous comparator.
+  using Base::lower_bound;
+
+  // btree_multiset::upper_bound()
+  //
+  // template <typename K> iterator upper_bound(const K& key):
+  // template <typename K> const_iterator upper_bound(const K& key) const:
+  //
+  // Finds the first element that is greater than `key` within the
+  // `btree_multiset`.
+  //
+  // Supports heterogeneous lookup, provided that the set has a compatible
+  // heterogeneous comparator.
+  using Base::upper_bound;
 
   // btree_multiset::get_allocator()
   //
@@ -648,6 +717,80 @@ void swap(btree_multiset<K, C, A> &x, btree_multiset<K, C, A> &y) {
   return x.swap(y);
 }
 
+// absl::erase_if(absl::btree_multiset<>, Pred)
+//
+// Erases all elements that satisfy the predicate pred from the container.
+// Returns the number of erased elements.
+template <typename K, typename C, typename A, typename Pred>
+typename btree_multiset<K, C, A>::size_type erase_if(
+   btree_multiset<K, C, A> & set, Pred pred) {
+  return container_internal::btree_access::erase_if(set, std::move(pred));
+}
+
+namespace container_internal {
+
+// This type implements the necessary functions from the
+// absl::container_internal::slot_type interface for btree_(multi)set.
+template <typename Key>
+struct set_slot_policy {
+  using slot_type = Key;
+  using value_type = Key;
+  using mutable_value_type = Key;
+
+  static value_type &element(slot_type *slot) { return *slot; }
+  static const value_type &element(const slot_type *slot) { return *slot; }
+
+  template <typename Alloc, class... Args>
+  static void construct(Alloc *alloc, slot_type *slot, Args &&...args) {
+    absl::allocator_traits<Alloc>::construct(*alloc, slot,
+                                             std::forward<Args>(args)...);
+  }
+
+  template <typename Alloc>
+  static void construct(Alloc *alloc, slot_type *slot, slot_type *other) {
+    absl::allocator_traits<Alloc>::construct(*alloc, slot, std::move(*other));
+  }
+
+  template <typename Alloc>
+  static void destroy(Alloc *alloc, slot_type *slot) {
+    absl::allocator_traits<Alloc>::destroy(*alloc, slot);
+  }
+
+  template <typename Alloc>
+  static void swap(Alloc * /*alloc*/, slot_type *a, slot_type *b) {
+    using std::swap;
+    swap(*a, *b);
+  }
+
+  template <typename Alloc>
+  static void move(Alloc * /*alloc*/, slot_type *src, slot_type *dest) {
+    *dest = std::move(*src);
+  }
+};
+
+// A parameters structure for holding the type parameters for a btree_set.
+// Compare and Alloc should be nothrow copy-constructible.
+template <typename Key, typename Compare, typename Alloc, int TargetNodeSize,
+          bool Multi>
+struct set_params : common_params<Key, Compare, Alloc, TargetNodeSize, Multi,
+                                  set_slot_policy<Key>> {
+  using value_type = Key;
+  using slot_type = typename set_params::common_params::slot_type;
+  using value_compare =
+      typename set_params::common_params::original_key_compare;
+  using is_map_container = std::false_type;
+
+  template <typename V>
+  static const V &key(const V &value) {
+    return value;
+  }
+  static const Key &key(const slot_type *slot) { return *slot; }
+  static const Key &key(slot_type *slot) { return *slot; }
+};
+
+}  // namespace container_internal
+
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_CONTAINER_BTREE_SET_H_

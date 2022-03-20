@@ -37,7 +37,7 @@ float atanhf(float x) /* wrapper atanhf */
    float z, y;
    struct exception exc;
    z = __hide_ieee754_atanhf(x);
-   if(_LIB_VERSION == _IEEE_ || isnan(x))
+   if(_LIB_VERSION == _IEEE_ || isnanf(x))
       return z;
    y = fabsf(x);
    if(y >= (float)1.0)

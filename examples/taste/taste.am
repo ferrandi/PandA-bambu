@@ -7,6 +7,3 @@ EXTRA_DIST += \
    %D%/taste_list\
    %D%/taste.sh\
    %D%/taste-types.asn
-
-TESTS += \
-   %D%/bambu.sh

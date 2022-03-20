@@ -1,6 +1,12 @@
 /* Test for builtin abs, labs, llabs, imaxabs.  Test for __builtin versions. */
 /* Origin: Joseph Myers <jsm28@cam.ac.uk> */
 
+#if (__GNUC__ == 4 && __GNUC_MINOR__ == 5) || defined(__llvm__)
+int main()
+{
+   return 0;
+}
+#else
 #include <limits.h>
 typedef __INTMAX_TYPE__ intmax_t;
 #define INTMAX_MAX __INTMAX_MAX__
@@ -8,12 +14,6 @@ typedef __INTMAX_TYPE__ intmax_t;
 extern void abort (void);
 extern void link_error (void);
 
-#if (__GNUC__ == 4 && __GNUC_MINOR__ == 5) || defined(__llvm__)
-int main()
-{
-   return 0;
-}
-#else
 void
 main_test (void)
 {
@@ -85,6 +85,7 @@ main_test (void)
     abort ();
   if (__builtin_llabs (__LONG_LONG_MAX__) != __LONG_LONG_MAX__)
     link_error ();
+#if 0
   if (__builtin_imaxabs (imax0) != 0)
     abort ();
   if (__builtin_imaxabs (0) != 0)
@@ -105,5 +106,12 @@ main_test (void)
     abort ();
   if (__builtin_imaxabs (INTMAX_MAX) != INTMAX_MAX)
     link_error ();
+#endif
+}
+
+int main()
+{
+   main_test();
+   return 0;
 }
 #endif

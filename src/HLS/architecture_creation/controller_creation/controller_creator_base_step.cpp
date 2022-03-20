@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,21 +66,26 @@
 #include "polixml.hpp"
 #include "xml_helper.hpp"
 
-ControllerCreatorBaseStep::ControllerCreatorBaseStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+ControllerCreatorBaseStep::ControllerCreatorBaseStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                                     unsigned int _funId,
+                                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                                     const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type), out_num(0), in_num(0)
 {
 }
 
 ControllerCreatorBaseStep::~ControllerCreatorBaseStep() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ControllerCreatorBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+ControllerCreatorBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -100,7 +105,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 void ControllerCreatorBaseStep::Initialize()
 {
    HLSFunctionStep::Initialize();
-   /// Test on previuos steps. They check if schedule, register and connection binding have been performed.
+   /// Test on previous steps. They check if schedule, register and connection binding have been performed.
    /// Otherwise, the circuit cannot be created.
    THROW_ASSERT(this->HLS->Rsch, "Scheduling not performed");
    THROW_ASSERT(this->HLS->Rreg, "Register allocation not performed");
@@ -108,32 +113,29 @@ void ControllerCreatorBaseStep::Initialize()
 
    // reference to the HLS controller circuit
    HLS->controller = structural_managerRef(new structural_manager(HLS->Param));
-   this->SM = this->HLS->controller;
    out_ports.clear();
-   in_ports.clear();
    cond_ports.clear();
-   cond_obj.clear();
    out_num = 0;
    in_num = 0;
 }
 
-void ControllerCreatorBaseStep::add_common_ports(structural_objectRef circuit)
+void ControllerCreatorBaseStep::add_common_ports(structural_objectRef circuit, structural_managerRef SM)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the done port...");
-   this->add_done_port(circuit);
+   this->add_done_port(circuit, SM);
 
-   this->add_command_ports(circuit);
+   this->add_command_ports(circuit, SM);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding clock and reset ports...");
-   this->add_clock_reset(circuit);
+   this->add_clock_reset(circuit, SM);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the start port...");
-   this->add_start_port(circuit);
+   this->add_start_port(circuit, SM);
 }
 
-void ControllerCreatorBaseStep::add_clock_reset(structural_objectRef circuit)
+void ControllerCreatorBaseStep::add_clock_reset(structural_objectRef circuit, structural_managerRef SM)
 {
-   /// define boolean type for the clock and reset signals
+   /// define Boolean type for the clock and reset signals
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding clock signal...");
@@ -149,9 +151,9 @@ void ControllerCreatorBaseStep::add_clock_reset(structural_objectRef circuit)
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Reset signal added!");
 }
 
-void ControllerCreatorBaseStep::add_done_port(structural_objectRef circuit)
+void ControllerCreatorBaseStep::add_done_port(structural_objectRef circuit, structural_managerRef SM)
 {
-   /// define boolean type for the done port
+   /// define Boolean type for the done port
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Done signal...");
    /// add done port
@@ -159,9 +161,9 @@ void ControllerCreatorBaseStep::add_done_port(structural_objectRef circuit)
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Done signal added!");
 }
 
-void ControllerCreatorBaseStep::add_start_port(structural_objectRef circuit)
+void ControllerCreatorBaseStep::add_start_port(structural_objectRef circuit, structural_managerRef SM)
 {
-   /// define boolean type for the start port
+   /// define Boolean type for the start port
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding start signal...");
    /// add the start port
@@ -169,18 +171,19 @@ void ControllerCreatorBaseStep::add_start_port(structural_objectRef circuit)
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Start signal added!");
 }
 
-void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
+void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit, structural_managerRef SM)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding command ports");
 
-   /// define boolean type for command signals
+   /// define Boolean type for command signals
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
 
    out_num = 0;
    in_num = 0;
    const auto& selectors = HLS->Rconn->GetSelectors();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding " + std::to_string(selectors.size()) + " selectors");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Adding " + std::to_string(selectors.size()) + " selectors");
    for(const auto& selector : selectors)
    {
       for(const auto& j : selector.second)
@@ -190,9 +193,12 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
          {
             /// operations signals have not to be added at this point
             if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::OPERATION)
+            {
                continue;
+            }
             /// they represent commands to multiplexers or write enables to registers
-            structural_objectRef sel_obj = SM->add_port(j.second->get_structural_obj()->get_id(), port_o::OUT, circuit, bool_type);
+            structural_objectRef sel_obj =
+                SM->add_port(j.second->get_structural_obj()->get_id(), port_o::OUT, circuit, bool_type);
             GetPointer<commandport_obj>(j.second)->set_controller_obj(sel_obj);
             out_ports[j.second] = out_num++;
          }
@@ -203,7 +209,8 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
             structural_objectRef sel_obj;
             if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTI_UNBOUNDED)
             {
-               sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
+               sel_obj =
+                   SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
                auto mu_obj = GetPointer<commandport_obj>(j.second)->get_elem();
                THROW_ASSERT(GetPointer<multi_unbounded_obj>(mu_obj), "unexpected condition");
                mu_ports[GetPointer<multi_unbounded_obj>(mu_obj)->get_fsm_state()] = in_num;
@@ -216,26 +223,30 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
                {
                   /// multi bit selector representing the evaluation of a switch
                   unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, cond_v);
-                  structural_type_descriptorRef switch_port_type = structural_type_descriptorRef(new structural_type_descriptor(var_written, FB->CGetBehavioralHelper()));
-                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, switch_port_type);
+                  structural_type_descriptorRef switch_port_type = structural_type_descriptorRef(
+                      new structural_type_descriptor(var_written, FB->CGetBehavioralHelper()));
+                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit,
+                                         switch_port_type);
                }
                else if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTIIF)
                {
-                  std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, cond_v);
+                  std::vector<HLS_manager::io_binding_type> var_read =
+                      HLSMgr->get_required_values(HLS->functionId, cond_v);
                   auto vect_size = static_cast<unsigned int>(var_read.size());
-                  structural_type_descriptorRef multiif_port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", vect_size));
-                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, multiif_port_type);
+                  structural_type_descriptorRef multiif_port_type =
+                      structural_type_descriptorRef(new structural_type_descriptor("bool", vect_size));
+                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit,
+                                         multiif_port_type);
                }
                else
                {
                   /// single bit selector representing the evaluation of a condition
-                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
+                  sel_obj =
+                      SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
                }
                cond_ports[cond_v] = in_num;
-               cond_obj[cond_v] = j.second;
             }
             GetPointer<commandport_obj>(j.second)->set_controller_obj(sel_obj);
-            in_ports[j.second] = in_num;
             in_num++;
          }
       }

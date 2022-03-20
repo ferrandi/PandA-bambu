@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,14 +75,16 @@ class liberty_model : public time_model
 
    void xwrite(xml_element* pin_node, const std::string& output_pin) override;
 
-   void add_timing_group(const std::string& output, const CustomOrderedSet<std::string>& inputs, const timing_groupRef& tg);
+   void add_timing_group(const std::string& output, const CustomOrderedSet<std::string>& inputs,
+                         const timing_groupRef& tg);
 
    std::map<std::string, std::map<CustomOrderedSet<std::string>, timing_groupRef>> get_timing_groups() const
    {
       return timing_groups;
    }
 
-   void set_timing_groups(const std::map<std::string, std::map<CustomOrderedSet<std::string>, timing_groupRef>>& timing_groups_);
+   void set_timing_groups(
+       const std::map<std::string, std::map<CustomOrderedSet<std::string>, timing_groupRef>>& timing_groups_);
 
    bool has_timing_groups() const
    {
@@ -98,6 +100,6 @@ class liberty_model : public time_model
    double get_skew_value() const;
 };
 
-typedef refcount<liberty_model> liberty_modelRef;
+using liberty_modelRef = refcount<liberty_model>;
 
 #endif

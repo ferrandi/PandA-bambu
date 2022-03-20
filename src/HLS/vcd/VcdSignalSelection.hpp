@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -55,7 +55,8 @@ class VcdSignalSelection : public HLS_step
    /**
     * Return the set of analyses in relationship with this design step
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Selects the initial set of function parameters to skip, iterating on
@@ -64,7 +65,8 @@ class VcdSignalSelection : public HLS_step
     * \param[in] reached_body_fun_ids  List of ids of the reached functions with body
     * \param[out] address_parameters The set of parm_decl tree_nodes representing addresses
     */
-   void SelectInitialAddrParam(const CustomOrderedSet<unsigned int>& reached_body_fun_ids, CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters);
+   void SelectInitialAddrParam(const CustomOrderedSet<unsigned int>& reached_body_fun_ids,
+                               CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters);
 
    /**
     * Determines if the tree_node tn assigns an ssa_name representing an
@@ -78,7 +80,9 @@ class VcdSignalSelection : public HLS_step
     * \param[in] addr_fun_ids List of ids of the reached functions that return an address value
     * \param[in] call_id_to_called_id Map the id of a call to the id of the called function
     */
-   void InitialSsaIsAddress(const tree_nodeConstRef& tn, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
+   void InitialSsaIsAddress(
+       const tree_nodeConstRef& tn, const CustomUnorderedSet<unsigned int>& addr_fun_ids,
+       const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
 
    /**
     * Determines if the tree_node tn assigns an ssa_name representing an
@@ -94,7 +98,10 @@ class VcdSignalSelection : public HLS_step
     * \param[in] addr_fun_ids List of ids of the reached functions that return an address value
     * \param[in] call_id_to_called_id Map the id of a call to the id of the called function
     */
-   void SelectInitialSsa(const CustomOrderedSet<unsigned int>& reached_body_fun_ids, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
+   void
+   SelectInitialSsa(const CustomOrderedSet<unsigned int>& reached_body_fun_ids,
+                    const CustomUnorderedSet<unsigned int>& addr_fun_ids,
+                    const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
 
    /**
     * Single step used in the loop of PropagateAddrParamToSsa()
@@ -109,7 +116,8 @@ class VcdSignalSelection : public HLS_step
     * \param[in] address_parameters Set of parm_decl tree_nodes of the parameters to skip
     * \param[in] reached_body_functions List of the ids of the reached functions with body
     */
-   void PropagateAddrParamToSsa(const CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters, const CustomOrderedSet<unsigned int>& reached_body_fun_ids);
+   void PropagateAddrParamToSsa(const CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters,
+                                const CustomOrderedSet<unsigned int>& reached_body_fun_ids);
 
    /**
     * Single step used in the loop of PropagateAddrSsa()
@@ -128,7 +136,8 @@ class VcdSignalSelection : public HLS_step
     * \param[in] reached_body_functions List of the ids of the reached functions with body
     * \param[in, out] addr_fun_ids List of ids of the reached functions that return an address value
     */
-   void DetectInvalidReturns(const CustomOrderedSet<unsigned int>& reached_body_functions, CustomUnorderedSet<unsigned int>& addr_fun_ids);
+   void DetectInvalidReturns(const CustomOrderedSet<unsigned int>& reached_body_functions,
+                             CustomUnorderedSet<unsigned int>& addr_fun_ids);
 
    /**
     * Propagates the information on the ssa to skip to all the ssa in the
@@ -138,7 +147,9 @@ class VcdSignalSelection : public HLS_step
     * \param[in] reached_body_functions List of the ids of the reached functions with body
     * \param[in, out] addr_fun_ids List of ids of the reached functions that return an address value
     */
-   void InProcedurePropagateAddr(const CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters, const CustomOrderedSet<unsigned int>& reached_body_functions, CustomUnorderedSet<unsigned int>& addr_fun_ids);
+   void InProcedurePropagateAddr(const CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters,
+                                 const CustomOrderedSet<unsigned int>& reached_body_functions,
+                                 CustomUnorderedSet<unsigned int>& addr_fun_ids);
 
    /**
     * Propagates the information on the parameters to skip across function
@@ -152,8 +163,12 @@ class VcdSignalSelection : public HLS_step
     * \param[in] fu_id_to_call_ids  Maps a function id to the set of ids of operations where it calls other functions
     * \param[in] call_id_to_called_id  Maps the id of a call operation to the id of the called function
     */
-   void CrossPropagateAddrSsa(CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters, const CustomOrderedSet<unsigned int>& reached_body_functions, const CustomUnorderedSet<unsigned int>& addr_fun_ids,
-                              const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
+   void CrossPropagateAddrSsa(
+       CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters,
+       const CustomOrderedSet<unsigned int>& reached_body_functions,
+       const CustomUnorderedSet<unsigned int>& addr_fun_ids,
+       const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& fu_id_to_call_ids,
+       const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
 
    /**
     * Compute the ssa representing address values. They must be manipulated
@@ -161,20 +176,24 @@ class VcdSignalSelection : public HLS_step
     * \param[in] fu_id_to_call_ids  Maps a function id to the set of ids of operations where it calls other functions
     * \param[in] call_id_to_called_id  Maps the id of a call operation to the id of the called function
     */
-   void SelectAddrSsa(const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
+   void
+   SelectAddrSsa(const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& fu_id_to_call_ids,
+                 const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
 
    /**
     * Checks if type_index represents an address type
     */
    bool IsAddressType(const unsigned int type_index) const;
 
-   void SelectInternalSignals(CustomUnorderedMap<unsigned int, UnorderedSetStdStable<std::string>>& fun_id_to_sig_names) const;
+   void SelectInternalSignals(
+       CustomUnorderedMap<unsigned int, UnorderedSetStdStable<std::string>>& fun_id_to_sig_names) const;
 
  public:
    /**
     * Constructor
     */
-   VcdSignalSelection(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   VcdSignalSelection(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+                      const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

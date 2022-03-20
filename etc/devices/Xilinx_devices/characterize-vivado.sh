@@ -1,6 +1,6 @@
 #! /bin/bash
 
-for device in xc7z020-1clg484-VVD; do
+for device in xc7z020-1clg484-VVD xc7z045-2ffg900-VVD; do
    mkdir -p "$device-DIR"
    cd "$device-DIR"
    /opt/panda/bin/eucalyptus --estimate-library="../$device.xml" --target-scriptfile=../Zynq-VVD.xml --target-datafile="../$device-seed.xml" -v4 >& "$device.log" &

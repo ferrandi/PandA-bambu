@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,17 +66,20 @@ std::string reg_binding_cs::CalculateRegisterName(unsigned int)
 void reg_binding_cs::specialise_reg(structural_objectRef& reg, unsigned int r)
 {
    reg_binding::specialise_reg(reg, r);
-   unsigned int mem_dimension = HLS->Param->getOption<unsigned int>(OPT_context_switch);
+   auto mem_dimension = HLS->Param->getOption<unsigned int>(OPT_context_switch);
    int dimension = ceil_log2(HLS->Param->getOption<unsigned long long int>(OPT_context_switch));
    if(!dimension)
+   {
       dimension = 1;
+   }
    structural_objectRef selector_port = reg->find_member(SELECTOR_REGISTER_FILE, port_o_K, reg);
    if(selector_port != nullptr)
    {
       selector_port->type_resize(static_cast<unsigned>(dimension)); // selector
    }
    GetPointer<module>(reg)->SetParameter("n_elements", STR(mem_dimension));
-   for(unsigned int j = 0; j < GetPointer<module>(reg)->get_in_port_size(); j++) // connect input scheduler with datapath input
+   for(unsigned int j = 0; j < GetPointer<module>(reg)->get_in_port_size();
+       j++) // connect input scheduler with datapath input
    {
       structural_objectRef port_i = GetPointer<module>(reg)->get_in_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();

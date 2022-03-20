@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2014-2020 Politecnico di Milano
+ *              Copyright (C) 2014-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file div_utilities
  * @brief function used to speedup the single precision floating point division.
@@ -42,181 +42,241 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-typedef unsigned int div_UHItype __attribute__ ((mode (HI)));
-typedef unsigned int div_USItype __attribute__ ((mode (SI)));
-typedef unsigned int div_UDItype __attribute__ ((mode (DI)));
+ */
+typedef unsigned int div_UHItype __attribute__((mode(HI)));
+typedef unsigned int div_USItype __attribute__((mode(SI)));
+typedef unsigned int div_UDItype __attribute__((mode(DI)));
 /// compute the 64bit multiplication between a and b and return only the 32 most significant bits
 div_USItype __builtin_umulh32(div_USItype a, div_USItype b);
 __FORCE_INLINE div_USItype __builtin_umulh32(div_USItype a, div_USItype b)
 {
-  return ((div_UDItype)(div_USItype)(a) * (div_USItype)(b))>>32;
+   return ((div_UDItype)(div_USItype)(a) * (div_USItype)(b)) >> 32;
 }
 
-///compute the 32bit multiplication between a and b and return only the 16 most significant bits
+/// compute the 32bit multiplication between a and b and return only the 16 most significant bits
 div_UHItype __builtin_umulh16(div_UHItype a, div_UHItype b);
 __FORCE_INLINE div_UHItype __builtin_umulh16(div_UHItype a, div_UHItype b)
 {
-  return ((div_USItype)(div_UHItype)(a) * (div_UHItype)(b))>>16;
+   return ((div_USItype)(div_UHItype)(a) * (div_UHItype)(b)) >> 16;
 }
 
 div_UHItype __builtin_umulh816(div_UHItype a, div_UHItype b);
 __FORCE_INLINE div_UHItype __builtin_umulh816(div_UHItype a, div_UHItype b)
 {
-  return ((div_USItype)(div_UHItype)(a) * (div_UHItype)(b))>>8;
+   return ((div_USItype)(div_UHItype)(a) * (div_UHItype)(b)) >> 8;
 }
 
 div_USItype __builtin_umulh1632(div_USItype a, div_USItype b);
 __FORCE_INLINE div_USItype __builtin_umulh1632(div_USItype a, div_USItype b)
 {
-  return (((div_UDItype)a) * b)>>16;
+   return (((div_UDItype)a) * b) >> 16;
 }
 
 div_UDItype __builtin_umulh64(div_UDItype u, div_UDItype v);
 __FORCE_INLINE div_UDItype __builtin_umulh64(div_UDItype u, div_UDItype v)
 {
-    register div_USItype u0, v0, k, u1, v1, w1, w2;
-    register div_UDItype t, t0, t1;
-    u1 = u >> 32; u0 = u ;
-    v1 = v >> 32; v0 = v ;
-    t = (div_UDItype)u0*v0;
-    k = t >> 32;
-    t0 = (div_UDItype)u1*v0;
-    t = t0 + (div_UDItype)k; 
-    w1 = t;
-    w2 = t >> 32;
-    t0 = (div_UDItype)u0*v1;
-    t = t0 + (div_UDItype)w1;
-    k = t >> 32;
-    t0 = (div_UDItype)u1*v1;
-    t1 = (div_UDItype)w2 + (div_UDItype)k;
-    return t0 + t1; 
+   register div_USItype u0, v0, k, u1, v1, w1, w2;
+   register div_UDItype t, t0, t1;
+   u1 = u >> 32;
+   u0 = u;
+   v1 = v >> 32;
+   v0 = v;
+   t = (div_UDItype)u0 * v0;
+   k = t >> 32;
+   t0 = (div_UDItype)u1 * v0;
+   t = t0 + (div_UDItype)k;
+   w1 = t;
+   w2 = t >> 32;
+   t0 = (div_UDItype)u0 * v1;
+   t = t0 + (div_UDItype)w1;
+   k = t >> 32;
+   t0 = (div_UDItype)u1 * v1;
+   t1 = (div_UDItype)w2 + (div_UDItype)k;
+   return t0 + t1;
 }
 
-#define GOLDSCHMIDT_MANTISSA_DIVISION()\
-    zExp = aExp - bExp + 0x7D;\
-    aSig = ( aSig | 0x00800000U )<<7;\
-    bSig = ( bSig | 0x00800000U )<<8;\
-     if ( bSig <= ( aSig << 1 ) ) {\
-        aSig >>= 1;\
-        ++zExp;\
-    }\
-    {\
-        static const __bits16 softfloat_approxRecip_1k0s[16] = {\
-            0xFFC4, 0xF0BE, 0xE363, 0xD76F, 0xCCAD, 0xC2F0, 0xBA16, 0xB201,\
-            0xAA97, 0xA3C6, 0x9D7A, 0x97A6, 0x923C, 0x8D32, 0x887E, 0x8417\
-        };\
-        static const __bits16 softfloat_approxRecip_1k1s[16] = {\
-            0xF0F1, 0xD62C, 0xBFA1, 0xAC77, 0x9C0A, 0x8DDB, 0x8185, 0x76BA,\
-            0x6D3B, 0x64D4, 0x5D5C, 0x56B1, 0x50B6, 0x4B55, 0x4679, 0x4211\
-        };\
-        __bits8 index = bSig>>27 & 0xF;\
-        __bits16 eps = (__bits16) (bSig>>11);\
-        __bits16 r0 = softfloat_approxRecip_1k0s[index]\
-                 - ((softfloat_approxRecip_1k1s[index] * (__bits32) eps)>>20);\
-        __bits32 sigma0 = ~(__bits32) ((r0 * (__bits64) bSig)>>7);\
-        __bits32 r = ((__bits32) r0<<16) + ((r0 * (__bits32) ((sigma0>>16)))>>8);\
-        _Bool rem_ge;\
-        __bits32 p = (__bits32) r >> 1;\
-        ga0 = __builtin_umulh32(aSig, p) << 2;\
-        gb0 = __builtin_umulh32(bSig, p);\
-        gb1 = 0x80000000U - gb0;\
-        ga1 = ((((div_UDItype)(div_USItype)(ga0>>2) * (div_USItype)(gb1))<<2)>>32)<<1;\
-        zSig = (ga1 + 0x10) >> 5;\
-        __bits32 zSigminus1 = zSig-1;\
-        zSig <<= 6;\
-        zSigminus1 <<= 6;\
-        rem0 = (((div_UDItype)(div_USItype)(bSig>>8) * (div_USItype)(zSig>>6))<<14)>>32;\
-        rem = aSig - rem0;\
-        rem_ge = ((__sbits32) rem) <= 0;\
-        zSig = COND_EXPR_MACRO32(rem_ge, zSigminus1, zSig);\
-        zSig = zSig| (0x1<< 5);\
-    }
+#define GOLDSCHMIDT_MANTISSA_DIVISION_IEEE()                                                                                                                                                   \
+   zExp = aExp - bExp + 0x7D;                                                                                                                                                                  \
+   aSig = (aSig | 0x00800000U) << 7;                                                                                                                                                           \
+   bSig = (bSig | 0x00800000U) << 8;                                                                                                                                                           \
+   if(bSig <= (aSig << 1))                                                                                                                                                                     \
+   {                                                                                                                                                                                           \
+      aSig >>= 1;                                                                                                                                                                              \
+      ++zExp;                                                                                                                                                                                  \
+   }                                                                                                                                                                                           \
+   {                                                                                                                                                                                           \
+      static const __bits16 softfloat_approxRecip_1k0s[16] = {0xFFC4, 0xF0BE, 0xE363, 0xD76F, 0xCCAD, 0xC2F0, 0xBA16, 0xB201, 0xAA97, 0xA3C6, 0x9D7A, 0x97A6, 0x923C, 0x8D32, 0x887E, 0x8417}; \
+      static const __bits16 softfloat_approxRecip_1k1s[16] = {0xF0F1, 0xD62C, 0xBFA1, 0xAC77, 0x9C0A, 0x8DDB, 0x8185, 0x76BA, 0x6D3B, 0x64D4, 0x5D5C, 0x56B1, 0x50B6, 0x4B55, 0x4679, 0x4211}; \
+      __bits8 index = bSig >> 27 & 0xF;                                                                                                                                                        \
+      __bits16 eps = (__bits16)(bSig >> 11);                                                                                                                                                   \
+      __bits16 r0 = softfloat_approxRecip_1k0s[index] - ((softfloat_approxRecip_1k1s[index] * (__bits32)eps) >> 20);                                                                           \
+      __bits32 sigma0 = ~(__bits32)((r0 * (__bits64)bSig) >> 7);                                                                                                                               \
+      __bits32 r = ((__bits32)r0 << 16) + ((r0 * (__bits32)((sigma0 >> 16))) >> 8);                                                                                                            \
+      _Bool rem_ge;                                                                                                                                                                            \
+      __bits32 p = (__bits32)r >> 1;                                                                                                                                                           \
+      ga0 = __builtin_umulh32(aSig, p) << 2;                                                                                                                                                   \
+      gb0 = __builtin_umulh32(bSig, p);                                                                                                                                                        \
+      gb1 = 0x80000000U - gb0;                                                                                                                                                                 \
+      ga1 = ((((div_UDItype)(div_USItype)(ga0 >> 2) * (div_USItype)(gb1)) << 2) >> 32) << 1;                                                                                                   \
+      zSig = (ga1 + 0x10) >> 5;                                                                                                                                                                \
+      __bits32 zSigminus1 = zSig - 1;                                                                                                                                                          \
+      zSig <<= 6;                                                                                                                                                                              \
+      zSigminus1 <<= 6;                                                                                                                                                                        \
+      rem0 = (((div_UDItype)(div_USItype)(bSig >> 8) * (div_USItype)(zSig >> 6)) << 14) >> 32;                                                                                                 \
+      rem = aSig - rem0;                                                                                                                                                                       \
+      rem_ge = ((__sbits32)rem) <= 0;                                                                                                                                                          \
+      zSig = COND_EXPR_MACRO32(rem_ge, zSigminus1, zSig);                                                                                                                                      \
+      zSig = zSig | (0x1 << 5);                                                                                                                                                                \
+   }
 
-#define FLIP_MANTISSA_DIVISION()\
-    zExp = aExp - bExp + 0x7D;\
-    aSig = ( aSig | 0x00800000U )<<7;\
-    bSig = ( bSig | 0x00800000U )<<8;\
-     if ( bSig <= ( aSig << 1 ) ) {\
-        aSig >>= 1;\
-        ++zExp;\
-    }\
-    if( bSig < 0xC0000000U ) {\
-      c0 = 0x13A9CBBCU;\
-      c1 = 0x503829C5U;\
-      c2 = 0xADD32DF9U;\
-      c3 = 0xD30031B3U;\
-      c4 = 0x880B9496U;\
-      c5 = 0x2466BBF6U;\
-      shft = 5;\
-    }\
-    else {\
-      c0 = 0x1BC2BBC2U;\
-      c1 = 0x501C42DCU;\
-      c2 = 0x7B0A4354U;\
-      c3 = 0x6A142F53U;\
-      c4 = 0x30AD0BD9U;\
-      c5 = 0x094998D5U;\
-      shft = 4;\
-    }\
-    p1 = __builtin_umulh32(bSig, c5);\
-    bSigsqr1 = __builtin_umulh32(bSig, bSig);\
-    bSigsqr2 = __builtin_umulh32(bSigsqr1, bSigsqr1);\
-    p1 = __builtin_umulh32(bSigsqr2, (c4-p1));\
-    p3 = __builtin_umulh32(bSig, c3);\
-    p2 = __builtin_umulh32(bSigsqr1, (c2-p3));\
-    p3 = __builtin_umulh32(bSig, c1);\
-    p3 = c0-p3;\
-    p = p1 + p2 + p3;\
-    p = p << shft;\
-    ga0 = __builtin_umulh32(aSig, p) << 2;\
-    gb0 = __builtin_umulh32(bSig, p);\
-    gb1 = 0x80000000U - gb0;\
-    ga1 = __builtin_umulh32(ga0, gb1) << 1;\
-    zSig = (ga1 + 0x10) >> 5;\
-    rem0 = __builtin_umulh32(bSig, (zSig<<6));\
-    rem = aSig - rem0;\
-    if(((__sbits32) rem) <= 0)\
-      --zSig;\
-    zSig = (zSig << 6)| (0x1<< 5);\
+#define GOLDSCHMIDT_MANTISSA_DIVISION()                                                                                                                                                        \
+   zExp = aExp - bExp - __exp_bias - 2;                                                                                                                                                        \
+   aSig = (aSig | (1 << __frac_bits)) << (30 - __frac_bits);                                                                                                                                   \
+   bSig = (bSig | (1 << __frac_bits)) << (31 - __frac_bits);                                                                                                                                   \
+   if(bSig <= (aSig << 1))                                                                                                                                                                     \
+   {                                                                                                                                                                                           \
+      aSig >>= 1;                                                                                                                                                                              \
+      ++zExp;                                                                                                                                                                                  \
+   }                                                                                                                                                                                           \
+   {                                                                                                                                                                                           \
+      static const __bits16 softfloat_approxRecip_1k0s[16] = {0xFFC4, 0xF0BE, 0xE363, 0xD76F, 0xCCAD, 0xC2F0, 0xBA16, 0xB201, 0xAA97, 0xA3C6, 0x9D7A, 0x97A6, 0x923C, 0x8D32, 0x887E, 0x8417}; \
+      static const __bits16 softfloat_approxRecip_1k1s[16] = {0xF0F1, 0xD62C, 0xBFA1, 0xAC77, 0x9C0A, 0x8DDB, 0x8185, 0x76BA, 0x6D3B, 0x64D4, 0x5D5C, 0x56B1, 0x50B6, 0x4B55, 0x4679, 0x4211}; \
+      __bits8 index = bSig >> 27 & 0xF;                                                                                                                                                        \
+      __bits16 eps = (__bits16)(bSig >> 11);                                                                                                                                                   \
+      __bits16 r0 = softfloat_approxRecip_1k0s[index] - ((softfloat_approxRecip_1k1s[index] * (__bits32)eps) >> 20);                                                                           \
+      __bits32 sigma0 = ~(__bits32)((r0 * (__bits64)bSig) >> 7);                                                                                                                               \
+      __bits32 r = ((__bits32)r0 << 16) + ((r0 * (__bits32)((sigma0 >> 16))) >> 8);                                                                                                            \
+      _Bool rem_ge;                                                                                                                                                                            \
+      __bits32 p = (__bits32)r >> 1;                                                                                                                                                           \
+      ga0 = __builtin_umulh32(aSig, p) << 2;                                                                                                                                                   \
+      gb0 = __builtin_umulh32(bSig, p);                                                                                                                                                        \
+      gb1 = 0x80000000U - gb0;                                                                                                                                                                 \
+      ga1 = ((((div_UDItype)(div_USItype)(ga0 >> 2) * (div_USItype)(gb1)) << 2) >> 32) << 1;                                                                                                   \
+      zSig = (ga1 + 0x10) >> 5;                                                                                                                                                                \
+      __bits32 zSigminus1 = zSig - 1;                                                                                                                                                          \
+      zSig <<= 6;                                                                                                                                                                              \
+      zSigminus1 <<= 6;                                                                                                                                                                        \
+      rem0 = (((div_UDItype)(div_USItype)(bSig >> 8) * (div_USItype)(zSig >> 6)) << 14) >> 32;                                                                                                 \
+      rem = aSig - rem0;                                                                                                                                                                       \
+      rem_ge = ((__sbits32)rem) <= 0;                                                                                                                                                          \
+      zSig = COND_EXPR_MACRO32(rem_ge, zSigminus1, zSig);                                                                                                                                      \
+      zSig = zSig | (0x1 << 5);                                                                                                                                                                \
+   }
 
-#define GOLDSCHMIDT_MANTISSA_DIVISION_64()\
-    zExp = aExp - bExp + 0x3FD;\
-    aSig = ( aSig | 0x0010000000000000U )<<10;\
-    bSig = ( bSig | 0x0010000000000000U )<<11;\
-     if ( bSig <= ( aSig << 1 ) ) {\
-        aSig >>= 1;\
-        ++zExp;\
-    }\
-    {\
-        static const __bits16 softfloat_approxRecip_1k0s[16] = {\
-            0xFFC4, 0xF0BE, 0xE363, 0xD76F, 0xCCAD, 0xC2F0, 0xBA16, 0xB201,\
-            0xAA97, 0xA3C6, 0x9D7A, 0x97A6, 0x923C, 0x8D32, 0x887E, 0x8417\
-        };\
-        static const __bits16 softfloat_approxRecip_1k1s[16] = {\
-            0xF0F1, 0xD62C, 0xBFA1, 0xAC77, 0x9C0A, 0x8DDB, 0x8185, 0x76BA,\
-            0x6D3B, 0x64D4, 0x5D5C, 0x56B1, 0x50B6, 0x4B55, 0x4679, 0x4211\
-        };\
-        __bits8 index = bSig>>(27+32) & 0xF;\
-        __bits16 eps = (__bits16) (bSig>>(11+32));\
-        __bits16 r0 = softfloat_approxRecip_1k0s[index]\
-                 - ((softfloat_approxRecip_1k1s[index] * (__bits32) eps)>>20);\
-        __bits32 sigma0 = ~(__bits32) ((r0 * (bSig>>32))>>7);\
-        __bits32 r = ((__bits32) r0<<16) + ((r0 * (__bits64) sigma0)>>24);\
-        __bits32 sqrSigma0 = ((__bits64) sigma0 * sigma0)>>32;\
-        r += ((__bits32) r * (__bits64) sqrSigma0)>>48;\
-        __bits64 p = ((__bits64)r) << (15+16);\
-        ga0 = __builtin_umulh64(aSig, p) << 2;\
-        gb0 = __builtin_umulh64(bSig, p);\
-        gb1 = 0x8000000000000000U - gb0;\
-        ga1 = __builtin_umulh64(ga0, gb1) << 1;\
-        zSig = (ga1 + 0x10) >> 8;\
-        __bits64 zSigminus1 = zSig-1;\
-        zSig <<= 9;\
-        zSigminus1 <<= 9;\
-        rem0 = __builtin_umulh64(bSig, zSig);\
-        rem = aSig - rem0;\
-        zSig = ((__sbits64) rem) <= 0? zSigminus1 : zSig;\
-        zSig = zSig| (0x1<< 8);\
-    }
+#define FLIP_MANTISSA_DIVISION()                     \
+   zExp = aExp - bExp + 0x7D;                        \
+   aSig = (aSig | 0x00800000U) << 7;                 \
+   bSig = (bSig | 0x00800000U) << 8;                 \
+   if(bSig <= (aSig << 1))                           \
+   {                                                 \
+      aSig >>= 1;                                    \
+      ++zExp;                                        \
+   }                                                 \
+   if(bSig < 0xC0000000U)                            \
+   {                                                 \
+      c0 = 0x13A9CBBCU;                              \
+      c1 = 0x503829C5U;                              \
+      c2 = 0xADD32DF9U;                              \
+      c3 = 0xD30031B3U;                              \
+      c4 = 0x880B9496U;                              \
+      c5 = 0x2466BBF6U;                              \
+      shft = 5;                                      \
+   }                                                 \
+   else                                              \
+   {                                                 \
+      c0 = 0x1BC2BBC2U;                              \
+      c1 = 0x501C42DCU;                              \
+      c2 = 0x7B0A4354U;                              \
+      c3 = 0x6A142F53U;                              \
+      c4 = 0x30AD0BD9U;                              \
+      c5 = 0x094998D5U;                              \
+      shft = 4;                                      \
+   }                                                 \
+   p1 = __builtin_umulh32(bSig, c5);                 \
+   bSigsqr1 = __builtin_umulh32(bSig, bSig);         \
+   bSigsqr2 = __builtin_umulh32(bSigsqr1, bSigsqr1); \
+   p1 = __builtin_umulh32(bSigsqr2, (c4 - p1));      \
+   p3 = __builtin_umulh32(bSig, c3);                 \
+   p2 = __builtin_umulh32(bSigsqr1, (c2 - p3));      \
+   p3 = __builtin_umulh32(bSig, c1);                 \
+   p3 = c0 - p3;                                     \
+   p = p1 + p2 + p3;                                 \
+   p = p << shft;                                    \
+   ga0 = __builtin_umulh32(aSig, p) << 2;            \
+   gb0 = __builtin_umulh32(bSig, p);                 \
+   gb1 = 0x80000000U - gb0;                          \
+   ga1 = __builtin_umulh32(ga0, gb1) << 1;           \
+   zSig = (ga1 + 0x10) >> 5;                         \
+   rem0 = __builtin_umulh32(bSig, (zSig << 6));      \
+   rem = aSig - rem0;                                \
+   if(((__sbits32)rem) <= 0)                         \
+      --zSig;                                        \
+   zSig = (zSig << 6) | (0x1 << 5);
 
+#define GOLDSCHMIDT_MANTISSA_DIVISION_64_IEEE()                                                                                                                                                \
+   zExp = aExp - bExp + 0x3FD;                                                                                                                                                                 \
+   aSig = (aSig | 0x0010000000000000U) << 10;                                                                                                                                                  \
+   bSig = (bSig | 0x0010000000000000U) << 11;                                                                                                                                                  \
+   if(bSig <= (aSig << 1))                                                                                                                                                                     \
+   {                                                                                                                                                                                           \
+      aSig >>= 1;                                                                                                                                                                              \
+      ++zExp;                                                                                                                                                                                  \
+   }                                                                                                                                                                                           \
+   {                                                                                                                                                                                           \
+      static const __bits16 softfloat_approxRecip_1k0s[16] = {0xFFC4, 0xF0BE, 0xE363, 0xD76F, 0xCCAD, 0xC2F0, 0xBA16, 0xB201, 0xAA97, 0xA3C6, 0x9D7A, 0x97A6, 0x923C, 0x8D32, 0x887E, 0x8417}; \
+      static const __bits16 softfloat_approxRecip_1k1s[16] = {0xF0F1, 0xD62C, 0xBFA1, 0xAC77, 0x9C0A, 0x8DDB, 0x8185, 0x76BA, 0x6D3B, 0x64D4, 0x5D5C, 0x56B1, 0x50B6, 0x4B55, 0x4679, 0x4211}; \
+      __bits8 index = bSig >> (27 + 32) & 0xF;                                                                                                                                                 \
+      __bits16 eps = (__bits16)(bSig >> (11 + 32));                                                                                                                                            \
+      __bits16 r0 = softfloat_approxRecip_1k0s[index] - ((softfloat_approxRecip_1k1s[index] * (__bits32)eps) >> 20);                                                                           \
+      __bits32 sigma0 = ~(__bits32)((r0 * (bSig >> 32)) >> 7);                                                                                                                                 \
+      __bits32 r = ((__bits32)r0 << 16) + ((r0 * (__bits64)sigma0) >> 24);                                                                                                                     \
+      __bits32 sqrSigma0 = ((__bits64)sigma0 * sigma0) >> 32;                                                                                                                                  \
+      r += ((__bits32)r * (__bits64)sqrSigma0) >> 48;                                                                                                                                          \
+      __bits64 p = ((__bits64)r) << (15 + 16);                                                                                                                                                 \
+      ga0 = __builtin_umulh64(aSig, p) << 2;                                                                                                                                                   \
+      gb0 = __builtin_umulh64(bSig, p);                                                                                                                                                        \
+      gb1 = 0x8000000000000000U - gb0;                                                                                                                                                         \
+      ga1 = __builtin_umulh64(ga0, gb1) << 1;                                                                                                                                                  \
+      zSig = (ga1 + 0x10) >> 8;                                                                                                                                                                \
+      __bits64 zSigminus1 = zSig - 1;                                                                                                                                                          \
+      zSig <<= 9;                                                                                                                                                                              \
+      zSigminus1 <<= 9;                                                                                                                                                                        \
+      rem0 = __builtin_umulh64(bSig, zSig);                                                                                                                                                    \
+      rem = aSig - rem0;                                                                                                                                                                       \
+      zSig = ((__sbits64)rem) <= 0 ? zSigminus1 : zSig;                                                                                                                                        \
+      zSig = zSig | (0x1 << 8);                                                                                                                                                                \
+   }
+
+#define GOLDSCHMIDT_MANTISSA_DIVISION_64()                                                                                                                                                     \
+   zExp = aExp - bExp - __exp_bias - 2;                                                                                                                                                        \
+   aSig = (aSig | (1ULL << __frac_bits)) << (62 - __frac_bits);                                                                                                                                \
+   bSig = (bSig | (1ULL << __frac_bits)) << (63 - __frac_bits);                                                                                                                                \
+   if(bSig <= (aSig << 1))                                                                                                                                                                     \
+   {                                                                                                                                                                                           \
+      aSig >>= 1;                                                                                                                                                                              \
+      ++zExp;                                                                                                                                                                                  \
+   }                                                                                                                                                                                           \
+   {                                                                                                                                                                                           \
+      static const __bits16 softfloat_approxRecip_1k0s[16] = {0xFFC4, 0xF0BE, 0xE363, 0xD76F, 0xCCAD, 0xC2F0, 0xBA16, 0xB201, 0xAA97, 0xA3C6, 0x9D7A, 0x97A6, 0x923C, 0x8D32, 0x887E, 0x8417}; \
+      static const __bits16 softfloat_approxRecip_1k1s[16] = {0xF0F1, 0xD62C, 0xBFA1, 0xAC77, 0x9C0A, 0x8DDB, 0x8185, 0x76BA, 0x6D3B, 0x64D4, 0x5D5C, 0x56B1, 0x50B6, 0x4B55, 0x4679, 0x4211}; \
+      __bits8 index = bSig >> (27 + 32) & 0xF;                                                                                                                                                 \
+      __bits16 eps = (__bits16)(bSig >> (11 + 32));                                                                                                                                            \
+      __bits16 r0 = softfloat_approxRecip_1k0s[index] - ((softfloat_approxRecip_1k1s[index] * (__bits32)eps) >> 20);                                                                           \
+      __bits32 sigma0 = ~(__bits32)((r0 * (bSig >> 32)) >> 7);                                                                                                                                 \
+      __bits32 r = ((__bits32)r0 << 16) + ((r0 * (__bits64)sigma0) >> 24);                                                                                                                     \
+      __bits32 sqrSigma0 = ((__bits64)sigma0 * sigma0) >> 32;                                                                                                                                  \
+      r += ((__bits32)r * (__bits64)sqrSigma0) >> 48;                                                                                                                                          \
+      __bits64 p = ((__bits64)r) << (15 + 16);                                                                                                                                                 \
+      ga0 = __builtin_umulh64(aSig, p) << 2;                                                                                                                                                   \
+      gb0 = __builtin_umulh64(bSig, p);                                                                                                                                                        \
+      gb1 = 0x8000000000000000U - gb0;                                                                                                                                                         \
+      ga1 = __builtin_umulh64(ga0, gb1) << 1;                                                                                                                                                  \
+      zSig = (ga1 + 0x10) >> 8;                                                                                                                                                                \
+      __bits64 zSigminus1 = zSig - 1;                                                                                                                                                          \
+      zSig <<= 9;                                                                                                                                                                              \
+      zSigminus1 <<= 9;                                                                                                                                                                        \
+      rem0 = __builtin_umulh64(bSig, zSig);                                                                                                                                                    \
+      rem = aSig - rem0;                                                                                                                                                                       \
+      zSig = ((__sbits64)rem) <= 0 ? zSigminus1 : zSig;                                                                                                                                        \
+      zSig = zSig | (0x1 << 8);                                                                                                                                                                \
+   }

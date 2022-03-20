@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -34,8 +34,9 @@
  * @file bipartite_matching.hpp
  * @brief The class solve the bipartite weighted matching problem with the Hungarian method.
  *
- * The algorithm is based on the description available through http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=hungarianAlgorithm
- * in particular it has been implemented the O(n^3) version of the algorithm.
+ * The algorithm is based on the description available through
+ * http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=hungarianAlgorithm in particular it has been
+ * implemented the O(n^3) version of the algorithm.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -102,39 +103,61 @@ class bipartite_matching
    int get_cost(size_t x, size_t y)
    {
       if(x < num_rows && y < num_cols)
+      {
          return cost(x, y);
+      }
       else
+      {
          return 0;
+      }
    }
    void add_to_tree(size_t x, size_t prevx)
    // x - current vertex,prevx - vertex from X before x in the alternating path,
    // so we add edges (prevx, xy[x]), (xy[x], x)
    {
-      S[x] = true;                    // add x to S
-      prev[x] = prevx;                // we need this when augmenting
-      for(size_t y = 0; y < nel; y++) // update slacks, because we add new vertex to S
+      S[x] = true;     // add x to S
+      prev[x] = prevx; // we need this when augmenting
+      for(size_t y = 0; y < nel; y++)
+      { // update slacks, because we add new vertex to S
          if(lx[x] + ly[y] - get_cost(x, y) < slack[y])
          {
             slack[y] = lx[x] + ly[y] - get_cost(x, y);
             slackx[y] = x;
          }
+      }
    }
    void update_labels()
    {
       size_t x, y;
       int delta = std::numeric_limits<int>::max(); // init delta as infinity
-      for(y = 0; y < nel; y++)                     // calculate delta using slack
+      for(y = 0; y < nel; y++)
+      { // calculate delta using slack
          if(!T[y])
+         {
             delta = std::min(delta, slack[y]);
-      for(x = 0; x < nel; x++) // update X labels
+         }
+      }
+      for(x = 0; x < nel; x++)
+      { // update X labels
          if(S[x])
+         {
             lx[x] -= delta;
-      for(y = 0; y < nel; y++) // update Y labels
+         }
+      }
+      for(y = 0; y < nel; y++)
+      { // update Y labels
          if(T[y])
+         {
             ly[y] += delta;
-      for(y = 0; y < nel; y++) // update slack array
+         }
+      }
+      for(y = 0; y < nel; y++)
+      { // update slack array
          if(!T[y])
+         {
             slack[y] -= delta;
+         }
+      }
    }
 
  public:
@@ -159,7 +182,9 @@ class bipartite_matching
       /// initialize lx
       /// given the cost matrix we have we just have to iterate over the row
       for(size_t i = 0; i < nel; ++i)
+      {
          lx[i] = cost.max_row(i);
+      }
    }
    std::vector<size_t>& get_solution()
    {
@@ -176,7 +201,8 @@ class bipartite_matching
          S.assign(nel, false);        // init set S
          T.assign(nel, false);        // init set T
          prev.assign(nel, MINUS_ONE); // init set prev - for the alternating tree
-         for(x = 0; x < nel; x++)     // finding root of the tree
+         for(x = 0; x < nel; x++)
+         { // finding root of the tree
             if(xy[x] == MINUS_ONE)
             {
                q[wr++] = root = x;
@@ -184,6 +210,7 @@ class bipartite_matching
                S[x] = true;
                break;
             }
+         }
 
          for(y = 0; y < nel; y++) // initializing slack array
          {
@@ -217,7 +244,9 @@ class bipartite_matching
                      }
                   }
                   else
+                  {
                      ++y;
+                  }
                }
             }
             if(!found)
@@ -251,7 +280,9 @@ class bipartite_matching
                      }
                   }
                   else
+                  {
                      ++y;
+                  }
                }
             }
          }

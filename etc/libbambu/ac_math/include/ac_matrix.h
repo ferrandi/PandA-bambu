@@ -397,7 +397,8 @@ class ac_matrix
    friend void ac_matrix_matrixmul(const TA& A, const TB& B, TC& C);
 
    // Send ac_matrix inputs to cholesky inverse as 2D arrays instead.
-   template <bool use_pwl1, bool use_pwl2, int add2w, int add2i, ac_q_mode temp_Q, ac_o_mode temp_O, unsigned M1, class T1, class T2>
+   template <bool use_pwl1, bool use_pwl2, int add2w, int add2i, ac_q_mode temp_Q, ac_o_mode temp_O, unsigned M1,
+             class T1, class T2>
    friend void ac_matrix_cholinv(const ac_matrix<T1, M1, M1>& input, ac_matrix<T2, M1, M1>& output);
 
 #ifdef CCS_SCVERIFY
@@ -455,7 +456,8 @@ T determinant(ac_matrix<T, M, M>& m)
 template <class T>
 T determinant(ac_matrix<T, 3, 3>& m)
 {
-   return m(0, 0) * (m(1, 1) * m(2, 2) - m(1, 2) * m(2, 1)) - m(0, 1) * (m(1, 0) * m(2, 2) - m(1, 2) * m(2, 0)) + m(0, 2) * (m(1, 0) * m(2, 1) - m(1, 1) * m(2, 0));
+   return m(0, 0) * (m(1, 1) * m(2, 2) - m(1, 2) * m(2, 1)) - m(0, 1) * (m(1, 0) * m(2, 2) - m(1, 2) * m(2, 0)) +
+          m(0, 2) * (m(1, 0) * m(2, 1) - m(1, 1) * m(2, 0));
 }
 
 // Specialized template version for 2x2 matrix

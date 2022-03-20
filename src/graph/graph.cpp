@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,7 +44,8 @@
 void graphs_collection::RemoveVertex(boost::graph_traits<boost_graphs_collection>::vertex_descriptor v)
 {
    boost::remove_vertex(v, *this);
-   boost::property_map<boost_graphs_collection, boost::vertex_index_t>::type index_map = boost::get(boost::vertex_index_t(), *this);
+   boost::property_map<boost_graphs_collection, boost::vertex_index_t>::type index_map =
+       boost::get(boost::vertex_index_t(), *this);
    boost::graph_traits<boost_graphs_collection>::vertex_iterator v_it, v_it_end;
    size_t index = 0;
    for(boost::tie(v_it, v_it_end) = boost::vertices(*this); v_it != v_it_end; v_it++, index++)
@@ -57,7 +58,8 @@ boost::graph_traits<boost_graphs_collection>::vertex_descriptor graphs_collectio
 {
    size_t index = boost::num_vertices(*this);
    boost::graph_traits<boost_graphs_collection>::vertex_descriptor new_vertex = boost::add_vertex(*this);
-   boost::property_map<boost_graphs_collection, boost::vertex_index_t>::type index_map = boost::get(boost::vertex_index_t(), *this);
+   boost::property_map<boost_graphs_collection, boost::vertex_index_t>::type index_map =
+       boost::get(boost::vertex_index_t(), *this);
    index_map[new_vertex] = index;
    NodeInfoRef& node_info = (*this)[new_vertex];
    node_info = info;

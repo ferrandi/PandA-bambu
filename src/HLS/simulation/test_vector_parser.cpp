@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -35,11 +35,6 @@
  * @brief .
  *
  */
-
-#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
-
 #include "test_vector_parser.hpp"
 
 /// behavior include
@@ -78,6 +73,7 @@
 
 /// tree/ include
 #include "behavioral_helper.hpp"
+#include "tree_helper.hpp"
 
 /// utility includes
 #include "dbgPrintHelper.hpp"
@@ -85,10 +81,12 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-/// wrapper/treegcc include
-#include "gcc_wrapper.hpp"
+/// wrapper/compiler include
+#include "compiler_wrapper.hpp"
 
-TestVectorParser::TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TEST_VECTOR_PARSER)
+TestVectorParser::TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                   const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TEST_VECTOR_PARSER)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -105,9 +103,13 @@ void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::st
    for(auto it = local_string.begin(), it_end = local_string.end(); it != it_end; ++it)
    {
       if(*it == ',')
+      {
          last_comma = it;
+      }
       else if(*it == '=' && last_comma != it_end)
+      {
          *last_comma = '$';
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Preprocessed string " + local_string);
    test_vectors.push_back(std::map<std::string, std::string>());
@@ -132,7 +134,8 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
 {
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
 
-   THROW_ASSERT(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) != 0, "The call graph has not been computed yet");
+   THROW_ASSERT(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) != 0,
+                "The call graph has not been computed yet");
 
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
@@ -146,16 +149,20 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
       xml_element* nodeRoot = document.create_root_node("function");
       xml_element* node = nodeRoot->add_child_element("testbench");
 
-      for(const auto function_parameter : behavioral_helper->get_parameters())
+      for(const auto& function_parameter : behavioral_helper->GetParameters())
       {
-         if(behavioral_helper->is_a_pointer(function_parameter))
+         if(tree_helper::IsPointerType(function_parameter))
+         {
             continue;
-         std::string param = behavioral_helper->PrintVariable(function_parameter);
+         }
+         std::string param = behavioral_helper->PrintVariable(function_parameter->index);
 
          long long int value = (rand() % 20);
-         if(behavioral_helper->is_bool(function_parameter))
+         if(tree_helper::IsBooleanType(function_parameter))
+         {
             value = value % 2;
-         node->set_attribute(param, boost::lexical_cast<std::string>(value));
+         }
+         node->set_attribute(param, STR(value));
       }
 
       document.write_to_file_formatted(input_xml_filename);
@@ -174,24 +181,38 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
             const auto* Enode = GetPointer<const xml_element>(iter);
 
             if(!Enode || Enode->get_name() != "testbench")
+            {
                continue;
+            }
 
             std::map<std::string, std::string> test_vector;
 
             for(const auto function_parameter : behavioral_helper->get_parameters())
             {
                std::string param = behavioral_helper->PrintVariable(function_parameter);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + param + (behavioral_helper->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
+               INDENT_DBG_MEX(
+                   DEBUG_LEVEL_PEDANTIC, debug_level,
+                   "Parameter: " + param +
+                       (behavioral_helper->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
                if((Enode)->get_attribute(param))
                {
-                  test_vector[param] = boost::lexical_cast<std::string>((Enode)->get_attribute(param)->get_value());
+                  test_vector[param] = STR((Enode)->get_attribute(param)->get_value());
                }
                else if((Enode)->get_attribute(param + ":init_file"))
                {
                   const auto test_directory = GetDirectory(input_xml_filename);
-                  const auto input_file_name = BuildPath(test_directory, Enode->get_attribute(param + ":init_file")->get_value());
-                  const auto input_file = fileIO_istream_open(input_file_name);
-                  test_vector[param] = std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+                  const auto input_file_name =
+                      BuildPath(test_directory, Enode->get_attribute(param + ":init_file")->get_value());
+                  if(input_file_name.size() > 4 && input_file_name.substr(input_file_name.size() - 4) == ".dat")
+                  {
+                     test_vector[param] = input_file_name;
+                  }
+                  else
+                  {
+                     const auto input_file = fileIO_istream_open(input_file_name);
+                     test_vector[param] =
+                         std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+                  }
                }
                else if(!behavioral_helper->is_a_pointer(function_parameter))
                {
@@ -202,17 +223,29 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
                   HLSMgr->RSim->results_available = true;
                   test_vector[param + ":output"] = STR((Enode)->get_attribute(param + ":output")->get_value());
                }
+               else if((Enode)->get_attribute(param + ":init_output_file"))
+               {
+                  HLSMgr->RSim->results_available = true;
+                  const auto test_directory = GetDirectory(input_xml_filename);
+                  const auto input_file_name =
+                      BuildPath(test_directory, Enode->get_attribute(param + ":init_output_file")->get_value());
+                  const auto input_file = fileIO_istream_open(input_file_name);
+                  test_vector[param + ":output"] =
+                      std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+               }
             }
             if(behavioral_helper->GetFunctionReturnType(function_id) and ((Enode)->get_attribute("return")))
             {
                HLSMgr->RSim->results_available = true;
                test_vector["return"] = ((Enode)->get_attribute("return")->get_value());
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Expected return value is " + test_vector["return"]);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "Expected return value is " + test_vector["return"]);
             }
             test_vectors.emplace_back(std::move(test_vector));
          }
          /// If discrepancy is enabled, then xml output is ignored
-         if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and HLSMgr->RSim->results_available)
+         if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and
+            HLSMgr->RSim->results_available)
          {
             HLSMgr->RSim->results_available = false;
             THROW_WARNING("Output stored in xml file will be ignored since discrepancy analysis is enabled");
@@ -242,11 +275,11 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
 
 size_t TestVectorParser::ParseTestVectors(std::vector<std::map<std::string, std::string>>& test_vectors) const
 {
-   if(not input_xml_filename.empty())
+   if(!input_xml_filename.empty())
    {
       ParseXMLFile(test_vectors);
    }
-   else if(not user_input_string.empty())
+   else if(!user_input_string.empty())
    {
       ParseUserString(test_vectors);
    }
@@ -289,14 +322,16 @@ DesignFlowStep_Status TestVectorParser::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestVectorParser::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+TestVectorParser::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:

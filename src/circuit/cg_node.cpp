@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,14 +53,22 @@ void cg_edge_info::print(std::ostream& os) const
       os << GetPointer<constant_o>(from_port)->get_value();
    }
    else if(from_port->get_owner()->get_kind() == port_vector_o_K)
+   {
       os << from_port->get_owner()->get_id() << "[" << from_port->get_id() << "]";
+   }
    else
+   {
       os << from_port->get_id();
+   }
    os << "-";
    if(to_port->get_owner()->get_kind() == port_vector_o_K)
+   {
       os << to_port->get_owner()->get_id() << "[" << to_port->get_id() << "]";
+   }
    else
+   {
       os << to_port->get_id();
+   }
 }
 
 cg_edge_writer::cg_edge_writer(const graph* _g) : g(_g)
@@ -72,17 +80,29 @@ void cg_edge_writer::operator()(std::ostream& out, const EdgeDescriptor& e) cons
    const auto* edge_info = Cget_edge_info<cg_edge_info>(e, *g);
    bool is_critical = false;
    if(edge_info)
+   {
       is_critical = edge_info->is_critical;
+   }
    if(is_critical)
+   {
       out << "[color=red, ";
+   }
    else if(DATA_SELECTOR & g->GetSelector(e))
+   {
       out << "[color=blue, ";
+   }
    else if(CLOCK_SELECTOR & g->GetSelector(e))
+   {
       out << "[color=yellow, ";
+   }
    else if(CHANNEL_SELECTOR & g->GetSelector(e))
+   {
       out << "[color=green, ";
+   }
    else
+   {
       THROW_ERROR(std::string("InconsistentDataStructure"));
+   }
    if(edge_info)
    {
       out << "label=\"";
@@ -107,7 +127,9 @@ void cg_label_writer::operator()(std::ostream& out, const vertex& v) const
    {
       out << "[shape=box";
       if(is_critical)
+      {
          out << ",color=red";
+      }
    }
    out << ", label=\"" << GET_NAME(g, v) << " \\n" << GET_OPERATION(g, v) << "\"]";
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -92,5 +92,5 @@ class CInitializationFlexLexer : public yyFlexLexer
       return 1;
    }
 };
-typedef refcount<CInitializationFlexLexer> CInitializationFlexLexerRef;
+using CInitializationFlexLexerRef = refcount<CInitializationFlexLexer>;
 #endif

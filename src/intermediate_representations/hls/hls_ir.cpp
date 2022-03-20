@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,7 +40,8 @@
 /// Header include
 #include "hls_ir.hpp"
 
-HLSIR::HLSIR(const HLS_managerRef& _hls_manager, const ParameterConstRef& _parameters) : IntermediateRepresentation(_parameters), hls_manager(HLS_managerRef(_hls_manager.get(), null_deleter()))
+HLSIR::HLSIR(const HLS_managerRef& _hls_manager, const ParameterConstRef& _parameters)
+    : IntermediateRepresentation(_parameters), hls_manager(HLS_managerRef(_hls_manager.get(), null_deleter()))
 {
 }
 

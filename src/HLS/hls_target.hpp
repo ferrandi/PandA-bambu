@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,6 +78,6 @@ class HLS_target : public target_manager
    static HLS_targetRef create_target(const ParameterRef& Param);
 };
 /// refcount definition of class
-typedef refcount<HLS_target> HLS_targetRef;
+using HLS_targetRef = refcount<HLS_target>;
 
 #endif

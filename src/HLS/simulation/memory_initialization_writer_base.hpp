@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,9 +78,10 @@ class MemoryInitializationWriterBase : public CInitializationParserFunctor
    unsigned long int written_bytes;
 
    /// The stack representing the current status of the parser; the content is the last dumped element.
-   /// First element of the pair is the tree node describing the type, the second element of the pair is the number of the field (for struct/union) or of the element (for array)
-   /// Second element is the number of seen elements (index of the last element + 1)
-   /// Note that storing last element dumped is equivalent to store next element to be dumped, but this approach make easier check of closes parenthesis
+   /// First element of the pair is the tree node describing the type, the second element of the pair is the number of
+   /// the field (for struct/union) or of the element (for array) Second element is the number of seen elements (index
+   /// of the last element + 1) Note that storing last element dumped is equivalent to store next element to be dumped,
+   /// but this approach make easier check of closes parenthesis
    std::vector<std::pair<const tree_nodeConstRef, size_t>> status;
 
    /// The variable/parameter being printed
@@ -104,8 +105,11 @@ class MemoryInitializationWriterBase : public CInitializationParserFunctor
     * @param testbench_generation_memory_type is the type of initialization being printed
     * @param parameters is the set of input parameters
     */
-   MemoryInitializationWriterBase(const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter,
-                                  const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
+   MemoryInitializationWriterBase(const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper,
+                                  const unsigned long int reserved_mem_bytes,
+                                  const tree_nodeConstRef function_parameter,
+                                  const TestbenchGeneration_MemoryType testbench_generation_memory_type,
+                                  const ParameterConstRef parameters);
 
    /**
     * Check that all the necessary information was present in the initialization string

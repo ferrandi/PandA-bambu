@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,8 +75,12 @@
 /// utility include
 #include "indented_output_stream.hpp"
 
-EdgeCWriter::EdgeCWriter(const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _Param, bool _verbose)
-    : CWriter(_AppM, _instruction_writer, _indented_output_stream, _Param, _verbose), dumped_edges(ltedge<BBGraph>(nullptr)), counter(0)
+EdgeCWriter::EdgeCWriter(const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer,
+                         const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _Param,
+                         bool _verbose)
+    : CWriter(_AppM, _instruction_writer, _indented_output_stream, _Param, _verbose),
+      dumped_edges(ltedge<BBGraph>(nullptr)),
+      counter(0)
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 }
@@ -145,14 +149,17 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
    /// the exit vertex
    const vertex exit_vertex = bb_fcfgGraph->CGetBBGraphInfo()->exit_vertex;
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting writing BB" + boost::lexical_cast<std::string>(bb_number));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Starting writing BB" + boost::lexical_cast<std::string>(bb_number));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   THROW_ASSERT(bb_frontier.find(current_vertex) == bb_frontier.end(), "current_vertex cannot be part of the basic block frontier");
+   THROW_ASSERT(bb_frontier.find(current_vertex) == bb_frontier.end(),
+                "current_vertex cannot be part of the basic block frontier");
 
    if(bb_analyzed.find(current_vertex) != bb_analyzed.end())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--BB" + boost::lexical_cast<std::string>(bb_number) + " already written");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--BB" + boost::lexical_cast<std::string>(bb_number) + " already written");
       return;
    }
 
@@ -160,7 +167,10 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
    bool add_phi_nodes_assignment_prefix = basic_block_prefix.find(bb_number) != basic_block_prefix.end();
    bb_analyzed.insert(current_vertex);
    if(this->verbose)
-      indented_output_stream->Append("//Basic block " + boost::lexical_cast<std::string>(bb_number) + " - loop " + boost::lexical_cast<std::string>(bb_node_info->loop_id) + "\n");
+   {
+      indented_output_stream->Append("//Basic block " + boost::lexical_cast<std::string>(bb_number) + " - loop " +
+                                     boost::lexical_cast<std::string>(bb_node_info->loop_id) + "\n");
+   }
 
    /// get immediate post-dominator
    vertex bb_PD = post_dominators->get_immediate_dominator(current_vertex);
@@ -171,10 +181,13 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
    CustomOrderedSet<vertex>::iterator bb_frontier_begin, bb_frontier_end = bb_frontier.end();
    for(bb_frontier_begin = bb_frontier.begin(); bb_frontier_begin != bb_frontier_end; ++bb_frontier_begin)
    {
-      frontier_string += "BB" + boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(*bb_frontier_begin)->block->number) + " ";
+      frontier_string +=
+          "BB" + boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(*bb_frontier_begin)->block->number) +
+          " ";
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Frontier at the moment is: " + frontier_string);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Its post-dominator is BB" + boost::lexical_cast<std::string>(bb_number_PD));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "Its post-dominator is BB" + boost::lexical_cast<std::string>(bb_number_PD));
 #endif
    bool analyze_bb_PD = bb_frontier.find(bb_PD) == bb_frontier.end() && bb_analyzed.find(bb_PD) == bb_analyzed.end();
    if(analyze_bb_PD)
@@ -200,38 +213,56 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Looking for last statement");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   for(vRIter = bb_node_info->statements_list.rbegin(), vRIterEnd = bb_node_info->statements_list.rend(); vRIter != vRIterEnd; ++vRIter)
+   for(vRIter = bb_node_info->statements_list.rbegin(), vRIterEnd = bb_node_info->statements_list.rend();
+       vRIter != vRIterEnd; ++vRIter)
    {
       if(local_rec_instructions.find(*vRIter) == local_rec_instructions.end())
+      {
          continue;
+      }
       if(GET_TYPE(cfgGraph, *vRIter) & TYPE_VPHI)
+      {
          continue;
+      }
       if((GET_TYPE(cfgGraph, *vRIter) & TYPE_INIT) != 0)
+      {
          continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering operation " + GET_NAME(cfgGraph, *vRIter));
       is_there = true;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "This is basic block is not empty in this task. Last operation to be printed id " + GET_NAME(cfgGraph, *vRIter));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "This is basic block is not empty in this task. Last operation to be printed id " +
+                         GET_NAME(cfgGraph, *vRIter));
       last_stmt = *vRIter;
       break;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    /// check the feasibility
-   bool last_statement_is_a_cond_or_goto = is_there and behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block) != 0 && last_stmt == bb_node_info->statements_list.back();
-   THROW_ASSERT(!last_statement_is_a_cond_or_goto || !is_there || (last_statement_is_a_cond_or_goto && last_stmt == bb_node_info->statements_list.back()), "inconsistent recursion");
+   bool last_statement_is_a_cond_or_goto = is_there and
+                                           behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block) != 0 &&
+                                           last_stmt == bb_node_info->statements_list.back();
+   THROW_ASSERT(!last_statement_is_a_cond_or_goto || !is_there ||
+                    (last_statement_is_a_cond_or_goto && last_stmt == bb_node_info->statements_list.back()),
+                "inconsistent recursion");
    /// check for basic block label
    bool start_with_a_label = behavioral_helper->start_with_a_label(bb_node_info->block);
 
    if(start_with_a_label)
+   {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block starts with a label");
+   }
 
    bool add_bb_label = goto_list.find(current_vertex) != goto_list.end();
 
    if(add_bb_label)
+   {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block should start with a label");
+   }
 
    if(!add_bb_label and !start_with_a_label and boost::in_degree(current_vertex, *bb_fcfgGraph) > 1)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block has an indegree > 1 and not associated label");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "Basic block has an indegree > 1 and not associated label");
       InEdgeIterator inE, inEEnd;
       for(boost::tie(inE, inEEnd) = boost::in_edges(current_vertex, *bb_fcfgGraph); inE != inEEnd; ++inE)
       {
@@ -239,23 +270,31 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          const BBNodeInfoConstRef pred_bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(source);
 
          // This condition match first basic block of case preceded by a case without break
-         if(pred_bb_node_info->statements_list.size() and (GET_TYPE(cfgGraph, *(pred_bb_node_info->statements_list.rbegin())) & TYPE_SWITCH) and post_dominators->get_immediate_dominator(source) != current_vertex)
+         if(pred_bb_node_info->statements_list.size() and
+            (GET_TYPE(cfgGraph, *(pred_bb_node_info->statements_list.rbegin())) & TYPE_SWITCH) and
+            post_dominators->get_immediate_dominator(source) != current_vertex)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block is the first case of a case preceded by a case without break");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Basic block is the first case of a case preceded by a case without break");
             add_bb_label = true;
             break;
          }
          // Basic block start the body of a short circuit
-         else if(bb_analyzed.find(source) == bb_analyzed.end() and !((FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(*inE))))
+         else if(bb_analyzed.find(source) == bb_analyzed.end() and
+                 !((FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(*inE))))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block should start with a label since is the body of a short-circuit");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Basic block should start with a label since is the body of a short-circuit");
             add_bb_label = true;
             break;
          }
          // Basic block is a header loop, but it does not end with while or for
-         else if((bb_analyzed.find(source) == bb_analyzed.end() or current_vertex == source) and (bb_node_info->statements_list.empty() or ((GET_TYPE(cfgGraph, *(bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)) == 0)))
+         else if((bb_analyzed.find(source) == bb_analyzed.end() or current_vertex == source) and
+                 (bb_node_info->statements_list.empty() or
+                  ((GET_TYPE(cfgGraph, *(bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)) == 0)))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block is the header of a loop and it does not end with while or for");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Basic block is the header of a loop and it does not end with while or for");
             add_bb_label = true;
             break;
          }
@@ -271,7 +310,9 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          indented_output_stream->Append("{\n");
       }
       else
+      {
          add_semicolon = true;
+      }
    }
 
    if(local_inc.find(current_vertex) == local_inc.end())
@@ -305,20 +346,27 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
    }
    else
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---There is already an edge instrumentation associated with the current basic block");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---There is already an edge instrumentation associated with the current basic block");
       EdgeDescriptor e = local_inc[current_vertex];
       unsigned int first_loop_index = support_cfg->CGetBBNodeInfo(boost::source(e, *support_cfg))->loop_id;
       unsigned int second_loop_index = support_cfg->CGetBBNodeInfo(boost::target(e, *support_cfg))->loop_id;
       // Different loop
       if(first_loop_index != second_loop_index)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Changing from loop " + boost::lexical_cast<std::string>(first_loop_index) + " to " + boost::lexical_cast<std::string>(second_loop_index));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Changing from loop " + boost::lexical_cast<std::string>(first_loop_index) + " to " +
+                            boost::lexical_cast<std::string>(second_loop_index));
          unsigned int first_depth = 0;
          unsigned int second_depth = 0;
          if(first_loop_index)
+         {
             first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+         }
          if(second_loop_index)
+         {
             second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+         }
          // Second vertex is an header
          if(first_depth < second_depth)
          {
@@ -345,13 +393,20 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
    if((bb_node_info->loop_id == bb_number) && bb_number)
    {
       if(verbose)
-         indented_output_stream->Append("//Starting of a loop - average iteration number " + boost::lexical_cast<std::string>(AppM->CGetFunctionBehavior(funId)->CGetProfilingInformation()->GetLoopAvgIterations(bb_number)) + "\n");
+      {
+         indented_output_stream->Append(
+             "//Starting of a loop - average iteration number " +
+             boost::lexical_cast<std::string>(
+                 AppM->CGetFunctionBehavior(funId)->CGetProfilingInformation()->GetLoopAvgIterations(bb_number)) +
+             "\n");
+      }
    }
 
    if(add_bb_label)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "A label should be added at the beginning");
-      THROW_ASSERT(basic_blocks_labels.find(bb_number) != basic_blocks_labels.end(), "I do not know the destination: " + STR(bb_number));
+      THROW_ASSERT(basic_blocks_labels.find(bb_number) != basic_blocks_labels.end(),
+                   "I do not know the destination: " + STR(bb_number));
       indented_output_stream->Append(basic_blocks_labels.find(bb_number)->second + ":\n");
       add_semicolon = true;
    }
@@ -370,12 +425,15 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
       for(boost::tie(oi, oend) = boost::out_edges(current_vertex, *bb_fcfgGraph); oi != oend and notFeedBack; oi++)
       {
          if(FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(*oi))
+         {
             notFeedBack = false;
+         }
       }
    }
    if(is_there)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "There are instructions to be printed for this pair task - basic block");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "There are instructions to be printed for this pair task - basic block");
 
       /// fill the renamin table in case is needed
       if(renaming_table.find(current_vertex) != renaming_table.end())
@@ -383,28 +441,37 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          const std::map<unsigned int, std::string>& rvt = renaming_table.find(current_vertex)->second;
          auto rvt_it_end = rvt.end();
          for(auto rvt_it = rvt.begin(); rvt_it != rvt_it_end; ++rvt_it)
+         {
             BehavioralHelper::rename_a_variable(rvt_it->first, rvt_it->second);
+         }
       }
       bool label_has_to_be_printed = start_with_a_label;
       bool prefix_has_to_be_printed = basic_block_prefix.find(bb_number) != basic_block_prefix.end();
       unsigned int analyzed_statement = 0;
       do
       {
-         /// We can print results of split of phi nodes if they have not yet been printed and if label has already been printed (or there was not any label to be printed)
+         /// We can print results of split of phi nodes if they have not yet been printed and if label has already been
+         /// printed (or there was not any label to be printed)
          if(prefix_has_to_be_printed and not label_has_to_be_printed)
          {
             prefix_has_to_be_printed = false;
             indented_output_stream->Append(basic_block_prefix.find(bb_number)->second);
          }
          if(local_rec_instructions.find(*vIter) == local_rec_instructions.end())
+         {
             continue;
+         }
          analyzed_statement++;
-         /// If there is not any label to be printed, label_has_to_be_printed is already false, otherwise the label will be printed during this loop iteration
+         /// If there is not any label to be printed, label_has_to_be_printed is already false, otherwise the label will
+         /// be printed during this loop iteration
          label_has_to_be_printed = false;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Preparing printing of operation " + GET_NAME(cfgGraph, *vIter));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "Preparing printing of operation " + GET_NAME(cfgGraph, *vIter));
          // Now I print the instruction
          if(this->verbose)
+         {
             indented_output_stream->Append("//Instruction: " + GET_NAME(cfgGraph, *vIter) + "\n");
+         }
 
          if(start_with_a_label && vIter == vIterBegin)
          {
@@ -412,25 +479,37 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
             for(boost::tie(inE, inEEnd) = boost::in_edges(current_vertex, *bb_fcfgGraph); inE != inEEnd; inE++)
             {
                if(FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(*inE))
+               {
                   indented_output_stream->Append("//start of a loop\n");
+               }
             }
          }
          bool isLastIntruction = last_stmt == *vIter;
          /// in case we have phi nodes we check if some assignments should be printed
-         bool print_phi_now = ((GET_TYPE(cfgGraph, *vIter) & (TYPE_IF | TYPE_WHILE | TYPE_FOR | TYPE_SWITCH | TYPE_MULTIIF))) || behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block);
+         bool print_phi_now =
+             ((GET_TYPE(cfgGraph, *vIter) & (TYPE_IF | TYPE_WHILE | TYPE_FOR | TYPE_SWITCH | TYPE_MULTIIF))) ||
+             behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block);
          if(add_phi_nodes_assignment && isLastIntruction && print_phi_now)
-            indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
+         {
+            indented_output_stream->Append(basic_block_tail.at(bb_number));
+         }
          if((GET_TYPE(cfgGraph, *vIter) & (TYPE_VPHI)) == 0)
          {
-            if(GET_TYPE(cfgGraph, *vIter) & (TYPE_WHILE | TYPE_FOR) and this->verbose and local_rec_function_behavior->CGetLoops()->CGetLoop(bb_node_info->loop_id)->loop_type & DOALL_LOOP)
+            if(GET_TYPE(cfgGraph, *vIter) & (TYPE_WHILE | TYPE_FOR) and this->verbose and
+               local_rec_function_behavior->CGetLoops()->CGetLoop(bb_node_info->loop_id)->loop_type & DOALL_LOOP)
+            {
                indented_output_stream->Append("//#pragma omp parallel for\n");
+            }
             // End of a loop with goto
-            if(isLastIntruction and behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block) and boost::out_degree(current_vertex, *bb_fcfgGraph) == 1)
+            if(isLastIntruction and behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block) and
+               boost::out_degree(current_vertex, *bb_fcfgGraph) == 1)
             {
                OutEdgeIterator eo1, eo_end1;
                boost::tie(eo1, eo_end1) = boost::out_edges(current_vertex, *bb_fcfgGraph);
                if(FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(*eo1))
+               {
                   print_loop_ending(*eo1);
+               }
             }
             else if((GET_TYPE(cfgGraph, *vIter) & TYPE_RET) != 0)
             {
@@ -442,27 +521,37 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
             }
             instrWriter->write(local_rec_function_behavior, *vIter, local_rec_variableFunctor);
             if((GET_TYPE(cfgGraph, *vIter) & TYPE_LABEL) == 0)
+            {
                add_semicolon = false;
+            }
          }
          else if(this->verbose)
          {
             indented_output_stream->Append("//(removed virtual phi instruction)\n");
          }
          if(!isLastIntruction)
+         {
             continue;
+         }
          BehavioralHelper::clear_renaming_table();
          if(add_phi_nodes_assignment && !print_phi_now)
+         {
             indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---This is not the last statement");
-         if(boost::out_degree(current_vertex, *support_cfg) == 1 and boost::out_degree(current_vertex, *bb_fcfgGraph) == 1)
+         if(boost::out_degree(current_vertex, *support_cfg) == 1 and
+            boost::out_degree(current_vertex, *bb_fcfgGraph) == 1)
          {
             OutEdgeIterator eo1, eo_end1;
             boost::tie(eo1, eo_end1) = boost::out_edges(current_vertex, *support_cfg);
             vertex next = boost::target(*eo1, *support_cfg);
             if(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->loop_id == bb_fcfgGraph->CGetBBNodeInfo(next)->loop_id)
             {
-               THROW_ASSERT(fun_loop_to_index.find(funId) != fun_loop_to_index.end(), "Function " + boost::lexical_cast<std::string>(funId) + " not found");
-               THROW_ASSERT(fun_loop_to_index.find(funId)->second.find(bb_node_info->loop_id) != fun_loop_to_index.find(funId)->second.end(), "Loop " + boost::lexical_cast<std::string>(bb_node_info->loop_id) + " not found");
+               THROW_ASSERT(fun_loop_to_index.find(funId) != fun_loop_to_index.end(),
+                            "Function " + boost::lexical_cast<std::string>(funId) + " not found");
+               THROW_ASSERT(fun_loop_to_index.find(funId)->second.find(bb_node_info->loop_id) !=
+                                fun_loop_to_index.find(funId)->second.end(),
+                            "Loop " + boost::lexical_cast<std::string>(bb_node_info->loop_id) + " not found");
                print_edge(*eo1, fun_loop_to_index.find(funId)->second.find(bb_node_info->loop_id)->second);
             }
          }
@@ -478,7 +567,8 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
             bool add_false_to_goto = false;
             if(bb_frontier.find(true_vertex) == bb_frontier.end())
             {
-               if(bb_frontier.find(false_vertex) == bb_frontier.end() && goto_list.find(false_vertex) == goto_list.end())
+               if(bb_frontier.find(false_vertex) == bb_frontier.end() &&
+                  goto_list.find(false_vertex) == goto_list.end())
                {
                   goto_list.insert(false_vertex);
                   add_false_to_goto = true;
@@ -494,7 +584,8 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                }
                else
                {
-                  THROW_ASSERT(basic_blocks_labels.find(bb_true_number) != basic_blocks_labels.end(), "I do not know the destination");
+                  THROW_ASSERT(basic_blocks_labels.find(bb_true_number) != basic_blocks_labels.end(),
+                               "I do not know the destination");
                   indented_output_stream->Append("{\n");
                   EdgeDescriptor e;
                   bool inserted;
@@ -502,17 +593,25 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   THROW_ASSERT(inserted, "Edge missing");
                   if(not(FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(e)))
                   {
-                     unsigned int first_loop_index = support_cfg->CGetBBNodeInfo(boost::source(e, *support_cfg))->loop_id;
-                     unsigned int second_loop_index = support_cfg->CGetBBNodeInfo(boost::target(e, *support_cfg))->loop_id;
+                     unsigned int first_loop_index =
+                         support_cfg->CGetBBNodeInfo(boost::source(e, *support_cfg))->loop_id;
+                     unsigned int second_loop_index =
+                         support_cfg->CGetBBNodeInfo(boost::target(e, *support_cfg))->loop_id;
                      // Different loop
                      if(first_loop_index != second_loop_index)
                      {
                         unsigned int first_depth = 0;
                         unsigned int second_depth = 0;
                         if(first_loop_index)
-                           first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                        {
+                           first_depth =
+                               AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                        }
                         if(second_loop_index)
-                           second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                        {
+                           second_depth =
+                               AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                        }
                         // Second vertex is an header
                         if(first_depth < second_depth)
                         {
@@ -557,9 +656,13 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   unsigned int first_depth = 0;
                   unsigned int second_depth = 0;
                   if(first_loop_index)
+                  {
                      first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                  }
                   if(second_loop_index)
+                  {
                      second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                  }
                   // Second vertex is an header
                   if(first_depth < second_depth)
                   {
@@ -583,7 +686,9 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                indented_output_stream->Append("}\n");
             }
             if(add_false_to_goto)
+            {
                goto_list.erase(false_vertex);
+            }
             if(bb_frontier.find(false_vertex) == bb_frontier.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "False BB is not on the frontier");
@@ -600,21 +705,30 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   }
                   else
                   {
-                     THROW_ASSERT(basic_blocks_labels.find(bb_false_number) != basic_blocks_labels.end(), "I do not know the destination");
+                     THROW_ASSERT(basic_blocks_labels.find(bb_false_number) != basic_blocks_labels.end(),
+                                  "I do not know the destination");
                      indented_output_stream->Append("{\n");
                      boost::tie(e, ins) = boost::edge(current_vertex, false_vertex, *support_cfg);
                      THROW_ASSERT(ins, "Missing edge");
-                     unsigned int first_loop_index = support_cfg->CGetBBNodeInfo(boost::source(e, *support_cfg))->loop_id;
-                     unsigned int second_loop_index = support_cfg->CGetBBNodeInfo(boost::target(e, *support_cfg))->loop_id;
+                     unsigned int first_loop_index =
+                         support_cfg->CGetBBNodeInfo(boost::source(e, *support_cfg))->loop_id;
+                     unsigned int second_loop_index =
+                         support_cfg->CGetBBNodeInfo(boost::target(e, *support_cfg))->loop_id;
                      // Different loop
                      if(first_loop_index != second_loop_index)
                      {
                         unsigned int first_depth = 0;
                         unsigned int second_depth = 0;
                         if(first_loop_index)
-                           first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                        {
+                           first_depth =
+                               AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                        }
                         if(second_loop_index)
-                           second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                        {
+                           second_depth =
+                               AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                        }
                         // Second vertex is an header
                         if(first_depth < second_depth)
                         {
@@ -636,7 +750,8 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                         print_edge(e, fun_loop_to_index.find(funId)->second.find(bb_node_info->loop_id)->second);
                      }
 
-                     indented_output_stream->Append("   goto " + basic_blocks_labels.find(bb_false_number)->second + ";/*goto6*/\n");
+                     indented_output_stream->Append("   goto " + basic_blocks_labels.find(bb_false_number)->second +
+                                                    ";/*goto6*/\n");
                      indented_output_stream->Append("}\n");
                   }
                }
@@ -647,14 +762,18 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   const vertex target = boost::target(e, *bb_fcfgGraph);
                   const BBNodeInfoConstRef target_bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(target);
                   /// Target is not a while or a for
-                  if(target_bb_node_info->statements_list.empty() or ((GET_TYPE(cfgGraph, *(target_bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)) == 0))
+                  if(target_bb_node_info->statements_list.empty() or
+                     ((GET_TYPE(cfgGraph, *(target_bb_node_info->statements_list.rbegin())) &
+                       (TYPE_WHILE | TYPE_FOR)) == 0))
                   {
                      indented_output_stream->Append("else\n");
                      indented_output_stream->Append("{\n");
 
                      print_loop_ending(e);
-                     THROW_ASSERT(basic_blocks_labels.find(bb_false_number) != basic_blocks_labels.end(), "I do not know the destination");
-                     indented_output_stream->Append("   goto " + basic_blocks_labels.find(bb_false_number)->second + ";/*goto7*/\n");
+                     THROW_ASSERT(basic_blocks_labels.find(bb_false_number) != basic_blocks_labels.end(),
+                                  "I do not know the destination");
+                     indented_output_stream->Append("   goto " + basic_blocks_labels.find(bb_false_number)->second +
+                                                    ";/*goto7*/\n");
                      indented_output_stream->Append("}\n");
                   }
                }
@@ -675,9 +794,13 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   unsigned int first_depth = 0;
                   unsigned int second_depth = 0;
                   if(first_loop_index)
+                  {
                      first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                  }
                   if(second_loop_index)
+                  {
                      second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                  }
                   // Second vertex is an header
                   if(first_depth < second_depth)
                   {
@@ -711,7 +834,9 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                if(bb_analyzed.find(true_vertex) == bb_analyzed.end())
                {
                   if(analyzed_statement == local_rec_instructions.size())
+                  {
                      return;
+                  }
                   EdgeDescriptor e;
                   bool inserted;
                   boost::tie(e, inserted) = boost::edge(current_vertex, true_vertex, *bb_fcfgGraph);
@@ -742,11 +867,17 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                unsigned int first_depth = 0;
                unsigned int second_depth = 0;
                if(first_loop_index)
+               {
                   first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+               }
                else
+               {
                   THROW_ERROR("Basic block of for or while it is not in a loop");
+               }
                if(second_loop_index)
+               {
                   second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+               }
                // Second vertex is an header
                if(first_depth < second_depth)
                {
@@ -789,21 +920,26 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
             THROW_ASSERT(node->get_kind() == gimple_multi_way_if_K, "unexpected node");
             auto* gmwi = GetPointer<gimple_multi_way_if>(node);
             std::map<unsigned int, bool> add_elseif_to_goto;
-            for(const auto cond : gmwi->list_of_cond)
+            for(const auto& cond : gmwi->list_of_cond)
             {
                unsigned int bb_index_num = cond.second;
                const vertex bb_vertex = bb_index_map.find(bb_index_num)->second;
                if(cond != gmwi->list_of_cond.front())
                {
-                  bool to_be_added = bb_frontier.find(bb_vertex) == bb_frontier.end() && goto_list.find(bb_vertex) == goto_list.end();
+                  bool to_be_added =
+                      bb_frontier.find(bb_vertex) == bb_frontier.end() && goto_list.find(bb_vertex) == goto_list.end();
                   add_elseif_to_goto[bb_index_num] = to_be_added;
                   if(to_be_added)
+                  {
                      goto_list.insert(bb_vertex);
+                  }
                }
                else
+               {
                   add_elseif_to_goto[bb_index_num] = false;
+               }
             }
-            for(const auto cond : gmwi->list_of_cond)
+            for(const auto& cond : gmwi->list_of_cond)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering successor BB" + STR(cond.second));
                unsigned int bb_index_num = cond.second;
@@ -817,10 +953,15 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                      indented_output_stream->Append(")\n");
                   }
                   else
+                  {
                      indented_output_stream->Append("else\n");
+                  }
                }
-               if(add_elseif_to_goto.find(bb_index_num) != add_elseif_to_goto.end() && add_elseif_to_goto.find(bb_index_num)->second)
+               if(add_elseif_to_goto.find(bb_index_num) != add_elseif_to_goto.end() &&
+                  add_elseif_to_goto.find(bb_index_num)->second)
+               {
                   goto_list.erase(bb_vertex);
+               }
                if(bb_frontier.find(bb_vertex) == bb_frontier.end())
                {
                   if(bb_analyzed.find(bb_vertex) == bb_analyzed.end())
@@ -836,7 +977,8 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor has already been examined");
 
-                     THROW_ASSERT(basic_blocks_labels.find(bb_index_num) != basic_blocks_labels.end(), "I do not know the destination " + boost::lexical_cast<std::string>(bb_index_num));
+                     THROW_ASSERT(basic_blocks_labels.find(bb_index_num) != basic_blocks_labels.end(),
+                                  "I do not know the destination " + boost::lexical_cast<std::string>(bb_index_num));
                      indented_output_stream->Append("{\n");
                      EdgeDescriptor e;
                      bool inserted;
@@ -845,19 +987,29 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                      if(not(FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(e)))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connected by feedback edge");
-                        unsigned int first_loop_index = support_cfg->CGetBBNodeInfo(boost::source(e, *support_cfg))->loop_id;
-                        unsigned int second_loop_index = support_cfg->CGetBBNodeInfo(boost::target(e, *support_cfg))->loop_id;
+                        unsigned int first_loop_index =
+                            support_cfg->CGetBBNodeInfo(boost::source(e, *support_cfg))->loop_id;
+                        unsigned int second_loop_index =
+                            support_cfg->CGetBBNodeInfo(boost::target(e, *support_cfg))->loop_id;
                         // Different loop
                         if(first_loop_index != second_loop_index)
                         {
                            unsigned int first_depth = 0;
                            unsigned int second_depth = 0;
                            if(first_loop_index)
-                              first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                           {
+                              first_depth =
+                                  AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                           }
                            if(second_loop_index)
-                              second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Depth of first loop is " + STR(first_depth));
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Depth of second loop is " + STR(second_depth));
+                           {
+                              second_depth =
+                                  AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                           }
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---Depth of first loop is " + STR(first_depth));
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---Depth of second loop is " + STR(second_depth));
                            // Second vertex is an header
                            if(first_depth < second_depth)
                            {
@@ -903,11 +1055,18 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                      unsigned int first_depth = 0;
                      unsigned int second_depth = 0;
                      if(first_loop_index)
+                     {
                         first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                     }
                      if(second_loop_index)
-                        second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Depth of first loop is " + STR(first_depth));
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Depth of second loop is " + STR(second_depth));
+                     {
+                        second_depth =
+                            AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                     }
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Depth of first loop is " + STR(first_depth));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Depth of second loop is " + STR(second_depth));
                      // Second vertex is an header
                      if(first_depth < second_depth)
                      {
@@ -947,13 +1106,16 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
 #ifndef NDEBUG
                const unsigned int bb_number_next_bb = next_bb_node_info->block->number;
 #endif
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining successor " + boost::lexical_cast<std::string>(bb_number_next_bb));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "Examining successor " + boost::lexical_cast<std::string>(bb_number_next_bb));
                unsigned int in_edge_counter = 0;
                InEdgeIterator ei, ei_end;
                for(boost::tie(ei, ei_end) = boost::in_edges(next_bb, *bb_fcfgGraph); ei != ei_end; ei++)
                {
                   if(not(FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(*ei)))
+                  {
                      in_edge_counter++;
+                  }
                }
                CustomOrderedSet<unsigned int>::const_iterator eIdBeg, eIdEnd;
                CustomOrderedSet<unsigned int> Set = bb_fcfgGraph->CGetBBEdgeInfo(*oE)->get_labels(CFG_SELECTOR);
@@ -971,7 +1133,9 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                         print_edge(*oE, fun_loop_to_index.find(funId)->second.find(bb_node_info->loop_id)->second);
                         indented_output_stream->Append("}\n");
                         if(current_vertex == dominators->get_immediate_dominator(next_bb))
+                        {
                            analyze_bb_PD = true;
+                        }
                         break;
                      }
                      local_inc[next_bb] = *oE;
@@ -987,7 +1151,10 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                      local_inc[next_bb] = *oE;
                      if(in_edge_counter != 1)
                      {
-                        THROW_ERROR_CODE(PROFILING_EC, "Not yet supported type of switch in profiling - Function is " + boost::lexical_cast<std::string>(funId) + " - current basic block is " + boost::lexical_cast<std::string>(bb_number));
+                        THROW_ERROR_CODE(PROFILING_EC, "Not yet supported type of switch in profiling - Function is " +
+                                                           boost::lexical_cast<std::string>(funId) +
+                                                           " - current basic block is " +
+                                                           boost::lexical_cast<std::string>(bb_number));
                         THROW_ERROR("Not yet supported type of switch in profiling");
                      }
                      if(next_bb == bb_PD) /// then adjust post dominator
@@ -996,7 +1163,8 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed current basic block");
                      }
 
-                     indented_output_stream->Append("case " + behavioral_helper->print_constant(*eIdBeg));
+                     indented_output_stream->Append("case " +
+                                                    behavioral_helper->PrintConstant(TM->CGetTreeReindex(*eIdBeg)));
                   }
                   indented_output_stream->Append(":\n");
                }
@@ -1015,8 +1183,10 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor has already been examined");
                   const unsigned int next_bb_number = next_bb_node_info->block->number;
 
-                  THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(), "I do not know the destination " + boost::lexical_cast<std::string>(next_bb_number));
-                  indented_output_stream->Append("   goto " + basic_blocks_labels.find(next_bb_number)->second + ";/*goto8*/\n");
+                  THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(),
+                               "I do not know the destination " + boost::lexical_cast<std::string>(next_bb_number));
+                  indented_output_stream->Append("   goto " + basic_blocks_labels.find(next_bb_number)->second +
+                                                 ";/*goto8*/\n");
                }
             }
             indented_output_stream->Append("}\n");
@@ -1037,7 +1207,9 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                      THROW_ERROR("Profiling does not support computed goto");
                   }
                   if(bb_frontier.find(next_bb) != bb_frontier.end())
+                  {
                      continue;
+                  }
                   goto_list.insert(next_bb);
                }
             }
@@ -1049,19 +1221,26 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
             if(current_vertex == bbentry)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended writing basic block " + boost::lexical_cast<std::string>(bb_number));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "<--Ended writing basic block " + boost::lexical_cast<std::string>(bb_number));
                return;
             }
-            THROW_ASSERT(boost::out_degree(current_vertex, *bb_fcfgGraph) <= 1, "Only one edge expected as output of BB" + STR(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->block->number));
+            THROW_ASSERT(boost::out_degree(current_vertex, *bb_fcfgGraph) <= 1,
+                         "Only one edge expected as output of BB" +
+                             STR(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->block->number));
             OutEdgeIterator oE, oEEnd;
             for(boost::tie(oE, oEEnd) = boost::out_edges(current_vertex, *bb_fcfgGraph); oE != oEEnd; oE++)
             {
                vertex next_bb = boost::target(*oE, *bb_fcfgGraph);
                if(bb_frontier.find(next_bb) != bb_frontier.end())
                {
-                  if(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->loop_id != bb_fcfgGraph->CGetBBNodeInfo(next_bb)->loop_id)
+                  if(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->loop_id !=
+                     bb_fcfgGraph->CGetBBNodeInfo(next_bb)->loop_id)
+                  {
                      print_loop_starting(*oE);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not adding goto since target is in the frontier");
+                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "Not adding goto since target is in the frontier");
                   continue;
                }
                if(FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(*oE))
@@ -1069,14 +1248,19 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   print_loop_ending(*oE);
                   const vertex target = boost::target(*oE, *bb_fcfgGraph);
                   const BBNodeInfoConstRef target_bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(target);
-                  if(target_bb_node_info->statements_list.size() and (GET_TYPE(cfgGraph, *(target_bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)))
+                  if(target_bb_node_info->statements_list.size() and
+                     (GET_TYPE(cfgGraph, *(target_bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not adding a goto since target is a while/for");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "Not adding a goto since target is a while/for");
                      continue;
                   }
                }
-               if(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->loop_id != bb_fcfgGraph->CGetBBNodeInfo(next_bb)->loop_id)
+               if(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->loop_id !=
+                  bb_fcfgGraph->CGetBBNodeInfo(next_bb)->loop_id)
+               {
                   print_loop_starting(*oE);
+               }
                if(boost::in_degree(next_bb, *bb_fcfgGraph) == 1)
                {
                   writeRoutineInstructions_rec(next_bb, false);
@@ -1085,8 +1269,10 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                {
                   const BBNodeInfoConstRef next_bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(next_bb);
                   const unsigned int next_bb_number = next_bb_node_info->block->number;
-                  THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(), "I do not know the destination");
-                  indented_output_stream->Append("   goto " + basic_blocks_labels.find(next_bb_number)->second + ";/*Goto4*/\n");
+                  THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(),
+                               "I do not know the destination");
+                  indented_output_stream->Append("   goto " + basic_blocks_labels.find(next_bb_number)->second +
+                                                 ";/*Goto4*/\n");
                   goto_list.insert(next_bb);
                }
             }
@@ -1106,17 +1292,22 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
          add_semicolon = false;
       }
-      if(!behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block) && ((bb_node_info->statements_list.empty()) || ((GET_TYPE(cfgGraph, *bb_node_info->statements_list.rbegin()) & (TYPE_SWITCH | TYPE_WHILE | TYPE_FOR)) == 0)))
+      if(!behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block) &&
+         ((bb_node_info->statements_list.empty()) ||
+          ((GET_TYPE(cfgGraph, *bb_node_info->statements_list.rbegin()) & (TYPE_SWITCH | TYPE_WHILE | TYPE_FOR)) == 0)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not end with a cond or goto nor switch");
          const vertex bbentry = bb_fcfgGraph->CGetBBGraphInfo()->entry_vertex;
          if(current_vertex == bbentry)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended writing basic block " + boost::lexical_cast<std::string>(bb_number));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--Ended writing basic block " + boost::lexical_cast<std::string>(bb_number));
             return;
          }
-         THROW_ASSERT(boost::out_degree(current_vertex, *bb_fcfgGraph) <= 1, "only one edge expected BB(" + boost::lexical_cast<std::string>(bb_number) + ") Fun(" + boost::lexical_cast<std::string>(funId) + ")");
+         THROW_ASSERT(boost::out_degree(current_vertex, *bb_fcfgGraph) <= 1,
+                      "only one edge expected BB(" + boost::lexical_cast<std::string>(bb_number) + ") Fun(" +
+                          boost::lexical_cast<std::string>(funId) + ")");
          OutEdgeIterator oE, oEEnd;
          for(boost::tie(oE, oEEnd) = boost::out_edges(current_vertex, *bb_fcfgGraph); oE != oEEnd; oE++)
          {
@@ -1125,15 +1316,21 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
             if(boost::in_degree(next_bb, *bb_fcfgGraph) == 1)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor is the only");
-               if(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->loop_id != bb_fcfgGraph->CGetBBNodeInfo(next_bb)->loop_id)
+               if(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->loop_id !=
+                  bb_fcfgGraph->CGetBBNodeInfo(next_bb)->loop_id)
+               {
                   print_loop_starting(*oE);
+               }
                continue;
             }
             if(bb_frontier.find(next_bb) != bb_frontier.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor belongs to frontier");
-               if(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->loop_id != bb_fcfgGraph->CGetBBNodeInfo(next_bb)->loop_id)
+               if(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->loop_id !=
+                  bb_fcfgGraph->CGetBBNodeInfo(next_bb)->loop_id)
+               {
                   print_loop_starting(*oE);
+               }
                else
                {
                   print_edge(*oE, fun_loop_to_index.find(funId)->second.find(bb_node_info->loop_id)->second);
@@ -1145,21 +1342,28 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
             {
                const vertex target = boost::target(*oE, *bb_fcfgGraph);
                const BBNodeInfoConstRef target_bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(target);
-               if(target_bb_node_info->statements_list.size() and (GET_TYPE(cfgGraph, *(target_bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)))
+               if(target_bb_node_info->statements_list.size() and
+                  (GET_TYPE(cfgGraph, *(target_bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)))
+               {
                   continue;
+               }
             }
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor does not belong to frontier");
             const BBNodeInfoConstRef next_bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(next_bb);
             const unsigned int next_bb_number = next_bb_node_info->block->number;
-            THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(), "I do not know the destination");
+            THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(),
+                         "I do not know the destination");
             if(bb_fcfgGraph->CGetBBNodeInfo(current_vertex)->loop_id != bb_fcfgGraph->CGetBBNodeInfo(next_bb)->loop_id)
+            {
                print_loop_starting(*oE);
+            }
             if(bb_fcfgGraph->CGetBBNodeInfo(next_bb)->loop_id == bb_fcfgGraph->CGetBBNodeInfo(next_bb)->block->number)
             {
                print_loop_ending(*oE);
             }
-            indented_output_stream->Append("   goto " + basic_blocks_labels.find(next_bb_number)->second + ";/*goto5*/\n");
+            indented_output_stream->Append("   goto " + basic_blocks_labels.find(next_bb_number)->second +
+                                           ";/*goto5*/\n");
             goto_list.insert(next_bb);
             add_semicolon = false;
          }
@@ -1169,26 +1373,35 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          }
       }
       else if(add_semicolon)
+      {
          indented_output_stream->Append("   ;\n"); /// added a fake indent
+      }
    }
 
    if(analyze_bb_PD)
    {
       // recurse on the post dominator
       bb_frontier.erase(bb_PD);
-      THROW_ASSERT(bb_analyzed.find(bb_PD) == bb_analyzed.end(), "something of wrong happen " + boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(bb_PD)->block->number) + " Fun(" + boost::lexical_cast<std::string>(funId) + ")");
+      THROW_ASSERT(bb_analyzed.find(bb_PD) == bb_analyzed.end(),
+                   "something of wrong happen " +
+                       boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(bb_PD)->block->number) + " Fun(" +
+                       boost::lexical_cast<std::string>(funId) + ")");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printing the post dominator");
       writeRoutineInstructions_rec(bb_PD, false);
    }
-   if((analyze_bb_PD || is_there || add_bb_label || add_phi_nodes_assignment || add_phi_nodes_assignment_prefix) && bracket)
+   if((analyze_bb_PD || is_there || add_bb_label || add_phi_nodes_assignment || add_phi_nodes_assignment_prefix) &&
+      bracket)
    {
       indented_output_stream->Append("}\n");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--BB" + boost::lexical_cast<std::string>(bb_number) + " written");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--BB" + boost::lexical_cast<std::string>(bb_number) + " written");
 }
 
-void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, const var_pp_functorConstRef variableFunctor, vertex bb_start, CustomOrderedSet<vertex> bb_end)
+void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions,
+                                           const var_pp_functorConstRef variableFunctor, vertex bb_start,
+                                           CustomOrderedSet<vertex> bb_end)
 {
    const FunctionBehaviorConstRef function_behavior = AppM->CGetFunctionBehavior(function_index);
    const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
@@ -1199,7 +1412,9 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, co
    dumped_edges = std::set<EdgeDescriptor, ltedge<BBGraph>>(ltedge<BBGraph>(support_cfg.get()));
 
    const OpGraphConstRef cfgGraph = function_behavior->CGetOpGraph(FunctionBehavior::FCFG);
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Edge profiling writer - start to fwrite body of function " + behavioral_helper->get_function_name());
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                  "-->Edge profiling writer - start to fwrite body of function " +
+                      behavioral_helper->get_function_name());
    if(instructions.empty())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Edge profiling writer - Empty function");
@@ -1219,13 +1434,18 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, co
    vertex bbentry;
    CustomOrderedSet<vertex> bb_exit;
    if(!bb_start)
+   {
       bbentry = bb_fcfgGraph->CGetBBGraphInfo()->entry_vertex;
+   }
    else
+   {
       bbentry = bb_start;
+   }
    if(bb_end.empty())
    {
       bb_exit.insert(bb_fcfgGraph->CGetBBGraphInfo()->exit_vertex);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "There are " + boost::lexical_cast<std::string>(bb_exit.size()) + " exit basic blocks");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "There are " + boost::lexical_cast<std::string>(bb_exit.size()) + " exit basic blocks");
    }
    else
    {
@@ -1237,14 +1457,21 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, co
       size_t delta = bb_exit.find(*vi) != bb_exit.end() ? 1u : 0u;
       if(boost::in_degree(*vi, *bb_fcfgGraph) <= (1 + delta))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipped BB" + boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(*vi)->block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Skipped BB" +
+                            boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(*vi)->block->number));
          continue;
       }
       const BBNodeInfoConstRef bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(*vi);
       const unsigned int le = behavioral_helper->start_with_a_label(bb_node_info->block);
       basic_blocks_labels[bb_node_info->block->number] =
-          (le ? behavioral_helper->get_label_name(le) : ("BB_LABEL_" + boost::lexical_cast<std::string>(bb_node_info->block->number)) + (bb_label_counter == 1 ? "" : "_" + boost::lexical_cast<std::string>(bb_label_counter)));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Label of BB" + boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(*vi)->block->number) + " is " + basic_blocks_labels[bb_node_info->block->number]);
+          (le ? behavioral_helper->get_label_name(le) :
+                ("BB_LABEL_" + boost::lexical_cast<std::string>(bb_node_info->block->number)) +
+                    (bb_label_counter == 1 ? "" : "_" + boost::lexical_cast<std::string>(bb_label_counter)));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Label of BB" +
+                         boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(*vi)->block->number) + " is " +
+                         basic_blocks_labels[bb_node_info->block->number]);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed labels");
    /// set of basic block already analyzed
@@ -1270,7 +1497,9 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, co
       for(boost::tie(oE, oEEnd) = boost::out_edges(bbentry, *bb_fcfgGraph); oE != oEEnd; oE++)
       {
          if(bb_exit.find(boost::target(*oE, *bb_fcfgGraph)) != bb_exit.end())
+         {
             continue;
+         }
          else
          {
             writeRoutineInstructions_rec(boost::target(*oE, *bb_fcfgGraph), false);
@@ -1293,19 +1522,28 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, co
                           std::inserter(not_yet_considered, not_yet_considered.begin()) /*result*/);
    }
    const vertex exit = bb_fcfgGraph->CGetBBGraphInfo()->exit_vertex;
-   if(goto_list.find(exit) != goto_list.end() && basic_blocks_labels.find(bloc::EXIT_BLOCK_ID) != basic_blocks_labels.end())
+   if(goto_list.find(exit) != goto_list.end() &&
+      basic_blocks_labels.find(bloc::EXIT_BLOCK_ID) != basic_blocks_labels.end())
    {
       indented_output_stream->Append(basic_blocks_labels.find(bloc::EXIT_BLOCK_ID)->second + ":\n");
    }
    EdgeIterator e, e_end;
    for(boost::tie(e, e_end) = boost::edges(*support_cfg); e != e_end; e++)
    {
-      if(dumped_edges.find(*e) == dumped_edges.end() && boost::source(*e, *support_cfg) != support_cfg->CGetBBGraphInfo()->entry_vertex && boost::target(*e, *support_cfg) != support_cfg->CGetBBGraphInfo()->exit_vertex)
+      if(dumped_edges.find(*e) == dumped_edges.end() &&
+         boost::source(*e, *support_cfg) != support_cfg->CGetBBGraphInfo()->entry_vertex &&
+         boost::target(*e, *support_cfg) != support_cfg->CGetBBGraphInfo()->exit_vertex)
       {
          WriteFile("Error.c");
-         THROW_ERROR_CODE(PROFILING_EC, "Profiling Instrumentation of Edge of function " + behavioral_helper->get_function_name() + " from vertex BB" +
-                                            boost::lexical_cast<std::string>(support_cfg->CGetBBNodeInfo(boost::source(*e, *support_cfg))->block->number) + " to BB" +
-                                            boost::lexical_cast<std::string>(support_cfg->CGetBBNodeInfo(boost::target(*e, *support_cfg))->block->number) + " not printed");
+         THROW_ERROR_CODE(PROFILING_EC,
+                          "Profiling Instrumentation of Edge of function " + behavioral_helper->get_function_name() +
+                              " from vertex BB" +
+                              boost::lexical_cast<std::string>(
+                                  support_cfg->CGetBBNodeInfo(boost::source(*e, *support_cfg))->block->number) +
+                              " to BB" +
+                              boost::lexical_cast<std::string>(
+                                  support_cfg->CGetBBNodeInfo(boost::target(*e, *support_cfg))->block->number) +
+                              " not printed");
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Edge profiling writer - ended");

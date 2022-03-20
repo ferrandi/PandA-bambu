@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -84,7 +84,9 @@ bool cell_model::is_characterization(unsigned int characterization_type) const
 
 bool cell_model::has_element_characterization(unsigned int characterization_type, unsigned int element_type) const
 {
-   return is_characterization(characterization_type) and characterization.find(characterization_type)->second.find(element_type) != characterization.find(characterization_type)->second.end();
+   return is_characterization(characterization_type) and
+          characterization.find(characterization_type)->second.find(element_type) !=
+              characterization.find(characterization_type)->second.end();
 }
 
 double cell_model::get_characterization(unsigned int characterization_type, unsigned int element_type) const

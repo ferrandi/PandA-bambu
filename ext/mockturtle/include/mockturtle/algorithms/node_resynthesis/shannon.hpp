@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,17 +27,21 @@
   \file shannon.hpp
   \brief Use Shannon decomposition for resynthesis
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
 #pragma once
 
+#include <algorithm>
+#include <optional>
 #include <vector>
 
 #include <kitty/dynamic_truth_table.hpp>
 
 #include "../../traits.hpp"
-#include "../shannon_decomposition.hpp"
+#include "../decomposition.hpp"
+#include "null.hpp"
 
 namespace mockturtle
 {
@@ -61,16 +65,36 @@ namespace mockturtle
    \endverbatim
  *
  */
-template<class Ntk>
+template<class Ntk, class ResynFn = null_resynthesis<Ntk>>
 class shannon_resynthesis
 {
 public:
+  shannon_resynthesis( std::optional<uint32_t> const& threshold = {}, ResynFn* resyn = nullptr )
+      : threshold_( threshold ),
+        resyn_( resyn ) {}
+
   template<typename LeavesIterator, typename Fn>
-  void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, LeavesIterator begin, LeavesIterator end, Fn&& fn )
+  void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, LeavesIterator begin, LeavesIterator end, Fn&& fn ) const
   {
-    const auto f = shannon_decomposition( ntk, function, std::vector<signal<Ntk>>( begin, end ) );
-    fn( f );
+    if ( threshold_ )
+    {
+      std::vector<uint32_t> vars( function.num_vars() - std::min<uint32_t>( *threshold_, function.num_vars() ) );
+      std::iota( vars.begin(), vars.end(), 0u );
+      const auto f = shannon_decomposition<Ntk, ResynFn>( ntk, function, vars, std::vector<signal<Ntk>>( begin, end ), *resyn_ );
+      fn( f );
+    }
+    else
+    {
+      std::vector<uint32_t> vars( function.num_vars() );
+      std::iota( vars.begin(), vars.end(), 0u );
+      const auto f = shannon_decomposition( ntk, function, vars, std::vector<signal<Ntk>>( begin, end ) );
+      fn( f );
+    }
   }
+
+private:
+  std::optional<uint32_t> threshold_;
+  ResynFn* resyn_;
 };
 
 } /* namespace mockturtle */

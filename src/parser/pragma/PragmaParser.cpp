@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,7 +75,12 @@ unsigned int PragmaParser::number = 0;
 unsigned int PragmaParser::file_counter = 0;
 
 // constructor
-PragmaParser::PragmaParser(const pragma_managerRef _PM, const ParameterConstRef _Param) : PM(_PM), debug_level(_Param->get_class_debug_level(GET_CLASS(*this))), Param(_Param), level(0), search_function(false)
+PragmaParser::PragmaParser(const pragma_managerRef _PM, const ParameterConstRef _Param)
+    : PM(_PM),
+      debug_level(_Param->get_class_debug_level(GET_CLASS(*this))),
+      Param(_Param),
+      level(0),
+      search_function(false)
 {
    THROW_ASSERT(PM, "Pragma manager not initialized");
 }
@@ -86,18 +91,20 @@ PragmaParser::~PragmaParser() = default;
 std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Substituting pragma in " + OldFile);
-   THROW_ASSERT(boost::filesystem::exists(boost::filesystem::path(OldFile)), "Input file \"" + OldFile + "\" does not exist");
+   THROW_ASSERT(boost::filesystem::exists(boost::filesystem::path(OldFile)),
+                "Input file \"" + OldFile + "\" does not exist");
 
    boost::filesystem::path old_path(OldFile);
-   std::string FileName = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_pragma_prefix + boost::lexical_cast<std::string>(file_counter) + "_" + GetLeafFileName(old_path);
-   std::ofstream fileOutput(FileName.c_str(), std::ios::out);
+   std::string FileName = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_pragma_prefix +
+                          boost::lexical_cast<std::string>(file_counter) + "_" + GetLeafFileName(old_path);
+   std::ofstream fileOutput(FileName, std::ios::out);
 
    file_counter++;
    level = 0;
    // unsigned line_number = 0;
 
    // Get a stream from the input file
-   std::ifstream instream(OldFile.c_str());
+   std::ifstream instream(OldFile);
    // Test if the file has been correctly opened
    THROW_ASSERT(instream.is_open(), "INPUT FILE ERROR: Could not open input file: " + OldFile);
    while(!instream.eof())
@@ -110,7 +117,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
       /// search for function name
       if(search_function)
       {
-         std::string::size_type notwhite = output_line.find_first_of("(");
+         std::string::size_type notwhite = output_line.find_first_of('(');
          if(notwhite != std::string::npos)
          {
             std::string Token = input_line;
@@ -125,14 +132,18 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 
             /// Pragma associated with called are added by pragma_analysis
             if(level == 0)
+            {
                PM->AddFunctionDefinitionPragmas(name_function, FunctionPragmas);
+            }
 
             name_function.clear();
             search_function = false;
             FunctionPragmas.clear();
          }
          else
+         {
             name_function += input_line + " ";
+         }
       }
       if(input_line.find("#pragma") != std::string::npos)
       {
@@ -159,11 +170,14 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
          if(i == '{')
          {
             level++;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found {: Current level " + boost::lexical_cast<std::string>(level));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Found {: Current level " + boost::lexical_cast<std::string>(level));
             if(!found)
             {
                for(auto& FloatingPragma : FloatingPragmas)
+               {
                   OpenPragmas[level].push_back(FloatingPragma);
+               }
                FloatingPragmas.clear();
             }
             found = true;
@@ -173,11 +187,14 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
             if(OpenPragmas.count(level))
             {
                for(auto& open_pragma : OpenPragmas[level])
+               {
                   fileOutput << std::string(STR_CST_pragma_function_end) + "(\"" << open_pragma << "\");" << std::endl;
+               }
                OpenPragmas[level].clear();
             }
             level--;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found }: Current level " + boost::lexical_cast<std::string>(level));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Found }: Current level " + boost::lexical_cast<std::string>(level));
          }
       }
 
@@ -220,15 +237,21 @@ bool PragmaParser::analyze_pragma(std::string& Line)
 
    /// call_point_hw pragmas
    if(Line.find("call_point_hw") != std::string::npos)
+   {
       return recognize_call_point_hw_pragma(Line);
+   }
 
    /// issue pragmas
    if(Line.find("issue") != std::string::npos)
+   {
       return recognize_issue_pragma(Line);
+   }
 
    /// profiling pragmas
    if(Line.find("profiling") != std::string::npos)
+   {
       return recognize_profiling_pragma(Line);
+   }
 
    /// generate_hw pragmas
    if(Line.find("generate_hw") != std::string::npos)
@@ -247,9 +270,12 @@ bool PragmaParser::recognize_omp_pragma(std::string& line)
    std::string original_line = line;
    const pragma_manager::OmpPragmaType omp_pragma_type = pragma_manager::GetOmpPragmaType(line);
    if(omp_pragma_type == pragma_manager::OMP_UNKNOWN)
+   {
       THROW_ERROR("Unsupported openmp directive in line " + line);
+   }
    bool single_line_pragma = false;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found directive " + pragma_manager::omp_directive_keywords[omp_pragma_type]);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Found directive " + pragma_manager::omp_directive_keywords[omp_pragma_type]);
    switch(omp_pragma_type)
    {
       case(pragma_manager::OMP_ATOMIC):
@@ -298,11 +324,15 @@ bool PragmaParser::recognize_omp_pragma(std::string& line)
    original_line.erase(0, original_line.find(omp_pragma_directive) + omp_pragma_directive.size());
    if(not single_line_pragma)
    {
-      FloatingPragmas.push_back(STR_CST_pragma_keyword_omp "\", \"" + omp_pragma_directive + (original_line.size() ? "\", \"" + original_line.substr(1, original_line.size() - 1) : ""));
+      FloatingPragmas.push_back(
+          STR_CST_pragma_keyword_omp "\", \"" + omp_pragma_directive +
+          (original_line.size() ? "\", \"" + original_line.substr(1, original_line.size() - 1) : ""));
    }
 
    if(original_line.size())
+   {
       line += ", \"" + original_line.substr(1, original_line.size() - 1) + "\"";
+   }
    line += ");";
    return true;
 }
@@ -315,11 +345,14 @@ bool PragmaParser::recognize_call_point_hw_pragma(std::string& line) const
    line += ", ";
    std::vector<std::string> splitted = SplitString(old_line, " ");
    THROW_ASSERT(splitted.size() == 4 or splitted.size() == 5, "Error in syntax of mapping pragma: " + old_line);
-   THROW_ASSERT(splitted[2] == std::string(STR_CST_pragma_keyword_call_point_hw), "Expecting " + std::string(STR_CST_pragma_keyword_call_point_hw) + " - Found : " + splitted[2]);
+   THROW_ASSERT(splitted[2] == std::string(STR_CST_pragma_keyword_call_point_hw),
+                "Expecting " + std::string(STR_CST_pragma_keyword_call_point_hw) + " - Found : " + splitted[2]);
    line += "\"" + std::string(STR_CST_pragma_keyword_call_point_hw) + "\"";
    line += ", \"" + splitted[3] + "\"";
    if(splitted.size() == 5)
+   {
       line += ", \"" + splitted[4] + "\"";
+   }
    line += ");";
    return true;
 }

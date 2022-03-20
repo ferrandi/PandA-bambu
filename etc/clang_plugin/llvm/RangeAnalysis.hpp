@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2020 Politecnico di Milano
+ *              Copyright (C) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -164,8 +164,8 @@ namespace RangeAnalysis
    /// The interface of this class is very similar to LLVM's ConstantRange class.
    ///
    /// Changes done by Fabrizio Ferrandi, Politecnico di Milano, Italy
-   /// Added Anti range support to describe range in this form ~[l,m]. The idea has been taken from GCC VR_ANTI_RANGE objects.
-   /// Moreover, many range computation are done by exploiting the standard LLVM ConstantRange class.
+   /// Added Anti range support to describe range in this form ~[l,m]. The idea has been taken from GCC VR_ANTI_RANGE
+   /// objects. Moreover, many range computation are done by exploiting the standard LLVM ConstantRange class.
 
    /// Value extended for value range analysis
    using eValue = std::pair<const llvm::Value*, const llvm::Value*>;
@@ -548,7 +548,8 @@ namespace RangeAnalysis
       Range eval() override;
 
     public:
-      UnaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const llvm::Instruction* inst, VarNode* source, unsigned int opcode);
+      UnaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const llvm::Instruction* inst, VarNode* source,
+              unsigned int opcode);
       ~UnaryOp() override;
       UnaryOp(const UnaryOp&) = delete;
       UnaryOp(UnaryOp&&) = delete;
@@ -599,7 +600,8 @@ namespace RangeAnalysis
       bool unresolved;
 
     public:
-      SigmaOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const llvm::Instruction* inst, VarNode* source, VarNode* SymbolicSource, unsigned int opcode);
+      SigmaOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const llvm::Instruction* inst, VarNode* source,
+              VarNode* SymbolicSource, unsigned int opcode);
       ~SigmaOp() override = default;
       SigmaOp(const SigmaOp&) = delete;
       SigmaOp(SigmaOp&&) = delete;
@@ -847,7 +849,8 @@ namespace RangeAnalysis
       Range eval() override;
 
     public:
-      BinaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const llvm::Instruction* inst, VarNode* source1, VarNode* source2, unsigned int opcode);
+      BinaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const llvm::Instruction* inst, VarNode* source1,
+               VarNode* source2, unsigned int opcode);
       ~BinaryOp() override = default;
       BinaryOp(const BinaryOp&) = delete;
       BinaryOp(BinaryOp&&) = delete;
@@ -905,7 +908,8 @@ namespace RangeAnalysis
       Range eval() override;
 
     public:
-      TernaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const llvm::Instruction* inst, VarNode* source1, VarNode* source2, VarNode* source3, unsigned int opcode);
+      TernaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const llvm::Instruction* inst,
+                VarNode* source1, VarNode* source2, VarNode* source3, unsigned int opcode);
       ~TernaryOp() override = default;
       TernaryOp(const TernaryOp&) = delete;
       TernaryOp(TernaryOp&&) = delete;
@@ -966,7 +970,9 @@ namespace RangeAnalysis
       std::shared_ptr<BasicInterval> ItvF;
 
     public:
-      ValueBranchMap(const llvm::Value* V, const llvm::BasicBlock* BBTrue, const llvm::BasicBlock* BBFalse, std::shared_ptr<BasicInterval> ItvT, std::shared_ptr<BasicInterval> ItvF) : V(V), BBTrue(BBTrue), BBFalse(BBFalse), ItvT(ItvT), ItvF(ItvF)
+      ValueBranchMap(const llvm::Value* V, const llvm::BasicBlock* BBTrue, const llvm::BasicBlock* BBFalse,
+                     std::shared_ptr<BasicInterval> ItvT, std::shared_ptr<BasicInterval> ItvF)
+          : V(V), BBTrue(BBTrue), BBFalse(BBFalse), ItvT(ItvT), ItvF(ItvF)
       {
       }
       ~ValueBranchMap() = default;
@@ -1021,7 +1027,9 @@ namespace RangeAnalysis
       llvm::SmallVector<std::pair<std::shared_ptr<BasicInterval>, const llvm::BasicBlock*>, 4> BBsuccs;
 
     public:
-      ValueSwitchMap(const llvm::Value* V, llvm::SmallVector<std::pair<std::shared_ptr<BasicInterval>, const llvm::BasicBlock*>, 4>& BBsuccs) : V(V), BBsuccs(BBsuccs)
+      ValueSwitchMap(const llvm::Value* V,
+                     llvm::SmallVector<std::pair<std::shared_ptr<BasicInterval>, const llvm::BasicBlock*>, 4>& BBsuccs)
+          : V(V), BBsuccs(BBsuccs)
       {
       }
       ~ValueSwitchMap() = default;
@@ -1205,17 +1213,27 @@ namespace RangeAnalysis
       /// Adds a PhiOp in the graph.
       void addPhiOp(const llvm::PHINode* Phi, llvm::ModulePass* modulePass, const llvm::DataLayout* DL);
       // Adds a SigmaOp to the graph.
-      void addSigmaOp(const llvm::PHINode* Sigma, llvm::ModulePass* modulePass, const llvm::DataLayout* DL);
+      void addSigmaOp(const llvm::PHINode* Sigma, llvm::ModulePass* modulePass, const llvm::DataLayout* DL,
+                      bool* changed);
       /// Add LoadOp in the graph
-      void addLoadOp(const llvm::LoadInst* LI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass, const llvm::DataLayout* DL,
-                     llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store);
+      void
+      addLoadOp(const llvm::LoadInst* LI, Andersen_AA* PtoSets_AA, bool arePointersResolved,
+                llvm::ModulePass* modulePass, const llvm::DataLayout* DL,
+                llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
+                bool* changed);
       /// Add StoreOp in the graph
-      void addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
-                      const llvm::DataLayout* DL);
+      void
+      addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved,
+                 llvm::ModulePass* modulePass,
+                 llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
+                 const llvm::DataLayout* DL, bool* changed);
 
       /// Takes an instruction and creates an operation.
-      void buildOperations(const llvm::Instruction* I, llvm::ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved,
-                           llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store);
+      void buildOperations(
+          const llvm::Instruction* I, llvm::ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA,
+          bool arePointersResolved,
+          llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
+          bool* changed);
       void buildValueBranchMap(const llvm::BranchInst* br, const llvm::DataLayout* DL);
       void buildValueSwitchMap(const llvm::SwitchInst* sw, const llvm::DataLayout* DL);
       void buildValueMaps(const llvm::Function& F, const llvm::DataLayout* DL);
@@ -1223,19 +1241,25 @@ namespace RangeAnalysis
       //	void clearValueMaps();
 
       void insertConstantIntoVector(llvm::APInt constantval);
-      llvm::APInt getFirstGreaterFromVector(const llvm::SmallVector<llvm::APInt, 2>& constantvector, const llvm::APInt& val);
-      llvm::APInt getFirstLessFromVector(const llvm::SmallVector<llvm::APInt, 2>& constantvector, const llvm::APInt& val);
+      llvm::APInt getFirstGreaterFromVector(const llvm::SmallVector<llvm::APInt, 2>& constantvector,
+                                            const llvm::APInt& val);
+      llvm::APInt getFirstLessFromVector(const llvm::SmallVector<llvm::APInt, 2>& constantvector,
+                                         const llvm::APInt& val);
       void buildConstantVector(const llvm::SmallPtrSet<VarNode*, 32>& component, const UseMap& compusemap);
-      llvm::SmallPtrSet<const llvm::Value*, 6> ComputeConflictingStores(const llvm::StoreInst* SI, const llvm::Value* GV, const llvm::Instruction* instr, Andersen_AA* PtoSets_AA,
-                                                                        llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store, llvm::ModulePass* modulePass);
+      llvm::SmallPtrSet<const llvm::Value*, 6> ComputeConflictingStores(
+          const llvm::StoreInst* SI, const llvm::Value* GV, const llvm::Instruction* instr, Andersen_AA* PtoSets_AA,
+          llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
+          llvm::ModulePass* modulePass, bool* changed);
 
     protected:
       // Perform the widening and narrowing operations
-      void update(const UseMap& compUseMap, llvm::DenseSet<eValue>& actv, bool (*meet)(BasicOp* op, const llvm::SmallVector<llvm::APInt, 2>* constantvector));
+      void update(const UseMap& compUseMap, llvm::DenseSet<eValue>& actv,
+                  bool (*meet)(BasicOp* op, const llvm::SmallVector<llvm::APInt, 2>* constantvector));
       void update(unsigned nIterations, const UseMap& compUseMap, llvm::DenseSet<eValue>& actv);
 
       virtual void preUpdate(const UseMap& compUseMap, llvm::DenseSet<eValue>& entryPoints) = 0;
-      virtual void posUpdate(const UseMap& compUseMap, llvm::DenseSet<eValue>& activeVars, const llvm::SmallPtrSet<VarNode*, 32>* component) = 0;
+      virtual void posUpdate(const UseMap& compUseMap, llvm::DenseSet<eValue>& activeVars,
+                             const llvm::SmallPtrSet<VarNode*, 32>* component) = 0;
 
     public:
       ConstraintGraph() = default;
@@ -1262,8 +1286,11 @@ namespace RangeAnalysis
       /// Adds an UnaryOp to the graph.
       void addUnaryOp(const llvm::Instruction* I, llvm::ModulePass* modulePass, const llvm::DataLayout* DL);
       /// Iterates through all instructions in the function and builds the graph.
-      void buildGraph(const llvm::Function& F, llvm::ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved,
-                      llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store);
+      void
+      buildGraph(const llvm::Function& F, llvm::ModulePass* modulePass, const llvm::DataLayout* DL,
+                 Andersen_AA* PtoSets_AA, bool arePointersResolved,
+                 llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
+                 bool* changed);
       void buildVarNodes(const llvm::DataLayout* DL);
       void buildSymbolicIntersectMap();
       UseMap buildUseMap(const llvm::SmallPtrSet<VarNode*, 32>& component);
@@ -1294,7 +1321,8 @@ namespace RangeAnalysis
    {
     private:
       void preUpdate(const UseMap& compUseMap, llvm::DenseSet<eValue>& entryPoints) override;
-      void posUpdate(const UseMap& compUseMap, llvm::DenseSet<eValue>& entryPoints, const llvm::SmallPtrSet<VarNode*, 32>* component) override;
+      void posUpdate(const UseMap& compUseMap, llvm::DenseSet<eValue>& entryPoints,
+                     const llvm::SmallPtrSet<VarNode*, 32>* component) override;
 
     public:
       Cousot() = default;
@@ -1304,7 +1332,8 @@ namespace RangeAnalysis
    {
     private:
       void preUpdate(const UseMap& compUseMap, llvm::DenseSet<eValue>& entryPoints) override;
-      void posUpdate(const UseMap& compUseMap, llvm::DenseSet<eValue>& activeVars, const llvm::SmallPtrSet<VarNode*, 32>* component) override;
+      void posUpdate(const UseMap& compUseMap, llvm::DenseSet<eValue>& activeVars,
+                     const llvm::SmallPtrSet<VarNode*, 32>* component) override;
       void storeAbstractStates(const llvm::SmallPtrSet<VarNode*, 32>& component);
       void crop(const UseMap& compUseMap, BasicOp* op);
 
@@ -1326,7 +1355,8 @@ namespace RangeAnalysis
       bool checkWorklist();
       bool checkComponents();
       bool checkTopologicalSort(UseMap* useMap);
-      bool hasEdge(llvm::SmallPtrSet<VarNode*, 32>* componentFrom, llvm::SmallPtrSet<VarNode*, 32>* componentTo, UseMap* useMap);
+      bool hasEdge(llvm::SmallPtrSet<VarNode*, 32>* componentFrom, llvm::SmallPtrSet<VarNode*, 32>* componentTo,
+                   UseMap* useMap);
 #endif
     public:
       Nuutila(VarNodes* varNodes, UseMap* useMap, SymbMap* symbMap);
@@ -1390,6 +1420,8 @@ namespace RangeAnalysis
 
    class InterProceduralRACropDFSHelper : public RangeAnalysis
    {
+      bool changed;
+
     public:
       InterProceduralRACropDFSHelper()
       {

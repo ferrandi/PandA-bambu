@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,7 +65,10 @@
 REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(Schedule);
 REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(application_manager);
 class tree_node_visitor;
+class gimple_assign;
+
 //@}
 
 /// return the id given a super class or a class member
@@ -91,6 +94,9 @@ struct bloc
  private:
    friend class use_counting;
 
+   /// Already visited tree node (used to avoid infinite recursion)
+   CustomUnorderedSet<unsigned int> already_visited;
+
    /// list_of_phi is a list of eventual phi node presents in the basic block.
    std::list<tree_nodeRef> list_of_phi;
 
@@ -102,6 +108,10 @@ struct bloc
 
    /// consistency of ssa uses
    bool updated_ssa_uses;
+
+   void update_new_stmt(const application_managerRef& AppM, const tree_nodeRef& new_stmt);
+   void manageCallGraph(const application_managerRef& AppM, const tree_nodeRef& statement);
+   bool check_function_call(const tree_nodeRef& statement, gimple_assign* ga, unsigned int& called_function_id);
 
  public:
    /// list_of_pred is the list of predecessors.
@@ -128,10 +138,12 @@ struct bloc
    /// flag for header of reducible parallelizable loop
    unsigned int hpl;
 
-   /// in case the last statement is a gimple_cond associated with an if statement this member contains the basic block reference to the then statements.
+   /// in case the last statement is a gimple_cond associated with an if statement this member contains the basic block
+   /// reference to the then statements.
    unsigned int true_edge;
 
-   /// in case the last statement is a gimple_cond associated with an if statement this member contains the basic block reference to the else statements.
+   /// in case the last statement is a gimple_cond associated with an if statement this member contains the basic block
+   /// reference to the else statements.
    unsigned int false_edge;
 
 #if HAVE_BAMBU_BUILT
@@ -170,19 +182,19 @@ struct bloc
     * Add a value to list of phi node.
     * @param a is a NODE_ID.
     */
-   void AddPhi(const tree_nodeRef a);
+   void AddPhi(const tree_nodeRef phi);
 
    /**
     * Add a statement in front of list of statements.
     * @param statement is the statement to be added
     */
-   void PushFront(const tree_nodeRef statement);
+   void PushFront(const tree_nodeRef statement, const application_managerRef AppM);
 
    /**
-    * Add a statement as last non controllong statement
+    * Add a statement as last non controlling statement
     * @param statement is the statement to be added
     */
-   void PushBack(const tree_nodeRef statement);
+   void PushBack(const tree_nodeRef statement, const application_managerRef AppM);
 
    /**
     * Replace a statement with another one
@@ -190,21 +202,22 @@ struct bloc
     * @param new_stmt is the new statement to be added
     * @param move_virtuals specifies if memdef and vdef have to be transferred
     */
-   void Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, const bool move_virtuals);
+   void Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, const bool move_virtuals,
+                const application_managerRef AppM);
 
    /**
     * Add a statement before a specified one
     * @param new_stmt is the statement to be added
     * @param existing_stmt is the statement before which new_stmt has to be added
     */
-   void PushBefore(const tree_nodeRef new_stmt, const tree_nodeRef existing_stmt);
+   void PushBefore(const tree_nodeRef new_stmt, const tree_nodeRef existing_stmt, const application_managerRef AppM);
 
    /**
     * Add a statement after a specified one
     * @param new_stmt is the statement to be added
     * @param existing_stmt is the statement after which new_stmt has to be added
     */
-   void PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_stmt);
+   void PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_stmt, const application_managerRef AppM);
 
    /**
     * @brief ReorderLUTs reorders the LUT statements to fix the def-use relations.
@@ -215,7 +228,7 @@ struct bloc
     * Remove a statement
     * @param statement is the statement to be removed
     */
-   void RemoveStmt(const tree_nodeRef statement);
+   void RemoveStmt(const tree_nodeRef statement, const application_managerRef AppM);
 
    /**
     * Remove a phi

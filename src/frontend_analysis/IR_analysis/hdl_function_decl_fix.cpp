@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,17 +54,20 @@
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// tree includes
 #include "tree_manager.hpp"
+#include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
 #include "string_manipulation.hpp" // for GET_CLASS
 
-HDLFunctionDeclFix::HDLFunctionDeclFix(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+HDLFunctionDeclFix::HDLFunctionDeclFix(const application_managerRef _AppM,
+                                       const DesignFlowManagerConstRef _design_flow_manager,
+                                       const ParameterConstRef _parameters)
     : ApplicationFrontendFlowStep(_AppM, HDL_FUNCTION_DECL_FIX, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -76,8 +79,10 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
 {
    bool changed_tree = false;
    const tree_managerRef TM = AppM->get_tree_manager();
-   const auto hdl_writer_type = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
-   const auto hdl_writer = language_writer::create_writer(hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_target()->get_technology_manager(), parameters);
+   const auto hdl_writer_type =
+       static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+   const auto hdl_writer = language_writer::create_writer(
+       hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_target()->get_technology_manager(), parameters);
    const auto hdl_reserved_names = hdl_writer->GetHDLReservedNames();
    std::remove_const<decltype(hdl_reserved_names)>::type found_names;
    if(hdl_writer_type == HDLWriter_Language::VHDL)
@@ -96,9 +101,12 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
    {
       auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function));
       if(not fd->name)
+      {
          continue;
+      }
       auto in = GetPointer<identifier_node>(GET_NODE(fd->name));
-      const auto identifier = hdl_writer_type == HDLWriter_Language::VHDL ? boost::to_upper_copy<std::string>(in->strg) : in->strg;
+      const auto identifier =
+          hdl_writer_type == HDLWriter_Language::VHDL ? boost::to_upper_copy<std::string>(in->strg) : in->strg;
       if(found_names.find(identifier) != found_names.end())
       {
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
@@ -110,11 +118,8 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
             var_decl_name_nid_test = TM->find(identifier_node_K, IR_schema);
          } while(var_decl_name_nid_test);
          found_names.insert(in->strg + STR(var_decl_unique_id - 1));
-         unsigned int var_decl_name_nid = TM->new_tree_node_id();
-         TM->create_tree_node(var_decl_name_nid, identifier_node_K, IR_schema);
-         IR_schema.clear();
-         tree_nodeRef tr_new_id = TM->GetTreeReindex(var_decl_name_nid);
-         fd->name = tr_new_id;
+         const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
+         fd->name = tree_man->create_identifier_node(IR_schema[TOK(TOK_STRG)]);
       }
       else
       {
@@ -124,14 +129,15 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
    return changed_tree ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HDLFunctionDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+HDLFunctionDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

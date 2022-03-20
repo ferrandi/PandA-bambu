@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -55,7 +55,8 @@ class unique_binding_register : public reg_binding_creator
     * Constructor of the class.
     * @param design_flow_manager is the design flow manager
     */
-   unique_binding_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   unique_binding_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                           const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor of the class.

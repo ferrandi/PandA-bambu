@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,17 +48,38 @@
 #include "custom_set.hpp"
 #include <vector>
 
+/**
+ * @name forward declarations
+ */
+//@{
+REF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(CallGraphManager);
+//@}
+
 class mem_dominator_allocation : public memory_allocation
 {
  protected:
    std::vector<unsigned int> getFunctionAllocationOrder(CustomOrderedSet<unsigned int> top_functions);
+
+   /// user defined base address
+   unsigned long long int user_defined_base_address;
+
+   std::map<std::string, std::set<std::string>> user_internal_objects;
+
+   std::map<std::string, std::set<std::string>> user_external_objects;
+
+   /// function checking if the current variable has to allocated inside the accelerator or outside
+   virtual bool is_internal_obj(unsigned int var_index, const std::string& var_name, const std::string& fun_name,
+                                bool multiple_top_call_graph, const tree_managerRef TreeM);
 
  public:
    /**
     * Constructor
     * @param design_flow_manager is the design flow manager
     */
-   mem_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+   mem_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+                            const DesignFlowManagerConstRef design_flow_manager,
+                            const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
                             const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);
 
    /**

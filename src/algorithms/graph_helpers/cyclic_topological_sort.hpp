@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,7 +67,7 @@ struct cyclic_topological_sort_visitor : public boost::dfs_visitor<>
 template <typename VertexListGraph, typename OutputIterator, typename P, typename T, typename R>
 void cyclic_topological_sort(VertexListGraph& g, OutputIterator result, const boost::bgl_named_params<P, T, R>& params)
 {
-   typedef cyclic_topological_sort_visitor<OutputIterator> TopoVisitor;
+   using TopoVisitor = cyclic_topological_sort_visitor<OutputIterator>;
    boost::depth_first_search(g, params.visitor(TopoVisitor(result)));
 }
 

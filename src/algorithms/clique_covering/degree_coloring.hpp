@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file degree_coloring.hpp
- * @brief Boost-based implementation of a heuristic sequential coloring algorithm based on the descandant degree ordering of vertices.
+ * @brief Boost-based implementation of a heuristic sequential coloring algorithm based on the descandant degree
+ * ordering of vertices.
  *
  * Simple sequential coloring heuristic based on descandant degree coloring.
  *

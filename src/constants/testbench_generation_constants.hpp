@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,5 +42,8 @@
 
 /// The basename of the testbench files
 #define STR_CST_testbench_generation_basename "values"
+
+/// threshold used to switch from data directly printed to data written to a file and then copied
+#define DATA_SIZE_THRESHOLD (1024 * 8)
 
 #endif

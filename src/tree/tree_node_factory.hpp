@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,9 @@ REF_FORWARD_DECL(tree_manager);
 struct tree_node_factory : public tree_node_mask
 {
    /// default constructor
-   tree_node_factory(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& _tree_node_schema, tree_manager& _TM) : tree_node_schema(_tree_node_schema), TM(_TM), curr_tree_node_ptr(nullptr)
+   tree_node_factory(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& _tree_node_schema,
+                     tree_manager& _TM)
+       : tree_node_schema(_tree_node_schema), TM(_TM), curr_tree_node_ptr(nullptr)
    {
    }
    /// tree_node visitors
@@ -77,7 +79,8 @@ struct tree_node_factory : public tree_node_mask
 
    /**
     * Factory method.
-    * It creates a tree_node of type equal tree_node_type by using a relation (tree_node_schema) between tree node fields and their values.
+    * It creates a tree_node of type equal tree_node_type by using a relation (tree_node_schema) between tree node
+    * fields and their values.
     * @param node_id is the node id of the created object.
     * @param tree_node_type is the type of the node added to the tree_manager
     * For example the following code:

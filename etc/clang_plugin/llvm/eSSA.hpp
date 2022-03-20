@@ -62,7 +62,7 @@ class eSSA
    ~eSSA()
    {
    }
-   bool runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass);
+   bool runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass, bool* changed);
 };
 
 #endif

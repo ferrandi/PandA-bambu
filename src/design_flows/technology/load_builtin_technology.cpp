@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,14 +62,18 @@
 /// utility include
 #include "fileIO.hpp"
 
-LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_BUILTIN_TECHNOLOGY, _parameters)
+LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+                                             const DesignFlowManagerConstRef _design_flow_manager,
+                                             const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_BUILTIN_TECHNOLOGY,
+                         _parameters)
 {
 }
 
 LoadBuiltinTechnology::~LoadBuiltinTechnology() = default;
 
-const CustomUnorderedSet<TechnologyFlowStep_Type> LoadBuiltinTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
+const CustomUnorderedSet<TechnologyFlowStep_Type>
+LoadBuiltinTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
 {
    return CustomUnorderedSet<TechnologyFlowStep_Type>();
 }

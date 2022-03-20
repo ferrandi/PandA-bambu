@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -34,7 +34,8 @@
  * @file clique_covering.hpp
  * @brief This header file includes four different algorithms heuristically solving the clique covering problem.
  *
- * This header has 4 classes solving clique covering problem. Three of them consider the weighted of the edges during the clique selection.
+ * This header has 4 classes solving clique covering problem. Three of them consider the weighted of the edges during
+ * the clique selection.
  *
  * The first two heuristics are based on these two papers:
  *  - E. Tomita, A. Tanaka, H. Takahashi
@@ -43,9 +44,9 @@
  *  - K. C. Dukka Bahadur, Tatsuya Akutsu, Etsuji Tomita, and Tomokazu Seki.
  *    "Protein side-chain packing problem: a maximum edge-weight clique algorithmic approach",
  *    In Proceedings of the second conference on Asia-Pacific bioinformatics - Volume 29 (APBC '04),
- *    Yi-Ping Phoebe Chen (Ed.), Vol. 29. Australian Computer Society, Inc., Darlinghurst, Australia, Australia, 191-200.
- * The third one is a simple clique covering obtained by coloring the complement graph.
- * The last one performs iteratively the clique covering on a filtered graph induced by different edge weights.
+ *    Yi-Ping Phoebe Chen (Ed.), Vol. 29. Australian Computer Society, Inc., Darlinghurst, Australia, Australia,
+ * 191-200. The third one is a simple clique covering obtained by coloring the complement graph. The last one performs
+ * iteratively the clique covering on a filtered graph induced by different edge weights.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -62,7 +63,7 @@
 #include "custom_map.hpp" // for map
 #include "custom_set.hpp" // for set
 #include <algorithm>      // for binary_search, sort
-#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/incremental_components.hpp>
@@ -192,7 +193,8 @@ class clique_covering
     * @param graph_type is the kind of graph you are going to create
     * @return a reference to the desidered solver
     */
-   static typename refcount<clique_covering<VertexType>> create_solver(CliqueCovering_Algorithm solver);
+   static typename refcount<clique_covering<VertexType>> create_solver(CliqueCovering_Algorithm solver,
+                                                                       unsigned int nvert);
 
    /**
     * Adds a vertex to graph. It checks if element is already into graph. If it is, an assertion fails, otherwise
@@ -301,11 +303,11 @@ class compatibility_node_info_writer
 {
  private:
    /// names of the vertices
-   const std::map<C_vertex, std::string>& names;
+   const CustomUnorderedMap<C_vertex, std::string>& names;
 
  public:
    /// Constructor
-   explicit compatibility_node_info_writer(const std::map<C_vertex, std::string>& _names) : names(_names)
+   explicit compatibility_node_info_writer(const CustomUnorderedMap<C_vertex, std::string>& _names) : names(_names)
    {
    }
 
@@ -323,13 +325,13 @@ template <typename Graph>
 class TTT_maximal_weighted_clique
 {
    /// vertex iterator
-   typedef typename boost::graph_traits<Graph>::vertex_iterator vertex_iterator;
+   using vertex_iterator = typename boost::graph_traits<Graph>::vertex_iterator;
    /// vertex object
-   typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex;
+   using vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
    /// adjacency iterator
-   typedef typename boost::graph_traits<Graph>::adjacency_iterator adjacency_iterator;
+   using adjacency_iterator = typename boost::graph_traits<Graph>::adjacency_iterator;
    /// out edge iterator
-   typedef typename boost::graph_traits<Graph>::out_edge_iterator edge_iterator;
+   using edge_iterator = typename boost::graph_traits<Graph>::out_edge_iterator;
 
    /// set of vertices of the current clique
    CustomUnorderedSet<vertex> Q;
@@ -340,10 +342,11 @@ class TTT_maximal_weighted_clique
    /// weight of Q_max
    int W_Q_max;
 
-   std::map<C_vertex, std::string>& names;
+   CustomUnorderedMap<C_vertex, std::string>& names;
 
    /// return the vertex of subg with the maximum intersection with cand
-   vertex get_max_weighted_adiacent_intersection(const CustomUnorderedSet<vertex>& subg, const CustomUnorderedSet<vertex>& cand, const Graph& g)
+   vertex get_max_weighted_adiacent_intersection(const CustomUnorderedSet<vertex>& subg,
+                                                 const CustomUnorderedSet<vertex>& cand, const Graph& g)
    {
       vertex result = boost::graph_traits<Graph>::null_vertex();
       THROW_ASSERT(!subg.empty(), "at least one element should belong to subg");
@@ -357,7 +360,9 @@ class TTT_maximal_weighted_clique
          for(; ei != ei_end; ++ei)
          {
             if(cand.find(boost::target(*ei, g)) != cand.end())
+            {
                weight_intersection += g[*ei].weight;
+            }
          }
          if(weight_intersection > max_weighted_intersection)
          {
@@ -402,8 +407,12 @@ class TTT_maximal_weighted_clique
       edge_iterator ei, ei_end;
       boost::tie(ei, ei_end) = boost::out_edges(q_vertex, g);
       for(; ei != ei_end; ++ei)
+      {
          if(Q_set.find(boost::target(*ei, g)) != Q_set.end())
+         {
             result += g[*ei].weight;
+         }
+      }
       return result;
    }
 
@@ -422,7 +431,9 @@ class TTT_maximal_weighted_clique
          return;
       }
       else if(cand.empty())
+      {
          return;
+      }
 
       /// get the vertex in subg with the maximum of adjacent vertices in cand
       vertex u = get_max_weighted_adiacent_intersection(subg, cand, g);
@@ -455,7 +466,9 @@ class TTT_maximal_weighted_clique
          unordered_set_intersection(cand.begin(), cand.end(), gamma_q, std::inserter(cand_q, cand_q.end()));
          expand(subg_q, cand_q, g, upper_bound);
          if(upper_bound <= W_Q_max)
+         {
             return;
+         }
          cand.erase(q);
          // std::cerr << "back," << std::endl;
          Q.erase(q);
@@ -487,7 +500,8 @@ class TTT_maximal_weighted_clique
    {
       return W_Q_max;
    }
-   explicit TTT_maximal_weighted_clique(std::map<C_vertex, std::string>& _names) : W_Q(0), W_Q_max(std::numeric_limits<int>::min()), names(_names)
+   explicit TTT_maximal_weighted_clique(CustomUnorderedMap<C_vertex, std::string>& _names)
+       : W_Q(0), W_Q_max(std::numeric_limits<int>::min()), names(_names)
    {
    }
 };
@@ -499,13 +513,13 @@ template <typename Graph>
 class TTT_maximal_weighted_clique_fast
 {
    /// vertex iterator
-   typedef typename boost::graph_traits<Graph>::vertex_iterator vertex_iterator;
+   using vertex_iterator = typename boost::graph_traits<Graph>::vertex_iterator;
    /// vertex object
-   typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex;
+   using vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
    /// adjacency iterator
-   typedef typename boost::graph_traits<Graph>::adjacency_iterator adjacency_iterator;
+   using adjacency_iterator = typename boost::graph_traits<Graph>::adjacency_iterator;
    /// out edge iterator
-   typedef typename boost::graph_traits<Graph>::out_edge_iterator edge_iterator;
+   using edge_iterator = typename boost::graph_traits<Graph>::out_edge_iterator;
 
    /// set of vertices of the current clique
    CustomUnorderedSet<vertex> Q;
@@ -516,10 +530,11 @@ class TTT_maximal_weighted_clique_fast
    /// weight of Q_max
    int W_Q_max;
 
-   std::map<C_vertex, std::string>& names;
+   CustomUnorderedMap<C_vertex, std::string>& names;
 
    /// return the vertex of subg with the maximum intersection with cand
-   vertex get_max_weighted_adiacent_intersection(const CustomUnorderedSet<vertex>& subg, const CustomUnorderedSet<vertex>& cand, const Graph& g)
+   vertex get_max_weighted_adiacent_intersection(const CustomUnorderedSet<vertex>& subg,
+                                                 const CustomUnorderedSet<vertex>& cand, const Graph& g)
    {
       vertex result = boost::graph_traits<Graph>::null_vertex();
       THROW_ASSERT(!subg.empty(), "at least one element should belong to subg");
@@ -533,7 +548,9 @@ class TTT_maximal_weighted_clique_fast
          for(; ei != ei_end; ++ei)
          {
             if(cand.find(boost::target(*ei, g)) != cand.end())
+            {
                weight_intersection += g[*ei].weight;
+            }
          }
          if(weight_intersection > max_weighted_intersection)
          {
@@ -578,8 +595,12 @@ class TTT_maximal_weighted_clique_fast
       edge_iterator ei, ei_end;
       boost::tie(ei, ei_end) = boost::out_edges(q_vertex, g);
       for(; ei != ei_end; ++ei)
+      {
          if(Q_set.find(boost::target(*ei, g)) != Q_set.end())
+         {
             result += g[*ei].weight;
+         }
+      }
       return result;
    }
 
@@ -598,7 +619,9 @@ class TTT_maximal_weighted_clique_fast
          return;
       }
       else if(cand.empty())
+      {
          return;
+      }
 
       /// get the vertex in subg with the maximum of adjacent vertices in cand
       vertex u = get_max_weighted_adiacent_intersection(subg, cand, g);
@@ -633,7 +656,9 @@ class TTT_maximal_weighted_clique_fast
          expand(subg_q, cand_q, g);
          // std::cerr << "W_Q_max=" << W_Q_max << std::endl;
          if(W_Q_max >= 0)
+         {
             return;
+         }
          cand.erase(q);
          // std::cerr << "back," << std::endl;
          Q.erase(q);
@@ -660,7 +685,9 @@ class TTT_maximal_weighted_clique_fast
       return Q_max;
    }
 
-   explicit TTT_maximal_weighted_clique_fast(std::map<typename boost::graph_traits<Graph>::vertex_descriptor, std::string>& _names) : W_Q(0), W_Q_max(std::numeric_limits<int>::min()), names(_names)
+   explicit TTT_maximal_weighted_clique_fast(
+       CustomUnorderedMap<typename boost::graph_traits<Graph>::vertex_descriptor, std::string>& _names)
+       : W_Q(0), W_Q_max(std::numeric_limits<int>::min()), names(_names)
    {
    }
 };
@@ -673,21 +700,23 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    /// set of maximal clique computed
    std::vector<CustomOrderedSet<C_vertex>> cliques;
    /// map between vertex_type and C_vertex
-   std::map<vertex_type, C_vertex> v2uv;
+   CustomUnorderedMap<vertex_type, C_vertex> v2uv;
    /// edge selector to select all edges of the compatibility graph
    static const int COMPATIBILITY_ALL_EDGES = ~0;
    int max_level;
    bool all_edges;
+   unsigned vindex;
 
  protected:
    /// map between C_vertex and vertex_type
-   std::map<C_vertex, vertex_type> uv2v;
+   CustomUnorderedMap<C_vertex, vertex_type> uv2v;
    /// name map for the C_vertex vertices
-   std::map<C_vertex, std::string> names;
+   CustomUnorderedMap<C_vertex, std::string> names;
 
  public:
    /// constructor
-   explicit coloring_based_clique_covering(bool _all_edges) : max_level(0), all_edges(_all_edges)
+   explicit coloring_based_clique_covering(bool _all_edges, unsigned int nvert)
+       : clique_covering_graph_bulk(nvert), max_level(0), all_edges(_all_edges), vindex(0)
    {
    }
 
@@ -700,7 +729,8 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       C_vertex result;
       THROW_ASSERT(v2uv.find(element) == v2uv.end(), "vertex already added");
       /// vertex weight not considered
-      v2uv[element] = result = boost::add_vertex(clique_covering_graph_bulk);
+      v2uv[element] = result = boost::vertex(vindex, clique_covering_graph_bulk);
+      ++vindex;
       uv2v[result] = element;
       names[result] = name;
       return result;
@@ -738,47 +768,66 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       return result;
    }
 
-   virtual void do_clique_covering(const cc_compatibility_graphRef filteredCG, boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, CustomUnorderedSet<C_vertex>&, const CustomUnorderedSet<C_vertex>&, const filter_clique<vertex_type>&)
+   virtual void do_clique_covering(const cc_compatibility_graphRef filteredCG,
+                                   boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds,
+                                   CustomUnorderedSet<C_vertex>&, const CustomUnorderedSet<C_vertex>&,
+                                   const filter_clique<vertex_type>&)
    {
-      typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> conflict_graph;
-      typedef boost::graph_traits<conflict_graph>::vertices_size_type cg_vertices_size_type;
-      typedef boost::property_map<conflict_graph, boost::vertex_index_t>::const_type cg_vertex_index_map;
-      boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&> color;
+      using conflict_graph = boost::adjacency_matrix<boost::undirectedS>;
+      using cg_vertices_size_type = boost::graph_traits<conflict_graph>::vertices_size_type;
+      using cg_vertex_index_map = boost::property_map<conflict_graph, boost::vertex_index_t>::const_type;
+      boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
+                                   cg_vertices_size_type&>
+          color;
 
       std::vector<cg_vertices_size_type> color_vec;
       /// conflict graph
-      conflict_graph cg;
 
-      typedef boost::graph_traits<conflict_graph>::vertex_descriptor vertex_descriptor_cg;
-      std::map<C_vertex, vertex_descriptor_cg> vmap;
+      using vertex_descriptor_cg = boost::graph_traits<conflict_graph>::vertex_descriptor;
+      CustomUnorderedMap<C_vertex, vertex_descriptor_cg> vmap;
       std::vector<C_vertex> reverse_map;
+
+      unsigned int num_vert = 0;
+      cc_compatibility_graph::vertex_iterator vi, vi_end;
+      for(boost::tie(vi, vi_end) = boost::vertices(*filteredCG); vi != vi_end; ++vi)
+      {
+         ++num_vert;
+      }
+      conflict_graph* cg = new conflict_graph(num_vert);
 
       unsigned int vertex_index = 0;
       BGL_FORALL_VERTICES(v, *filteredCG, cc_compatibility_graph)
       {
-         vmap[v] = boost::add_vertex(cg);
+         vmap[v] = boost::vertex(vertex_index, *cg);
          reverse_map.push_back(v);
          ++vertex_index;
       }
       color_vec.resize(vertex_index);
-      color = boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&>(&color_vec.front(), boost::get(boost::vertex_index, cg));
+      color = boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
+                                           cg_vertices_size_type&>(&color_vec.front(),
+                                                                   boost::get(boost::vertex_index, *cg));
 
       BGL_FORALL_VERTICES(u, *filteredCG, cc_compatibility_graph)
       {
-         std::vector<C_vertex> neighbors(boost::adjacent_vertices(u, *filteredCG).first, boost::adjacent_vertices(u, *filteredCG).second);
+         std::vector<C_vertex> neighbors(boost::adjacent_vertices(u, *filteredCG).first,
+                                         boost::adjacent_vertices(u, *filteredCG).second);
          std::sort(neighbors.begin(), neighbors.end());
          BGL_FORALL_VERTICES(v, *filteredCG, cc_compatibility_graph)
          {
             if(u > v)
+            {
                continue; /// the graph is an undirected graph...
+            }
             // Might want to check for self-loops
             if(!std::binary_search(neighbors.begin(), neighbors.end(), v))
-               boost::add_edge(vmap[u], vmap[v], cg);
+            {
+               boost::add_edge(vmap[u], vmap[v], *cg);
+            }
          }
       }
 
       /// coloring based on DSATUR 2 heuristic
-      cg_vertices_size_type num_colors = dsatur2_coloring(cg, color);
+      cg_vertices_size_type num_colors = dsatur2_coloring(*cg, color);
       std::vector<unsigned int> colors(num_colors);
 
       for(unsigned int i = 0; i < num_colors; ++i)
@@ -789,7 +838,9 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       {
          cg_vertices_size_type c = color_vec[i];
          if(colors[c] == std::numeric_limits<unsigned int>::max())
+         {
             colors[c] = i;
+         }
          else
          {
             C_vertex ug_vertex_i = reverse_map[i];
@@ -800,7 +851,9 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    }
 
    /// build partitions
-   void build_partitions(CustomUnorderedSet<C_vertex>& support, boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, std::map<C_vertex, CustomOrderedSet<C_vertex>>& current_partitions)
+   void build_partitions(CustomUnorderedSet<C_vertex>& support,
+                         boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds,
+                         std::map<C_vertex, CustomOrderedSet<C_vertex>>& current_partitions)
    {
       auto it_end = support.end();
       for(auto it = support.begin(); it != it_end;)
@@ -817,7 +870,9 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
                current_partitions[rep] = singularity;
             }
             else
+            {
                current_partitions.find(rep)->second.insert(cur);
+            }
          }
          else
          {
@@ -839,20 +894,23 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       rank_pmap_type rank_pmap = boost::make_iterator_property_map(rank_map.begin(), cindex_pmap, rank_map[0]);
       pred_pmap_type pred_pmap = boost::make_iterator_property_map(pred_map.begin(), cindex_pmap, pred_map[0]);
       boost::disjoint_sets<rank_pmap_type, pred_pmap_type> ds(rank_pmap, pred_pmap);
-      typedef boost::graph_traits<boost_cc_compatibility_graph>::vertex_iterator u_vertex_iterator;
+      using u_vertex_iterator = boost::graph_traits<boost_cc_compatibility_graph>::vertex_iterator;
       CustomUnorderedSet<C_vertex> support;
       CustomUnorderedSet<C_vertex> all_vertices;
 
       boost::initialize_incremental_components(clique_covering_graph_bulk, ds);
 
       u_vertex_iterator ui, uiend;
-      for(boost::tie(ui, uiend) = boost::vertices(clique_covering_graph_bulk); ui != uiend; ui++)
+      for(boost::tie(ui, uiend) = boost::vertices(clique_covering_graph_bulk); ui != uiend; ++ui)
       {
          support.insert(*ui);
          all_vertices.insert(*ui);
       }
-      cc_compatibility_graphRef completeCG = cc_compatibility_graphRef(new cc_compatibility_graph(clique_covering_graph_bulk, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
-                                                                                                  cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>(&support)));
+      auto completeCG = cc_compatibility_graphRef(
+          new cc_compatibility_graph(clique_covering_graph_bulk,
+                                     cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(
+                                         COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
+                                     cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>(&support)));
 
       std::map<C_vertex, CustomOrderedSet<C_vertex>> current_partitions;
       if(all_edges)
@@ -864,8 +922,10 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
          /// color the conflict graph projection
          int cur_level = max_level;
          int selector = 1 << cur_level;
-         cc_compatibility_graphRef filteredCG = cc_compatibility_graphRef(
-             new cc_compatibility_graph(clique_covering_graph_bulk, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(selector, &clique_covering_graph_bulk), cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>(&support)));
+         auto filteredCG = cc_compatibility_graphRef(new cc_compatibility_graph(
+             clique_covering_graph_bulk,
+             cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(selector, &clique_covering_graph_bulk),
+             cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>(&support)));
          while(cur_level > 0)
          {
             do_clique_covering(filteredCG, ds, support, all_vertices, fc);
@@ -893,12 +953,14 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
                         C_vertex rep_target = boost::target(*ei, *completeCG);
                         if(rep_target != cur)
                         {
-                           std::vector<C_vertex> neighbors(boost::adjacent_vertices(cur, *completeCG).first, boost::adjacent_vertices(cur, *completeCG).second);
+                           std::vector<C_vertex> neighbors(boost::adjacent_vertices(cur, *completeCG).first,
+                                                           boost::adjacent_vertices(cur, *completeCG).second);
                            std::sort(neighbors.begin(), neighbors.end());
                            if(!std::binary_search(neighbors.begin(), neighbors.end(), rep_target))
                            {
                               (*completeCG)[*ei].selector = 0;
-                              // std::cerr << names[cur] << "|"<< names[rep] << " -0- " << names[rep_target] << std::endl;
+                              // std::cerr << names[cur] << "|"<< names[rep] << " -0- " << names[rep_target] <<
+                              // std::endl;
                               c_it = current_cliques.begin(); /// restart the pruning
                               restart = true;                 /// and then restart the whole partition analysis
                            }
@@ -909,12 +971,14 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
                         C_vertex cur_target = boost::target(*ei, *completeCG);
                         if(cur_target != rep)
                         {
-                           std::vector<C_vertex> neighbors(boost::adjacent_vertices(rep, *completeCG).first, boost::adjacent_vertices(rep, *completeCG).second);
+                           std::vector<C_vertex> neighbors(boost::adjacent_vertices(rep, *completeCG).first,
+                                                           boost::adjacent_vertices(rep, *completeCG).second);
                            std::sort(neighbors.begin(), neighbors.end());
                            if(!std::binary_search(neighbors.begin(), neighbors.end(), cur_target))
                            {
                               (*completeCG)[*ei].selector = 0;
-                              // std::cerr << names[rep] << "|"<< names[cur] << " -1- " << names[cur_target] << std::endl;
+                              // std::cerr << names[rep] << "|"<< names[cur] << " -1- " << names[cur_target] <<
+                              // std::endl;
                            }
                         }
                      }
@@ -941,8 +1005,11 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
             --cur_level;
             selector = selector | 1 << cur_level;
             // std::cerr << "new selector " << cur_level << std::endl;
-            filteredCG = cc_compatibility_graphRef(new cc_compatibility_graph(clique_covering_graph_bulk, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(selector, &clique_covering_graph_bulk),
-                                                                              cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>(&support)));
+            filteredCG = cc_compatibility_graphRef(new cc_compatibility_graph(
+                clique_covering_graph_bulk,
+                cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(selector,
+                                                                                   &clique_covering_graph_bulk),
+                cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>(&support)));
          }
          /// rebuild the partitions
          boost::tie(ui, uiend) = boost::vertices(clique_covering_graph_bulk);
@@ -952,8 +1019,8 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
 
       build_partitions(support, ds, current_partitions);
       /// and then fill the cliques
-      std::map<C_vertex, CustomOrderedSet<C_vertex>>::const_iterator cp_it_end = current_partitions.end();
-      for(std::map<C_vertex, CustomOrderedSet<C_vertex>>::const_iterator cp_it = current_partitions.begin(); cp_it != cp_it_end; ++cp_it)
+      auto cp_it_end = current_partitions.end();
+      for(auto cp_it = current_partitions.begin(); cp_it != cp_it_end; ++cp_it)
       {
          cliques.push_back(cp_it->second);
          cliques.back().insert(cp_it->first);
@@ -963,7 +1030,8 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    void writeDot(const std::string& filename) const override
    {
       std::ofstream f(filename.c_str());
-      boost::write_graphviz(f, clique_covering_graph_bulk, compatibility_node_info_writer(names), compatibility_edge_writer(clique_covering_graph_bulk));
+      boost::write_graphviz(f, clique_covering_graph_bulk, compatibility_node_info_writer(names),
+                            compatibility_edge_writer(clique_covering_graph_bulk));
    }
 
    void add_subpartitions(size_t, vertex_type) override
@@ -987,17 +1055,21 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    }
 };
 
-/// second fast version of the TTT_based_clique_covering. The first maximal clique found is used by the greedy clique covering.
+/// second fast version of the TTT_based_clique_covering. The first maximal clique found is used by the greedy clique
+/// covering.
 template <typename vertex_type>
 class TTT_based_clique_covering_fast : public coloring_based_clique_covering<vertex_type>
 {
  public:
    /// constructor
-   explicit TTT_based_clique_covering_fast(bool _all_edges) : coloring_based_clique_covering<vertex_type>(_all_edges)
+   explicit TTT_based_clique_covering_fast(bool _all_edges, unsigned int nvert)
+       : coloring_based_clique_covering<vertex_type>(_all_edges, nvert)
    {
    }
 
-   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, CustomUnorderedSet<C_vertex>& support, const CustomUnorderedSet<C_vertex>& all_vertices,
+   void do_clique_covering(const cc_compatibility_graphRef CG,
+                           typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds,
+                           CustomUnorderedSet<C_vertex>& support, const CustomUnorderedSet<C_vertex>& all_vertices,
                            const filter_clique<vertex_type>& fc) override
    {
       TTT_maximal_weighted_clique_fast<cc_compatibility_graph> MWC(coloring_based_clique_covering<vertex_type>::names);
@@ -1021,10 +1093,13 @@ class TTT_based_clique_covering_fast : public coloring_based_clique_covering<ver
                {
                   C_vertex rep = ds.find_set(*av_it);
                   if(curr_clique.find(rep) != curr_clique.end())
+                  {
                      curr_expandend_clique.insert(*av_it);
+                  }
                }
 
-               removed_vertex = fc.select_candidate_to_remove(curr_expandend_clique, vertex_to_be_removed, coloring_based_clique_covering<vertex_type>::uv2v, *CG);
+               removed_vertex = fc.select_candidate_to_remove(curr_expandend_clique, vertex_to_be_removed,
+                                                              coloring_based_clique_covering<vertex_type>::uv2v, *CG);
                if(removed_vertex)
                {
                   // std::cerr << "Vertex removed " << curr_clique.size() << std::endl;
@@ -1032,7 +1107,9 @@ class TTT_based_clique_covering_fast : public coloring_based_clique_covering<ver
                }
             }
             else
+            {
                removed_vertex = false;
+            }
          } while(removed_vertex);
 
          // std::cerr << "Found one of size " << curr_clique.size() << std::endl;
@@ -1046,7 +1123,9 @@ class TTT_based_clique_covering_fast : public coloring_based_clique_covering<ver
             auto current = support.find(curr_vertex);
             THROW_ASSERT(current != support.end(), "unexpected condition");
             if(cc_it != first_cc_it)
+            {
                ds.union_set(first, curr_vertex);
+            }
             support.erase(current);
             ++cc_it;
          } while(cc_it != cc_it_end);
@@ -1071,11 +1150,14 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
 {
  public:
    /// constructor
-   explicit TTT_based_clique_covering(bool _all_edges) : coloring_based_clique_covering<vertex_type>(_all_edges)
+   explicit TTT_based_clique_covering(bool _all_edges, unsigned int nvert)
+       : coloring_based_clique_covering<vertex_type>(_all_edges, nvert)
    {
    }
 
-   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, CustomUnorderedSet<C_vertex>& support, const CustomUnorderedSet<C_vertex>& all_vertices,
+   void do_clique_covering(const cc_compatibility_graphRef CG,
+                           typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds,
+                           CustomUnorderedSet<C_vertex>& support, const CustomUnorderedSet<C_vertex>& all_vertices,
                            const filter_clique<vertex_type>& fc) override
    {
       TTT_maximal_weighted_clique<cc_compatibility_graph> MWC(coloring_based_clique_covering<vertex_type>::names);
@@ -1083,7 +1165,8 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
       int upper_bound = std::numeric_limits<int>::max();
       while(!support.empty())
       {
-         // std::cerr << "Looking for a maximum weighted clique on a graph with " << support.size() << " vertices" << std::endl;
+         // std::cerr << "Looking for a maximum weighted clique on a graph with " << support.size() << " vertices" <<
+         // std::endl;
          CustomOrderedSet<C_vertex> curr_clique = MWC.get_weighted_maximal_cliques(*CG, upper_bound);
          /// update the upper bound with the last weight
          upper_bound = MWC.get_last_W_Q_max();
@@ -1101,9 +1184,12 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
                {
                   C_vertex rep = ds.find_set(*av_it);
                   if(curr_clique.find(rep) != curr_clique.end())
+                  {
                      curr_expandend_clique.insert(*av_it);
+                  }
                }
-               removed_vertex = fc.select_candidate_to_remove(curr_expandend_clique, vertex_to_be_removed, coloring_based_clique_covering<vertex_type>::uv2v, *CG);
+               removed_vertex = fc.select_candidate_to_remove(curr_expandend_clique, vertex_to_be_removed,
+                                                              coloring_based_clique_covering<vertex_type>::uv2v, *CG);
                if(removed_vertex)
                {
                   // std::cerr << "Vertex removed " << curr_clique.size() << std::endl;
@@ -1111,7 +1197,9 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
                }
             }
             else
+            {
                removed_vertex = false;
+            }
          } while(removed_vertex);
 
          // std::cerr << "Found one of size " << curr_clique.size() << std::endl;
@@ -1125,7 +1213,9 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
             auto current = support.find(curr_vertex);
             THROW_ASSERT(current != support.end(), "unexpected condition");
             if(cc_it != first_cc_it)
+            {
                ds.union_set(first, curr_vertex);
+            }
             support.erase(current);
             ++cc_it;
          } while(cc_it != cc_it_end);
@@ -1148,9 +1238,12 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
 template <typename vertex_type>
 class TS_based_clique_covering : public coloring_based_clique_covering<vertex_type>
 {
-   typedef boost::graph_traits<cc_compatibility_graph>::edge_descriptor edge_descriptor;
+   using edge_descriptor = boost::graph_traits<cc_compatibility_graph>::edge_descriptor;
 
-   bool is_non_compliant(C_vertex src, C_vertex tgt, const cc_compatibility_graph& subgraph, const CustomUnorderedSet<C_vertex>& all_vertices, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, const filter_clique<vertex_type>& fc)
+   bool is_non_compliant(C_vertex src, C_vertex tgt, const cc_compatibility_graph& subgraph,
+                         const CustomUnorderedSet<C_vertex>& all_vertices,
+                         typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds,
+                         const filter_clique<vertex_type>& fc)
    {
       C_vertex vertex_to_be_removed;
       CustomOrderedSet<C_vertex> curr_expandend_clique;
@@ -1159,12 +1252,18 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
       {
          C_vertex rep = ds.find_set(*av_it);
          if(rep == src || rep == tgt)
+         {
             curr_expandend_clique.insert(*av_it);
+         }
       }
-      return fc.select_candidate_to_remove(curr_expandend_clique, vertex_to_be_removed, coloring_based_clique_covering<vertex_type>::uv2v, subgraph);
+      return fc.select_candidate_to_remove(curr_expandend_clique, vertex_to_be_removed,
+                                           coloring_based_clique_covering<vertex_type>::uv2v, subgraph);
    }
 
-   bool select_edge_start(C_vertex source, C_vertex& tgt, const cc_compatibility_graph& subgraph, const CustomUnorderedSet<C_vertex>& all_vertices, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, const filter_clique<vertex_type>& fc)
+   bool select_edge_start(C_vertex source, C_vertex& tgt, const cc_compatibility_graph& subgraph,
+                          const CustomUnorderedSet<C_vertex>& all_vertices,
+                          typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds,
+                          const filter_clique<vertex_type>& fc)
    {
       size_t h_max_neighbors = 0;
       size_t h_min_del_edges = std::numeric_limits<size_t>::max();
@@ -1174,7 +1273,9 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
       {
          C_vertex target = boost::target(*sei0, subgraph);
          if(is_non_compliant(source, target, subgraph, all_vertices, ds, fc))
+         {
             continue;
+         }
 
          size_t h_neighbors = 0, h_del_edges = 0;
          C_outEdgeIterator sei, sei_end, tei, tei_end;
@@ -1191,10 +1292,12 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
             ++tgt_out_degree;
             tgt_neighbors.insert(boost::target(*tei, subgraph));
          }
-         unordered_set_intersection(src_neighbors.begin(), src_neighbors.end(), tgt_neighbors, std::inserter(common_neighbors, common_neighbors.end()));
+         unordered_set_intersection(src_neighbors.begin(), src_neighbors.end(), tgt_neighbors,
+                                    std::inserter(common_neighbors, common_neighbors.end()));
          h_neighbors = common_neighbors.size();
          h_del_edges = src_out_degree + tgt_out_degree - h_neighbors - 1;
-         if(first_iter || (h_neighbors > h_max_neighbors) || (h_neighbors == h_max_neighbors && h_del_edges < h_min_del_edges))
+         if(first_iter || (h_neighbors > h_max_neighbors) ||
+            (h_neighbors == h_max_neighbors && h_del_edges < h_min_del_edges))
          {
             first_iter = false;
             h_max_neighbors = h_neighbors;
@@ -1205,7 +1308,10 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
       return !first_iter;
    }
    /// Compute the heuristics and return the best matching edge
-   bool select_edge(C_vertex& src, C_vertex& tgt, const cc_compatibility_graph& subgraph, const CustomUnorderedSet<C_vertex>& all_vertices, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, const filter_clique<vertex_type>& fc)
+   bool select_edge(C_vertex& src, C_vertex& tgt, const cc_compatibility_graph& subgraph,
+                    const CustomUnorderedSet<C_vertex>& all_vertices,
+                    typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds,
+                    const filter_clique<vertex_type>& fc)
    {
       size_t h_max_neighbors = 0;
       size_t h_min_del_edges = std::numeric_limits<size_t>::max();
@@ -1217,7 +1323,9 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
          source = boost::source(*ei, subgraph);
          target = boost::target(*ei, subgraph);
          if(is_non_compliant(source, target, subgraph, all_vertices, ds, fc))
+         {
             continue;
+         }
 
          size_t h_neighbors = 0, h_del_edges = 0;
          C_outEdgeIterator sei, sei_end, tei, tei_end;
@@ -1234,10 +1342,12 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
             ++tgt_out_degree;
             tgt_neighbors.insert(boost::target(*tei, subgraph));
          }
-         unordered_set_intersection(src_neighbors.begin(), src_neighbors.end(), tgt_neighbors, std::inserter(common_neighbors, common_neighbors.end()));
+         unordered_set_intersection(src_neighbors.begin(), src_neighbors.end(), tgt_neighbors,
+                                    std::inserter(common_neighbors, common_neighbors.end()));
          h_neighbors = common_neighbors.size();
          h_del_edges = src_out_degree + tgt_out_degree - h_neighbors - 1;
-         if(first_iter || (h_neighbors > h_max_neighbors) || (h_neighbors == h_max_neighbors && h_del_edges < h_min_del_edges))
+         if(first_iter || (h_neighbors > h_max_neighbors) ||
+            (h_neighbors == h_max_neighbors && h_del_edges < h_min_del_edges))
          {
             first_iter = false;
             h_max_neighbors = h_neighbors;
@@ -1251,23 +1361,29 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
 
  public:
    /// constructor
-   explicit TS_based_clique_covering(bool _all_edges) : coloring_based_clique_covering<vertex_type>(_all_edges)
+   explicit TS_based_clique_covering(bool _all_edges, unsigned int nvert)
+       : coloring_based_clique_covering<vertex_type>(_all_edges, nvert)
    {
    }
 
-   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, CustomUnorderedSet<C_vertex>& support, const CustomUnorderedSet<C_vertex>& all_vertices,
+   void do_clique_covering(const cc_compatibility_graphRef CG,
+                           typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds,
+                           CustomUnorderedSet<C_vertex>& support, const CustomUnorderedSet<C_vertex>& all_vertices,
                            const filter_clique<vertex_type>& fc) override
    {
       CustomUnorderedSet<C_vertex> support_copy(support);
 
       while(support.size() > 1)
       {
-         // std::cerr << "Looking for a maximum weighted clique on a graph with " << support.size() << " vertices" << std::endl;
+         // std::cerr << "Looking for a maximum weighted clique on a graph with " << support.size() << " vertices" <<
+         // std::endl;
          /// build the clique seed
          C_vertex src, tgt;
          bool res_edge = select_edge(src, tgt, *CG, all_vertices, ds, fc);
          if(!res_edge)
+         {
             break;
+         }
 
          size_t cluster_size = 1;
          std::map<edge_descriptor, int> removed_edges;
@@ -1285,7 +1401,9 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
             {
                C_vertex target = boost::target(*sei, *CG);
                if(tgt == target)
+               {
                   continue;
+               }
                if(neighbors_tgt.find(target) == neighbors_tgt.end())
                {
                   removed_edges[*sei] = (*CG)[*sei].selector;
@@ -1296,7 +1414,9 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
             {
                C_vertex target = boost::target(*sei, *CG);
                if(src == target)
+               {
                   continue;
+               }
                if(neighbors_src.find(target) == neighbors_src.end())
                {
                   removed_edges[*sei] = (*CG)[*sei].selector;
@@ -1319,8 +1439,8 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
          current = support.find(src);
          THROW_ASSERT(current != support.end(), "unexpected condition");
          support.erase(current);
-         const std::map<edge_descriptor, int>::const_iterator re_it_end = removed_edges.end();
-         for(std::map<edge_descriptor, int>::const_iterator re_it = removed_edges.begin(); re_it != re_it_end; ++re_it)
+         const auto re_it_end = removed_edges.end();
+         for(auto re_it = removed_edges.begin(); re_it != re_it_end; ++re_it)
          {
             (*CG)[re_it->first].selector = re_it->second;
          }
@@ -1346,13 +1466,16 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
 template <typename vertex_type>
 class RTS_based_clique_covering : public TS_based_clique_covering<vertex_type>
 {
-   typedef boost::graph_traits<cc_compatibility_graph>::edge_descriptor edge_descriptor;
+   using edge_descriptor = boost::graph_traits<cc_compatibility_graph>::edge_descriptor;
 
-   size_t compute_cost(std::vector<CustomOrderedSet<C_vertex>>& curr_cliques, const filter_clique<vertex_type>& fc)
+   size_t compute_cost(const std::vector<CustomOrderedSet<C_vertex>>& curr_cliques,
+                       const filter_clique<vertex_type>& fc)
    {
       size_t total_cost = 0;
-      for(auto clique_val : curr_cliques)
+      for(const auto& clique_val : curr_cliques)
+      {
          total_cost += fc.clique_cost(clique_val, coloring_based_clique_covering<vertex_type>::uv2v);
+      }
       return total_cost;
    }
 
@@ -1366,7 +1489,8 @@ class RTS_based_clique_covering : public TS_based_clique_covering<vertex_type>
    {
       std::vector<CustomOrderedSet<C_vertex>> best_cliques;
       size_t best_cost = std::numeric_limits<size_t>::max();
-      size_t iterations = std::min(boost::num_vertices(coloring_based_clique_covering<vertex_type>::clique_covering_graph_bulk), 10ul);
+      size_t iterations =
+          std::min(boost::num_vertices(coloring_based_clique_covering<vertex_type>::clique_covering_graph_bulk), 10ul);
       // std::cerr << "N iterations " << iterations << std::endl;
       for(unsigned int i = 0; i < iterations; ++i)
       {
@@ -1420,7 +1544,9 @@ struct full_cost_matrix : BM_cost_functor
    {
       int res = cost(x, 0);
       for(unsigned j = 1; j < cost.size2(); ++j)
+      {
          res = std::max(res, cost(x, j));
+      }
       return res;
    }
 
@@ -1438,13 +1564,16 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    /// set of maximal clique computed
    std::vector<CustomUnorderedSet<C_vertex>> cliques;
    /// map between vertex_type and C_vertex
-   std::map<vertex_type, C_vertex> v2uv;
+   CustomUnorderedMap<vertex_type, C_vertex> v2uv;
    /// map between C_vertex and vertex_type
-   std::map<C_vertex, vertex_type> uv2v;
+   CustomUnorderedMap<C_vertex, vertex_type> uv2v;
    /// name map for the C_vertex vertices
-   std::map<C_vertex, std::string> names;
+   CustomUnorderedMap<C_vertex, std::string> names;
    /// maximum weight
    int max_weight;
+   unsigned int vindex;
+   std::map<size_t, CustomOrderedSet<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>> partitions;
+   size_t num_cols;
    /// edge selector
    static const int COMPATIBILITY_EDGE = 1;
    static const int COMPATIBILITY_ALL_EDGES = ~0;
@@ -1454,15 +1583,19 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    /// the maximum size of these sets is the number of the cliques used to cover the graph
    size_t color_the_cc_compatibility_graph(const boost_cc_compatibility_graph& CG)
    {
-      typedef boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type cg_vertices_size_type;
-      typedef boost::property_map<boost_cc_compatibility_graph, boost::vertex_index_t>::const_type cg_vertex_index_map;
-      boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&> color;
+      using cg_vertices_size_type = boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type;
+      using cg_vertex_index_map = boost::property_map<boost_cc_compatibility_graph, boost::vertex_index_t>::const_type;
+      boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
+                                   cg_vertices_size_type&>
+          color;
 
       std::vector<cg_vertices_size_type> color_vec;
 
       size_t n_vertices = boost::num_vertices(CG);
       color_vec.resize(n_vertices);
-      color = boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&>(&color_vec.front(), boost::get(boost::vertex_index, CG));
+      color =
+          boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
+                                       cg_vertices_size_type&>(&color_vec.front(), boost::get(boost::vertex_index, CG));
 
       /// coloring based on DSATUR 2 heuristic
       dsatur2_coloring(CG, color);
@@ -1487,13 +1620,10 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       return max_size;
    }
 
-   std::map<size_t, CustomOrderedSet<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>> partitions;
-
-   size_t num_cols;
-
  public:
    /// constructor
-   bipartite_matching_clique_covering() : max_weight(std::numeric_limits<int>::min()), num_cols(0)
+   bipartite_matching_clique_covering(unsigned int nvert)
+       : clique_covering_graph_bulk(nvert), max_weight(std::numeric_limits<int>::min()), vindex(0), num_cols(0)
    {
    }
 
@@ -1503,7 +1633,8 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       C_vertex result;
       THROW_ASSERT(v2uv.find(element) == v2uv.end(), "vertex already added");
       /// vertex weight not considered
-      v2uv[element] = result = boost::add_vertex(clique_covering_graph_bulk);
+      v2uv[element] = result = boost::vertex(vindex, clique_covering_graph_bulk);
+      ++vindex;
       uv2v[result] = element;
       names[result] = name;
       return result;
@@ -1545,9 +1676,13 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    {
       cost_matrix.resize(final_num_cols + 1, final_num_cols + 1, true);
       for(unsigned int i = 0; i <= final_num_cols; ++i)
+      {
          cost_matrix(i, final_num_cols) = 0;
+      }
       for(unsigned int i = 0; i < final_num_cols; ++i)
+      {
          cost_matrix(final_num_cols, i) = 0;
+      }
       cost_matrix(num_rows, final_num_cols) = BIG_NUMBER;
       CustomUnorderedSet<C_vertex> empty;
       cliques.push_back(empty);
@@ -1558,10 +1693,15 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    {
       /// now color the graph and then do the bipartite matching on the vertex having the same color
       if(partitions.empty())
+      {
          num_cols = color_the_cc_compatibility_graph(clique_covering_graph_bulk);
+      }
       // std::cerr << "initial num_cols " << num_cols << std::endl;
-      cc_compatibility_graphRef completeCG = cc_compatibility_graphRef(new cc_compatibility_graph(clique_covering_graph_bulk, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
-                                                                                                  cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>()));
+      auto completeCG = cc_compatibility_graphRef(
+          new cc_compatibility_graph(clique_covering_graph_bulk,
+                                     cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(
+                                         COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
+                                     cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>()));
 
       size_t final_num_cols = num_cols;
 
@@ -1600,11 +1740,13 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                size_t compatibles = 0;
                int acc_cost_y = 0;
                for(ei = eibegin; ei != ei_end; ++ei)
+               {
                   if(cliques[y].find(boost::target(*ei, clique_covering_graph_bulk)) != cliques[y].end())
                   {
                      ++compatibles;
                      acc_cost_y += (clique_covering_graph_bulk)[*ei].weight;
                   }
+               }
                if(compatibles == cliques[y].size())
                {
                   if(compatibles == 0)
@@ -1614,7 +1756,8 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                      {
                         compatible_exist = true;
                         added_an_element = true;
-                        // std::cerr << "0cost_matrix(num_-rows,y) " << cost_matrix(num_rows,y) << " nr " << names[*v_it] << " y " << y << " size " << cliques[y].size() << std::endl;
+                        // std::cerr << "0cost_matrix(num_-rows,y) " << cost_matrix(num_rows,y) << " nr " <<
+                        // names[*v_it] << " y " << y << " size " << cliques[y].size() << std::endl;
                      }
                   }
                   else
@@ -1624,31 +1767,41 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                      candidate_clique.insert(cliques[y].begin(), cliques[y].end());
                      candidate_clique.insert(*v_it);
                      C_vertex vertex_to_be_removed;
-                     compatible_exist = !fc.select_candidate_to_remove(candidate_clique, vertex_to_be_removed, uv2v, *completeCG);
+                     compatible_exist =
+                         !fc.select_candidate_to_remove(candidate_clique, vertex_to_be_removed, uv2v, *completeCG);
                      if(compatible_exist)
                      {
-                        int curr_cost = (max_weight * acc_cost_y) / static_cast<int>(compatibles) + max_weight * static_cast<int>(offset - compatibles);
+                        int curr_cost = (max_weight * acc_cost_y) / static_cast<int>(compatibles) +
+                                        max_weight * static_cast<int>(offset - compatibles);
                         THROW_ASSERT(curr_cost > 0, "cost has to be positive");
                         cost_matrix(num_rows, y) = curr_cost;
                         added_an_element = true;
                      }
                      else
+                     {
                         cost_matrix(num_rows, y) = 0;
+                     }
                   }
-                  // std::cerr << "1cost_matrix(num_rows,y) " << cost_matrix(num_rows,y) << " nr " << names[*v_it] << " y " << y << " size " << cliques[y].size() << std::endl;
+                  // std::cerr << "1cost_matrix(num_rows,y) " << cost_matrix(num_rows,y) << " nr " << names[*v_it] << "
+                  // y " << y << " size " << cliques[y].size() << std::endl;
                }
                else
+               {
                   cost_matrix(num_rows, y) = 0;
+               }
             }
             if(!compatible_exist)
             {
                extend_and_assign(cost_matrix, final_num_cols, num_rows);
-               // std::cerr << "cost_matrix(num_rows,y) " << cost_matrix(num_rows,final_num_cols-1) << " nr " << names[*v_it] << " y " << final_num_cols-1<< std::endl;
+               // std::cerr << "cost_matrix(num_rows,y) " << cost_matrix(num_rows,final_num_cols-1) << " nr " <<
+               // names[*v_it] << " y " << final_num_cols-1<< std::endl;
             }
          }
          num_cols = final_num_cols;
          if(!added_an_element)
+         {
             continue;
+         }
          // std::cerr << "1num_rows " << num_rows << std::endl;
          // std::cerr << "1num_cols " << num_cols << std::endl;
          THROW_ASSERT(num_rows <= num_cols, "something of unexpected happen");
@@ -1672,23 +1825,31 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                boost::tie(ei, ei_end) = boost::out_edges(*v_it, clique_covering_graph_bulk);
                size_t compatibles = 0;
                for(; ei != ei_end; ++ei)
+               {
                   if(cliques[s].find(boost::target(*ei, clique_covering_graph_bulk)) != cliques[s].end())
+                  {
                      ++compatibles;
+                  }
+               }
                /// check if *v_it fit in the clique given the filtering predicate
                CustomOrderedSet<C_vertex> candidate_clique;
                candidate_clique.insert(cliques[s].begin(), cliques[s].end());
                candidate_clique.insert(*v_it);
                C_vertex vertex_to_be_removed;
                if(fc.select_candidate_to_remove(candidate_clique, vertex_to_be_removed, uv2v, *completeCG))
+               {
                   compatibles = 0;
+               }
                if(compatibles != cliques[s].size())
                {
-                  // std::cerr << "Wrong result from bipartite matching for " + names[*v_it] + " assigned to " + STR(s) << std::endl;
+                  // std::cerr << "Wrong result from bipartite matching for " + names[*v_it] + " assigned to " + STR(s)
+                  // << std::endl;
                   restart_bipartite = true;
                   extend_and_assign(cost_matrix, final_num_cols, i);
                   num_cols = final_num_cols;
                   analyzed_rows = i;
-                  // std::cerr << "cost_matrix(num_rows,y) " << cost_matrix(i,final_num_cols-1) << " nr " << names[*v_it] << " y " << final_num_cols-1<< std::endl;
+                  // std::cerr << "cost_matrix(num_rows,y) " << cost_matrix(i,final_num_cols-1) << " nr " <<
+                  // names[*v_it] << " y " << final_num_cols-1<< std::endl;
                   break;
                }
                cliques[s].insert(*v_it);
@@ -1710,7 +1871,8 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    void writeDot(const std::string& filename) const override
    {
       std::ofstream f(filename.c_str());
-      boost::write_graphviz(f, clique_covering_graph_bulk, compatibility_node_info_writer(names), compatibility_edge_writer(clique_covering_graph_bulk));
+      boost::write_graphviz(f, clique_covering_graph_bulk, compatibility_node_info_writer(names),
+                            compatibility_edge_writer(clique_covering_graph_bulk));
    }
 
    void add_subpartitions(size_t id, vertex_type v) override
@@ -1754,7 +1916,7 @@ class randomized_clique_covering : public clique_covering<vertex_type>
    std::vector<CustomOrderedSet<vertex_type>> cliques;
 
    /// map between vertex_type and C_vertex
-   std::map<vertex_type, C_vertex> Rv2uv;
+   CustomUnorderedMap<vertex_type, C_vertex> Rv2uv;
 
    /// minimum number of cliques
    size_t minimum_number_of_cliques;
@@ -1764,9 +1926,9 @@ class randomized_clique_covering : public clique_covering<vertex_type>
 
  protected:
    /// map between C_vertex and vertex_type
-   std::map<C_vertex, vertex_type> Ruv2v;
+   CustomUnorderedMap<C_vertex, vertex_type> Ruv2v;
    /// name map for the C_vertex vertices
-   std::map<C_vertex, std::string> names;
+   CustomUnorderedMap<C_vertex, std::string> names;
 
    /// vertices index type
    typedef boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type VertexIndex;
@@ -1778,7 +1940,10 @@ class randomized_clique_covering : public clique_covering<vertex_type>
    typedef boost::iterator_property_map<std::vector<C_vertex>::iterator, vertex_index_pmap_t> pred_pmap_type;
 
  public:
-   randomized_clique_covering() : number_of_cliques(0), minimum_number_of_cliques(0), maximum_number_of_cliques(std::numeric_limits<size_t>::max())
+   randomized_clique_covering()
+       : number_of_cliques(0),
+         minimum_number_of_cliques(0),
+         maximum_number_of_cliques(std::numeric_limits<size_t>::max())
    {
    }
 
@@ -1843,7 +2008,7 @@ class randomized_clique_covering : public clique_covering<vertex_type>
    /**
     * Returns number of cliques into graph after performing clique covering
     */
-   size_t num_vertices()
+   size_t num_vertices() override
    {
       return number_of_cliques;
    }
@@ -1852,12 +2017,13 @@ class randomized_clique_covering : public clique_covering<vertex_type>
     * Writes a dotty representation of the actual graph
     * @param filename is the output filename
     */
-   void writeDot(const std::string& filename) const
+   void writeDot(const std::string& filename) const override
    {
       // THROW_WARNING("randomized_clique_covering::writeDot not yet implemented");
 
       std::ofstream f(filename.c_str());
-      boost::write_graphviz(f, compatibility_graph, compatibility_node_info_writer(names), compatibility_edge_writer(compatibility_graph));
+      boost::write_graphviz(f, compatibility_graph, compatibility_node_info_writer(names),
+                            compatibility_edge_writer(compatibility_graph));
 
       return;
    }
@@ -1866,20 +2032,20 @@ class randomized_clique_covering : public clique_covering<vertex_type>
     * suggest that the problem have at least a given number of resources
     * @param n_resources is the number of resources available
     */
-   void suggest_min_resources(size_t)
+   void suggest_min_resources(size_t) override
    {
    }
 
-   void suggest_max_resources(size_t)
+   void suggest_max_resources(size_t) override
    {
    }
 
-   void min_resources(size_t _minimum_number_of_cliques)
+   void min_resources(size_t _minimum_number_of_cliques) override
    {
       minimum_number_of_cliques = _minimum_number_of_cliques;
    }
 
-   void max_resources(size_t _maximum_number_of_cliques)
+   void max_resources(size_t _maximum_number_of_cliques) override
    {
       maximum_number_of_cliques = _maximum_number_of_cliques;
    }
@@ -1922,28 +2088,29 @@ class randomized_clique_covering : public clique_covering<vertex_type>
 //******************************************************************************************************************
 
 template <typename VertexType>
-refcount<clique_covering<VertexType>> clique_covering<VertexType>::create_solver(CliqueCovering_Algorithm solver)
+refcount<clique_covering<VertexType>> clique_covering<VertexType>::create_solver(CliqueCovering_Algorithm solver,
+                                                                                 unsigned int nvert)
 {
    switch(solver)
    {
       case CliqueCovering_Algorithm::COLORING:
-         return refcount<clique_covering<VertexType>>(new coloring_based_clique_covering<VertexType>(true));
+         return refcount<clique_covering<VertexType>>(new coloring_based_clique_covering<VertexType>(true, nvert));
       case CliqueCovering_Algorithm::WEIGHTED_COLORING:
-         return refcount<clique_covering<VertexType>>(new coloring_based_clique_covering<VertexType>(false));
+         return refcount<clique_covering<VertexType>>(new coloring_based_clique_covering<VertexType>(false, nvert));
       case CliqueCovering_Algorithm::TTT_CLIQUE_COVERING:
-         return refcount<clique_covering<VertexType>>(new TTT_based_clique_covering<VertexType>(true));
+         return refcount<clique_covering<VertexType>>(new TTT_based_clique_covering<VertexType>(true, nvert));
       case CliqueCovering_Algorithm::TTT_CLIQUE_COVERING2:
-         return refcount<clique_covering<VertexType>>(new TTT_based_clique_covering<VertexType>(false));
+         return refcount<clique_covering<VertexType>>(new TTT_based_clique_covering<VertexType>(false, nvert));
       case CliqueCovering_Algorithm::TTT_CLIQUE_COVERING_FAST:
-         return refcount<clique_covering<VertexType>>(new TTT_based_clique_covering_fast<VertexType>(true));
+         return refcount<clique_covering<VertexType>>(new TTT_based_clique_covering_fast<VertexType>(true, nvert));
       case CliqueCovering_Algorithm::TTT_CLIQUE_COVERING_FAST2:
-         return refcount<clique_covering<VertexType>>(new TTT_based_clique_covering_fast<VertexType>(false));
+         return refcount<clique_covering<VertexType>>(new TTT_based_clique_covering_fast<VertexType>(false, nvert));
       case CliqueCovering_Algorithm::TS_CLIQUE_COVERING:
-         return refcount<clique_covering<VertexType>>(new TS_based_clique_covering<VertexType>(true));
+         return refcount<clique_covering<VertexType>>(new TS_based_clique_covering<VertexType>(true, nvert));
       case CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING:
-         return refcount<clique_covering<VertexType>>(new TS_based_clique_covering<VertexType>(false));
+         return refcount<clique_covering<VertexType>>(new TS_based_clique_covering<VertexType>(false, nvert));
       case CliqueCovering_Algorithm::BIPARTITE_MATCHING:
-         return refcount<clique_covering<VertexType>>(new bipartite_matching_clique_covering<VertexType>());
+         return refcount<clique_covering<VertexType>>(new bipartite_matching_clique_covering<VertexType>(nvert));
 #if HAVE_EXPERIMENTAL
       case CliqueCovering_Algorithm::RANDOMIZED:
          return refcount<clique_covering<VertexType>>(new randomized_clique_covering<VertexType>());

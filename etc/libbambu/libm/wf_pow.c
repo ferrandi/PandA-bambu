@@ -38,9 +38,9 @@ float powf(float x, float y) /* wrapper powf */
    float z;
    struct exception exc;
    z = __hide_ieee754_powf(x, y);
-   if(_LIB_VERSION == _IEEE_ || isnan(y))
+   if(_LIB_VERSION == _IEEE_ || isnanf(y))
       return z;
-   if(isnan(x))
+   if(isnanf(x))
    {
       if(y == (float)0.0)
       {
@@ -87,7 +87,7 @@ float powf(float x, float y) /* wrapper powf */
             errno = exc.err;
          return (float)exc.retval;
       }
-      if(__finitef(y) && y < (float)0.0)
+      if(finitef(y) && y < (float)0.0)
       {
          /* 0**neg */
          exc.type = DOMAIN;
@@ -111,11 +111,11 @@ float powf(float x, float y) /* wrapper powf */
       }
       return z;
    }
-   if(!__finitef(z))
+   if(!finitef(z))
    {
-      if(__finitef(x) && __finitef(y))
+      if(finitef(x) && finitef(y))
       {
-         if(isnan(z))
+         if(isnanf(z, IEEE32_SPEC))
          {
             /* neg**non-integral */
             exc.type = DOMAIN;
@@ -171,7 +171,7 @@ float powf(float x, float y) /* wrapper powf */
          }
       }
    }
-   if(z == (float)0.0 && __finitef(x) && __finitef(y))
+   if(z == (float)0.0 && finitef(x) && finitef(y))
    {
       /* powf(x,y) underflow */
       exc.type = UNDERFLOW;

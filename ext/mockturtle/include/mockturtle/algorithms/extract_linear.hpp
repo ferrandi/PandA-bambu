@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,7 @@
   \file extract_linear.hpp
   \brief Extract linear subcircuit in XAGs
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -85,7 +86,7 @@ extract_linear_circuit( xag_network const& xag )
     }
     else /* if ( xag.is_xor( n ) ) */
     {
-      std::array<xag_network::signal, 2> children;
+      std::array<xag_network::signal, 2> children{};
       xag.foreach_fanin( n, [&]( auto const& f, auto i ) {
         children[i] = old_to_new[f] ^ xag.is_complemented( f );
       } );
@@ -98,6 +99,7 @@ extract_linear_circuit( xag_network const& xag )
   } );
   for ( auto const& [a, b, _] : and_tuples )
   {
+    (void)_;
     dest.create_po( a );
     dest.create_po( b );
   }
@@ -173,7 +175,7 @@ private:
     }
 
     assert( xag.is_xor( n ) );
-    std::array<xag_network::signal, 2> children;
+    std::array<xag_network::signal, 2> children{};
     xag.foreach_fanin( n, [&]( auto const& cf, auto i ) {
       children[i] = run_rec( xag.get_node( cf ) ) ^ xag.is_complemented( cf );
     } );

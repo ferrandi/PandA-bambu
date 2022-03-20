@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,7 +66,8 @@ class xml_element;
  * Map storing path profiling information
  */
 #if HAVE_UNORDERED
-class PathProfilingInformation : public CustomUnorderedMap<unsigned int, std::map<CustomOrderedSet<unsigned int>, long double>>
+class PathProfilingInformation
+    : public CustomUnorderedMap<unsigned int, std::map<CustomOrderedSet<unsigned int>, long double>>
 {
 };
 #else
@@ -167,7 +168,8 @@ class ProfilingInformation
    friend class read_profiling_data;
    friend class tp_profiling;
 
-   /// map that represents, for each execution path of each loop (represented by the set of the executed control equivalent regions), the execution frequency
+   /// map that represents, for each execution path of each loop (represented by the set of the executed control
+   /// equivalent regions), the execution frequency
    PathProfilingInformation path_profiling;
 
    /// Absolute number of execution of each basic block
@@ -179,7 +181,8 @@ class ProfilingInformation
    /// number of average iterations for one loop execution
    AvgIterations avg_iterations;
 
-   /// number of absolute execution (different from number of execution of the header); correspond to how many times a feedback edge of a loop is executed
+   /// number of absolute execution (different from number of execution of the header); correspond to how many times a
+   /// feedback edge of a loop is executed
    Iterations abs_iterations;
 
    /// Maximum number of iterations
@@ -208,7 +211,7 @@ class ProfilingInformation
     * @param basic_block is the basic block
     * @return the absolute number of executions of a basic block
     */
-   unsigned long long int GetBBExecutions(const vertex basic_block) const;
+   unsigned long long int GetBBExecutions(const vertex bb_vertex) const;
 
    /**
     * Return the absolute number of the executions of an edge
@@ -272,6 +275,6 @@ class ProfilingInformation
    void Clear();
 };
 
-typedef refcount<ProfilingInformation> ProfilingInformationRef;
+using ProfilingInformationRef = refcount<ProfilingInformation>;
 
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -190,7 +190,8 @@ class hls
    /**
     *
     */
-   hls(const ParameterConstRef Param, unsigned int function_id, OpVertexSet operations, const HLS_targetRef HLS_T, const HLS_constraintsRef HLS_C);
+   hls(const ParameterConstRef Param, unsigned int function_id, OpVertexSet operations, const HLS_targetRef HLS_T,
+       const HLS_constraintsRef HLS_C);
 
    /**
     * Destructor
@@ -272,6 +273,6 @@ class hls
    }
 };
 /// refcount definition of the class
-typedef refcount<hls> hlsRef;
+using hlsRef = refcount<hls>;
 
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,7 +58,8 @@
 #include "fileIO.hpp"
 
 #if HAVE_IPXACT_BUILT
-void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_PARAMETER(Param), const std::string& xml_file)
+void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_PARAMETER(Param),
+                                                  const std::string& xml_file)
 {
    if(!boost::filesystem::exists(xml_file))
       THROW_ERROR("File \"" + xml_file + "\" does not exist!");
@@ -122,7 +123,8 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
                         {
                            value = child_value->get_child_text()->get_content();
                         }
-                        INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---adding parameter \"" + referenceId + "\" with value \"" + value + "\"");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                                       "---adding parameter \"" + referenceId + "\" with value \"" + value + "\"");
                         parameter_values[referenceId] = value;
                      }
                   }
@@ -131,6 +133,7 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
          }
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--Parsed configuration file of design \"" + component_name + "\"");
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                  "<--Parsed configuration file of design \"" + component_name + "\"");
 }
 #endif

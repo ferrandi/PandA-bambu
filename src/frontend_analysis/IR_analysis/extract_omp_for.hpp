@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -55,7 +55,8 @@ class ExtractOmpFor : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -65,7 +66,8 @@ class ExtractOmpFor : public FunctionFrontendFlowStep
     * @param DesignFlowManagerConstRef is the design flow manager
     * @param Param is the set of the parameters
     */
-   ExtractOmpFor(const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   ExtractOmpFor(const application_managerRef _AppM, unsigned int function_id,
+                 const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor
@@ -75,17 +77,17 @@ class ExtractOmpFor : public FunctionFrontendFlowStep
    /**
     * Restructures the unstructured code
     */
-   DesignFlowStep_Status InternalExec();
+   DesignFlowStep_Status InternalExec() override;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
-   virtual void Initialize();
+   virtual void Initialize() override;
 
    /**
     * Check if this step has actually to be executed
     * @return true if the step has to be executed
     */
-   virtual bool HasToBeExecuted() const;
+   virtual bool HasToBeExecuted() const override;
 };
 #endif

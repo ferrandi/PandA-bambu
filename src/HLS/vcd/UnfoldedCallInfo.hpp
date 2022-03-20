@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,6 +57,6 @@ class UnfoldedCallInfo : public EdgeInfo
    ~UnfoldedCallInfo() override = default;
 };
 
-typedef refcount<UnfoldedCallInfo> UnfoldedCallInfoRef;
-typedef refcount<const UnfoldedCallInfo> UnfoldedCallInfoConstRef;
+using UnfoldedCallInfoRef = refcount<UnfoldedCallInfo>;
+using UnfoldedCallInfoConstRef = refcount<const UnfoldedCallInfo>;
 #endif

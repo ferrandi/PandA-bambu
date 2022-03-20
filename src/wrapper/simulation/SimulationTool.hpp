@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,15 +56,7 @@ class SimulationTool
 {
  public:
    /// supported synthesis tools
-   typedef enum
-   {
-      UNKNOWN = 0,
-      MODELSIM,
-      ISIM,
-      XSIM,
-      ICARUS,
-      VERILATOR
-   } type_t;
+   using type_t = enum { UNKNOWN = 0, MODELSIM, ISIM, XSIM, ICARUS, VERILATOR };
 
  protected:
    /// class containing all the parameters
@@ -85,7 +77,8 @@ class SimulationTool
    /**
     * Performs the actual writing
     */
-   virtual void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) = 0;
+   virtual void GenerateScript(std::ostringstream& script, const std::string& top_filename,
+                               const std::list<std::string>& file_list) = 0;
 
  public:
    /**
@@ -101,7 +94,8 @@ class SimulationTool
    /**
     * Factory method
     */
-   static SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param, const std::string& suffix);
+   static SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param,
+                                                 const std::string& suffix);
 
    /**
     * Checks if the current specification can be executed or not
@@ -111,7 +105,8 @@ class SimulationTool
    /**
     * Generates the proper simulation script
     */
-   virtual std::string GenerateSimulationScript(const std::string& top_filename, const std::list<std::string>& file_list);
+   virtual std::string GenerateSimulationScript(const std::string& top_filename,
+                                                const std::list<std::string>& file_list);
 
    /**
     * Performs the simulation and returns the number of cycles
@@ -132,5 +127,5 @@ class SimulationTool
    virtual void Clean() const;
 };
 /// refcount definition of the class
-typedef refcount<SimulationTool> SimulationToolRef;
+using SimulationToolRef = refcount<SimulationTool>;
 #endif

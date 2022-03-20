@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -124,7 +124,7 @@ extern void yyerror(const AsnParserDataRef data, const AsnFlexLexerRef lexer, co
 ///There are a lot of conflicts in the grammar as it has been written, but we want to use the same grammar of syntax card
 ///%expect 0
 
-%pure-parser
+%define api.pure
 %start module_definition
 
 %%

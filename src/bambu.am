@@ -54,7 +54,7 @@ bambu_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""
      -I$(top_srcdir)/src/technology/physical_library/models \
      -I$(top_srcdir)/src/technology/target_technology \
      -I$(top_srcdir)/src/technology/target_device \
-     -I$(top_srcdir)/src/wrapper/treegcc \
+     -I$(top_srcdir)/src/wrapper/compiler \
       $(AM_CPPFLAGS)
 
 if BUILD_LIB_ILP
@@ -77,20 +77,15 @@ if BUILD_LIB_HOST_PROFILING
 endif
 endif
 
-if BUILD_ALTERA
-  bambu_CPPFLAGS += \
-        -I$(top_srcdir)/src/wrapper/synthesis/altera
-endif
-
 if BUILD_BEAGLE
   bambu_CPPFLAGS += \
         -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration \
         -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration/common \
         -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration/GA \
-        -I$(top_builddir)/ext/beagle/beagle/include/ \
-        -I$(BEAGLE_DIR)/beagle/include/ \
-        -I$(BEAGLE_DIR)/beagle/GA/include/ \
-        -I$(BEAGLE_DIR)/PACC
+        -isystem $(top_builddir)/ext/beagle/beagle/include/ \
+        -isystem $(BEAGLE_DIR)/beagle/include/ \
+        -isystem $(BEAGLE_DIR)/beagle/GA/include/ \
+        -isystem $(BEAGLE_DIR)/PACC
 endif
 if BUILD_LIB_CODE_ESTIMATION
    bambu_CPPFLAGS += \
@@ -106,7 +101,7 @@ endif
 
 if BUILD_TRNG
    bambu_CPPFLAGS += \
-      -I$(top_builddir)/ext/trng-4.17
+      -isystem $(top_builddir)/ext/trng-4.17
 endif
 
 lib_bambu_la_LIBADD += \

@@ -1,5 +1,5 @@
 /* 64-bit division and modulus
-   Copyright (C) 2004-2020 Politecnico di Milano
+   Copyright (C) 2004-2022 Politecnico di Milano
    This file is part of the HLS-FP Library.
 
    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -141,13 +141,15 @@ strong_alias(__divdi3, __divdi3_internal)
 }
 strong_alias(__moddi3, __moddi3_internal)
 
-    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions"))) __udivdi3(UDWtype u, UDWtype v)
+    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions")))
+    __udivdi3(UDWtype u, UDWtype v)
 {
    return __udivmoddi4(u, v, NULL);
 }
 strong_alias(__udivdi3, __udivdi3_internal)
 
-    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions"))) __umoddi3(UDWtype u, UDWtype v)
+    UDWtype __attribute__((optimize("O2"))) __attribute__((optimize("-finline-functions")))
+    __umoddi3(UDWtype u, UDWtype v)
 {
    UDWtype w;
 

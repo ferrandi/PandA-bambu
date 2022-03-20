@@ -1,5 +1,5 @@
-SUBDIRS = devices macros scripts
-DIST_SUBDIRS = devices macros scripts 
+SUBDIRS = Appimage containers devices macros scripts
+DIST_SUBDIRS = Appimage containers devices macros scripts 
 
 if BUILD_GCC_PLUGIN
    SUBDIRS += gcc_plugin clang_plugin
@@ -9,11 +9,6 @@ endif
 if BUILD_LIBBAMBU
    SUBDIRS += lib libbambu
    DIST_SUBDIRS += lib libbambu
-endif
-
-if BUILD_LATEX_TABLE_FORMAT
-   SUBDIRS += latex_table_format
-   DIST_SUBDIRS += latex_table_format
 endif
 
 EXTRA_DIST = Doxyfile \

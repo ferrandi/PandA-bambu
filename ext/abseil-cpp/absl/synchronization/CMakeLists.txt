@@ -26,6 +26,7 @@ absl_cc_library(
   DEPS
     absl::base
     absl::base_internal
+    absl::config
     absl::core_headers
     absl::malloc_internal
     absl::raw_logging_internal
@@ -51,7 +52,7 @@ absl_cc_library(
     "barrier.h"
     "blocking_counter.h"
     "internal/create_thread_identity.h"
-    "internal/mutex_nonprod.inc"
+    "internal/futex.h"
     "internal/per_thread_sem.h"
     "internal/waiter.h"
     "mutex.h"
@@ -94,7 +95,7 @@ absl_cc_test(
   DEPS
     absl::synchronization
     absl::time
-    gmock_main
+    GTest::gmock_main
 )
 
 absl_cc_test(
@@ -107,7 +108,7 @@ absl_cc_test(
   DEPS
     absl::synchronization
     absl::time
-    gmock_main
+    GTest::gmock_main
 )
 
 absl_cc_test(
@@ -121,7 +122,7 @@ absl_cc_test(
     absl::graphcycles_internal
     absl::core_headers
     absl::raw_logging_internal
-    gmock_main
+    GTest::gmock_main
 )
 
 absl_cc_library(
@@ -148,11 +149,12 @@ absl_cc_test(
     absl::synchronization
     absl::thread_pool
     absl::base
+    absl::config
     absl::core_headers
     absl::memory
     absl::raw_logging_internal
     absl::time
-    gmock_main
+    GTest::gmock_main
 )
 
 absl_cc_test(
@@ -165,7 +167,7 @@ absl_cc_test(
   DEPS
     absl::synchronization
     absl::time
-    gmock_main
+    GTest::gmock_main
 )
 
 absl_cc_library(
@@ -178,9 +180,10 @@ absl_cc_library(
   DEPS
     absl::synchronization
     absl::base
+    absl::config
     absl::strings
     absl::time
-    gmock
+    GTest::gmock
   TESTONLY
 )
 
@@ -196,7 +199,7 @@ absl_cc_test(
     absl::synchronization
     absl::strings
     absl::time
-    gmock_main
+    GTest::gmock_main
 )
 
 absl_cc_test(

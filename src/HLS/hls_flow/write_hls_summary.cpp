@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,20 +51,30 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
-WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::WRITE_HLS_SUMMARY)
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
+#include "memory.hpp"
+
+#include <boost/filesystem/operations.hpp>
+
+WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr,
+                                 const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::WRITE_HLS_SUMMARY)
 {
 }
 
 WriteHLSSummary::~WriteHLSSummary() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> WriteHLSSummary::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+WriteHLSSummary::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::ALL_FUNCTIONS));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -87,8 +97,20 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
    {
       const hlsRef top_HLS = HLSMgr->get_HLS(top_function);
       top_HLS->PrintResources();
+      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+      {
+         std::string out_file_name = GetPath("memory_allocation");
+         unsigned int progressive = 0;
+         std::string candidate_out_file_name;
+         do
+         {
+            candidate_out_file_name = out_file_name + "_" + std::to_string(progressive++) + ".xml";
+         } while(boost::filesystem::exists(candidate_out_file_name));
+         out_file_name = candidate_out_file_name;
+         HLSMgr->Rmem->xwrite(out_file_name);
+      }
 #if 0
-      std::string out_file_name = "hls_summary";
+      std::string out_file_name = GetPath("hls_summary");
       unsigned int progressive = 0;
       std::string candidate_out_file_name;
       do

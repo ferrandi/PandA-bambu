@@ -1,0 +1,9 @@
+FROM debian:bullseye-slim
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+   ca-certificates cppcheck curl git xz-utils \
+   libboost-dev libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev \
+   libboost-regex-dev libboost-regex-dev libboost-date-time-dev libboost-wave-dev \
+   && rm -rf /var/lib/apt/lists/*
+
+CMD [ "/bin/bash" ]

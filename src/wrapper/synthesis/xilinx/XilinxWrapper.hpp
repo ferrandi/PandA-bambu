@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -84,7 +84,8 @@ class XilinxWrapper : public SynthesisTool
     * @param out_dir is the directory where to save all the results
     * @param default_out_dir is the default output directory
     */
-   XilinxWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device, const std::string& out_dir, const std::string& default_out_dir);
+   XilinxWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device,
+                 const std::string& _output_dir, const std::string& _default_output_dir);
 
    /**
     * Destructor
@@ -107,6 +108,6 @@ class XilinxWrapper : public SynthesisTool
    std::string getStringValue(const xml_script_node_tRef node, const DesignParametersRef& dp) const override;
 };
 /// Refcount definition for the class
-typedef refcount<XilinxWrapper> XilinxWrapperRef;
+using XilinxWrapperRef = refcount<XilinxWrapper>;
 
 #endif

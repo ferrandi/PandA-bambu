@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,8 +58,7 @@ class clb_model : public area_model
 {
  public:
    /// type of resources
-   typedef enum
-   {
+   using value_t = enum {
       REGISTERS,
       SLICE,
       SLICE_LUTS,
@@ -67,9 +66,11 @@ class clb_model : public area_model
       ALMS,
       LOGIC_ELEMENTS,
       FUNCTIONAL_ELEMENTS,
+      LOGIC_AREA,
       DSP,
-      BRAM
-   } value_t;
+      BRAM,
+      POWER
+   };
 
  protected:
    /// a double value representing the area of the component
@@ -130,6 +131,6 @@ class clb_model : public area_model
    double get_resource_value(value_t val) const;
 };
 
-typedef refcount<clb_model> clb_modelRef;
+using clb_modelRef = refcount<clb_model>;
 
 #endif

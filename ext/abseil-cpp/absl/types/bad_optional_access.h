@@ -30,12 +30,15 @@
 #include <optional>
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 using std::bad_optional_access;
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #else  // ABSL_USES_STD_OPTIONAL
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 // -----------------------------------------------------------------------------
 // bad_optional_access
@@ -64,9 +67,10 @@ class bad_optional_access : public std::exception {
 namespace optional_internal {
 
 // throw delegator
-[[noreturn]] void throw_bad_optional_access();
+[[noreturn]] ABSL_DLL void throw_bad_optional_access();
 
 }  // namespace optional_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_USES_STD_OPTIONAL

@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "soft-fp.h"
-
-DFtype __adddf3(DFtype a, DFtype b)
+static __FORCE_INLINE DFtype __adddf3(DFtype a, DFtype b)
 {
    FP_DECL_EX;
    FP_DECL_D(A);
@@ -47,9 +44,4 @@ DFtype __adddf3(DFtype a, DFtype b)
    FP_HANDLE_EXCEPTIONS;
 
    return r;
-}
-
-inline DFtype __float64_addif(DFtype a, DFtype b)
-{
-   return __adddf3(a, b);
 }

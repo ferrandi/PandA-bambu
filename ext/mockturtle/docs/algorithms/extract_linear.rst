@@ -1,5 +1,5 @@
-Extracts linear subcircuit
---------------------------
+Extract linear subcircuit
+-------------------------
 
 **Header:** ``mockturtle/algorithms/extract_linear.hpp``
 

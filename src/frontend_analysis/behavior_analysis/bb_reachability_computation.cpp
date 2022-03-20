@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,9 @@
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-BBReachabilityComputation::BBReachabilityComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+BBReachabilityComputation::BBReachabilityComputation(const ParameterConstRef _Param, const application_managerRef _AppM,
+                                                     unsigned int _function_id,
+                                                     const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, BB_REACHABILITY_COMPUTATION, _design_flow_manager, _Param)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -85,15 +87,16 @@ void BBReachabilityComputation::Initialize()
    }
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BBReachabilityComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+BBReachabilityComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ADD_BB_ECFG_EDGES, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(ADD_BB_ECFG_EDGES, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -124,7 +127,9 @@ DesignFlowStep_Status BBReachabilityComputation::InternalExec()
    it_end = container.end();
    for(it = container.begin(); it != it_end; ++it)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Examining basic block " + boost::lexical_cast<std::string>(ecfg->CGetBBNodeInfo(*it)->block->number));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                    "  Examining basic block " +
+                        boost::lexical_cast<std::string>(ecfg->CGetBBNodeInfo(*it)->block->number));
       OutEdgeIterator eo, eo_end;
       for(boost::tie(eo, eo_end) = boost::out_edges(*it, *ecfg); eo != eo_end; eo++)
       {

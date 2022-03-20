@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,7 +52,9 @@
 #include "refcount.hpp"
 #include "utility.hpp"
 
-STG_creator::STG_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+STG_creator::STG_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned _funId,
+                         const DesignFlowManagerConstRef _design_flow_manager,
+                         const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
 }

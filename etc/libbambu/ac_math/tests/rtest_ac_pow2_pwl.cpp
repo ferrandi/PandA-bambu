@@ -50,7 +50,8 @@ using namespace ac_math;
 //   ac_fixed inputs.
 
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi>
-void test_ac_pow2_pwl(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in, ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out_pow2)
+void test_ac_pow2_pwl(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in,
+                      ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out_pow2)
 {
    out_pow2 = ac_pow2_pwl<ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>>(in);
 }
@@ -73,7 +74,8 @@ using namespace std;
 //   in variables defined in the calling function.
 
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi>
-int test_driver(double& cumulative_max_error_pow2, const double allowed_error, const double threshold, bool details = false)
+int test_driver(double& cumulative_max_error_pow2, const double allowed_error, const double threshold,
+                bool details = false)
 {
    bool passed = true;
    bool check_monotonic = true;
@@ -134,14 +136,16 @@ int test_driver(double& cumulative_max_error_pow2, const double allowed_error, c
 
       if(check_monotonic)
       {
-         // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with current value. Since the exponential function we
-         // are testing is an increasing function, and our testbench value keeps incrementing or remains the same (in case of saturation), we expect the
-         // old value to be lesser than or equal to the current one.
+         // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with
+         // current value. Since the exponential function we are testing is an increasing function, and our testbench
+         // value keeps incrementing or remains the same (in case of saturation), we expect the old value to be lesser
+         // than or equal to the current one.
 
          // This comparison is only carried out once there is an old value to compare with, for the base 2 exponential.
          if(compare_pow2)
          {
-            // if by any chance the function output has dropped in value, print out at what point the problem has occured and throw a runtime assertion.
+            // if by any chance the function output has dropped in value, print out at what point the problem has
+            // occured and throw a runtime assertion.
             if(old_output_pow2 > actual_value_pow2)
             {
                cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl; // LCOV_EXCL_LINE

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,9 +50,11 @@
 /// utility include
 #include "refcount.hpp"
 
-/// Special opening character used to open a new nested level. This character is just a control character and therefore it will not be printed.
+/// Special opening character used to open a new nested level. This character is just a control character and therefore
+/// it will not be printed.
 #define STD_OPENING_CHAR (static_cast<char>(1))
-/// Special closing character used to close the current nested level. This character is just a control character and therefore it will not be printed.
+/// Special closing character used to close the current nested level. This character is just a control character and
+/// therefore it will not be printed.
 #define STD_CLOSING_CHAR (static_cast<char>(2))
 
 /**
@@ -106,7 +108,7 @@ class IndentedOutputStream
     * Append a string to the output
     * @param message is the string to be printed
     */
-   void Append(const std::string& message);
+   void Append(const std::string& str);
 
    /**
     * Manually increase the indenting of the code
@@ -129,5 +131,5 @@ class IndentedOutputStream
     */
    void WriteFile(const std::string& file_name);
 };
-typedef refcount<IndentedOutputStream> IndentedOutputStreamRef;
+using IndentedOutputStreamRef = refcount<IndentedOutputStream>;
 #endif

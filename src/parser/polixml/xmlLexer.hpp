@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,7 +63,8 @@ struct XmlFlexLexer : public yyFlexLexer
    /// The name of the parsed file/string
    const std::string name;
 
-   XmlFlexLexer(std::string _name, std::istream* argin = nullptr, std::ostream* argout = nullptr) : yyFlexLexer(argin, argout), name(std::move(_name)), keep(0)
+   XmlFlexLexer(const std::string& _name, std::istream* argin = nullptr, std::ostream* argout = nullptr)
+       : yyFlexLexer(argin, argout), name(_name), keep(0)
    {
    }
    ~XmlFlexLexer() override = default;

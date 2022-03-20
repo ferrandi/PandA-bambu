@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,7 +53,8 @@
 #include <string>                  // for allocator, operator+
 #include <utility>                 // for pair
 
-BasicBlocksGraphConstructor::BasicBlocksGraphConstructor(const BBGraphsCollectionRef _bg) : bg(_bg), bb_graph(new BBGraph(bg, -1)), bb_index_map(bb_graph->GetBBGraphInfo()->bb_index_map)
+BasicBlocksGraphConstructor::BasicBlocksGraphConstructor(const BBGraphsCollectionRef _bg)
+    : bg(_bg), bb_graph(new BBGraph(bg, -1)), bb_index_map(bb_graph->GetBBGraphInfo()->bb_index_map)
 {
 }
 
@@ -99,12 +100,14 @@ void BasicBlocksGraphConstructor::RemoveEdge(const EdgeDescriptor edge, int sele
    bg->RemoveSelector(edge, selector);
 }
 
-void BasicBlocksGraphConstructor::add_bb_edge_info(const vertex source, const vertex target, int type, const unsigned label)
+void BasicBlocksGraphConstructor::add_bb_edge_info(const vertex source, const vertex target, int type,
+                                                   const unsigned label)
 {
    EdgeDescriptor e;
    bool inserted;
    boost::tie(e, inserted) = boost::edge(source, target, *bg);
-   THROW_ASSERT(inserted, "Edge BB" + STR(bb_graph->CGetBBNodeInfo(source)->block->number) + "-->BB" + STR(bb_graph->CGetBBNodeInfo(target)->block->number) + " doesn't exists");
+   THROW_ASSERT(inserted, "Edge BB" + STR(bb_graph->CGetBBNodeInfo(source)->block->number) + "-->BB" +
+                              STR(bb_graph->CGetBBNodeInfo(target)->block->number) + " doesn't exists");
    THROW_ASSERT(type & (CFG_SELECTOR | FB_CFG_SELECTOR | CDG_SELECTOR | FB_CDG_SELECTOR), "Not supported label type");
    bb_graph->GetBBEdgeInfo(e)->labels[type].insert(label);
 }
@@ -126,7 +129,8 @@ bool BasicBlocksGraphConstructor::check_vertex(unsigned int block_index) const
 
 vertex BasicBlocksGraphConstructor::Cget_vertex(unsigned int block_index) const
 {
-   THROW_ASSERT(bb_index_map.find(block_index) != bb_index_map.end(), "this vertex does not exist " + boost::lexical_cast<std::string>(block_index));
+   THROW_ASSERT(bb_index_map.find(block_index) != bb_index_map.end(),
+                "this vertex does not exist " + boost::lexical_cast<std::string>(block_index));
    return bb_index_map.find(block_index)->second;
 }
 

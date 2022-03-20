@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2020 Politecnico di Milano
+ *              Copyright (C) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,6 +48,7 @@
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Hashing.h"
+#include "llvm/IR/GlobalObject.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
 #if __clang_major__ != 4
@@ -63,21 +64,38 @@
 #define GT(code) tree_codes::code
 #define LOCAL_BUFFER_LEN 512
 
-#if __clang_major__ == 8
+#if __clang_major__ == 12
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang12##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang12" #SYMBOL
+#elif __clang_major__ == 11
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang11##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang11" #SYMBOL
+#elif __clang_major__ == 10
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang10##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang10" #SYMBOL
+#elif __clang_major__ == 9
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang9##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang9" #SYMBOL
+#elif __clang_major__ == 8
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang8##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang8" #SYMBOL
+#elif __clang_major__ == 7 && !defined(VVD)
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang7##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang7" #SYMBOL
-#elif __clang_major__ == 7
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang7##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang7" #SYMBOL
+#elif __clang_major__ == 7 && defined(VVD)
+#define CLANG_VERSION_SYMBOL(SYMBOL) clangvvd##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clangvvd" #SYMBOL
 #elif __clang_major__ == 6
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang6##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL
+#elif __clang_major__ == 5
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang5##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
 #elif __clang_major__ == 4
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang4##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang4" #SYMBOL
 #else
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang5##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
+#error
 #endif
 
 namespace llvm
@@ -115,6 +133,9 @@ namespace llvm
 {
    class DumpGimpleRaw
    {
+#if __clang_major__ >= 11
+      bool changed;
+#endif
       bool earlyAnalysis;
       /* Serialize column control */
       const int SOL_COLUMN = 25;       /* Start of line column.  */
@@ -154,6 +175,8 @@ namespace llvm
       static const gimple_rhs_class gimple_rhs_class_table[];
       static const char* ValueTyNames[];
       static const std::set<std::string> builtinsNames;
+
+      static std::string getName(const llvm::GlobalObject*);
 
       struct tree_list
       {
@@ -386,14 +409,19 @@ namespace llvm
       bool isSignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const;
       template <class InstructionOrConstantExpr>
       bool isUnsignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const;
-      const void* getSSA(const llvm::Value* operand, const void* def_stmt, const llvm::Function* currentFunction, bool isDefault);
+      const void* getSSA(const llvm::Value* operand, const void* def_stmt, const llvm::Function* currentFunction,
+                         bool isDefault);
       bool is_PTS(unsigned int varId, const llvm::TargetLibraryInfo& TLI, bool with_all = false);
       bool is_virtual_ssa(const void* t) const;
       bool SSA_NAME_IS_DEFAULT_DEF(const void* t) const;
-      const void* LowerGetElementPtrOffset(const llvm::GEPOperator* gep, const llvm::Function* currentFunction, const void*& base_node, bool& isZero);
+      const void* LowerGetElementPtrOffset(const llvm::GEPOperator* gep, const llvm::Function* currentFunction,
+                                           const void*& base_node, bool& isZero);
       const void* LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function* currentFunction);
       const void* gimple_assign_rhs_getelementptr(const void* g);
-      bool temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited, const llvm::TargetLibraryInfo& TLI);
+      const void* gimple_assign_rhs_insertvalue(const void* g);
+      const void* gimple_assign_rhs_extractvalue(const void* g);
+      bool temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited,
+                                const llvm::TargetLibraryInfo& TLI);
       const void* getOperand(const llvm::Value* operand, const llvm::Function* currentFunction);
       const void* gimple_assign_lhs(const void* g);
       const void* gimple_assign_rhs_alloca(const void* g);
@@ -419,7 +447,8 @@ namespace llvm
       template <class InstructionOrConstantExpr>
       const void* getSignedOperand(const InstructionOrConstantExpr* inst, const void* op, unsigned index);
       template <class InstructionOrConstantExpr>
-      const void* getSignedOperandIndex(const InstructionOrConstantExpr* inst, unsigned index, const llvm::Function* currentFunction);
+      const void* getSignedOperandIndex(const InstructionOrConstantExpr* inst, unsigned index,
+                                        const llvm::Function* currentFunction);
       const void* gimple_assign_rhsIndex(const void* g, unsigned index);
       const void* gimple_assign_rhs1(const void* g)
       {
@@ -526,7 +555,8 @@ namespace llvm
 
       const void* createGimpleLabelStmt(const llvm::BasicBlock* BB);
 
-      const void* getVirtualDefStatement(llvm::MemoryAccess* defAccess, bool& isDefault, const llvm::MemorySSA& MSSA, const llvm::Function* currentFunction);
+      const void* getVirtualDefStatement(llvm::MemoryAccess* defAccess, bool& isDefault, const llvm::MemorySSA& MSSA,
+                                         const llvm::Function* currentFunction);
       const void* getVirtualGimplePhi(llvm::MemoryPhi* mp, const llvm::MemorySSA& MSSA);
 
       const void* build3(tree_codes tc, const void* type, const void* op1, const void* op2, const void* op3);
@@ -639,10 +669,14 @@ namespace llvm
       const void* getStatement_list(const void* t);
       const void* getGimpleScpe(const void* g);
       int getGimple_bb_index(const void* g);
-      bool gimple_has_mem_ops(const void* g) const;
-      std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>> CurrentListofMAEntryDef;
+      bool gimple_has_mem_ops(const void* g);
+      std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>
+          CurrentListofMAEntryDef;
       void serialize_vops(const void* g);
-      void serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA, std::set<llvm::MemoryAccess*>& visited, const llvm::Function* currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag);
+      void serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA,
+                                                  std::set<llvm::MemoryAccess*>& visited,
+                                                  const llvm::Function* currentFunction,
+                                                  const llvm::MemoryLocation* OrigLoc, const char* tag);
 
       const void* SSA_NAME_VAR(const void* t) const;
       int SSA_NAME_VERSION(const void* t) const;
@@ -712,21 +746,26 @@ namespace llvm
       void dequeue_and_serialize();
 
       std::map<const llvm::Value*, llvm::Metadata*> MetaDataMap;
-      void buildMetaDataMap(llvm::Module& M);
+      void buildMetaDataMap(const llvm::Module& M);
 
       bool lowerMemIntrinsics(llvm::Module& M);
       bool RebuildConstants(llvm::Module& M);
       bool lowerIntrinsics(llvm::Module& M);
 
-      void compute_eSSA(llvm::Module& M);
+      void compute_eSSA(llvm::Module& M, bool* changed);
 
-      void computeValueRange(llvm::Module& M);
+      void computeValueRange(const llvm::Module& M);
       void ValueRangeOptimizer(llvm::Module& M);
       bool LoadStoreOptimizer(llvm::Module& M);
-      void computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass);
+      void
+      computeMAEntryDefs(const llvm::Function* F,
+                         std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>&
+                             CurrentListofMAEntryDef,
+                         llvm::ModulePass* modulePass);
 
     public:
-      DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals, std::map<std::string, std::vector<std::string>>* fun2params, bool early);
+      DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals,
+                    std::map<std::string, std::vector<std::string>>* fun2params, bool early);
 
       bool runOnModule(llvm::Module& M, llvm::ModulePass* modulePass, const std::string& TopFunctionName);
    };

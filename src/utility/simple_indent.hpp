@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,9 +47,11 @@
 
 #include "refcount.hpp"
 
-/// Special opening character used to open a new nested level. This character is just a control character and therefore it will not be printed.
+/// Special opening character used to open a new nested level. This character is just a control character and therefore
+/// it will not be printed.
 #define STD_OPENING_CHAR (static_cast<char>(1))
-/// Special closing character used to close the current nested level. This character is just a control character and therefore it will not be printed.
+/// Special closing character used to close the current nested level. This character is just a control character and
+/// therefore it will not be printed.
 #define STD_CLOSING_CHAR (static_cast<char>(2))
 
 /**
@@ -114,5 +116,5 @@ class simple_indent
    void deindent();
 };
 
-typedef refcount<simple_indent> simple_indentRef;
+using simple_indentRef = refcount<simple_indent>;
 #endif

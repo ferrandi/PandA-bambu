@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2020 Politecnico di Milano
+ *            Copyright (C) 2004-2022 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -57,7 +57,8 @@ static tree_nodeRef getFunctionPointerType(tree_nodeRef fptr);
 void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
 {
    THROW_ASSERT(TN->get_kind() == tree_reindex_K, "Node is not a tree reindex");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Update recursively node: " + STR(GET_NODE(TN)) + " id: " + STR(GET_INDEX_NODE(TN)));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Update recursively node: " + STR(GET_NODE(TN)) + " id: " + STR(GET_INDEX_NODE(TN)));
 
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef currentTreeNode = GET_NODE(TN);
@@ -68,9 +69,9 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
       case aggr_init_expr_K:
       {
          const call_expr* CE = GetPointer<call_expr>(currentTreeNode);
-         const std::vector<tree_nodeRef>& args = CE->args;
 
-         tree_nodeRef FN = GetPointer<addr_expr>(GET_NODE(CE->fn)) ? GetPointer<addr_expr>(GET_NODE(CE->fn))->op : CE->fn;
+         tree_nodeRef FN =
+             GetPointer<addr_expr>(GET_NODE(CE->fn)) ? GetPointer<addr_expr>(GET_NODE(CE->fn))->op : CE->fn;
          THROW_ASSERT(FN, "Address expression with null op");
          if(GET_NODE(FN)->get_kind() == function_decl_K)
          {
@@ -78,11 +79,15 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
             std::string funName = tree_helper::name_function(TM, functionDeclIdx);
             if(funName == BUILTIN_WAIT_CALL)
             {
-               tree_nodeRef builtinArgZero = GetPointer<addr_expr>(GET_NODE(args[0])) ? GetPointer<addr_expr>(GET_NODE(args[0]))->op : args[0];
+               const std::vector<tree_nodeRef>& args = CE->args;
+               tree_nodeRef builtinArgZero =
+                   GetPointer<addr_expr>(GET_NODE(args[0])) ? GetPointer<addr_expr>(GET_NODE(args[0]))->op : args[0];
                if(GET_NODE(builtinArgZero)->get_kind() == function_decl_K)
                {
                   unsigned int calledFunctionId = builtinArgZero->index;
-                  AppM->GetCallGraphManager()->AddCallPoint(function_id, calledFunctionId, GET_INDEX_NODE(TN), FunctionEdgeInfo::CallType::indirect_call);
+                  CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, calledFunctionId,
+                                                          GET_INDEX_CONST_NODE(TN),
+                                                          FunctionEdgeInfo::CallType::indirect_call, debug_level);
                   modified = true;
                }
                else if(GET_NODE(builtinArgZero)->get_kind() == ssa_name_K)
@@ -97,9 +102,9 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
       case gimple_call_K:
       {
          const gimple_call* CE = GetPointer<gimple_call>(currentTreeNode);
-         const std::vector<tree_nodeRef>& args = CE->args;
 
-         tree_nodeRef FN = GetPointer<addr_expr>(GET_NODE(CE->fn)) ? GetPointer<addr_expr>(GET_NODE(CE->fn))->op : CE->fn;
+         tree_nodeRef FN =
+             GetPointer<addr_expr>(GET_NODE(CE->fn)) ? GetPointer<addr_expr>(GET_NODE(CE->fn))->op : CE->fn;
          THROW_ASSERT(FN, "Address expression with null op");
          if(GET_NODE(FN)->get_kind() == function_decl_K)
          {
@@ -107,11 +112,15 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
             std::string funName = tree_helper::name_function(TM, functionDeclIdx);
             if(funName == BUILTIN_WAIT_CALL)
             {
-               tree_nodeRef builtinArgZero = GetPointer<addr_expr>(GET_NODE(args[0])) ? GetPointer<addr_expr>(GET_NODE(args[0]))->op : args[0];
+               const std::vector<tree_nodeRef>& args = CE->args;
+               tree_nodeRef builtinArgZero =
+                   GetPointer<addr_expr>(GET_NODE(args[0])) ? GetPointer<addr_expr>(GET_NODE(args[0]))->op : args[0];
                if(GET_NODE(builtinArgZero)->get_kind() == function_decl_K)
                {
                   unsigned int calledFunctionId = builtinArgZero->index;
-                  AppM->GetCallGraphManager()->AddCallPoint(function_id, calledFunctionId, GET_INDEX_NODE(TN), FunctionEdgeInfo::CallType::indirect_call);
+                  CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, calledFunctionId,
+                                                          GET_INDEX_CONST_NODE(TN),
+                                                          FunctionEdgeInfo::CallType::indirect_call, debug_level);
                   modified = true;
                }
                else if(GET_NODE(builtinArgZero)->get_kind() == ssa_name_K)
@@ -131,40 +140,6 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---call_expr " + STR(GET_NODE(gm->op1)));
             lookForBuiltinCall(gm->op1);
-         }
-         else if(GetPointer<addr_expr>(GET_NODE(gm->op1)))
-         {
-            auto* ae = GetPointer<addr_expr>(GET_NODE(gm->op1));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is addr_expr " + GET_NODE(ae->op)->get_kind_text());
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---takes address " + STR(GET_NODE(gm->op1)));
-            if(GetPointer<function_decl>(GET_NODE(ae->op)))
-            {
-               AppM->GetCallGraphManager()->AddCallPoint(function_id, GET_INDEX_NODE(ae->op), currentTreeNode->index, FunctionEdgeInfo::CallType::function_address);
-            }
-         }
-         else if(GetPointer<nop_expr>(GET_NODE(gm->op1)))
-         {
-            auto* nop = GetPointer<nop_expr>(GET_NODE(gm->op1));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---nop_expr(" + STR(GET_NODE(nop->op)) +
-                               ")"
-                               " op is " +
-                               GET_NODE(nop->op)->get_kind_text());
-            if(GetPointer<addr_expr>(GET_NODE(nop->op)))
-            {
-               auto* ae = GetPointer<addr_expr>(GET_NODE(nop->op));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is addr_expr of " + GET_NODE(ae->op)->get_kind_text());
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---takes address " + STR(GET_NODE(nop->op)));
-               if(GetPointer<function_decl>(GET_NODE(ae->op)))
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---takes address of function_decl " + STR(GET_INDEX_NODE(ae->op)));
-                  AppM->GetCallGraphManager()->AddCallPoint(function_id, GET_INDEX_NODE(ae->op), currentTreeNode->index, FunctionEdgeInfo::CallType::function_address);
-               }
-            }
-         }
-         else
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- not addr_expr " + GET_NODE(gm->op1)->get_kind_text());
          }
          break;
       }
@@ -237,29 +212,29 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
 void CallGraphBuiltinCall::ExtendCallGraph(unsigned int callerIdx, tree_nodeRef funType, unsigned int stmtIdx)
 {
    std::string type = tree_helper::print_type(AppM->get_tree_manager(), funType->index);
+   buildTypeToDeclaration();
    for(unsigned int Itr : typeToDeclaration[type])
    {
-      AppM->GetCallGraphManager()->AddCallPoint(callerIdx, Itr, stmtIdx, FunctionEdgeInfo::CallType::indirect_call);
+      CallGraphManager::addCallPointAndExpand(already_visited, AppM, callerIdx, Itr, stmtIdx,
+                                              FunctionEdgeInfo::CallType::indirect_call, debug_level);
       modified = true;
    }
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, CallGraphBuiltinCall::FunctionRelationship>> CallGraphBuiltinCall::ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, CallGraphBuiltinCall::FunctionRelationship>>
+CallGraphBuiltinCall::ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(RT)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(HWCALL_INJECTION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
-         break;
-      }
-      case(INVALIDATION_RELATIONSHIP):
-      {
+         relationships.insert(std::make_pair(HWCALL_INJECTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -269,8 +244,11 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, CallGraphBuiltinCall::F
    return relationships;
 }
 
-CallGraphBuiltinCall::CallGraphBuiltinCall(const application_managerRef AM, unsigned int functionId, const DesignFlowManagerConstRef DFM, const ParameterConstRef P)
-    : FunctionFrontendFlowStep(AM, functionId, CALL_GRAPH_BUILTIN_CALL, DFM, P), modified(false)
+CallGraphBuiltinCall::CallGraphBuiltinCall(const application_managerRef AM, unsigned int functionId,
+                                           const DesignFlowManagerConstRef DFM, const ParameterConstRef P)
+    : FunctionFrontendFlowStep(AM, functionId, CALL_GRAPH_BUILTIN_CALL, DFM, P),
+      modified(false),
+      typeToDeclarationBuilt(false)
 {
    debug_level = P->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -279,8 +257,39 @@ CallGraphBuiltinCall::~CallGraphBuiltinCall() = default;
 
 void CallGraphBuiltinCall::Initialize()
 {
-   modified = false;
-   typeToDeclaration.clear();
+}
+
+void CallGraphBuiltinCall::buildTypeToDeclaration()
+{
+   if(!typeToDeclarationBuilt)
+   {
+      tree_managerRef TM = AppM->get_tree_manager();
+      const CallGraphManagerRef CGM = AppM->GetCallGraphManager();
+      const auto root_functions = CGM->GetRootFunctions();
+      CustomUnorderedSet<unsigned int> allFunctions;
+      function_decl_refs fdr_visitor(allFunctions);
+      for(const auto root_function : root_functions)
+      {
+         tree_nodeRef rf = TM->get_tree_node_const(root_function);
+         rf->visit(&fdr_visitor);
+      }
+      for(unsigned int allFunction : allFunctions)
+      {
+         std::string functionName = tree_helper::name_function(TM, allFunction);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Analyzing function " + STR(allFunction) + " " + functionName);
+         tree_nodeRef function = TM->get_tree_node_const(allFunction);
+         auto* funDecl = GetPointer<function_decl>(function);
+         std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
+         if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" &&
+            !boost::algorithm::starts_with(functionName, "__pragma__"))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---FunctionTypeString " + type);
+         }
+         typeToDeclaration[type].insert(allFunction);
+      }
+      typeToDeclarationBuilt = true;
+   }
 }
 
 DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
@@ -291,32 +300,16 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
    auto* functionDecl = GetPointer<function_decl>(currentTreeNode);
    auto* stmtList = GetPointer<statement_list>(GET_NODE(functionDecl->body));
 
-   if(parameters->getOption<bool>(OPT_print_dot))
+   if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_PEDANTIC <= debug_level &&
+      !parameters->IsParameter("disable-print-dot-FF"))
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("builtin-graph-pre" + STR(function_id) + ".dot");
    }
+   already_visited.clear();
+   modified = false;
+   typeToDeclaration.clear();
+   typeToDeclarationBuilt = false;
 
-   // Build the typeToDeclarationMap
-   const CallGraphManagerRef CGM = AppM->GetCallGraphManager();
-   const auto root_functions = CGM->GetRootFunctions();
-   CustomUnorderedSet<unsigned int> allFunctions;
-   function_decl_refs fdr_visitor(allFunctions);
-   for(const auto root_function : root_functions)
-   {
-      tree_nodeRef rf = TM->get_tree_node_const(root_function);
-      rf->visit(&fdr_visitor);
-   }
-   for(CustomUnorderedSet<unsigned int>::const_iterator Itr = allFunctions.begin(), End = allFunctions.end(); Itr != End; ++Itr)
-   {
-      std::string functionName = tree_helper::name_function(TM, *Itr);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing function " + STR(*Itr) + " " + functionName);
-      tree_nodeRef function = TM->get_tree_node_const(*Itr);
-      auto* funDecl = GetPointer<function_decl>(function);
-      std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
-      if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" && !boost::algorithm::starts_with(functionName, "__pragma__"))
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---FunctionTypeString " + type);
-      typeToDeclaration[type].insert(*Itr);
-   }
    for(const auto& block : stmtList->list_of_bloc)
    {
       for(const auto& stmt : block.second->CGetStmtList())
@@ -329,7 +322,8 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
       }
    }
 
-   if(parameters->getOption<bool>(OPT_print_dot))
+   if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_PEDANTIC <= debug_level &&
+      !parameters->IsParameter("disable-print-dot-FF"))
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("builtin-graph-post" + STR(function_id) + ".dot");
    }
@@ -351,10 +345,13 @@ static tree_nodeRef getFunctionPointerType(tree_nodeRef fptr)
       pt = GetPointer<pointer_type>(GET_NODE(var->type));
    }
    else
+   {
       pt = GetPointer<pointer_type>(GET_NODE(sa->type));
+   }
 
    THROW_ASSERT(pt, "Declaration node has not information about pointer_type");
-   THROW_ASSERT(GetPointer<function_type>(GET_NODE(pt->ptd)), "Pointer type has not information about pointed function_type");
+   THROW_ASSERT(GetPointer<function_type>(GET_NODE(pt->ptd)),
+                "Pointer type has not information about pointed function_type");
 
    return GET_NODE(pt->ptd);
 }

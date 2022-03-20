@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2020 Politecnico di Milano
+ *              Copyright (C) 2017-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,8 @@ class fanout_opt : public FunctionFrontendFlowStep
    /// tree manager
    const tree_managerRef TM;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /// return true in case the use is relevant for the fanout optimization
    bool is_dest_relevant(tree_nodeRef t, bool is_phi);
@@ -81,7 +82,8 @@ class fanout_opt : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   fanout_opt(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   fanout_opt(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int function_id,
+              const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

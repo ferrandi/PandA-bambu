@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,14 +57,18 @@
 /// utility include
 #include "fileIO.hpp"
 
-LoadDeviceTechnology::LoadDeviceTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY, _parameters)
+LoadDeviceTechnology::LoadDeviceTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+                                           const DesignFlowManagerConstRef _design_flow_manager,
+                                           const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY,
+                         _parameters)
 {
 }
 
 LoadDeviceTechnology::~LoadDeviceTechnology() = default;
 
-const CustomUnorderedSet<TechnologyFlowStep_Type> LoadDeviceTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<TechnologyFlowStep_Type>
+LoadDeviceTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
@@ -99,8 +103,9 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
    // if configuration file is given, it is parsed to check for technology information
    if(parameters->isOption(OPT_xml_input_configuration))
    {
-      std::string fn = parameters->getOption<std::string>(OPT_xml_input_configuration);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "checking for technology information in the configuration file...");
+      auto fn = parameters->getOption<std::string>(OPT_xml_input_configuration);
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                    "checking for technology information in the configuration file...");
       try
       {
          XMLDomParser parser(fn);
@@ -126,7 +131,8 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
       {
          THROW_ERROR("Error during technology file parsing");
       }
-      PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, " ==== XML configuration file parsed for technology information ====");
+      PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                    " ==== XML configuration file parsed for technology information ====");
    }
 
    /// load specific device information

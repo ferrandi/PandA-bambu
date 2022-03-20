@@ -1,0 +1,140 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (C) 2004-2022 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file treeLexer.lpp
+ * @brief LEX based lexer for GCC raw files.
+ *
+ * 
+ *
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
+ *
+*/
+%option yylineno
+%option never-interactive
+/*%option noyywrap*/
+%{
+
+#include <iosfwd>
+#include <fstream>
+#include <string>
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+#include "token_interface.hpp"
+
+///Utility include
+#include "refcount.hpp"
+
+///NOTE: forward declarations of BisonParserData and TreeFlexLexer are in this point since they will be used in treeParser.h
+REF_FORWARD_DECL(BisonParserData);
+REF_FORWARD_DECL(TreeFlexLexer);
+
+#if HAVE_BISON_2_7_OR_GREATER
+#include "treeParser.hpp"
+#else
+#include "treeParser.h"
+#endif
+#include "treeLexer.hpp"
+
+#include <boost/lexical_cast.hpp>
+
+using namespace std;
+
+///Skipping warnings due to flex
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (defined(__clang__) && __clang_major__ >= 6)
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
+TreeFlexLexer::TreeFlexLexer( std::istream* argin, std::ostream* argout) : yyFlexLexer(argin, argout)
+{
+   tokens = new treeVocabularyTokenTypes;
+}
+
+TreeFlexLexer::~TreeFlexLexer()
+{
+   delete tokens;
+}
+TreeVocabularyTokenTypes_TokenEnum TreeFlexLexer::bison2token(int token) const
+{
+   return tokens->bison2token(token);
+}
+#ifndef __clang_analyzer__
+%}
+
+alnum_p_ [_a-zA-Z0-9]
+alpha_p_ [_a-zA-Z]
+/* Characters and Strings */
+hex_digit       [0-9A-Fa-f]
+
+hex_quad        {hex_digit}{4}
+
+uni_char        (\\[u]{hex_quad})|(\\[u]{hex_quad}{hex_quad})
+
+simple_esc      \\['"?\\abfnrtv]
+octal_esc       \\[0-7]{1,3}
+hex_esc         \\x{hex_digit}+
+
+esc_seq         {simple_esc}|{octal_esc}|{hex_esc}
+
+s_char          [^"\n]|{esc_seq}|{uni_char}
+
+string_lit  \"{s_char}*\"
+
+unsigned_lit         [1-9][0-9]*|0
+int_lit         [\-]?{unsigned_lit}
+node_lit	"@"{unsigned_lit}
+
+%%
+
+{alpha_p_}{alnum_p_}* { int res = tokens->check_tokens(YYText()); if(res <0){ LexerError("Unrecognized keyword"); }  else return res;}
+
+{int_lit}         {lvalp->long_value = boost::lexical_cast<long long int>(YYText()); return TOK_BISON_NUMBER;}
+{node_lit} {lvalp->value= strtol(YYText()+1, (char **)NULL, 10); return NODE_ID;}
+{string_lit}      {lvalp->text=YYText(); return TOK_BISON_STRING;}
+
+
+";;".*\n /* eat up one-line comments */
+[ \t\n\r\:]+   /* eat up whitespace */
+.		     { LexerError("Lexical Error"); }
+%%
+#endif

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<function>
+  <testbench a="__Inf" pb="{0}" />
+  <testbench a="-__Inf" pb="{0}" />
+  <testbench a="__Nan" pb="{0}" />
+  <testbench a="0.0" pb="{0}" />
+  <testbench a="-0.0" pb="{0}" />
+  <testbench a="12.8" pb="{0}" />
+  <testbench a="-27.34" pb="{0}" />
+</function>

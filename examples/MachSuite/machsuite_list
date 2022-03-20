@@ -1,0 +1,19 @@
+aes/aes/aes.c           common/harness.c --benchmark-name=aes           --file-input-data=BENCHMARKS_ROOT/aes/aes/input.data,BENCHMARKS_ROOT/aes/aes/check.data
+backprop/backprop/net.c common/harness.c --benchmark-name=backprop      --file-input-data=BENCHMARKS_ROOT/backprop/backprop/input.data,BENCHMARKS_ROOT/backprop/backprop/check.data -DNO_FINAL_MEMCMP_CHECK -lm
+bfs/bulk/bulk.c         common/harness.c --benchmark-name=bfs_bulk      --file-input-data=BENCHMARKS_ROOT/bfs/bulk/input.data,BENCHMARKS_ROOT/bfs/bulk/check.data
+bfs/queue/queue.c       common/harness.c --benchmark-name=bfs_queue     --file-input-data=BENCHMARKS_ROOT/bfs/queue/input.data,BENCHMARKS_ROOT/bfs/queue/check.data
+fft/strided/fft.c       common/harness.c --benchmark-name=fft_strided   --file-input-data=BENCHMARKS_ROOT/fft/strided/input.data,BENCHMARKS_ROOT/fft/strided/check.data -lm
+fft/transpose/fft.c     common/harness.c --benchmark-name=fft_transpose --file-input-data=BENCHMARKS_ROOT/fft/transpose/input.data,BENCHMARKS_ROOT/fft/transpose/check.data -DNO_FINAL_MEMCMP_CHECK -lm
+gemm/ncubed/gemm.c      common/harness.c --benchmark-name=gemm_ncubed   --file-input-data=BENCHMARKS_ROOT/gemm/ncubed/input.data,BENCHMARKS_ROOT/gemm/ncubed/check.data
+gemm/blocked/bbgemm.c   common/harness.c --benchmark-name=gemm_blocked  --file-input-data=BENCHMARKS_ROOT/gemm/blocked/input.data,BENCHMARKS_ROOT/gemm/blocked/check.data
+kmp/kmp/kmp.c           common/harness.c --benchmark-name=kmp           --file-input-data=BENCHMARKS_ROOT/kmp/kmp/input.data,BENCHMARKS_ROOT/kmp/kmp/check.data
+md/knn/md.c             common/harness.c --benchmark-name=md_knn        --file-input-data=BENCHMARKS_ROOT/md/knn/input.data,BENCHMARKS_ROOT/md/knn/check.data
+md/grid/md.c            common/harness.c --benchmark-name=md_grid       --file-input-data=BENCHMARKS_ROOT/md/grid/input.data,BENCHMARKS_ROOT/md/grid/check.data
+nw/nw/needwun.c         common/harness.c --benchmark-name=nw            --file-input-data=BENCHMARKS_ROOT/nw/nw/input.data,BENCHMARKS_ROOT/nw/nw/check.data
+sort/merge/merge.c      common/harness.c --benchmark-name=merge         --file-input-data=BENCHMARKS_ROOT/sort/merge/input.data,BENCHMARKS_ROOT/sort/merge/check.data
+sort/radix/radix.c      common/harness.c --benchmark-name=radix         --file-input-data=BENCHMARKS_ROOT/sort/radix/input.data,BENCHMARKS_ROOT/sort/radix/check.data
+spmv/crs/crs.c          common/harness.c --benchmark-name=spmv_crs      --file-input-data=BENCHMARKS_ROOT/spmv/crs/input.data,BENCHMARKS_ROOT/spmv/crs/check.data
+spmv/ellpack/ellpack.c  common/harness.c --benchmark-name=spmv_ellpack  --file-input-data=BENCHMARKS_ROOT/spmv/ellpack/input.data,BENCHMARKS_ROOT/spmv/ellpack/check.data
+stencil/stencil2d/stencil.c   common/harness.c --benchmark-name=stencil2d --file-input-data=BENCHMARKS_ROOT/stencil/stencil2d/input.data,BENCHMARKS_ROOT/stencil/stencil2d/check.data
+stencil/stencil3d/stencil3d.c common/harness.c --benchmark-name=stencil3d --file-input-data=BENCHMARKS_ROOT/stencil/stencil3d/input.data,BENCHMARKS_ROOT/stencil/stencil3d/check.data
+viterbi/viterbi/viterbi.c     common/harness.c --benchmark-name=viterbi   --file-input-data=BENCHMARKS_ROOT/viterbi/viterbi/input.data,BENCHMARKS_ROOT/viterbi/viterbi/check.data

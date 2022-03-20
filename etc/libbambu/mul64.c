@@ -29,4 +29,3 @@ __UDItype __umul64(__UDItype u, __UDItype v)
    tlast = u0 * v1 + w1;
    return (((__UDItype)tlast) << 32) | ((__UDItype)w0);
 }
-

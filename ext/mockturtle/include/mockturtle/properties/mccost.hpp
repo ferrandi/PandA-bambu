@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,7 @@
   \file mccost.hpp
   \brief Cost functions based on multiplicative-complexity
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -59,7 +60,7 @@ std::optional<uint32_t> multiplicative_complexity( Ntk const& ntk )
   bool valid{true};
 
   ntk.foreach_gate( [&]( auto const& n ) {
-    if ( has_is_and_v<Ntk> )
+    if constexpr ( has_is_and_v<Ntk> )
     {
       if ( ntk.is_and( n ) )
       {
@@ -68,7 +69,7 @@ std::optional<uint32_t> multiplicative_complexity( Ntk const& ntk )
       }
     }
 
-    if ( has_is_or_v<Ntk> )
+    if constexpr ( has_is_or_v<Ntk> )
     {
       if ( ntk.is_or( n ) )
       {
@@ -77,7 +78,7 @@ std::optional<uint32_t> multiplicative_complexity( Ntk const& ntk )
       }
     }
 
-    if ( has_is_xor_v<Ntk> )
+    if constexpr ( has_is_xor_v<Ntk> )
     {
       if ( ntk.is_xor( n ) )
       {
@@ -85,7 +86,7 @@ std::optional<uint32_t> multiplicative_complexity( Ntk const& ntk )
       }
     }
 
-    if ( has_is_maj_v<Ntk> )
+    if constexpr ( has_is_maj_v<Ntk> )
     {
       if ( ntk.is_maj( n ) )
       {
@@ -94,7 +95,7 @@ std::optional<uint32_t> multiplicative_complexity( Ntk const& ntk )
       }
     }
 
-    if ( has_is_ite_v<Ntk> )
+    if constexpr ( has_is_ite_v<Ntk> )
     {
       if ( ntk.is_ite( n ) )
       {
@@ -103,9 +104,41 @@ std::optional<uint32_t> multiplicative_complexity( Ntk const& ntk )
       }
     }
 
-    if ( has_is_xor3_v<Ntk> )
+    if constexpr ( has_is_xor3_v<Ntk> )
     {
       if ( ntk.is_xor3( n ) )
+      {
+        return true;
+      }
+    }
+
+    if constexpr ( has_is_nary_and_v<Ntk> )
+    {
+      if ( ntk.is_nary_and( n ) )
+      {
+        if ( ntk.fanin_size( n ) > 1u )
+        {
+          total += ntk.fanin_size( n ) - 1u;
+        }
+        return true;
+      }
+    }
+
+    if constexpr ( has_is_nary_or_v<Ntk> )
+    {
+      if ( ntk.is_nary_or( n ) )
+      {
+        if ( ntk.fanin_size( n ) > 1u )
+        {
+          total += ntk.fanin_size( n ) - 1u;
+        }
+        return true;
+      }
+    }
+
+    if constexpr ( has_is_nary_xor_v<Ntk> )
+    {
+      if ( ntk.is_nary_xor( n ) )
       {
         return true;
       }
@@ -213,6 +246,33 @@ std::optional<uint32_t> multiplicative_complexity_depth( Ntk const& ntk )
     if ( has_is_xor3_v<Ntk> )
     {
       if ( ntk.is_xor3( n ) )
+      {
+        level[n] = max_level;
+        return true;
+      }
+    }
+
+    if ( has_is_nary_and_v<Ntk> )
+    {
+      if ( ntk.is_nary_and( n ) )
+      {
+        level[n] = max_level + static_cast<uint32_t>( std::ceil( std::log2( ntk.fanin_size( n ) ) ) );
+        return true;
+      }
+    }
+
+    if ( has_is_nary_or_v<Ntk> )
+    {
+      if ( ntk.is_nary_or( n ) )
+      {
+        level[n] = max_level + static_cast<uint32_t>( std::ceil( std::log2( ntk.fanin_size( n ) ) ) );
+        return true;
+      }
+    }
+
+    if ( has_is_nary_xor_v<Ntk> )
+    {
+      if ( ntk.is_nary_xor( n ) )
       {
         level[n] = max_level;
         return true;

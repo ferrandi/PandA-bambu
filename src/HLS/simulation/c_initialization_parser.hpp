@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,7 +64,8 @@ class CInitializationParser
     * @param c_initialization_parser_functor is the functor used during the parsing
     * @param lexer is the lexer used to process the initiation string
     */
-   void YYParse(const CInitializationParserFunctorRef c_initialization_parser_functor, const CInitializationFlexLexerRef lexer) const;
+   void YYParse(const CInitializationParserFunctorRef c_initialization_parser_functor,
+                const CInitializationFlexLexerRef lexer) const;
 
  public:
    /**
@@ -78,8 +79,9 @@ class CInitializationParser
     * @param c_initialization_parser_functor is the functor used during parsing
     * @param initialization_string is the C initialization string of a variable
     */
-   void Parse(const CInitializationParserFunctorRef c_initialization_parser_functor, const std::string& initialization_string) const;
+   void Parse(CInitializationParserFunctorRef c_initialization_parser_functor,
+              const std::string& initialization_string) const;
 };
-typedef refcount<const CInitializationParser> CInitializationParserConstRef;
-typedef refcount<CInitializationParser> CInitializationParserRef;
+using CInitializationParserConstRef = refcount<const CInitializationParser>;
+using CInitializationParserRef = refcount<CInitializationParser>;
 #endif

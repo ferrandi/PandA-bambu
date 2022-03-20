@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,7 +45,7 @@
 
 #include "reg_binding_creator.hpp"
 
-#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
 #include <vector>
 
 class compatibility_based_register : public reg_binding_creator
@@ -57,6 +57,9 @@ class compatibility_based_register : public reg_binding_creator
       /// edge weight
       int weight;
 
+      edge_compatibility_property() : weight(0)
+      {
+      }
       /**
        * Constructor with selector
        * @param _weight is the weight to be associated with the edge
@@ -66,12 +69,13 @@ class compatibility_based_register : public reg_binding_creator
       }
    };
 
-   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, edge_compatibility_property> compatibility_graph;
-   typedef boost::graph_traits<compatibility_graph>::vertex_descriptor CG_vertex_descriptor;
-   typedef boost::graph_traits<compatibility_graph>::vertices_size_type CG_vertices_size_type;
+   using compatibility_graph =
+       boost::adjacency_matrix<boost::undirectedS, boost::no_property, edge_compatibility_property>;
+   using CG_vertex_descriptor = boost::graph_traits<compatibility_graph>::vertex_descriptor;
+   using CG_vertices_size_type = boost::graph_traits<compatibility_graph>::vertices_size_type;
 
    /// compatibility graph
-   compatibility_graph CG;
+   compatibility_graph* CG;
 
    /// ordered vector containing the vertices of the compatibility graph
    std::vector<CG_vertex_descriptor> verts;
@@ -81,8 +85,10 @@ class compatibility_based_register : public reg_binding_creator
     * Constructor
     * @param design_flow_manager is the design flow manager
     */
-   compatibility_based_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
-                                const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+   compatibility_based_register(
+       const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+       const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**
     * Destructor
@@ -100,6 +106,6 @@ class compatibility_based_register : public reg_binding_creator
    bool is_compatible(unsigned int sv1, unsigned int sv2) const;
 };
 /// refcount definition of the class
-typedef refcount<compatibility_based_register> compatibility_based_registerRef;
+using compatibility_based_registerRef = refcount<compatibility_based_register>;
 
 #endif

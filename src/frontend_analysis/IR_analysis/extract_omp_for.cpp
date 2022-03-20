@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,7 +73,8 @@
 #include "dbgPrintHelper.hpp"
 #include "utility.hpp"
 
-ExtractOmpFor::ExtractOmpFor(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+ExtractOmpFor::ExtractOmpFor(const application_managerRef _AppM, unsigned int _function_id,
+                             const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_OMP_FOR, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -83,7 +84,8 @@ ExtractOmpFor::~ExtractOmpFor()
 {
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ExtractOmpFor::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+ExtractOmpFor::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto TM = AppM->get_tree_manager();
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -91,14 +93,14 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_ANALYSIS_BAMBU, SAME_FUNCTION));
-         break;
-      }
-      case(INVALIDATION_RELATIONSHIP):
-      {
+         relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
+      {
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -129,14 +131,14 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
    {
       WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
       PrintTreeManager(true);
    }
    bool changed = false;
    const auto loops = function_behavior->CGetLoops();
-   for(const auto loop : loops->GetList())
+   for(const auto& loop : loops->GetList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing loop " + STR(loop->GetId()));
       if(not(loop->loop_type & DOALL_LOOP))
@@ -152,7 +154,8 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
          for(const auto basic_block : basic_blocks)
          {
             const auto bb_node_info = basic_block_graph->CGetBBNodeInfo(basic_block);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info->block->number));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "-->Analyzing BB" + STR(bb_node_info->block->number));
             if(bb_node_info->block->CGetStmtList().size() == 1)
             {
                THROW_ERROR("BB" + STR(bb_node_info->block->number) + " has only one statement");
@@ -184,7 +187,8 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                THROW_ASSERT(loop->main_iv, "");
                if(not induction_variable or induction_variable->index != loop->main_iv)
                {
-                  THROW_ERROR("Induction variable is " + TM->get_tree_node_const(loop->main_iv)->ToString() + " - Second operation of loop body is " + second_node->ToString());
+                  THROW_ERROR("Induction variable is " + TM->get_tree_node_const(loop->main_iv)->ToString() +
+                              " - Second operation of loop body is " + second_node->ToString());
                }
                const auto call_op = GetPointer<const addr_expr>(GET_NODE(call->fn));
                if(not call_op)
@@ -203,16 +207,59 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
          if(loops->GetList().size() == 2)
          {
             VertexIterator basic_block, basic_block_end;
-            for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph); basic_block != basic_block_end; basic_block++)
+            for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph);
+                basic_block != basic_block_end; basic_block++)
             {
                const auto basic_block_info = basic_block_graph->CGetBBNodeInfo(*basic_block);
-               if(*basic_block == basic_block_graph_info->entry_vertex or *basic_block == basic_block_graph_info->exit_vertex)
+               if(*basic_block == basic_block_graph_info->entry_vertex or
+                  *basic_block == basic_block_graph_info->exit_vertex)
+               {
                   continue;
+               }
                if(basic_block_info->loop_id)
+               {
                   continue;
+               }
                if(not basic_block_info->block->CGetStmtList().size())
+               {
                   continue;
-               for(const auto statement : basic_block_info->block->CGetStmtList())
+               }
+               if(boost::in_degree(*basic_block, *basic_block_graph) == 1 &&
+                  boost::source(*(boost::in_edges(*basic_block, *basic_block_graph).first), *basic_block_graph) ==
+                      basic_block_graph_info->entry_vertex)
+               {
+                  const auto& stm_list = basic_block_info->block->CGetStmtList();
+                  if(stm_list.size() != 3)
+                  {
+                     THROW_ERROR("unexpected pattern");
+                  }
+                  auto stmt_iter = stm_list.begin();
+                  const auto ga1 = GetPointer<const gimple_assign>(GET_NODE(*stmt_iter));
+                  if(not ga1)
+                  {
+                     THROW_ERROR("First statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+                  const auto nop1 = GetPointer<const nop_expr>(GET_NODE(ga1->op1));
+                  if(not nop1)
+                  {
+                     THROW_ERROR("First statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+                  ++stmt_iter;
+                  const auto ga2 = GetPointer<const gimple_assign>(GET_NODE(*stmt_iter));
+                  if(not ga2)
+                  {
+                     THROW_ERROR("Second statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+                  if(GET_NODE(ga2->op1)->get_kind() == gt_expr_K)
+                  {
+                     continue;
+                  }
+                  else
+                  {
+                     THROW_ERROR("Second statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+               }
+               for(const auto& statement : basic_block_info->block->CGetStmtList())
                {
                   const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));
                   if(gr and not gr->op)
@@ -238,7 +285,8 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                continue;
             }
             const auto bb_node_info = basic_block_graph->CGetBBNodeInfo(basic_block);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info->block->number));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "-->Analyzing BB" + STR(bb_node_info->block->number));
             const auto list_of_stmt = bb_node_info->block->CGetStmtList();
             const auto first_node = list_of_stmt.front();
             const auto second_node = [&]() -> tree_nodeRef {
@@ -248,7 +296,8 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                   const auto header_list_of_stmt = header_node_info->block->CGetStmtList();
                   if(header_list_of_stmt.size() != 3)
                   {
-                     THROW_ERROR("Unexpected pattern in header. Number of operations is " + STR(header_list_of_stmt.size()));
+                     THROW_ERROR("Unexpected pattern in header. Number of operations is " +
+                                 STR(header_list_of_stmt.size()));
                   }
                   auto stmt_it = header_list_of_stmt.begin();
                   stmt_it++;
@@ -283,7 +332,8 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             THROW_ASSERT(loop->main_iv, "");
             if(not induction_variable or induction_variable->index != loop->main_iv)
             {
-               THROW_ERROR("Induction variable is " + TM->get_tree_node_const(loop->main_iv)->ToString() + " - Second operation of loop body is " + second_node->ToString());
+               THROW_ERROR("Induction variable is " + TM->get_tree_node_const(loop->main_iv)->ToString() +
+                           " - Second operation of loop body is " + second_node->ToString());
             }
             const auto call_op = GetPointer<const addr_expr>(GET_NODE(call->fn));
             if(not call_op)
@@ -301,16 +351,24 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
          if(loops->GetList().size() == 2)
          {
             VertexIterator basic_block, basic_block_end;
-            for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph); basic_block != basic_block_end; basic_block++)
+            for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph);
+                basic_block != basic_block_end; basic_block++)
             {
                const auto basic_block_info = basic_block_graph->CGetBBNodeInfo(*basic_block);
-               if(*basic_block == basic_block_graph_info->entry_vertex or *basic_block == basic_block_graph_info->exit_vertex)
+               if(*basic_block == basic_block_graph_info->entry_vertex or
+                  *basic_block == basic_block_graph_info->exit_vertex)
+               {
                   continue;
+               }
                if(basic_block_info->loop_id)
+               {
                   continue;
+               }
                if(not basic_block_info->block->CGetStmtList().size())
+               {
                   continue;
-               for(const auto statement : basic_block_info->block->CGetStmtList())
+               }
+               for(const auto& statement : basic_block_info->block->CGetStmtList())
                {
                   const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));
                   if(gr and not gr->op)

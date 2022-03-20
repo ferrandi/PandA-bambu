@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,10 +54,13 @@
 #include <iterator>                // for front_insert_iterator
 #include <list>                    // for list, _List_iterator
 
-void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, CustomUnorderedMap<vertex, vertex>& i2o, CustomUnorderedMap<vertex, vertex>& o2i)
+void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, CustomUnorderedMap<vertex, vertex>& i2o,
+                                                   CustomUnorderedMap<vertex, vertex>& o2i)
 {
    if(boost::num_vertices(*input) == 0)
+   {
       return;
+   }
    // creating maps
    THROW_ASSERT(i2o.size() == o2i.size(), "Different map sizes");
    if(i2o.size() == 0)
@@ -76,7 +79,9 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, Cu
    CustomUnorderedMap<vertex, unsigned int> sorted_nodes;
    unsigned int counter = 0;
    for(auto& level : levels)
+   {
       sorted_nodes[level] = ++counter;
+   }
 
    dominance<graph> dm(*input, start, end, param);
    dm.calculate_dominance_info(dominance<graph>::CDI_POST_DOMINATORS);
@@ -94,24 +99,38 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, Cu
          while(current_node && current_node != A && current_node != post_dominators.at(A))
          {
             if(sorted_nodes[current_node] > sorted_nodes[A])
+            {
                add_edge(i2o[A], i2o[current_node], output);
+            }
             else
+            {
                break;
+            }
             current_node = post_dominators.at(current_node);
          }
       }
    }
 }
 
-weak_dominance::weak_dominance(const graph* _input, vertex _start, vertex _end, const ParameterConstRef _param, int _selector)
-    : input(_input), start(_start), end(_end), selector(_selector), param(_param), debug_level(_param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
+weak_dominance::weak_dominance(const graph* _input, vertex _start, vertex _end, const ParameterConstRef _param,
+                               int _selector)
+    : input(_input),
+      start(_start),
+      end(_end),
+      selector(_selector),
+      param(_param),
+      debug_level(_param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 {
 }
 
 void weak_dominance::add_edge(vertex source, vertex target, graphs_collection* output)
 {
    if(output->ExistsEdge(source, target))
+   {
       output->AddSelector(source, target, selector);
+   }
    else
+   {
       output->InternalAddEdge(source, target, selector, EdgeInfoRef());
+   }
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,6 +66,7 @@ REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_type_descriptor);
 REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(technology_node);
+REF_FORWARD_DECL(application_manager);
 class module;
 
 class moduleGenerator
@@ -80,6 +81,8 @@ class moduleGenerator
    /// The debug level
    const int debug_level;
 
+   const std::string output_directory;
+
  public:
    /**
     * Constructor.
@@ -93,16 +96,27 @@ class moduleGenerator
     */
    virtual ~moduleGenerator();
 
-   structural_type_descriptorRef getDataType(unsigned int variable, const FunctionBehaviorConstRef FB) const;
+   structural_type_descriptorRef getDataType(unsigned int variable,
+                                             const FunctionBehaviorConstRef function_behavior) const;
 
-   void add_port_parameters(structural_objectRef generated_port, structural_objectRef currentPort);
+   void add_port_parameters(structural_objectRef generated_port, structural_objectRef original_port);
 
-   std::string GenerateHDL(const module* mod, const std::string& hdl_template, std::vector<std::tuple<unsigned int, unsigned int>>& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB,
+   std::string GenerateHDL(const module* mod, const std::string& hdl_template,
+                           std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
+                           const std::string& specializing_string, const FunctionBehaviorConstRef FB,
                            const std::string& path_dynamic_generators, HDLWriter_Language);
 
-   std::string get_specialized_name(unsigned int firstIndexToSpecialize, std::vector<std::tuple<unsigned int, unsigned int>>& required_variables, const FunctionBehaviorConstRef FB) const;
+   std::string get_specialized_name(unsigned int firstIndexToSpecialize,
+                                    std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
+                                    const FunctionBehaviorConstRef FB) const;
 
-   void specialize_fu(std::string fuName, vertex ve, std::string libraryId, const technology_managerRef TM, const FunctionBehaviorConstRef FB, std::string new_fu_name, std::map<std::string, technology_nodeRef>& new_fu, const TargetDevice_Type dv_type);
+   void specialize_fu(std::string fuName, vertex ve, std::string libraryId, const technology_managerRef TM,
+                      const FunctionBehaviorConstRef FB, std::string new_fu_name,
+                      std::map<std::string, technology_nodeRef>& new_fu, const TargetDevice_Type dv_type);
+
+   void create_generic_module(const std::string& fuName, const std::string& libraryId, const technology_managerRef TM,
+                              const std::string& new_fu_name, TargetDevice_Type dv_type,
+                              const application_managerRef AppM);
 };
-typedef refcount<moduleGenerator> moduleGeneratorRef;
+using moduleGeneratorRef = refcount<moduleGenerator>;
 #endif

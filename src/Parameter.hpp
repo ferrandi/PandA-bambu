@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file Parameter.hpp
- * @brief this class is used to manage the command-line or XML options. It has to be specialized with respect to the tool
+ * @brief this class is used to manage the command-line or XML options. It has to be specialized with respect to the
+ * tool
  *
  *
  *
@@ -95,7 +96,7 @@ enum class HostProfiling_Method;
 #endif
 #if HAVE_FROM_C_BUILT
 enum class ActorGraphBackend_Type;
-enum class GccWrapper_CompilerTarget;
+enum class CompilerWrapper_CompilerTarget;
 #endif
 #if HAVE_DESIGN_ANALYSIS_BUILT
 enum class DesignAnalysis_Step;
@@ -115,55 +116,95 @@ enum class DiopsisInstrumentWriter_Type;
 #define PARAMETER_PARSED INT_MIN
 #define PARAMETER_NOTPARSED INT_MAX
 
-#define BAMBU_OPTIONS                                                                                                                                                                                                                                          \
-   (chaining)(chaining_algorithm)(constraints_file)(context_switch)(controller_architecture)(datapath_architecture)(distram_threshold)(DSP_allocation_coefficient)(DSP_margin_combinational)(DSP_margin_pipelined)(estimate_logic_and_connections)(            \
-       evaluation)(evaluation_mode)(evaluation_objectives)(experimental_setup)(export_core)(export_core_mode)(fsm_encoding)(fu_binding_algorithm)(generate_testbench)(generate_vcd)(hls_flow)(hls_div)(hls_fpdiv)(interface)(interface_type)(additional_top)(  \
-       data_bus_bitsize)(addr_bus_bitsize)(libm_std_rounding)(liveness_algorithm)(scheduling_mux_margins)(scheduling_priority)(scheduling_algorithm)(simulate)(simulator)(simulation_output)(speculative)(pipelining)(storage_value_insertion_algorithm)(stg)( \
-       stg_algorithm)(register_allocation_algorithm)(register_grouping)(registered_inputs)(resp_model)(datapath_interconnection_algorithm)(insert_memory_profile)(timing_simulation)(top_file)(assert_debug)(memory_allocation_algorithm)(                     \
-       memory_allocation_policy)(xml_memory_allocation)(rom_duplication)(base_address)(sync_reset)(level_reset)(reg_init_value)(clock_period_resource_fraction)(channels_type)(channels_number)(memory_controller_type)(soft_float)(soft_fp)(                  \
-       softfloat_subnormal)(max_sim_cycles)(sparse_memory)(max_ulp)(skip_pipe_parameter)(gcc_serialize_memory_accesses)(unaligned_access)(aligned_access)(backend_script_extensions)(backend_sdc_extensions)(VHDL_library)(bitvalue_ipa)(                      \
-       use_asynchronous_memories)(do_not_chain_memories)(bram_high_latency)(cdfc_module_binding_algorithm)(function_allocation_algorithm)(testbench_input_string)(testbench_input_xml)(weighted_clique_register_algorithm)(disable_function_proxy)(            \
-       memory_mapped_top)(do_not_expose_globals)(connect_iob)(profiling_output)(disable_bounded_function)(discrepancy)(discrepancy_force)(discrepancy_hw)(discrepancy_no_load_pointers)(discrepancy_only)(discrepancy_permissive_ptrs)(dry_run_evaluation)(    \
-       find_max_cfg_transformations)(generate_taste_architecture)(initial_internal_address)(mem_delay_read)(mem_delay_write)(memory_banks_number)(mixed_design)(no_parse_c_python)(num_accelerators)(post_rescheduling)(technology_file)(                      \
-       testbench_extra_gcc_flags)(timing_violation_abort)(top_design_name)(visualizer)(serialize_output)(use_ALUs)
+#define BAMBU_OPTIONS                                                                                                  \
+   (chaining)(chaining_algorithm)(constraints_file)(context_switch)(controller_architecture)(datapath_architecture)(   \
+       distram_threshold)(DSP_allocation_coefficient)(DSP_margin_combinational)(DSP_margin_pipelined)(                 \
+       estimate_logic_and_connections)(evaluation)(evaluation_mode)(evaluation_objectives)(experimental_setup)(        \
+       export_core)(export_core_mode)(fsm_encoding)(fu_binding_algorithm)(generate_testbench)(generate_vcd)(hls_flow)( \
+       hls_div)(hls_fpdiv)(interface)(interface_type)(additional_top)(data_bus_bitsize)(addr_bus_bitsize)(             \
+       libm_std_rounding)(liveness_algorithm)(scheduling_mux_margins)(scheduling_priority)(scheduling_algorithm)(      \
+       simulate)(simulator)(simulation_output)(speculative)(pipelining)(storage_value_insertion_algorithm)(stg)(       \
+       stg_algorithm)(register_allocation_algorithm)(register_grouping)(registered_inputs)(resp_model)(                \
+       datapath_interconnection_algorithm)(insert_memory_profile)(timing_simulation)(top_file)(assert_debug)(          \
+       memory_allocation_algorithm)(memory_allocation_policy)(xml_memory_allocation)(rom_duplication)(base_address)(   \
+       sync_reset)(level_reset)(reg_init_value)(clock_period_resource_fraction)(channels_type)(channels_number)(       \
+       memory_controller_type)(soft_float)(soft_fp)(fp_subnormal)(max_sim_cycles)(sparse_memory)(max_ulp)(             \
+       skip_pipe_parameter)(gcc_serialize_memory_accesses)(unaligned_access)(aligned_access)(                          \
+       backend_script_extensions)(backend_sdc_extensions)(VHDL_library)(bitvalue_ipa)(use_asynchronous_memories)(      \
+       do_not_chain_memories)(bram_high_latency)(cdfc_module_binding_algorithm)(function_allocation_algorithm)(        \
+       testbench_input_string)(testbench_input_xml)(weighted_clique_register_algorithm)(disable_function_proxy)(       \
+       memory_mapped_top)(expose_globals)(connect_iob)(profiling_output)(disable_bounded_function)(discrepancy)(       \
+       discrepancy_force)(discrepancy_hw)(discrepancy_no_load_pointers)(discrepancy_only)(                             \
+       discrepancy_permissive_ptrs)(dry_run_evaluation)(generate_taste_architecture)(initial_internal_address)(        \
+       mem_delay_read)(mem_delay_write)(memory_banks_number)(mixed_design)(no_parse_c_python)(num_accelerators)(       \
+       post_rescheduling)(technology_file)(testbench_extra_gcc_flags)(timing_violation_abort)(top_design_name)(        \
+       visualizer)(serialize_output)(use_ALUs)(range_analysis_mode)(fp_format)(fp_format_propagate)(                   \
+       fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(interface_xml_filename)(            \
+       lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_pmi_tdpbe)(lattice_pmi_mul)(xilinx_root)(              \
+       xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(mentor_visualizer)(     \
+       mentor_optimizer)(verilator)(verilator_l2_name)(verilator_timescale_override)(verilator_parallel)(icarus)(      \
+       altera_root)(quartus_settings)(quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(    \
+       nanoxplore_bypass)(shared_input_registers)(inline_functions)
 
-#define FRAMEWORK_OPTIONS                                                                                                                                                                                                                                     \
-   (architecture)(benchmark_name)(cat_args)(cfg_max_transformations)(compatible_compilers)(compute_size_of)(configuration_name)(debug_level)(default_compiler)(dot_directory)(dump_profiling_data)(file_costs)(file_input_data)(host_compiler)(ilp_max_time)( \
-       ilp_solver)(input_file)(input_format)(model_costs)(no_clean)(no_parse_files)(no_return_zero)(output_file)(output_level)(output_temporary_directory)(output_directory)(panda_parameter)(parse_pragma)(pretty_print)(print_dot)(profiling_file)(         \
-       profiling_method)(program_name)(read_parameter_xml)(revision)(seed)(task_threshold)(test_multiple_non_deterministic_flows)(test_single_non_deterministic_flow)(top_functions_names)(use_rtl)(xml_input_configuration)(xml_output_configuration)(       \
-       write_parameter_xml)
+#define FRAMEWORK_OPTIONS                                                                                            \
+   (architecture)(benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(    \
+       compute_size_of)(configuration_name)(debug_level)(default_compiler)(dot_directory)(dump_profiling_data)(      \
+       file_costs)(file_input_data)(host_compiler)(ilp_max_time)(ilp_solver)(input_file)(input_format)(model_costs)( \
+       no_clean)(no_parse_files)(no_return_zero)(output_file)(output_level)(output_temporary_directory)(             \
+       output_directory)(panda_parameter)(parse_pragma)(pretty_print)(print_dot)(profiling_file)(profiling_method)(  \
+       program_name)(read_parameter_xml)(revision)(seed)(task_threshold)(test_multiple_non_deterministic_flows)(     \
+       test_single_non_deterministic_flow)(top_functions_names)(use_rtl)(xml_input_configuration)(                   \
+       xml_output_configuration)(write_parameter_xml)
 
-#define GCC_OPTIONS                                                                                                                                                                                                                                         \
-   (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(gcc_library_directories)(gcc_openmp_simd)(gcc_opt_level)(gcc_m32_mx32)(gcc_optimizations)(gcc_optimization_set)(gcc_parameters)(gcc_plugindir)( \
-       gcc_read_xml)(gcc_standard)(gcc_undefines)(gcc_warnings)(gcc_c)(gcc_E)(gcc_S)(gcc_write_xml)
+#define COMPILER_OPTIONS                                                                                              \
+   (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(          \
+       gcc_library_directories)(gcc_openmp_simd)(compiler_opt_level)(gcc_m32_mx32)(gcc_optimizations)(                \
+       gcc_optimization_set)(gcc_parameters)(gcc_plugindir)(gcc_read_xml)(gcc_standard)(gcc_undefines)(gcc_warnings)( \
+       gcc_c)(gcc_E)(gcc_S)(gcc_write_xml)
 
 #define GECCO_OPTIONS (algorithms)(analyses)
 
-#define KOALA_OPTIONS                                                                                                                                                                                                                                         \
-   (aig_analysis)(aig_analysis_algorithm)(apply_reduction_to_standard_library)(characterization_with_DC)(circuit_debug_level)(complete_library_post_covering)(complete_library_pre_covering)(covering)(csv_file)(design_compiler_effort)(                     \
-       drive_strength_values)(equation)(evolutionary_reduction)(explore_cell_variants)(extract_features)(generated_library_name)(group_glue)(has_complete_characterization)(hdl_backend)(icarus_debug_level)(input_libraries)(library)(library_optimization)( \
-       library_optimization_algorithm)(lib_output_format)(max_area)(max_delay)(output_libraries)(output_name)(regularity_abstraction_level)(regularity_algorithm)(regularity_coloring_type)(regularity_covering)(regularity_extraction)(regularity_fast)(     \
-       regularity_forward)(regularity_hierarchical)(regularity_include_sequential)(regularity_max_inputs)(regularity_min_frequency)(regularity_min_size)(regularity_window_size)(reordering)(perform_resynthesis)(print_templates)(                           \
-       reimplement_standard_cells)(separate_templates)(set_constraint)(set_optimization_goal)(skew_values)(split_roots)(store_library_creator_db)(synthesis_tool_xml)(template_file)(xml_library_cells)(xml_library_statistics)
+#define KOALA_OPTIONS                                                                                                \
+   (aig_analysis)(aig_analysis_algorithm)(apply_reduction_to_standard_library)(characterization_with_DC)(            \
+       complete_library_post_covering)(complete_library_pre_covering)(covering)(csv_file)(design_compiler_effort)(   \
+       drive_strength_values)(equation)(evolutionary_reduction)(explore_cell_variants)(extract_features)(            \
+       generated_library_name)(group_glue)(has_complete_characterization)(hdl_backend)(icarus_debug_level)(          \
+       input_libraries)(library)(library_optimization)(library_optimization_algorithm)(lib_output_format)(max_area)( \
+       max_delay)(output_libraries)(output_name)(regularity_abstraction_level)(regularity_algorithm)(                \
+       regularity_coloring_type)(regularity_covering)(regularity_extraction)(regularity_fast)(regularity_forward)(   \
+       regularity_hierarchical)(regularity_include_sequential)(regularity_max_inputs)(regularity_min_frequency)(     \
+       regularity_min_size)(regularity_window_size)(reordering)(perform_resynthesis)(print_templates)(               \
+       reimplement_standard_cells)(separate_templates)(set_constraint)(set_optimization_goal)(skew_values)(          \
+       split_roots)(store_library_creator_db)(synthesis_tool_xml)(template_file)(xml_library_cells)(                 \
+       xml_library_statistics)
 
-#define SYNTHESIS_OPTIONS                                                                                                                                                                                                                           \
-   (clock_period)(clock_name)(reset_name)(start_name)(done_name)(design_analysis_steps)(design_compiler_compile_log)(design_compiler_split_log)(design_parameters)(design_hierarchy)(device_string)(dump_genlib)(estimate_library)(export_ip_core)( \
-       import_ip_core)(input_liberty_library_file)(ip_xact_architecture_template)(ip_xact_parameters)(is_structural)(lib2xml)(min_metric)(parse_edif)(rtl)(synthesis_flow)(structural_HDL)(target_device)(target_library)(target_library_source)(   \
-       target_technology)(target_technology_file)(target_device_file)(target_device_script)(target_device_type)(top_component)(uniquify)(writer_language)
+#define SYNTHESIS_OPTIONS                                                                                              \
+   (clock_period)(clock_name)(reset_name)(start_name)(done_name)(design_analysis_steps)(design_compiler_compile_log)(  \
+       design_compiler_split_log)(design_parameters)(design_hierarchy)(device_string)(dump_genlib)(estimate_library)(  \
+       export_ip_core)(import_ip_core)(input_liberty_library_file)(ip_xact_architecture_template)(ip_xact_parameters)( \
+       is_structural)(lib2xml)(min_metric)(parse_edif)(rtl)(synthesis_flow)(structural_HDL)(target_device)(            \
+       target_library)(target_library_source)(target_technology)(target_technology_file)(target_device_file)(          \
+       target_device_script)(target_device_type)(top_component)(uniquify)(writer_language)
 
-#define SPIDER_OPTIONS                                                                                                                                                                                                                              \
-   (accuracy)(aggregated_features)(cross_validation)(experimental_setup_file)(interval_level)(latex_format_file)(max_bound)(maximum_error)(min_bound)(minimum_significance)(normalization_file)(normalization_sequences)(output_format)(precision)( \
-       processing_element_type)(skip_rows)(surviving_benchmarks)
+#define SPIDER_OPTIONS                                                                                            \
+   (accuracy)(aggregated_features)(cross_validation)(experimental_setup_file)(interval_level)(latex_format_file)( \
+       max_bound)(maximum_error)(min_bound)(minimum_significance)(normalization_file)(normalization_sequences)(   \
+       output_format)(precision)(processing_element_type)(skip_rows)(surviving_benchmarks)
 
 #define EUCALIPTUS_OPTIONS (component_name)
 
-#define TREE_PANDA_GCC_OPTIONS (archive_files)(obj_files)(compress_archive)
+#define TREE_PANDA_COMPILER_OPTIONS (archive_files)(obj_files)(compress_archive)
 
-#define ZEBU_OPTIONS                                                                                                                                                                                                                                           \
-   (alternative_metrics)(analysis_level)(blackbox)(cache_analysis)(compare_model_max_iterations)(compare_measure_regions)(compare_models)(cpus_number)(cuda_optimization)(examined_model)(default_fork_cost)(diopsis_instrumentation)(driving_component_type)( \
-       driving_metric)(dump_schedule)(evaluate_pointed_size)(exec_argv)(frontend_statistics)(golden_model)(fork_join_backend)(hand_mapping)(ignore_mapping)(ignore_parallelism)(mapping)(measure_profile_overhead)(memory_profiling)(no_sequential)(           \
-       normalize_models)(partitioning)(partitioning_algorithm)(partitioning_functions)(path)(performance_estimation)(platform_base_dir)(prof_resolution)(profile_loop_max_iterations)(profile_minutes_timeout)(runs_number)(simit_fork_cost)(                  \
-       source_code_statistics)(resolution)(run)(sequence_length)(shorter_sequence)(symbolic_simulation)(trace_buffer_size)(tsim_instrumentation)(tollerance)(without_operating_system)(without_transformation)
+#define ZEBU_OPTIONS                                                                                                   \
+   (alternative_metrics)(analysis_level)(blackbox)(cache_analysis)(compare_model_max_iterations)(                      \
+       compare_measure_regions)(compare_models)(cpus_number)(cuda_optimization)(examined_model)(default_fork_cost)(    \
+       diopsis_instrumentation)(driving_component_type)(driving_metric)(dump_schedule)(evaluate_pointed_size)(         \
+       exec_argv)(frontend_statistics)(golden_model)(fork_join_backend)(hand_mapping)(ignore_mapping)(                 \
+       ignore_parallelism)(mapping)(measure_profile_overhead)(memory_profiling)(no_sequential)(normalize_models)(      \
+       partitioning)(partitioning_algorithm)(partitioning_functions)(path)(performance_estimation)(platform_base_dir)( \
+       prof_resolution)(profile_loop_max_iterations)(profile_minutes_timeout)(runs_number)(simit_fork_cost)(           \
+       source_code_statistics)(resolution)(run)(sequence_length)(shorter_sequence)(symbolic_simulation)(               \
+       trace_buffer_size)(tsim_instrumentation)(tollerance)(without_operating_system)(without_transformation)
 
 #define OPTIONS_ENUM(r, data, elem) BOOST_PP_CAT(OPT_, elem),
 
@@ -171,10 +212,16 @@ enum class DiopsisInstrumentWriter_Type;
 // cppcheck-suppress syntaxError
 enum enum_option
 {
-   BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, BAMBU_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, EUCALIPTUS_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, FRAMEWORK_OPTIONS)
-       BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, GCC_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, GECCO_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, KOALA_OPTIONS)
-           BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SPIDER_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, TREE_PANDA_GCC_OPTIONS)
-               BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, ZEBU_OPTIONS)
+   BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, BAMBU_OPTIONS)
+       BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, EUCALIPTUS_OPTIONS)
+           BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, FRAMEWORK_OPTIONS)
+               BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, COMPILER_OPTIONS)
+                   BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, GECCO_OPTIONS)
+                       BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, KOALA_OPTIONS)
+                           BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SPIDER_OPTIONS)
+                               BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS)
+                                   BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, TREE_PANDA_COMPILER_OPTIONS)
+                                       BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, ZEBU_OPTIONS)
 };
 
 class OptionMap : public std::map<std::string, std::string>
@@ -193,60 +240,76 @@ class OptionMap : public std::map<std::string, std::string>
 
 #define DEFAULT_OPT_BASE 512
 #define OPT_READ_PARAMETERS_XML DEFAULT_OPT_BASE
-#define OPT_WRITE_PARAMETERS_XML DEFAULT_OPT_BASE + 1
-#define OPT_DEBUG_CLASSES DEFAULT_OPT_BASE + 2
-#define OPT_BENCHMARK_NAME DEFAULT_OPT_BASE + 3
-#define OPT_BENCHMARK_FAKE_PARAMETERS DEFAULT_OPT_BASE + 4
-#define INPUT_OPT_ERROR_ON_WARNING DEFAULT_OPT_BASE + 5
-#define OPT_OUTPUT_TEMPORARY_DIRECTORY DEFAULT_OPT_BASE + 6
-#define INPUT_OPT_PRINT_DOT DEFAULT_OPT_BASE + 7
-#define INPUT_OPT_SEED DEFAULT_OPT_BASE + 8
-#define INPUT_OPT_NO_CLEAN DEFAULT_OPT_BASE + 9
-#define INPUT_OPT_CONFIGURATION_NAME DEFAULT_OPT_BASE + 10
-#define INPUT_OPT_CFG_MAX_TRANSFORMATIONS DEFAULT_OPT_BASE + 11
-#define INPUT_OPT_PANDA_PARAMETER DEFAULT_OPT_BASE + 12
+#define OPT_WRITE_PARAMETERS_XML (1 + OPT_READ_PARAMETERS_XML)
+#define OPT_DEBUG_CLASSES (1 + OPT_WRITE_PARAMETERS_XML)
+#define OPT_BENCHMARK_NAME (1 + OPT_DEBUG_CLASSES)
+#define OPT_BENCHMARK_FAKE_PARAMETERS (1 + OPT_BENCHMARK_NAME)
+#define INPUT_OPT_ERROR_ON_WARNING (1 + OPT_BENCHMARK_FAKE_PARAMETERS)
+#define OPT_OUTPUT_TEMPORARY_DIRECTORY (1 + INPUT_OPT_ERROR_ON_WARNING)
+#define INPUT_OPT_PRINT_DOT (1 + OPT_OUTPUT_TEMPORARY_DIRECTORY)
+#define INPUT_OPT_SEED (1 + INPUT_OPT_PRINT_DOT)
+#define INPUT_OPT_NO_CLEAN (1 + INPUT_OPT_SEED)
+#define INPUT_OPT_CONFIGURATION_NAME (1 + INPUT_OPT_NO_CLEAN)
+#define INPUT_OPT_MAX_TRANSFORMATIONS (1 + INPUT_OPT_CONFIGURATION_NAME)
+#define INPUT_OPT_FIND_MAX_TRANSFORMATIONS (1 + INPUT_OPT_MAX_TRANSFORMATIONS)
+#define INPUT_OPT_PANDA_PARAMETER (1 + INPUT_OPT_FIND_MAX_TRANSFORMATIONS)
 
 /// define the default tool short option string
 #define COMMON_SHORT_OPTIONS_STRING "hVv:d:"
 
 /// define default TOOL long options
-#define COMMON_LONG_OPTIONS                                                                                                                                                                                                                                  \
-   {"help", no_argument, nullptr, 'h'}, {"verbosity", required_argument, nullptr, 'v'}, {"version", no_argument, nullptr, 'V'}, {"read-parameters-XML", required_argument, nullptr, OPT_READ_PARAMETERS_XML},                                                \
-       {"write-parameters-XML", required_argument, nullptr, OPT_WRITE_PARAMETERS_XML}, {"debug", required_argument, nullptr, 'd'}, {"debug-classes", required_argument, nullptr, OPT_DEBUG_CLASSES}, {"no-clean", no_argument, nullptr, INPUT_OPT_NO_CLEAN}, \
-       {"benchmark-name", required_argument, nullptr, OPT_BENCHMARK_NAME}, {"configuration-name", required_argument, nullptr, INPUT_OPT_CONFIGURATION_NAME}, {"benchmark-fake-parameters", required_argument, nullptr, OPT_BENCHMARK_FAKE_PARAMETERS},       \
-       {"output-temporary-directory", required_argument, nullptr, OPT_OUTPUT_TEMPORARY_DIRECTORY}, {"error-on-warning", no_argument, nullptr, INPUT_OPT_ERROR_ON_WARNING}, {"print-dot", no_argument, nullptr, INPUT_OPT_PRINT_DOT},                         \
-       {"seed", required_argument, nullptr, INPUT_OPT_SEED}, {"cfg-max-transformations", required_argument, nullptr, INPUT_OPT_CFG_MAX_TRANSFORMATIONS},                                                                                                     \
-   {                                                                                                                                                                                                                                                         \
-      "panda-parameter", required_argument, nullptr, INPUT_OPT_PANDA_PARAMETER                                                                                                                                                                               \
+#define COMMON_LONG_OPTIONS                                                                                            \
+   {"help", no_argument, nullptr, 'h'}, {"verbosity", required_argument, nullptr, 'v'},                                \
+       {"version", no_argument, nullptr, 'V'},                                                                         \
+       {"read-parameters-XML", required_argument, nullptr, OPT_READ_PARAMETERS_XML},                                   \
+       {"write-parameters-XML", required_argument, nullptr, OPT_WRITE_PARAMETERS_XML},                                 \
+       {"debug", required_argument, nullptr, 'd'}, {"debug-classes", required_argument, nullptr, OPT_DEBUG_CLASSES},   \
+       {"no-clean", no_argument, nullptr, INPUT_OPT_NO_CLEAN},                                                         \
+       {"benchmark-name", required_argument, nullptr, OPT_BENCHMARK_NAME},                                             \
+       {"configuration-name", required_argument, nullptr, INPUT_OPT_CONFIGURATION_NAME},                               \
+       {"benchmark-fake-parameters", required_argument, nullptr, OPT_BENCHMARK_FAKE_PARAMETERS},                       \
+       {"output-temporary-directory", required_argument, nullptr, OPT_OUTPUT_TEMPORARY_DIRECTORY},                     \
+       {"error-on-warning", no_argument, nullptr, INPUT_OPT_ERROR_ON_WARNING},                                         \
+       {"print-dot", no_argument, nullptr, INPUT_OPT_PRINT_DOT}, {"seed", required_argument, nullptr, INPUT_OPT_SEED}, \
+       {"max-transformations", required_argument, nullptr, INPUT_OPT_MAX_TRANSFORMATIONS},                             \
+       {"find-max-transformations", no_argument, nullptr, INPUT_OPT_FIND_MAX_TRANSFORMATIONS},                         \
+   {                                                                                                                   \
+      "panda-parameter", required_argument, nullptr, INPUT_OPT_PANDA_PARAMETER                                         \
    }
 
 #define INPUT_OPT_CUSTOM_OPTIONS 1024
-#define INPUT_OPT_COMPUTE_SIZEOF 1 + INPUT_OPT_CUSTOM_OPTIONS
-#define INPUT_OPT_COMPILER 1 + INPUT_OPT_COMPUTE_SIZEOF
-#define INPUT_OPT_GCC_CONFIG 1 + INPUT_OPT_COMPILER
-#define INPUT_OPT_INCLUDE_SYSDIR 1 + INPUT_OPT_GCC_CONFIG
-#define INPUT_OPT_PARAM 1 + INPUT_OPT_INCLUDE_SYSDIR
-#define INPUT_OPT_READ_GCC_XML 1 + INPUT_OPT_PARAM
-#define INPUT_OPT_STD 1 + INPUT_OPT_READ_GCC_XML
-#define INPUT_OPT_USE_RAW 1 + INPUT_OPT_STD
-#define INPUT_OPT_WRITE_GCC_XML 1 + INPUT_OPT_USE_RAW
+#define INPUT_OPT_COMPUTE_SIZEOF (1 + INPUT_OPT_CUSTOM_OPTIONS)
+#define INPUT_OPT_COMPILER (1 + INPUT_OPT_COMPUTE_SIZEOF)
+#define INPUT_OPT_GCC_CONFIG (1 + INPUT_OPT_COMPILER)
+#define INPUT_OPT_INCLUDE_SYSDIR (1 + INPUT_OPT_GCC_CONFIG)
+#define INPUT_OPT_PARAM (1 + INPUT_OPT_INCLUDE_SYSDIR)
+#define INPUT_OPT_READ_GCC_XML (1 + INPUT_OPT_PARAM)
+#define INPUT_OPT_STD (1 + INPUT_OPT_READ_GCC_XML)
+#define INPUT_OPT_USE_RAW (1 + INPUT_OPT_STD)
+#define INPUT_OPT_WRITE_GCC_XML (1 + INPUT_OPT_USE_RAW)
 #define LAST_GCC_OPT INPUT_OPT_WRITE_GCC_XML
 
 /// define the GCC short option string
 #define GCC_SHORT_OPTIONS_STRING "cf:I:D:U:O::l:L:W:Em:g::"
 
 #if !RELEASE
-#define GCC_LONG_OPTIONS_RAW_XML {"use-raw", no_argument, nullptr, INPUT_OPT_USE_RAW}, {"read-GCC-XML", required_argument, nullptr, INPUT_OPT_READ_GCC_XML}, {"write-GCC-XML", required_argument, nullptr, INPUT_OPT_WRITE_GCC_XML},
+#define GCC_LONG_OPTIONS_RAW_XML                                             \
+   {"use-raw", no_argument, nullptr, INPUT_OPT_USE_RAW},                     \
+       {"read-GCC-XML", required_argument, nullptr, INPUT_OPT_READ_GCC_XML}, \
+       {"write-GCC-XML", required_argument, nullptr, INPUT_OPT_WRITE_GCC_XML},
 #else
 #define GCC_LONG_OPTIONS_RAW_XML {"use-raw", no_argument, nullptr, INPUT_OPT_USE_RAW},
 #endif
 #define GCC_LONG_OPTIONS_COMPILER {"compiler", required_argument, nullptr, INPUT_OPT_COMPILER},
 
-#define GCC_LONG_OPTIONS                                                                                                                                                                                                            \
-   GCC_LONG_OPTIONS_COMPILER{"std", required_argument, nullptr, INPUT_OPT_STD}, GCC_LONG_OPTIONS_RAW_XML{"param", required_argument, nullptr, INPUT_OPT_PARAM}, {"Include-sysdir", no_argument, nullptr, INPUT_OPT_INCLUDE_SYSDIR}, \
-       {"gcc-config", no_argument, nullptr, INPUT_OPT_GCC_CONFIG}, {"compute-sizeof", no_argument, nullptr, INPUT_OPT_COMPUTE_SIZEOF},                                                                                              \
-   {                                                                                                                                                                                                                                \
-      "extra-gcc-options", required_argument, nullptr, INPUT_OPT_CUSTOM_OPTIONS                                                                                                                                                     \
+#define GCC_LONG_OPTIONS                                                               \
+   GCC_LONG_OPTIONS_COMPILER{"std", required_argument, nullptr, INPUT_OPT_STD},        \
+       GCC_LONG_OPTIONS_RAW_XML{"param", required_argument, nullptr, INPUT_OPT_PARAM}, \
+       {"Include-sysdir", no_argument, nullptr, INPUT_OPT_INCLUDE_SYSDIR},             \
+       {"gcc-config", no_argument, nullptr, INPUT_OPT_GCC_CONFIG},                     \
+       {"compute-sizeof", no_argument, nullptr, INPUT_OPT_COMPUTE_SIZEOF},             \
+   {                                                                                   \
+      "extra-gcc-options", required_argument, nullptr, INPUT_OPT_CUSTOM_OPTIONS        \
    }
 
 /**
@@ -266,6 +329,7 @@ enum class Parameters_FileFormat
    FF_OBJECTIVECPP, /**< (Input/Output) Objective C++ source file */
    FF_FORTRAN,      /**< (Input/Output) Fortran source file */
    FF_LLVM,         /**< (Input/Output) LLVM source bitcode file */
+   FF_LLVM_CPP,     /**< (Input/Output) LLVM source bitcode file generated from c++ source code*/
 #endif
    FF_CSV, /**< (Input) comma separated value */
 #if HAVE_EXPERIMENTAL
@@ -532,7 +596,8 @@ class Parameter
    template <typename G>
    G getOption(const enum enum_option name) const
    {
-      THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + (option_name.find(name))->second + "\" not stored");
+      THROW_ASSERT(enum_options.find(name) != enum_options.end(),
+                   "Option \"" + (option_name.find(name))->second + "\" not stored");
       return boost::lexical_cast<G>(enum_options.find(name)->second);
    }
 
@@ -607,7 +672,9 @@ class Parameter
    bool removeOption(const enum enum_option name)
    {
       if(!isOption(name))
+      {
          return false;
+      }
       enum_options.erase(name);
       return true;
    }
@@ -630,7 +697,9 @@ class Parameter
    bool removeOption(const std::string& name)
    {
       if(!isOption(name))
+      {
          return false;
+      }
       Options.erase(name);
       return true;
    }
@@ -738,7 +807,7 @@ Parameters_FileFormat Parameter::getOption(const enum enum_option name) const;
 
 #if HAVE_FROM_C_BUILT
 template <>
-GccWrapper_CompilerTarget Parameter::getOption(const enum enum_option name) const;
+CompilerWrapper_CompilerTarget Parameter::getOption(const enum enum_option name) const;
 #endif
 
 #if HAVE_CODE_ESTIMATION_BUILT
@@ -760,11 +829,11 @@ DesignAnalysis_Step Parameter::getOption(const enum enum_option name) const;
 #endif
 
 #if HAVE_FROM_C_BUILT
-enum class GccWrapper_OptimizationSet;
+enum class CompilerWrapper_OptimizationSet;
 template <>
-GccWrapper_OptimizationSet Parameter::getOption(const enum enum_option name) const;
+CompilerWrapper_OptimizationSet Parameter::getOption(const enum enum_option name) const;
 template <>
-void Parameter::setOption(const enum enum_option name, const GccWrapper_OptimizationSet value);
+void Parameter::setOption(const enum enum_option name, const CompilerWrapper_OptimizationSet value);
 #endif
 
 #if HAVE_TO_C_BUILT
@@ -786,7 +855,8 @@ void Parameter::setOption(const enum enum_option name, const MemoryAllocation_Po
 template <>
 MemoryAllocation_ChannelsType Parameter::getOption(const enum enum_option name) const;
 template <>
-void Parameter::setOption(const enum enum_option name, const MemoryAllocation_ChannelsType memory_allocation_channels_type);
+void Parameter::setOption(const enum enum_option name,
+                          const MemoryAllocation_ChannelsType memory_allocation_channels_type);
 
 template <>
 CliqueCovering_Algorithm Parameter::getOption(const enum enum_option name) const;
@@ -804,7 +874,7 @@ template <>
 void Parameter::setOption(const enum enum_option name, const ParametricListBased_Metric parametric_list_based_metric);
 #endif
 
-typedef refcount<Parameter> ParameterRef;
-typedef refcount<const Parameter> ParameterConstRef;
+using ParameterRef = refcount<Parameter>;
+using ParameterConstRef = refcount<const Parameter>;
 
 #endif

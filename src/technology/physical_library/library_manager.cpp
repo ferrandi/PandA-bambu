@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -100,7 +100,8 @@ attribute::attribute(const std::string& _value_type, std::string _content) : con
    }
 }
 
-attribute::attribute(const value_t _value_type, std::string _content) : content(std::move(_content)), value_type(_value_type)
+attribute::attribute(const value_t _value_type, std::string _content)
+    : content(std::move(_content)), value_type(_value_type)
 {
    xml_node::convert_escaped(content);
    value_type = static_cast<value_t>(_value_type);
@@ -147,7 +148,8 @@ unsigned int attribute::get_value_type() const
    return value_type;
 }
 
-void attribute::xload(const xml_element* EnodeC, std::vector<std::string>& ordered_attributes, std::map<std::string, attributeRef>& attributes)
+void attribute::xload(const xml_element* EnodeC, std::vector<std::string>& ordered_attributes,
+                      std::map<std::string, attributeRef>& attributes)
 {
    const xml_attribute* att_name = EnodeC->get_attribute("name");
    const xml_node::node_list& list_att = EnodeC->get_children();
@@ -162,7 +164,8 @@ void attribute::xload(const xml_element* EnodeC, std::vector<std::string>& order
       const xml_text_node* txt_node = EnodeC1->get_child_text();
       _content.push_back(attributeRef(new attribute(EnodeC1->get_name(), txt_node->get_content())));
    }
-   if(std::find(ordered_attributes.begin(), ordered_attributes.end(), att_name->get_value()) == ordered_attributes.end())
+   if(std::find(ordered_attributes.begin(), ordered_attributes.end(), att_name->get_value()) ==
+      ordered_attributes.end())
    {
       ordered_attributes.push_back(att_name->get_value());
    }
@@ -174,7 +177,8 @@ void attribute::xload(const xml_element* EnodeC, std::vector<std::string>& order
    {
       const xml_attribute* value_type_node = EnodeC->get_attribute("value_type");
       const xml_text_node* txt_node = EnodeC->get_child_text();
-      attributes[att_name->get_value()] = attributeRef(new attribute(value_type_node->get_value(), txt_node->get_content()));
+      attributes[att_name->get_value()] =
+          attributeRef(new attribute(value_type_node->get_value(), txt_node->get_content()));
    }
 }
 
@@ -234,14 +238,16 @@ library_manager::library_manager(ParameterConstRef _Param, bool std) : Param(std
    set_default_attributes();
 }
 
-library_manager::library_manager(std::string library_name, ParameterConstRef _Param, bool std) : Param(std::move(_Param)), name(std::move(library_name)), is_std(std)
+library_manager::library_manager(std::string library_name, ParameterConstRef _Param, bool std)
+    : Param(std::move(_Param)), name(std::move(library_name)), is_std(std)
 {
    set_default_attributes();
 }
 
 library_manager::~library_manager() = default;
 
-void library_manager::xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param, const target_deviceRef& device)
+void library_manager::xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param,
+                            const target_deviceRef& device)
 {
 #ifndef NDEBUG
    int debug_level = Param->get_class_debug_level("library_manager");
@@ -458,40 +464,52 @@ void library_manager::update(const technology_nodeRef& fu_node)
       current_fu->CM = GetPointer<functional_unit>(node)->CM;
    }
 #endif
-   if(GetPointer<functional_unit_template>(fu_node) && !GetPointer<functional_unit_template>(fu_node)->specialized.empty())
+   if(GetPointer<functional_unit_template>(fu_node) &&
+      !GetPointer<functional_unit_template>(fu_node)->specialized.empty())
    {
-      GetPointer<functional_unit_template>(fu)->specialized = GetPointer<functional_unit_template>(fu_node)->specialized;
+      GetPointer<functional_unit_template>(fu)->specialized =
+          GetPointer<functional_unit_template>(fu_node)->specialized;
    }
-   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->fu_template_name.empty()) || GetPointer<functional_unit_template>(fu_node))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->fu_template_name.empty()) ||
+      GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->fu_template_name = GetPointer<functional_unit>(node)->fu_template_name;
    }
-   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->fu_template_parameters.empty()) || GetPointer<functional_unit_template>(fu_node))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->fu_template_parameters.empty()) ||
+      GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->fu_template_parameters = GetPointer<functional_unit>(node)->fu_template_parameters;
    }
-   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->characterizing_constant_value.empty()) || GetPointer<functional_unit_template>(fu_node))
+   if((GetPointer<functional_unit>(node) &&
+       !GetPointer<functional_unit>(node)->characterizing_constant_value.empty()) ||
+      GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->characterizing_constant_value = GetPointer<functional_unit>(node)->characterizing_constant_value;
    }
-   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->memory_type.empty()) || GetPointer<functional_unit_template>(fu_node))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->memory_type.empty()) ||
+      GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->memory_type = GetPointer<functional_unit>(node)->memory_type;
    }
-   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->channels_type.empty()) || GetPointer<functional_unit_template>(fu_node))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->channels_type.empty()) ||
+      GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->channels_type = GetPointer<functional_unit>(node)->channels_type;
    }
-   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->memory_ctrl_type.empty()) || GetPointer<functional_unit_template>(fu_node))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->memory_ctrl_type.empty()) ||
+      GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->memory_ctrl_type = GetPointer<functional_unit>(node)->memory_ctrl_type;
    }
-   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->bram_load_latency.empty()) || GetPointer<functional_unit_template>(fu_node))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->bram_load_latency.empty()) ||
+      GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->bram_load_latency = GetPointer<functional_unit>(node)->bram_load_latency;
    }
 
-   THROW_ASSERT(current_fu->characterization_timestamp <= GetPointer<functional_unit>(node)->characterization_timestamp, STR(current_fu->characterization_timestamp) + " vs " + STR(GetPointer<functional_unit>(node)->characterization_timestamp));
+   THROW_ASSERT(current_fu->characterization_timestamp <= GetPointer<functional_unit>(node)->characterization_timestamp,
+                STR(current_fu->characterization_timestamp) + " vs " +
+                    STR(GetPointer<functional_unit>(node)->characterization_timestamp));
    current_fu->characterization_timestamp = GetPointer<functional_unit>(node)->characterization_timestamp;
 }
 

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file var_pp_functor.cpp
- * @brief Helper for reading data about internal representation after behavioral_manager analysis about specification produced from tree
+ * @brief Helper for reading data about internal representation after behavioral_manager analysis about specification
+ * produced from tree
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -45,7 +46,9 @@
 #include "behavioral_helper.hpp"
 #include <cstddef> // for size_t
 
-pointer_var_pp_functor::pointer_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, bool _add_restrict) : pointer_based_variables(vars), BH(_BH), std_functor(std_var_pp_functor(_BH)), add_restrict(_add_restrict)
+pointer_var_pp_functor::pointer_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars,
+                                               bool _add_restrict)
+    : pointer_based_variables(vars), BH(_BH), std_functor(std_var_pp_functor(_BH)), add_restrict(_add_restrict)
 {
 }
 
@@ -66,23 +69,36 @@ std::string std_var_pp_functor::operator()(unsigned int var) const
          unsigned int type = BH->get_type(array);
          std::string offset_str = this->operator()(offset);
          std::string type_string = BH->print_type(type);
-         if(BH->is_an_array(type))
+         if(BH->is_an_array(type) && !BH->is_a_struct(type) && !BH->is_an_union(type))
          {
-            size_t found_square_bracket = type_string.find("[");
+            size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
+            {
                type_string.insert(found_square_bracket, "(*)");
+            }
             else
+            {
                type_string = type_string + "*";
+            }
          }
          else
+         {
             type_string = type_string + "*";
+         }
          if(offset_str == "0")
+         {
             return "(*((" + type_string + ")(" + this->operator()(base) + ")))" + "[" + this->operator()(index) + "]";
+         }
          else
-            return "(*((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + offset_str + ")))" + "[" + this->operator()(index) + "]";
+         {
+            return "(*((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + offset_str + ")))" +
+                   "[" + this->operator()(index) + "]";
+         }
       }
       else
+      {
          return this->operator()(array) + "[" + this->operator()(index) + "]";
+      }
    }
    if(BH->is_a_component_ref(var))
    {
@@ -99,20 +115,29 @@ std::string std_var_pp_functor::operator()(unsigned int var) const
          unsigned int offset = BH->get_mem_ref_offset(pointed);
          unsigned int type = BH->get_type(pointed);
          std::string type_string = BH->print_type(type);
-         if(BH->is_an_array(type))
+         if(BH->is_an_array(type) && !BH->is_a_struct(type) && !BH->is_an_union(type))
          {
-            size_t found_square_bracket = type_string.find("[");
+            size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
+            {
                type_string.insert(found_square_bracket, "(*)");
+            }
             else
+            {
                type_string = type_string + "*";
+            }
          }
          else
+         {
             type_string = type_string + "*";
-         return "((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + this->operator()(offset) + "))";
+         }
+         return "((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + this->operator()(offset) +
+                "))";
       }
       else
+      {
          return "(&(" + this->operator()(pointed) + "))";
+      }
    }
    if(BH->is_a_realpart_expr(var))
    {
@@ -129,7 +154,9 @@ std::string std_var_pp_functor::operator()(unsigned int var) const
 
 std::string pointer_var_pp_functor::operator()(unsigned int var) const
 {
-   if(pointer_based_variables.find(var) == pointer_based_variables.end() and (not BH->IsDefaultSsaName(var) or pointer_based_variables.find(BH->GetVarFromSsa(var)) == pointer_based_variables.end()))
+   if(pointer_based_variables.find(var) == pointer_based_variables.end() and
+      (not BH->IsDefaultSsaName(var) or
+       pointer_based_variables.find(BH->GetVarFromSsa(var)) == pointer_based_variables.end()))
    {
       if(BH->is_an_indirect_ref(var))
       {
@@ -137,9 +164,13 @@ std::string pointer_var_pp_functor::operator()(unsigned int var) const
          if(pointer_based_variables.find(pointer) != pointer_based_variables.end())
          {
             if(add_restrict)
+            {
                return "*__restrict__ " + BH->PrintVariable(var);
+            }
             else
+            {
                return "*" + BH->PrintVariable(var);
+            }
          }
          else
          {
@@ -161,10 +192,14 @@ std::string pointer_var_pp_functor::operator()(unsigned int var) const
       if(BH->is_an_addr_expr(var))
       {
          unsigned int pointed = BH->get_operand_from_unary_expr(var);
-         if(BH->is_an_array(pointed))
+         if(BH->is_an_array(pointed) && !BH->is_a_struct(pointed) && !BH->is_an_union(pointed))
+         {
             return this->operator()(pointed);
+         }
          else
+         {
             return "&(" + this->operator()(pointed) + ")";
+         }
       }
       if(BH->is_a_realpart_expr(var))
       {
@@ -180,16 +215,24 @@ std::string pointer_var_pp_functor::operator()(unsigned int var) const
    }
    else
    {
-      if(BH->is_an_array(var))
+      if(BH->is_an_array(var) && !BH->is_a_struct(var) && !BH->is_an_union(var))
+      {
          return BH->PrintVariable(var);
+      }
       else if(add_restrict)
+      {
          return "*__restrict__ " + BH->PrintVariable(var);
+      }
       else
+      {
          return "*" + BH->PrintVariable(var);
+      }
    }
 }
 
-address_var_pp_functor::address_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, const CustomSet<unsigned int> pointer_vars) : addr_based_variables(vars), pointer_based_variables(pointer_vars), BH(_BH)
+address_var_pp_functor::address_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars,
+                                               const CustomSet<unsigned int> pointer_vars)
+    : addr_based_variables(vars), pointer_based_variables(pointer_vars), BH(_BH)
 {
 }
 
@@ -212,10 +255,14 @@ std::string address_var_pp_functor::operator()(unsigned int var) const
    {
       if(addr_based_variables.find(var) != addr_based_variables.end())
       {
-         if(BH->is_an_array(var))
+         if(BH->is_an_array(var) && !BH->is_a_struct(var) && !BH->is_an_union(var))
+         {
             return BH->PrintVariable(var);
+         }
          else
+         {
             return "&" + BH->PrintVariable(var);
+         }
       }
       else
       {
@@ -231,9 +278,13 @@ std::string isolated_var_pp_functor::operator()(unsigned int var) const
    if(BH->is_an_indirect_ref(var))
    {
       if(repl_var == var)
+      {
          return var_string;
+      }
       else
+      {
          return BH->PrintVariable(var);
+      }
    }
    if(BH->is_an_array_ref(var))
    {
@@ -246,23 +297,36 @@ std::string isolated_var_pp_functor::operator()(unsigned int var) const
          unsigned int type = BH->get_type(array);
          std::string offset_str = this->operator()(offset);
          std::string type_string = BH->print_type(type);
-         if(BH->is_an_array(type))
+         if(BH->is_an_array(type) && !BH->is_a_struct(type) && !BH->is_an_union(type))
          {
-            size_t found_square_bracket = type_string.find("[");
+            size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
+            {
                type_string.insert(found_square_bracket, "(*)");
+            }
             else
+            {
                type_string = type_string + "*";
+            }
          }
          else
+         {
             type_string = type_string + "*";
+         }
          if(offset_str == "0")
+         {
             return "(*((" + type_string + ")(" + this->operator()(base) + ")))" + "[" + this->operator()(index) + "]";
+         }
          else
-            return "(*((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + offset_str + ")))" + "[" + this->operator()(index) + "]";
+         {
+            return "(*((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + offset_str + ")))" +
+                   "[" + this->operator()(index) + "]";
+         }
       }
       else
+      {
          return this->operator()(array) + "[" + this->operator()(index) + "]";
+      }
    }
    if(BH->is_a_component_ref(var))
    {
@@ -279,20 +343,29 @@ std::string isolated_var_pp_functor::operator()(unsigned int var) const
          unsigned int offset = BH->get_mem_ref_offset(pointed);
          unsigned int type = BH->get_type(pointed);
          std::string type_string = BH->print_type(type);
-         if(BH->is_an_array(type))
+         if(BH->is_an_array(type) && !BH->is_a_struct(type) && !BH->is_an_union(type))
          {
-            size_t found_square_bracket = type_string.find("[");
+            size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
+            {
                type_string.insert(found_square_bracket, "(*)");
+            }
             else
+            {
                type_string = type_string + "*";
+            }
          }
          else
+         {
             type_string = type_string + "*";
-         return "((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + this->operator()(offset) + "))";
+         }
+         return "((" + type_string + ")((unsigned char*)" + this->operator()(base) + " + " + this->operator()(offset) +
+                "))";
       }
       else
+      {
          return "(&(" + this->operator()(pointed) + "))";
+      }
    }
    if(BH->is_a_realpart_expr(var))
    {
@@ -305,7 +378,11 @@ std::string isolated_var_pp_functor::operator()(unsigned int var) const
       return "__imag__ " + this->operator()(complex);
    }
    if(repl_var == var)
+   {
       return var_string;
+   }
    else
+   {
       return BH->PrintVariable(var);
+   }
 }

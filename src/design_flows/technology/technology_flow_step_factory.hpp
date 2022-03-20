@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -70,7 +70,8 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   TechnologyFlowStepFactory(const technology_managerRef TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   TechnologyFlowStepFactory(const technology_managerRef TM, const target_deviceRef target,
+                             const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -86,6 +87,6 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
     * Create a scheduling design flow step
     * @param technology_design_flow_step_type is the type of step to be created
     */
-   DesignFlowStepRef CreateTechnologyFlowStep(const TechnologyFlowStep_Type hls_flow_step_type) const;
+   DesignFlowStepRef CreateTechnologyFlowStep(const TechnologyFlowStep_Type technology_flow_step_type) const;
 };
 #endif

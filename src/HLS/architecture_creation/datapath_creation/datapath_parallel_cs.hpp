@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,7 +63,9 @@ class datapath_parallel_cs : public classic_datapath
     * @param memory_modules
     * @param circuit
     */
-   void manage_extern_global_port_parallel(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit);
+   void manage_extern_global_port_parallel(const structural_managerRef SM,
+                                           const CustomOrderedSet<structural_objectRef>& memory_modules,
+                                           const structural_objectRef circuit);
 
    /**
     * @brief connect datapath with each kernel
@@ -81,14 +83,15 @@ class datapath_parallel_cs : public classic_datapath
    /**
     * Adds the input/output ports of the module
     */
-   virtual void add_ports();
+   virtual void add_ports() override;
 
    /**
     * @brief ComputeHLSRelationships datapath need kernel in order to be created
     * @param relationship_type
     * @return
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * @brief for each port resize it depending on the type of bus port
@@ -108,18 +111,19 @@ class datapath_parallel_cs : public classic_datapath
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   datapath_parallel_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   datapath_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                        const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor.
     */
-   virtual ~datapath_parallel_cs();
+   virtual ~datapath_parallel_cs() override;
 
    /**
     * @brief InternalExec
     * @return
     */
-   DesignFlowStep_Status InternalExec();
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif // DATAPATH_PARALLEL_CS_H

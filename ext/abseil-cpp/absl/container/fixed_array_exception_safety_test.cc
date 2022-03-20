@@ -23,6 +23,7 @@
 #include "absl/base/internal/exception_safety_testing.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 namespace {
 
@@ -149,8 +150,7 @@ TEST(FixedArrayExceptionSafety, InitListConstructorWithAlloc) {
 
 template <typename FixedArrT>
 testing::AssertionResult ReadMemory(FixedArrT* fixed_arr) {
-  // Marked volatile to prevent optimization. Used for running asan tests.
-  volatile int sum = 0;
+  int sum = 0;
   for (const auto& thrower : *fixed_arr) {
     sum += thrower.Get();
   }
@@ -195,6 +195,7 @@ TEST(FixedArrayExceptionSafety, FillWithAlloc) {
 
 }  // namespace
 
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_HAVE_EXCEPTIONS

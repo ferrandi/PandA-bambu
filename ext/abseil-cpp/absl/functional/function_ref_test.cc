@@ -14,6 +14,7 @@
 
 #include "absl/functional/function_ref.h"
 
+#include <functional>
 #include <memory>
 
 #include "gmock/gmock.h"
@@ -22,6 +23,7 @@
 #include "absl/memory/memory.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace {
 
 void RunFun(FunctionRef<void()> f) { f(); }
@@ -252,4 +254,5 @@ TEST(FunctionRef, PassByValueTypes) {
 }
 
 }  // namespace
+ABSL_NAMESPACE_END
 }  // namespace absl

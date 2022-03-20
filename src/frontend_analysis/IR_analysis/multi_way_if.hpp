@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,14 +58,6 @@ REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_node);
 //@}
 
-/// STL include
-#include <deque>
-#include <list>
-#include <string>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
 /**
  * Structure the original short circuit
  */
@@ -86,51 +78,52 @@ class multi_way_if : public FunctionFrontendFlowStep
 
    /**
     * Merge two basic blocks both ending with gimple_cond_K
-    * @param pred is the first basic block
+    * @param pred_bb is the first basic block
     * @param curr_bb is the second basic block
     */
-   void MergeCondCond(unsigned int pred, unsigned int curr_bb);
+   void MergeCondCond(const blocRef& pred_bb, const blocRef& curr_bb);
 
    /**
     * Build the gimple_multi_way_if by mergin a gimple_cond with a gimple_multi_way_if
     * @param pred_bb is the basic block containing the gimple_cond
     * @param second_bb is the basic block containg the gimple_multi_way_if
     */
-   void MergeCondMulti(const unsigned int pred_bb, const unsigned int curr_bb);
+   void MergeCondMulti(const blocRef& pred_bb, const blocRef& curr_bb);
 
    /**
     * Merge a gimple_cond in a gimple_multi_way_if
     * @param pred_bb is the basic block containing the gimple_multi_way_if
     * @param curr_bb is the basic block containing the gimple_cond
     */
-   void MergeMultiCond(const unsigned int pred_bb, const unsigned int curr_bb);
+   void MergeMultiCond(const blocRef& pred_bb, const blocRef& curr_bb);
 
    /**
     * Merge two gimple_multi_way_if in a single one
     * @param pred_bb is the basic block containing the first gimple_multi_way_if
     * @param curr_bb is the basic block containing the second gimple multi_way_if
     */
-   void MergeMultiMulti(const unsigned int pred_bb, const unsigned int curr_bb);
+   void MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_bb);
 
    /**
     * Update the basic block control flow graph data structure
     * @param pred_bb is the predecessor basic block
     * @param curr_bb is the current basic block
     */
-   void UpdateCfg(unsigned int pred_bb, unsigned int curr_bb);
+   void UpdateCfg(const blocRef& pred_bb, const blocRef& curr_bb);
 
    /**
     * Insert a basic block on an edge
     * @param pred_bb is the index of the first basic block
     * @param succ_bb is the index of the second basic block
     */
-   void FixCfg(const unsigned int pred_bb, const unsigned int succ_bb);
+   void FixCfg(const blocRef& pred_bb, const blocRef& succ_bb);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -140,7 +133,8 @@ class multi_way_if : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   multi_way_if(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   multi_way_if(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id,
+                const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

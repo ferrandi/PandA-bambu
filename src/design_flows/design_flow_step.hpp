@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -112,7 +112,8 @@ enum class DesignFlowStep_Status
 class DesignFlowStep
 {
  protected:
-   /// True if this step represents a composition of design flow steps (e.g., a flow); must be set by specialized constructors
+   /// True if this step represents a composition of design flow steps (e.g., a flow); must be set by specialized
+   /// constructors
    bool composed;
 
    /// The design flow manager
@@ -189,7 +190,8 @@ class DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   virtual void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) = 0;
+   virtual void ComputeRelationships(DesignFlowStepSet& relationship,
+                                     const DesignFlowStep::RelationshipType relationship_type) = 0;
 
    /**
     * Write the label for a dot graph
@@ -224,7 +226,7 @@ class DesignFlowStep
     */
    virtual void PrintFinalIR() const;
 };
-typedef refcount<DesignFlowStep> DesignFlowStepRef;
-typedef refcount<const DesignFlowStep> DesignFlowStepConstRef;
+using DesignFlowStepRef = refcount<DesignFlowStep>;
+using DesignFlowStepConstRef = refcount<const DesignFlowStep>;
 
 #endif

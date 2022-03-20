@@ -1,5 +1,5 @@
 /* Specific functions for bambu architecture.
-   Copyright (C) 2016-2020 Politecnico di Milano (Italy).
+   Copyright (C) 2016-2022 Politecnico di Milano (Italy).
    This specific code has been derived from libgcc from GCC.
    The GCC licence and its exception applies.
 */
@@ -26,7 +26,8 @@ a copy of the GCC Runtime Library Exception along with this program;
 see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 <http://www.gnu.org/licenses/>.  */
 
-typedef union {
+typedef union
+{
    float value;
    unsigned int u_value;
 } local_float_shape_type;

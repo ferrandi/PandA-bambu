@@ -12,6 +12,7 @@ lib_asnparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS \
    -I$(top_srcdir)/src/intermediate_representations/aadl_asn \
    -I$(top_srcdir)/src/parser \
+   -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
 

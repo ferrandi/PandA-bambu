@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,8 +68,10 @@
 /// utility include
 #include "string_manipulation.hpp" // for GET_CLASS
 
-HDLVarDeclFix::HDLVarDeclFix(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : VarDeclFix(_AppM, _function_id, _design_flow_manager, _parameters, HDL_VAR_DECL_FIX), hdl_writer_type(static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)))
+HDLVarDeclFix::HDLVarDeclFix(const application_managerRef _AppM, unsigned int _function_id,
+                             const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : VarDeclFix(_AppM, _function_id, _design_flow_manager, _parameters, HDL_VAR_DECL_FIX),
+      hdl_writer_type(static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -79,9 +81,21 @@ HDLVarDeclFix::~HDLVarDeclFix() = default;
 DesignFlowStep_Status HDLVarDeclFix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
+   /// Already considered decl_node
+   CustomUnorderedSet<unsigned int> already_examinated_decls;
+
+   /// Already found variable and parameter names
+   CustomUnorderedSet<std::string> already_examinated_names;
+
+   /// Already found type names
+   CustomUnorderedSet<std::string> already_examinated_type_names;
+
+   /// Already visited address expression (used to avoid infinite recursion)
+   CustomUnorderedSet<unsigned int> already_visited_ae;
 
    /// Preload backend names
-   const auto hdl_writer = language_writer::create_writer(hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_target()->get_technology_manager(), parameters);
+   const auto hdl_writer = language_writer::create_writer(
+       hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_target()->get_technology_manager(), parameters);
    const auto hdl_reserved_names = hdl_writer->GetHDLReservedNames();
    already_examinated_names.insert(hdl_reserved_names.begin(), hdl_reserved_names.end());
 
@@ -98,15 +112,17 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    tree_helper::get_mangled_fname(fd, fname);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
 
-   if(HLSMgr && !HLSMgr->design_interface.empty() && HLSMgr->design_interface.find(fname) != HLSMgr->design_interface.end())
+   if(HLSMgr && !HLSMgr->design_interface.empty() &&
+      HLSMgr->design_interface.find(fname) != HLSMgr->design_interface.end())
    {
-      for(auto arg : fd->list_of_args)
+      for(const auto& arg : fd->list_of_args)
       {
          auto a = GetPointer<parm_decl>(GET_NODE(arg));
          auto argName = GET_NODE(a->name);
          THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
          const std::string argName_string = GetPointer<identifier_node>(argName)->strg;
-         recursive_examinate(arg);
+         recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
+                             already_visited_ae);
          argName = GET_NODE(a->name);
          THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
          const std::string argName_string_new = GetPointer<identifier_node>(argName)->strg;
@@ -116,12 +132,32 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
             auto di_value = di_it->second;
             HLSMgr->design_interface.find(fname)->second.erase(di_it);
             HLSMgr->design_interface.find(fname)->second[argName_string_new] = di_value;
-            if(HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() && HLSMgr->design_interface_arraysize.find(fname)->second.find(argName_string) != HLSMgr->design_interface_arraysize.find(fname)->second.end())
+            if(HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() &&
+               HLSMgr->design_interface_arraysize.find(fname)->second.find(argName_string) !=
+                   HLSMgr->design_interface_arraysize.find(fname)->second.end())
             {
                auto dia_it = HLSMgr->design_interface_arraysize.find(fname)->second.find(argName_string);
                auto dia_value = dia_it->second;
                HLSMgr->design_interface_arraysize.find(fname)->second.erase(dia_it);
                HLSMgr->design_interface_arraysize.find(fname)->second[argName_string_new] = dia_value;
+            }
+            if(HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() &&
+               HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string) !=
+                   HLSMgr->design_interface_attribute2.find(fname)->second.end())
+            {
+               auto dia_it = HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string);
+               auto dia_value = dia_it->second;
+               HLSMgr->design_interface_attribute2.find(fname)->second.erase(dia_it);
+               HLSMgr->design_interface_attribute2.find(fname)->second[argName_string_new] = dia_value;
+            }
+            if(HLSMgr->design_interface_attribute3.find(fname) != HLSMgr->design_interface_attribute3.end() &&
+               HLSMgr->design_interface_attribute3.find(fname)->second.find(argName_string) !=
+                   HLSMgr->design_interface_attribute3.find(fname)->second.end())
+            {
+               auto dia_it = HLSMgr->design_interface_attribute3.find(fname)->second.find(argName_string);
+               auto dia_value = dia_it->second;
+               HLSMgr->design_interface_attribute3.find(fname)->second.erase(dia_it);
+               HLSMgr->design_interface_attribute3.find(fname)->second[argName_string_new] = dia_value;
             }
             auto dit_it = HLSMgr->design_interface_typename.find(fname)->second.find(argName_string);
             auto dit_value = dit_it->second;
@@ -164,13 +200,14 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    }
    else
    {
-      for(auto arg : fd->list_of_args)
-         recursive_examinate(arg);
+      for(const auto& arg : fd->list_of_args)
+      {
+         recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
+                             already_visited_ae);
+      }
    }
 
-   VarDeclFix::InternalExec();
-
-   return DesignFlowStep_Status::SUCCESS;
+   return VarDeclFix::InternalExec();
 }
 
 const std::string HDLVarDeclFix::Normalize(const std::string& identifier) const

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -156,7 +156,7 @@ void util_print_cpu_stats(std::ostream& os)
    struct rlimit rlp
    {
    };
-   int text, data;
+   int text, data, stack;
    rlim_t vm_limit, vm_soft_limit;
    long double user, system, scale;
    long int temp;
@@ -184,8 +184,8 @@ void util_print_cpu_stats(std::ostream& os)
 
    /* Get usage stats */
    (void)getrusage(RUSAGE_SELF, &rusage);
-   user = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec / 1000000;
-   system = rusage.ru_stime.tv_sec + rusage.ru_stime.tv_usec / 1000000;
+   user = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec / 1000000.L;
+   system = rusage.ru_stime.tv_sec + rusage.ru_stime.tv_usec / 1000000.L;
    scale = (user + system) * 100.0L;
    if(scale == 0.0L)
    {
@@ -199,9 +199,11 @@ void util_print_cpu_stats(std::ostream& os)
    os << "System time " << system << " seconds\n\n";
 
    text = (int)(rusage.ru_ixrss / scale + 0.5L);
-   data = (int)((rusage.ru_idrss + rusage.ru_isrss) / scale + 0.5L);
+   data = (int)((rusage.ru_idrss) / scale + 0.5L);
+   stack = (int)((rusage.ru_isrss) / scale + 0.5L);
    os << "Average resident text size       = " << text << "K\n";
-   os << "Average resident data + stack size = " << data << "K\n";
+   os << "Average resident data size = " << data << "K\n";
+   os << "Average resident stack size = " << stack << "K\n";
    os << "Maximum resident size            = " << rusage.ru_maxrss / 2 << "K\n\n";
    os << "Virtual text size                = " << vm_text << "K\n";
    os << "Virtual data size                = " << vm_init_data + vm_uninit_data + vm_sbrk_data << "K\n";

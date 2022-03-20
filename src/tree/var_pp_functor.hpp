@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,14 +68,15 @@ struct var_pp_functor
    }
 
    /**
-    * This functor returns a string representing the variable (usually the name of the variable). This can be used both in variable declaration and in variable use.
-    * The string returned depends on the type of manipulation performed by the backend layer.
+    * This functor returns a string representing the variable (usually the name of the variable). This can be used both
+    * in variable declaration and in variable use. The string returned depends on the type of manipulation performed by
+    * the backend layer.
     * @param var is the nodeid of the variable that should be analyzed.
     */
    virtual std::string operator()(unsigned int var) const = 0;
 };
-typedef refcount<var_pp_functor> var_pp_functorRef;
-typedef refcount<const var_pp_functor> var_pp_functorConstRef;
+using var_pp_functorRef = refcount<var_pp_functor>;
+using var_pp_functorConstRef = refcount<const var_pp_functor>;
 
 /**
  * Standard functor that returns the name of a variable
@@ -113,7 +114,8 @@ struct pointer_var_pp_functor : public var_pp_functor
     * @param vars is the reference to the set of variables for which a star should be returned along with their name.
     * @param add_restrict controls the addition to the parameters declarations of the __restrict__ keyword.
     */
-   pointer_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, bool _add_restrict = false);
+   pointer_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars,
+                          bool _add_restrict = false);
 
    /**
     * Destructor
@@ -151,7 +153,8 @@ struct address_var_pp_functor : public var_pp_functor
     * @param BH is the behavioral helper.
     * @param vars is the reference to the set of variables for which a star should be returned along with their name.
     */
-   address_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, const CustomSet<unsigned int> pointer_vars);
+   address_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars,
+                          const CustomSet<unsigned int> pointer_vars);
 
    /// Destructor
    ~address_var_pp_functor() override = default;
@@ -183,7 +186,8 @@ struct isolated_var_pp_functor : public var_pp_functor
 
  public:
    /// Constructor
-   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, std::string _var_string) : BH(_BH), repl_var(_repl_var), var_string(std::move(_var_string))
+   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, const std::string& _var_string)
+       : BH(_BH), repl_var(_repl_var), var_string(_var_string)
    {
    }
 

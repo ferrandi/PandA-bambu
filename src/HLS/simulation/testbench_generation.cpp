@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,24 +48,30 @@
 #include "custom_set.hpp"
 #include <tuple>
 
-TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_GENERATION)
+TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                         const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_GENERATION)
 {
    composed = true;
 }
 
 TestbenchGeneration::~TestbenchGeneration() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
 #ifndef NDEBUG
-         bool interface = interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION or
+         bool interface = interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or
+                          interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION or
+                          interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION or
                           interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION
 #if HAVE_TASTE
                           or interface_type == HLSFlowStep_Type::TASTE_INTERFACE_GENERATION
@@ -73,7 +79,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
              ;
          THROW_ASSERT(interface, "Unexpected interface type");
 #endif
-         ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION
+         ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or
+                                            interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION or
+                                            interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION
 #if HAVE_TASTE
                                             or interface_type == HLSFlowStep_Type::TASTE_INTERFACE_GENERATION
 #endif

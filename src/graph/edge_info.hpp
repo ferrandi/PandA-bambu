@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,5 +66,5 @@ struct EdgeInfo
 /**
  * RefCount type definition of the edge_info class structure
  */
-typedef refcount<EdgeInfo> EdgeInfoRef;
+using EdgeInfoRef = refcount<EdgeInfo>;
 #endif

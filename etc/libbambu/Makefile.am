@@ -111,3 +111,45 @@ libbambu_clang7_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG7
 libbambu_clang7_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG7 -C
 endif
 
+if BUILD_I386_CLANG8
+pkglib_LIBRARIES += libbambu_clang8.a
+libbambu_clang8_a_SOURCES = $(common_libbambu_src)
+libbambu_clang8_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG8
+libbambu_clang8_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG8 -C
+endif
+
+if BUILD_I386_CLANG9
+pkglib_LIBRARIES += libbambu_clang9.a
+libbambu_clang9_a_SOURCES = $(common_libbambu_src)
+libbambu_clang9_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG9
+libbambu_clang9_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG9 -C
+endif
+
+if BUILD_I386_CLANG10
+pkglib_LIBRARIES += libbambu_clang10.a
+libbambu_clang10_a_SOURCES = $(common_libbambu_src)
+libbambu_clang10_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG10
+libbambu_clang10_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG10 -C
+endif
+
+if BUILD_I386_CLANG11
+pkglib_LIBRARIES += libbambu_clang11.a
+libbambu_clang11_a_SOURCES = $(common_libbambu_src)
+libbambu_clang11_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG11
+libbambu_clang11_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG11 -C
+endif
+
+if BUILD_I386_CLANGVVD
+pkglib_LIBRARIES += libbambu_clangvvd.a
+libbambu_clangvvd_a_SOURCES = $(common_libbambu_src)
+libbambu_clangvvd_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANGVVD
+libbambu_clangvvd_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANGVVD -C
+endif
+
+if BUILD_I386_CLANG12
+pkglib_LIBRARIES += libbambu_clang12.a
+libbambu_clang12_a_SOURCES = $(common_libbambu_src)
+libbambu_clang12_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG12
+libbambu_clang12_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG12 -C
+endif
+

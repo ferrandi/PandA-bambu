@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -90,11 +90,13 @@ static std::string GetFile(const std::string& directory, const std::string& file
    return "";
 }
 
-AadlParserData::AadlParserData(const ParameterConstRef _parameters) : parameters(_parameters), debug_level(_parameters->get_class_debug_level("AadlParser"))
+AadlParserData::AadlParserData(const ParameterConstRef _parameters)
+    : parameters(_parameters), debug_level(_parameters->get_class_debug_level("AadlParser"))
 {
 }
 
-AadlParser::AadlParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string& _file_name, const application_managerRef _AppM, const ParameterConstRef _parameters)
+AadlParser::AadlParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string& _file_name,
+                       const application_managerRef _AppM, const ParameterConstRef _parameters)
     : ParserFlowStep(_design_flow_manager, ParserFlowStep_Type::AADL, _file_name, _parameters), AppM(_AppM)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
@@ -107,7 +109,9 @@ DesignFlowStep_Status AadlParser::Exec()
    fileIO_istreamRef sname = fileIO_istream_open(file_name);
    const auto directory = GetDirectory(file_name);
    if(sname->fail())
+   {
       THROW_ERROR(std::string("FILE does not exist: ") + file_name);
+   }
    const AadlFlexLexerRef lexer(new AadlFlexLexer(parameters, sname.get(), nullptr));
    const AadlParserDataRef data(new AadlParserData(parameters));
    YYParse(data, lexer);
@@ -115,7 +119,8 @@ DesignFlowStep_Status AadlParser::Exec()
    const auto aadl_information = GetPointer<HLS_manager>(AppM)->aadl_information;
    for(const auto& system : data->system_properties)
    {
-      if(system.second.find("Source_Language") != system.second.end() and system.second.find("Source_Language")->second == "VHDL")
+      if(system.second.find("Source_Language") != system.second.end() and
+         system.second.find("Source_Language")->second == "VHDL")
       {
          if(system.second.find("Source_Text") != system.second.end())
          {
@@ -129,12 +134,18 @@ DesignFlowStep_Status AadlParser::Exec()
             {
                if(feature.second.find("Taste::InterfaceName") != feature.second.end())
                {
-                  const auto top_functions = parameters->isOption(OPT_top_functions_names) ? parameters->getOption<std::string>(OPT_top_functions_names) + STR_CST_string_separator : "";
+                  const auto top_functions =
+                      parameters->isOption(OPT_top_functions_names) ?
+                          parameters->getOption<std::string>(OPT_top_functions_names) + STR_CST_string_separator :
+                          "";
                   const auto function_name = feature.second.find("Taste::InterfaceName")->second;
-                  const auto without_quota_function_name = function_name.at(0) == '"' ? function_name.substr(1, function_name.size() - 2) : function_name;
+                  const auto without_quota_function_name =
+                      function_name.at(0) == '"' ? function_name.substr(1, function_name.size() - 2) : function_name;
                   aadl_information->top_functions_names.push_back(without_quota_function_name);
-                  const_cast<Parameter*>(parameters.get())->setOption(OPT_top_functions_names, top_functions + without_quota_function_name);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding top function " + without_quota_function_name);
+                  const_cast<Parameter*>(parameters.get())
+                      ->setOption(OPT_top_functions_names, top_functions + without_quota_function_name);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Adding top function " + without_quota_function_name);
                }
             }
          }
@@ -171,11 +182,15 @@ DesignFlowStep_Status AadlParser::Exec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found parameter " + feature.first);
             aadl_parameter.asn_type = feature.second.find(STR_CST_aadl_parameter_type)->second;
             if(aadl_parameter.asn_type.find(STR_CST_aadl_data_view) == 0)
+            {
                aadl_parameter.asn_type = aadl_parameter.asn_type.substr(std::string(STR_CST_aadl_data_view).size());
+            }
             THROW_ASSERT(feature.second.find(STR_CST_aadl_parameter_direction) != feature.second.end(), "");
             THROW_ASSERT(feature.second.find(STR_CST_aadl_parameter_endianess) != feature.second.end(), "");
-            aadl_parameter.direction = AadlInformation::AadlParameter::GetDirection(feature.second.find(STR_CST_aadl_parameter_direction)->second);
-            aadl_parameter.endianess = AadlInformation::AadlParameter::Endianess(feature.second.find(STR_CST_aadl_parameter_endianess)->second);
+            aadl_parameter.direction = AadlInformation::AadlParameter::GetDirection(
+                feature.second.find(STR_CST_aadl_parameter_direction)->second);
+            aadl_parameter.endianess = AadlInformation::AadlParameter::Endianess(
+                feature.second.find(STR_CST_aadl_parameter_endianess)->second);
             aadl_information->function_parameters[subprogram.first].push_back(aadl_parameter);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed feature " + feature.first);

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -83,19 +83,22 @@ class FunctionalUnitStep : public virtual DesignFlowStep
     * @param stage_index
     * @param constPort is the index of the constant port
     */
-   virtual void AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index,
+   virtual void AnalyzeCell(functional_unit* fu, const unsigned int prec,
+                            const std::vector<std::string>& portsize_parameters, const size_t portsize_index,
+                            const std::vector<std::string>& pipe_parameters, const size_t stage_index,
                             const unsigned int constPort, const bool is_commutative, size_t max_lut_size) = 0;
 
    /**
     * Analyze all the cells built starting from a template
     * @param fu is the corresponding functional unit
     */
-   virtual void AnalyzeFu(const technology_nodeRef fu);
+   virtual void AnalyzeFu(const technology_nodeRef f_unit);
 
    /**
     * Create a template instance to be specialized
     */
-   technology_nodeRef create_template_instance(const technology_nodeRef& fu_template, std::string& name, const target_deviceRef& device, unsigned int prec);
+   technology_nodeRef create_template_instance(const technology_nodeRef& fu_template, const std::string& name,
+                                               const target_deviceRef& device, unsigned int prec);
 
  public:
    /**
@@ -104,7 +107,8 @@ class FunctionalUnitStep : public virtual DesignFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   FunctionalUnitStep(const target_managerRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   FunctionalUnitStep(const target_managerRef target, const DesignFlowManagerConstRef design_flow_manager,
+                      const ParameterConstRef parameters);
 
    /**
     * Destructor

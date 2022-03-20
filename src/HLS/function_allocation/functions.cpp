@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,7 @@
  */
 /**
  * @file memory.cpp
- * @brief Datastructure to describe functions allocation in high-level synthesis
+ * @brief Data structure describing function allocation in high-level synthesis
  *
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -42,8 +42,14 @@
  *
  */
 #include "functions.hpp"
+#include "behavioral_helper.hpp"
+#include "constant_strings.hpp"
 #include "exceptions.hpp"
+#include "function_behavior.hpp"
+#include "hls_manager.hpp"
 #include "string_manipulation.hpp" //STR
+
+#include <boost/algorithm/string/predicate.hpp>
 
 functions::functions() = default;
 
@@ -52,7 +58,8 @@ functions::~functions() = default;
 void functions::map_shared_function(unsigned int funID_scope, const std::string& fun)
 {
    shared_functions[funID_scope].insert(fun);
-   THROW_ASSERT(proxied_functions.find(fun) == proxied_functions.end(), "function already mapped in a different scope: " + fun + "->" + STR(proxied_functions.at(fun)));
+   THROW_ASSERT(proxied_functions.find(fun) == proxied_functions.end(),
+                "function already mapped in a different scope: " + fun + "->" + STR(proxied_functions.at(fun)));
    proxied_functions[fun] = funID_scope;
 }
 
@@ -68,7 +75,8 @@ bool functions::has_shared_functions(unsigned int funID_scope) const
 
 bool functions::is_a_shared_function(unsigned int funID_scope, const std::string& fun) const
 {
-   return (has_shared_functions(funID_scope) && shared_functions.at(funID_scope).find(fun) != shared_functions.at(funID_scope).end());
+   return (has_shared_functions(funID_scope) &&
+           shared_functions.at(funID_scope).find(fun) != shared_functions.at(funID_scope).end());
 }
 
 void functions::add_shared_function_proxy(unsigned int funID_scope, const std::string& fun)
@@ -89,7 +97,8 @@ bool functions::has_proxied_shared_functions(unsigned int funID_scope) const
 
 bool functions::is_a_proxied_shared_function(unsigned int funID_scope, const std::string& fun) const
 {
-   return (has_proxied_shared_functions(funID_scope) && shared_function_proxy.at(funID_scope).find(fun) != shared_function_proxy.at(funID_scope).end());
+   return (has_proxied_shared_functions(funID_scope) &&
+           shared_function_proxy.at(funID_scope).find(fun) != shared_function_proxy.at(funID_scope).end());
 }
 
 bool functions::is_a_proxied_function(const std::string& fun) const
@@ -101,4 +110,24 @@ unsigned int functions::get_proxy_mapping(const std::string& fun) const
 {
    THROW_ASSERT(proxied_functions.find(fun) != proxied_functions.end(), "this is not a proxy function");
    return proxied_functions.at(fun);
+}
+
+std::string functions::get_function_name_cleaned(const std::string& original_function_name)
+{
+   if(original_function_name.find(STR_CST_interface_parameter_keyword) != std::string::npos &&
+      boost::algorithm::ends_with(original_function_name, "_array"))
+   {
+      return original_function_name.substr(0, original_function_name.find(STR_CST_interface_parameter_keyword) +
+                                                  std::string(STR_CST_interface_parameter_keyword).length());
+   }
+   else
+   {
+      return original_function_name;
+   }
+}
+
+std::string functions::get_function_name_cleaned(unsigned int funID, const HLS_managerRef HLSMgr)
+{
+   const auto original_function_name = HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name();
+   return get_function_name_cleaned(original_function_name);
 }

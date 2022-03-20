@@ -10,9 +10,9 @@
  *                              PandA Project
  *                 URL: http://trac.ws.dei.polimi.it/panda
  *                      Microarchitectures Laboratory
- *                       Politecnico di Milano - DEI
+ *                       Politecnico di Milano - DEIB
  *             ***********************************************
- *              Copyright (c) 2020 Politecnico di Milano
+ *              Copyright (c) 2020-2022 Politecnico di Milano
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,14 +29,14 @@
  *   Free Software Foundation, Inc.,
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA.
  *
-*/
+ */
 /**
  * @file Write_none_registered.cpp
  * @brief Snippet for the Write_none_registered dynamic generator.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 
 std::cout << "integer ii=0;\n";
 std::cout << "reg [" << _ports_out[1].type_size << "-1:0] " << _ports_out[1].name << ";\n";
@@ -47,30 +47,47 @@ std::cout << "always @(posedge clock 1RESET_EDGE)\n";
 std::cout << "begin\n";
 std::cout << "  if (1RESET_VALUE)\n";
 std::cout << "    " << _ports_out[1].name << " <= 0;\n";
-std::cout << "  else if(|"<<_ports_in[2].name<<")\n";
+std::cout << "  else if(|" << _ports_in[2].name << ")\n";
 std::cout << "    " << _ports_out[1].name << " <= " << _ports_out[1].name << "_0;\n";
 std::cout << "end\n";
 
 std::cout << "always @(*)\n";
 std::cout << "begin\n";
 std::cout << "  " << _ports_out[1].name << "_0 = 0;\n";
-std::cout << "  for(ii=0; ii<PORTSIZE_"<< _ports_in[3].name << "; ii=ii+1)\n";
+std::cout << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
 std::cout << "  begin\n";
-std::cout << "    " << _ports_out[1].name << "_0 = (" << _ports_in[3].name <<"[(BITSIZE_" << _ports_in[3].name <<")*ii+:BITSIZE_" << _ports_in[3].name<<"]>=" << _ports_out[1].type_size << ")?" << _ports_in[4].name <<"[(BITSIZE_" << _ports_in[4].name <<")*ii+:BITSIZE_" << _ports_in[4].name<<"]:(" << _ports_out[1].name << "_0^((((BITSIZE_" << _ports_in[4].name <<">=" << _ports_out[1].type_size << "?" << _ports_in[4].name <<"[(BITSIZE_" << _ports_in[4].name <<")*ii+:BITSIZE_" << _ports_in[4].name<<"]:{{(" << _ports_out[1].type_size << "<BITSIZE_" << _ports_in[4].name <<" ? 1 : " << _ports_out[1].type_size << "-BITSIZE_" << _ports_in[4].name <<"){1'b0}}," << _ports_in[4].name <<"[(BITSIZE_" << _ports_in[4].name <<")*ii+:BITSIZE_" << _ports_in[4].name<<"]})<<" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8)^" << _ports_out[1].name << "_0) & (((" << _ports_in[3].name <<"[(BITSIZE_" << _ports_in[3].name <<")*ii+:BITSIZE_" << _ports_in[3].name<<"]+" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8)>" << _ports_out[1].type_size << ") ? ((({(" << _ports_out[1].type_size << "){1'b1}})>>(" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8))<<(" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8)) : ((((({(" << _ports_out[1].type_size << "){1'b1}})>>(" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8))<<(" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8))<<(" << _ports_out[1].type_size << "-" << _ports_in[3].name <<"[(BITSIZE_" << _ports_in[3].name <<")*ii+:BITSIZE_" << _ports_in[3].name<<"]-" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8))>>(" << _ports_out[1].type_size << "-" << _ports_in[3].name <<"[(BITSIZE_" << _ports_in[3].name <<")*ii+:BITSIZE_" << _ports_in[3].name<<"]-" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8)))));\n";
+std::cout << "    " << _ports_out[1].name << "_0 = (" << _ports_in[3].name << "[(BITSIZE_" << _ports_in[3].name
+          << ")*ii+:BITSIZE_" << _ports_in[3].name << "]>=" << _ports_out[1].type_size << ")?" << _ports_in[4].name
+          << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name << "]:(" << _ports_out[1].name
+          << "_0^((((BITSIZE_" << _ports_in[4].name << ">=" << _ports_out[1].type_size << "?" << _ports_in[4].name
+          << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name << "]:{{("
+          << _ports_out[1].type_size << "<BITSIZE_" << _ports_in[4].name << " ? 1 : " << _ports_out[1].type_size
+          << "-BITSIZE_" << _ports_in[4].name << "){1'b0}}," << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
+          << ")*ii+:BITSIZE_" << _ports_in[4].name << "]})<<" << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name
+          << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8)^" << _ports_out[1].name << "_0) & (((" << _ports_in[3].name
+          << "[(BITSIZE_" << _ports_in[3].name << ")*ii+:BITSIZE_" << _ports_in[3].name << "]+" << _ports_in[5].name
+          << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8)>"
+          << _ports_out[1].type_size << ") ? ((({(" << _ports_out[1].type_size << "){1'b1}})>>(" << _ports_in[5].name
+          << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8))<<("
+          << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
+          << "]*8)) : ((((({(" << _ports_out[1].type_size << "){1'b1}})>>(" << _ports_in[5].name << "[(BITSIZE_"
+          << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8))<<(" << _ports_in[5].name
+          << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8))<<("
+          << _ports_out[1].type_size << "-" << _ports_in[3].name << "[(BITSIZE_" << _ports_in[3].name
+          << ")*ii+:BITSIZE_" << _ports_in[3].name << "]-" << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name
+          << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8))>>(" << _ports_out[1].type_size << "-" << _ports_in[3].name
+          << "[(BITSIZE_" << _ports_in[3].name << ")*ii+:BITSIZE_" << _ports_in[3].name << "]-" << _ports_in[5].name
+          << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8)))));\n";
 std::cout << "  end\n";
 std::cout << "end\n";
-
 
 std::cout << "always @(posedge clock 1RESET_EDGE)\n";
 std::cout << "begin\n";
 std::cout << "  if (1RESET_VALUE)\n";
 std::cout << "    " << _ports_out[0].name << " <= 0;\n";
 std::cout << "  else\n";
-std::cout << "    for(ii=0; ii<PORTSIZE_"<< _ports_in[3].name << "; ii=ii+1)\n";
+std::cout << "    for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
 std::cout << "    begin\n";
-std::cout << "      " << _ports_out[0].name << "[ii] <= "<< _ports_in[2].name <<"[ii];" <<std::endl;
+std::cout << "      " << _ports_out[0].name << "[ii] <= " << _ports_in[2].name << "[ii];" << std::endl;
 std::cout << "    end\n";
 std::cout << "end\n";
-
-
-

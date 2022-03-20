@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,9 +53,11 @@
 #include <boost/lexical_cast.hpp>          // for lexical_cast
 #include <iostream>                        // for ios_base::failure
 
-SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _represented_frontend_flow_step, const DesignFlowManagerConstRef _design_flow_manager,
-                                                                         const ParameterConstRef _parameters)
-    : ApplicationFrontendFlowStep(_AppM, SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP, _design_flow_manager, _parameters), represented_frontend_flow_step_type(_represented_frontend_flow_step)
+SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(
+    const application_managerRef _AppM, const FrontendFlowStepType _represented_frontend_flow_step,
+    const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP, _design_flow_manager, _parameters),
+      represented_frontend_flow_step_type(_represented_frontend_flow_step)
 {
    composed = true;
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -63,18 +65,20 @@ SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(const a
 
 SymbolicApplicationFrontendFlowStep::~SymbolicApplicationFrontendFlowStep() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> SymbolicApplicationFrontendFlowStep::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+SymbolicApplicationFrontendFlowStep::ComputeFrontendRelationships(
+    const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(represented_frontend_flow_step_type, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(represented_frontend_flow_step_type, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
 #if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_POINTER_CALLGRAPH_COMPUTATION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FUNCTION_POINTER_CALLGRAPH_COMPUTATION, WHOLE_APPLICATION));
 #endif
          break;
       }
@@ -102,9 +106,11 @@ const std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
    return "SymbolicApplicationFrontendFlowStep(" + EnumToKindText(represented_frontend_flow_step_type) + ")";
 }
 
-const std::string SymbolicApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType represented_frontend_flow_step_type)
+const std::string
+SymbolicApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType represented_frontend_flow_step_type)
 {
-   return "Frontend::" + boost::lexical_cast<std::string>(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" + boost::lexical_cast<std::string>(represented_frontend_flow_step_type) + ")";
+   return "Frontend::" + boost::lexical_cast<std::string>(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" +
+          boost::lexical_cast<std::string>(represented_frontend_flow_step_type) + ")";
 }
 
 const std::string SymbolicApplicationFrontendFlowStep::GetSignature() const

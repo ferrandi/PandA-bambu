@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -156,7 +156,8 @@ class liveness
     * @param first is the first iterator of a set to be merged in the live in
     * @param last is the last iterator of a set to be merged in the live in
     */
-   void set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first, const CustomOrderedSet<unsigned int>::const_iterator last);
+   void set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
+                    const CustomOrderedSet<unsigned int>::const_iterator last);
 
    /**
     * erase a variable from the live in
@@ -185,7 +186,8 @@ class liveness
     * @param first is the first iterator of a set to be merged in the live out
     * @param last is the last iterator of a set to be merged in the live out
     */
-   void set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first, const CustomOrderedSet<unsigned int>::const_iterator last);
+   void set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
+                     const CustomOrderedSet<unsigned int>::const_iterator last);
 
    /**
     * erase a variable from the live out
@@ -359,7 +361,12 @@ class liveness
    bool are_in_conflict(vertex op1, vertex op2) const;
 
    // activate conflicts with reachability computation
-   void compute_conflicts_with_reachability(hlsRef _HLS)
+   // void compute_conflicts_with_reachability(hlsRef _HLS)
+   //{
+   //   HLS = _HLS;
+   //}
+
+   void set_HLS(hlsRef _HLS)
    {
       HLS = _HLS;
    }
@@ -402,6 +409,6 @@ class liveness
 };
 
 // refcount definition for class
-typedef refcount<liveness> livenessRef;
+using livenessRef = refcount<liveness>;
 
 #endif

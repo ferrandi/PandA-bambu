@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,8 +45,13 @@
 #include "design_flow_manager.hpp" // for DesignFlowStepRef, DesignF...
 #include <ostream>                 // for operator<<, basic_ostream
 
-DesignFlowStep::DesignFlowStep(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : composed(false), design_flow_manager(_design_flow_manager), parameters(_parameters), debug_level(parameters->getOption<int>(OPT_debug_level)), output_level(parameters->getOption<int>(OPT_output_level))
+DesignFlowStep::DesignFlowStep(const DesignFlowManagerConstRef _design_flow_manager,
+                               const ParameterConstRef _parameters)
+    : composed(false),
+      design_flow_manager(_design_flow_manager),
+      parameters(_parameters),
+      debug_level(parameters->getOption<int>(OPT_debug_level)),
+      output_level(parameters->getOption<int>(OPT_output_level))
 {
 }
 

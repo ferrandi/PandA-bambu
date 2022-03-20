@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,7 +76,7 @@ class XMLDomParser
     * @param name is the name of the string
     * @param string_to_be_parsed is the string to be parsed
     */
-   XMLDomParser(std::string name, std::string string_to_be_parsed);
+   XMLDomParser(const std::string& name, const std::string& string_to_be_parsed);
 
    /**
     * Constructor from file
@@ -103,5 +103,5 @@ class XMLDomParser
     */
    const xml_documentRef get_document() const;
 };
-typedef refcount<XMLDomParser> XMLDomParserRef;
+using XMLDomParserRef = refcount<XMLDomParser>;
 #endif

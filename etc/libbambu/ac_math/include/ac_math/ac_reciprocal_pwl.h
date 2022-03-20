@@ -141,7 +141,8 @@ using namespace std;
 
 namespace ac_math
 {
-   template <ac_q_mode pwl_Q = AC_TRN, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO>
+   template <ac_q_mode pwl_Q = AC_TRN, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS,
+             ac_q_mode outQ, ac_o_mode outO>
    void ac_reciprocal_pwl(const ac_fixed<W, I, S, Q, O>& input, ac_fixed<outW, outI, outS, outQ, outO>& output)
    {
       // Use a macro to activate the AC_ASSERT
@@ -156,30 +157,33 @@ namespace ac_math
       ac_fixed<outW, outI, outS, outQ, outO> output_temp;
 
       // Start of code outputted by ac_reciprocal_pwl_lutgen.cpp
-      // Note that the LUT generator file also outputs values for x_max_lut (upper limit of PWL domain) and sc_constant_lut (scaling factor used to scale the input from
-      // 0 to n_segments_lut). However, these values aren't explicitly considered in the header file because it has been optimized to work with an 8-segment PWL model that
-      // covers the domain of [0.5, 1). For other PWL implementations, the user will probably have to take these values into account explicitly. Guidelines for doing so
-      // are given in the comments.
-      // In addition, some of the slope values here are modified slightly in order to ensure monotonicity of the PWL function as the input crosses segment boundaries.
-      // The user might want to take care to ensure that for their own PWL versions.
+      // Note that the LUT generator file also outputs values for x_max_lut (upper limit of PWL domain) and
+      // sc_constant_lut (scaling factor used to scale the input from 0 to n_segments_lut). However, these values aren't
+      // explicitly considered in the header file because it has been optimized to work with an 8-segment PWL model that
+      // covers the domain of [0.5, 1). For other PWL implementations, the user will probably have to take these values
+      // into account explicitly. Guidelines for doing so are given in the comments. In addition, some of the slope
+      // values here are modified slightly in order to ensure monotonicity of the PWL function as the input crosses
+      // segment boundaries. The user might want to take care to ensure that for their own PWL versions.
 
       // Initialization for PWL LUT
       static const unsigned n_segments_lut = 8;
-      // The number of fractional bits for the LUT values is chosen by first finding the maximum absolute error over the domain of the PWL
-      // when double-precision values are used for LUT values. This error will correspond to a number of fractional bits that are always
-      // guaranteed to be error-free, for fixed-point PWL outputs.
-      // This number of fractional bits is found out by the formula:
-      // nbits = abs(ceil(log2(abs_error_max)) - 1.
-      // The number of fractional bits hereafter used to store the LUT values is nbits + 2.
+      // The number of fractional bits for the LUT values is chosen by first finding the maximum absolute error over the
+      // domain of the PWL when double-precision values are used for LUT values. This error will correspond to a number
+      // of fractional bits that are always guaranteed to be error-free, for fixed-point PWL outputs. This number of
+      // fractional bits is found out by the formula: nbits = abs(ceil(log2(abs_error_max)) - 1. The number of
+      // fractional bits hereafter used to store the LUT values is nbits + 2.
       const int nfrac_bits = 10;
       // For this particular PWL implementation, the number of fractional bits is 10.
-      static const ac_fixed<nfrac_bits, 0, true> m_lut[n_segments_lut] = {-.22265625, -.1767578125, -.14453125, -.12109375, -.1025390625, -.087890625, -.0751953125, -.06640625};
-      static const ac_fixed<nfrac_bits + 1, 1, false> c_lut[n_segments_lut] = {1.9970703125, 1.7744140625, 1.59765625, 1.453125, 1.33203125, 1.2294921875, 1.1416015625, 1.06640625};
+      static const ac_fixed<nfrac_bits, 0, true> m_lut[n_segments_lut] = {
+          -.22265625, -.1767578125, -.14453125, -.12109375, -.1025390625, -.087890625, -.0751953125, -.06640625};
+      static const ac_fixed<nfrac_bits + 1, 1, false> c_lut[n_segments_lut] = {
+          1.9970703125, 1.7744140625, 1.59765625, 1.453125, 1.33203125, 1.2294921875, 1.1416015625, 1.06640625};
       static const ac_fixed<1, 0, false> x_min_lut = 0.5;
 
       // End of code outputted by ac_reciprocal_pwl_lutgen.cpp
 
-      // The absolute value of the input is taken and passed to the normalization function. Initialize variables for the same.
+      // The absolute value of the input is taken and passed to the normalization function. Initialize variables for the
+      // same.
       ac_fixed<W, I, false> input_abs_value;
       ac_fixed<W, 0, false> normalized_fixed;
 
@@ -200,18 +204,20 @@ namespace ac_math
       const int int_bits = ac::nbits<n_segments_lut - 1>::val;
       // Compute reciprocal using pwl.
       // Scale the normalized input from 0 to n_segments_lut. Any other PWL implementation
-      // with a different number of segments/domain should be scaled according to the formula: x_in_sc = (normalized_fixed - x_min_lut) * sc_constant_lut
-      // where sc_constant_lut = n_segments_lut / (x_max_lut - x_min_lut)
-      // (x_min_lut and and x_max_lut are the lower and upper limits of the domain)
-      ac_fixed<int_bits + nfrac_bits, int_bits, false> x_in_sc = ((ac_fixed<int_bits + nfrac_bits + 4, int_bits, false>)(normalized_fixed - x_min_lut)) << 4;
+      // with a different number of segments/domain should be scaled according to the formula: x_in_sc =
+      // (normalized_fixed - x_min_lut) * sc_constant_lut where sc_constant_lut = n_segments_lut / (x_max_lut -
+      // x_min_lut) (x_min_lut and and x_max_lut are the lower and upper limits of the domain)
+      ac_fixed<int_bits + nfrac_bits, int_bits, false> x_in_sc =
+          ((ac_fixed<int_bits + nfrac_bits + 4, int_bits, false>)(normalized_fixed - x_min_lut)) << 4;
       // Take out the fractional bits of the scaled input
       ac_fixed<nfrac_bits, 0, false> x_in_sc_frac;
       x_in_sc_frac.set_slc(0, x_in_sc.template slc<nfrac_bits>(0));
       // The integer part of the input is the index of the LUT table
       ac_int<int_bits, false> index = x_in_sc.to_int();
       // The output of the PWL approximation should have the same signedness as the output of the function.
-      // The precision given below will ensure that there is no precision lost in the assignment to output_pwl, hence rounding for the variable is switched off by default.
-      // However, if the user uses less fractional bits and turn rounding on instead, they are welcome to do so by giving a different value for pwl_Q.
+      // The precision given below will ensure that there is no precision lost in the assignment to output_pwl, hence
+      // rounding for the variable is switched off by default. However, if the user uses less fractional bits and turn
+      // rounding on instead, they are welcome to do so by giving a different value for pwl_Q.
       typedef ac_fixed<2 * nfrac_bits + 1 + int(outS), 1 + int(outS), outS, pwl_Q> output_pwl_type;
       output_pwl_type output_pwl = m_lut[index] * x_in_sc_frac + c_lut[index];
 
@@ -392,8 +398,10 @@ namespace ac_math
    //
    //-------------------------------------------------------------------------
 
-   template <ac_q_mode pwl_Q = AC_TRN, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO>
-   void ac_reciprocal_pwl(const ac_complex<ac_fixed<W, I, S, Q, O>>& input, ac_complex<ac_fixed<outW, outI, outS, outQ, outO>>& output)
+   template <ac_q_mode pwl_Q = AC_TRN, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS,
+             ac_q_mode outQ, ac_o_mode outO>
+   void ac_reciprocal_pwl(const ac_complex<ac_fixed<W, I, S, Q, O>>& input,
+                          ac_complex<ac_fixed<outW, outI, outS, outQ, outO>>& output)
    {
       ac_complex<ac_fixed<outW, outI, outS, outQ, outO>> output_temp;
 
@@ -488,7 +496,8 @@ namespace ac_math
    //-------------------------------------------------------------------------
 
    template <ac_q_mode pwl_Q = AC_TRN, int W, int I, int E, ac_q_mode Q, int outW, int outI, int outE, ac_q_mode outQ>
-   void ac_reciprocal_pwl(const ac_complex<ac_float<W, I, E, Q>>& input, ac_complex<ac_float<outW, outI, outE, outQ>>& output)
+   void ac_reciprocal_pwl(const ac_complex<ac_float<W, I, E, Q>>& input,
+                          ac_complex<ac_float<outW, outI, outE, outQ>>& output)
    {
       ac_complex<ac_float<outW, outI, outE, outQ>> output_temp;
 

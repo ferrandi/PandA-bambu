@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -214,6 +214,11 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
  */
 #define TYPE_PREDICATED 1 << 27
 
+/**
+ * Constant identifying if a TYPE_EXTERNAL write  or read memory
+ */
+#define TYPE_RW 1 << 28
+
 //@}
 
 /**
@@ -364,7 +369,8 @@ struct OpNodeInfo : public TypedNodeInfo
    CustomSet<unsigned int> cited_variables;
 
    /// set of scalar ssa accessed in this node
-   CustomMap<FunctionBehavior_VariableType, CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int>>> variables;
+   CustomMap<FunctionBehavior_VariableType, CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int>>>
+       variables;
 
 #if HAVE_EXPERIMENTAL
    /// set of memory locations dynamically accessed in this node
@@ -406,14 +412,16 @@ struct OpNodeInfo : public TypedNodeInfo
     * @param variable_type is the type of variables to be considered
     * @param access_type is the type of accesses to be considered
     */
-   const CustomSet<unsigned int>& GetVariables(const FunctionBehavior_VariableType variable_type, const FunctionBehavior_VariableAccessType access_type) const;
+   const CustomSet<unsigned int>& GetVariables(const FunctionBehavior_VariableType variable_type,
+                                               const FunctionBehavior_VariableAccessType access_type) const;
 
 #if HAVE_EXPERIMENTAL
    /**
     * Return a set of accessed dynamid data memory location
     * @param access_type is the type of accesses to be considered
     */
-   const CustomSet<MemoryAddress>& GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const;
+   const CustomSet<MemoryAddress>&
+   GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const;
 #endif
 
 #if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT
@@ -436,8 +444,8 @@ struct OpNodeInfo : public TypedNodeInfo
     */
    void Print(std::ostream& stream, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format) const;
 };
-typedef refcount<OpNodeInfo> OpNodeInfoRef;
-typedef refcount<const OpNodeInfo> OpNodeInfoConstRef;
+using OpNodeInfoRef = refcount<OpNodeInfo>;
+using OpNodeInfoConstRef = refcount<const OpNodeInfo>;
 
 /**
  * Macro returning the index of the basic block which the node belongs to
@@ -507,7 +515,8 @@ typedef refcount<const OpNodeInfo> OpNodeInfoConstRef;
 #define RSDG_SELECTOR (TRED_SELECTOR)
 
 /// Control and Data dependence and antidependence graph edge selector with feedback edges
-#define FSADG_SELECTOR (CDG_SELECTOR | DFG_SELECTOR | ADG_SELECTOR | FB_CDG_SELECTOR | FB_DFG_SELECTOR | FB_ADG_SELECTOR)
+#define FSADG_SELECTOR \
+   (CDG_SELECTOR | DFG_SELECTOR | ADG_SELECTOR | FB_CDG_SELECTOR | FB_DFG_SELECTOR | FB_ADG_SELECTOR)
 /// Control and Data dependence and antidependence graph edge selector
 #define SAODG_SELECTOR (CDG_SELECTOR | DFG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR)
 /// data dependence antidependence and feedback graph edge selector
@@ -557,8 +566,8 @@ class OpEdgeInfo : public CdfgEdgeInfo
    bool FlgEdgeF() const;
 };
 /// Refcount definition for OpEdgeInfo
-typedef refcount<OpEdgeInfo> OpEdgeInfoRef;
-typedef refcount<const OpEdgeInfo> OpEdgeInfoConstRef;
+using OpEdgeInfoRef = refcount<OpEdgeInfo>;
+using OpEdgeInfoConstRef = refcount<const OpEdgeInfo>;
 
 /**
  * information associated with the whole graph
@@ -595,8 +604,8 @@ struct OpGraphInfo : public GraphInfo
 };
 
 /// Refcount definition for OpGraphInfo
-typedef refcount<OpGraphInfo> OpGraphInfoRef;
-typedef refcount<const OpGraphInfo> OpGraphInfoConstRef;
+using OpGraphInfoRef = refcount<OpGraphInfo>;
+using OpGraphInfoConstRef = refcount<const OpGraphInfo>;
 
 #if HAVE_UNORDERED
 /**
@@ -680,7 +689,8 @@ class OpVertexMap : public std::map<vertex, value, OpVertexSorter>
    /**
     * Constructor
     */
-   explicit OpVertexMap(const OpGraphConstRef op_graph) : std::map<vertex, value, OpVertexSorter>(OpVertexSorter(op_graph))
+   explicit OpVertexMap(const OpGraphConstRef op_graph)
+       : std::map<vertex, value, OpVertexSorter>(OpVertexSorter(op_graph))
    {
    }
 };
@@ -750,9 +760,13 @@ class OpGraphsCollection : public graphs_collection
    inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector)
    {
       if(ExistsEdge(source, target))
+      {
          return AddSelector(source, target, selector);
+      }
       else
+      {
          return InternalAddEdge(source, target, selector, EdgeInfoRef(new OpEdgeInfo()));
+      }
    }
 
    /**
@@ -780,7 +794,7 @@ class OpGraphsCollection : public graphs_collection
 };
 
 /// Refcount definition for OpGraphsCollectionRef
-typedef refcount<OpGraphsCollection> OpGraphsCollectionRef;
+using OpGraphsCollectionRef = refcount<OpGraphsCollection>;
 
 /**
  * Class used to describe a particular graph with operations as nodes
@@ -796,7 +810,7 @@ struct OpGraph : public graph
     * @param g is the bulk graph.
     * @param selector is the selector used to filter the bulk graph.
     */
-   OpGraph(const OpGraphsCollectionRef g, int selector);
+   OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int selector);
 
    /**
     * Sub-graph constructor.
@@ -804,7 +818,8 @@ struct OpGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   OpGraph(const OpGraphsCollectionRef g, int selector, const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
+   OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int selector,
+           const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
 
    /**
     * Destructor
@@ -825,7 +840,8 @@ struct OpGraph : public graph
     * @param HLS is the high level synthesis structure
     * @param critical_paths is the set of operations belonging to critical paths
     */
-   void WriteDot(const std::string& file_name, const hlsConstRef HLS, const CustomSet<unsigned int> critical_paths) const;
+   void WriteDot(const std::string& file_name, const hlsConstRef HLS,
+                 const CustomSet<unsigned int> critical_paths) const;
 #endif
 
    /**
@@ -922,7 +938,7 @@ struct OpGraph : public graph
 #endif
 };
 /// refcount definition of the class
-typedef refcount<OpGraph> OpGraphRef;
-typedef refcount<const OpGraph> OpGraphConstRef;
+using OpGraphRef = refcount<OpGraph>;
+using OpGraphConstRef = refcount<const OpGraph>;
 
 #endif

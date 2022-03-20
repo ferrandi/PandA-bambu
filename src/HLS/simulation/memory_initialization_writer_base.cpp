@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,19 +58,28 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
+#include "tree_reindex.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "utility.hpp"
 
-MemoryInitializationWriterBase::MemoryInitializationWriterBase(const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter,
-                                                               const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef)
-    : TM(_TM), behavioral_helper(_behavioral_helper), reserved_mem_bytes(_reserved_mem_bytes), written_bytes(0), function_parameter(_function_parameter), testbench_generation_memory_type(_testbench_generation_memory_type)
+MemoryInitializationWriterBase::MemoryInitializationWriterBase(
+    const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper,
+    const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter,
+    const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef)
+    : TM(_TM),
+      behavioral_helper(_behavioral_helper),
+      reserved_mem_bytes(_reserved_mem_bytes),
+      written_bytes(0),
+      function_parameter(_function_parameter),
+      testbench_generation_memory_type(_testbench_generation_memory_type)
 {
-   const auto parameter_type = GetPointer<const type_node>(function_parameter) ? function_parameter : TM->CGetTreeNode(tree_helper::get_type_index(TM, function_parameter->index));
-   status.push_back(std::pair<const tree_nodeConstRef, size_t>(parameter_type, 0));
+   const auto parameter_type = tree_helper::CGetType(function_parameter);
+   status.push_back(std::make_pair(parameter_type, 0));
 }
+
 void MemoryInitializationWriterBase::CheckEnd()
 {
    if(written_bytes != reserved_mem_bytes)
@@ -79,7 +88,9 @@ void MemoryInitializationWriterBase::CheckEnd()
    }
    /// First of all we have to check that there is just one element in the stack
    if(status.size() != 1)
+   {
       THROW_ERROR("Missing data in C initialization string. Status is " + PrintStatus());
+   }
 }
 
 void MemoryInitializationWriterBase::GoUp()
@@ -92,14 +103,14 @@ void MemoryInitializationWriterBase::GoUp()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--GoUp - New status is " + PrintStatus());
 
    /// Second, according to the type let's how many elements have to have been processed
-   std::vector<unsigned int> array_dimensions;
-   switch(status.back().first->get_kind())
+   switch(GET_CONST_NODE(status.back().first)->get_kind())
    {
       case array_type_K:
-         /// parameters cannot have this type, but global variables can
-         tree_helper::get_array_dimensions(TM, status.back().first->index, array_dimensions);
-         expected_size = array_dimensions.front();
+      { /// parameters cannot have this type, but global variables can
+         const auto array_dims = tree_helper::GetArrayDimensions(status.back().first);
+         expected_size = array_dims.front();
          break;
+      }
       case complex_type_K:
          expected_size = 2;
          break;
@@ -110,8 +121,12 @@ void MemoryInitializationWriterBase::GoUp()
          expected_size = 0; /// Actual size depends on the pointed type
          break;
       case record_type_K:
+         expected_size = tree_helper::CGetFieldTypes(status.back().first).size();
+         break;
       case union_type_K:
          expected_size = tree_helper::CGetFieldTypes(status.back().first).size();
+         if(expected_size > 1)
+            expected_size = 1;
          break;
       case boolean_type_K:
       case CharType_K:
@@ -131,7 +146,8 @@ void MemoryInitializationWriterBase::GoUp()
       case type_pack_expansion_K:
       case vector_type_K:
       case void_type_K:
-         THROW_ERROR("Unexpected type in initializing parameter/variable: " + status.back().first->get_kind_text());
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " +
+                     GET_CONST_NODE(status.back().first)->get_kind_text());
          break;
       case aggr_init_expr_K:
       case binfo_K:
@@ -160,35 +176,41 @@ void MemoryInitializationWriterBase::GoUp()
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(status.back().first->get_kind_text()));
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
+                          "Not supported node: " + GET_CONST_NODE(status.back().first)->get_kind_text());
    }
-   if(expected_size != 0 and expected_size != status.back().second)
-      THROW_ERROR("Missing data in C initialization for node of type " + status.back().first->get_kind_text() + " " + STR(expected_size) + " vs. " + STR(status.back().second));
+   if(expected_size != 0 && (expected_size != status.back().second))
+   {
+      THROW_ERROR("Missing data in C initialization for node of type " +
+                  GET_CONST_NODE(status.back().first)->get_kind_text() + " " + STR(expected_size) + " vs. " +
+                  STR(status.back().second));
+   }
 }
 
 void MemoryInitializationWriterBase::GoDown()
 {
-   THROW_ASSERT(not status.empty(), "");
-   const auto type_node = status.back().first;
+   THROW_ASSERT(!status.empty(), "");
+   const auto& type_node = status.back().first;
    const auto new_type = [&]() -> tree_nodeConstRef {
-      if(type_node->get_kind() == record_type_K or type_node->get_kind() == union_type_K)
+      if(tree_helper::IsStructType(type_node) || tree_helper::IsUnionType(type_node))
       {
          const auto fields = tree_helper::CGetFieldTypes(type_node);
          THROW_ASSERT(fields.size() > status.back().second, STR(fields.size()) + " vs. " + STR(status.back().second));
-         return tree_helper::CGetFieldTypes(type_node)[status.back().second];
+         return fields[status.back().second];
       }
-      if(type_node->get_kind() == array_type_K)
+      if(tree_helper::IsArrayType(type_node))
       {
          return tree_helper::CGetElements(type_node);
       }
-      if(type_node->get_kind() == pointer_type_K or type_node->get_kind() == reference_type_K)
+      if(tree_helper::IsPointerType(type_node))
       {
          return tree_helper::CGetPointedType(type_node);
       }
-      THROW_ERROR("Unexpected nested initialization " + type_node->get_kind_text() + " - Current status is " + PrintStatus());
-      return tree_nodeRef();
+      THROW_ERROR("Unexpected nested initialization " + type_node->get_kind_text() + " - Current status is " +
+                  PrintStatus());
+      return tree_nodeConstRef();
    }();
-   status.push_back(std::pair<const tree_nodeConstRef, size_t>(new_type, 0));
+   status.push_back(std::make_pair(new_type, 0));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Going down. New level " + PrintStatus());
 }
 
@@ -196,8 +218,8 @@ void MemoryInitializationWriterBase::GoNext()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating the status from " + PrintStatus());
    THROW_ASSERT(status.size() >= 2, "");
-   const tree_nodeConstRef upper_type = status[status.size() - 2].first;
-   if(upper_type->get_kind() == record_type_K)
+   const auto& upper_type = status[status.size() - 2].first;
+   if(tree_helper::IsStructType(upper_type))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Read field of a record");
       /// We have read a field of record, move to the next field, if any
@@ -210,12 +232,13 @@ void MemoryInitializationWriterBase::GoNext()
 #endif
       status.pop_back();
       status.back().second++;
-      const auto new_type = tree_helper::CGetFieldTypes(upper_type)[status[status.size() - 1].second];
-      status.push_back(std::pair<const tree_nodeConstRef, unsigned int>(new_type, 0));
+      const auto new_type = record_fields[status[status.size() - 1].second];
+      status.push_back(std::make_pair(new_type, 0));
    }
    else
    {
-      THROW_ASSERT(upper_type->get_kind() == array_type_K or upper_type->get_kind() == pointer_type_K, upper_type->get_kind_text());
+      THROW_ASSERT(tree_helper::IsArrayType(upper_type) || tree_helper::IsPointerType(upper_type),
+                   GET_CONST_NODE(upper_type)->get_kind_text());
       status[status.size() - 2].second++;
       status[status.size() - 1].second = 0;
    }
@@ -225,10 +248,12 @@ void MemoryInitializationWriterBase::GoNext()
 const std::string MemoryInitializationWriterBase::PrintStatus() const
 {
    std::string ret;
-   for(const auto level : status)
+   for(const auto& level : status)
    {
       if(ret != "")
+      {
          ret += ":";
+      }
       ret += level.first->get_kind_text() + "[" + STR(level.second) + "]";
    }
    return ret;

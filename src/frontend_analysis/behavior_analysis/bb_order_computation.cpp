@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,7 +57,8 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 
-BBOrderComputation::BBOrderComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+BBOrderComputation::BBOrderComputation(const ParameterConstRef _Param, const application_managerRef _AppM,
+                                       unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, BB_ORDER_COMPUTATION, _design_flow_manager, _Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -65,14 +66,15 @@ BBOrderComputation::BBOrderComputation(const ParameterConstRef _Param, const app
 
 BBOrderComputation::~BBOrderComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BBOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+BBOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -99,7 +101,9 @@ void BBOrderComputation::Initialize()
 
 DesignFlowStep_Status BBOrderComputation::InternalExec()
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting order computation on function " + function_behavior->CGetBehavioralHelper()->get_function_name());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Starting order computation on function " +
+                      function_behavior->CGetBehavioralHelper()->get_function_name());
    const BBGraphConstRef ebb = function_behavior->CGetBBGraph(FunctionBehavior::EBB);
    VertexIterator bb_v, bb_v_end;
    /// Mark for visit in different functions.
@@ -118,7 +122,9 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
    while(!to_visit.empty())
    {
       vertex actual = to_visit.front();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking vertex BB" + boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(actual)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Checking vertex BB" +
+                         boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(actual)->block->number));
       to_visit.pop_front();
       MARK[actual] = true;
       function_behavior->bb_lm->add(actual, index++);
@@ -130,22 +136,34 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
       {
          bool toadd = true;
          vertex next = boost::target(*o, *ebb);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking successor vertex BB" + boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(next)->block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Checking successor vertex BB" +
+                            boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(next)->block->number));
          /// Checking if all successor's predecessors have been examinated
          for(boost::tie(i, i_end) = boost::in_edges(next, *ebb); i != i_end; i++)
          {
             if(!MARK[boost::source(*i, *ebb)])
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking its predecessor BB" + boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(boost::source(*i, *ebb))->block->number) + " - Not marked");
+               INDENT_DBG_MEX(
+                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                   "---Checking its predecessor BB" +
+                       boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(boost::source(*i, *ebb))->block->number) +
+                       " - Not marked");
                toadd = false;
                break;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking its predecessor BB" + boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(boost::source(*i, *ebb))->block->number) + " - Marked");
+            INDENT_DBG_MEX(
+                DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                "---Checking its predecessor BB" +
+                    boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(boost::source(*i, *ebb))->block->number) +
+                    " - Marked");
          }
          if(toadd)
          {
             if(ebb->CGetBBEdgeInfo(*o)->cfg_edge_T())
+            {
                then = next;
+            }
             /// Vertex can be added to list
             if(next != then)
             {

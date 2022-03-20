@@ -1,0 +1,69 @@
+add/modified/add.c --benchmark-name=add0
+add/modified/add.c --benchmark-name=add0m -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts
+add/modified/add.c -fopenmp-simd=1 --benchmark-name=add1
+add/modified/add.c -fopenmp-simd=2 --benchmark-name=add2
+add/modified/add.c -fopenmp-simd=3 --benchmark-name=add3
+add/modified/add.c -fopenmp-simd=4 --benchmark-name=add4
+add/modified/add.c -fopenmp-simd=8 --benchmark-name=add8
+add/modified/add.c -ftree-vectorize --benchmark-name=addv
+add/modified/add.c -ftree-vectorize --benchmark-name=addvm -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts
+blackscholes/inlined/main.c --benchmark-name=inline_blackscholes0  blackscholes/inlined/constraints.xml
+blackscholes/inlined/main.c --benchmark-name=inline_blackscholes0m -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts  blackscholes/inlined/constraints.xml
+blackscholes/inlined/main.c -fopenmp-simd=1 -fdisable-tree-cunroll=2 --param max-inline-insns-auto=100 --benchmark-name=inline_blackscholes1 blackscholes/inlined/constraints.xml
+blackscholes/inlined/main.c -fopenmp-simd=2 -fdisable-tree-cunroll=2 --param max-inline-insns-auto=100 --benchmark-name=inline_blackscholes2 blackscholes/inlined/constraints.xml
+blackscholes/inlined/main.c -fopenmp-simd=3 -fdisable-tree-cunroll=2 --param max-inline-insns-auto=100 --benchmark-name=inline_blackscholes3 blackscholes/inlined/constraints.xml
+blackscholes/inlined/main.c -fopenmp-simd=4 -fdisable-tree-cunroll=4 --param max-inline-insns-auto=100 --benchmark-name=inline_blackscholes4 blackscholes/inlined/constraints.xml
+blackscholes/inlined/main.c -fopenmp-simd=8 -fdisable-tree-cunroll=8 --param max-inline-insns-auto=100 --benchmark-name=inline_blackscholes8 blackscholes/inlined/constraints.xml
+blackscholes/inlined/main.c -ftree-vectorize --benchmark-name=inline_blackscholesv  blackscholes/inlined/constraints.xml
+blackscholes/inlined/main.c -ftree-vectorize --benchmark-name=inline_blackscholesvm -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts  blackscholes/inlined/constraints.xml
+blackscholes/modified/main.c --benchmark-name=blackscholes0 blackscholes/modified/constraints.xml
+blackscholes/modified/main.c --benchmark-name=blackscholes0m -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts blackscholes/modified/constraints.xml
+blackscholes/modified/main.c -fopenmp-simd=1 -fdisable-tree-cunroll=2 --param max-inline-insns-auto=100 --benchmark-name=blackscholes1 blackscholes/modified/constraints.xml
+blackscholes/modified/main.c -fopenmp-simd=2 -fdisable-tree-cunroll=2 --param max-inline-insns-auto=100 --benchmark-name=blackscholes2 blackscholes/modified/constraints.xml
+blackscholes/modified/main.c -fopenmp-simd=3 -fdisable-tree-cunroll=2 --param max-inline-insns-auto=100 --benchmark-name=blackscholes3 blackscholes/modified/constraints.xml
+blackscholes/modified/main.c -fopenmp-simd=4 -fdisable-tree-cunroll=4 --param max-inline-insns-auto=100 --benchmark-name=blackscholes4 blackscholes/modified/constraints.xml
+blackscholes/modified/main.c -fopenmp-simd=8 -fdisable-tree-cunroll=8 --param max-inline-insns-auto=100 --benchmark-name=blackscholes8 blackscholes/modified/constraints.xml
+blackscholes/modified/main.c -ftree-vectorize --benchmark-name=blackscholesv blackscholes/modified/constraints.xml
+blackscholes/modified/main.c -ftree-vectorize --benchmark-name=blackscholesvm -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts blackscholes/modified/constraints.xml
+boxfilter/modified/boxfilter.c --benchmark-name=boxfilter0
+boxfilter/modified/boxfilter.c --benchmark-name=boxfilter0m -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts
+boxfilter/modified/boxfilter.c -fopenmp-simd=1 -fdisable-tree-cunroll=2 --param max-inline-insns-auto=100 --benchmark-name=boxfilter1
+boxfilter/modified/boxfilter.c -fopenmp-simd=2 -fdisable-tree-cunroll=2 --param max-inline-insns-auto=100 --benchmark-name=boxfilter2
+boxfilter/modified/boxfilter.c -fopenmp-simd=3 -fdisable-tree-cunroll=2 --param max-inline-insns-auto=100 --benchmark-name=boxfilter3
+boxfilter/modified/boxfilter.c -fopenmp-simd=4 -fdisable-tree-cunroll=4 --param max-inline-insns-auto=100 --benchmark-name=boxfilter4
+boxfilter/modified/boxfilter.c -fopenmp-simd=8 -fdisable-tree-cunroll=8 --param max-inline-insns-auto=100 --benchmark-name=boxfilter8
+boxfilter/modified/boxfilter.c -ftree-vectorize --benchmark-name=boxfilterv
+boxfilter/modified/boxfilter.c -ftree-vectorize --benchmark-name=boxfiltervm -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts
+dotproduct/modified/dotproduct.c --benchmark-name=dotproduct0
+dotproduct/modified/dotproduct.c --benchmark-name=dotproduct0m -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts
+dotproduct/modified/dotproduct.c -fopenmp-simd=1 --benchmark-name=dotproduct1
+dotproduct/modified/dotproduct.c -fopenmp-simd=2 --benchmark-name=dotproduct2
+dotproduct/modified/dotproduct.c -fopenmp-simd=3 --benchmark-name=dotproduct3
+dotproduct/modified/dotproduct.c -fopenmp-simd=4 --benchmark-name=dotproduct4
+dotproduct/modified/dotproduct.c -fopenmp-simd=8 --benchmark-name=dotproduct8
+dotproduct/modified/dotproduct.c -ftree-vectorize --benchmark-name=dotproductv
+dotproduct/modified/dotproduct.c -ftree-vectorize --benchmark-name=dotproductvm -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts
+histogram/modified/histogram.c --benchmark-name=histogram0
+histogram/modified/histogram.c --benchmark-name=histogram0m -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts
+histogram/modified/histogram.c -fopenmp-simd=1 -fdisable-tree-cunroll -fdisable-tree-ivopts --param max-inline-insns-auto=1000 --benchmark-name=histogram1
+histogram/modified/histogram.c -fopenmp-simd=2 -fdisable-tree-cunroll -fdisable-tree-ivopts --param max-inline-insns-auto=1000 --benchmark-name=histogram2
+histogram/modified/histogram.c -fopenmp-simd=3 -fdisable-tree-cunroll -fdisable-tree-ivopts --param max-inline-insns-auto=1000 --benchmark-name=histogram3
+histogram/modified/histogram.c -fopenmp-simd=4 -fdisable-tree-cunroll -fdisable-tree-ivopts --param max-inline-insns-auto=1000 --benchmark-name=histogram4
+histogram/modified/histogram.c -fopenmp-simd=8 -fdisable-tree-cunroll -fdisable-tree-ivopts --param max-inline-insns-auto=1000 --benchmark-name=histogram8
+histogram/modified/histogram.c -ftree-vectorize --benchmark-name=histogram
+histogram/modified/histogram.c -ftree-vectorize --benchmark-name=histogravm -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts
+mandelbrot/modified/mandelbrot.c --benchmark-name=mandelbrot0
+mandelbrot/modified/mandelbrot.c --benchmark-name=mandelbrot0m -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts
+mandelbrot/modified/mandelbrot.c -fopenmp-simd=1 -fdisable-tree-cunroll -fdisable-tree-ivopts --param max-inline-insns-auto=1000 --benchmark-name=mandelbrot1
+mandelbrot/modified/mandelbrot.c -fopenmp-simd=2 -fdisable-tree-cunroll -fdisable-tree-ivopts --param max-inline-insns-auto=1000 --benchmark-name=mandelbrot2
+mandelbrot/modified/mandelbrot.c -fopenmp-simd=3 -fdisable-tree-cunroll -fdisable-tree-ivopts --param max-inline-insns-auto=1000 --benchmark-name=mandelbrot3
+mandelbrot/modified/mandelbrot.c -fopenmp-simd=4 -fdisable-tree-cunroll -fdisable-tree-ivopts --param max-inline-insns-auto=1000 --benchmark-name=mandelbrot4
+mandelbrot/modified/mandelbrot.c -ftree-vectorize --benchmark-name=mandelbrotv
+mandelbrot/modified/mandelbrot.c -ftree-vectorize --benchmark-name=mandelbrotvm -fno-tree-pre -fno-tree-vrp -fno-ivopts -fno-tree-dominator-opts
+perfecthash/modified/perfecthash.c --benchmark-name=perfecthash0
+perfecthash/modified/perfecthash.c -fopenmp-simd=1 --benchmark-name=perfecthash1
+perfecthash/modified/perfecthash.c -fopenmp-simd=2 --benchmark-name=perfecthash2
+perfecthash/modified/perfecthash.c -fopenmp-simd=3 --benchmark-name=perfecthash3
+perfecthash/modified/perfecthash.c -fopenmp-simd=4 --benchmark-name=perfecthash4
+perfecthash/modified/perfecthash.c -fopenmp-simd=8 --benchmark-name=perfecthash8
+perfecthash/modified/perfecthash.c -ftree-vectorize --benchmark-name=perfecthashv

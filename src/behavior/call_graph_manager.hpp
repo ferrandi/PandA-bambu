@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,6 +52,7 @@
 #include "refcount.hpp"                       // for CONSTREF_FORWARD...
 #include <boost/graph/depth_first_search.hpp> // for default_dfs_visitor
 
+REF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(CallGraph);
 REF_FORWARD_DECL(CallGraph);
@@ -61,6 +62,7 @@ REF_FORWARD_DECL(FunctionBehavior);
 CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 
 /**
@@ -69,6 +71,8 @@ REF_FORWARD_DECL(tree_node);
 class CallGraphManager
 {
  private:
+   friend class call_graph_computation;
+
    const CallGraphsCollectionRef call_graphs_collection;
 
    /// The view of call graph with all the edges
@@ -108,6 +112,36 @@ class CallGraphManager
    const int debug_level;
 
    /**
+    * Creates a new call point
+    * @param caller_id is the function id of the caller
+    * @param called_id is the function id of the called function
+    * @param call_id is the tree node index of the call statement
+    * @param call_type is the type of call
+    */
+   void AddCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                     enum FunctionEdgeInfo::CallType call_type);
+   /**
+    * Creates a new called function and directly adds the call to the call graph
+    * @param caller_id is the function id of the caller
+    * @param called_id is the function id of the called function
+    * @param call_id is the tree node index of the call statement
+    * @param called_function_behavior is the FunctionBehavior of the called function
+    * @param call_type is the type of call
+    */
+   void AddFunctionAndCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                                const FunctionBehaviorRef called_function_behavior,
+                                enum FunctionEdgeInfo::CallType call_type);
+   /**
+    * Returns true if the call point is present
+    * @param caller_id is the function id of the caller
+    * @param called_id is the function id of the called function
+    * @param call_id is the tree node index of the call statement
+    * @param call_type is the type of call
+    */
+   bool IsCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                    enum FunctionEdgeInfo::CallType call_type) const;
+
+   /**
     * Compute the root and reached functions, maintaining the internal data
     * structures coherent
     */
@@ -119,13 +153,16 @@ class CallGraphManager
 
    /**
     * Constructor. The data structure is initialized.
-    * @param function_expander is the functor used to determine if a function has to be considered during construction of call graph
+    * @param function_expander is the functor used to determine if a function has to be considered during construction
+    * of call graph
     * @param single_root_function specifies if only one root function has to be considered
     * @param allow_recursive_functions specifies if recursive functions are allowed
     * @param tree_manager is the tree manager
     * @param Param is the set of input parameters
     */
-   CallGraphManager(const FunctionExpanderConstRef function_expander, const bool single_root_function, const bool allow_recursive_functions, const tree_managerConstRef tree_manager, const ParameterConstRef Param);
+   CallGraphManager(const FunctionExpanderConstRef function_expander, const bool single_root_function,
+                    const bool allow_recursive_functions, const tree_managerConstRef tree_manager,
+                    const ParameterConstRef Param);
 
    /**
     * Destructor
@@ -190,7 +227,7 @@ class CallGraphManager
     * Returns the source code functions called by the root functions
     * @return the set of top function
     */
-   CustomOrderedSet<unsigned int> GetReachedBodyFunctions() const;
+   const CustomOrderedSet<unsigned int>& GetReachedBodyFunctions() const;
 
    /**
     * compute the list of reached function starting from a given function
@@ -212,38 +249,21 @@ class CallGraphManager
    bool IsVertex(unsigned int functionID) const;
 
    /**
-    * Returns true if the call point is present
-    * @param caller_id is the function id of the caller
-    * @param called_id is the function id of the called function
-    * @param call_id is the tree node index of the call statement
-    * @param call_type is the type of call
-    */
-   bool IsCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type) const;
-
-   /**
     * @param new_function_id is the index of the function to add
     * @param fun_behavior is the corresponding function behavior
     */
    void AddFunction(unsigned int new_function_id, const FunctionBehaviorRef fun_behavior);
 
    /**
-    * Creates a new call point
-    * @param caller_id is the function id of the caller
-    * @param called_id is the function id of the called function
-    * @param call_id is the tree node index of the call statement
-    * @param call_type is the type of call
-    */
-   void AddCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id, enum FunctionEdgeInfo::CallType call_type);
-
-   /**
     * Creates a new called function and directly adds the call to the call graph
+    * @param AppM is the application manager
     * @param caller_id is the function id of the caller
     * @param called_id is the function id of the called function
     * @param call_id is the tree node index of the call statement
-    * @param called_function_behavior is the FunctionBehavior of the called function
     * @param call_type is the type of call
     */
-   void AddFunctionAndCallPoint(unsigned int caller_id, unsigned int called_id, unsigned int call_id, const FunctionBehaviorRef called_function_behavior, enum FunctionEdgeInfo::CallType call_type);
+   void AddFunctionAndCallPoint(const application_managerRef AppM, unsigned int caller_id, unsigned int called_id,
+                                unsigned int call_id, enum FunctionEdgeInfo::CallType call_type);
 
    /**
     * Remove a function call, like RemoveCallPoint with a different API
@@ -258,7 +278,7 @@ class CallGraphManager
     * @param e is the edge in the call graph
     * @param call_id is the call graph point to remove
     */
-   void RemoveCallPoint(EdgeDescriptor e, const unsigned int call_id);
+   void RemoveCallPoint(EdgeDescriptor e, const unsigned int callid);
 
    /**
     * Replaces a call point.
@@ -266,7 +286,7 @@ class CallGraphManager
     * @param old_call_id is the old call tree node id
     * @param new_call_id is the new call tree node id
     */
-   void ReplaceCallPoint(const EdgeDescriptor e, const unsigned int old_call_id, const unsigned int new_call_id);
+   void ReplaceCallPoint(const EdgeDescriptor e, const unsigned int orig, const unsigned int repl);
 
    /**
     * Returns true is there is at least a reachable function that is
@@ -278,9 +298,26 @@ class CallGraphManager
     * Returns a set containing all the reachable addressed_functions
     */
    CustomOrderedSet<unsigned int> GetAddressedFunctions() const;
+
+   /**
+    * Recursive analysis of the tree nodes looking for call expressions.
+    * @param TM is the tree manager.
+    * @param tn is current tree node.
+    * @param node_stmt is the analyzed tree node
+    * @param call_type is the type of call to be added
+    */
+   static void call_graph_computation_recursive(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM,
+                                                unsigned int current, const tree_managerRef& TM, const tree_nodeRef& tn,
+                                                unsigned int node_stmt, enum FunctionEdgeInfo::CallType call_type,
+                                                int DL);
+   static void expandCallGraphFromFunction(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM,
+                                           unsigned int f_id, int DL);
+   static void addCallPointAndExpand(CustomUnorderedSet<unsigned int>& AV, const application_managerRef AM,
+                                     unsigned int caller_id, unsigned int called_id, unsigned int call_id,
+                                     enum FunctionEdgeInfo::CallType call_type, int DL);
 };
-typedef refcount<CallGraphManager> CallGraphManagerRef;
-typedef refcount<const CallGraphManager> CallGraphManagerConstRef;
+using CallGraphManagerRef = refcount<CallGraphManager>;
+using CallGraphManagerConstRef = refcount<const CallGraphManager>;
 
 /**
  * Visitor to identify the list of called functions
@@ -308,15 +345,17 @@ struct CalledFunctionsVisitor : public boost::default_dfs_visitor
     * @param body_functions is where results will be stored
     * @param library_functions is where results will be stored
     */
-   CalledFunctionsVisitor(const bool allow_recursive_functions, const CallGraphManager* call_graph_manager, CustomOrderedSet<unsigned int>& body_functions, CustomOrderedSet<unsigned int>& library_functions);
+   CalledFunctionsVisitor(const bool allow_recursive_functions, const CallGraphManager* call_graph_manager,
+                          CustomOrderedSet<unsigned int>& body_functions,
+                          CustomOrderedSet<unsigned int>& library_functions);
 
-   void back_edge(const EdgeDescriptor& edge, const CallGraph& call_graph);
+   void back_edge(const EdgeDescriptor& edge, const CallGraph& g);
 
    /**
     * Function called when a vertex has been finished
     * @param u is the vertex
     * @param call_graph is the call graph
     */
-   void finish_vertex(const vertex& u, const CallGraph& call_graph);
+   void finish_vertex(const vertex& u, const CallGraph& g);
 };
 #endif

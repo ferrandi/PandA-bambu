@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -35,7 +35,8 @@
  * @brief interface of loops finding algorithm
  *
  * Loops are detection described in
- * in Vugranam C. Sreedhar, Guang R. Gao, Yong-Fong Lee: Identifying Loops Using DJ Graphs. ACM Trans. Program. Lang. Syst. 18(6): 649-658 (1996)
+ * in Vugranam C. Sreedhar, Guang R. Gao, Yong-Fong Lee: Identifying Loops Using DJ Graphs. ACM Trans. Program. Lang.
+ * Syst. 18(6): 649-658 (1996)
  *
  * @author Marco Garatti <m.garatti@gmail.com>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
@@ -105,7 +106,7 @@ class Loops
    std::list<LoopRef> modifiable_loops_list;
    std::list<LoopConstRef> const_loops_list;
 
-   typedef std::pair<vertex, vertex> vertex_pair;
+   using vertex_pair = std::pair<vertex, vertex>;
 
    bool is_edge_in_list(CustomUnorderedSet<vertex_pair>& l, vertex source, vertex target);
 
@@ -124,11 +125,15 @@ class Loops
     * @param node is current vertex
     * @param header is the entry of the reducible loop
     */
-   void DetectReducibleLoop(const BBGraphRef djg, CustomOrderedSet<vertex>& visited, LoopRef loop, vertex node, vertex header);
+   void DetectReducibleLoop(const BBGraphRef djg, CustomOrderedSet<vertex>& visited, LoopRef loop, vertex node,
+                            vertex header);
 
-   void DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, unsigned int max_level, std::vector<std::list<vertex>>& level_vertices_rel);
+   void DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, unsigned int max_level,
+                              std::vector<std::list<vertex>>& level_vertices_rel);
 
-   void tarjan_scc(const BBGraphRef djg, vertex v, CustomUnorderedMap<vertex, unsigned int>& dfs_order, CustomUnorderedMap<vertex, unsigned int>& lowlink, std::list<vertex>& s, CustomOrderedSet<vertex>& u, unsigned int& max_dfs);
+   void tarjan_scc(const BBGraphRef djg, vertex v, CustomUnorderedMap<vertex, unsigned int>& dfs_order,
+                   CustomUnorderedMap<vertex, unsigned int>& lowlink, std::list<vertex>& s, CustomOrderedSet<vertex>& u,
+                   unsigned int& max_dfs);
 
    bool stack_contains(std::list<vertex> stack, vertex v);
 
@@ -190,7 +195,7 @@ class Loops
                  ,
                  const ProfilingInformationConstRef profiling_information = ProfilingInformationConstRef()
 #endif
-                     ) const;
+   ) const;
 };
 
 #endif // LOOPS_HPP

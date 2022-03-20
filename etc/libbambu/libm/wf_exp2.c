@@ -82,7 +82,8 @@
  */
 float exp2f(float x)
 {
-   union {
+   union
+   {
       float f;
       unsigned int ui;
    } bias, exp_int, exp_frac;

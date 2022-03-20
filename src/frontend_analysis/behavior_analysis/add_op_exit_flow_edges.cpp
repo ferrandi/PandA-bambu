@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,7 +58,8 @@
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-AddOpExitFlowEdges::AddOpExitFlowEdges(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+AddOpExitFlowEdges::AddOpExitFlowEdges(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                                       unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_EXIT_FLOW_EDGES, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -66,15 +67,16 @@ AddOpExitFlowEdges::AddOpExitFlowEdges(const ParameterConstRef _parameters, cons
 
 AddOpExitFlowEdges::~AddOpExitFlowEdges() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddOpExitFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+AddOpExitFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OPERATIONS_CFG_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OPERATIONS_CFG_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -101,7 +103,9 @@ void AddOpExitFlowEdges::Initialize()
          for(boost::tie(edge, edge_end) = boost::edges(*flg); edge != edge_end; edge++)
          {
             if((GET_TYPE(flg, boost::target(*edge, *flg)) & TYPE_LAST_OP) != 0)
+            {
                function_behavior->ogc->RemoveSelector(*edge, FLG_SELECTOR);
+            }
          }
       }
    }
@@ -121,9 +125,14 @@ DesignFlowStep_Status AddOpExitFlowEdges::InternalExec()
    {
       if((GET_TYPE(fcfg, *v) & TYPE_LAST_OP) != 0)
       {
-/// NOTE: the old version of this code added a flow edge from all the operations which reach last op and not only from the operations of the same basic block: was there any actual reason to do in this way?
+/// NOTE: the old version of this code added a flow edge from all the operations which reach last op and not only from
+/// the operations of the same basic block: was there any actual reason to do in this way?
 #if 1
-         for(const auto operation : basic_block_graph->CGetBBNodeInfo(basic_block_graph->CGetBBGraphInfo()->bb_index_map.find(fcfg->CGetOpNodeInfo(*v)->bb_index)->second)->statements_list)
+         for(const auto operation : basic_block_graph
+                                        ->CGetBBNodeInfo(basic_block_graph->CGetBBGraphInfo()
+                                                             ->bb_index_map.find(fcfg->CGetOpNodeInfo(*v)->bb_index)
+                                                             ->second)
+                                        ->statements_list)
          {
             const auto reachability = function_behavior->CheckReachability(operation, *v);
             if(reachability and ((GET_TYPE(fcfg, operation) & TYPE_LAST_OP) == 0))

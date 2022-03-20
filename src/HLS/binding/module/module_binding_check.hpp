@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,11 +60,11 @@ class fu_binding;
 class module_register_binding_spec
 {
  private:
-   typedef CustomUnorderedMap<unsigned int, std::size_t> tree_index_rank_t;
-   typedef CustomUnorderedMapUnstable<unsigned int, unsigned int> tree_index_parent_t;
-   typedef boost::associative_property_map<tree_index_rank_t> tree_index_rank_map_t;
-   typedef boost::associative_property_map<tree_index_parent_t> tree_index_parent_map_t;
-   typedef boost::disjoint_sets<tree_index_rank_map_t, tree_index_parent_map_t> tree_index_dsets_t;
+   using tree_index_rank_t = CustomUnorderedMap<unsigned int, std::size_t>;
+   using tree_index_parent_t = CustomUnorderedMapUnstable<unsigned int, unsigned int>;
+   using tree_index_rank_map_t = boost::associative_property_map<tree_index_rank_t>;
+   using tree_index_parent_map_t = boost::associative_property_map<tree_index_parent_t>;
+   using tree_index_dsets_t = boost::disjoint_sets<tree_index_rank_map_t, tree_index_parent_map_t>;
 
    tree_index_rank_t tree_index_rank_map;
    tree_index_parent_t tree_index_parent_map;
@@ -74,7 +74,10 @@ class module_register_binding_spec
  public:
    tree_index_dsets_t binding;
 
-   module_register_binding_spec() : tree_index_rank_pmap(tree_index_rank_map), tree_index_parent_pmap(tree_index_parent_map), binding(tree_index_rank_pmap, tree_index_parent_pmap)
+   module_register_binding_spec()
+       : tree_index_rank_pmap(tree_index_rank_map),
+         tree_index_parent_pmap(tree_index_parent_map),
+         binding(tree_index_rank_pmap, tree_index_parent_pmap)
    {
    }
 };
@@ -129,13 +132,16 @@ struct module_binding_check : public check_clique<vertex_type>
    {
       std::vector<CustomOrderedSet<unsigned int>> variableVector;
 
-      std::vector<HLS_manager::io_binding_type> vars_read = HLSMgr->get_required_values(HLS->functionId, operationVertex);
+      std::vector<HLS_manager::io_binding_type> vars_read =
+          HLSMgr->get_required_values(HLS->functionId, operationVertex);
       for(auto& port_index : vars_read)
       {
          unsigned int tree_var = std::get<0>(port_index);
          CustomOrderedSet<unsigned int> variablesAtPort;
          if(tree_var != 0)
+         {
             variablesAtPort.insert(tree_var);
+         }
          variableVector.push_back(variablesAtPort);
       }
 
@@ -151,11 +157,18 @@ struct module_binding_check : public check_clique<vertex_type>
    virtual double getOpSlack(vertex& operationVertex) const
    {
       if(starting_time.find(operationVertex)->second > controller_delay)
+      {
          return slack_time.find(operationVertex)->second;
+      }
       else if(controller_delay - starting_time.find(operationVertex)->second > slack_time.find(operationVertex)->second)
+      {
          return 0;
+      }
       else
-         return (slack_time.find(operationVertex)->second - (controller_delay - starting_time.find(operationVertex)->second));
+      {
+         return (slack_time.find(operationVertex)->second -
+                 (controller_delay - starting_time.find(operationVertex)->second));
+      }
    }
 
    bool is_disabled_slack_based_binding;
@@ -164,9 +177,19 @@ struct module_binding_check : public check_clique<vertex_type>
    //-----------------------------------------------------------------------------------------------
    // methods
 
-   module_binding_check(unsigned int _fu_prec, double _area_resource, const hlsRef _HLS, const HLS_managerRef _HLSMgr, const CustomUnorderedMap<vertex, double>& _slack_time, const CustomUnorderedMap<vertex, double>& _starting_time,
-                        double _controller_delay, module_register_binding_spec& _tree_index_dsets)
-       : fu_prec(_fu_prec), area_resource(_area_resource), tree_index_dsets(_tree_index_dsets), HLS(_HLS), HLSMgr(_HLSMgr), slack_time(_slack_time), starting_time(_starting_time), controller_delay(_controller_delay), is_disabled_slack_based_binding(false)
+   module_binding_check(unsigned int _fu_prec, double _area_resource, const hlsRef _HLS, const HLS_managerRef _HLSMgr,
+                        const CustomUnorderedMap<vertex, double>& _slack_time,
+                        const CustomUnorderedMap<vertex, double>& _starting_time, double _controller_delay,
+                        module_register_binding_spec& _tree_index_dsets)
+       : fu_prec(_fu_prec),
+         area_resource(_area_resource),
+         tree_index_dsets(_tree_index_dsets),
+         HLS(_HLS),
+         HLSMgr(_HLSMgr),
+         slack_time(_slack_time),
+         starting_time(_starting_time),
+         controller_delay(_controller_delay),
+         is_disabled_slack_based_binding(false)
    {
    }
 
@@ -194,7 +217,8 @@ struct module_binding_check : public check_clique<vertex_type>
 
    ~module_binding_check() override = default;
 
-   void initialize_structures(boost_cc_compatibility_graph& graph, std::map<C_vertex, vertex_type>& Ruv2v) override
+   void initialize_structures(boost_cc_compatibility_graph& graph,
+                              CustomUnorderedMap<C_vertex, vertex_type>& Ruv2v) override
    {
       BOOST_FOREACH(C_vertex tempVertex, boost::vertices(graph))
       {
@@ -221,12 +245,16 @@ struct module_binding_check : public check_clique<vertex_type>
                      unsigned int fu_index = HLS->Rfu->get_index(def_op);
                      if(fu_index != INFINITE_UINT)
                      {
-                        if(tree_var_resource_relation.find(std::make_pair(fu_name, fu_index)) != tree_var_resource_relation.end())
+                        if(tree_var_resource_relation.find(std::make_pair(fu_name, fu_index)) !=
+                           tree_var_resource_relation.end())
                         {
-                           tree_index_dsets.binding.union_set(tree_var, tree_var_resource_relation.find(std::make_pair(fu_name, fu_index))->second);
+                           tree_index_dsets.binding.union_set(
+                               tree_var, tree_var_resource_relation.find(std::make_pair(fu_name, fu_index))->second);
                         }
                         else
+                        {
                            tree_var_resource_relation[std::make_pair(fu_name, fu_index)] = tree_var;
+                        }
                      }
                   }
                }
@@ -239,12 +267,19 @@ struct module_binding_check : public check_clique<vertex_type>
    {
       double area_muxes = 0;
       for(auto input_var : input_variables)
+      {
          for(auto vars : input_var.second)
          {
             if(vars.size() > 1)
-               area_muxes += HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(vars.size()));
+            {
+               area_muxes +=
+                   HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(vars.size()));
+            }
          }
-      // std::cerr << "n_muxes " << n_muxes << " area_mux " << area_mux << " area_resource " << area_resource << " clique_count " << clique_count << " Area " << n_muxes*area_mux+area_resource*static_cast<double>(clique_count) << std::endl;
+      }
+      // std::cerr << "n_muxes " << n_muxes << " area_mux " << area_mux << " area_resource " << area_resource << "
+      // clique_count " << clique_count << " Area " << n_muxes*area_mux+area_resource*static_cast<double>(clique_count)
+      // << std::endl;
       return area_muxes + area_resource * static_cast<double>(clique_count);
    }
 
@@ -252,11 +287,15 @@ struct module_binding_check : public check_clique<vertex_type>
    {
       size_t n_muxes = 0;
       for(auto input_var : input_variables)
+      {
          for(auto vars : input_var.second)
          {
             if(vars.size() > 1)
+            {
                n_muxes += static_cast<size_t>(vars.size()) - 1;
+            }
          }
+      }
       return n_muxes;
    }
 
@@ -314,26 +353,41 @@ struct module_binding_check : public check_clique<vertex_type>
             port_inputs.insert(temp_var);
             port_inputs_other.insert(temp_var);
          }
-         size_t n_mux_inputs = static_cast<size_t>(port_inputs.size());
+         auto n_mux_inputs = static_cast<size_t>(port_inputs.size());
 
-         total_area_muxes += HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(n_mux_inputs));
-         total_area_muxes_rep += HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(port_inputs_rep.size()));
-         total_area_muxes_other += HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(port_inputs_other.size()));
+         total_area_muxes +=
+             HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(n_mux_inputs));
+         total_area_muxes_rep += HLS->allocation_information->estimate_muxNto1_area(
+             fu_prec, static_cast<unsigned int>(port_inputs_rep.size()));
+         total_area_muxes_other += HLS->allocation_information->estimate_muxNto1_area(
+             fu_prec, static_cast<unsigned int>(port_inputs_other.size()));
 
-         if(!is_disabled_slack_based_binding && n_mux_inputs > 1 && HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(n_mux_inputs)) > area_resource)
+         if(!is_disabled_slack_based_binding && n_mux_inputs > 1 &&
+            HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(n_mux_inputs)) >
+                area_resource)
+         {
             return false;
+         }
 
-         if(n_mux_inputs > 1 && HLS->allocation_information->estimate_muxNto1_delay(fu_prec, static_cast<unsigned int>(n_mux_inputs)) > minSlack)
+         if(n_mux_inputs > 1 && HLS->allocation_information->estimate_muxNto1_delay(
+                                    fu_prec, static_cast<unsigned int>(n_mux_inputs)) > minSlack)
+         {
             return false;
+         }
 
          port_inputs.clear();
          port_inputs_rep.clear();
          port_inputs_other.clear();
       }
       // if(total_area_muxes>0)
-      // std::cerr << "total_area_muxes " << total_area_muxes << " total_area_muxes_rep " << total_area_muxes_rep << " total_area_muxes_other " << total_area_muxes_other << std::endl;
-      if(!is_disabled_slack_based_binding && ((total_area_muxes + area_resource) > (total_area_muxes_rep + area_resource + total_area_muxes_other + area_resource)))
+      // std::cerr << "total_area_muxes " << total_area_muxes << " total_area_muxes_rep " << total_area_muxes_rep << "
+      // total_area_muxes_other " << total_area_muxes_other << std::endl;
+      if(!is_disabled_slack_based_binding &&
+         ((total_area_muxes + area_resource) >
+          (total_area_muxes_rep + area_resource + total_area_muxes_other + area_resource)))
+      {
          return false;
+      }
 
       return true;
    }
@@ -356,7 +410,9 @@ struct module_binding_check : public check_clique<vertex_type>
             port_inputs.insert(temp_var);
          }
          if(port_inputs.size() > 1)
+         {
             return false;
+         }
 
          port_inputs.clear();
       }
@@ -368,14 +424,18 @@ struct module_binding_check : public check_clique<vertex_type>
 template <typename vertex_type>
 struct module_binding_check_no_filter : public module_binding_check<vertex_type>
 {
-   module_binding_check_no_filter(unsigned int _fu_prec, double _area_resource, const hlsRef _HLS, const HLS_managerRef _HLSMgr, const CustomUnorderedMap<vertex, double>& _slack_time, const CustomUnorderedMap<vertex, double>& _starting_time,
-                                  double _controller_delay, module_register_binding_spec& _tree_index_dsets)
-       : module_binding_check<vertex_type>(_fu_prec, _area_resource, _HLS, _HLSMgr, _slack_time, _starting_time, _controller_delay, _tree_index_dsets)
+   module_binding_check_no_filter(unsigned int _fu_prec, double _area_resource, const hlsRef _HLS,
+                                  const HLS_managerRef _HLSMgr, const CustomUnorderedMap<vertex, double>& _slack_time,
+                                  const CustomUnorderedMap<vertex, double>& _starting_time, double _controller_delay,
+                                  module_register_binding_spec& _tree_index_dsets)
+       : module_binding_check<vertex_type>(_fu_prec, _area_resource, _HLS, _HLSMgr, _slack_time, _starting_time,
+                                           _controller_delay, _tree_index_dsets)
    {
       module_binding_check<vertex_type>::is_disabled_slack_based_binding = true;
    }
 
-   module_binding_check_no_filter(const module_binding_check_no_filter& original) : module_binding_check<vertex_type>(original)
+   module_binding_check_no_filter(const module_binding_check_no_filter& original)
+       : module_binding_check<vertex_type>(original)
    {
    }
 

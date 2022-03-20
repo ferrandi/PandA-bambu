@@ -1,0 +1,17 @@
+adpcm_encode/not-optimized/adpcm.c --benchmark-name=adpcm_encode --generate-tb=BENCHMARKS_ROOT/adpcm_encode/not-optimized/encode.xml -DINITIALIZATIONS --top-fname=encode
+aes_decrypt/not-optimized/aes.c --benchmark-name=aes_decrypt --generate-tb=BENCHMARKS_ROOT/aes_decrypt/not-optimized/decrypt.xml --top-fname=main --top-rtldesign-name=decrypt
+aes_encrypt/not-optimized/aes.c --benchmark-name=aes_encrypt --generate-tb=BENCHMARKS_ROOT/aes_encrypt/not-optimized/main.xml --top-fname=main --top-rtldesign-name=encrypt  
+bellmanford/not-optimized/bellmanford.c --benchmark-name=bellmanford --generate-tb=BENCHMARKS_ROOT/bellmanford/not-optimized/test_ext_dataset.xml  --top-fname=bellmanford
+blowfish-BF_cfb64_encrypt/not-optimized/bf.c --benchmark-name=blowfish --generate-tb=BENCHMARKS_ROOT/blowfish-BF_cfb64_encrypt/not-optimized/main.xml   --top-fname=main --top-rtldesign-name=BF_cfb64_encrypt 
+dfadd/not-optimized/dfadd.c --benchmark-name=dfadd --generate-tb=BENCHMARKS_ROOT/dfadd/not-optimized/float64_add.xml   --top-fname=float64_add  
+dfdiv/not-optimized/dfdiv.c --benchmark-name=dfdiv --generate-tb=BENCHMARKS_ROOT/dfdiv/not-optimized/float64_div.xml   --top-fname=float64_div
+dfmul/not-optimized/dfmul.c --benchmark-name=dfmul --generate-tb=BENCHMARKS_ROOT/dfmul/not-optimized/float64_mul.xml   --top-fname=float64_mul 
+dfsin/not-optimized/dfsin.c --benchmark-name=dfsin --generate-tb=BENCHMARKS_ROOT/dfsin/not-optimized/local_sin.xml --top-fname=local_sin
+gsm/not-optimized/gsm.c --benchmark-name=gsm --generate-tb=BENCHMARKS_ROOT/gsm/not-optimized/Gsm_LPC_Analysis.xml  --top-fname=Gsm_LPC_Analysis
+jpeg/not-optimized/main.c --benchmark-name=jpeg --generate-tb=BENCHMARKS_ROOT/jpeg/not-optimized/jpeg2bmp_main.xml --top-fname=jpeg2bmp_main
+mips/not-optimized/mips.c --benchmark-name=mips --generate-tb=BENCHMARKS_ROOT/mips/not-optimized/main.xml  --top-fname=main --top-rtldesign-name=mips_call   
+mm/not-optimized/module.c --benchmark-name=matrix --generate-tb=BENCHMARKS_ROOT/mm/not-optimized/test.xml  --top-fname=mm
+motion/not-optimized/mpeg2.c --benchmark-name=motion --generate-tb=BENCHMARKS_ROOT/motion/not-optimized/main.xml  --top-fname=main --top-rtldesign-name=motion_vectors   
+satd/not-optimized/main.c --benchmark-name=satd --generate-tb=BENCHMARKS_ROOT/satd/not-optimized/test.xml  --top-fname=satd -fpeel-loops
+sha/not-optimized/sha_driver.c --benchmark-name=sha --generate-tb=BENCHMARKS_ROOT/sha/not-optimized/main.xml  --top-fname=main --top-rtldesign-name=sha_stream
+sobel/not-optimized/sobel.c --benchmark-name=sobel --generate-tb=BENCHMARKS_ROOT/sobel/not-optimized/test.xml --std=c99  --top-fname=sobel 

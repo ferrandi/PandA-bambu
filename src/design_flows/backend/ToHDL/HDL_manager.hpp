@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file HDL_manager.hpp
- * @brief This class writes different HDL based descriptions (VHDL, Verilog, SystemC) starting from a structural representation.
+ * @brief This class writes different HDL based descriptions (VHDL, Verilog, SystemC) starting from a structural
+ * representation.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
@@ -101,30 +102,36 @@ class HDL_manager
 
    /**
     * Returns the list of components that have a structural-based description.
-    * This list of components is relative sorted such that if a component C_i uses a component C_j then C_j is before C_i.
-    * To obtain this list the hierarchy is visited in a post-order fashion.
+    * This list of components is relative sorted such that if a component C_i uses a component C_j then C_j is before
+    * C_i. To obtain this list the hierarchy is visited in a post-order fashion.
     * @param lan is the chosen language writer object.
     * @param cir is the structural object under analysis.
     * @param list_of_com is the list of components.
     */
-   void get_post_order_structural_components(const structural_objectRef cir, std::list<structural_objectRef>& list_of_com) const;
+   void get_post_order_structural_components(const structural_objectRef cir,
+                                             std::list<structural_objectRef>& list_of_com) const;
 
    /**
     * Generates the HDL description for the given components in the specified language
     */
-   std::string write_components(const std::string& filename, const HDLWriter_Language language, const std::list<structural_objectRef>& components, bool equation, std::list<std::string>& aux_files) const;
+   std::string write_components(const std::string& filename, const HDLWriter_Language language,
+                                const std::list<structural_objectRef>& components, bool equation,
+                                std::list<std::string>& aux_files) const;
 
    /**
     * Determines the proper language for each component and generates the corresponding HDL descriptions
     */
-   void write_components(const std::string& filename, const std::list<structural_objectRef>& components, bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files);
+   void write_components(const std::string& filename, const std::list<structural_objectRef>& components, bool equation,
+                         std::list<std::string>& hdl_files, std::list<std::string>& aux_files);
 
    /**
     * Writes the module description.
     * @param lan is the chosen language writer object.
-    * @param cir is the module to be written. The analysis does not consider the inner objects but just one level of the hierarchy.
+    * @param cir is the module to be written. The analysis does not consider the inner objects but just one level of the
+    * hierarchy.
     */
-   void write_module(const language_writerRef writer, const structural_objectRef cir, bool equation, std::list<std::string>& aux_files) const;
+   void write_module(const language_writerRef writer, const structural_objectRef cir, bool equation,
+                     std::list<std::string>& aux_files) const;
 
    /**
     * Writes the FloPoCo module description to a VHDL file.
@@ -139,6 +146,7 @@ class HDL_manager
     * @param lspf is true when the first post is written
     */
    void io_signal_fix_ith(const language_writerRef writer, const structural_objectRef po, bool& lspf) const;
+   void io_signal_fix_ith_vector(const language_writerRef writer, const structural_objectRef po, bool& lspf) const;
 
    /**
     * Returns true if the module has a FSM description associated with, false otherwise.
@@ -160,7 +168,8 @@ class HDL_manager
     * @param cir is the module.
     * @param behav is the string-based behavioral description.
     */
-   void write_behavioral(const language_writerRef writer, const structural_objectRef& cir, const std::string& behav) const;
+   void write_behavioral(const language_writerRef writer, const structural_objectRef& cir,
+                         const std::string& behav) const;
 
  public:
    /**
@@ -169,7 +178,7 @@ class HDL_manager
     * @param device is the data structure containing information about the target device
     * @param parameters is the data structure containing all the parameters
     */
-   HDL_manager(const HLS_managerRef hls_manager, const target_deviceRef device, const ParameterConstRef parameters);
+   HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef device, const ParameterConstRef parameters);
 
    /**
     * Constructor
@@ -178,7 +187,8 @@ class HDL_manager
     * @param SM is the structural manager containing the top component
     * @param parameters is the data structure containing all the parameters
     */
-   HDL_manager(const HLS_managerRef HLSMgr, const target_deviceRef device, const structural_managerRef SM, const ParameterConstRef parameters);
+   HDL_manager(const HLS_managerRef HLSMgr, const target_deviceRef device, const structural_managerRef SM,
+               const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -193,12 +203,13 @@ class HDL_manager
     * @param the created files (file_name + other files)
     * @param the created aux files
     */
-   void hdl_gen(const std::string& file_name, const std::list<structural_objectRef>& cirs, bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files);
+   void hdl_gen(const std::string& filename, const std::list<structural_objectRef>& cirs, bool equation,
+                std::list<std::string>& hdl_files, std::list<std::string>& aux_files);
 
    /**
     * Converts a generic string to a language compliant identifier
     */
-   static std::string convert_to_identifier(const language_writer* lan, const std::string& id);
+   static std::string convert_to_identifier(const language_writer* writer, const std::string& id);
 
    /**
     * Converts a generic string to a language compliant identifier
@@ -223,5 +234,5 @@ class HDL_manager
 #endif
 };
 /// refcount definition of the class
-typedef refcount<HDL_manager> HDL_managerRef;
+using HDL_managerRef = refcount<HDL_manager>;
 #endif

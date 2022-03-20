@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,7 +40,7 @@
 
 /// Graph includes
 #include <boost/config.hpp>
-#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -50,15 +50,17 @@
 #include <boost/pending/disjoint_sets.hpp>
 #include <boost/version.hpp>
 
+#include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "refcount.hpp"
 
 /// Predicate functor object used to select the proper set of vertices
 template <typename Graph>
 struct cc_compatibility_graph_vertex_selector
 {
  public:
-   typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_descriptor;
-   typedef CustomUnorderedSet<vertex_descriptor> SET_container;
+   using vertex_descriptor = typename boost::graph_traits<Graph>::vertex_descriptor;
+   using SET_container = CustomUnorderedSet<vertex_descriptor>;
    /// constructor
    cc_compatibility_graph_vertex_selector() : all(true), support(nullptr)
    {
@@ -71,9 +73,13 @@ struct cc_compatibility_graph_vertex_selector
    bool operator()(const vertex_descriptor& v) const
    {
       if(all)
+      {
          return true;
+      }
       else
+      {
          return support->find(v) != support->end();
+      }
    }
 
  private:
@@ -114,9 +120,13 @@ struct cc_compatibility_graph_edge_selector
    bool operator()(const Edge& e) const
    {
       if(all)
+      {
          return true;
+      }
       else
+      {
          return selector & (*g)[e].selector;
+      }
    }
 };
 
@@ -144,31 +154,36 @@ struct edge_compatibility_selector
 };
 
 /// bulk compatibility graph
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::property<boost::vertex_index_t, std::size_t>, edge_compatibility_selector> boost_cc_compatibility_graph;
+using boost_cc_compatibility_graph =
+    boost::adjacency_matrix<boost::undirectedS, boost::property<boost::vertex_index_t, std::size_t>,
+                            edge_compatibility_selector>;
 
 /// compatibility graph
-typedef boost::filtered_graph<boost_cc_compatibility_graph, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>, cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>> cc_compatibility_graph;
+using cc_compatibility_graph =
+    boost::filtered_graph<boost_cc_compatibility_graph,
+                          cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>,
+                          cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>>;
 
 /// refcount version of cc_compatibility_graph
-typedef refcount<cc_compatibility_graph> cc_compatibility_graphRef;
+using cc_compatibility_graphRef = refcount<cc_compatibility_graph>;
 
 /// cc_compatibility_graph vertex
-typedef boost::graph_traits<cc_compatibility_graph>::vertex_descriptor C_vertex;
-typedef boost::graph_traits<cc_compatibility_graph>::out_edge_iterator C_outEdgeIterator;
+using C_vertex = boost::graph_traits<cc_compatibility_graph>::vertex_descriptor;
+using C_outEdgeIterator = boost::graph_traits<cc_compatibility_graph>::out_edge_iterator;
 
 /// vertices index type
-typedef boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type VertexIndex;
+using VertexIndex = boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type;
 /// index map type
-typedef boost::property_map<boost_cc_compatibility_graph, boost::vertex_index_t>::type vertex_index_pmap_t;
+using vertex_index_pmap_t = boost::property_map<boost_cc_compatibility_graph, boost::vertex_index_t>::type;
 /// rank property map definition
-typedef boost::iterator_property_map<std::vector<VertexIndex>::iterator, vertex_index_pmap_t> rank_pmap_type;
+using rank_pmap_type = boost::iterator_property_map<std::vector<VertexIndex>::iterator, vertex_index_pmap_t>;
 /// parent property map definition
-typedef boost::iterator_property_map<std::vector<C_vertex>::iterator, vertex_index_pmap_t> pred_pmap_type;
+using pred_pmap_type = boost::iterator_property_map<std::vector<C_vertex>::iterator, vertex_index_pmap_t>;
 
 //*************** definitions used in randomized clique covering
 
-typedef boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type RVertexIndex;
-typedef boost::graph_traits<boost_cc_compatibility_graph>::edge_descriptor REdge;
+using RVertexIndex = boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type;
+using REdge = boost::graph_traits<boost_cc_compatibility_graph>::edge_descriptor;
 
 /* VERSIONE PRECEDENTE
 typedef RVertexIndex* RRank;
@@ -176,6 +191,6 @@ typedef C_vertex* RParent;
 typedef boost::disjoint_sets<RRank, RParent, boost::find_with_full_path_compression> RDisjointSet;
 */
 
-typedef boost::disjoint_sets<rank_pmap_type, pred_pmap_type> RDisjointSet;
+using RDisjointSet = boost::disjoint_sets<rank_pmap_type, pred_pmap_type>;
 
 #endif

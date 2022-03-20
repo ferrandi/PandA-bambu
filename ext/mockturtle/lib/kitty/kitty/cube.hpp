@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -77,6 +77,10 @@ public:
     _bits = _mask = 0u;
 
     auto p = str.begin();
+    if ( p == str.end() )
+    {
+      return;
+    }
 
     for ( uint64_t i = 1; i <= ( uint64_t( 1u ) << 32u ); i <<= 1 )
     {
@@ -133,6 +137,12 @@ public:
   inline bool operator<( const cube& that ) const
   {
     return _value < that._value;
+  }
+
+  /*! \brief Returns the negated cube */
+  inline cube operator~() const
+  {
+    return {~_bits, _mask};
   }
 
   /*! \brief Merges two cubes of distance-1 */
@@ -264,10 +274,10 @@ inline void print_cubes( const std::vector<cube>& cubes, unsigned length = 32u, 
   for ( const auto& cube : cubes )
   {
     cube.print( length, os );
-    std::cout << '\n';
+    os << '\n';
   }
 
-  std::cout << std::flush;
+  os << std::flush;
 }
 
 template<>

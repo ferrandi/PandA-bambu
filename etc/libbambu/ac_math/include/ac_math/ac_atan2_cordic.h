@@ -181,8 +181,10 @@ namespace ac_math
    //   - atan2, inverse tan angle in radians
    //-------------------------------------------------------------------------
 
-   template <int YW, int YI, ac_q_mode YQ, ac_o_mode YO, int XW, int XI, ac_q_mode XQ, ac_o_mode XO, int OW, int OI, ac_q_mode OQ, ac_o_mode OO>
-   void ac_atan2_cordic(ac_fixed<YW, YI, true, YQ, YO> y, ac_fixed<XW, XI, true, XQ, XO> x, ac_fixed<OW, OI, true, OQ, OO>& atan)
+   template <int YW, int YI, ac_q_mode YQ, ac_o_mode YO, int XW, int XI, ac_q_mode XQ, ac_o_mode XO, int OW, int OI,
+             ac_q_mode OQ, ac_o_mode OO>
+   void ac_atan2_cordic(ac_fixed<YW, YI, true, YQ, YO> y, ac_fixed<XW, XI, true, XQ, XO> x,
+                        ac_fixed<OW, OI, true, OQ, OO>& atan)
    {
       // Number of iterations depends on output precision OW
       const int N_I = OW - OI + 3;

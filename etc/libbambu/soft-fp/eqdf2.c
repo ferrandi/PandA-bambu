@@ -28,10 +28,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "soft-fp.h"
-
-CMPtype __eqdf2(DFtype a, DFtype b)
+static __FORCE_INLINE CMPtype __eqdf2(DFtype a, DFtype b)
 {
    FP_DECL_EX;
    FP_DECL_D(A);
@@ -50,8 +47,3 @@ CMPtype __eqdf2(DFtype a, DFtype b)
 }
 
 strong_alias(__eqdf2, __nedf2);
-
-inline CMPtype __float64_eq(DFtype a, DFtype b)
-{
-   return __eqdf2(a, b);
-}

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,7 +64,7 @@ REF_FORWARD_DECL(target_device);
 class xml_element;
 
 /// macro used to convert the functional unit name and the library in an unique string.
-#define ENCODE_FU_LIB(fu_name, library) fu_name + ":" + library
+#define ENCODE_FU_LIB(fu_name, library) ((fu_name) + ":" + (library))
 
 /**
  * @class HLS_constraints
@@ -94,7 +94,8 @@ class HLS_constraints
    /// Variable storing the number of registers.
    unsigned int registers;
 
-   /// name of the function which the constraints are associated with; emtpy string means that they are global constraints
+   /// name of the function which the constraints are associated with; emtpy string means that they are global
+   /// constraints
    std::string fun_name;
 
    /// The set of input parameters
@@ -107,7 +108,7 @@ class HLS_constraints
    /**
     * Constructor.
     */
-   HLS_constraints(const ParameterConstRef& Param, std::string function_name);
+   HLS_constraints(const ParameterConstRef& Param, std::string _fun_name);
 
    /**
     * Gets the name of the function which the constraints are associated with
@@ -137,7 +138,8 @@ class HLS_constraints
     * @param library is the library of name.
     * @param n_resources is the maximum number of fu available (default is infinite).
     */
-   void set_number_fu(const std::string& name, const std::string& library, unsigned int n_resources = std::numeric_limits<unsigned int>::max());
+   void set_number_fu(const std::string& name, const std::string& library,
+                      unsigned int n_resources = std::numeric_limits<unsigned int>::max());
 
    /**
     * This method returns the maximum number of functional units available for the design.
@@ -161,7 +163,8 @@ class HLS_constraints
     * @param fu_library is the name of the library where the functional unit fu_name is contained.
     * @param fu_index is the ith functional unit instance.
     */
-   void bind_vertex_to_fu(const std::string& vertex_name, const std::string& fu_name, const std::string& fu_library, const unsigned int fu_index);
+   void bind_vertex_to_fu(const std::string& vertex_name, const std::string& fu_name, const std::string& fu_library,
+                          const unsigned int fu_index);
 
    /**
     * Binds a vertex to a functional unit.
@@ -231,7 +234,7 @@ class HLS_constraints
     * Writes the HLS constraints into an XML tree.
     * @param Enode is the root node which the XML representation of the constraints is attached.
     */
-   void xwrite(xml_element* Enode);
+   void xwrite(xml_element* rootnode);
 
    /**
     * Writes the generic synthesis constraints
@@ -247,7 +250,8 @@ class HLS_constraints
     * @param fu_library is the name of the library where the functional unit fu_name is contained.
     * @param fu_index is the ith functional unit instance.
     */
-   void xwriteFUConstraints(xml_element* Enode, const std::string& fu_name, const std::string& fu_library, unsigned int number_fu, bool forDump = false);
+   void xwriteFUConstraints(xml_element* Enode, const std::string& fu_name, const std::string& fu_library,
+                            unsigned int number_fu, bool forDump = false);
 
    /**
     * Writes the binding constraints (i.e., functional unit, instance and library) associated with an operation
@@ -256,7 +260,8 @@ class HLS_constraints
     * @param fu_name is the name of the functional unit
     * @param fu_library is the name of the library where the functional unit fu_name is contained.
     */
-   void xwriteBindingConstraints(xml_element* Enode, const std::string& vertex_name, const std::string& fu_name, const std::string& fu_library, unsigned int fu_index);
+   void xwriteBindingConstraints(xml_element* Enode, const std::string& vertex_name, const std::string& fu_name,
+                                 const std::string& fu_library, unsigned int fu_index);
 
    /**
     * Writes the scheduling constraints (i.e., priority value) associated with an operation
@@ -288,6 +293,6 @@ class HLS_constraints
    }
 };
 /// refcount definition of the class
-typedef refcount<HLS_constraints> HLS_constraintsRef;
+using HLS_constraintsRef = refcount<HLS_constraints>;
 
 #endif

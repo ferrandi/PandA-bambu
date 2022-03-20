@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,6 +75,6 @@ struct AsnParserNode
     * @param os is the output stream
     * @param to_be_printed is the node to be printed
     */
-   friend std::ostream& operator<<(std::ostream& os, const AsnParserNode& to_be_printed);
+   friend std::ostream& operator<<(std::ostream& os, const AsnParserNode& asn_parser_node);
 };
 #endif

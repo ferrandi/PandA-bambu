@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,7 +72,8 @@
 /// utility include
 #include "utility.hpp"
 
-OmpAllocation::OmpAllocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+OmpAllocation::OmpAllocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                             const DesignFlowManagerConstRef _design_flow_manager)
     : allocation(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::OMP_ALLOCATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -113,7 +114,7 @@ void OmpAllocation::AddPandaPthreadMutex()
    const auto top = CM->get_circ();
    /// add description and license
    GetPointer<module>(top)->set_description("Implementation of panda_pthread_mutex");
-   GetPointer<module>(top)->set_copyright("Copyright (C) 2012-2020 Politecnico di Milano");
+   GetPointer<module>(top)->set_copyright("Copyright (C) 2012-2022 Politecnico di Milano");
    GetPointer<module>(top)->set_authors("Marco Lattuada marco.lattuada@polimi.it");
    GetPointer<module>(top)->set_license("PANDA_GPLv3");
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, "panda_pthread_mutex");
@@ -125,21 +126,27 @@ void OmpAllocation::AddPandaPthreadMutex()
    auto op = GetPointer<operation>(fu->get_operation(op_name));
    op->time_m = time_model::create_model(TargetDevice_Type::FPGA, parameters);
    fu->area_m = area_model::create_model(TargetDevice_Type::FPGA, parameters);
-   structural_type_descriptorRef boolean_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   structural_type_descriptorRef boolean_type =
+       structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    CM->add_port(START_PORT_NAME, port_o::IN, top, boolean_type);
-   const auto behavioral_helper = HLSMgr->CGetFunctionBehavior(TreeM->function_index("panda_pthread_mutex"))->CGetBehavioralHelper();
+   const auto behavioral_helper =
+       HLSMgr->CGetFunctionBehavior(TreeM->GetFunction("panda_pthread_mutex")->index)->CGetBehavioralHelper();
    size_t parameter_index = 0;
    const auto function_parameters = behavioral_helper->get_parameters();
    THROW_ASSERT(function_parameters.size() == 2, STR(function_parameters.size()));
    for(const auto function_parameter : function_parameters)
    {
-      CM->add_port(parameter_index == 0 ? "mutex" : "locking", port_o::IN, top, structural_type_descriptorRef(new structural_type_descriptor(function_parameter, behavioral_helper)));
+      CM->add_port(
+          parameter_index == 0 ? "mutex" : "locking", port_o::IN, top,
+          structural_type_descriptorRef(new structural_type_descriptor(function_parameter, behavioral_helper)));
       parameter_index++;
    }
    parameter_index = 0;
    for(const auto function_parameter : function_parameters)
    {
-      CM->add_port(parameter_index == 0 ? "out_mutex" : "out_locking", port_o::OUT, top, structural_type_descriptorRef(new structural_type_descriptor(function_parameter, behavioral_helper)));
+      CM->add_port(
+          parameter_index == 0 ? "out_mutex" : "out_locking", port_o::OUT, top,
+          structural_type_descriptorRef(new structural_type_descriptor(function_parameter, behavioral_helper)));
       parameter_index++;
    }
    CM->add_port(DONE_PORT_NAME, port_o::OUT, top, boolean_type);

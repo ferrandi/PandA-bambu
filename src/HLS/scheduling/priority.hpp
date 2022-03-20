@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -130,7 +130,8 @@ struct priority_dynamic_mobility : public priority_data<int>
    /**
     * Constructor.
     */
-   priority_dynamic_mobility(const ASLAPRef& aslap, const OpVertexSet& _ready_nodes, unsigned int _ctrl_step_multiplier);
+   priority_dynamic_mobility(const ASLAPRef& aslap, const OpVertexSet& _ready_nodes,
+                             unsigned int _ctrl_step_multiplier);
 
    /**
     * This specialization does update the priorities at the end of the control step only of ready nodes.
@@ -178,7 +179,8 @@ struct priority_compare_functor
     */
    bool operator()(const vertex& a, const vertex& b) const
    {
-      return priority_values->operator()(a) < priority_values->operator()(b) || (priority_values->operator()(a) == priority_values->operator()(b) && a > b);
+      return priority_values->operator()(a) < priority_values->operator()(b) ||
+             (priority_values->operator()(a) == priority_values->operator()(b) && a > b);
    }
 
    /**

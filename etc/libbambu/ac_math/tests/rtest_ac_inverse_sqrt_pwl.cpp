@@ -52,7 +52,9 @@ using namespace ac_math;
 
 // Test Design for real and complex fixed point values.
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-void test_ac_inverse_sqrt_pwl_fixed(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in1, ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out1, const ac_complex<ac_fixed<Wfi + 1, Ifi + 1, true, AC_TRN, AC_WRAP>>& in2,
+void test_ac_inverse_sqrt_pwl_fixed(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in1,
+                                    ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& out1,
+                                    const ac_complex<ac_fixed<Wfi + 1, Ifi + 1, true, AC_TRN, AC_WRAP>>& in2,
                                     ac_complex<ac_fixed<outWfi + 1, outIfi + 1, true, AC_TRN, AC_WRAP>>& out2)
 {
    out1 = ac_inverse_sqrt_pwl<ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>>(in1);
@@ -61,7 +63,8 @@ void test_ac_inverse_sqrt_pwl_fixed(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_W
 
 // Test Design for real floating point values.
 template <int Wfl, int Ifl, int Efl, int outWfl, int outIfl, int outEfl>
-void test_ac_inverse_sqrt_pwl_float(const ac_float<Wfl, Ifl, Efl, AC_TRN>& in3, ac_float<outWfl, outIfl, outEfl, AC_TRN>& out3)
+void test_ac_inverse_sqrt_pwl_float(const ac_float<Wfl, Ifl, Efl, AC_TRN>& in3,
+                                    ac_float<outWfl, outIfl, outEfl, AC_TRN>& out3)
 {
    out3 = ac_inverse_sqrt_pwl<ac_float<outWfl, outIfl, outEfl, AC_TRN>>(in3);
 }
@@ -79,7 +82,8 @@ using namespace std;
 
 // Calculating error for real datatype.
 template <class T_in, class T_out>
-double err_calc(const T_in input, double& actual_value, const T_out output, const double allowed_error, const double threshold)
+double err_calc(const T_in input, double& actual_value, const T_out output, const double allowed_error,
+                const double threshold)
 {
    double expected_value;
 
@@ -98,7 +102,8 @@ double err_calc(const T_in input, double& actual_value, const T_out output, cons
    actual_value = output.to_double();
    double this_error;
 
-   // If expected value is greater than a particular threshold, calculate relative error, else, calculate absolute error.
+   // If expected value is greater than a particular threshold, calculate relative error, else, calculate absolute
+   // error.
    if(abs(expected_value) > threshold)
    {
       this_error = abs((expected_value - actual_value) / expected_value) * 100.0;
@@ -127,7 +132,8 @@ double err_calc(const T_in input, double& actual_value, const T_out output, cons
 // Calculate error for complex outputs
 
 template <class T_in, class T_out>
-double cmplx_err_calc(const ac_complex<T_in> input, const ac_complex<T_out> output, const double allowed_error, const double threshold)
+double cmplx_err_calc(const ac_complex<T_in> input, const ac_complex<T_out> output, const double allowed_error,
+                      const double threshold)
 {
    ac_complex<double> input_double(input.r().to_double(), input.i().to_double());
    ac_complex<double> output_sqrt, exp_op, diff_op, act_op;
@@ -200,7 +206,9 @@ double cmplx_err_calc(const ac_complex<T_in> input, const ac_complex<T_out> outp
    // The assert below notifies the user of that.
    if((input != 0) && (isnan(float(exp_op_no_quant.r())) || isnan(float(exp_op_no_quant.i()))))
    {
-      cout << "  Real and/or imaginary parts of the calculated expected output were set to nan. Please check your calculations." << endl;
+      cout << "  Real and/or imaginary parts of the calculated expected output were set to nan. Please check your "
+              "calculations."
+           << endl;
       assert(false);
    }
 #endif
@@ -210,14 +218,18 @@ double cmplx_err_calc(const ac_complex<T_in> input, const ac_complex<T_out> outp
 
 // Function for monotonicity checking in ac_fixed inputs.
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-void monotonicity_check(double& old_real_output, const double actual_value_fixed, bool& compare, ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> input_fixed, ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP> output_fixed)
+void monotonicity_check(double& old_real_output, const double actual_value_fixed, bool& compare,
+                        ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> input_fixed,
+                        ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP> output_fixed)
 {
-   // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with current value. Since the inverse square root function we
-   // are testing is a decreasing function, and our testbench value keeps incrementing or remains the same (in case of saturation), we expect the
-   // old value to be greater than or equal to the current one.
+   // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with current
+   // value. Since the inverse square root function we are testing is a decreasing function, and our testbench value
+   // keeps incrementing or remains the same (in case of saturation), we expect the old value to be greater than or
+   // equal to the current one.
    if(compare)
    {
-      // Figuring out what the normalized value was for the input is a good way to figure out where the discontinuity occured w.r.t. the PWL segments.
+      // Figuring out what the normalized value was for the input is a good way to figure out where the discontinuity
+      // occured w.r.t. the PWL segments.
       ac_fixed<Wfi, 0, false, AC_TRN, AC_WRAP> norm_input_fixed;
       ac_normalize(input_fixed, norm_input_fixed);
       if(old_real_output < actual_value_fixed)
@@ -233,7 +245,8 @@ void monotonicity_check(double& old_real_output, const double actual_value_fixed
    }
    // Update the variable for old_real_output.
    old_real_output = actual_value_fixed;
-   // By setting compare to true, we make sure that once there is an old value stored, we can start comparing for monotonicity.
+   // By setting compare to true, we make sure that once there is an old value stored, we can start comparing for
+   // monotonicity.
    compare = true;
 }
 
@@ -252,7 +265,9 @@ void monotonicity_check(double& old_real_output, const double actual_value_fixed
 //   and outputs.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max_error_cmplx_fixed, const double allowed_error_fixed, const double allowed_error_complex, const double threshold, bool details = false)
+int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max_error_cmplx_fixed,
+                      const double allowed_error_fixed, const double allowed_error_complex, const double threshold,
+                      bool details = false)
 {
    bool passed;
    bool check_monotonic = true;
@@ -315,8 +330,10 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
          }
          test_ac_inverse_sqrt_pwl_fixed(input_fixed, output_fixed, cmplx_input_fixed, cmplx_output_fixed);
 
-         double this_error_fixed = err_calc(input_fixed, actual_value_fixed, output_fixed, allowed_error_fixed, threshold);
-         double this_error_complex = cmplx_err_calc(cmplx_input_fixed, cmplx_output_fixed, allowed_error_complex, threshold);
+         double this_error_fixed =
+             err_calc(input_fixed, actual_value_fixed, output_fixed, allowed_error_fixed, threshold);
+         double this_error_complex =
+             cmplx_err_calc(cmplx_input_fixed, cmplx_output_fixed, allowed_error_complex, threshold);
 
          if(check_monotonic)
          {
@@ -361,7 +378,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
 // Description: test_driver function for ac_float inputs and outputs.
 
 template <int Wfl, int Ifl, int Efl, int outWfl, int outIfl, int outEfl>
-int test_driver_float(double& cumulative_max_error_float, const double allowed_error_float, const double threshold, bool details = false)
+int test_driver_float(double& cumulative_max_error_float, const double allowed_error_float, const double threshold,
+                      bool details = false)
 {
    bool passed = true;
    double max_error_float = 0.0; // reset for this run
@@ -437,7 +455,8 @@ int test_driver_float(double& cumulative_max_error_float, const double allowed_e
          double actual_value_float = output_float.to_double();
          double this_error_float;
 
-         // If expected value is greater than a particular threshold, calculate relative error, else, calculate absolute error.
+         // If expected value is greater than a particular threshold, calculate relative error, else, calculate absolute
+         // error.
          if(abs(expected_value_float) > threshold)
          {
             this_error_float = abs((expected_value_float - actual_value_float) / expected_value_float) * 100.0;
@@ -492,19 +511,30 @@ int main(int argc, char* argv[])
    double threshold_float = 0.005;
 
    cout << "=============================================================================" << endl;
-   cout << "Testing function: ac_inverse_sqrt_pwl() - Allowed error " << allowed_error_fixed << " (fixed pt), " << allowed_error_complex << " (complex fixed pt), " << allowed_error_float << " (float pt)" << endl;
+   cout << "Testing function: ac_inverse_sqrt_pwl() - Allowed error " << allowed_error_fixed << " (fixed pt), "
+        << allowed_error_complex << " (complex fixed pt), " << allowed_error_float << " (float pt)" << endl;
 
    // template <int Wfi, int Ifi, int outWfi, int outIfi>
-   test_driver_fixed<5, 2, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex, threshold_fixed);
-   test_driver_fixed<8, 20, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex, threshold_fixed);
-   test_driver_fixed<11, 0, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex, threshold_fixed);
-   test_driver_fixed<10, -6, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex, threshold_fixed);
-   test_driver_fixed<10, -4, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex, threshold_fixed);
-   test_driver_fixed<10, 8, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex, threshold_fixed);
-   test_driver_fixed<9, 4, 60, 30>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex, threshold_fixed);
-   test_driver_fixed<4, 9, 60, 30>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex, threshold_fixed);
-   test_driver_fixed<10, 11, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex, threshold_fixed);
-   test_driver_fixed<10, 5, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex, threshold_fixed);
+   test_driver_fixed<5, 2, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex,
+                                   threshold_fixed);
+   test_driver_fixed<8, 20, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex,
+                                    threshold_fixed);
+   test_driver_fixed<11, 0, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex,
+                                    threshold_fixed);
+   test_driver_fixed<10, -6, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex,
+                                     threshold_fixed);
+   test_driver_fixed<10, -4, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex,
+                                     threshold_fixed);
+   test_driver_fixed<10, 8, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex,
+                                    threshold_fixed);
+   test_driver_fixed<9, 4, 60, 30>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex,
+                                   threshold_fixed);
+   test_driver_fixed<4, 9, 60, 30>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex,
+                                   threshold_fixed);
+   test_driver_fixed<10, 11, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex,
+                                     threshold_fixed);
+   test_driver_fixed<10, 5, 64, 32>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, allowed_error_complex,
+                                    threshold_fixed);
 
    // template <int Wfl, int Ifl, int Efl, int outWfl, int outIfl, int outEfl>
    test_driver_float<8, 20, 3, 64, 32, 10>(max_error_float, allowed_error_float, threshold_float);
@@ -526,7 +556,8 @@ int main(int argc, char* argv[])
    cout << "    max_error_float       = " << max_error_float << endl;
 
    // If error limits on any tested datatype have been crossed, the test has failed
-   bool test_fail = (max_error_fixed > allowed_error_fixed) || (cmplx_max_error_fixed > allowed_error_complex) || (max_error_float > allowed_error_float);
+   bool test_fail = (max_error_fixed > allowed_error_fixed) || (cmplx_max_error_fixed > allowed_error_complex) ||
+                    (max_error_float > allowed_error_float);
 
    // Notify the user whether or not the test was a failure.
    if(test_fail)

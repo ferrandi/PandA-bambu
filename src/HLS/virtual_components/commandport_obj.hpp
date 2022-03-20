@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,22 +71,24 @@ class commandport_obj : public generic_obj
 {
  public:
    /// Available command types
-   typedef enum
-   {
-      OPERATION = 0,   /// operation enable
-      CONDITION,       /// conditional value. it represents a readcond if it goes to the controller or a condition if it goes to the datapath
-      SWITCH,          /// switch value, it represents the value of the switch statement
-      MULTIIF,         /// represents the multi conditions
-      SELECTOR,        /// mux selector
-      ALUSELECTOR,     /// ALU selector
-      UNBOUNDED,       /// signal representing a communication for an unbounded object (function call)
-      MULTI_UNBOUNDED, /// signal representing when a multi unbounded call ends
-      WRENABLE         /// enable for register writing
-   } command_type;
+   using command_type = enum {
+      OPERATION = 0, /// operation enable
+      CONDITION, /// conditional value. it represents a readcond if it goes to the controller or a condition if it goes
+                 /// to the datapath
+      SWITCH,    /// switch value, it represents the value of the switch statement
+      MULTIIF,   /// represents the multi conditions
+      SELECTOR,  /// mux selector
+      ALUSELECTOR,            /// ALU selector
+      UNBOUNDED,              /// signal representing a communication for an unbounded object (function call)
+      MULTI_UNBOUNDED,        /// signal representing when a multi unbounded call ends
+      MULTI_UNBOUNDED_ENABLE, /// signal enabling the multi unbounded component
+      WRENABLE                /// enable for register writing
+   };
 
-   typedef std::pair<unsigned int, vertex> data_operation_pair;
-   /// describe a transition from a source state to the target state plus the tree_node of the data transferred and the operation vertex where the computation is performed
-   typedef std::tuple<vertex, vertex, data_operation_pair> transition;
+   using data_operation_pair = std::pair<unsigned int, vertex>;
+   /// describe a transition from a source state to the target state plus the tree_node of the data transferred and the
+   /// operation vertex where the computation is performed
+   using transition = std::tuple<vertex, vertex, data_operation_pair>;
 
  private:
    /// TODO: substitute with a functor
@@ -104,7 +106,7 @@ class commandport_obj : public generic_obj
    CustomOrderedSet<transition> activations;
 
    /// structural_object associated with the element inside the controller
-   structural_objectRef controller_SM;
+   Wrefcount<structural_object> controller_SM;
 
  public:
    /**
@@ -112,14 +114,19 @@ class commandport_obj : public generic_obj
     * @param signal_ is vertex associated to port
     * @param mode is command type
     */
-   commandport_obj(const vertex& signal_, unsigned int _mode, const std::string& _name) : generic_obj(COMMAND_PORT, _name), signal(signal_), mode(_mode), is_a_phi_write_enable(false)
+   commandport_obj(const vertex& signal_, unsigned int _mode, const std::string& _name)
+       : generic_obj(COMMAND_PORT, _name), signal(signal_), mode(_mode), is_a_phi_write_enable(false)
    {
-      THROW_ASSERT(mode == OPERATION or mode == CONDITION or mode == SWITCH or mode == MULTIIF or mode == UNBOUNDED, "Command mode not allowed into this constructor");
+      THROW_ASSERT(mode == OPERATION or mode == CONDITION or mode == SWITCH or mode == MULTIIF or mode == UNBOUNDED,
+                   "Command mode not allowed into this constructor");
    }
 
-   commandport_obj(generic_objRef _elem, unsigned int _mode, const std::string& _name) : generic_obj(COMMAND_PORT, _name), elem(std::move(_elem)), mode(_mode), is_a_phi_write_enable(false)
+   commandport_obj(generic_objRef _elem, unsigned int _mode, const std::string& _name)
+       : generic_obj(COMMAND_PORT, _name), elem(_elem), mode(_mode), is_a_phi_write_enable(false)
    {
-      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR or mode == MULTI_UNBOUNDED, "Selector port is wrong");
+      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR or mode == MULTI_UNBOUNDED or
+                       mode == MULTI_UNBOUNDED_ENABLE,
+                   "Selector port is wrong");
    }
 
    /**
@@ -133,7 +140,8 @@ class commandport_obj : public generic_obj
     */
    const vertex& get_vertex() const
    {
-      THROW_ASSERT(mode == OPERATION or mode == CONDITION or mode == SWITCH or mode == MULTIIF or mode == UNBOUNDED, "Command mode not allowed");
+      THROW_ASSERT(mode == OPERATION or mode == CONDITION or mode == SWITCH or mode == MULTIIF or mode == UNBOUNDED,
+                   "Command mode not allowed");
       return signal;
    }
 
@@ -169,14 +177,16 @@ class commandport_obj : public generic_obj
     * Gets structural_object associated to this object
     * @return a reference to structural_object associated
     */
-   const structural_objectRef& get_controller_obj() const
+   const structural_objectRef get_controller_obj() const
    {
-      return controller_SM;
+      return controller_SM.lock();
    }
 
    const generic_objRef& get_elem() const
    {
-      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR || mode == MULTI_UNBOUNDED, "Selector port is wrong");
+      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR || mode == MULTI_UNBOUNDED or
+                       mode == MULTI_UNBOUNDED_ENABLE,
+                   "Selector port is wrong");
       return elem;
    }
 
@@ -196,6 +206,8 @@ class commandport_obj : public generic_obj
             return "UNBOUNDED";
          case MULTI_UNBOUNDED:
             return "MULTI_UNBOUNDED";
+         case MULTI_UNBOUNDED_ENABLE:
+            return "MULTI_UNBOUNDED_ENABLE";
          case SELECTOR:
             return "SELECTOR";
          case WRENABLE:

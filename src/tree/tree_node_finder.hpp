@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,14 +66,16 @@ REF_FORWARD_DECL(tree_node_finder);
 struct tree_node_finder : public tree_node_mask
 {
    /// default constructor
-   explicit tree_node_finder(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& _tree_node_schema) : find_res(true), tree_node_schema(_tree_node_schema)
+   explicit tree_node_finder(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& _tree_node_schema)
+       : find_res(true), tree_node_schema(_tree_node_schema)
    {
    }
    /// tree_node visitors
    BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
    BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)
 
-   /// Return true in case the tree node is compatible with the tree_node_schema. Usually called by tree_manager::create_tree_node.
+   /// Return true in case the tree node is compatible with the tree_node_schema. Usually called by
+   /// tree_manager::create_tree_node.
    bool check(const tree_nodeRef& t)
    {
       find_res = true;

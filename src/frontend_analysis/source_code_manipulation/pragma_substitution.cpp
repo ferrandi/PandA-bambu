@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,7 +57,9 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
-PragmaSubstitution::PragmaSubstitution(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+PragmaSubstitution::PragmaSubstitution(const application_managerRef _AppM,
+                                       const DesignFlowManagerConstRef _design_flow_manager,
+                                       const ParameterConstRef _parameters)
     : ApplicationFrontendFlowStep(_AppM, PRAGMA_SUBSTITUTION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -65,7 +67,8 @@ PragmaSubstitution::PragmaSubstitution(const application_managerRef _AppM, const
 
 PragmaSubstitution::~PragmaSubstitution() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> PragmaSubstitution::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+PragmaSubstitution::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -94,7 +97,8 @@ DesignFlowStep_Status PragmaSubstitution::Exec()
 {
    for(const auto& input_file : AppM->input_files)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Patching file " + input_file.first + "(" + input_file.second + ")");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Patching file " + input_file.first + "(" + input_file.second + ")");
       if(not boost::filesystem::exists(boost::filesystem::path(input_file.second)))
       {
          THROW_ERROR("File " + input_file.second + " does not exist");

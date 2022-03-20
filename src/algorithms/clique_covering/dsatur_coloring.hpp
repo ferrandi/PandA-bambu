@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file dsatur_coloring.hpp
- * @brief Boost-based implementation of a heuristic sequential coloring algorithm based on the work of Daniel Brelaz (Version 1).
+ * @brief Boost-based implementation of a heuristic sequential coloring algorithm based on the work of Daniel Brelaz
+ * (Version 1).
  *
  * Some ideas come from the Joseph Culberson's implementation of DSATUR heuristic of Daniel Brelaz.
  * For more details see
@@ -107,7 +108,8 @@ namespace boost
       {
          return degree(vertex(v1, G), G) < v2_degree;
       }
-      dsatur_degree_predicate_functor(const VertexListGraph& _G, size_type& _v2) : G(_G), v2_degree(degree(vertex(_v2, _G), _G))
+      dsatur_degree_predicate_functor(const VertexListGraph& _G, size_type& _v2)
+          : G(_G), v2_degree(degree(vertex(_v2, _G), _G))
       {
       }
 
@@ -142,12 +144,20 @@ namespace boost
       ColorMap& CM;
 
     public:
-      dsatur_coloring_helper(const VertexListGraph& _G, ColorMap& _CM, const size_type _num_node) : num_node(_num_node), satur_to_list(1), vertex_to_satur(_num_node, 0), vertex_to_iter(_num_node), color_set(_num_node), G(_G), CM(_CM)
+      dsatur_coloring_helper(const VertexListGraph& _G, ColorMap& _CM, const size_type _num_node)
+          : num_node(_num_node),
+            satur_to_list(1),
+            vertex_to_satur(_num_node, 0),
+            vertex_to_iter(_num_node),
+            color_set(_num_node),
+            G(_G),
+            CM(_CM)
       {
          std::vector<size_type> tmp_vertex_degree_ordering(_num_node);
          for(size_type i = 0; i < _num_node; i++)
             tmp_vertex_degree_ordering[i] = i;
-         std::stable_sort(tmp_vertex_degree_ordering.begin(), tmp_vertex_degree_ordering.end(), dsatur_degree_compare_functor<size_type, VertexListGraph>(_G));
+         std::stable_sort(tmp_vertex_degree_ordering.begin(), tmp_vertex_degree_ordering.end(),
+                          dsatur_degree_compare_functor<size_type, VertexListGraph>(_G));
          dsatur_d_list<size_type>* last = 0;
          for(size_type i = 0; i < _num_node; i++)
          {

@@ -46,7 +46,7 @@ all:
 	   let i+=1; \
 	done < ../check_compilation
 
-CONFIGURE_OPTIONS="--enable-flopoco --enable-xilinx --enable-modelsim --enable-icarus --enable-verilator --enable-altera --enable-opt --enable-altera-64bit --enable-lattice --enable-release --with-mentor-license=2003@lmw-2d.polimi.it"
+CONFIGURE_OPTIONS="--enable-flopoco --enable-opt --enable-release"
 
 dist:
 	make -f Makefile.init; \

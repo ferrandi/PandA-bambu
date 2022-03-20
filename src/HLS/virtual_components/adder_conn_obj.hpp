@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,7 +66,8 @@ class adder_conn_obj : public generic_obj
    /**
     * Constructor
     */
-   adder_conn_obj(const std::string& _name) : generic_obj(ADDER_CONN_OBJ, _name), bitsize(0), is_aligned_adder_p(false), trimmed_bits(0)
+   adder_conn_obj(const std::string& _name)
+       : generic_obj(ADDER_CONN_OBJ, _name), bitsize(0), is_aligned_adder_p(false), trimmed_bits(0)
    {
    }
 

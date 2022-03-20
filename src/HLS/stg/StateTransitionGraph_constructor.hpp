@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,7 +80,8 @@ class StateTransitionGraph_constructor
     * @param state_transition_graphs_collection is the graph to be manipulated
     * @param HLS is the HLS data structure
     */
-   StateTransitionGraph_constructor(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, const HLS_managerConstRef HLSMgr, unsigned int funId);
+   StateTransitionGraph_constructor(const StateTransitionGraphsCollectionRef state_transition_graphs_collection,
+                                    const HLS_managerConstRef HLSMgr, unsigned int funId);
 
    /**
     * Adds a new state managing the operations given as parameters
@@ -89,7 +90,8 @@ class StateTransitionGraph_constructor
     * @param end_op is a list of operation vertices that will end in the created state
     * @return the created vertex
     */
-   vertex create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op, const std::list<vertex>& end_op, const CustomOrderedSet<unsigned int>& BB_ids);
+   vertex create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op,
+                       const std::list<vertex>& end_op, const CustomOrderedSet<unsigned int>& BB_ids);
 
    /**
     *  create the STG entry vertex
@@ -121,7 +123,8 @@ class StateTransitionGraph_constructor
     */
    void set_condition(const EdgeDescriptor& e, transition_type t, vertex ops);
 
-   void set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const CustomOrderedSet<vertex>& ops, vertex ref_state);
+   void set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const CustomOrderedSet<vertex>& ops,
+                                vertex ref_state);
 
    /**
     * @brief function setting the condition on edge derived from switch statements
@@ -130,7 +133,8 @@ class StateTransitionGraph_constructor
     * @param labels are the the switch guards/labels associated with the edge
     * @param has_default is true when with the edge is associated the default guard/label
     */
-   void set_switch_condition(const EdgeDescriptor& e, vertex op, const CustomOrderedSet<unsigned>& labels, bool has_default);
+   void set_switch_condition(const EdgeDescriptor& e, vertex op, const CustomOrderedSet<unsigned>& labels,
+                             bool has_default);
 
    /**
     * @brief copy condition from one edge to another
@@ -149,6 +153,6 @@ class StateTransitionGraph_constructor
 };
 
 /// refcount definition to StateTransitionGraph_constructor class
-typedef refcount<StateTransitionGraph_constructor> StateTransitionGraph_constructorRef;
+using StateTransitionGraph_constructorRef = refcount<StateTransitionGraph_constructor>;
 
 #endif

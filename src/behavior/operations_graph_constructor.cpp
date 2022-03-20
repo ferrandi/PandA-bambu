@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,7 +57,8 @@
 #include <list>                   // for list
 #include <utility>                // for pair
 
-operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og) : og(std::move(_og)), op_graph(new OpGraph(og, -1))
+operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og)
+    : og(std::move(_og)), op_graph(new OpGraph(og, -1))
 {
 }
 
@@ -72,7 +73,9 @@ void operations_graph_constructor::Clear()
 vertex operations_graph_constructor::getIndex(const std::string& source)
 {
    if(index_map.find(source) != index_map.end())
+   {
       return index_map.find(source)->second;
+   }
    NodeInfoRef node_info(new OpNodeInfo());
    GetPointer<OpNodeInfo>(node_info)->vertex_name = source;
    const vertex v_og = og->AddVertex(node_info);
@@ -106,7 +109,8 @@ void operations_graph_constructor::CompressEdges()
    og->CompressEdges();
 }
 
-void operations_graph_constructor::add_edge_info(const vertex src, const vertex tgt, const int selector, unsigned int NodeID)
+void operations_graph_constructor::add_edge_info(const vertex src, const vertex tgt, const int selector,
+                                                 unsigned int NodeID)
 {
    EdgeDescriptor e;
    bool inserted;
@@ -128,8 +132,11 @@ void operations_graph_constructor::AddOperation(const tree_managerRef TM, const 
    THROW_ASSERT(operation_t != "", "Operation empty");
 #endif
    vertex current = getIndex(src);
-   THROW_ASSERT(not op_graph->CGetOpNodeInfo(current)->node or node_id == 0 or node_id == op_graph->CGetOpNodeInfo(current)->GetNodeId(),
-                "Trying to set node_id " + boost::lexical_cast<std::string>(node_id) + " to vertex " + src + " that has already node_id " + boost::lexical_cast<std::string>(op_graph->CGetOpNodeInfo(current)->GetNodeId()));
+   THROW_ASSERT(not op_graph->CGetOpNodeInfo(current)->node or node_id == 0 or
+                    node_id == op_graph->CGetOpNodeInfo(current)->GetNodeId(),
+                "Trying to set node_id " + boost::lexical_cast<std::string>(node_id) + " to vertex " + src +
+                    " that has already node_id " +
+                    boost::lexical_cast<std::string>(op_graph->CGetOpNodeInfo(current)->GetNodeId()));
    if(node_id > 0 and node_id != ENTRY_ID and node_id != EXIT_ID)
    {
       op_graph->GetOpNodeInfo(current)->node = TM->GetTreeReindex(node_id);
@@ -143,9 +150,13 @@ void operations_graph_constructor::AddOperation(const tree_managerRef TM, const 
 #endif
    GET_NODE_INFO(og, OpNodeInfo, current)->bb_index = bb_index;
    if(src == ENTRY)
+   {
       op_graph->GetOpGraphInfo()->entry_vertex = current;
+   }
    if(src == EXIT)
+   {
       op_graph->GetOpGraphInfo()->exit_vertex = current;
+   }
    op_graph->GetOpGraphInfo()->tree_node_to_operation[node_id] = current;
 }
 
@@ -155,18 +166,25 @@ void operations_graph_constructor::add_type(const std::string& src, unsigned int
    THROW_ASSERT(type_t != 0, "Type of vertex " + src + " is zero");
    vertex src_index = getIndex(src);
    if(GET_NODE_INFO(og, OpNodeInfo, src_index)->node_type != TYPE_GENERIC)
+   {
       GET_NODE_INFO(og, OpNodeInfo, src_index)->node_type |= type_t;
+   }
    else
+   {
       GET_NODE_INFO(og, OpNodeInfo, src_index)->node_type = type_t;
+   }
 }
 
-void operations_graph_constructor::AddVariable(const vertex op_vertex, const unsigned int variable, const FunctionBehavior_VariableType variable_type, const FunctionBehavior_VariableAccessType access_type)
+void operations_graph_constructor::AddVariable(const vertex op_vertex, const unsigned int variable,
+                                               const FunctionBehavior_VariableType variable_type,
+                                               const FunctionBehavior_VariableAccessType access_type)
 {
    op_graph->GetOpNodeInfo(op_vertex)->variables[variable_type][access_type].insert(variable);
 }
 
 #if HAVE_EXPERIMENTAL
-void operations_graph_constructor::AddMemoryLocation(const vertex op_vertex, const MemoryAddress variable, const FunctionBehavior_VariableAccessType access_type)
+void operations_graph_constructor::AddMemoryLocation(const vertex op_vertex, const MemoryAddress variable,
+                                                     const FunctionBehavior_VariableAccessType access_type)
 {
    op_graph->GetOpNodeInfo(op_vertex)->dynamic_memory_locations[access_type].insert(variable);
 }

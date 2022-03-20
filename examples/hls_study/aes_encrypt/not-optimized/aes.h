@@ -63,7 +63,7 @@
 /* ************* data type define ************************* */
 int type;
 int nb;
-int round;
+int i_round;
 int key[32];
 int statemt[32];
 int word[4][120];

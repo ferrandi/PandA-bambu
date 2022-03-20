@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,7 +58,8 @@ class STG_creator : public HLSFunctionStep
    /**
     * Constructor.
     */
-   STG_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   STG_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+               const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor.
@@ -66,6 +67,6 @@ class STG_creator : public HLSFunctionStep
    ~STG_creator() override;
 };
 /// refcount definition of the class
-typedef refcount<STG_creator> STG_creatorRef;
+using STG_creatorRef = refcount<STG_creator>;
 
 #endif

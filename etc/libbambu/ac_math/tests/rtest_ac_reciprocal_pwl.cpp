@@ -51,7 +51,9 @@ using namespace ac_math;
 
 // Test Design for real and complex fixed point values.
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
-void test_ac_reciprocal_pwl_fixed(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in1, ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& out1, const ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>& in2,
+void test_ac_reciprocal_pwl_fixed(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>& in1,
+                                  ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& out1,
+                                  const ac_complex<ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>>& in2,
                                   ac_complex<ac_fixed<outWfi, outIfi, true, AC_TRN, AC_WRAP>>& out2)
 {
    out1 = ac_reciprocal_pwl<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>(in1);
@@ -60,7 +62,10 @@ void test_ac_reciprocal_pwl_fixed(const ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP>
 
 // Test Design for real and complex floating point values.
 template <int Wfl, int Ifl, int Efl, int outWfl, int outIfl, int outEfl>
-void test_ac_reciprocal_pwl_float(const ac_float<Wfl, Ifl, Efl, AC_TRN>& in3, ac_float<outWfl, outIfl, outEfl, AC_TRN>& out3, const ac_complex<ac_float<Wfl, Ifl, Efl, AC_TRN>>& in4, ac_complex<ac_float<outWfl, outIfl, outEfl, AC_TRN>>& out4)
+void test_ac_reciprocal_pwl_float(const ac_float<Wfl, Ifl, Efl, AC_TRN>& in3,
+                                  ac_float<outWfl, outIfl, outEfl, AC_TRN>& out3,
+                                  const ac_complex<ac_float<Wfl, Ifl, Efl, AC_TRN>>& in4,
+                                  ac_complex<ac_float<outWfl, outIfl, outEfl, AC_TRN>>& out4)
 {
    out3 = ac_reciprocal_pwl<ac_float<outWfl, outIfl, outEfl, AC_TRN>>(in3);
    out4 = ac_reciprocal_pwl<ac_complex<ac_float<outWfl, outIfl, outEfl, AC_TRN>>>(in4);
@@ -79,7 +84,8 @@ using namespace std;
 
 // Calculating error for real datatype.
 template <class T_in, class T_out>
-double err_calc(const T_in input, double& actual_value, const T_out output, const double allowed_error, const double threshold)
+double err_calc(const T_in input, double& actual_value, const T_out output, const double allowed_error,
+                const double threshold)
 {
    double expected_value;
 
@@ -98,7 +104,8 @@ double err_calc(const T_in input, double& actual_value, const T_out output, cons
    actual_value = output.to_double();
    double this_error;
 
-   // If expected value is greater than a particular threshold, calculate relative error, else, calculate absolute error.
+   // If expected value is greater than a particular threshold, calculate relative error, else, calculate absolute
+   // error.
    if(abs(expected_value) > threshold)
    {
       this_error = abs((expected_value - actual_value) / expected_value) * 100.0;
@@ -126,7 +133,8 @@ double err_calc(const T_in input, double& actual_value, const T_out output, cons
 
 // Calculating error for complex datatype.
 template <class T_in, class T_out>
-double cmplx_err_calc(const ac_complex<T_in> input, const ac_complex<T_out> output, const double allowed_error, const double threshold)
+double cmplx_err_calc(const ac_complex<T_in> input, const ac_complex<T_out> output, const double allowed_error,
+                      const double threshold)
 {
    double in_r = input.r().to_double();
    double in_i = input.i().to_double();
@@ -161,7 +169,8 @@ double cmplx_err_calc(const ac_complex<T_in> input, const ac_complex<T_out> outp
    diff_op = exp_op - act_op;
    double this_error;
 
-   // If magnitude of expected value is greater than a particular threshold, calculate relative error, else, calculate absolute error.
+   // If magnitude of expected value is greater than a particular threshold, calculate relative error, else, calculate
+   // absolute error.
    if(sqrt(exp_op.mag_sqr()) > threshold)
    {
       this_error = sqrt((diff_op / exp_op).mag_sqr()) * 100;
@@ -189,18 +198,22 @@ double cmplx_err_calc(const ac_complex<T_in> input, const ac_complex<T_out> outp
 
 // Function for monotonicity checking in ac_fixed inputs.
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
-void monotonicity_check(double& old_real_output, const double actual_value_fixed, bool& compare, ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> input_fixed, ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> output_fixed)
+void monotonicity_check(double& old_real_output, const double actual_value_fixed, bool& compare,
+                        ac_fixed<Wfi, Ifi, Sfi, AC_TRN, AC_WRAP> input_fixed,
+                        ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> output_fixed)
 {
-   // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with current value. Since the reciprocal function we
-   // are testing is a decreasing function, and our testbench value keeps incrementing or remains the same (in case of saturation), we expect the
-   // old value to be greater than or equal to the current one.
-   // Also, since the reciprocal function has a large discontinuity at x = 0; we make sure we don't compare values when we cross this point.
-   // We do this by checking the signage of the old output vs that of the new output. Since we aren't checking for zero inputs, crossing x = 0
-   // will mean that the old output is negative and the new one is positive, in case of an increasing testbench.
+   // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with current
+   // value. Since the reciprocal function we are testing is a decreasing function, and our testbench value keeps
+   // incrementing or remains the same (in case of saturation), we expect the old value to be greater than or equal to
+   // the current one. Also, since the reciprocal function has a large discontinuity at x = 0; we make sure we don't
+   // compare values when we cross this point. We do this by checking the signage of the old output vs that of the new
+   // output. Since we aren't checking for zero inputs, crossing x = 0 will mean that the old output is negative and the
+   // new one is positive, in case of an increasing testbench.
    bool sign_same = (old_real_output > 0 && actual_value_fixed > 0) || (old_real_output < 0 && actual_value_fixed < 0);
    if(compare && sign_same)
    {
-      // Figuring out what the normalized value was for the input is a good way to figure out where the discontinuity occured w.r.t. the PWL segments.
+      // Figuring out what the normalized value was for the input is a good way to figure out where the discontinuity
+      // occured w.r.t. the PWL segments.
       ac_fixed<Wfi, int(Sfi), Sfi, AC_TRN, AC_WRAP> norm_input_fixed;
       ac_normalize(input_fixed, norm_input_fixed);
       if(old_real_output < actual_value_fixed)
@@ -216,7 +229,8 @@ void monotonicity_check(double& old_real_output, const double actual_value_fixed
    }
    // Update the variable for old_real_output.
    old_real_output = actual_value_fixed;
-   // By setting compare to true, we make sure that once there is an old value stored, we can start comparing for monotonicity.
+   // By setting compare to true, we make sure that once there is an old value stored, we can start comparing for
+   // monotonicity.
    compare = true;
 }
 
@@ -235,7 +249,8 @@ void monotonicity_check(double& old_real_output, const double actual_value_fixed
 //   and outputs.
 
 template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
-int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max_error_cmplx_fixed, const double allowed_error_fixed, const double threshold, bool details = false)
+int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max_error_cmplx_fixed,
+                      const double allowed_error_fixed, const double threshold, bool details = false)
 {
    bool passed = true;
    bool check_monotonic = true;
@@ -287,8 +302,10 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
          input_fixed = j;
          test_ac_reciprocal_pwl_fixed(input_fixed, output_fixed, cmplx_input_fixed, cmplx_output_fixed);
 
-         double this_error_fixed = err_calc(input_fixed, actual_value_fixed, output_fixed, allowed_error_fixed, threshold);
-         double this_error_complex = cmplx_err_calc(cmplx_input_fixed, cmplx_output_fixed, allowed_error_fixed, threshold);
+         double this_error_fixed =
+             err_calc(input_fixed, actual_value_fixed, output_fixed, allowed_error_fixed, threshold);
+         double this_error_complex =
+             cmplx_err_calc(cmplx_input_fixed, cmplx_output_fixed, allowed_error_fixed, threshold);
 
          if(check_monotonic)
          {
@@ -334,7 +351,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
 //   and outputs.
 
 template <int Wfl, int Ifl, int Efl, int outWfl, int outIfl, int outEfl>
-int test_driver_float(double& cumulative_max_error_float, double& cumulative_max_error_cmplx_float, const double allowed_error_float, const double threshold, bool details = false)
+int test_driver_float(double& cumulative_max_error_float, double& cumulative_max_error_cmplx_float,
+                      const double allowed_error_float, const double threshold, bool details = false)
 {
    bool passed = true;
    double max_error_float = 0.0;       // reset for this run
@@ -411,8 +429,10 @@ int test_driver_float(double& cumulative_max_error_float, double& cumulative_max
             input_float.m = i;
             test_ac_reciprocal_pwl_float(input_float, output_float, cmplx_input_float, cmplx_output_float);
 
-            double this_error_float = err_calc(input_float, actual_value_float, output_float, allowed_error_float, threshold);
-            double this_error_complex = cmplx_err_calc(cmplx_input_float, cmplx_output_float, allowed_error_float, threshold);
+            double this_error_float =
+                err_calc(input_float, actual_value_float, output_float, allowed_error_float, threshold);
+            double this_error_complex =
+                cmplx_err_calc(cmplx_input_float, cmplx_output_float, allowed_error_float, threshold);
 
             if(this_error_float > max_error_float)
             {
@@ -456,21 +476,28 @@ int main(int argc, char* argv[])
    double allowed_error_float = 0.5;
    const double threshold = 0.005;
    cout << "=============================================================================" << endl;
-   cout << "Testing function: ac_reciprocal_pwl() - Allowed error " << allowed_error_fixed << " (fixed pt), " << allowed_error_float << " (float pt)" << endl;
+   cout << "Testing function: ac_reciprocal_pwl() - Allowed error " << allowed_error_fixed << " (fixed pt), "
+        << allowed_error_float << " (float pt)" << endl;
 
    // template <int Wfi, int Ifi, bool Sfi, int outWfi, int outIfi, bool outSfi>
    test_driver_fixed<10, 3, true, 64, 32, true>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
    test_driver_fixed<11, 1, true, 64, 32, true>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
-   test_driver_fixed<10, 0, false, 64, 32, false>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
-   test_driver_fixed<12, 2, false, 64, 32, true>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
+   test_driver_fixed<10, 0, false, 64, 32, false>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed,
+                                                  threshold);
+   test_driver_fixed<12, 2, false, 64, 32, true>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed,
+                                                 threshold);
    test_driver_fixed<4, 9, true, 64, 32, true>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
    test_driver_fixed<4, -2, true, 64, 32, true>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
-   test_driver_fixed<5, 8, false, 64, 32, false>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
-   test_driver_fixed<4, -2, false, 60, 30, false>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
+   test_driver_fixed<5, 8, false, 64, 32, false>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed,
+                                                 threshold);
+   test_driver_fixed<4, -2, false, 60, 30, false>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed,
+                                                  threshold);
    test_driver_fixed<10, 4, true, 64, 32, true>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
-   test_driver_fixed<10, 3, false, 64, 32, false>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
+   test_driver_fixed<10, 3, false, 64, 32, false>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed,
+                                                  threshold);
    test_driver_fixed<9, 4, true, 60, 30, true>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
-   test_driver_fixed<9, 2, false, 64, 32, false>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed, threshold);
+   test_driver_fixed<9, 2, false, 64, 32, false>(max_error_fixed, cmplx_max_error_fixed, allowed_error_fixed,
+                                                 threshold);
 
    // template <int Wfl, int Ifl, int Efl, int outWfl, int outIfl, int outEfl>
    test_driver_float<5, 3, 3, 64, 32, 10>(max_error_float, cmplx_max_error_float, allowed_error_float, threshold);
@@ -491,7 +518,8 @@ int main(int argc, char* argv[])
    cout << "    cmplx_max_error_float = " << cmplx_max_error_float << endl;
 
    // If error limits on any tested datatype have been crossed, the test has failed
-   bool test_fail = (max_error_fixed > allowed_error_fixed) || (cmplx_max_error_fixed > allowed_error_fixed) || (max_error_float > allowed_error_float) || (cmplx_max_error_float > allowed_error_float);
+   bool test_fail = (max_error_fixed > allowed_error_fixed) || (cmplx_max_error_fixed > allowed_error_fixed) ||
+                    (max_error_float > allowed_error_float) || (cmplx_max_error_float > allowed_error_float);
 
    // Notify the user whether or not the test was a failure.
    if(test_fail)

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,9 @@ class xml_comment_node : public xml_node
       std::string escaped(get_name());
       convert_unescaped(escaped);
       if(formatted && pp)
+      {
          (*pp)(os, "\n");
+      }
       os << "<!--" << escaped << "-->";
    }
 
@@ -82,8 +84,8 @@ class xml_comment_node : public xml_node
    }
 
    /** Set the text of this content node
-    * @param content The text. This must be unescaped, meaning that the predefined entities will be created for you where necessary.
-    * See get_content().
+    * @param content The text. This must be unescaped, meaning that the predefined entities will be created for you
+    * where necessary. See get_content().
     */
    void set_content(const std::string& content)
    {

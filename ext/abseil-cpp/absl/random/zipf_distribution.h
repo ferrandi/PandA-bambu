@@ -23,9 +23,11 @@
 #include <type_traits>
 
 #include "absl/random/internal/iostream_state_saver.h"
+#include "absl/random/internal/traits.h"
 #include "absl/random/uniform_real_distribution.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 // absl::zipf_distribution produces random integer-values in the range [0, k],
 // distributed according to the discrete probability function:
@@ -93,7 +95,7 @@ class zipf_distribution {
     double hxm_;              // h(k + 0.5)
     double hx0_minus_hxm_;    // h(x0) - h(k + 0.5)
 
-    static_assert(std::is_integral<IntType>::value,
+    static_assert(random_internal::IsIntegral<IntType>::value,
                   "Class-template absl::zipf_distribution<> must be "
                   "parameterized using an integral type.");
   };
@@ -220,7 +222,7 @@ zipf_distribution<IntType>::operator()(
     const double u = p.hxm_ + v * p.hx0_minus_hxm_;
     const double x = p.hinv(u);
     k = rint(x);              // std::floor(x + 0.5);
-    if (k > p.k()) continue;  // reject k > max_k
+    if (k > static_cast<double>(p.k())) continue;  // reject k > max_k
     if (k - x <= p.s_) break;
     const double h = p.h(k + 0.5);
     const double r = p.pow_negative_q(p.v_ + k);
@@ -264,6 +266,7 @@ std::basic_istream<CharT, Traits>& operator>>(
   return is;
 }
 
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_RANDOM_ZIPF_DISTRIBUTION_H_

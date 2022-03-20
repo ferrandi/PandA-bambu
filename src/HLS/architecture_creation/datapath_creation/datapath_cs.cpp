@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,7 +54,9 @@
 #include "math_function.hpp"
 #include "utility.hpp"
 
-datapath_cs::datapath_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+datapath_cs::datapath_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                         const DesignFlowManagerConstRef _design_flow_manager,
+                         const HLSFlowStep_Type _hls_flow_step_type)
     : classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
@@ -73,18 +75,26 @@ void datapath_cs::add_ports()
    const structural_objectRef circuit = SM->get_circ();
    bool found = false;
    if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+   {
       found = true;
+   }
    if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+   {
       found = true;
+   }
    if(found) // function with selector
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports selector and suspension");
       int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
       if(!num_slots)
+      {
          num_slots = 1;
-      structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
+      }
+      structural_type_descriptorRef port_type =
+          structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
       SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
-      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+      structural_type_descriptorRef bool_type =
+          structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
       SM->add_port(STR(SUSPENSION), port_o::OUT, circuit, bool_type);
    }
    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
@@ -93,9 +103,13 @@ void datapath_cs::add_ports()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for kernel module");
       int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
       if(!num_slots)
+      {
          num_slots = 1;
-      structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
-      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+      }
+      structural_type_descriptorRef port_type =
+          structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
+      structural_type_descriptorRef bool_type =
+          structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
       SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::OUT, circuit, port_type);
       SM->add_port(STR(TASKS_POOL_END), port_o::IN, circuit, bool_type);
       SM->add_port(STR(DONE_SCHEDULER), port_o::IN, circuit, bool_type);

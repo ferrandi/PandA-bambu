@@ -41,7 +41,7 @@ double scalb(double x, double fn) /* wrapper scalb */
    z = __hide_ieee754_scalb(x, fn);
    if(_LIB_VERSION == _IEEE_)
       return z;
-   if(!(__finite(z) || isnan(z)) && __finite(x))
+   if(!(finite(z) || isnan(z)) && finite(x))
    {
       return __hide_kernel_standard(x, (double)fn, 32); /* scalb overflow */
    }
@@ -50,7 +50,7 @@ double scalb(double x, double fn) /* wrapper scalb */
       return __hide_kernel_standard(x, (double)fn, 33); /* scalb underflow */
    }
 #ifndef _SCALB_INT
-   if(!__finite(fn))
+   if(!finite(fn))
       errno = ERANGE;
 #endif
    return z;

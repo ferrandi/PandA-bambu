@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,7 @@
 #include <boost/lexical_cast.hpp>
 
 /// Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 
 static char* alloc_long_option(char* argv[], int& i, int& dec)
 {
@@ -95,8 +95,9 @@ static char** alloc_argv(int& argc, char* argv[])
    {
       char* tmp;
       // std::cerr << argv[i] << std::endl;
-      if(strcmp(argv[i], "-include") == 0 || strcmp(argv[i], "-isystem") == 0 || strcmp(argv[i], "-iquote") == 0 || strcmp(argv[i], "-isysroot") == 0 || strcmp(argv[i], "-imultilib") == 0 || strcmp(argv[i], "-MF") == 0 || strcmp(argv[i], "-MT") == 0 ||
-         strcmp(argv[i], "-MQ") == 0)
+      if(strcmp(argv[i], "-include") == 0 || strcmp(argv[i], "-isystem") == 0 || strcmp(argv[i], "-iquote") == 0 ||
+         strcmp(argv[i], "-isysroot") == 0 || strcmp(argv[i], "-imultilib") == 0 || strcmp(argv[i], "-MF") == 0 ||
+         strcmp(argv[i], "-MT") == 0 || strcmp(argv[i], "-MQ") == 0)
       {
          tmp = alloc_long_option(argv, i, dec);
       }
@@ -205,13 +206,17 @@ int main(int argc, char* argv_orig[])
             }
          }
 
-         const GccWrapper_OptimizationSet optimization_set = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_optimization_set);
-         const GccWrapper_CompilerTarget compiler_target = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
-         GccWrapperRef Wrap = GccWrapperRef(new GccWrapper(Param, compiler_target, optimization_set));
+         const CompilerWrapper_OptimizationSet optimization_set =
+             Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
+         const CompilerWrapper_CompilerTarget compiler_target =
+             Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+         CompilerWrapperRef Wrap = CompilerWrapperRef(new CompilerWrapper(Param, compiler_target, optimization_set));
 
          const auto input_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
 
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Created list of files: " + boost::lexical_cast<std::string>(input_files.size()) + " input source code files to be concatenated");
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                       "Created list of files: " + boost::lexical_cast<std::string>(input_files.size()) +
+                           " input source code files to be concatenated");
 
          std::map<std::string, std::string> temp_input_files;
          for(const auto& input_file : input_files)
@@ -261,24 +266,23 @@ int main(int argc, char* argv_orig[])
                   THROW_ERROR("File " + archive_file + " does not exist");
                }
                std::string temporary_directory_pattern;
-               temporary_directory_pattern = Param->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
+               temporary_directory_pattern =
+                   Param->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
                // The %s are required by the mkdtemp function
                boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
                boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
                boost::filesystem::create_directories(temp_path_obtained);
 
-               boost::filesystem::path local_archive_file = archive_file;
-               if(local_archive_file.is_relative())
-               {
-                  local_archive_file = boost::filesystem::current_path() / local_archive_file;
-               }
+               boost::filesystem::path local_archive_file = GetPath(archive_file);
+
                std::string command = "cd " + temp_path_obtained.string() + "; ar x " + local_archive_file.string();
                int ret = PandaSystem(Param, command);
                if(IsError(ret))
                {
                   THROW_ERROR("ar returns an error during archive extraction ");
                }
-               for(auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(temp_path_obtained), {}))
+               for(auto& entry :
+                   boost::make_iterator_range(boost::filesystem::directory_iterator(temp_path_obtained), {}))
                {
                   const tree_managerRef TM_new = ParseTreeFile(Param, entry.path().string());
                   TM->merge_tree_managers(TM_new);

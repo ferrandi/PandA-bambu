@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file raw_writer.cpp
- * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the raw format.
+ * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the raw
+ * format.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
@@ -58,7 +59,7 @@
 
 #include "exceptions.hpp" // for THROW_ERROR
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 #if HAVE_RTL_BUILT
@@ -105,8 +106,8 @@
  * Macro which writes on an output stream a string with its length. STRING_CST case
  */
 #define WRITE_STRGLNGT_STRING(os, field) \
-   (os << " "                            \
-       << "strg: \"" << (field) << "\" lngt: " << (field).size() + 1)
+   ((os) << " "                          \
+         << "strg: \"" << (field) << "\" lngt: " << (field).size() + 1)
 
 /**
  * Macro which writes on an output stream the srcp fields.
@@ -184,7 +185,8 @@ void raw_writer::operator()(const WeightedNode* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
-   /// TODO: these fields should be printed by this method. At the moment it is not possible because of ordering of fields produced by gcc
+   /// TODO: these fields should be printed by this method. At the moment it is not possible because of ordering of
+   /// fields produced by gcc
    // WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT), obj->recursive_weight);
    // WRITE_NFIELD(os, STOK(TOK_SIZE_WEIGHT), obj->instruction_size);
 }
@@ -260,8 +262,10 @@ void raw_writer::operator()(const expr_node* obj, unsigned int& mask)
    obj->srcp::visit(this);
 #if HAVE_CODE_ESTIMATION_BUILT
    obj->weight_information->recursive_weight.find(driving_component);
-   if(obj->weight_information->recursive_weight.find(driving_component) != obj->weight_information->recursive_weight.end())
-      WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT), obj->weight_information->recursive_weight.find(driving_component)->second);
+   if(obj->weight_information->recursive_weight.find(driving_component) !=
+      obj->weight_information->recursive_weight.end())
+      WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT),
+                   obj->weight_information->recursive_weight.find(driving_component)->second);
    if(obj->weight_information->instruction_size)
       WRITE_NFIELD(os, STOK(TOK_SIZE_WEIGHT), obj->weight_information->instruction_size);
 #endif
@@ -292,8 +296,10 @@ void raw_writer::operator()(const gimple_node* obj, unsigned int& mask)
    }
    obj->srcp::visit(this);
 #if HAVE_CODE_ESTIMATION_BUILT
-   if(obj->weight_information->recursive_weight.find(driving_component) != obj->weight_information->recursive_weight.end())
-      WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT), obj->weight_information->recursive_weight.find(driving_component)->second);
+   if(obj->weight_information->recursive_weight.find(driving_component) !=
+      obj->weight_information->recursive_weight.end())
+      WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT),
+                   obj->weight_information->recursive_weight.find(driving_component)->second);
    if(obj->weight_information->instruction_size)
       WRITE_NFIELD(os, STOK(TOK_SIZE_WEIGHT), obj->weight_information->instruction_size);
 #endif
@@ -677,6 +683,18 @@ void raw_writer::operator()(const function_decl* obj, unsigned int& mask)
    {
       WRITE_TOKEN(os, TOK_READING_MEMORY);
    }
+   if(obj->pipeline_enabled)
+   {
+      WRITE_TOKEN(os, TOK_PIPELINE_ENABLED);
+   }
+   if(obj->simple_pipeline)
+   {
+      WRITE_TOKEN(os, TOK_SIMPLE_PIPELINE);
+   }
+   if(obj->pipeline_enabled && !obj->simple_pipeline)
+   {
+      WRITE_NFIELD(os, STOK(TOK_INITIATION_TIME), obj->initiation_time);
+   }
 #if HAVE_FROM_PRAGMA_BUILT
    if(obj->omp_atomic)
    {
@@ -718,7 +736,6 @@ void raw_writer::operator()(const gimple_assign* obj, unsigned int& mask)
    write_when_not_null(STOK(TOK_OP), obj->op0);
    write_when_not_null(STOK(TOK_OP), obj->op1);
    write_when_not_null(STOK(TOK_PREDICATE), obj->predicate);
-   write_when_not_null(STOK(TOK_ORIG), obj->orig);
    if(obj->init_assignment)
    {
       WRITE_TOKEN(os, TOK_INIT);

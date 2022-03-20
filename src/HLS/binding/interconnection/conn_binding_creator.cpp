@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,14 +71,17 @@
 #include "call_graph_manager.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
-conn_binding_creator::conn_binding_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+conn_binding_creator::conn_binding_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                           unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
+                                           const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
 }
 
 conn_binding_creator::~conn_binding_creator() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> conn_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+conn_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -87,17 +90,38 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       {
          if(parameters->IsParameter("PortSwapping") and parameters->GetParameter<bool>("PortSwapping"))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::PORT_SWAPPING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::PORT_SWAPPING, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          if(HLSMgr->get_HLS(funId))
          {
-            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
+            {
+               ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
+            }
+            else
+            {
+               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
+                                          HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
+            }
          }
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_REGISTER_BINDING, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
+         else
+         {
+            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+                                       HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
 #if HAVE_EXPERIMENTAL
          if(parameters->IsParameter("MemoryConflictGraph") and parameters->GetParameter<bool>("MemoryConflictGraph"))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
 #endif
          break;
@@ -134,7 +158,8 @@ void conn_binding_creator::add_parameter_ports()
    const unsigned int return_type_index = BH->GetFunctionReturnType(BH->get_function_index());
    if(return_type_index)
    {
-      PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Return format " + BH->print_type(return_type_index) + " (OUT) ");
+      PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level,
+                       "Return format " + BH->print_type(return_type_index) + " (OUT) ");
       output_ports[return_type_index] = HLS->Rconn->bind_port(return_type_index, conn_binding::OUT);
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");

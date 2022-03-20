@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,9 +45,6 @@
 /// Includes the class definition
 #include "xst_wrapper.hpp"
 
-#include "config_HAVE_XILINX.hpp"
-#include "config_XILINX_SETTINGS.hpp"
-
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
 
@@ -58,7 +55,9 @@
 #include "utility.hpp"
 
 // constructor
-xst_wrapper::xst_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : XilinxWrapper(_Param, XST_TOOL_ID, _device, _output_dir, "xst")
+xst_wrapper::xst_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
+                         const target_deviceRef& _device)
+    : XilinxWrapper(_Param, XST_TOOL_ID, _device, _output_dir, "xst")
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the XST wrapper...");

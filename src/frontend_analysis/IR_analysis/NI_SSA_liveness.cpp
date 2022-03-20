@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,17 +45,29 @@
  *     hal_id = {inria-00558509},
  *     url = {http://hal.inria.fr/inria-00558509},
  *     title = {{Computing Liveness Sets for SSA-Form Programs}},
- *     author = {Brandner, Florian and Boissinot, Benoit and Darte, Alain and Dupont De Dinechin, Beno{\^\i}t and Rastello, Fabrice},
- *     abstract = {{We revisit the problem of computing liveness sets, i.e., the set of variables live-in and live-out of basic blocks, for programs in strict SSA (static single assignment). Strict SSA is also known as SSA with dominance property because
- * it ensures that the definition of a variable always dominates all its uses. This property can be exploited to optimize the computation of liveness sets. Our first contribution is the design of a fast data-flow algorithm, which, unlike traditional
- * approaches, avoids the iterative calculation of a fixed point. Thanks to the properties of strict SSA form and the use of a loop-nesting forest, we show that two passes are sufficient. A first pass, similar to the initialization of iterative data-flow
- * analysis, traverses the control-flow graph in postorder propagating liveness information backwards. A second pass then traverses the loop-nesting forest, updating liveness information within loops. Another approach is to propagate from uses to
- * definition, one variable and one path at a time, instead of unioning sets as in standard data-flow analysis. Such a path-exploration strategy was proposed by Appel in his ''Tiger book'' and is also used in the LLVM compiler. Our second contribution is
- * to show how to extend and optimize algorithms based on this idea to compute liveness sets one variable at a time using adequate data\~structures. Finally, we evaluate and compare the efficiency of the proposed algorithms using the SPECINT 2000 benchmark
- * suite. The standard data-flow approach is clearly outperformed, all algorithms show substantial speed-ups of a factor of 2 on average. Depending on the underlying set implementation either the path-exploration approach or the loop-forest-based approach
- * provides superior performance. Experiments show that our loop-forest-based algorithm provides superior performances (average speed-up of 43\% on the fastest alternative) when sets are represented as bitsets and for optimized programs, i.e., when there
- * are more variables and larger live-sets and live-ranges.}}, keywords = {Liveness Analysis; SSA form; Compilers}, language = {English}, affiliation = {COMPSYS - INRIA Grenoble Rh{\^o}ne-Alpes / LIP Laboratoire de l'Informatique du Parall{\'e}lisme ,
- * Kalray}, pages = {25}, type = {Research Report}, institution = {INRIA}, number = {RR-7503}, collaboration = {Kalray }, year = {2011}, month = Apr, pdf = {http://hal.inria.fr/inria-00558509/PDF/RR-7503.pdf},
+ *     author = {Brandner, Florian and Boissinot, Benoit and Darte, Alain and Dupont De Dinechin, Beno{\^\i}t and
+ * Rastello, Fabrice}, abstract = {{We revisit the problem of computing liveness sets, i.e., the set of variables
+ * live-in and live-out of basic blocks, for programs in strict SSA (static single assignment). Strict SSA is also known
+ * as SSA with dominance property because it ensures that the definition of a variable always dominates all its uses.
+ * This property can be exploited to optimize the computation of liveness sets. Our first contribution is the design of
+ * a fast data-flow algorithm, which, unlike traditional approaches, avoids the iterative calculation of a fixed point.
+ * Thanks to the properties of strict SSA form and the use of a loop-nesting forest, we show that two passes are
+ * sufficient. A first pass, similar to the initialization of iterative data-flow analysis, traverses the control-flow
+ * graph in postorder propagating liveness information backwards. A second pass then traverses the loop-nesting forest,
+ * updating liveness information within loops. Another approach is to propagate from uses to definition, one variable
+ * and one path at a time, instead of unioning sets as in standard data-flow analysis. Such a path-exploration strategy
+ * was proposed by Appel in his ''Tiger book'' and is also used in the LLVM compiler. Our second contribution is to show
+ * how to extend and optimize algorithms based on this idea to compute liveness sets one variable at a time using
+ * adequate data\~structures. Finally, we evaluate and compare the efficiency of the proposed algorithms using the
+ * SPECINT 2000 benchmark suite. The standard data-flow approach is clearly outperformed, all algorithms show
+ * substantial speed-ups of a factor of 2 on average. Depending on the underlying set implementation either the
+ * path-exploration approach or the loop-forest-based approach provides superior performance. Experiments show that our
+ * loop-forest-based algorithm provides superior performances (average speed-up of 43\% on the fastest alternative) when
+ * sets are represented as bitsets and for optimized programs, i.e., when there are more variables and larger live-sets
+ * and live-ranges.}}, keywords = {Liveness Analysis; SSA form; Compilers}, language = {English}, affiliation = {COMPSYS
+ * - INRIA Grenoble Rh{\^o}ne-Alpes / LIP Laboratoire de l'Informatique du Parall{\'e}lisme , Kalray}, pages = {25},
+ * type = {Research Report}, institution = {INRIA}, number = {RR-7503}, collaboration = {Kalray }, year = {2011}, month
+ * = Apr, pdf = {http://hal.inria.fr/inria-00558509/PDF/RR-7503.pdf},
  *   }
  *
  *
@@ -88,7 +100,8 @@
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
 
-NI_SSA_liveness::NI_SSA_liveness(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+NI_SSA_liveness::NI_SSA_liveness(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                                 unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, NI_SSA_LIVENESS, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -96,18 +109,18 @@ NI_SSA_liveness::NI_SSA_liveness(const ParameterConstRef _parameters, const appl
 
 NI_SSA_liveness::~NI_SSA_liveness() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> NI_SSA_liveness::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+NI_SSA_liveness::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPLETE_BB_GRAPH, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HDL_VAR_DECL_FIX, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COMPLETE_BB_GRAPH, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(HDL_VAR_DECL_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -116,11 +129,11 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FANOUT_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FUNCTION_CALL_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));
          break;
       }
       default:
@@ -136,21 +149,35 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
    /// if def(v) ∈ B (φ excluded) then return > Killed in the block, stop
    auto* v_ssa_name = GetPointer<ssa_name>(GET_NODE(v));
    if(!v_ssa_name)
+   {
       return;
+   }
    if(v_ssa_name->volatile_flag)
+   {
       return;
-   THROW_ASSERT(v_ssa_name->CGetDefStmts().size() == 1, "SSA " + v_ssa_name->ToString() + " (" + STR(v_ssa_name->index) + ") is not in SSA form");
+   }
+   THROW_ASSERT(v_ssa_name->CGetDefStmts().size() == 1,
+                "SSA " + v_ssa_name->ToString() + " (" + STR(v_ssa_name->index) + ") is not in SSA form");
    unsigned int def_stmt = GET_INDEX_NODE(v_ssa_name->CGetDefStmt());
-   if(((GET_NODE(v_ssa_name->CGetDefStmt()))->get_kind() == gimple_nop_K && GET_NODE(v_ssa_name->var)->get_kind() == parm_decl_K))
+   if(((GET_NODE(v_ssa_name->CGetDefStmt()))->get_kind() == gimple_nop_K &&
+       GET_NODE(v_ssa_name->var)->get_kind() == parm_decl_K))
+   {
       return;
+   }
 
    for(const auto& stmt : B->CGetStmtList())
+   {
       if(def_stmt == GET_INDEX_NODE(stmt))
+      {
          return;
+      }
+   }
    /// if v ∈ LiveIn(B) then return >    Propagation already done, stop
    unsigned int v_index = GET_INDEX_NODE(v);
    if(B->live_in.find(v_index) != B->live_in.end())
+   {
       return;
+   }
    /// LiveIn(B) = LiveIn(B) ∪ {v}
    B->live_in.insert(v_index);
    /// if v ∈ PhiDefs(B) then return >   Do not propagate φ definitions
@@ -158,11 +185,13 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
    {
       auto* pn = GetPointer<gimple_phi>(GET_NODE(phi));
       if(GET_INDEX_NODE(pn->res) == v_index)
+      {
          return;
+      }
    }
    /// for each P ∈ CFG_preds(B) do >   Propagate backward
-   std::vector<unsigned int>::const_iterator lp_it_end = B->list_of_pred.end();
-   for(std::vector<unsigned int>::const_iterator lp_it = B->list_of_pred.begin(); lp_it != lp_it_end; ++lp_it)
+   auto lp_it_end = B->list_of_pred.end();
+   for(auto lp_it = B->list_of_pred.begin(); lp_it != lp_it_end; ++lp_it)
    {
       const blocRef P = sl->list_of_bloc[*lp_it];
       P->live_out.insert(v_index);
@@ -185,8 +214,8 @@ DesignFlowStep_Status NI_SSA_liveness::InternalExec()
       blocRef B = B_it->second;
       unsigned int B_id = B->number;
       /// for each v ∈ PhiUses(B) do > Used in the φ of a successor block
-      std::vector<unsigned int>::const_iterator ls_it_end = B->list_of_succ.end();
-      for(std::vector<unsigned int>::const_iterator ls_it = B->list_of_succ.begin(); ls_it != ls_it_end; ++ls_it)
+      auto ls_it_end = B->list_of_succ.end();
+      for(auto ls_it = B->list_of_succ.begin(); ls_it != ls_it_end; ++ls_it)
       {
          const blocRef B_succ = sl->list_of_bloc[*ls_it];
          for(auto const& phi : B_succ->CGetPhiList())
@@ -267,7 +296,7 @@ void NI_SSA_liveness::Initialize()
       auto fd = GetPointer<function_decl>(tn);
       THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
       auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
-      for(auto block : sl->list_of_bloc)
+      for(const auto& block : sl->list_of_bloc)
       {
          block.second->live_in.clear();
          block.second->live_out.clear();

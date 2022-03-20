@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,11 +45,13 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "structural_objects.hpp"
 
-vcd_parser::vcd_parser(const ParameterConstRef& param) : debug_level(param->get_class_debug_level(GET_CLASS(*this))), vcd_fp(nullptr), sig_n(0)
+vcd_parser::vcd_parser(const ParameterConstRef& param)
+    : debug_level(param->get_class_debug_level(GET_CLASS(*this))), vcd_fp(nullptr), sig_n(0)
 {
 }
 
-vcd_parser::vcd_trace_t vcd_parser::parse_vcd(const std::string& vcd_file_to_parse, const vcd_filter_t& selected_signals)
+vcd_parser::vcd_trace_t vcd_parser::parse_vcd(const std::string& vcd_file_to_parse,
+                                              const vcd_filter_t& selected_signals)
 {
    // ---- initialization ----
    // open file
@@ -94,7 +96,8 @@ vcd_parser::vcd_trace_t vcd_parser::parse_vcd(const std::string& vcd_file_to_par
    // parse waveforms
    vcd_parse_sim();
    // ---- statistics ----
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of selected signals: " + STR(scope_and_name_to_sig_info.size()) + "/" + STR(sig_n));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                  "Number of selected signals: " + STR(scope_and_name_to_sig_info.size()) + "/" + STR(sig_n));
    // ---- cleanup ----
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Cleaning up VCD parser");
    fclose(vcd_fp);
@@ -208,7 +211,8 @@ int vcd_parser::vcd_parse_def_var(const std::string& scope)
             /* This is a hierarchical reference so we shouldn't modify ref -- quirky behavior from VCS */
             msb = size - 1;
             lsb = 0;
-            /* this is the case of signal (like integer) that are defined in the VCD in the same way of bit but they are arrays */
+            /* this is the case of signal (like integer) that are defined in the VCD in the same way of bit but they are
+             * arrays */
             if(msb > 0)
             {
                isvect = true;
@@ -235,7 +239,8 @@ int vcd_parser::vcd_parse_def_var(const std::string& scope)
          {
             msb = size - 1;
             lsb = 0;
-            /* this is the case of signal (like integer) that are defined in the VCD in the same way of bit but they are arrays */
+            /* this is the case of signal (like integer) that are defined in the VCD in the same way of bit but they are
+             * arrays */
             if(msb > 0)
             {
                isvect = true;
@@ -480,7 +485,8 @@ int vcd_parser::vcd_parse_sim()
          {
             last_timestep = std::stoul(token + 1, nullptr, 10);
          }
-         else if((token[0] == '0') || (token[0] == '1') || (token[0] == 'x') || (token[0] == 'X') || (token[0] == 'z') || (token[0] == 'Z'))
+         else if((token[0] == '0') || (token[0] == '1') || (token[0] == 'x') || (token[0] == 'X') ||
+                 (token[0] == 'z') || (token[0] == 'Z'))
          {
             /* normal signal -> add to vector */
             char tmp[2];
@@ -519,7 +525,9 @@ bool vcd_parser::check_filter_list(const std::string& scope_str, const std::stri
    return signal_names.find(name) != signal_names.end();
 }
 
-void vcd_parser::vcd_add_signal(const std::string& scope, const std::string& name, const std::string& vcd_id, const std::string& type, const bool isvect, const unsigned int msb, const unsigned int lsb)
+void vcd_parser::vcd_add_signal(const std::string& scope, const std::string& name, const std::string& vcd_id,
+                                const std::string& type, const bool isvect, const unsigned int msb,
+                                const unsigned int lsb)
 {
    THROW_ASSERT(!scope.empty() && !name.empty(), "scope = \"" + scope + "\" name = \"" + name + "\"");
 
@@ -555,9 +563,12 @@ bool vcd_parser::check_signals() const
       const vcd_sig_info& info = si.second;
       if(info.is_vec)
       {
-         if((info.lsb != 0) || (info.vcd_id_to_bit.size() > 1 && info.vcd_id_to_bit.size() != (info.msb - info.lsb + 1)))
+         if((info.lsb != 0) ||
+            (info.vcd_id_to_bit.size() > 1 && info.vcd_id_to_bit.size() != (info.msb - info.lsb + 1)))
          {
-            PRINT_OUT_MEX(DEBUG_LEVEL_NONE, 0, "port vector declaration is not consistent for vcd signal: \n" + si.first.first + si.first.second + "\n");
+            PRINT_OUT_MEX(DEBUG_LEVEL_NONE, 0,
+                          "port vector declaration is not consistent for vcd signal: \n" + si.first.first +
+                              si.first.second + "\n");
             return false;
          }
       }
@@ -589,8 +600,10 @@ void vcd_parser::add_variation(const std::string& sig_id, const std::string& val
       {
          const vcd_sig_info& siginfo = scope_and_name_to_sig_info.at(sn);
          std::list<sig_variation>& vars = parse_result.at(sn.first).at(sn.second);
-         THROW_ASSERT(vars.back().time_stamp <= ts, "Variations are not being added in time order: id = '" + sig_id + "', ts = " + STR(vars.back().time_stamp) + " > " + STR(ts));
-         THROW_ASSERT(!siginfo.vcd_id_to_bit.empty(), "signal " + sn.first + STR(HIERARCHY_SEPARATOR) + sn.second + " has no mapped vcd_id");
+         THROW_ASSERT(vars.back().time_stamp <= ts, "Variations are not being added in time order: id = '" + sig_id +
+                                                        "', ts = " + STR(vars.back().time_stamp) + " > " + STR(ts));
+         THROW_ASSERT(!siginfo.vcd_id_to_bit.empty(),
+                      "signal " + sn.first + STR(HIERARCHY_SEPARATOR) + sn.second + " has no mapped vcd_id");
          /* prepare the new value for variation to insert */
          std::string new_value;
          if(siginfo.vcd_id_to_bit.size() > 1)
@@ -601,9 +614,13 @@ void vcd_parser::add_variation(const std::string& sig_id, const std::string& val
              */
             THROW_ASSERT(value.size() == 1, "variation of a bit is larger than a bit");
             new_value = std::string(vars.back().value);
-            THROW_ASSERT(siginfo.vcd_id_to_bit.find(sig_id) != siginfo.vcd_id_to_bit.end(), "vcd id " + sig_id + " is not assigned to any bit of port" + sn.first + STR(HIERARCHY_SEPARATOR) + sn.second);
+            THROW_ASSERT(siginfo.vcd_id_to_bit.find(sig_id) != siginfo.vcd_id_to_bit.end(),
+                         "vcd id " + sig_id + " is not assigned to any bit of port" + sn.first +
+                             STR(HIERARCHY_SEPARATOR) + sn.second);
             size_t idx = siginfo.vcd_id_to_bit.at(sig_id);
-            THROW_ASSERT(idx < new_value.size(), "vcd_id " + sig_id + " for signal " + sn.first + STR(HIERARCHY_SEPARATOR) + sn.second + " is mapped to a bit higher than port size");
+            THROW_ASSERT(idx < new_value.size(), "vcd_id " + sig_id + " for signal " + sn.first +
+                                                     STR(HIERARCHY_SEPARATOR) + sn.second +
+                                                     " is mapped to a bit higher than port size");
             new_value.at(new_value.size() - idx - 1) = value.front();
          }
          else

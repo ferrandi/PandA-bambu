@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,24 +68,30 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "utility.hpp"
 
-SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager)
-    : EvaluationBaseStep(_Param, _hls_mgr, 0, _design_flow_manager, HLSFlowStep_Type::SIMULATION_EVALUATION), already_executed(false)
+SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr,
+                                           const DesignFlowManagerConstRef _design_flow_manager)
+    : EvaluationBaseStep(_Param, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::SIMULATION_EVALUATION),
+      already_executed(false)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
 }
 
 SimulationEvaluation::~SimulationEvaluation() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> SimulationEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+SimulationEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -102,7 +108,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-DesignFlowStep_Status SimulationEvaluation::InternalExec()
+DesignFlowStep_Status SimulationEvaluation::Exec()
 {
    THROW_ASSERT(not already_executed, "simulation cannot be executed multiple times!");
 
@@ -116,11 +122,12 @@ DesignFlowStep_Status SimulationEvaluation::InternalExec()
       HLSMgr->RSim->sim_tool->Clean();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cleaned up simulation files");
    }
-   std::string objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
+   auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    for(const auto& objective : objective_vector)
    {
-      if(objective == "CYCLES" or objective == "TIME" or objective == "TOTAL_CYCLES" or objective == "TOTAL_TIME" or objective == "TIMExAREA")
+      if(objective == "CYCLES" or objective == "TIME" or objective == "TOTAL_CYCLES" or objective == "TOTAL_TIME" or
+         objective == "TIMExAREA")
       {
          unsigned long long int tot_cycles = HLSMgr->RSim->tot_n_cycles;
          unsigned long long int avg_cycles = HLSMgr->RSim->avg_n_cycles;

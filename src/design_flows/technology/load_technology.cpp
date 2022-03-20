@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -61,7 +61,9 @@
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 
-LoadTechnology::LoadTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+LoadTechnology::LoadTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+                               const DesignFlowManagerConstRef _design_flow_manager,
+                               const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_TECHNOLOGY, _parameters)
 {
    composed = true;
@@ -70,7 +72,8 @@ LoadTechnology::LoadTechnology(const technology_managerRef _TM, const target_dev
 
 LoadTechnology::~LoadTechnology() = default;
 
-const CustomUnorderedSet<TechnologyFlowStep_Type> LoadTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<TechnologyFlowStep_Type>
+LoadTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
@@ -114,7 +117,8 @@ DesignFlowStep_Status LoadTechnology::Exec()
 
 void LoadTechnology::PrintFinalIR() const
 {
-   const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_" + GetName() + ".tm";
+   const std::string file_name =
+       parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_" + GetName() + ".tm";
    std::ofstream raw_file(file_name.c_str());
    TM->print(raw_file);
    raw_file.close();

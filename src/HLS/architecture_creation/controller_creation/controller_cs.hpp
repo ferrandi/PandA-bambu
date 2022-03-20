@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,7 +47,8 @@ class controller_cs : public fsm_controller
    /**
     * Constructor
     */
-   controller_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   controller_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                 const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor.
@@ -55,11 +56,11 @@ class controller_cs : public fsm_controller
    virtual ~controller_cs();
 
  protected:
-   void add_common_ports(structural_objectRef circuit);
+   void add_common_ports(structural_objectRef circuit, structural_managerRef SM) override;
 
-   void add_selector_register_file_port(structural_objectRef circuit);
+   void add_selector_register_file_port(structural_objectRef circuit, structural_managerRef SM);
 
-   void add_correct_transition_memory(std::string state_representation);
+   void add_correct_transition_memory(const std::string& state_representation, structural_managerRef SM) override;
 };
 
 #endif // CONTROLLER_CS_H

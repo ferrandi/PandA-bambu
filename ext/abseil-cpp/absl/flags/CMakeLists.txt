@@ -17,19 +17,16 @@
 # Internal-only target, do not depend on directly.
 absl_cc_library(
   NAME
-    flags_internal
-  SRCS
-    "internal/flag.cc"
+    flags_path_util
   HDRS
-    "internal/flag.h"
+    "internal/path_util.h"
   COPTS
     ${ABSL_DEFAULT_COPTS}
   LINKOPTS
     ${ABSL_DEFAULT_LINKOPTS}
   DEPS
-    absl::flags_handle
-    absl::flags_registry
-    absl::synchronization
+    absl::config
+    absl::strings
   PUBLIC
 )
 
@@ -46,24 +43,11 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_DEFAULT_LINKOPTS}
   DEPS
+    absl::config
+    absl::core_headers
     absl::flags_path_util
     absl::strings
     absl::synchronization
-  PUBLIC
-)
-
-# Internal-only target, do not depend on directly.
-absl_cc_library(
-  NAME
-    flags_path_util
-  HDRS
-    "internal/path_util.h"
-  COPTS
-    ${ABSL_DEFAULT_COPTS}
-  LINKOPTS
-    ${ABSL_DEFAULT_LINKOPTS}
-  DEPS
-    absl::strings
   PUBLIC
 )
 
@@ -80,6 +64,7 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_DEFAULT_LINKOPTS}
   DEPS
+    absl::config
     absl::flags_path_util
     absl::flags_program_name
     absl::core_headers
@@ -99,7 +84,9 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_DEFAULT_LINKOPTS}
   DEPS
+    absl::config
     absl::core_headers
+    absl::log_severity
     absl::strings
     absl::str_format
 )
@@ -107,7 +94,7 @@ absl_cc_library(
 # Internal-only target, do not depend on directly.
 absl_cc_library(
   NAME
-    flags_handle
+    flags_commandlineflag_internal
   SRCS
     "internal/commandlineflag.cc"
   HDRS
@@ -117,37 +104,94 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_DEFAULT_LINKOPTS}
   DEPS
-    absl::flags_config
-    absl::flags_marshalling
-    absl::core_headers
-    absl::optional
-    absl::raw_logging_internal
-    absl::strings
-    absl::synchronization
+    absl::config
+    absl::fast_type_id
 )
 
-# Internal-only target, do not depend on directly.
 absl_cc_library(
   NAME
-    flags_registry
+    flags_commandlineflag
   SRCS
-    "internal/registry.cc"
-    "internal/type_erased.cc"
+    "commandlineflag.cc"
   HDRS
-    "internal/registry.h"
-    "internal/type_erased.h"
+    "commandlineflag.h"
   COPTS
     ${ABSL_DEFAULT_COPTS}
   LINKOPTS
     ${ABSL_DEFAULT_LINKOPTS}
   DEPS
+    absl::config
+    absl::fast_type_id
+    absl::flags_commandlineflag_internal
+    absl::optional
+    absl::strings
+)
+
+# Internal-only target, do not depend on directly.
+absl_cc_library(
+  NAME
+    flags_private_handle_accessor
+  SRCS
+    "internal/private_handle_accessor.cc"
+  HDRS
+    "internal/private_handle_accessor.h"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  LINKOPTS
+    ${ABSL_DEFAULT_LINKOPTS}
+  DEPS
+    absl::config
+    absl::flags_commandlineflag
+    absl::flags_commandlineflag_internal
+    absl::strings
+)
+
+absl_cc_library(
+  NAME
+    flags_reflection
+  SRCS
+    "reflection.cc"
+  HDRS
+    "reflection.h"
+    "internal/registry.h"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  LINKOPTS
+    ${ABSL_DEFAULT_LINKOPTS}
+  DEPS
+    absl::config
+    absl::flags_commandlineflag
+    absl::flags_private_handle_accessor
     absl::flags_config
-    absl::flags_handle
-    absl::core_headers
-    absl::dynamic_annotations
-    absl::raw_logging_internal
     absl::strings
     absl::synchronization
+    absl::flat_hash_map
+)
+
+# Internal-only target, do not depend on directly.
+absl_cc_library(
+  NAME
+    flags_internal
+  SRCS
+    "internal/flag.cc"
+  HDRS
+    "internal/flag.h"
+    "internal/sequence_lock.h"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  LINKOPTS
+    ${ABSL_DEFAULT_LINKOPTS}
+  DEPS
+    absl::base
+    absl::config
+    absl::flags_commandlineflag
+    absl::flags_commandlineflag_internal
+    absl::flags_config
+    absl::flags_marshalling
+    absl::synchronization
+    absl::meta
+    absl::utility
+  PUBLIC
 )
 
 absl_cc_library(
@@ -158,15 +202,17 @@ absl_cc_library(
   HDRS
     "declare.h"
     "flag.h"
+    "internal/flag_msvc.inc"
   COPTS
     ${ABSL_DEFAULT_COPTS}
   LINKOPTS
     ${ABSL_DEFAULT_LINKOPTS}
   DEPS
+    absl::config
+    absl::flags_commandlineflag
     absl::flags_config
-    absl::flags_handle
     absl::flags_internal
-    absl::flags_marshalling
+    absl::flags_reflection
     absl::base
     absl::core_headers
     absl::strings
@@ -185,11 +231,16 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_DEFAULT_LINKOPTS}
   DEPS
+    absl::config
     absl::flags_config
     absl::flags
-    absl::flags_handle
+    absl::flags_commandlineflag
+    absl::flags_internal
     absl::flags_path_util
+    absl::flags_private_handle_accessor
     absl::flags_program_name
+    absl::flags_reflection
+    absl::flat_hash_map
     absl::strings
     absl::synchronization
 )
@@ -206,6 +257,8 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_DEFAULT_LINKOPTS}
   DEPS
+    absl::config
+    absl::core_headers
     absl::flags_usage_internal
     absl::strings
     absl::synchronization
@@ -224,10 +277,16 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_DEFAULT_LINKOPTS}
   DEPS
+    absl::config
+    absl::core_headers
     absl::flags_config
     absl::flags
+    absl::flags_commandlineflag
+    absl::flags_commandlineflag_internal
+    absl::flags_internal
+    absl::flags_private_handle_accessor
     absl::flags_program_name
-    absl::flags_registry
+    absl::flags_reflection
     absl::flags_usage
     absl::strings
     absl::synchronization
@@ -240,17 +299,19 @@ absl_cc_test(
   NAME
     flags_commandlineflag_test
   SRCS
-    "internal/commandlineflag_test.cc"
+    "commandlineflag_test.cc"
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
     absl::flags
+    absl::flags_commandlineflag
+    absl::flags_commandlineflag_internal
     absl::flags_config
-    absl::flags_handle
-    absl::flags_registry
+    absl::flags_private_handle_accessor
+    absl::flags_reflection
     absl::memory
     absl::strings
-    gtest_main
+    GTest::gtest_main
 )
 
 absl_cc_test(
@@ -262,7 +323,7 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::flags_config
-    gtest_main
+    GTest::gtest_main
 )
 
 absl_cc_test(
@@ -274,10 +335,15 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
+    absl::core_headers
     absl::flags
     absl::flags_config
+    absl::flags_internal
+    absl::flags_marshalling
+    absl::flags_reflection
     absl::strings
-    gtest_main
+    absl::time
+    GTest::gtest_main
 )
 
 absl_cc_test(
@@ -289,7 +355,7 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::flags_marshalling
-    gtest_main
+    GTest::gtest_main
 )
 
 absl_cc_test(
@@ -302,11 +368,13 @@ absl_cc_test(
   DEPS
     absl::flags
     absl::flags_parse
+    absl::flags_reflection
+    absl::flags_usage_internal
     absl::raw_logging_internal
     absl::scoped_set_env
     absl::span
     absl::strings
-    gmock_main
+    GTest::gmock_main
 )
 
 absl_cc_test(
@@ -318,7 +386,7 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::flags_path_util
-    gtest_main
+    GTest::gtest_main
 )
 
 absl_cc_test(
@@ -331,22 +399,38 @@ absl_cc_test(
   DEPS
     absl::flags_program_name
     absl::strings
-    gtest_main
+    GTest::gtest_main
 )
 
 absl_cc_test(
   NAME
-    flags_type_erased_test
+    flags_reflection_test
   SRCS
-    "internal/type_erased_test.cc"
+    "reflection_test.cc"
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
+    absl::flags_commandlineflag_internal
     absl::flags
-    absl::flags_registry
+    absl::flags_reflection
+    absl::flags_usage
     absl::memory
     absl::strings
-    gtest_main
+    GTest::gmock_main
+)
+
+absl_cc_test(
+  NAME
+    flags_sequence_lock_test
+  SRCS
+    "internal/sequence_lock_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::base
+    absl::flags_internal
+    absl::time
+    GTest::gmock_main
 )
 
 absl_cc_test(
@@ -361,7 +445,7 @@ absl_cc_test(
     absl::flags_path_util
     absl::flags_program_name
     absl::strings
-    gtest_main
+    GTest::gtest_main
 )
 
 absl_cc_test(
@@ -377,8 +461,8 @@ absl_cc_test(
     absl::flags_path_util
     absl::flags_program_name
     absl::flags_parse
+    absl::flags_reflection
     absl::flags_usage
-    absl::memory
     absl::strings
-    gtest
+    GTest::gtest
 )

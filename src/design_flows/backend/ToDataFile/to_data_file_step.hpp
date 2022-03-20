@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,7 +73,8 @@ class ToDataFileStep : public virtual DesignFlowStep
     * @param to_data_file_step is the type of this step
     * @param parameters is the set of input parameters
     */
-   ToDataFileStep(const DesignFlowManagerConstRef design_flow_manager, const ToDataFileStep_Type to_data_file_step, const ParameterConstRef parameters);
+   ToDataFileStep(const DesignFlowManagerConstRef design_flow_manager,
+                  const ToDataFileStep_Type _to_data_file_step_type, const ParameterConstRef parameters);
 
    /**
     * Return a unified identifier of this design step
@@ -113,7 +114,8 @@ class ToDataFileStep : public virtual DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override = 0;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override = 0;
 
    /**
     * Return the factory to create this type of steps

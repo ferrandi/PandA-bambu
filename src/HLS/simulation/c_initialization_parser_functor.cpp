@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,6 +40,10 @@
 
 /// Header include
 #include "c_initialization_parser_functor.hpp"
+
+CInitializationParserFunctor::CInitializationParserFunctor() : debug_level(0), write_in_a_file(false), file_variable("")
+{
+}
 
 CInitializationParserFunctor::~CInitializationParserFunctor()
 {

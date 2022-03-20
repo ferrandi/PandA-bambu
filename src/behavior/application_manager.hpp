@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,6 +54,7 @@
 #include "custom_set.hpp" // for CustomSet
 #include "graph.hpp"      // for vertex
 #include "refcount.hpp"   // for REF_FORWARD_DECL
+#include "tree_node.hpp"
 
 CONSTREF_FORWARD_DECL(ActorGraphManager);
 REF_FORWARD_DECL(ActorGraphManager);
@@ -66,10 +67,6 @@ CONSTREF_FORWARD_DECL(FunctionExpander);
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(pragma_manager);
 REF_FORWARD_DECL(tree_manager);
-#ifndef NDEBUG
-CONSTREF_FORWARD_DECL(tree_node);
-#endif
-REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(Discrepancy);
 
 class application_manager
@@ -93,7 +90,7 @@ class application_manager
    const ParameterConstRef Param;
 
    /// set of global variables
-   CustomSet<unsigned int> global_variables;
+   TreeNodeConstSet global_variables;
 
    unsigned int address_bitsize;
 
@@ -108,21 +105,25 @@ class application_manager
    pragma_managerRef PM;
 #endif
 
-#ifndef NDEBUG
    /// The number of cfg transformations applied to this function
    size_t cfg_transformations;
-#endif
 
    /// debugging level of the class
    const int debug_level;
 
-   /// put into relation formal parameters and the associated ssa variables
-   CustomMap<unsigned, unsigned> Parm2SSA_map;
+   /// put into relation formal parameters and the associated ssa variables in a given function
+   CustomMap<unsigned, CustomMap<unsigned, unsigned>> Parm2SSA_map;
 
    /**
     * Returns the values produced by a vertex (recursive version)
     */
+   /// FIXME: to be remove after substitution with GetProducedValue
    unsigned int get_produced_value(const tree_nodeRef& tn) const;
+
+   /**
+    * Returns the values produced by a vertex (recursive version)
+    */
+   tree_nodeConstRef GetProducedValue(const tree_nodeConstRef& tn) const;
 
  public:
 #if HAVE_FROM_DISCREPANCY_BUILT
@@ -140,7 +141,8 @@ class application_manager
     * @param allow_recursive_functions specifies if recursive functions are allowed
     * @param _Param is the reference to the class containing all the parameters
     */
-   application_manager(const FunctionExpanderConstRef function_expander, const bool single_root_function, const bool allow_recursive_functions, const ParameterConstRef _Param);
+   application_manager(const FunctionExpanderConstRef function_expander, const bool single_root_function,
+                       const bool allow_recursive_functions, const ParameterConstRef _Param);
 
    /**
     * Destructor
@@ -175,14 +177,16 @@ class application_manager
    bool hasToBeInterfaced(unsigned int funId) const;
 
    /**
-    * Returns the data structure associated with the given identifier. This method returns an error if the function does not exist.
+    * Returns the data structure associated with the given identifier. This method returns an error if the function does
+    * not exist.
     * @param index is the identified of the function to be returned
     * @return the FunctionBehavior associated with the given function
     */
    FunctionBehaviorRef GetFunctionBehavior(unsigned int index);
 
    /**
-    * Returns the datastructure associated with the given identifier. This method returns an error if the function does not exist.
+    * Returns the datastructure associated with the given identifier. This method returns an error if the function does
+    * not exist.
     * @param index is the identified of the function to be returned
     * @return the FunctionBehavior associated with the given function
     */
@@ -204,13 +208,13 @@ class application_manager
     * Adds a global variable
     * @param var is the global variable to be added
     */
-   void add_global_variable(unsigned int var);
+   void AddGlobalVariable(const tree_nodeConstRef& var);
 
    /**
     * Returns the set of original global variables
     * @return a set containing the identified of the global variables
     */
-   const CustomSet<unsigned int>& get_global_variables() const;
+   const TreeNodeConstSet& GetGlobalVariables() const;
 
 #if HAVE_PRAGMA_BUILT
    /**
@@ -222,7 +226,13 @@ class application_manager
    /**
     * Returns the value produced by a vertex
     */
+   /// FIXME: to be remove after substitution with GetProducedValue
    unsigned int get_produced_value(unsigned int fun_id, const vertex& v) const;
+
+   /**
+    * Returns the value produced by a vertex
+    */
+   tree_nodeConstRef GetProducedValue(unsigned int fun_id, const vertex& v) const;
 
    /**
     * Returns the parameter datastructure
@@ -239,6 +249,11 @@ class application_manager
     * Return the set of variables modified by a store
     */
    const CustomOrderedSet<unsigned int>& get_written_objects() const;
+
+   /**
+    * @brief clean_written_objects clean the written object data structure
+    */
+   void clean_written_objects();
 
    /**
     * set the value of the address bitsize
@@ -296,7 +311,6 @@ class application_manager
    void AddActorGraphManager(const unsigned int function_index, const ActorGraphManagerRef actor_graph_manager);
 #endif
 
-#ifndef NDEBUG
    /**
     * Return true if a new transformation can be applied
     */
@@ -308,33 +322,37 @@ class application_manager
     * @param new_tn is the tree node to be created
     */
    void RegisterTransformation(const std::string& step, const tree_nodeConstRef new_tn);
-#endif
 
    /**
     * @brief isParmUsed return true in case the parameter is used
     * @param parm_index is the parm_decl index
     * @return true in case the parameter is used
     */
-   bool isParmUsed(unsigned parm_index) const;
+   bool isParmUsed(unsigned int functionID, unsigned parm_index) const;
    /**
-    * \brief getSSAFromParm returns the ssa_name index associated with the parm_decl index, 0 in case there is not an associated index
-    * \param parm_index is the parm_decl index for which we look for the associated ssa_name index
+    * \brief getSSAFromParm returns the ssa_name index associated with the parm_decl index, 0 in case there is not an
+    * associated index \param parm_index is the parm_decl index for which we look for the associated ssa_name index
     */
-   unsigned getSSAFromParm(unsigned parm_index) const;
+   unsigned getSSAFromParm(unsigned int functionID, unsigned parm_index) const;
    /**
     * @brief setSSAFromParm defines the parm_decl versus ssa_name relation
     * @param parm_index is the index of the parm_decl
     * @param ssa_index is the index of the ssa_name
     */
-   void setSSAFromParm(unsigned int parm_index, unsigned ssa_index);
+   void setSSAFromParm(unsigned int functionID, unsigned int parm_index, unsigned ssa_index);
    /**
     * @brief clearParm2SSA cleans the map putting into relation parm_decl and ssa_name
     */
-   void clearParm2SSA();
+   void clearParm2SSA(unsigned int functionID);
+
+   /**
+    * return a copy of parameter to SSA map
+    */
+   CustomMap<unsigned, unsigned> getACopyParm2SSA(unsigned int functionID);
 };
 /// refcount definition of the class
-typedef refcount<application_manager> application_managerRef;
+using application_managerRef = refcount<application_manager>;
 /// constant refcount definition of the class
-typedef refcount<const application_manager> application_managerConstRef;
+using application_managerConstRef = refcount<const application_manager>;
 
 #endif

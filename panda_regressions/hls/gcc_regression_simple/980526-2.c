@@ -1,4 +1,4 @@
-typedef unsigned int dev_t;
+#include <sys/types.h>
 typedef unsigned int kdev_t;
 
 static inline kdev_t to_kdev_t(int dev)

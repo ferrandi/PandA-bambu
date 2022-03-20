@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,7 +59,7 @@ REF_FORWARD_DECL(virtual_phi_nodes_split);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(bloc);
-REF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(tree_manipulation);
 //@}
 
 /**
@@ -68,14 +68,13 @@ REF_FORWARD_DECL(tree_manager);
 class virtual_phi_nodes_split : public FunctionFrontendFlowStep
 {
  private:
+   tree_manipulationRef tree_man;
+
    /// flag to check if initial tree has been dumped
    static bool tree_dumped;
 
    /// Basic block introduced after entry
    blocRef next_entry;
-
-   /// Basic block splitting information: if replace[source, target] exists, then between source and target replace[source, target] has been inserted
-   std::map<std::pair<unsigned int, unsigned int>, unsigned int> replace;
 
    /**
     * virtually split a particular phi in two or more assignments
@@ -84,13 +83,16 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
     * @param list_of_bloc is basic block of the current function
     * @param TM is the tree manager
     */
-   void virtual_split_phi(tree_nodeRef phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM);
+   void virtual_split_phi(tree_nodeRef phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc,
+                          const tree_managerRef TM,
+                          std::map<std::pair<unsigned int, unsigned int>, unsigned int>& replace);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -100,7 +102,8 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
     * @param function_id is the index of the function
     * @param design_flow_manager is the design flow manager
     */
-   virtual_phi_nodes_split(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   virtual_phi_nodes_split(const ParameterConstRef _parameters, const application_managerRef AppM,
+                           unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -108,7 +111,7 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
    ~virtual_phi_nodes_split() override;
 
    /**
-    * Performes the virtual splitting of the phi-nodes.
+    * Performs the virtual splitting of the phi-nodes.
     */
    DesignFlowStep_Status InternalExec() override;
 };

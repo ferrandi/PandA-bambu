@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -124,7 +124,7 @@ class NP_functionality
  private:
    /// Store the description of the functionality.
    std::map<NP_functionaly_type, std::string> descriptions;
-   /// store the names of the enumerative NSC_functionaly_type.
+   /// store the names of the enumerative NP_functionaly_type.
    static const char* NP_functionaly_typeNames[];
    /**
     * Convert a string into the corresponding NP_functionaly_type enumerative type
@@ -168,7 +168,8 @@ class NP_functionality
     */
    void get_library_parameters(std::vector<std::string>& parameters) const;
 
-   void get_port_list(std::map<unsigned int, std::map<std::string, std::string>>& InPortMap, std::map<unsigned int, std::map<std::string, std::string>>& OutPortMap) const;
+   void get_port_list(std::map<unsigned int, std::map<std::string, std::string>>& InPortMap,
+                      std::map<unsigned int, std::map<std::string, std::string>>& OutPortMap) const;
 
    /**
     * Load a NP_functionality starting from an xml file.
@@ -200,6 +201,6 @@ class NP_functionality
 /**
  * RefCount type definition of the connection class structure.
  */
-typedef refcount<NP_functionality> NP_functionalityRef;
+using NP_functionalityRef = refcount<NP_functionality>;
 
 #endif

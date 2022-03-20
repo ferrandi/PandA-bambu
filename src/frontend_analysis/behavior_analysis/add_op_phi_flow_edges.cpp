@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file add_op_phi_flow_edges.cpp
- * @brief Analysis step which adds flow edges from the computation of the condition(s) of gimple_cond and gimple_multi_way_if to phi
+ * @brief Analysis step which adds flow edges from the computation of the condition(s) of gimple_cond and
+ * gimple_multi_way_if to phi
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
@@ -59,7 +60,9 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-AddOpPhiFlowEdges::AddOpPhiFlowEdges(const application_managerRef _AppM, const unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+AddOpPhiFlowEdges::AddOpPhiFlowEdges(const application_managerRef _AppM, const unsigned int _function_id,
+                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                     const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_PHI_FLOW_EDGES, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -67,16 +70,17 @@ AddOpPhiFlowEdges::AddOpPhiFlowEdges(const application_managerRef _AppM, const u
 
 AddOpPhiFlowEdges::~AddOpPhiFlowEdges() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddOpPhiFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+AddOpPhiFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OPERATIONS_CFG_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OPERATIONS_CFG_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -103,7 +107,9 @@ void AddOpPhiFlowEdges::Initialize()
          for(boost::tie(edge, edge_end) = boost::edges(*flg); edge != edge_end; edge++)
          {
             if((GET_TYPE(flg, boost::target(*edge, *flg)) & TYPE_PHI) != 0)
+            {
                function_behavior->ogc->RemoveSelector(*edge, FLG_SELECTOR);
+            }
          }
       }
    }
@@ -140,11 +146,14 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
             }
          }
          if(found_feedback_edge)
+         {
             continue;
+         }
          boost::tie(ie, ie_end) = boost::in_edges(bb_vertex, *dom_tree);
          const auto dominator = boost::source(*ie, *dom_tree);
          const auto dominator_statements = dom_tree->CGetBBNodeInfo(dominator)->block->CGetStmtList();
-         THROW_ASSERT(dominator_statements.size(), "BB" + STR(dom_tree->CGetBBNodeInfo(dominator)->block->number) + " is empty");
+         THROW_ASSERT(dominator_statements.size(),
+                      "BB" + STR(dom_tree->CGetBBNodeInfo(dominator)->block->number) + " is empty");
          const auto last_statement = GET_NODE(dominator_statements.back());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Last statement is " + last_statement->ToString());
          if(last_statement->get_kind() == gimple_cond_K)
@@ -155,7 +164,8 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + GET_NAME(fcfg, *operation));
                continue;
             }
-            THROW_ASSERT(GET_NODE(gc->op0)->get_kind() == ssa_name_K, "Operand of gimple_cond is " + gc->op0->ToString());
+            THROW_ASSERT(GET_NODE(gc->op0)->get_kind() == ssa_name_K,
+                         "Operand of gimple_cond is " + gc->op0->ToString());
             const auto ssa = GetPointer<const ssa_name>(GET_NODE(gc->op0));
             const auto def_stmt_node = ssa->CGetDefStmt();
             if(GetPointer<gimple_nop>(GET_NODE(def_stmt_node)))
@@ -164,7 +174,9 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
                continue;
             }
             const auto def_stmt_index = def_stmt_node->index;
-            THROW_ASSERT(fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index) != fcfg->CGetOpGraphInfo()->tree_node_to_operation.end(), "Vertex corresponding to " + ssa->CGetDefStmt()->ToString() + " not found");
+            THROW_ASSERT(fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index) !=
+                             fcfg->CGetOpGraphInfo()->tree_node_to_operation.end(),
+                         "Vertex corresponding to " + ssa->CGetDefStmt()->ToString() + " not found");
             const auto def_stmt_vertex = fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index)->second;
             function_behavior->ogc->AddEdge(def_stmt_vertex, *operation, FLG_SELECTOR);
          }
@@ -175,18 +187,22 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
             for(const auto& cond : gmwi->list_of_cond)
             {
                const auto cond_bb = bb_index_map.find(cond.second)->second;
-               if(cond.first and ((cond.second == bb_index) or function_behavior->CheckBBReachability(cond_bb, bb_vertex)))
+               if(cond.first and
+                  ((cond.second == bb_index) or function_behavior->CheckBBReachability(cond_bb, bb_vertex)))
                {
                   if(GET_NODE(cond.first)->get_kind() == integer_cst_K)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + GET_NAME(fcfg, *operation));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "<--Considered " + GET_NAME(fcfg, *operation));
                      continue;
                   }
-                  THROW_ASSERT(GET_NODE(cond.first)->get_kind() == ssa_name_K, "Operand of gimple_multi_way_if is " + cond.first->ToString());
+                  THROW_ASSERT(GET_NODE(cond.first)->get_kind() == ssa_name_K,
+                               "Operand of gimple_multi_way_if is " + cond.first->ToString());
                   const auto ssa = GetPointer<const ssa_name>(GET_NODE(cond.first));
                   THROW_ASSERT(ssa, GET_NODE(cond.first)->get_kind_text() + " " + STR(cond.first));
                   const auto def_stmt_index = ssa->CGetDefStmt()->index;
-                  const auto def_stmt_vertex = fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index)->second;
+                  const auto def_stmt_vertex =
+                      fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index)->second;
                   function_behavior->ogc->AddEdge(def_stmt_vertex, *operation, FLG_SELECTOR);
                }
             }
@@ -194,13 +210,17 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
          else if(last_statement->get_kind() == gimple_switch_K)
          {
             const auto gs = GetPointer<const gimple_switch>(last_statement);
-            THROW_ASSERT(GET_NODE(gs->op0)->get_kind() == ssa_name_K, "Operand of gimple_switch is " + gs->op0->ToString());
+            THROW_ASSERT(GET_NODE(gs->op0)->get_kind() == ssa_name_K,
+                         "Operand of gimple_switch is " + gs->op0->ToString());
             const auto ssa = GetPointer<const ssa_name>(GET_NODE(gs->op0));
             if(not ssa->var or GET_NODE(ssa->var)->get_kind() != parm_decl_K)
             {
                const auto def_stmt_index = ssa->CGetDefStmt()->index;
-               THROW_ASSERT(fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index) != fcfg->CGetOpGraphInfo()->tree_node_to_operation.end(), "Vertex corresponding to " + ssa->CGetDefStmt()->ToString() + " not found");
-               const auto def_stmt_vertex = fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index)->second;
+               THROW_ASSERT(fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index) !=
+                                fcfg->CGetOpGraphInfo()->tree_node_to_operation.end(),
+                            "Vertex corresponding to " + ssa->CGetDefStmt()->ToString() + " not found");
+               const auto def_stmt_vertex =
+                   fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index)->second;
                function_behavior->ogc->AddEdge(def_stmt_vertex, *operation, FLG_SELECTOR);
             }
          }

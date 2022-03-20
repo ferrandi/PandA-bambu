@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,7 +43,8 @@
 ///. include
 #include "Parameter.hpp"
 
-IntermediateRepresentation::IntermediateRepresentation(const ParameterConstRef& _parameters) : parameters(_parameters), debug_level(_parameters->getOption<int>(OPT_debug_level))
+IntermediateRepresentation::IntermediateRepresentation(const ParameterConstRef& _parameters)
+    : parameters(_parameters), debug_level(_parameters->getOption<int>(OPT_debug_level))
 {
 }
 

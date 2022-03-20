@@ -12,7 +12,7 @@
 *                       Politecnico di Milano - DEIB
 *                        System Architectures Group
 *             ***********************************************
-*              Copyright (C) 2004-2020 Politecnico di Milano
+*              Copyright (C) 2004-2022 Politecnico di Milano
 *
 *   This file is part of the PandA framework.
 *
@@ -50,6 +50,8 @@ tree* VRP_max_array=0;
 bool* p_VRP_min=0;
 bool* p_VRP_max=0;
 
+char dump_base_name_trimmed[1024];
+
 void set_num_vr_values(unsigned int n)
 {
   num_vr_values = n;
@@ -64,8 +66,7 @@ static char *outdir_name;
 
 /* Information about a node to be dumped.  */
 #define ZERO_OR_ONE(val) (val != 0 ? 1 : 0)
-#define MAKE_ANN(binfo_val, gimple_val, statement_val) (ZERO_OR_ONE(binfo_val) | (ZERO_OR_ONE(gimple_val) << 1) | (ZERO_OR_ONE(statement_val) << 2) )
-#define IS_BINFO(val) (val&1)
+#define MAKE_ANN(binfo, gimple_val, statement_val) (ZERO_OR_ONE(binfo) | (ZERO_OR_ONE(gimple_val) << 1) | (ZERO_OR_ONE(statement_val) << 2) )
 #define IS_GIMPLE(val) (val&2)
 #define IS_STATEMENT(val) (val&4)
 
@@ -642,6 +643,17 @@ SerializeGimpleEnd()
 unsigned int
 gimplePssa (void)
 {
+   size_t nc = strlen(dump_base_name);
+   size_t nc_index=0;
+   size_t last_slash=0;
+   while (nc_index<nc)
+   {
+      if(dump_base_name[nc_index] == '/')
+         last_slash = nc_index+1;
+      ++nc_index;
+   }
+   strcpy(dump_base_name_trimmed, dump_base_name+last_slash);
+
    /* dummy pass */
    if (!(cfun->curr_properties & PROP_cfg))
       fatal_error(INLOC "PROP_cfg marked in the pass descriptor but not found");
@@ -653,7 +665,7 @@ gimplePssa (void)
    if(cfun->cfg && basic_block_info)
 #endif
    {
-      char * name = concat (outdir_name, "/", dump_base_name, ".gimplePSSA", NULL);
+      char * name = concat (outdir_name, "/", dump_base_name_trimmed, ".gimplePSSA", NULL);
       bool has_loop = current_loops != NULL;
       if(!has_loop)
          loop_optimizer_init (AVOID_CFG_MODIFICATIONS);
@@ -724,6 +736,8 @@ void index_insert(serialize_queue_p dq, unsigned int index, unsigned int ann, tr
 #endif
    m->key = t;
    m->value = index;
+   unsigned int has_body = t && (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) && t == cfun->decl? 1 : 0;
+   m->has_body = has_body;
    gcc_assert(index <= di_local_index);
    m->ann = ann;
 
@@ -2162,9 +2176,7 @@ dequeue_and_serialize ()
   serialize_index (index);
 
   /* And the type of node this is.  */
-  if (IS_BINFO(ann))
-    code_name = "binfo";
-  else if(TREE_CODE (t) == TARGET_MEM_REF)
+  if(TREE_CODE (t) == TARGET_MEM_REF)
     code_name = "target_mem_ref461";
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 && __GNUC_PATCHLEVEL__>= 1)
   else if(TREE_CODE (t) == BIT_NOT_EXPR && TREE_CODE (TREE_TYPE (t)) == BOOLEAN_TYPE) /*incorrect encoding of not of a boolean expression*/
@@ -2196,46 +2208,6 @@ dequeue_and_serialize ()
   //    serialize_vops(t);
   // }
 
-  /* Although BINFOs are TREE_VECs, we serialize them specially so as to be
-     more informative.  */
-  if (IS_BINFO(ann))
-  {
-    unsigned ix;
-    tree base;
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
-    vec<tree,va_gc> *accesses = BINFO_BASE_ACCESSES (t);
-#else
-    VEC(tree,gc) *accesses = BINFO_BASE_ACCESSES (t);
-#endif
-    serialize_child ("type", BINFO_TYPE (t));
-
-    if (BINFO_VIRTUAL_P (t))
-      serialize_string ("virt");
-
-    serialize_int ("bases", BINFO_N_BASE_BINFOS (t));
-    for (ix = 0; BINFO_BASE_ITERATE (t, ix, base); ix++)
-    {
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
-      tree access = (accesses ? (*accesses)[ix] : access_public_node);
-#else
-      tree access = (accesses ? VEC_index (tree, accesses, ix) : access_public_node);
-#endif
-      const char *string = NULL;
-
-      if (access == access_public_node)
-        string = "pub";
-      else if (access == access_protected_node)
-        string = "prot";
-      else if (access == access_private_node)
-        string = "priv";
-      else
-        gcc_unreachable ();
-
-      serialize_string (string);
-    }
-
-    goto done;
-  }
 
   /* We can knock off a bunch of expression nodes in exactly the same
      way.  */
@@ -2522,8 +2494,10 @@ dequeue_and_serialize ()
 #endif
       serialize_child ("var", SSA_NAME_VAR (t));
       serialize_int ("vers", SSA_NAME_VERSION (t));
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
       if (POINTER_TYPE_P (TREE_TYPE (t)) && SSA_NAME_PTR_INFO (t))
         dump_pt_solution(&(SSA_NAME_PTR_INFO (t)->pt), "use", "use_vars");
+#endif
       if (TREE_THIS_VOLATILE (t))
         serialize_string("volatile");
       else
@@ -2711,6 +2685,7 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
     case REALPART_EXPR:
     case IMAGPART_EXPR:
     case VIEW_CONVERT_EXPR:
+    case ALIGNOF_EXPR:
       /* These nodes are unary, but do not have code class `1'.  */
       serialize_child ("op", TREE_OPERAND (t, 0));
       break;
@@ -2945,7 +2920,9 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
       break;
     }
 
+#ifdef CPP_LANGUAGE
  done:
+#endif
 
   /* Terminate the line.  */
   fprintf (serialize_gimple_info.stream, "\n");
@@ -3142,7 +3119,7 @@ dequeue_and_serialize_gimple ()
               serialize_child ("arg", gimple_call_arg(g, arg_index));
            }
         }
-#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) && !defined(SPARC) && !defined(ARM) && (__GNUC__ == 4 && __GNUC_MINOR__ < 8)
+#if (__GNUC__ == 4 && __GNUC_MINOR__ > 6) && !defined(SPARC) && !defined(ARM) && (__GNUC__ == 4 && __GNUC_MINOR__ < 8)
         pt = gimple_call_use_set (g);
         if (!pt_solution_empty_p (pt))
            dump_pt_solution(pt, "use", "use_vars");
@@ -3311,7 +3288,6 @@ dequeue_and_serialize_statement ()
   serialize_queue_p dq;
   struct tree_2_ints * stn_index;
   unsigned int index;
-  unsigned int ann;
   const char* code_name;
   basic_block bb;
 
@@ -3320,7 +3296,6 @@ dequeue_and_serialize_statement ()
   stn_index = dq->node_index;
   index = stn_index->value;
   gcc_assert(index <= di_local_index);
-  ann = stn_index->ann;
 
   /* Remove the node from the queue, and put it on the free list.  */
   serialize_gimple_info.queue = dq->next;
@@ -3333,10 +3308,7 @@ dequeue_and_serialize_statement ()
   serialize_index (index);
 
   /* And the type of node this is.  */
-  if (IS_BINFO(ann))
-    code_name = "binfo";
-  else
-    code_name = "statement_list";
+  code_name = "statement_list";
   fprintf (serialize_gimple_info.stream, "%-16s ", code_name);
   serialize_gimple_info.column = 25;
 
@@ -3439,6 +3411,7 @@ SerializeGimpleGlobalTreeNode(tree t)
    }
 
    /* Queue up the first node when not yet considered.  */
+   unsigned int has_body = (TREE_CODE(t) == FUNCTION_DECL) && gimple_has_body_p (t) && t == cfun->decl ? 1 : 0;
    unsigned int ann = MAKE_ANN(0, 0, 0);
    in.key = t;
    in.ann = ann;
@@ -3449,7 +3422,7 @@ SerializeGimpleGlobalTreeNode(tree t)
 #endif
    if (!n)
       queue (t);
-   else if (FUNCTION_DECL == TREE_CODE(t) && gimple_has_body_p (t))
+   else if (has_body && !n->has_body)
    {
       in.key = t;
       in.ann = ann;
@@ -3536,7 +3509,18 @@ build_custom_function_call_expr_internal_fn (location_t loc, internal_fn fn, tre
  */
 void serialize_global_variable(void * gcc_data, void * user_data)
 {
-   char * name = concat ((char *)user_data, "/", dump_base_name, ".001t.tu", NULL);
+   size_t nc = strlen(dump_base_name);
+   size_t nc_index=0;
+   size_t last_slash=0;
+   while (nc_index<nc)
+   {
+      if(dump_base_name[nc_index] == '/')
+         last_slash = nc_index+1;
+      ++nc_index;
+   }
+   strcpy(dump_base_name_trimmed, dump_base_name+last_slash);
+
+   char * name = concat ((char *)user_data, "/", dump_base_name_trimmed, ".001t.tu", NULL);
    SerializeGimpleBegin(name);
    serialize_globals();
    SerializeGimpleEnd();

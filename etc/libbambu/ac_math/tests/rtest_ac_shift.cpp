@@ -52,8 +52,12 @@ using namespace ac_math;
 
 // Test for left shifts on unsigned ac_fixed and ac_complex<ac_fixed> inputs and outputs.
 template <int W, int I, int outW, int outI, ac_q_mode outQ, ac_o_mode outO>
-void test_ac_shift_left_us(const ac_fixed<W, I, false, AC_TRN, AC_WRAP>& us_fixed_input, ac_fixed<outW, outI, false, outQ, outO>& us_fixed_output_1, ac_fixed<outW, outI, false, outQ, outO>& us_fixed_output_2,
-                           const ac_complex<ac_fixed<W, I, false, AC_TRN, AC_WRAP>>& us_complex_input, ac_complex<ac_fixed<outW, outI, false, outQ, outO>>& us_complex_output, const unsigned int& us_shift, const int& s_shift)
+void test_ac_shift_left_us(const ac_fixed<W, I, false, AC_TRN, AC_WRAP>& us_fixed_input,
+                           ac_fixed<outW, outI, false, outQ, outO>& us_fixed_output_1,
+                           ac_fixed<outW, outI, false, outQ, outO>& us_fixed_output_2,
+                           const ac_complex<ac_fixed<W, I, false, AC_TRN, AC_WRAP>>& us_complex_input,
+                           ac_complex<ac_fixed<outW, outI, false, outQ, outO>>& us_complex_output,
+                           const unsigned int& us_shift, const int& s_shift)
 {
    ac_shift_left(us_fixed_input, us_shift, us_fixed_output_1);
    ac_shift_left(us_fixed_input, s_shift, us_fixed_output_2);
@@ -62,8 +66,12 @@ void test_ac_shift_left_us(const ac_fixed<W, I, false, AC_TRN, AC_WRAP>& us_fixe
 
 // Test for left shifts on signed ac_fixed and ac_complex<ac_fixed> inputs and outputs.
 template <int W, int I, int outW, int outI, ac_q_mode outQ, ac_o_mode outO>
-void test_ac_shift_left_s(const ac_fixed<W, I, true, AC_TRN, AC_WRAP>& s_fixed_input, ac_fixed<outW, outI, true, outQ, outO>& s_fixed_output_1, ac_fixed<outW, outI, true, outQ, outO>& s_fixed_output_2,
-                          const ac_complex<ac_fixed<W, I, true, AC_TRN, AC_WRAP>>& s_complex_input, ac_complex<ac_fixed<outW, outI, true, outQ, outO>>& s_complex_output, const unsigned int& us_shift, const int& s_shift)
+void test_ac_shift_left_s(const ac_fixed<W, I, true, AC_TRN, AC_WRAP>& s_fixed_input,
+                          ac_fixed<outW, outI, true, outQ, outO>& s_fixed_output_1,
+                          ac_fixed<outW, outI, true, outQ, outO>& s_fixed_output_2,
+                          const ac_complex<ac_fixed<W, I, true, AC_TRN, AC_WRAP>>& s_complex_input,
+                          ac_complex<ac_fixed<outW, outI, true, outQ, outO>>& s_complex_output,
+                          const unsigned int& us_shift, const int& s_shift)
 {
    ac_shift_left(s_fixed_input, us_shift, s_fixed_output_1);
    ac_shift_left(s_fixed_input, s_shift, s_fixed_output_2);
@@ -72,8 +80,12 @@ void test_ac_shift_left_s(const ac_fixed<W, I, true, AC_TRN, AC_WRAP>& s_fixed_i
 
 // Test for right shifts on unsigned ac_fixed and ac_complex<ac_fixed> inputs and outputs.
 template <int W, int I, int outW, int outI, ac_q_mode outQ, ac_o_mode outO>
-void test_ac_shift_right_us(const ac_fixed<W, I, false, AC_TRN, AC_WRAP>& us_fixed_input, ac_fixed<outW, outI, false, outQ, outO>& us_fixed_output_1, ac_fixed<outW, outI, false, outQ, outO>& us_fixed_output_2,
-                            const ac_complex<ac_fixed<W, I, false, AC_TRN, AC_WRAP>>& us_complex_input, ac_complex<ac_fixed<outW, outI, false, outQ, outO>>& us_complex_output, const unsigned int& us_shift, const int& s_shift)
+void test_ac_shift_right_us(const ac_fixed<W, I, false, AC_TRN, AC_WRAP>& us_fixed_input,
+                            ac_fixed<outW, outI, false, outQ, outO>& us_fixed_output_1,
+                            ac_fixed<outW, outI, false, outQ, outO>& us_fixed_output_2,
+                            const ac_complex<ac_fixed<W, I, false, AC_TRN, AC_WRAP>>& us_complex_input,
+                            ac_complex<ac_fixed<outW, outI, false, outQ, outO>>& us_complex_output,
+                            const unsigned int& us_shift, const int& s_shift)
 {
    ac_shift_right(us_fixed_input, us_shift, us_fixed_output_1);
    ac_shift_right(us_fixed_input, s_shift, us_fixed_output_2);
@@ -82,8 +94,12 @@ void test_ac_shift_right_us(const ac_fixed<W, I, false, AC_TRN, AC_WRAP>& us_fix
 
 // Test for right shifts on signed ac_fixed and ac_complex<ac_fixed> inputs and outputs.
 template <int W, int I, int outW, int outI, ac_q_mode outQ, ac_o_mode outO>
-void test_ac_shift_right_s(const ac_fixed<W, I, true, AC_TRN, AC_WRAP>& s_fixed_input, ac_fixed<outW, outI, true, outQ, outO>& s_fixed_output_1, ac_fixed<outW, outI, true, outQ, outO>& s_fixed_output_2,
-                           const ac_complex<ac_fixed<W, I, true, AC_TRN, AC_WRAP>>& s_complex_input, ac_complex<ac_fixed<outW, outI, true, outQ, outO>>& s_complex_output, const unsigned int& us_shift, const int& s_shift)
+void test_ac_shift_right_s(const ac_fixed<W, I, true, AC_TRN, AC_WRAP>& s_fixed_input,
+                           ac_fixed<outW, outI, true, outQ, outO>& s_fixed_output_1,
+                           ac_fixed<outW, outI, true, outQ, outO>& s_fixed_output_2,
+                           const ac_complex<ac_fixed<W, I, true, AC_TRN, AC_WRAP>>& s_complex_input,
+                           ac_complex<ac_fixed<outW, outI, true, outQ, outO>>& s_complex_output,
+                           const unsigned int& us_shift, const int& s_shift)
 {
    ac_shift_right(s_fixed_input, us_shift, s_fixed_output_1);
    ac_shift_right(s_fixed_input, s_shift, s_fixed_output_2);
@@ -330,11 +346,17 @@ int test_driver_us(bool& all_tests_pass, bool details = false)
             us_fixed_input = i;
             us_complex_input.r() = i;
             us_complex_input.i() = j;
-            test_ac_shift_left_us(us_fixed_input, us_fixed_output_1, us_fixed_output_2, us_complex_input, us_complex_output, un, n);
-            bool correct_iteration_shift_left = output_check_shift_left(us_fixed_input, un, us_fixed_output_1) && output_check_shift_left(us_fixed_input, n, us_fixed_output_2) && output_check_shift_left(us_complex_input, un, us_complex_output);
+            test_ac_shift_left_us(us_fixed_input, us_fixed_output_1, us_fixed_output_2, us_complex_input,
+                                  us_complex_output, un, n);
+            bool correct_iteration_shift_left = output_check_shift_left(us_fixed_input, un, us_fixed_output_1) &&
+                                                output_check_shift_left(us_fixed_input, n, us_fixed_output_2) &&
+                                                output_check_shift_left(us_complex_input, un, us_complex_output);
 
-            test_ac_shift_right_us(us_fixed_input, us_fixed_output_1, us_fixed_output_2, us_complex_input, us_complex_output, un, n);
-            bool correct_iteration_shift_right = output_check_shift_right(us_fixed_input, un, us_fixed_output_1) && output_check_shift_right(us_fixed_input, n, us_fixed_output_2) && output_check_shift_right(us_complex_input, un, us_complex_output);
+            test_ac_shift_right_us(us_fixed_input, us_fixed_output_1, us_fixed_output_2, us_complex_input,
+                                   us_complex_output, un, n);
+            bool correct_iteration_shift_right = output_check_shift_right(us_fixed_input, un, us_fixed_output_1) &&
+                                                 output_check_shift_right(us_fixed_input, n, us_fixed_output_2) &&
+                                                 output_check_shift_right(us_complex_input, un, us_complex_output);
 
             correct = correct && correct_iteration_shift_left && correct_iteration_shift_right;
          }
@@ -405,11 +427,17 @@ int test_driver_s(bool& all_tests_pass, bool details = false)
             s_fixed_input = i;
             s_complex_input.r() = i;
             s_complex_input.i() = j;
-            test_ac_shift_left_s(s_fixed_input, s_fixed_output_1, s_fixed_output_2, s_complex_input, s_complex_output, un, n);
-            bool correct_iteration_shift_left = output_check_shift_left(s_fixed_input, un, s_fixed_output_1) && output_check_shift_left(s_fixed_input, n, s_fixed_output_2) && output_check_shift_left(s_complex_input, un, s_complex_output);
+            test_ac_shift_left_s(s_fixed_input, s_fixed_output_1, s_fixed_output_2, s_complex_input, s_complex_output,
+                                 un, n);
+            bool correct_iteration_shift_left = output_check_shift_left(s_fixed_input, un, s_fixed_output_1) &&
+                                                output_check_shift_left(s_fixed_input, n, s_fixed_output_2) &&
+                                                output_check_shift_left(s_complex_input, un, s_complex_output);
 
-            test_ac_shift_right_s(s_fixed_input, s_fixed_output_1, s_fixed_output_2, s_complex_input, s_complex_output, un, n);
-            bool correct_iteration_shift_right = output_check_shift_right(s_fixed_input, un, s_fixed_output_1) && output_check_shift_right(s_fixed_input, n, s_fixed_output_2) && output_check_shift_right(s_complex_input, un, s_complex_output);
+            test_ac_shift_right_s(s_fixed_input, s_fixed_output_1, s_fixed_output_2, s_complex_input, s_complex_output,
+                                  un, n);
+            bool correct_iteration_shift_right = output_check_shift_right(s_fixed_input, un, s_fixed_output_1) &&
+                                                 output_check_shift_right(s_fixed_input, n, s_fixed_output_2) &&
+                                                 output_check_shift_right(s_complex_input, un, s_complex_output);
             correct = correct && correct_iteration_shift_left && correct_iteration_shift_right;
          }
       }

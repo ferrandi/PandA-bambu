@@ -1,4 +1,30 @@
-EXTRA_DIST = GRLIB/grlib/amba/amba.vhd GRLIB/grlib/amba/devices.vhd GRLIB/grlib/amba/ahbctrl.vhd GRLIB/grlib/amba/apbctrl.vhd GRLIB/grlib/stdlib/stdlib.vhd GRLIB/grlib/stdlib/version.vhd GRLIB/techmap/maps/inpad.vhd GRLIB/techmap/maps/outpad.vhd GRLIB/techmap/maps/clkpad.vhd GRLIB/techmap/maps/iopad.vhd GRLIB/techmap/maps/allclkgen.vhd GRLIB/techmap/maps/iodpad.vhd GRLIB/techmap/maps/toutpad.vhd GRLIB/techmap/maps/allpads.vhd GRLIB/techmap/maps/odpad.vhd GRLIB/techmap/maps/clkgen.vhd GRLIB/techmap/gencomp GRLIB/techmap/gencomp/gencomp.vhd GRLIB/techmap/unisim/clkgen_unisim.vhd GRLIB/techmap/unisim/pads_unisim.vhd GRLIB/gaisler/misc/misc.vhd GRLIB/gaisler/misc/ahbmst.vhd GRLIB/gaisler/misc/rstgen.vhd GRLIB/gaisler/pci/pci.vhd GRLIB/gaisler/pci/pci_target.vhd GRLIB/gaisler/pci/pcipads.vhd\
+EXTRA_DIST = \
+GRLIB/grlib/amba/amba.vhd \
+GRLIB/grlib/amba/devices.vhd \
+GRLIB/grlib/amba/ahbctrl.vhd \
+GRLIB/grlib/amba/apbctrl.vhd \
+GRLIB/grlib/stdlib/stdlib.vhd \
+GRLIB/grlib/stdlib/version.vhd \
+GRLIB/techmap/maps/inpad.vhd \
+GRLIB/techmap/maps/outpad.vhd \
+GRLIB/techmap/maps/clkpad.vhd \
+GRLIB/techmap/maps/iopad.vhd \
+GRLIB/techmap/maps/allclkgen.vhd \
+GRLIB/techmap/maps/iodpad.vhd \
+GRLIB/techmap/maps/toutpad.vhd \
+GRLIB/techmap/maps/allpads.vhd \
+GRLIB/techmap/maps/odpad.vhd \
+GRLIB/techmap/maps/clkgen.vhd \
+GRLIB/techmap/gencomp \
+GRLIB/techmap/gencomp/gencomp.vhd \
+GRLIB/techmap/unisim/clkgen_unisim.vhd \
+GRLIB/techmap/unisim/pads_unisim.vhd \
+GRLIB/gaisler/misc/misc.vhd \
+GRLIB/gaisler/misc/ahbmst.vhd \
+GRLIB/gaisler/misc/rstgen.vhd \
+GRLIB/gaisler/pci/pci.vhd \
+GRLIB/gaisler/pci/pci_target.vhd \
+GRLIB/gaisler/pci/pcipads.vhd\
 mockturtle/experiments/experiments.hpp\
 mockturtle/include/mockturtle/algorithms/aig_resub.hpp\
 mockturtle/include/mockturtle/algorithms/akers_synthesis.hpp\
@@ -33,13 +59,12 @@ mockturtle/include/mockturtle/algorithms/node_resynthesis/shannon.hpp\
 mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_minmc.hpp\
 mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_npn.hpp\
 mockturtle/include/mockturtle/algorithms/node_resynthesis/xmg_npn.hpp\
-mockturtle/include/mockturtle/algorithms/reconv_cut2.hpp\
 mockturtle/include/mockturtle/algorithms/reconv_cut.hpp\
 mockturtle/include/mockturtle/algorithms/refactoring.hpp\
 mockturtle/include/mockturtle/algorithms/resubstitution.hpp\
 mockturtle/include/mockturtle/algorithms/satlut_mapping.hpp\
-mockturtle/include/mockturtle/algorithms/shannon_decomposition.hpp\
 mockturtle/include/mockturtle/algorithms/simulation.hpp\
+mockturtle/include/mockturtle/algorithms/xag_optimization.hpp\
 mockturtle/include/mockturtle/algorithms/xmg_algebraic_rewriting.hpp\
 mockturtle/include/mockturtle/generators/arithmetic.hpp\
 mockturtle/include/mockturtle/generators/control.hpp\
@@ -79,7 +104,6 @@ mockturtle/include/mockturtle/utils/string_utils.hpp\
 mockturtle/include/mockturtle/utils/truth_table_cache.hpp\
 mockturtle/include/mockturtle/views/cut_view.hpp\
 mockturtle/include/mockturtle/views/depth_view.hpp\
-mockturtle/include/mockturtle/views/fanout_view2.hpp\
 mockturtle/include/mockturtle/views/fanout_view.hpp\
 mockturtle/include/mockturtle/views/immutable_view.hpp\
 mockturtle/include/mockturtle/views/mapping_view.hpp\
@@ -87,6 +111,67 @@ mockturtle/include/mockturtle/views/mffc_view.hpp\
 mockturtle/include/mockturtle/views/names_view.hpp\
 mockturtle/include/mockturtle/views/topo_view.hpp\
 mockturtle/include/mockturtle/views/window_view.hpp\
+mockturtle/include/mockturtle/algorithms/balancing.hpp\
+mockturtle/include/mockturtle/algorithms/balancing/sop_balancing.hpp\
+mockturtle/include/mockturtle/algorithms/circuit_validator.hpp\
+mockturtle/include/mockturtle/algorithms/decomposition.hpp\
+mockturtle/include/mockturtle/algorithms/detail/database_generator.hpp\
+mockturtle/include/mockturtle/algorithms/detail/minmc_xags.hpp\
+mockturtle/include/mockturtle/algorithms/equivalence_classes.hpp\
+mockturtle/include/mockturtle/algorithms/exact_mc_synthesis.hpp\
+mockturtle/include/mockturtle/algorithms/exorcism.hpp\
+mockturtle/include/mockturtle/algorithms/node_resynthesis/cached.hpp\
+mockturtle/include/mockturtle/algorithms/node_resynthesis/composed.hpp\
+mockturtle/include/mockturtle/algorithms/node_resynthesis/davio.hpp\
+mockturtle/include/mockturtle/algorithms/node_resynthesis/null.hpp\
+mockturtle/include/mockturtle/algorithms/node_resynthesis/traits.hpp\
+mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_minmc2.hpp\
+mockturtle/include/mockturtle/algorithms/node_resynthesis/xmg3_npn.hpp\
+mockturtle/include/mockturtle/algorithms/xag_resub_withDC.hpp\
+mockturtle/include/mockturtle/algorithms/xmg_optimization.hpp\
+mockturtle/include/mockturtle/algorithms/xmg_resub.hpp\
+mockturtle/include/mockturtle/generators/self_dualize.hpp\
+mockturtle/include/mockturtle/io/bristol_reader.hpp\
+mockturtle/include/mockturtle/networks/abstract_xag.hpp\
+mockturtle/include/mockturtle/properties/xmgcost.hpp\
+mockturtle/include/mockturtle/utils/cost_functions.hpp\
+mockturtle/include/mockturtle/utils/include/percy.hpp\
+mockturtle/include/mockturtle/utils/json_utils.hpp\
+mockturtle/include/mockturtle/utils/network_cache.hpp\
+mockturtle/include/mockturtle/views/cnf_view.hpp\
+mockturtle/include/mockturtle/algorithms/balancing/esop_balancing.hpp\
+mockturtle/include/mockturtle/algorithms/balancing/utils.hpp\
+mockturtle/include/mockturtle/algorithms/detail/resub_utils.hpp\
+mockturtle/include/mockturtle/algorithms/functional_reduction.hpp\
+mockturtle/include/mockturtle/algorithms/network_fuzz_tester.hpp\
+mockturtle/include/mockturtle/algorithms/pattern_generation.hpp\
+mockturtle/include/mockturtle/algorithms/sim_resub.hpp\
+mockturtle/include/mockturtle/algorithms/window_rewriting.hpp\
+mockturtle/include/mockturtle/io/dimacs_reader.hpp\
+mockturtle/include/mockturtle/io/genlib_reader.hpp\
+mockturtle/include/mockturtle/io/serialize.hpp\
+mockturtle/include/mockturtle/io/write_aiger.hpp\
+mockturtle/include/mockturtle/io/write_patterns.hpp\
+mockturtle/include/mockturtle/utils/abc_resub.hpp\
+mockturtle/include/mockturtle/utils/debugging_utils.hpp\
+mockturtle/include/mockturtle/utils/index_list.hpp\
+mockturtle/include/mockturtle/utils/truth_table_utils.hpp\
+mockturtle/include/mockturtle/utils/window_utils.hpp\
+mockturtle/include/mockturtle/views/aqfp_view.hpp\
+mockturtle/include/mockturtle/views/color_view.hpp\
+mockturtle/include/mockturtle/views/fanout_limit_view.hpp\
+mockturtle/include/mockturtle/algorithms/aqfp/mig_algebraic_rewriting_splitters.hpp\
+mockturtle/include/mockturtle/algorithms/aqfp/mig_resub_splitters.hpp\
+mockturtle/include/mockturtle/algorithms/resyn_engines/mig_resyn_engines.hpp\
+mockturtle/include/mockturtle/algorithms/resyn_engines/xag_resyn_engines.hpp\
+mockturtle/lib/abcresub/abcresub/abc_global.hpp\
+mockturtle/lib/abcresub/abcresub/abcresub2.hpp\
+mockturtle/lib/abcresub/abcresub/abcresub.hpp\
+mockturtle/lib/abcresub/abcresub/tt.hpp\
+mockturtle/lib/abcresub/abcresub/vec_int.hpp\
+mockturtle/lib/abcresub/abcresub/vec_ptr.hpp\
+mockturtle/lib/abcresub/abcresub/vec_wec.hpp\
+mockturtle/lib/abcresub/abcresub/vec_wrd.hpp\
 mockturtle/lib/abcsat/abc/abc_global.h\
 mockturtle/lib/abcsat/abc/AbcGlucose.h\
 mockturtle/lib/abcsat/abc/abc_namespaces.h\
@@ -114,7 +199,6 @@ mockturtle/lib/abcsat/abc/Vec.h\
 mockturtle/lib/abcsat/abc/vecInt.h\
 mockturtle/lib/abcsat/abc/vecWec.h\
 mockturtle/lib/abcsat/abc/XAlloc.h\
-mockturtle/lib/ez/ez/direct_iterator.hpp\
 mockturtle/lib/fmt/fmt/chrono.h\
 mockturtle/lib/fmt/fmt/color.h\
 mockturtle/lib/fmt/fmt/core.h\
@@ -125,7 +209,6 @@ mockturtle/lib/fmt/fmt/ostream.h\
 mockturtle/lib/fmt/fmt/posix.h\
 mockturtle/lib/fmt/fmt/printf.h\
 mockturtle/lib/fmt/fmt/ranges.h\
-mockturtle/lib/fmt/fmt/time.h\
 mockturtle/lib/json/nlohmann/json.hpp\
 mockturtle/lib/kitty/kitty/affine.hpp\
 mockturtle/lib/kitty/kitty/algorithm.hpp\
@@ -137,6 +220,7 @@ mockturtle/lib/kitty/kitty/decomposition.hpp\
 mockturtle/lib/kitty/kitty/detail/constants.hpp\
 mockturtle/lib/kitty/kitty/detail/linear_constants.hpp\
 mockturtle/lib/kitty/kitty/detail/mscfix.hpp\
+mockturtle/lib/kitty/kitty/detail/shift.hpp\
 mockturtle/lib/kitty/kitty/detail/utils.hpp\
 mockturtle/lib/kitty/kitty/dynamic_truth_table.hpp\
 mockturtle/lib/kitty/kitty/enumeration.hpp\
@@ -200,29 +284,141 @@ mockturtle/lib/percy/percy/solvers/solver_wrapper.hpp\
 mockturtle/lib/percy/percy/spec.hpp\
 mockturtle/lib/percy/percy/tt_utils.hpp\
 mockturtle/lib/rang/rang/rang.hpp\
-mockturtle/lib/sparsepp/sparsepp/spp_config.h\
-mockturtle/lib/sparsepp/sparsepp/spp_dlalloc.h\
-mockturtle/lib/sparsepp/sparsepp/spp.h\
-mockturtle/lib/sparsepp/sparsepp/spp_memory.h\
-mockturtle/lib/sparsepp/sparsepp/spp_smartptr.h\
-mockturtle/lib/sparsepp/sparsepp/spp_stdint.h\
-mockturtle/lib/sparsepp/sparsepp/spp_timer.h\
-mockturtle/lib/sparsepp/sparsepp/spp_traits.h\
-mockturtle/lib/sparsepp/sparsepp/spp_utils.h\
 mockturtle/test/catch2/catch.hpp\
 mockturtle/test/test_networks.hpp\
 mockturtle/docs/algorithms/extract_linear.rst\
 mockturtle/docs/algorithms/linear_resynthesis.rst\
+mockturtle/docs/algorithms/balancing.rst\
+mockturtle/docs/algorithms/circuit_validator.rst\
+mockturtle/docs/algorithms/decomposition.rst\
+mockturtle/docs/algorithms/equivalence_classes.rst\
+mockturtle/docs/algorithms/xmg_optimization.rst\
+mockturtle/docs/io/other.rst\
+mockturtle/docs/algorithms/functional_reduction.rst\
+mockturtle/docs/algorithms/pattern_generation.rst\
+mockturtle/docs/algorithms/resyn_engines.rst\
+mockturtle/docs/algorithms/xmg_optimization.rst\
 mockturtle/include/mockturtle/algorithms/extract_linear.hpp\
 mockturtle/include/mockturtle/algorithms/linear_resynthesis.hpp\
+mockturtle/include/mockturtle/generators/legacy.hpp\
 mockturtle/include/mockturtle/generators/majority_n.hpp\
 mockturtle/include/mockturtle/properties/mccost.hpp\
 mockturtle/test/algorithms/extract_linear.cpp\
 mockturtle/test/algorithms/linear_resynthesis.cpp\
 mockturtle/test/generators/majority_n.cpp\
 mockturtle/test/properties/mccost.cpp\
-mockturtle/test/views/names_view.cpp
-
+mockturtle/test/views/names_view.cpp\
+mockturtle/lib/abcesop/exor.cpp\
+mockturtle/lib/abcesop/exorCubes.cpp\
+mockturtle/lib/abcesop/eabc/abc_global.h\
+mockturtle/lib/abcesop/eabc/exor.h\
+mockturtle/lib/abcesop/eabc/vecWec.h\
+mockturtle/lib/abcesop/eabc/vecInt.h\
+mockturtle/lib/abcesop/eabc/vecPtr.h\
+mockturtle/lib/abcesop/exorBits.cpp\
+mockturtle/lib/abcesop/exorUtil.cpp\
+mockturtle/lib/abcesop/exorLink.cpp\
+mockturtle/lib/abcesop/exorList.cpp\
+mockturtle/lib/bill/bill/bill.hpp\
+mockturtle/lib/bill/bill/sat/incremental_totalizer_cardinality.hpp\
+mockturtle/lib/bill/bill/sat/interface/maple.hpp\
+mockturtle/lib/bill/bill/sat/interface/abc_bmcg.hpp\
+mockturtle/lib/bill/bill/sat/interface/abc_bsat2.hpp\
+mockturtle/lib/bill/bill/sat/interface/glucose.hpp\
+mockturtle/lib/bill/bill/sat/interface/types.hpp\
+mockturtle/lib/bill/bill/sat/interface/z3.hpp\
+mockturtle/lib/bill/bill/sat/interface/common.hpp\
+mockturtle/lib/bill/bill/sat/interface/ghack.hpp\
+mockturtle/lib/bill/bill/sat/tseytin.hpp\
+mockturtle/lib/bill/bill/sat/xor_clauses.hpp\
+mockturtle/lib/bill/bill/sat/solver/maple.hpp\
+mockturtle/lib/bill/bill/sat/solver/glucose.hpp\
+mockturtle/lib/bill/bill/sat/solver/abc.hpp\
+mockturtle/lib/bill/bill/sat/solver/abc/XAlloc.h\
+mockturtle/lib/bill/bill/sat/solver/abc/abc_global.h\
+mockturtle/lib/bill/bill/sat/solver/abc/Solver.h\
+mockturtle/lib/bill/bill/sat/solver/abc/pstdint.h\
+mockturtle/lib/bill/bill/sat/solver/abc/satVec.h\
+mockturtle/lib/bill/bill/sat/solver/abc/IntTypes.h\
+mockturtle/lib/bill/bill/sat/solver/abc/Heap.h\
+mockturtle/lib/bill/bill/sat/solver/abc/vecWec.h\
+mockturtle/lib/bill/bill/sat/solver/abc/SimpSolver.h\
+mockturtle/lib/bill/bill/sat/solver/abc/Alg.h\
+mockturtle/lib/bill/bill/sat/solver/abc/satSolver.h\
+mockturtle/lib/bill/bill/sat/solver/abc/Vec.h\
+mockturtle/lib/bill/bill/sat/solver/abc/utilDouble.h\
+mockturtle/lib/bill/bill/sat/solver/abc/system.h\
+mockturtle/lib/bill/bill/sat/solver/abc/AbcGlucose.h\
+mockturtle/lib/bill/bill/sat/solver/abc/Dimacs.h\
+mockturtle/lib/bill/bill/sat/solver/abc/vecInt.h\
+mockturtle/lib/bill/bill/sat/solver/abc/Alloc.h\
+mockturtle/lib/bill/bill/sat/solver/abc/BoundedQueue.h\
+mockturtle/lib/bill/bill/sat/solver/abc/Constants.h\
+mockturtle/lib/bill/bill/sat/solver/abc/abc_namespaces.h\
+mockturtle/lib/bill/bill/sat/solver/abc/satStore.h\
+mockturtle/lib/bill/bill/sat/solver/abc/SolverTypes.h\
+mockturtle/lib/bill/bill/sat/solver/abc/satClause.h\
+mockturtle/lib/bill/bill/sat/solver/abc/Sort.h\
+mockturtle/lib/bill/bill/sat/solver/abc/Map.h\
+mockturtle/lib/bill/bill/sat/solver/abc/Queue.h\
+mockturtle/lib/bill/bill/sat/solver/ghack.hpp\
+mockturtle/lib/bill/bill/sat/solver.hpp\
+mockturtle/lib/bill/bill/sat/unsat_cores.hpp\
+mockturtle/lib/bill/bill/sat/cardinality.hpp\
+mockturtle/lib/bill/bill/dd/zdd.hpp\
+mockturtle/lib/bill/bill/dd/cudd_zdd.hpp\
+mockturtle/lib/bill/bill/utils/platforms.hpp\
+mockturtle/lib/bill/bill/utils/hash.hpp\
+mockturtle/lib/fmt/fmt/compile.h\
+mockturtle/lib/fmt/fmt/os.cc\
+mockturtle/lib/fmt/fmt/os.h\
+mockturtle/lib/kitty/kitty/partial_truth_table.hpp\
+mockturtle/lib/kitty/kitty/spp.hpp\
+mockturtle/lib/lorina/lorina/bristol.hpp\
+mockturtle/lib/lorina/lorina/dimacs.hpp\
+mockturtle/lib/lorina/lorina/genlib.hpp\
+mockturtle/lib/percy/percy/generators/partial_dag_generator.hpp\
+mockturtle/lib/percy/percy/generators/partial_dag3_generator.hpp\
+mockturtle/lib/percy/percy/majority_chain.hpp\
+mockturtle/lib/percy/percy/printer.hpp\
+mockturtle/lib/matplot/matplot/matplotlibcpp.h\
+mockturtle/lib/parallel_hashmap/parallel_hashmap/btree.h\
+mockturtle/lib/parallel_hashmap/parallel_hashmap/conanfile.py\
+mockturtle/lib/parallel_hashmap/parallel_hashmap/meminfo.h\
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_base.h\
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_bits.h\
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_config.h\
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_dump.h\
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_fwd_decl.h\
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap.h\
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_utils.h\
+mockturtle/test/algorithms/balancing.cpp\
+mockturtle/test/algorithms/circuit_validator.cpp\
+mockturtle/test/algorithms/decomposition.cpp\
+mockturtle/test/algorithms/equivalence_classes.cpp\
+mockturtle/test/algorithms/exact_mc_synthesis.cpp\
+mockturtle/test/algorithms/exorcism.cpp\
+mockturtle/test/algorithms/node_resynthesis/cached.cpp\
+mockturtle/test/algorithms/xag_optimization.cpp\
+mockturtle/test/generators/control.cpp\
+mockturtle/test/generators/self_dualize.cpp\
+mockturtle/test/io/blif_reader.cpp\
+mockturtle/test/networks/abstract_xag.cpp\
+mockturtle/test/views/cnf_view.cpp\
+mockturtle/test/algorithms/functional_reduction.cpp\
+mockturtle/test/algorithms/mig_resyn_engines.cpp\
+mockturtle/test/algorithms/minmc_xags.cpp\
+mockturtle/test/algorithms/pattern_generation.cpp\
+mockturtle/test/algorithms/xag_resyn_engines.cpp\
+mockturtle/test/io/dimacs_reader.cpp\
+mockturtle/test/io/genlib_reader.cpp\
+mockturtle/test/io/serialize.cpp\
+mockturtle/test/io/write_aiger.cpp\
+mockturtle/test/io/write_patterns.cpp\
+mockturtle/test/utils/index_list.cpp\
+mockturtle/test/utils/window_utils.cpp\
+mockturtle/test/views/aqfp_view.cpp\
+mockturtle/test/views/color_view.cpp
 
 SUBDIRS = abseil-cpp
 DIST_SUBDIRS = abseil-cpp
@@ -281,8 +477,8 @@ if BUILD_SIMIT
 endif
 
 if BUILD_FLOPOCO
-   SUBDIRS += flopoco
-   DIST_SUBDIRS += sollya flopoco libfplll-4.0.3
+   SUBDIRS +=  libfplll-4.0.3 sollya flopoco
+   DIST_SUBDIRS += libfplll-4.0.3 sollya flopoco
 endif
 
 if BUILD_VFLIB
@@ -312,7 +508,7 @@ documentation-tag:
 
 if USE_GRLIB
 install-exec-hook:
-	cp -r $(top_srcdir)/ext/GRLIB  $(libdir)
+	mkdir -p $(DESTDIR)$(libdir); cp -r $(top_srcdir)/ext/GRLIB  $(DESTDIR)$(libdir)
 endif
 
 noinst_LTLIBRARIES =
@@ -323,9 +519,9 @@ noinst_LTLIBRARIES += lib_mockturtle.la
 lib_mockturtle_la_SOURCES = mockturtle/lib/abcsat/AbcGlucose.cpp mockturtle/lib/abcsat/Glucose.cpp mockturtle/lib/abcsat/satSolver.cpp mockturtle/lib/abcsat/satStore.cpp  mockturtle/lib/abcsat/SimpSolver.cpp
 lib_mockturtle_la_CPPFLAGS = \
       -I$(top_srcdir)/ext/mockturtle/lib/abcsat/\
-      -DLIN64 -DABC_NAMESPACE=pabc -DABC_NO_USE_READLINE
+      -DLIN64 -DABC_NAMESPACE=pabc -DABC_NO_USE_READLINE $(CXXFLAGS_STD)
 endif
-CXXFLAGS = -Wno-error=undef -Wno-unknown-pragmas -Wno-sign-conversion -Wno-conversion -Wno-shadow -Wno-switch-enum -Wno-unused-parameter -Wno-old-style-cast -Wno-cast-qual -Wno-zero-as-null-pointer-constant -Wno-non-virtual-dtor -Wno-pedantic -Wno-parentheses -Wno-switch-default -Wno-ctor-dtor-privacy -Wno-overloaded-virtual -Wno-sign-promo -fpermissive
+CXXFLAGS = -Wno-error=undef -Wno-unknown-pragmas -Wno-sign-conversion -Wno-conversion -Wno-shadow -Wno-switch-enum -Wno-unused-parameter -Wno-old-style-cast -Wno-cast-qual -Wno-zero-as-null-pointer-constant -Wno-non-virtual-dtor -Wno-pedantic -Wno-parentheses -Wno-switch-default -Wno-ctor-dtor-privacy -Wno-overloaded-virtual -Wno-sign-promo -fpermissive 
 
 #define FMT_HEADER_ONLY 1
 

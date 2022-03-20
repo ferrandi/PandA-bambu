@@ -25,7 +25,7 @@ eucalyptus_CPPFLAGS = \
  -I$(top_srcdir)/src/technology/target_device \
  -I$(top_srcdir)/src/technology/target_technology \
  -I$(top_srcdir)/src/utility \
- -I$(top_srcdir)/src/wrapper/treegcc \
+ -I$(top_srcdir)/src/wrapper/compiler \
  $(AM_CPPFLAGS)
 
 lib_eucalyptus_la_LIBADD += \

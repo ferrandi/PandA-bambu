@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,13 +43,14 @@
 /// Header include
 #include "quartus_13_wrapper.hpp"
 
-/// Autoheader include
-#include "config_HAVE_QUARTUS_13_64BIT.hpp"
-
 /// wrapper/synthesis include
 #include "xml_script_command.hpp"
 
-Quartus13Wrapper::Quartus13Wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : AlteraWrapper(_Param, QUARTUS_13_FLOW_TOOL_EXEC, _device, _output_dir, QUARTUS_13_FLOW_TOOL_ID)
+#include "Parameter.hpp"
+
+Quartus13Wrapper::Quartus13Wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
+                                   const target_deviceRef& _device)
+    : AlteraWrapper(_Param, QUARTUS_13_FLOW_TOOL_EXEC, _device, _output_dir, QUARTUS_13_FLOW_TOOL_ID)
 {
 }
 
@@ -58,9 +59,11 @@ std::string Quartus13Wrapper::get_command_line(const DesignParametersRef& dp) co
 {
    std::ostringstream s;
    s << get_tool_exec() << " -t ";
-#if HAVE_QUARTUS_13_64BIT
-   s << " --64bit ";
-#endif
+   THROW_ASSERT(Param->isOption(OPT_quartus_13_64bit), "");
+   if(Param->getOption<bool>(OPT_quartus_13_64bit))
+   {
+      s << " --64bit ";
+   }
    s << script_name;
    for(const auto& option : xml_tool_options)
    {

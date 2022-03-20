@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -86,20 +86,22 @@ class VarComputation : public FunctionFrontendFlowStep
     * @param tree_node is the tree node to be examined
     * @param access_type is the type of the access
     */
-   void RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef tree_node, const FunctionBehavior_VariableAccessType access_type) const;
+   void RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef& tree_node,
+                           const FunctionBehavior_VariableAccessType access_type) const;
 
    /**
     * Analyze virtual operands associated with a gimple node
     * @param op_vertex is the vertex to which gimple node belongs
     * @param vops is the set of virtual operands to be considered
     */
-   void AnalyzeVops(const vertex op_graph, const gimple_node* vops) const;
+   void AnalyzeVops(const vertex op_vertex, const gimple_node* vops) const;
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -109,7 +111,8 @@ class VarComputation : public FunctionFrontendFlowStep
     * @param function_id is the index of the function
     * @param design_flow_manager is the design flow manager
     */
-   VarComputation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   VarComputation(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id,
+                  const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

@@ -2,6 +2,7 @@ noinst_LTLIBRARIES += lib_utility.la
 lib_utility_la_CPPFLAGS =  \
    $(AM_CPPFLAGS)
 noinst_HEADERS += \
+   utility/APInt.hpp \
    utility/augmented_vector.hpp \
    utility/cpu_stats.hpp \
    utility/cpu_time.hpp \
@@ -24,6 +25,7 @@ noinst_HEADERS += \
    utility/visitor.hpp \
    utility/xml_helper.hpp
 lib_utility_la_SOURCES = \
+   utility/APInt.cpp \
    utility/cpu_stats.cpp \
    utility/exceptions.cpp \
    utility/indented_output_stream.cpp \

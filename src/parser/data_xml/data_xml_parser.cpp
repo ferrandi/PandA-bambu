@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,19 +60,21 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-DataXmlParser::DataXmlParser(const ParameterConstRef& Param) : debug_level(Param->get_class_debug_level(GET_CLASS(*this)))
+DataXmlParser::DataXmlParser(const ParameterConstRef& Param)
+    : debug_level(Param->get_class_debug_level(GET_CLASS(*this)))
 {
 }
 
 DataXmlParser::~DataXmlParser() = default;
 
-void DataXmlParser::Parse(const CustomSet<std::string>& file_names, std::map<std::string, CustomMap<std::string, std::string>>& output) const
+void DataXmlParser::Parse(const CustomSet<std::string>& file_names,
+                          std::map<std::string, CustomMap<std::string, std::string>>& output) const
 {
    try
    {
       for(const auto& file_name : file_names)
       {
-         XMLDomParser parser(file_name);
+         XMLDomParser parser(GetPath(file_name));
          parser.Exec();
          if(parser)
          {

@@ -50,7 +50,9 @@ using namespace ac_math;
 //   used to configure the bit-widths of the types.
 
 template <int numW, int denW, int quoW, int remW>
-void test_ac_div_int(const ac_int<numW, false>& us_real_num, const ac_int<denW, false>& us_real_den, ac_int<quoW, false>& us_real_quo, ac_int<remW, false>& us_real_rem, const ac_int<numW + 1, true>& s_real_num, const ac_int<denW + 1, true>& s_real_den,
+void test_ac_div_int(const ac_int<numW, false>& us_real_num, const ac_int<denW, false>& us_real_den,
+                     ac_int<quoW, false>& us_real_quo, ac_int<remW, false>& us_real_rem,
+                     const ac_int<numW + 1, true>& s_real_num, const ac_int<denW + 1, true>& s_real_den,
                      ac_int<quoW + 1, true>& s_real_quo, ac_int<remW + 1, true>& s_real_rem)
 {
    ac_div(us_real_num, us_real_den, us_real_quo, us_real_rem);
@@ -58,9 +60,14 @@ void test_ac_div_int(const ac_int<numW, false>& us_real_num, const ac_int<denW, 
 }
 
 template <int numW, int numI, int denW, int denI, int quoW, int quoI>
-void test_ac_div_fixed(const ac_fixed<numW, numI, false, AC_TRN, AC_WRAP>& us_real_num, const ac_fixed<denW, denI, false, AC_TRN, AC_WRAP>& us_real_den, ac_fixed<quoW, quoI, false, AC_TRN, AC_WRAP>& us_real_quo,
-                       const ac_fixed<numW + 1, numI + 1, true, AC_TRN, AC_WRAP>& s_real_num, const ac_fixed<denW + 1, denI + 1, true, AC_TRN, AC_WRAP>& s_real_den, ac_fixed<quoW + 1, quoI + 1, true, AC_TRN, AC_WRAP>& s_real_quo,
-                       const ac_complex<ac_fixed<numW + 1, numI + 1, true, AC_TRN, AC_WRAP>>& complex_num, const ac_complex<ac_fixed<denW + 1, denI + 1, true, AC_TRN, AC_WRAP>>& complex_den,
+void test_ac_div_fixed(const ac_fixed<numW, numI, false, AC_TRN, AC_WRAP>& us_real_num,
+                       const ac_fixed<denW, denI, false, AC_TRN, AC_WRAP>& us_real_den,
+                       ac_fixed<quoW, quoI, false, AC_TRN, AC_WRAP>& us_real_quo,
+                       const ac_fixed<numW + 1, numI + 1, true, AC_TRN, AC_WRAP>& s_real_num,
+                       const ac_fixed<denW + 1, denI + 1, true, AC_TRN, AC_WRAP>& s_real_den,
+                       ac_fixed<quoW + 1, quoI + 1, true, AC_TRN, AC_WRAP>& s_real_quo,
+                       const ac_complex<ac_fixed<numW + 1, numI + 1, true, AC_TRN, AC_WRAP>>& complex_num,
+                       const ac_complex<ac_fixed<denW + 1, denI + 1, true, AC_TRN, AC_WRAP>>& complex_den,
                        ac_complex<ac_fixed<quoW + 1, quoI + 1, true, AC_TRN, AC_WRAP>>& complex_quo)
 {
    ac_div(us_real_num, us_real_den, us_real_quo);
@@ -69,7 +76,8 @@ void test_ac_div_fixed(const ac_fixed<numW, numI, false, AC_TRN, AC_WRAP>& us_re
 }
 
 template <int numW, int numI, int numE, int denW, int denI, int denE, int quoW, int quoI, int quoE>
-void test_ac_div_float(const ac_float<numW, numI, numE, AC_TRN>& real_num, const ac_float<denW, denI, denE, AC_TRN>& real_den, ac_float<quoW, quoI, quoE, AC_TRN>& real_quo)
+void test_ac_div_float(const ac_float<numW, numI, numE, AC_TRN>& real_num,
+                       const ac_float<denW, denI, denE, AC_TRN>& real_den, ac_float<quoW, quoI, quoE, AC_TRN>& real_quo)
 {
    ac_div(real_num, real_den, real_quo);
 }
@@ -105,7 +113,8 @@ double err_calc(const T_num num, const T_den den, const T_quo quo, const double 
    double actual_value = quo.to_double();
    double this_error;
 
-   // If expected value is greater than a particular threshold, calculate relative error, else, calculate absolute error.
+   // If expected value is greater than a particular threshold, calculate relative error, else, calculate absolute
+   // error.
    if(abs(expected_value) > threshold)
    {
       this_error = abs((expected_value - actual_value) / expected_value) * 100.0;
@@ -121,7 +130,8 @@ double err_calc(const T_num num, const T_den den, const T_quo quo, const double 
 // Calculating error for complex ac_fixed and ac_float inputs.
 
 template <class T_num, class T_den, class T_quo>
-double cmplx_err_calc(const ac_complex<T_num> num, const ac_complex<T_den> den, const ac_complex<T_quo> quo, const double allowed_error, const double threshold)
+double cmplx_err_calc(const ac_complex<T_num> num, const ac_complex<T_den> den, const ac_complex<T_quo> quo,
+                      const double allowed_error, const double threshold)
 {
    ac_complex<double> expected_value, actual_value, num_double, den_double, diff_op;
    double error;
@@ -177,7 +187,9 @@ int test_driver_int(bool& all_tests_pass_int, bool details = false)
    ac_int<quoW + 1, true> s_real_quo;
    ac_int<remW + 1, true> s_real_rem;
 
-   // printf("TEST: ac_div() INPUTS: ac_int<%2d, false>, ac_int<%2d, true> (numerator) ac_int<%2d, false>, ac_int<%2d, true> (denominator)\nOUTPUTS: ac_int<%2d, false>, ac_int<%2d, true> (quotient) ac_int<%2d, false>, ac_int<%2d, true> (remainder)  RESULT:
+   // printf("TEST: ac_div() INPUTS: ac_int<%2d, false>, ac_int<%2d, true> (numerator) ac_int<%2d, false>, ac_int<%2d,
+   // true> (denominator)\nOUTPUTS: ac_int<%2d, false>, ac_int<%2d, true> (quotient) ac_int<%2d, false>, ac_int<%2d,
+   // true> (remainder)  RESULT:
    // ",
    //       numW, numW + 1, denW, denW + 1, quoW, quoW + 1, remW, remW + 1);
 
@@ -249,8 +261,10 @@ int test_driver_int(bool& all_tests_pass_int, bool details = false)
             continue;
          }
          // Pass all inputs at one go
-         test_ac_div_int(us_real_num, us_real_den, us_real_quo, us_real_rem, s_real_num, s_real_den, s_real_quo, s_real_rem);
-         bool correct_iteration = correct_output(us_real_num, us_real_den, us_real_quo, us_real_rem) && correct_output(s_real_num, s_real_den, s_real_quo, s_real_rem);
+         test_ac_div_int(us_real_num, us_real_den, us_real_quo, us_real_rem, s_real_num, s_real_den, s_real_quo,
+                         s_real_rem);
+         bool correct_iteration = correct_output(us_real_num, us_real_den, us_real_quo, us_real_rem) &&
+                                  correct_output(s_real_num, s_real_den, s_real_quo, s_real_rem);
          // If even a single output isn't correct, the value of "correct" will be set to false.
          correct = correct && correct_iteration;
       }
@@ -264,7 +278,8 @@ int test_driver_int(bool& all_tests_pass_int, bool details = false)
    s_real_num.template set_val<AC_VAL_MAX>();
    s_real_den.template set_val<AC_VAL_MAX>();
    test_ac_div_int(us_real_num, us_real_den, us_real_quo, us_real_rem, s_real_num, s_real_den, s_real_quo, s_real_rem);
-   bool correct_corner = correct_output(us_real_num, us_real_den, us_real_quo, us_real_rem) && correct_output(s_real_num, s_real_den, s_real_quo, s_real_rem);
+   bool correct_corner = correct_output(us_real_num, us_real_den, us_real_quo, us_real_rem) &&
+                         correct_output(s_real_num, s_real_den, s_real_quo, s_real_rem);
    correct = correct && correct_corner;
 
    // Second corner: signed real numerator = MAX, signed real denominator = MIN
@@ -293,7 +308,8 @@ int test_driver_int(bool& all_tests_pass_int, bool details = false)
    s_real_num.template set_val<AC_VAL_MAX>();
    s_real_den.template set_val<AC_VAL_QUANTUM>();
    test_ac_div_int(us_real_num, us_real_den, us_real_quo, us_real_rem, s_real_num, s_real_den, s_real_quo, s_real_rem);
-   correct_corner = correct_output(us_real_num, us_real_den, us_real_quo, us_real_rem) && correct_output(s_real_num, s_real_den, s_real_quo, s_real_rem);
+   correct_corner = correct_output(us_real_num, us_real_den, us_real_quo, us_real_rem) &&
+                    correct_output(s_real_num, s_real_den, s_real_quo, s_real_rem);
    correct = correct && correct_corner;
 
    // Sixth corner: real numerator = QUANTUM, real denominator = MAX
@@ -302,7 +318,8 @@ int test_driver_int(bool& all_tests_pass_int, bool details = false)
    s_real_num.template set_val<AC_VAL_QUANTUM>();
    s_real_den.template set_val<AC_VAL_MAX>();
    test_ac_div_int(us_real_num, us_real_den, us_real_quo, us_real_rem, s_real_num, s_real_den, s_real_quo, s_real_rem);
-   correct_corner = correct_output(us_real_num, us_real_den, us_real_quo, us_real_rem) && correct_output(s_real_num, s_real_den, s_real_quo, s_real_rem);
+   correct_corner = correct_output(us_real_num, us_real_den, us_real_quo, us_real_rem) &&
+                    correct_output(s_real_num, s_real_den, s_real_quo, s_real_rem);
    correct = correct && correct_corner;
 
    // Seventh corner: signed real numerator = MIN, signed real denominator = QUANTUM
@@ -324,7 +341,8 @@ int test_driver_int(bool& all_tests_pass_int, bool details = false)
    us_real_den.template set_val<AC_VAL_QUANTUM>();
    s_real_den.template set_val<AC_VAL_QUANTUM>();
    test_ac_div_int(us_real_num, us_real_den, us_real_quo, us_real_rem, s_real_num, s_real_den, s_real_quo, s_real_rem);
-   correct_corner = correct_output(us_real_num, us_real_den, us_real_quo, us_real_rem) && correct_output(s_real_num, s_real_den, s_real_quo, s_real_rem);
+   correct_corner = correct_output(us_real_num, us_real_den, us_real_quo, us_real_rem) &&
+                    correct_output(s_real_num, s_real_den, s_real_quo, s_real_rem);
    correct = correct && correct_corner;
 
    if(correct)
@@ -342,7 +360,8 @@ int test_driver_int(bool& all_tests_pass_int, bool details = false)
 }
 
 template <int numW, int numI, int denW, int denI, int quoW, int quoI>
-int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max_error_cmplx_fixed, const double allowed_error_fixed, const double threshold, bool details = false)
+int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max_error_cmplx_fixed,
+                      const double allowed_error_fixed, const double threshold, bool details = false)
 {
    bool passed;
    double max_error_fixed = 0.0;       // reset for this run
@@ -433,7 +452,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
                {
                   continue;
                }
-               test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num, complex_den, complex_quo);
+               test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num,
+                                 complex_den, complex_quo);
                // Calculate error for signed values.
                this_error_s = err_calc(s_real_num, s_real_den, s_real_quo, allowed_error_fixed, threshold);
                // Calculate error for unsigned values.
@@ -441,7 +461,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
                // Whichever error is greater is assigned to this_error_fixed
                this_error_fixed = this_error_s > this_error_us ? this_error_s : this_error_us;
                // Calculate error for complex inputs and outputs
-               this_error_complex = cmplx_err_calc(complex_num, complex_den, complex_quo, allowed_error_fixed, threshold);
+               this_error_complex =
+                   cmplx_err_calc(complex_num, complex_den, complex_quo, allowed_error_fixed, threshold);
                if(this_error_fixed > max_error_fixed)
                {
                   max_error_fixed = this_error_fixed;
@@ -457,7 +478,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
 
    // Also, test for corner cases
 
-   // First corner: real numerator = MAX, real denominator = MAX, complex numerator = (MAX, MAX), complex denominator = (MAX, MAX)
+   // First corner: real numerator = MAX, real denominator = MAX, complex numerator = (MAX, MAX), complex denominator =
+   // (MAX, MAX)
    us_real_num.template set_val<AC_VAL_MAX>();
    us_real_den.template set_val<AC_VAL_MAX>();
    s_real_num.template set_val<AC_VAL_MAX>();
@@ -466,7 +488,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
    complex_num.i().template set_val<AC_VAL_MAX>();
    complex_den.r().template set_val<AC_VAL_MAX>();
    complex_den.i().template set_val<AC_VAL_MAX>();
-   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num, complex_den, complex_quo);
+   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num,
+                     complex_den, complex_quo);
    // Calculate error for signed values.
    this_error_s = err_calc(s_real_num, s_real_den, s_real_quo, allowed_error_fixed, threshold);
    // Calculate error for unsigned values.
@@ -484,11 +507,13 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
       max_error_cmplx_fixed = this_error_complex;
    }
 
-   // Second corner: signed real numerator = MAX, signed real denominator = MIN, complex numerator = (MAX, MAX), complex denominator = (MIN, MIN)
+   // Second corner: signed real numerator = MAX, signed real denominator = MIN, complex numerator = (MAX, MAX), complex
+   // denominator = (MIN, MIN)
    s_real_den.template set_val<AC_VAL_MIN>();
    complex_den.r().template set_val<AC_VAL_MIN>();
    complex_den.i().template set_val<AC_VAL_MIN>();
-   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num, complex_den, complex_quo);
+   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num,
+                     complex_den, complex_quo);
    // Calculate error for signed values, assign it to this_error_fixed
    this_error_fixed = err_calc(s_real_num, s_real_den, s_real_quo, allowed_error_fixed, threshold);
    // Calculate error for complex inputs and outputs
@@ -502,14 +527,16 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
       max_error_cmplx_fixed = this_error_complex;
    }
 
-   // Third corner: signed real numerator = MIN, signed real denominator = MAX, complex numerator = (MIN, MIN), complex denominator = (MAX, MAX)
+   // Third corner: signed real numerator = MIN, signed real denominator = MAX, complex numerator = (MIN, MIN), complex
+   // denominator = (MAX, MAX)
    s_real_num.template set_val<AC_VAL_MIN>();
    s_real_den.template set_val<AC_VAL_MAX>();
    complex_num.r().template set_val<AC_VAL_MIN>();
    complex_num.i().template set_val<AC_VAL_MIN>();
    complex_den.r().template set_val<AC_VAL_MAX>();
    complex_den.i().template set_val<AC_VAL_MAX>();
-   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num, complex_den, complex_quo);
+   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num,
+                     complex_den, complex_quo);
    // Calculate error for signed values, assign it to this_error_fixed
    this_error_fixed = err_calc(s_real_num, s_real_den, s_real_quo, allowed_error_fixed, threshold);
    // Calculate error for complex inputs and outputs
@@ -523,11 +550,13 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
       max_error_cmplx_fixed = this_error_complex;
    }
 
-   // Fourth corner: signed real numerator = MIN, signed real denominator = MIN, complex numerator = (MIN, MIN), complex denominator = (MIN, MIN)
+   // Fourth corner: signed real numerator = MIN, signed real denominator = MIN, complex numerator = (MIN, MIN), complex
+   // denominator = (MIN, MIN)
    s_real_den.template set_val<AC_VAL_MIN>();
    complex_den.r().template set_val<AC_VAL_MIN>();
    complex_den.i().template set_val<AC_VAL_MIN>();
-   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num, complex_den, complex_quo);
+   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num,
+                     complex_den, complex_quo);
    // Calculate error for signed values, assign it to this_error_fixed
    this_error_fixed = err_calc(s_real_num, s_real_den, s_real_quo, allowed_error_fixed, threshold);
    // Calculate error for complex inputs and outputs
@@ -541,7 +570,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
       max_error_cmplx_fixed = this_error_complex;
    }
 
-   // Fifth corner: real numerator = MAX, real denominator = QUANTUM, complex numerator = (MAX, MAX), complex denominator = (QUANTUM, QUANTUM)
+   // Fifth corner: real numerator = MAX, real denominator = QUANTUM, complex numerator = (MAX, MAX), complex
+   // denominator = (QUANTUM, QUANTUM)
    us_real_num.template set_val<AC_VAL_MAX>();
    us_real_den.template set_val<AC_VAL_QUANTUM>();
    s_real_num.template set_val<AC_VAL_MAX>();
@@ -550,7 +580,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
    complex_num.i().template set_val<AC_VAL_MAX>();
    complex_den.r().template set_val<AC_VAL_QUANTUM>();
    complex_den.i().template set_val<AC_VAL_QUANTUM>();
-   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num, complex_den, complex_quo);
+   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num,
+                     complex_den, complex_quo);
    // Calculate error for signed values.
    this_error_s = err_calc(s_real_num, s_real_den, s_real_quo, allowed_error_fixed, threshold);
    // Calculate error for unsigned values.
@@ -568,7 +599,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
       max_error_cmplx_fixed = this_error_complex;
    }
 
-   // Sixth corner: real numerator = QUANTUM, real denominator = MAX, complex numerator = (QUANTUM, QUANTUM), complex denominator = (MAX, MAX)
+   // Sixth corner: real numerator = QUANTUM, real denominator = MAX, complex numerator = (QUANTUM, QUANTUM), complex
+   // denominator = (MAX, MAX)
    us_real_num.template set_val<AC_VAL_QUANTUM>();
    us_real_den.template set_val<AC_VAL_MAX>();
    s_real_num.template set_val<AC_VAL_QUANTUM>();
@@ -577,7 +609,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
    complex_num.i().template set_val<AC_VAL_QUANTUM>();
    complex_den.r().template set_val<AC_VAL_MAX>();
    complex_den.i().template set_val<AC_VAL_MAX>();
-   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num, complex_den, complex_quo);
+   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num,
+                     complex_den, complex_quo);
    // Calculate error for signed values.
    this_error_s = err_calc(s_real_num, s_real_den, s_real_quo, allowed_error_fixed, threshold);
    // Calculate error for unsigned values.
@@ -595,14 +628,16 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
       max_error_cmplx_fixed = this_error_complex;
    }
 
-   // Seventh corner: signed real numerator = MIN, signed real denominator = QUANTUM, complex numerator = (MIN, MIN), complex denominator = (QUANTUM, QUANTUM)
+   // Seventh corner: signed real numerator = MIN, signed real denominator = QUANTUM, complex numerator = (MIN, MIN),
+   // complex denominator = (QUANTUM, QUANTUM)
    s_real_num.template set_val<AC_VAL_MIN>();
    s_real_den.template set_val<AC_VAL_QUANTUM>();
    complex_num.r().template set_val<AC_VAL_MIN>();
    complex_num.i().template set_val<AC_VAL_MIN>();
    complex_den.r().template set_val<AC_VAL_QUANTUM>();
    complex_den.i().template set_val<AC_VAL_QUANTUM>();
-   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num, complex_den, complex_quo);
+   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num,
+                     complex_den, complex_quo);
    // Calculate error for signed values, assign it to this_error_fixed
    this_error_fixed = err_calc(s_real_num, s_real_den, s_real_quo, allowed_error_fixed, threshold);
    // Calculate error for complex inputs and outputs
@@ -616,14 +651,16 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
       max_error_cmplx_fixed = this_error_complex;
    }
 
-   // Eighth corner: signed real numerator = QUANTUM, signed real denominator = MIN, complex numerator = (QUANTUM, QUANTUM), complex denominator = (MIN, MIN)
+   // Eighth corner: signed real numerator = QUANTUM, signed real denominator = MIN, complex numerator = (QUANTUM,
+   // QUANTUM), complex denominator = (MIN, MIN)
    s_real_num.template set_val<AC_VAL_QUANTUM>();
    s_real_den.template set_val<AC_VAL_MIN>();
    complex_num.r().template set_val<AC_VAL_QUANTUM>();
    complex_num.i().template set_val<AC_VAL_QUANTUM>();
    complex_den.r().template set_val<AC_VAL_MIN>();
    complex_den.i().template set_val<AC_VAL_MIN>();
-   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num, complex_den, complex_quo);
+   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num,
+                     complex_den, complex_quo);
    // Calculate error for signed values, assign it to this_error_fixed
    this_error_fixed = err_calc(s_real_num, s_real_den, s_real_quo, allowed_error_fixed, threshold);
    // Calculate error for complex inputs and outputs
@@ -637,13 +674,15 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
       max_error_cmplx_fixed = this_error_complex;
    }
 
-   // Ninth corner: real numerator = QUANTUM, real denominator = QUANTUM, complex numerator = (QUANTUM, QUANTUM), complex denominator = (QUANTUM, QUANTUM)
+   // Ninth corner: real numerator = QUANTUM, real denominator = QUANTUM, complex numerator = (QUANTUM, QUANTUM),
+   // complex denominator = (QUANTUM, QUANTUM)
    us_real_num.template set_val<AC_VAL_QUANTUM>();
    us_real_den.template set_val<AC_VAL_QUANTUM>();
    s_real_den.template set_val<AC_VAL_QUANTUM>();
    complex_den.r().template set_val<AC_VAL_QUANTUM>();
    complex_den.i().template set_val<AC_VAL_QUANTUM>();
-   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num, complex_den, complex_quo);
+   test_ac_div_fixed(us_real_num, us_real_den, us_real_quo, s_real_num, s_real_den, s_real_quo, complex_num,
+                     complex_den, complex_quo);
    // Calculate error for signed values.
    this_error_s = err_calc(s_real_num, s_real_den, s_real_quo, allowed_error_fixed, threshold);
    // Calculate error for unsigned values.
@@ -685,7 +724,8 @@ int test_driver_fixed(double& cumulative_max_error_fixed, double& cumulative_max
 }
 
 template <int numW, int numI, int numE, int denW, int denI, int denE, int quoW, int quoI, int quoE>
-int test_driver_float(double& cumulative_max_error_float, const double allowed_error_float, const double threshold, bool details = false)
+int test_driver_float(double& cumulative_max_error_float, const double allowed_error_float, const double threshold,
+                      bool details = false)
 {
    bool passed;
    double max_error_float = 0.0; // reset for this run
@@ -955,7 +995,8 @@ int main(int argc, char* argv[])
    double threshold_float = 0;
 
    cout << "=============================================================================" << endl;
-   cout << "Testing function: ac_div(), Scalar and complex values. - Allowed error " << allowed_error_fixed << " (fixed pt)" << endl;
+   cout << "Testing function: ac_div(), Scalar and complex values. - Allowed error " << allowed_error_fixed
+        << " (fixed pt)" << endl;
 
    bool all_tests_pass = true;
 
@@ -965,9 +1006,12 @@ int main(int argc, char* argv[])
    test_driver_int<16, 16, 16, 64>(all_tests_pass);
 
    // template <int numW, int numI, int denW, int denI, int quoW, int quoI>
-   test_driver_fixed<16, 8, 16, 8, 64, 32>(max_error_fixed, max_error_cmplx_fixed, allowed_error_fixed, threshold_fixed);
-   test_driver_fixed<16, -8, 16, -8, 64, 32>(max_error_fixed, max_error_cmplx_fixed, allowed_error_fixed, threshold_fixed);
-   test_driver_fixed<8, 16, 8, 16, 64, 32>(max_error_fixed, max_error_cmplx_fixed, allowed_error_fixed, threshold_fixed);
+   test_driver_fixed<16, 8, 16, 8, 64, 32>(max_error_fixed, max_error_cmplx_fixed, allowed_error_fixed,
+                                           threshold_fixed);
+   test_driver_fixed<16, -8, 16, -8, 64, 32>(max_error_fixed, max_error_cmplx_fixed, allowed_error_fixed,
+                                             threshold_fixed);
+   test_driver_fixed<8, 16, 8, 16, 64, 32>(max_error_fixed, max_error_cmplx_fixed, allowed_error_fixed,
+                                           threshold_fixed);
 
    // template <int numW, int numI, int numE, int denW, int denI, int denE, int quoW, int quoI, int quoE>
    test_driver_float<10, 5, 4, 10, 5, 4, 64, 32, 10>(max_error_float, allowed_error_float, threshold_float);
@@ -981,8 +1025,10 @@ int main(int argc, char* argv[])
    cout << "    max_error_cmplx_fixed = " << max_error_cmplx_fixed << endl;
    cout << "    max_error_float       = " << max_error_float << endl;
 
-   // If error limits on ac_fixed/ac_float datatypes have been crossed, or the output for ac_int datatypes is not correct, the test has failed.
-   bool test_fail = (max_error_fixed > allowed_error_fixed) || (max_error_cmplx_fixed > allowed_error_fixed) || (max_error_float > allowed_error_float) || (!all_tests_pass);
+   // If error limits on ac_fixed/ac_float datatypes have been crossed, or the output for ac_int datatypes is not
+   // correct, the test has failed.
+   bool test_fail = (max_error_fixed > allowed_error_fixed) || (max_error_cmplx_fixed > allowed_error_fixed) ||
+                    (max_error_float > allowed_error_float) || (!all_tests_pass);
 
    // Notify the user that the test was a failure.
    if(test_fail)

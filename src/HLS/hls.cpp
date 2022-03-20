@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,6 +52,7 @@
 
 #include "hls_target.hpp"
 #include "technology_manager.hpp"
+#include "technology_node.hpp"
 
 #include "hls_constraints.hpp"
 
@@ -88,7 +89,8 @@
 
 #include "dbgPrintHelper.hpp"
 
-static void computeResources(const structural_objectRef circ, const technology_managerRef TM, std::map<std::string, unsigned int>& resources);
+static void computeResources(const structural_objectRef circ, const technology_managerRef TM,
+                             std::map<std::string, unsigned int>& resources);
 
 /*************************************************************************************************
  *                                                                                               *
@@ -96,7 +98,8 @@ static void computeResources(const structural_objectRef circ, const technology_m
  *                                                                                               *
  *************************************************************************************************/
 
-hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet _operations, const HLS_targetRef _HLS_T, const HLS_constraintsRef _HLS_C)
+hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet _operations, const HLS_targetRef _HLS_T,
+         const HLS_constraintsRef _HLS_C)
     : functionId(_function_id),
       operations(std::move(_operations)),
       HLS_T(_HLS_T),
@@ -141,13 +144,17 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
    {
       const auto* Enode = GetPointer<const xml_element>(iter);
       if(!Enode || Enode->get_name() != "scheduling")
+      {
          continue;
+      }
       const xml_node::node_list list1 = Enode->get_children();
       for(const auto& iter1 : list1)
       {
          const auto* EnodeC = GetPointer<const xml_element>(iter1);
          if(!EnodeC)
+         {
             continue;
+         }
          if(EnodeC->get_name() == "scheduling_constraints")
          {
             std::string vertex_name;
@@ -155,11 +162,17 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
             LOAD_XVM(vertex_name, EnodeC);
             THROW_ASSERT(vertex_name != "", "bad formed xml file: vertex_name expected in a hls specification");
             if(CE_XVM(cstep, EnodeC))
+            {
                LOAD_XVM(cstep, EnodeC);
+            }
             else
+            {
                THROW_ERROR("bad formed xml file: cstep expected in a hls specification for operation " + vertex_name);
+            }
             if(cstep > tot_cstep)
+            {
                tot_cstep = cstep;
+            }
 
             unsigned int fu_index;
             LOAD_XVM(fu_index, EnodeC);
@@ -168,9 +181,12 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
             std::string library = LIBRARY_STD;
             LOAD_XVM(fu_name, EnodeC);
             if(CE_XVM(library, EnodeC))
+            {
                LOAD_XVM(library, EnodeC);
+            }
             unsigned int fu_type;
-            if(allocation_information->is_artificial_fu(String2Id[std::make_pair(fu_name, library)].front()) || allocation_information->is_assign(String2Id[std::make_pair(fu_name, library)].front()))
+            if(allocation_information->is_artificial_fu(String2Id[std::make_pair(fu_name, library)].front()) ||
+               allocation_information->is_assign(String2Id[std::make_pair(fu_name, library)].front()))
             {
                fu_type = String2Id[std::make_pair(fu_name, library)].front();
                String2Id[std::make_pair(fu_name, library)].pop_front();
@@ -211,7 +227,9 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
       WRITE_XVM(fu_name, EnodeC);
       WRITE_XVM(fu_index, EnodeC);
       if(library != LIBRARY_STD)
+      {
          WRITE_XVM(library, EnodeC);
+      }
    }
 
    if(datapath)
@@ -231,22 +249,74 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
    }
 }
 
-static void computeResources(const structural_objectRef circ, const technology_managerRef TM, std::map<std::string, unsigned int>& resources)
+static void computeResources(const structural_objectRef circ, const technology_managerRef TM,
+                             std::map<std::string, unsigned int>& resources)
 {
    const module* mod = GetPointer<module>(circ);
+   auto processResources = [&](const structural_objectRef c) {
+      THROW_ASSERT(c, "unexpected condition");
+      const structural_type_descriptorRef id_type = c->get_typeRef();
+      if(c->get_kind() != component_o_K)
+      {
+         return;
+      }
+      computeResources(c, TM, resources);
+      if(c->get_id() == "Controller_i" || c->get_id() == "Datapath_i")
+      {
+         return;
+      }
+      std::string library = TM->get_library(id_type->id_type);
+      if(library == WORK_LIBRARY || library == PROXY_LIBRARY)
+      {
+         return;
+      }
+      resources[id_type->id_type]++;
+   };
    for(unsigned int l = 0; l < mod->get_internal_objects_size(); l++)
    {
       const structural_objectRef obj = mod->get_internal_object(l);
-      const structural_type_descriptorRef id_type = obj->get_typeRef();
-      if(obj->get_kind() != component_o_K)
-         continue;
-      computeResources(obj, TM, resources);
-      if(obj->get_id() == "Controller_i" || obj->get_id() == "Datapath_i")
-         continue;
-      std::string library = TM->get_library(id_type->id_type);
-      if(library == WORK_LIBRARY || library == PROXY_LIBRARY)
-         continue;
-      resources[id_type->id_type]++;
+      processResources(obj);
+   }
+   NP_functionalityRef NPF = mod->get_NP_functionality();
+   if(NPF and NPF->exist_NP_functionality(NP_functionality::IP_COMPONENT))
+   {
+      std::string ip_cores = NPF->get_NP_functionality(NP_functionality::IP_COMPONENT);
+      std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
+      for(const auto& ip_core : ip_cores_list)
+      {
+         std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
+         if(ip_core_vec.size() < 1 or ip_core_vec.size() > 2)
+         {
+            THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");
+         }
+         std::string library, component_name;
+         if(ip_core_vec.size() == 2)
+         {
+            library = ip_core_vec[0];
+            component_name = ip_core_vec[1];
+         }
+         else
+         {
+            component_name = ip_core_vec[0];
+            library = TM->get_library(component_name);
+         }
+         technology_nodeRef tn = TM->get_fu(component_name, library);
+         structural_objectRef core_cir;
+         if(tn->get_kind() == functional_unit_K)
+         {
+            core_cir = GetPointer<functional_unit>(tn)->CM->get_circ();
+         }
+         else if(tn->get_kind() == functional_unit_template_K &&
+                 GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU))
+         {
+            core_cir = GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->CM->get_circ();
+         }
+         else
+         {
+            THROW_ERROR("Unexpected pattern");
+         }
+         processResources(core_cir);
+      }
    }
 }
 
@@ -257,7 +327,9 @@ void hls::PrintResources() const
    const technology_managerRef TM = HLS_T->get_technology_manager();
    computeResources(datapath->get_circ(), TM, resources);
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Summary of resources:");
    for(auto r = resources.begin(); r != resources.end(); ++r)
    {

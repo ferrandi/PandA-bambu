@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,8 +50,11 @@
 /// utility include
 #include "exceptions.hpp"
 
-DesignFlowStepFactory::DesignFlowStepFactory(const DesignFlowManagerConstRef& _design_flow_manager, const ParameterConstRef& _parameters)
-    : design_flow_manager(_design_flow_manager), parameters(_parameters), debug_level(_parameters->getOption<int>(OPT_debug_level))
+DesignFlowStepFactory::DesignFlowStepFactory(const DesignFlowManagerConstRef& _design_flow_manager,
+                                             const ParameterConstRef& _parameters)
+    : design_flow_manager(_design_flow_manager),
+      parameters(_parameters),
+      debug_level(_parameters->getOption<int>(OPT_debug_level))
 {
 }
 

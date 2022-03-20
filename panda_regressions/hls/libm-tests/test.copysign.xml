@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<function>
+  <testbench a="0.0" b="4.0" />
+  <testbench a="0.0" b="-4.0" />
+  <testbench a="-0.0" b="4.0" />
+  <testbench a="-0.0" b="-4.0" />
+  <testbench a="__Inf" b="0.0" />
+  <testbench a="__Inf" b="-0.0" />
+  <testbench a="-__Inf" b="0.0" />
+  <testbench a="-__Inf" b="-0.0" />
+  <testbench a="0.0" b="__Inf" />
+  <testbench a="0.0" b="-0.0" />
+  <testbench a="-0.0" b="__Inf" />
+  <testbench a="-0.0" b="-0.0" />
+  <testbench a="__Nan" b="0.0" />
+  <testbench a="__Nan" b="-0.0" />
+  <testbench a="-__Nan" b="0.0" />
+  <testbench a="-__Nan" b="-0.0" />
+</function>

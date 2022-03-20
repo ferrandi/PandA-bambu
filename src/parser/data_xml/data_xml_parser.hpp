@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -82,9 +82,10 @@ class DataXmlParser
     * @param output is where data will be saved: first key is the benchmark name (sorted by name thanks to map),
     * second key is the characteristic, value is the actual value
     */
-   void Parse(const CustomSet<std::string>& file_names, std::map<std::string, CustomMap<std::string, std::string>>& output) const;
+   void Parse(const CustomSet<std::string>& file_names,
+              std::map<std::string, CustomMap<std::string, std::string>>& output) const;
 };
 /// Refcount definition for the class ParseProfilingAnalysis
-typedef refcount<const DataXmlParser> DataXmlParserConstRef;
-typedef refcount<DataXmlParser> DataXmlParserRef;
+using DataXmlParserConstRef = refcount<const DataXmlParser>;
+using DataXmlParserRef = refcount<DataXmlParser>;
 #endif

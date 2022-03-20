@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<target>
+  <device>
+    <vendor value="Generic"/>
+    <family value="Generic-yosysOpenROAD"/>
+    <model value="asap7"/>
+    <package value="none"/>
+    <speed_grade value="BC"/>
+    <BRAM_bitsize_max value="128"/>
+    <BRAM_bitsize_min value="8"/>
+    <DSPs_rx_sizes value="16"/>
+    <DSPs_ry_sizes value="16"/>
+    <DSPs_x_sizes value="16"/>
+    <DSPs_y_sizes value="16"/>
+    <max_lut_size value="0"/>
+    <USE_TIME_UNIT_PS value="1"/>
+
+    <PLATFORM is_bash_var="1" value="asap7"/>
+    <PROCESS is_bash_var="1" value="45"/>
+
+    <TECH_LEF is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/lef/asap7_tech_1x_201209.lef"/>
+    <SC_LEF is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/lef/asap7sc7p5t_27_R_1x_201211.lef"/>
+    <GDS_FILES is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/gds/asap7sc7p5t_27_R_1x_201211.gds ${ADDITIONAL_GDS}"/>
+
+    <LIB_FILES is_bash_var="1" value="&quot;${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_AO_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_INVBUF_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_OA_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_SIMPLE_RVT_FF_nldm_201020.lib ${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_SEQ_RVT_FF_nldm_201020.lib ${ADDITIONAL_LIBS} &quot;"/>
+    <DFF_LIB_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/lib/asap7sc7p5t_SEQ_RVT_FF_nldm_201020.lib"/>
+    <TEMPERATURE is_bash_var="1" value="25C"/>
+
+    <!-- # Dont use cells to ease congestion -->
+    <!-- # Specify at least one filler cell if none -->
+    <DONT_USE_CELLS is_bash_var="1" value="&quot;*x1_ASAP7* *x1p*_ASAP7* *xp*_ASAP7* SDF* ICG* DFFH*&quot;"/>
+
+    <!-- # Yosys mapping files -->
+    <!-- # Blackbox - list all standard cells and cells yosys should treat as blackboxes -->
+    <BLACKBOX_V_FILE  is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/yoSys/asap7sc7p5t.blackbox.v"/>
+    <LATCH_MAP_FILE   is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/yoSys/cells_latch.v"/>
+    <CLKGATE_MAP_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/yoSys/cells_clkgate.v"/>
+    <ADDER_MAP_FILE   is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/yoSys/cells_adders.v"/>
+    <BLACKBOX_MAP_TCL is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/yoSys/blackbox_map.tcl"/>
+
+    <ABC_DRIVER_CELL is_bash_var="1" value="BUFx2_ASAP7_75t_R"/>
+
+    <!-- # BUF_X1, pin (A) = 0.974659. Arbitrarily multiply by 4 -->
+    <ABC_LOAD_IN_FF is_bash_var="1" value="3.898"/>
+
+    <!-- # Set the TIEHI/TIELO cells -->
+    <!-- # These are used in yosys synthesis to avoid logical 1/0's in the netlist -->
+    <TIEHI_CELL_AND_PORT is_bash_var="1" value="&quot;TIEHIx1_ASAP7_75t_R H&quot;"/>	
+    <TIELO_CELL_AND_PORT is_bash_var="1" value="&quot;TIELOx1_ASAP7_75t_R L&quot;"/>
+
+    <!-- # Used in synthesis -->
+    <MIN_BUF_CELL_AND_PORTS is_bash_var="1" value="&quot;BUFx2_ASAP7_75t_R A Y&quot;"/>
+
+    <!-- # Placement site for core cells -->
+    <!-- # This can be found in the technology lef -->
+    <PLACE_SITE is_bash_var="1" value="asap7sc7p5t"/>
+
+    <MAKE_TRACKS is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/openRoad/make_tracks.tcl"/>
+
+    <!-- # Define default PDN config -->
+    <PDN_CFG is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/openRoad/pdn/grid_strategy-M2-M5-M7.cfg"/>
+
+    <!-- # IO Placer pin layers -->
+    <IO_PLACER_H is_bash_var="1" value="M4"/>
+    <IO_PLACER_V is_bash_var="1" value="M5"/>
+
+    <MACRO_PLACE_HALO is_bash_var="1" value="&quot;10 10&quot;"/>
+    <MACRO_PLACE_CHANNEL is_bash_var="1" value="&quot;12 12&quot;"/>
+
+    <!-- # Cell padding in SITE widths to ease rout-ability.  Applied to both sides -->
+    <CELL_PAD_IN_SITES_GLOBAL_PLACEMENT is_bash_var="1" value="2"/>
+    <CELL_PAD_IN_SITES_DETAIL_PLACEMENT is_bash_var="1" value="1"/>
+
+    <PLACE_DENSITY is_bash_var="1" value="0.60"/>
+
+    <!-- # Layer to use for parasitics estimations -->
+    <WIRE_RC_LAYER is_bash_var="1" value="M3"/>
+
+    <!-- # Endcap and Welltie cells -->
+    <TAPCELL_TCL is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/openRoad/tapcell.tcl"/>
+
+    <!-- # TritonCTS options -->
+    <CTS_BUF_CELL is_bash_var="1" value="BUFx4_ASAP7_75t_R"/>
+
+    <CTS_BUF_DISTANCE is_bash_var="1" value="60"/>
+
+    <!-- #Fill cells used in fill cell insertion -->
+    <FILL_CELLS is_bash_var="1" value="&quot;FILLERxp5_ASAP7_75t_R&quot;"/>
+
+    <SET_RC_TCL is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/setRC.tcl"/>
+
+    <!-- #  Route options -->
+    <MIN_ROUTING_LAYER is_bash_var="1" value="M2"/>
+    <MAX_ROUTING_LAYER is_bash_var="1" value="M7"/>
+
+    <!-- # KLayout technology file -->
+    <KLAYOUT_TECH_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/KLayout/asap7.lyt"/>
+
+    <!-- # OpenRCX extRules -->
+    <RCX_RULES is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/asap7/rcx_patterns.rules"/>
+
+    <!-- DESIGN RELATED -->
+    <DIE_AREA is_bash_var="1" value="&quot;0 0 90 90&quot;"/>
+    <CORE_AREA is_bash_var="1" value="&quot;5.08 5.08 80 80&quot;"/>
+
+   </device>
+</target>

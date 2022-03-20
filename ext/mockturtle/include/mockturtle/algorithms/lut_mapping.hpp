@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,7 @@
   \file lut_mapping.hpp
   \brief LUT mapping
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -238,7 +239,7 @@ private:
     /* blend flow referenes */
     for ( auto i = 0u; i < ntk.size(); ++i )
     {
-      flow_refs[i] = coef * flow_refs[i] + ( 1.0f - coef ) * std::max<float>( 1.0f, map_refs[i] );
+      flow_refs[i] = coef * flow_refs[i] + ( 1.0f - coef ) * std::max( 1.0f, static_cast<float>( map_refs[i] ) );
     }
 
     ++iteration;

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,26 +67,32 @@
 #endif
 #include "string_manipulation.hpp" // for STR GET_CLASS
 #include "tree_common.hpp"         // for target_mem_ref461_K, targe...
-#include "tree_manager.hpp"        // for ParameterConstRef, tree_no...
-#include "tree_node.hpp"           // for tree_nodeRef, tree_node
+#include "tree_helper.hpp"
+#include "tree_manager.hpp" // for ParameterConstRef, tree_no...
+#include "tree_node.hpp"    // for tree_nodeRef, tree_node
 #include "tree_reindex.hpp"
 
-application_manager::application_manager(const FunctionExpanderConstRef function_expander, const bool _single_root_function, const bool _allow_recursive_functions, const ParameterConstRef _Param)
+application_manager::application_manager(const FunctionExpanderConstRef function_expander,
+                                         const bool _single_root_function, const bool _allow_recursive_functions,
+                                         const ParameterConstRef _Param)
     : TM(new tree_manager(_Param)),
-      call_graph_manager(new CallGraphManager(function_expander, _single_root_function, _allow_recursive_functions, TM, _Param)),
+      call_graph_manager(
+          new CallGraphManager(function_expander, _single_root_function, _allow_recursive_functions, TM, _Param)),
       Param(_Param),
-      address_bitsize(_Param->isOption(OPT_addr_bus_bitsize) ? _Param->getOption<unsigned int>(OPT_addr_bus_bitsize) : 32),
+      address_bitsize(_Param->isOption(OPT_addr_bus_bitsize) ? _Param->getOption<unsigned int>(OPT_addr_bus_bitsize) :
+                                                               32),
       single_root_function(_single_root_function),
 #if HAVE_PRAGMA_BUILT
       PM(new pragma_manager(application_managerRef(this, null_deleter()), _Param)),
 #endif
-#ifndef NDEBUG
       cfg_transformations(0),
-#endif
       debug_level(_Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 #if HAVE_FROM_DISCREPANCY_BUILT
       ,
-      RDiscr(((_Param->isOption(OPT_discrepancy) and _Param->getOption<bool>(OPT_discrepancy)) or (_Param->isOption(OPT_discrepancy_hw) and _Param->getOption<bool>(OPT_discrepancy_hw))) ? new Discrepancy() : nullptr)
+      RDiscr(((_Param->isOption(OPT_discrepancy) and _Param->getOption<bool>(OPT_discrepancy)) or
+              (_Param->isOption(OPT_discrepancy_hw) and _Param->getOption<bool>(OPT_discrepancy_hw))) ?
+                 new Discrepancy() :
+                 nullptr)
 #endif
 {
    const auto original_file_names = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
@@ -124,7 +130,7 @@ bool application_manager::hasToBeInterfaced(unsigned int funId) const
    const auto root_functions = CGetCallGraphManager()->GetRootFunctions();
    const auto addressed_functions = CGetCallGraphManager()->GetAddressedFunctions();
    // all the root functions and the reached addressed functions must be interfaced
-   return root_functions.find(funId) != root_functions.end() or addressed_functions.find(funId) != addressed_functions.end();
+   return root_functions.count(funId) || addressed_functions.count(funId);
 }
 
 FunctionBehaviorRef application_manager::GetFunctionBehavior(unsigned int index)
@@ -137,16 +143,16 @@ FunctionBehaviorRef application_manager::GetFunctionBehavior(unsigned int index)
 const FunctionBehaviorConstRef application_manager::CGetFunctionBehavior(unsigned int index) const
 {
    const auto& behaviors = call_graph_manager->CGetCallGraph()->CGetCallGraphInfo()->behaviors;
-   THROW_ASSERT(behaviors.find(index) != behaviors.end(), "There is no function with index " + STR(index));
+   THROW_ASSERT(behaviors.count(index), "There is no function with index " + STR(index));
    return behaviors.at(index);
 }
 
-const CustomSet<unsigned int>& application_manager::get_global_variables() const
+const TreeNodeConstSet& application_manager::GetGlobalVariables() const
 {
    return global_variables;
 }
 
-void application_manager::add_global_variable(unsigned int var)
+void application_manager::AddGlobalVariable(const tree_nodeConstRef& var)
 {
    global_variables.insert(var);
 }
@@ -170,24 +176,37 @@ const pragma_managerRef application_manager::get_pragma_manager() const
 
 unsigned int application_manager::get_produced_value(unsigned int fun_id, const vertex& v) const
 {
-   const OpGraphConstRef cfg = CGetFunctionBehavior(fun_id)->CGetOpGraph(FunctionBehavior::CFG);
-   const unsigned int node_id = cfg->CGetOpNodeInfo(v)->GetNodeId();
-   return (node_id != ENTRY_ID and node_id != EXIT_ID) ? get_produced_value(TM->get_tree_node_const(node_id)) : 0;
+   const auto node = GetProducedValue(fun_id, v);
+   return node ? GET_INDEX_CONST_NODE(node) : 0;
+}
+
+tree_nodeConstRef application_manager::GetProducedValue(unsigned int fun_id, const vertex& v) const
+{
+   const auto cfg = CGetFunctionBehavior(fun_id)->CGetOpGraph(FunctionBehavior::CFG);
+   const auto node = cfg->CGetOpNodeInfo(v)->node;
+   return node ? GetProducedValue(node) : nullptr;
 }
 
 unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) const
 {
+   const auto node = GetProducedValue(tn);
+   return node ? GET_INDEX_CONST_NODE(node) : 0;
+}
+
+tree_nodeConstRef application_manager::GetProducedValue(const tree_nodeConstRef& _tn) const
+{
+   const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
    switch(tn->get_kind())
    {
       case gimple_while_K:
       {
-         auto* we = GetPointer<gimple_while>(tn);
-         return GET_INDEX_NODE(we->op0);
+         const auto we = GetPointerS<const gimple_while>(tn);
+         return we->op0;
       }
       case gimple_cond_K:
       {
-         auto* gc = GetPointer<gimple_cond>(tn);
-         return GET_INDEX_NODE(gc->op0);
+         const auto gc = GetPointerS<const gimple_cond>(tn);
+         return gc->op0;
       }
       case gimple_label_K:
       case gimple_return_K:
@@ -201,52 +220,72 @@ unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) con
       }
       case gimple_phi_K:
       {
-         auto* gp = GetPointer<gimple_phi>(tn);
-         return GET_INDEX_NODE(gp->res);
+         const auto gp = GetPointerS<const gimple_phi>(tn);
+         return gp->res;
       }
       case gimple_switch_K:
       {
-         auto* se = GetPointer<gimple_switch>(tn);
-         return GET_INDEX_NODE(se->op0);
+         const auto se = GetPointerS<const gimple_switch>(tn);
+         return se->op0;
       }
       case gimple_assign_K:
       {
-         auto* gm = GetPointer<gimple_assign>(tn);
-         tree_nodeRef op0 = GET_NODE(gm->op0);
+         const auto gm = GetPointerS<const gimple_assign>(tn);
+         const auto op0 = GET_CONST_NODE(gm->op0);
          if(gm->init_assignment || gm->clobber)
+         {
             break;
+         }
          else if(op0->get_kind() == array_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == indirect_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == misaligned_indirect_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == mem_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == target_mem_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == target_mem_ref461_K)
+         {
             break;
+         }
          else
          {
-            return GET_INDEX_NODE(gm->op0);
+            return gm->op0;
          }
          break;
       }
       case gimple_asm_K:
       {
-         auto* ga = GetPointer<gimple_asm>(tn);
+         const auto ga = GetPointerS<const gimple_asm>(tn);
          if(ga->out)
          {
-            auto tl = GetPointer<tree_list>(GET_NODE(ga->out));
+            const auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ga->out));
             /// only the first output and so only single output gimple_asm are supported
             if(tl->valu)
-               return GET_INDEX_NODE(tl->valu);
+            {
+               return tl->valu;
+            }
             else
+            {
                THROW_ERROR("unexpected condition");
+            }
          }
          else
-            return 0;
+         {
+            return nullptr;
+         }
          break;
       }
       case binfo_K:
@@ -279,20 +318,23 @@ unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) con
       case CASE_TERNARY_EXPRESSION:
       case CASE_TYPE_NODES:
       case CASE_UNARY_EXPRESSION:
-         THROW_ERROR("Operation not yet supported: " + std::string(tn->get_kind_text()));
+         THROW_ERROR("Operation not yet supported: " + tn->get_kind_text());
          break;
       default:
       {
          THROW_UNREACHABLE("");
       }
    }
-   return 0;
+   return nullptr;
 }
 
 #if HAVE_CODESIGN
-void application_manager::AddActorGraphManager(const unsigned int function_index, const ActorGraphManagerRef actor_graph_manager)
+void application_manager::AddActorGraphManager(const unsigned int function_index,
+                                               const ActorGraphManagerRef actor_graph_manager)
 {
-   THROW_ASSERT(const_output_actor_graphs.find(function_index) == const_output_actor_graphs.end(), "Function " + boost::lexical_cast<std::string>(function_index) + " has alread an actor graph manager associated");
+   THROW_ASSERT(const_output_actor_graphs.find(function_index) == const_output_actor_graphs.end(),
+                "Function " + boost::lexical_cast<std::string>(function_index) +
+                    " has alread an actor graph manager associated");
    const_output_actor_graphs[function_index] = actor_graph_manager;
    output_actor_graphs[function_index] = actor_graph_manager;
 }
@@ -304,13 +346,15 @@ const CustomUnorderedMap<unsigned int, ActorGraphManagerConstRef>& application_m
 
 const ActorGraphManagerConstRef application_manager::CGetActorGraph(const unsigned int function_index) const
 {
-   THROW_ASSERT(const_output_actor_graphs.find(function_index) != const_output_actor_graphs.end(), "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found");
+   THROW_ASSERT(const_output_actor_graphs.find(function_index) != const_output_actor_graphs.end(),
+                "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found");
    return const_output_actor_graphs.find(function_index)->second;
 }
 
 ActorGraphManagerRef application_manager::GetActorGraph(const unsigned int function_index)
 {
-   THROW_ASSERT(output_actor_graphs.find(function_index) != output_actor_graphs.end(), "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found ");
+   THROW_ASSERT(output_actor_graphs.find(function_index) != output_actor_graphs.end(),
+                "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found ");
    return output_actor_graphs.find(function_index)->second;
 }
 
@@ -320,58 +364,106 @@ CustomUnorderedMap<unsigned int, ActorGraphManagerRef> application_manager::GetA
 }
 #endif
 
-const CustomOrderedSet<unsigned int>& application_manager::get_written_objects() const
-{
-   return written_objects;
-}
-
 void application_manager::add_written_object(unsigned int node_id)
 {
    // std::cerr << "Written object " << node_id << std::endl;
    written_objects.insert(node_id);
 }
 
-#ifndef NDEBUG
+const CustomOrderedSet<unsigned int>& application_manager::get_written_objects() const
+{
+   return written_objects;
+}
+
+void application_manager::clean_written_objects()
+{
+   written_objects.clear();
+}
+
 bool application_manager::ApplyNewTransformation() const
 {
-   return cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations);
-}
-
-void application_manager::RegisterTransformation(const std::string& step, const tree_nodeConstRef new_tn)
-{
-   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations), step + " - " + (new_tn ? new_tn->ToString() : ""));
-   cfg_transformations++;
-   if(Param->getOption<size_t>(OPT_cfg_max_transformations) != std::numeric_limits<size_t>::max())
-   {
-      INDENT_OUT_MEX(0, 0, "---Transformation " + STR(cfg_transformations) + " - " + step + " - " + (new_tn ? new_tn->ToString() : ""));
-   }
-}
+#ifndef NDEBUG
+   return cfg_transformations < Param->getOption<size_t>(OPT_max_transformations);
+#else
+   return true;
 #endif
-
-bool application_manager::isParmUsed(unsigned parm_index) const
-{
-   return Parm2SSA_map.find(parm_index) != Parm2SSA_map.end();
 }
 
-unsigned application_manager::getSSAFromParm(unsigned parm_index) const
+void application_manager::RegisterTransformation(const std::string&
+#ifndef NDEBUG
+                                                     step
+#endif
+                                                 ,
+                                                 const tree_nodeConstRef
+#ifndef NDEBUG
+                                                     new_tn
+#endif
+)
 {
-   THROW_ASSERT(parm_index, "unexpected null parm_decl index");
-   THROW_ASSERT(Parm2SSA_map.find(parm_index) != Parm2SSA_map.end(), "unexpected condition");
-   return Parm2SSA_map.find(parm_index)->second;
+#ifndef NDEBUG
+   std::string tn_str = "";
+   if(new_tn)
+   {
+      const auto tn = new_tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(new_tn) : new_tn;
+      tn_str = tn->get_kind() == function_decl_K ?
+                   ("@" + STR(new_tn->index) +
+                    tree_helper::print_function_name(get_tree_manager(), GetPointerS<const function_decl>(tn))) :
+                   tn->ToString();
+   }
+   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_max_transformations),
+                step + " - " + tn_str + " Transformations " + STR(cfg_transformations));
+   cfg_transformations++;
+   if(Param->getOption<size_t>(OPT_max_transformations) != std::numeric_limits<size_t>::max())
+   {
+      INDENT_OUT_MEX(0, 0, "---Transformation " + STR(cfg_transformations) + " - " + step + " - " + tn_str);
+   }
+#endif
 }
 
-void application_manager::setSSAFromParm(unsigned int parm_index, unsigned ssa_index)
+bool application_manager::isParmUsed(unsigned int functionID, unsigned parm_index) const
+{
+   return Parm2SSA_map.find(functionID) != Parm2SSA_map.end() &&
+          Parm2SSA_map.find(functionID)->second.count(parm_index);
+}
+
+unsigned application_manager::getSSAFromParm(unsigned int functionID, unsigned parm_index) const
 {
    THROW_ASSERT(parm_index, "unexpected null parm_decl index");
-   THROW_ASSERT(ssa_index, "unexpected null ssa_name index");
-   if(Parm2SSA_map.find(parm_index) == Parm2SSA_map.end())
-      Parm2SSA_map[parm_index] = ssa_index;
+   THROW_ASSERT(Parm2SSA_map.find(functionID) != Parm2SSA_map.end(),
+                "relation not computed for function id: " + STR(functionID));
+   THROW_ASSERT(Parm2SSA_map.at(functionID).find(parm_index) != Parm2SSA_map.at(functionID).end(),
+                "unexpected condition " + STR(functionID) + " " + STR(parm_index));
+   return Parm2SSA_map.at(functionID).at(parm_index);
+}
+
+void application_manager::setSSAFromParm(unsigned int functionID, unsigned int parm_index, unsigned ssa_index)
+{
+   THROW_ASSERT(functionID, "unexpected null function id: " + STR(functionID));
+   THROW_ASSERT(parm_index, "unexpected null parm_decl index " + STR(parm_index));
+   THROW_ASSERT(ssa_index, "unexpected null ssa_name index " + STR(ssa_index));
+   if(Parm2SSA_map.find(functionID) == Parm2SSA_map.end())
+   {
+      Parm2SSA_map[functionID][parm_index] = ssa_index;
+   }
    else
    {
-      THROW_ASSERT(Parm2SSA_map.find(parm_index)->second == ssa_index, "unexpected condition");
+      if(Parm2SSA_map.find(functionID)->second.find(parm_index) == Parm2SSA_map.find(functionID)->second.end())
+      {
+         Parm2SSA_map[functionID][parm_index] = ssa_index;
+      }
+      else
+      {
+         THROW_ASSERT(Parm2SSA_map.find(functionID)->second.find(parm_index)->second == ssa_index,
+                      "unexpected condition " + STR(functionID) + " " + STR(parm_index) + " " + STR(ssa_index));
+      }
    }
 }
-void application_manager::clearParm2SSA()
+void application_manager::clearParm2SSA(unsigned int functionID)
 {
-   Parm2SSA_map.clear();
+   Parm2SSA_map[functionID].clear();
+}
+
+CustomMap<unsigned, unsigned> application_manager::getACopyParm2SSA(unsigned int functionID)
+{
+   return Parm2SSA_map[functionID];
 }

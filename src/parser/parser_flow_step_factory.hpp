@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,7 +63,8 @@ class ParserFlowStepFactory : public DesignFlowStepFactory
     * @param AppM is the application manager
     * @param parameters is the set of input parameters
     */
-   ParserFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerRef AppM, const ParameterConstRef parameters);
+   ParserFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerRef AppM,
+                         const ParameterConstRef parameters);
 
    /**
     * Destructor

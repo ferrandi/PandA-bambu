@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,13 +76,7 @@ class xml_element;
 struct attribute
 {
  public:
-   typedef enum
-   {
-      FLOAT64 = 0,
-      BOOLEAN,
-      INT32,
-      STRING
-   } value_t;
+   using value_t = enum { FLOAT64 = 0, BOOLEAN, INT32, STRING };
 
  private:
    std::string content;
@@ -117,11 +111,12 @@ struct attribute
       return content_list;
    }
 
-   static void xload(const xml_element* node, std::vector<std::string>& ordered_attributes, std::map<std::string, attributeRef>& attributes);
+   static void xload(const xml_element* EnodeC, std::vector<std::string>& ordered_attributes,
+                     std::map<std::string, attributeRef>& attributes);
 
    void xwrite(xml_element* xml_node, const std::string& name);
 };
-typedef refcount<attribute> attributeRef;
+using attributeRef = refcount<attribute>;
 
 /**
  * This class manages the specific library structure.
@@ -130,15 +125,14 @@ class library_manager
 {
  public:
    /// typedef for the identification of the functional units contained into the library
-   typedef std::map<std::string, technology_nodeRef> fu_map_type;
+   using fu_map_type = std::map<std::string, technology_nodeRef>;
 
    /**
     * @name Library output formats
     */
    //@{
    /// available information for the library
-   typedef enum
-   {
+   using info_t = enum {
       XML,
 #if HAVE_FROM_LIBERTY
       LIBERTY,
@@ -149,7 +143,7 @@ class library_manager
 #if HAVE_LIBRARY_COMPILER
       DB,
 #endif
-   } info_t;
+   };
    //@}
 
  private:
@@ -196,7 +190,8 @@ class library_manager
 
    /**
     * Check if the library is virtual or not
-    * @return true if the library is virtual, false otherwise (i.e., it is a standard library or, however, a library already characterized)
+    * @return true if the library is virtual, false otherwise (i.e., it is a standard library or, however, a library
+    * already characterized)
     */
    bool is_virtual() const;
 
@@ -225,7 +220,8 @@ class library_manager
 
    void erase_info();
 
-   static void xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param, const target_deviceRef& device);
+   static void xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param,
+                     const target_deviceRef& device);
 
    void xwrite(xml_element* rootnode, TargetDevice_Type dv_type);
 
@@ -245,7 +241,8 @@ class library_manager
 
    /**
     * Return the list of the resources contained into the given library
-    * @return a datastructure that maps the name of the cells contained into the library with the related technology_node's
+    * @return a datastructure that maps the name of the cells contained into the library with the related
+    * technology_node's
     */
    const fu_map_type& get_library_fu() const
    {
@@ -253,7 +250,7 @@ class library_manager
    }
 };
 
-typedef refcount<library_manager> library_managerRef;
-typedef refcount<const library_manager> library_managerConstRef;
+using library_managerRef = refcount<library_manager>;
+using library_managerConstRef = refcount<const library_manager>;
 
 #endif

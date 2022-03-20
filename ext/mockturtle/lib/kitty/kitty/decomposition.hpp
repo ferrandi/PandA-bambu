@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -40,6 +40,7 @@
 #include "constructors.hpp"
 #include "operations.hpp"
 #include "implicant.hpp"
+#include "traits.hpp"
 
 namespace kitty
 {
@@ -95,10 +96,13 @@ enum class bi_decomposition
   \param tt Input function \f$f\f$
   \param var_index Variable \f$a\f$
   \param func If not ``null`` and decomposition exists, its value is assigned the remainder \f$h\f$
+  \param allow_xor Set to false to disable XOR decomposition
 */
 template<class TT>
-top_decomposition is_top_decomposable( const TT& tt, uint32_t var_index, TT* func = nullptr )
+top_decomposition is_top_decomposable( const TT& tt, uint32_t var_index, TT* func = nullptr, bool allow_xor = true )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   auto var = tt.construct();
   kitty::create_nth_var( var, var_index );
 
@@ -135,17 +139,20 @@ top_decomposition is_top_decomposable( const TT& tt, uint32_t var_index, TT* fun
     return top_decomposition::le_;
   }
 
-  /* try XOR */
-  const auto co0 = cofactor0( tt, var_index );
-  const auto co1 = cofactor1( tt, var_index );
-
-  if ( equal( co0, ~co1 ) )
+  if ( allow_xor )
   {
-    if ( func )
+    /* try XOR */
+    const auto co0 = cofactor0( tt, var_index );
+    const auto co1 = cofactor1( tt, var_index );
+
+    if ( equal( co0, ~co1 ) )
     {
-      *func = co0;
+      if ( func )
+      {
+        *func = co0;
+      }
+      return top_decomposition::xor_;
     }
-    return top_decomposition::xor_;
   }
 
   return top_decomposition::none;
@@ -174,10 +181,13 @@ top_decomposition is_top_decomposable( const TT& tt, uint32_t var_index, TT* fun
   \param var_index1 Variable \f$a\f$
   \param var_index2 Variable \f$b\f$
   \param func If not ``null`` and decomposition exists, its value is assigned the remainder \f$h\f$
+  \param allow_xor Set to false to disable XOR decomposition
 */
 template<class TT>
-bottom_decomposition is_bottom_decomposable( const TT& tt, uint32_t var_index1, uint32_t var_index2, TT* func = nullptr )
+bottom_decomposition is_bottom_decomposable( const TT& tt, uint32_t var_index1, uint32_t var_index2, TT* func = nullptr, bool allow_xor = true )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   const auto tt0 = cofactor0( tt, var_index1 );
   const auto tt1 = cofactor1( tt, var_index1 );
 
@@ -238,7 +248,7 @@ bottom_decomposition is_bottom_decomposable( const TT& tt, uint32_t var_index1, 
     }
     return bottom_decomposition::and_;
   }
-  else // XOR
+  else if ( allow_xor ) // XOR
   {
     if ( func )
     {
@@ -274,7 +284,7 @@ TT select_one_cube( const TT& q )
   auto minterms = kitty::get_minterms( q );
   const uint64_t min = minterms[0];
   set_bit( m, min );
-  for ( auto i = 0; i < q.num_vars(); i++ )
+  for ( auto i = 0u; i < q.num_vars(); i++ )
   {
     std::vector<int> h( 1, i );
     auto m_p = exist_set( m, h );
@@ -590,7 +600,7 @@ inline std::tuple<std::vector<int>, std::vector<int>, bi_decomposition> best_var
     }
   }
 
-  int diff_or = x_or.first.size() - x_or.second.size();
+  int diff_or = static_cast<int>( x_or.first.size() ) - static_cast<int>( x_or.second.size() );
   if ( ( x_or.first.size() == 0 ) || ( x_or.second.size() == 0 ) )
   {
     diff_or = 100;
@@ -600,7 +610,7 @@ inline std::tuple<std::vector<int>, std::vector<int>, bi_decomposition> best_var
     diff_or = -diff_or;
   }
 
-  int diff_and = x_and.first.size() - x_and.second.size();
+  int diff_and = static_cast<int>( x_and.first.size() ) - static_cast<int>( x_and.second.size() );
   if ( ( x_and.first.size() == 0 ) || ( x_and.second.size() == 0 ) )
   {
     diff_and = 100;
@@ -610,7 +620,7 @@ inline std::tuple<std::vector<int>, std::vector<int>, bi_decomposition> best_var
     diff_and = -diff_and;
   }
 
-  int diff_xor = x_xor.first.size() - x_xor.second.size();
+  int diff_xor = static_cast<int>( x_xor.first.size() ) - static_cast<int>( x_xor.second.size() );
   if ( ( x_xor.first.size() == 0 ) || ( x_xor.second.size() == 0 ) )
   {
     diff_xor = 100;
@@ -707,7 +717,7 @@ std::tuple<TT, bi_decomposition, std::vector<TT>> is_bi_decomposable( const TT& 
   }
 
   std::vector<int> support;
-  for ( auto x = 0; x < tt.num_vars(); x++ )
+  for ( auto x = 0u; x < tt.num_vars(); x++ )
   {
     if ( has_var( binary_and( tt, dc ), x ) )
     {
@@ -881,6 +891,10 @@ bool is_ashenhurst_decomposable( const TTf& tt,
                                  const TTg& outer_func,
                                  const TTh& inner_func )
 {
+  static_assert( is_complete_truth_table<TTf>::value, "Can only be applied on complete truth tables." );
+  static_assert( is_complete_truth_table<TTg>::value, "Can only be applied on complete truth tables." );
+  static_assert( is_complete_truth_table<TTh>::value, "Can only be applied on complete truth tables." );
+
   std::vector<TTf> y_vars;
   std::vector<TTf> z_vars;
 
@@ -914,6 +928,10 @@ bool is_ashenhurst_decomposable( const TTf& tt,
 template<class TTf, class TTg, class TTh>
 uint32_t ashenhurst_decomposition( const TTf& tt, const std::vector<uint32_t>& ys_index, std::vector<std::pair<TTg, TTh>>& decomposition )
 {
+  static_assert( is_complete_truth_table<TTf>::value, "Can only be applied on complete truth tables." );
+  static_assert( is_complete_truth_table<TTg>::value, "Can only be applied on complete truth tables." );
+  static_assert( is_complete_truth_table<TTh>::value, "Can only be applied on complete truth tables." );
+
   std::vector<uint32_t> zs_index = detail::enumerate_zs_index( ys_index, tt.num_vars() - 1 );
   decomposition.clear();
 
@@ -932,7 +950,7 @@ uint32_t ashenhurst_decomposition( const TTf& tt, const std::vector<uint32_t>& y
     } while ( !is_const0( h ) );
     next_inplace( g );
   } while ( !is_const0( g ) );
-  return decomposition.size();
+  return static_cast<uint32_t>( decomposition.size() );
 }
 
 } // namespace kitty

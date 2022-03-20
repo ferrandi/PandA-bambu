@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file test_dsatur_coloring.hpp
- * @brief Test unit of the Boost-based implementation of the sequential coloring algorithm based on the work of Daniel Brelaz (Version 1).
+ * @brief Test unit of the Boost-based implementation of the sequential coloring algorithm based on the work of Daniel
+ * Brelaz (Version 1).
  *
  * Some ideas come from the Joseph Culberson's implementation of DSATUR heuristic of Daniel Brelaz.
  * For more details see
@@ -263,7 +264,8 @@ int main(int argc, char* argv[])
 
    {
       std::vector<vertices_size_type> color_vec(num_vertices(g1));
-      iterator_property_map<vertices_size_type*, vertex_index_map, vertices_size_type, vertices_size_type&> color(&color_vec.front(), get(vertex_index, g1));
+      iterator_property_map<vertices_size_type*, vertex_index_map, vertices_size_type, vertices_size_type&> color(
+          &color_vec.front(), get(vertex_index, g1));
       vertices_size_type num_colors = dsatur_coloring(g1, color);
       std::cout << "Boost colors are: " << num_colors << std::endl;
    }

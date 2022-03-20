@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2020 Politecnico di Milano
+ *            Copyright (C) 2004-2022 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -49,23 +49,31 @@ REF_FORWARD_DECL(tree_node);
 class CallGraphBuiltinCall : public FunctionFrontendFlowStep
 {
  private:
-   typedef std::map<std::string, CustomOrderedSet<unsigned int>> TypeDeclarationMap;
+   using TypeDeclarationMap = std::map<std::string, CustomOrderedSet<unsigned int>>;
    bool modified;
+   /// Already visited tree node (used to avoid infinite recursion)
+   CustomUnorderedSet<unsigned int> already_visited;
 
    /**
     * Map function types to matching declarations.
     */
    TypeDeclarationMap typeToDeclaration;
 
+   bool typeToDeclarationBuilt;
+
    void lookForBuiltinCall(const tree_nodeRef TN);
 
    void ExtendCallGraph(unsigned int callerIdx, tree_nodeRef funType, unsigned int stmtIdx);
+
+   // Build the typeToDeclarationMap
+   void buildTypeToDeclaration();
 
  protected:
    /// @brief State relationship with other design step
    ///
    /// @param RT Type of the relationship to be considered
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const override;
 
  public:
    /// @brief Ctor.
@@ -74,7 +82,8 @@ class CallGraphBuiltinCall : public FunctionFrontendFlowStep
    /// @param functionId Function id of the analyzed function.
    /// @param DFM Design Flow Manager
    /// @param P Set of parameters
-   CallGraphBuiltinCall(const application_managerRef AM, unsigned int functionId, const DesignFlowManagerConstRef DFM, const ParameterConstRef P);
+   CallGraphBuiltinCall(const application_managerRef AM, unsigned int functionId, const DesignFlowManagerConstRef DFM,
+                        const ParameterConstRef P);
 
    ~CallGraphBuiltinCall() override;
    void Initialize() override;

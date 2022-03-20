@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,6 +57,7 @@
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 CONSTREF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(tree_node);
 
 class determine_memory_accesses : public FunctionFrontendFlowStep
 {
@@ -69,20 +70,19 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
 
    /// Already visited address expression (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited_ae;
-
-   /// True if already executed
-   bool already_executed;
+   CustomUnorderedSet<unsigned int> already_visited;
 
    /**
     * Analyze the given node ID to determine which variables have to be referred in memory
     */
-   void analyze_node(unsigned int node_id, bool left_p, bool dynamic_address, bool no_dynamic_address);
+   void analyze_node(const tree_nodeConstRef& tn, bool left_p, bool dynamic_address, bool no_dynamic_address);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -92,7 +92,8 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
     * @param function_id is the node id of the function analyzed.
     * @param design_flow_manager is the design flow manager
     */
-   determine_memory_accesses(const ParameterConstRef parameters, const application_managerRef AppM, unsigned int function_idi, const DesignFlowManagerConstRef design_flow_manager);
+   determine_memory_accesses(const ParameterConstRef parameters, const application_managerRef AppM,
+                             unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor
@@ -103,11 +104,5 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
     * Determines the variables that require a memory access
     */
    DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 };
 #endif

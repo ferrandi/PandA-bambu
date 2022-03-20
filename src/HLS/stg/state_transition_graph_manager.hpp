@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,8 +64,8 @@ REF_FORWARD_DECL(structural_manager);
 
 /**
  * Class used to manage a graph into finite state machine representation; it contains methods to build the graph,
- * to add nodes, edges... and also to write the dotty representation of the graph. Two different graphs have been stored:
- * the finite state machine and the related acyclic version (without any feedback edges)
+ * to add nodes, edges... and also to write the dotty representation of the graph. Two different graphs have been
+ * stored: the finite state machine and the related acyclic version (without any feedback edges)
  */
 class StateTransitionGraphManager
 {
@@ -119,7 +119,7 @@ class StateTransitionGraphManager
     * Constructor of the class. It creates a new empty graph and it sets reference to hls class
     * @param HLS is the HLS data structure
     */
-   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, hlsRef HLS, const ParameterConstRef parameters);
+   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, hlsRef HLS, const ParameterConstRef _Param);
 
    /**
     * Destructor
@@ -209,8 +209,8 @@ class StateTransitionGraphManager
    void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
 };
 /// refcount definition to allocate the class
-typedef refcount<StateTransitionGraphManager> StateTransitionGraphManagerRef;
-typedef refcount<const StateTransitionGraphManager> StateTransitionGraphManagerConstRef;
+using StateTransitionGraphManagerRef = refcount<StateTransitionGraphManager>;
+using StateTransitionGraphManagerConstRef = refcount<const StateTransitionGraphManager>;
 
 /// state name prefix
 #define STATE_NAME_PREFIX "S_"

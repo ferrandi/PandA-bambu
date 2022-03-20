@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,7 +50,9 @@
 #include "load_technology.hpp"
 #include "write_technology.hpp"
 
-TechnologyFlowStepFactory::TechnologyFlowStepFactory(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+TechnologyFlowStepFactory::TechnologyFlowStepFactory(const technology_managerRef _TM, const target_deviceRef _target,
+                                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                                     const ParameterConstRef _parameters)
     : DesignFlowStepFactory(_design_flow_manager, _parameters), TM(_TM), target(_target)
 {
 }
@@ -62,7 +64,8 @@ const std::string TechnologyFlowStepFactory::GetPrefix() const
    return "Technology";
 }
 
-DesignFlowStepRef TechnologyFlowStepFactory::CreateTechnologyFlowStep(const TechnologyFlowStep_Type technology_flow_step_type) const
+DesignFlowStepRef
+TechnologyFlowStepFactory::CreateTechnologyFlowStep(const TechnologyFlowStep_Type technology_flow_step_type) const
 {
    switch(technology_flow_step_type)
    {

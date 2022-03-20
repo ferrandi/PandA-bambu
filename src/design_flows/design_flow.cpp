@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2020 Politecnico di Milano
+ *              Copyright (C) 2017-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,7 +43,9 @@
 #include "exceptions.hpp"          // for THROW_UNREACHABLE
 #include "string_manipulation.hpp" // for STR
 
-DesignFlow::DesignFlow(const DesignFlowManagerConstRef _design_flow_manager, const DesignFlow_Type _design_flow_type, const ParameterConstRef _parameters) : DesignFlowStep(_design_flow_manager, _parameters), design_flow_type(_design_flow_type)
+DesignFlow::DesignFlow(const DesignFlowManagerConstRef _design_flow_manager, const DesignFlow_Type _design_flow_type,
+                       const ParameterConstRef _parameters)
+    : DesignFlowStep(_design_flow_manager, _parameters), design_flow_type(_design_flow_type)
 {
 }
 

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,7 +54,9 @@
 #define PARAM_vivado_outdir "vivado_outdir"
 
 // constructor
-vivado_flow_wrapper::vivado_flow_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : XilinxWrapper(_Param, VIVADO_FLOW_TOOL_EXEC, _device, _output_dir, VIVADO_FLOW_TOOL_ID)
+vivado_flow_wrapper::vivado_flow_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
+                                         const target_deviceRef& _device)
+    : XilinxWrapper(_Param, VIVADO_FLOW_TOOL_EXEC, _device, _output_dir, VIVADO_FLOW_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the VIVADO_FLOW wrapper...");
 }
@@ -79,12 +81,18 @@ void vivado_flow_wrapper::create_sdc(const DesignParametersRef& dp)
    std::ofstream sdc_file(sdc_filename.c_str());
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
-      sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      if(boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) || (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1))
+      sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock +
+                      " [get_ports " + clock + "]\n";
+      if((boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) ||
+          (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) &&
+         !Param->isOption(OPT_backend_sdc_extensions))
       {
-         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
-         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_registers]\n";
-         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_registers] -to [all_outputs]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] +
+                         " -from [all_inputs] -to [all_outputs]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] +
+                         " -from [all_inputs] -to [all_registers]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] +
+                         " -from [all_registers] -to [all_outputs]\n";
       }
    }
    else
@@ -99,7 +107,7 @@ void vivado_flow_wrapper::create_sdc(const DesignParametersRef& dp)
 std::string vivado_flow_wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
-   s << get_tool_exec() << " -mode batch -nojournal -nolog -source " << script_name;
+   s << "ulimit -s 131072; " << get_tool_exec() << " -mode batch -nojournal -nolog -source " << script_name;
    for(const auto& option : xml_tool_options)
    {
       if(option->checkCondition(dp))

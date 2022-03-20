@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,11 +62,15 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-AsnParserData::AsnParserData(const AadlInformationRef _aadl_information, const ParameterConstRef _parameters) : aadl_information(_aadl_information), parameters(_parameters), debug_level(_parameters->get_class_debug_level("AsnParser"))
+AsnParserData::AsnParserData(const AadlInformationRef _aadl_information, const ParameterConstRef _parameters)
+    : aadl_information(_aadl_information),
+      parameters(_parameters),
+      debug_level(_parameters->get_class_debug_level("AsnParser"))
 {
 }
 
-AsnParser::AsnParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string& _file_name, const application_managerRef _AppM, const ParameterConstRef _parameters)
+AsnParser::AsnParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string& _file_name,
+                     const application_managerRef _AppM, const ParameterConstRef _parameters)
     : ParserFlowStep(_design_flow_manager, ParserFlowStep_Type::ASN, _file_name, _parameters), AppM(_AppM)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
@@ -78,7 +82,9 @@ DesignFlowStep_Status AsnParser::Exec()
 {
    fileIO_istreamRef sname = fileIO_istream_open(file_name);
    if(sname->fail())
+   {
       THROW_ERROR(std::string("FILE does not exist: ") + file_name);
+   }
    const AsnFlexLexerRef lexer(new AsnFlexLexer(parameters, sname.get(), nullptr));
    const AsnParserDataRef data(new AsnParserData(GetPointer<HLS_manager>(AppM)->aadl_information, parameters));
    YYParse(data, lexer);

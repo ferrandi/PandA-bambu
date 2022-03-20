@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,7 @@
  */
 /**
  * @file simple_code_motion.hpp
- * @brief Analysis step that performs some simple code motions over GCC IR
+ * @brief Analysis step that performs some simple code motions over the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -68,6 +68,8 @@ class gimple_assign;
 class simple_code_motion : public FunctionFrontendFlowStep
 {
  private:
+   bool restart_ifmwi_opt;
+
    /// The scheduling solution
    ScheduleRef schedule;
 
@@ -81,7 +83,8 @@ class simple_code_motion : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Check if a statement can be moved in a basic block
@@ -91,10 +94,15 @@ class simple_code_motion : public FunctionFrontendFlowStep
     * @param TM is the tree manager
     * @return if the statement can be moved
     */
-   FunctionFrontendFlowStep_Movable CheckMovable(const unsigned int dest_bb_index, tree_nodeRef tn, bool& zero_delay, const tree_managerRef TM);
+   FunctionFrontendFlowStep_Movable CheckMovable(const unsigned int dest_bb_index, tree_nodeRef tn, bool& zero_delay,
+                                                 const tree_managerRef TM);
 
-   void loop_pipelined(tree_nodeRef curr_stmt, const tree_managerRef TM, unsigned int curr_bb, unsigned int curr_loop_id, std::list<tree_nodeRef>& to_be_removed, std::list<tree_nodeRef>& to_be_added_back, std::list<tree_nodeRef>& to_be_added_front,
-                       std::map<unsigned int, blocRef>& list_of_bloc, std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>>& dom_diff, unsigned int curr_bb_dom);
+   void loop_pipelined(tree_nodeRef curr_stmt, const tree_managerRef TM, unsigned int curr_bb,
+                       unsigned int curr_loop_id, std::list<tree_nodeRef>& to_be_removed,
+                       std::list<tree_nodeRef>& to_be_added_back, std::list<tree_nodeRef>& to_be_added_front,
+                       std::map<unsigned int, blocRef>& list_of_bloc,
+                       std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>>& dom_diff,
+                       unsigned int curr_bb_dom);
 
  public:
    /**
@@ -104,7 +112,8 @@ class simple_code_motion : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   simple_code_motion(const ParameterConstRef parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   simple_code_motion(const ParameterConstRef parameters, const application_managerRef AppM, unsigned int function_id,
+                      const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,7 +60,9 @@
 /// utility include
 #include "cpu_time.hpp"
 
-unique_binding_register::unique_binding_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+unique_binding_register::unique_binding_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                                 unsigned int _funId,
+                                                 const DesignFlowManagerConstRef _design_flow_manager)
     : reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::UNIQUE_REGISTER_BINDING)
 {
 }
@@ -69,34 +71,42 @@ unique_binding_register::~unique_binding_register() = default;
 
 DesignFlowStep_Status unique_binding_register::InternalExec()
 {
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
+      START_TIME(step_time);
+   }
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
-   const std::list<vertex>& support = HLS->Rliv->get_support();
-
-   const std::list<vertex>::const_iterator vEnd = support.end();
-   for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
+   for(unsigned int sv = 0; sv < HLS->storage_value_information->get_number_of_storage_values(); sv++)
    {
-      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
-      auto k_end = live.end();
-      for(auto k = live.begin(); k != k_end; ++k)
-      {
-         unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
-         HLS->Rreg->bind(storage_value_index, storage_value_index);
-      }
+      HLS->Rreg->bind(sv, sv);
    }
    HLS->Rreg->set_used_regs(HLS->storage_value_information->get_number_of_storage_values());
-   STOP_TIME(step_time);
-   if(output_level == OUTPUT_LEVEL_PEDANTIC)
-      INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
-   INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
-   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
-      HLS->Rreg->print();
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
+   {
+      STOP_TIME(step_time);
+   }
+   if(output_level == OUTPUT_LEVEL_PEDANTIC)
+   {
+      INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
+   }
+   INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level,
+                  "-->Register binding information for function " +
+                      HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
+   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+   {
+      HLS->Rreg->print();
+   }
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "<--");
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
+   }
    return DesignFlowStep_Status::SUCCESS;
 }

@@ -40,7 +40,5 @@ EXTRA_DIST += \
    %D%/trinityq6/test-40.xml \
    %D%/trinityq7/lubm_trinityq7.c \
    %D%/trinityq7/test-1.xml \
-   %D%/trinityq7/test-40.xml\
+   %D%/trinityq7/test-40.xml \
    %D%/README
-
-TESTS+=%D%/bambu.sh

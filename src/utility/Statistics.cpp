@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,8 @@ boost::math::normal VarSum(boost::math::normal x, boost::math::normal y, double 
    mean = x.mean() + y.mean();
 
    // Mathematically, Cov(X,Y) = p * StandardVariation(x) * StandardVariation(y)
-   st_dev = sqrt(pow(x.standard_deviation(), 2) + pow(y.standard_deviation(), 2) + 2 * p * x.standard_deviation() * y.standard_deviation());
+   st_dev = sqrt(pow(x.standard_deviation(), 2) + pow(y.standard_deviation(), 2) +
+                 2 * p * x.standard_deviation() * y.standard_deviation());
    boost::math::normal s(mean, st_dev);
    return s;
 }
@@ -101,7 +102,9 @@ boost::math::lognormal VarSum(boost::math::lognormal s1, boost::math::lognormal 
    double u1, u2;
 
    u1 = exp(s1.location() + (pow(s1.scale(), 2)) / 2) + exp(s2.location() + (pow(s2.scale(), 2)) / 2);
-   u2 = exp(2 * s1.location() + 2 * pow(s1.scale(), 2)) + exp(2 * s2.location() + 2 * pow(s2.scale(), 2)) + 2 * exp(s1.location() + s2.location()) * exp(0.5 * (pow(s1.scale(), 2) + pow(s2.scale(), 2) + 2 * p * s1.scale() * s2.scale()));
+   u2 = exp(2 * s1.location() + 2 * pow(s1.scale(), 2)) + exp(2 * s2.location() + 2 * pow(s2.scale(), 2)) +
+        2 * exp(s1.location() + s2.location()) *
+            exp(0.5 * (pow(s1.scale(), 2) + pow(s2.scale(), 2) + 2 * p * s1.scale() * s2.scale()));
 
    mean = 2 * log(u1) - 0.5 * log(u2);
    st_dev = sqrt(log(u2) - 2 * log(u1));
@@ -115,11 +118,15 @@ boost::math::normal VarMax(boost::math::normal x, boost::math::normal y, double 
    double mean = 0, st_dev = 0, var = 0;
    double a = 0, alpha = 0;
 
-   a = pow((pow(x.standard_deviation(), 2) + pow(y.standard_deviation(), 2) - 2 * p * x.standard_deviation() * y.standard_deviation()), 0.5);
+   a = pow((pow(x.standard_deviation(), 2) + pow(y.standard_deviation(), 2) -
+            2 * p * x.standard_deviation() * y.standard_deviation()),
+           0.5);
    alpha = (x.mean() + y.mean()) / a;
 
    mean = x.mean() * cdf(x, alpha) + y.mean() * cdf(y, -alpha) + a * pdf(x, alpha);
-   var = (pow(x.standard_deviation(), 2) + pow(x.mean(), 2)) * cdf(x, alpha) + (pow(y.standard_deviation(), 2) + pow(y.mean(), 2)) * cdf(y, -alpha) + (x.mean() + y.mean()) * a * pdf(x, alpha) - pow(mean, 2);
+   var = (pow(x.standard_deviation(), 2) + pow(x.mean(), 2)) * cdf(x, alpha) +
+         (pow(y.standard_deviation(), 2) + pow(y.mean(), 2)) * cdf(y, -alpha) +
+         (x.mean() + y.mean()) * a * pdf(x, alpha) - pow(mean, 2);
 
    st_dev = sqrt(var);
    boost::math::normal s(mean, st_dev);
@@ -164,7 +171,8 @@ boost::math::normal CreateStatisticalAttribute(double a, int n)
    return CreateStatisticalAttribute(a, v, 0, 1, 1, 0, 1);
 }
 
-boost::math::normal CreateStatisticalAttribute(double a, std::vector<int> d, double mean, double st_dev, int d_rand, double mean_rand, double st_dev_rand)
+boost::math::normal CreateStatisticalAttribute(double a, std::vector<int> d, double mean, double st_dev, int d_rand,
+                                               double mean_rand, double st_dev_rand)
 {
    boost::math::normal ris;
    boost::math::normal x_rand(mean_rand, st_dev_rand);

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,7 +49,7 @@
 #include "config_HAVE_TREE_MANIPULATION_BUILT.hpp"
 #include "config_HAVE_TREE_PARSER_BUILT.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// RTL include
@@ -75,6 +75,8 @@
 #include <iostream>
 #include <utility>
 
+#include "config_HAVE_ASSERTS.hpp"
+
 /// forward declaration macro
 #define VISIT_TREE_NODE_MACRO(r, data, elem)          \
    void elem::visit(tree_node_visitor* const v) const \
@@ -84,13 +86,17 @@
       VISIT_SC(mask, data, visit(v));                 \
    }
 
-#define NAME_KIND(r, data, elem)          \
-   name = #elem;                          \
-   name = name.substr(19);                \
-   name = name.substr(0, name.find(')')); \
+#define NAME_KIND(r, data, elem)                                                    \
+   name = #elem;                                                                    \
+   name = name.substr(19);                                                          \
+   name = name.substr(name.front() == ' ', name.find(')') - (name.front() == ' ')); \
    string_to_kind[name] = BOOST_PP_CAT(elem, _K);
 
-#define KIND_NAME(r, data, elem) kind_to_string[BOOST_PP_CAT(elem, _K)] = #elem;
+#define KIND_NAME(r, data, elem)                                                    \
+   name = #elem;                                                                    \
+   name = name.substr(19);                                                          \
+   name = name.substr(name.front() == ' ', name.find(')') - (name.front() == ' ')); \
+   kind_to_string[BOOST_PP_CAT(elem, _K)] = name;
 
 std::map<std::string, enum kind> tree_node::string_to_kind;
 
@@ -102,7 +108,25 @@ enum kind tree_node::get_kind(const std::string& input_name)
    {
       // cppcheck-suppress unusedVariable
       std::string name;
-      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TREE_NODE_LIST);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, BINARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, CONST_OBJ_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, CPP_STMT_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, DECL_NODE_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, GIMPLE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, MISCELLANEOUS_EXPR_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, MISCELLANEOUS_OBJ_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, PANDA_EXTENSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, QUATERNARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TERNARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TYPE_NODE_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, UNARY_EXPRESSION_TREE_NODES(last_tree));
+#if HAVE_ASSERTS
+      for(const auto& sk : string_to_kind)
+      {
+         THROW_ASSERT(sk.first.find(' ') == std::string::npos,
+                      "Kind name string should not contain spaces: '" + sk.first + "'");
+      }
+#endif
    }
    return string_to_kind[input_name];
 }
@@ -111,14 +135,26 @@ std::string tree_node::GetString(enum kind k)
 {
    if(kind_to_string.empty())
    {
-      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, TREE_NODE_LIST);
-      // This part has been added since boost macro does not expand correctly
-      std::map<enum kind, std::string>::iterator it, it_end = kind_to_string.end();
-      for(it = kind_to_string.begin(); it != it_end; ++it)
+      std::string name;
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, BINARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, CONST_OBJ_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, CPP_STMT_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, DECL_NODE_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, GIMPLE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, MISCELLANEOUS_EXPR_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, MISCELLANEOUS_OBJ_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, PANDA_EXTENSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, QUATERNARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, TERNARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, TYPE_NODE_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, UNARY_EXPRESSION_TREE_NODES(last_tree))
+#if HAVE_ASSERTS
+      for(const auto& ks : kind_to_string)
       {
-         it->second = it->second.substr(19);
-         it->second = it->second.substr(0, it->second.find(')'));
+         THROW_ASSERT(ks.second.find(' ') == std::string::npos,
+                      "Kind name string should not contain spaces: '" + ks.second + "'");
       }
+#endif
    }
    return kind_to_string[k];
 }
@@ -130,8 +166,11 @@ BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, quaternary_expr, QUATERNARY_EXPRESS
 BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, cst_node, (void_cst))
 BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, tree_node, (ctor_initializer)(trait_expr))
 BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, decl_node, (label_decl)(using_decl)(translation_unit_decl))
-BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, expr_node, (modop_expr)(new_expr)(placeholder_expr)(template_id_expr)(vec_new_expr))
-BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, type_node, (boolean_type)(CharType)(nullptr_type)(lang_type)(offset_type)(qual_union_type)(set_type)(template_type_parm)(typename_type)(void_type))
+BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, expr_node,
+                      (modop_expr)(new_expr)(placeholder_expr)(template_id_expr)(vec_new_expr))
+BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, type_node,
+                      (boolean_type)(CharType)(nullptr_type)(lang_type)(offset_type)(qual_union_type)(set_type)(
+                          template_type_parm)(typename_type)(void_type))
 #undef VISIT_TREE_NODE_MACRO
 
 void tree_node::visit(tree_node_visitor* const v) const
@@ -185,49 +224,49 @@ void attr::visit(tree_node_visitor* const v) const
    (*v)(this, mask);
 }
 
-bool attr::is_constructor()
+bool attr::is_constructor() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_CONSTRUCTOR)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_CONSTRUCTOR);
 }
 
-bool attr::is_destructor()
+bool attr::is_destructor() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_DESTRUCTOR)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_DESTRUCTOR);
 }
 
-bool attr::is_member()
+bool attr::is_member() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_MEMBER)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_MEMBER);
 }
 
-bool attr::is_call()
+bool attr::is_call() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_CALL)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_CALL);
 }
 
-bool attr::is_new()
+bool attr::is_new() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_NEW)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_NEW);
 }
 
-bool attr::is_public()
+bool attr::is_public() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_PUBLIC)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_PUBLIC);
 }
 
-bool attr::is_protected()
+bool attr::is_protected() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_PROTECTED)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_PROTECTED);
 }
 
-bool attr::is_private()
+bool attr::is_private() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_PRIVATE)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_PRIVATE);
 }
 
-bool attr::is_bitfield()
+bool attr::is_bitfield() const
 {
-   return (list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_BITFIELD)) != list_attr.end();
+   return list_attr.count(TreeVocabularyTokenTypes_TokenEnum::TOK_BITFIELD);
 }
 
 srcp::~srcp() = default;
@@ -284,24 +323,38 @@ void expr_node::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, type, visit(v));
 }
 
-gimple_node::gimple_node(unsigned int i) : WeightedNode(i), use_set(new PointToSolution()), clobbered_set(new PointToSolution()), bb_index(0), artificial(false), keep(false)
+gimple_node::gimple_node(unsigned int i)
+    : WeightedNode(i),
+      use_set(new PointToSolution()),
+      clobbered_set(new PointToSolution()),
+      bb_index(0),
+      artificial(false),
+      keep(false)
 {
 }
 
-void gimple_node::AddVdef(const tree_nodeRef& _vdef)
+void gimple_node::SetVdef(const tree_nodeRef& _vdef)
 {
-   THROW_ASSERT(not vdef, "Multiple virtual definitions in the same gimple");
+   THROW_ASSERT(!GET_CONST_NODE(_vdef) || (GET_CONST_NODE(_vdef)->get_kind() == ssa_name_K &&
+                                           GetPointerS<const ssa_name>(GET_CONST_NODE(_vdef))->virtual_flag),
+                "");
    vdef = _vdef;
 }
 
-void gimple_node::AddVuse(const tree_nodeRef& vuse)
+bool gimple_node::AddVuse(const tree_nodeRef& vuse)
 {
-   vuses.insert(vuse);
+   THROW_ASSERT(!GET_CONST_NODE(vuse) || (GET_CONST_NODE(vuse)->get_kind() == ssa_name_K &&
+                                          GetPointerS<const ssa_name>(GET_CONST_NODE(vuse))->virtual_flag),
+                "");
+   return vuses.insert(vuse).second;
 }
 
-void gimple_node::AddVover(const tree_nodeRef& vover)
+bool gimple_node::AddVover(const tree_nodeRef& vover)
 {
-   vovers.insert(vover);
+   THROW_ASSERT(!GET_CONST_NODE(vover) || (GET_CONST_NODE(vover)->get_kind() == ssa_name_K &&
+                                           GetPointerS<const ssa_name>(GET_CONST_NODE(vover))->virtual_flag),
+                "");
+   return vovers.insert(vover).second;
 }
 
 void gimple_node::visit(tree_node_visitor* const v) const
@@ -713,6 +766,9 @@ function_decl::function_decl(unsigned int i)
       reverse_restrict_flag(false),
       writing_memory(false),
       reading_memory(false),
+      pipeline_enabled(false),
+      simple_pipeline(false),
+      initiation_time(1),
 #if HAVE_FROM_PRAGMA_BUILT
       omp_for_wrapper(0),
       omp_body_loop(false),
@@ -776,6 +832,36 @@ bool function_decl::is_protected()
    return attr::is_protected();
 }
 
+bool function_decl::is_pipelined()
+{
+   return pipeline_enabled;
+}
+
+void function_decl::set_pipelining(bool v)
+{
+   pipeline_enabled = v;
+}
+
+bool function_decl::is_simple_pipeline()
+{
+   return simple_pipeline;
+}
+
+void function_decl::set_simple_pipeline(bool v)
+{
+   simple_pipeline = v;
+}
+
+int function_decl::get_initiation_time()
+{
+   return initiation_time;
+}
+
+void function_decl::set_initiation_time(int time)
+{
+   initiation_time = time;
+}
+
 void function_type::visit(tree_node_visitor* const v) const
 {
    unsigned int mask = ALL_VISIT;
@@ -785,7 +871,8 @@ void function_type::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, prms, visit(v));
 }
 
-gimple_assign::gimple_assign(unsigned int i) : gimple_node(i), init_assignment(false), clobber(false), temporary_address(false)
+gimple_assign::gimple_assign(unsigned int i)
+    : gimple_node(i), init_assignment(false), clobber(false), temporary_address(false)
 {
 }
 
@@ -797,7 +884,6 @@ void gimple_assign::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, op0, visit(v));
    VISIT_MEMBER(mask, op1, visit(v));
    VISIT_MEMBER(mask, predicate, visit(v));
-   VISIT_MEMBER(mask, orig, visit(v));
 }
 
 void gimple_nop::visit(tree_node_visitor* const v) const
@@ -824,21 +910,25 @@ void handler::visit(tree_node_visitor* const v) const
 }
 
 #if HAVE_TREE_MANIPULATION_BUILT
-identifier_node::identifier_node(unsigned int node_id, std::string _strg, tree_manager* TM) : tree_node(node_id), operator_flag(false), strg(std::move(_strg))
+identifier_node::identifier_node(unsigned int node_id, std::string _strg, tree_manager* TM)
+    : tree_node(node_id), operator_flag(false), strg(std::move(_strg))
 {
    TM->add_identifier_node(node_id, strg);
 }
 
-identifier_node::identifier_node(unsigned int node_id, bool _operator_flag, tree_manager* TM) : tree_node(node_id), operator_flag(_operator_flag)
+identifier_node::identifier_node(unsigned int node_id, bool _operator_flag, tree_manager* TM)
+    : tree_node(node_id), operator_flag(_operator_flag)
 {
    TM->add_identifier_node(node_id, operator_flag);
 }
 #else
-identifier_node::identifier_node(unsigned int node_id, const std::string& _strg, tree_manager*) : tree_node(node_id), operator_flag(false), strg(_strg)
+identifier_node::identifier_node(unsigned int node_id, const std::string& _strg, tree_manager*)
+    : tree_node(node_id), operator_flag(false), strg(_strg)
 {
 }
 
-identifier_node::identifier_node(unsigned int node_id, bool _operator_flag, tree_manager*) : tree_node(node_id), operator_flag(_operator_flag)
+identifier_node::identifier_node(unsigned int node_id, bool _operator_flag, tree_manager*)
+    : tree_node(node_id), operator_flag(_operator_flag)
 {
 }
 #endif
@@ -899,7 +989,13 @@ void overload::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, chan, visit(v));
 }
 
-parm_decl::parm_decl(unsigned int i) : decl_node(i), algn(0), used(0), register_flag(false), readonly_flag(false), point_to_information(new PointToInformation())
+parm_decl::parm_decl(unsigned int i)
+    : decl_node(i),
+      algn(0),
+      used(0),
+      register_flag(false),
+      readonly_flag(false),
+      point_to_information(new PointToInformation())
 {
 }
 
@@ -932,7 +1028,7 @@ void gimple_phi::visit(tree_node_visitor* const v) const
 void gimple_phi::AddDefEdge(const tree_managerRef& TM, const DefEdge& def_edge)
 {
    list_of_def_edge.push_back(def_edge);
-   if(updated_ssa_uses and bb_index != 0)
+   if(updated_ssa_uses && bb_index != 0)
    {
       const auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
       if(sn)
@@ -953,7 +1049,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
    {
       if(def_edge == old_def_edge)
       {
-         if(updated_ssa_uses and bb_index != 0)
+         if(updated_ssa_uses && bb_index != 0)
          {
             auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
             if(sn)
@@ -962,7 +1058,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
             }
          }
          def_edge = new_def_edge;
-         if(updated_ssa_uses and bb_index != 0)
+         if(updated_ssa_uses && bb_index != 0)
          {
             auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
             if(sn)
@@ -977,7 +1073,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
 
 void gimple_phi::SetDefEdgeList(const tree_managerRef& TM, DefEdgeList new_list_of_def_edge)
 {
-   while(not list_of_def_edge.empty())
+   while(!list_of_def_edge.empty())
    {
       RemoveDefEdge(TM, list_of_def_edge.front());
    }
@@ -996,7 +1092,7 @@ void gimple_phi::RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_r
    {
       if(*def_edge == to_be_removed)
       {
-         if(updated_ssa_uses and bb_index != 0)
+         if(updated_ssa_uses && bb_index != 0)
          {
             const auto sn = GetPointer<ssa_name>(GET_NODE(to_be_removed.first));
             if(sn)
@@ -1008,12 +1104,13 @@ void gimple_phi::RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_r
          break;
       }
    }
-   THROW_ASSERT(list_of_def_edge.size() != initial_size, to_be_removed.first->ToString() + "(" + STR(to_be_removed.second) + ") not found in " + ToString());
+   THROW_ASSERT(list_of_def_edge.size() != initial_size,
+                to_be_removed.first->ToString() + "(" + STR(to_be_removed.second) + ") not found in " + ToString());
 }
 
 void gimple_phi::SetSSAUsesComputed()
 {
-   THROW_ASSERT(not updated_ssa_uses, "SSA uses already set as updated");
+   THROW_ASSERT(!updated_ssa_uses, "SSA uses already set as updated");
    updated_ssa_uses = true;
 }
 
@@ -1162,7 +1259,15 @@ void scope_ref::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, op1, visit(v));
 }
 
-ssa_name::ssa_name(unsigned int i) : tree_node(i), vers(0), orig_vers(0), volatile_flag(false), virtual_flag(false), default_flag(false), use_set(new PointToSolution()), point_to_information(new PointToInformation())
+ssa_name::ssa_name(unsigned int i)
+    : tree_node(i),
+      vers(0),
+      orig_vers(0),
+      volatile_flag(false),
+      virtual_flag(false),
+      default_flag(false),
+      use_set(new PointToSolution()),
+      point_to_information(new PointToInformation())
 {
 }
 
@@ -1204,7 +1309,55 @@ const TreeNodeSet ssa_name::CGetDefStmts() const
 
 void ssa_name::AddUseStmt(const tree_nodeRef& use_stmt)
 {
+#ifndef NDEBUG
+   size_t vuse_count = 0;
+   if(virtual_flag)
+   {
+      const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt));
+      vuse_count += static_cast<size_t>(std::count_if(gn->vuses.begin(), gn->vuses.end(),
+                                                      [&](const tree_nodeRef& tn) { return tn->index == index; }));
+      vuse_count += static_cast<size_t>(std::count_if(gn->vovers.begin(), gn->vovers.end(),
+                                                      [&](const tree_nodeRef& tn) { return tn->index == index; }));
+      vuse_count += static_cast<size_t>(gn->memuse && gn->memuse->index == index);
+      if(GET_CONST_NODE(use_stmt)->get_kind() == gimple_phi_K)
+      {
+         const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(use_stmt));
+         vuse_count += static_cast<size_t>(
+             std::count_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(),
+                           [&](const gimple_phi::DefEdge& de) { return de.first->index == index; }));
+      }
+   }
+#endif
    use_stmts[use_stmt]++;
+#ifndef NDEBUG
+   if(virtual_flag && use_stmts.count(use_stmt) > vuse_count)
+   {
+      std::cout << "vssa: " << ToString() << std::endl;
+      const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt));
+      if(gn->vdef)
+      {
+         std::cout << "vdef: " << GET_CONST_NODE(gn->vdef)->ToString() << std::endl;
+      }
+      for(const auto& vuse : gn->vuses)
+      {
+         std::cout << "vuse: " << GET_CONST_NODE(vuse)->ToString() << std::endl;
+      }
+      for(const auto& vover : gn->vovers)
+      {
+         std::cout << "vover: " << GET_CONST_NODE(vover)->ToString() << std::endl;
+      }
+      if(gn->memdef)
+      {
+         std::cout << "memdef: " << GET_CONST_NODE(gn->memdef)->ToString() << std::endl;
+      }
+      if(gn->memuse)
+      {
+         std::cout << "memuse: " << GET_CONST_NODE(gn->memuse)->ToString() << std::endl;
+      }
+      THROW_UNREACHABLE("Virtual ssa used more than " + STR(vuse_count) + " time - " +
+                        GET_CONST_NODE(use_stmt)->ToString());
+   }
+#endif
 }
 
 void ssa_name::AddDefStmt(const tree_nodeRef& def)
@@ -1236,12 +1389,14 @@ size_t ssa_name::CGetNumberUses() const
 void ssa_name::RemoveUse(const tree_nodeRef& use_stmt)
 {
 #ifndef NDEBUG
-   if(use_stmts.find(use_stmt) == use_stmts.end() or use_stmts.find(use_stmt)->second == 0)
+   if(use_stmts.find(use_stmt) == use_stmts.end() || use_stmts.find(use_stmt)->second == 0)
    {
       INDENT_DBG_MEX(0, 0, use_stmt->ToString() + " is not in the use_stmts of " + ToString());
       for(const auto& current_use_stmt : use_stmts)
       {
-         INDENT_DBG_MEX(0, 0, STR(current_use_stmt.second) + " uses in (" + STR(current_use_stmt.first->index) + ") " + STR(current_use_stmt.first));
+         INDENT_DBG_MEX(0, 0,
+                        STR(current_use_stmt.second) + " uses in (" + STR(current_use_stmt.first->index) + ") " +
+                            STR(current_use_stmt.first));
       }
       THROW_UNREACHABLE(STR(use_stmt) + " is not in the use statements of " + ToString());
    }
@@ -1380,7 +1535,18 @@ void union_type::visit(tree_node_visitor* const v) const
 }
 
 var_decl::var_decl(unsigned int i)
-    : decl_node(i), use_tmpl(-1), static_static_flag(false), static_flag(false), extern_flag(false), addr_taken(false), addr_not_taken(false), algn(0), used(0), register_flag(false), readonly_flag(false), point_to_information(new PointToInformation())
+    : decl_node(i),
+      use_tmpl(-1),
+      static_static_flag(false),
+      static_flag(false),
+      extern_flag(false),
+      addr_taken(false),
+      addr_not_taken(false),
+      algn(0),
+      used(0),
+      register_flag(false),
+      readonly_flag(false),
+      point_to_information(new PointToInformation())
 {
 }
 
@@ -1487,7 +1653,7 @@ bool TreeNodeConstEqualTo::operator()(const tree_nodeConstRef x, const tree_node
 
 #endif
 
-#if not HAVE_UNORDERED
+#if !HAVE_UNORDERED
 TreeNodeSorter::TreeNodeSorter() = default;
 
 bool TreeNodeSorter::operator()(const tree_nodeRef& x, const tree_nodeRef& y) const

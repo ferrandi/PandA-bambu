@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,12 +32,13 @@
  */
 /**
  * @file remove_ending_if.cpp
- * @brief Collapse and if and its "then" branch only if it is shorter than one cycle and the else is a BB composed only by return and PHI statements.
+ * @brief Collapse and if and its "then" branch only if it is shorter than one cycle and the else is a BB composed only
+ *by return and PHI statements.
  *
  * Complete description:
- * This step collapses an if block and its "then" branch only if the branch lasts one cycle and doesn't contain store and call. Furthermore,
- * the BB following the if should be the last BB (preceding the EXTI) and has to contain only a return statement ad a PHI statement, also the "then" BB
- * has to be linked to this block.
+ * This step collapses an if block and its "then" branch only if the branch lasts one cycle and doesn't contain store
+ *and call. Furthermore, the BB following the if should be the last BB (preceding the EXTI) and has to contain only a
+ *return statement ad a PHI statement, also the "then" BB has to be linked to this block.
  *                                    |
  *                             _ _ _ _| _ _ _                                             _ _ _ _ _ _ _ _
  *                            |              |                                           |               |
@@ -65,7 +66,8 @@
  *Find the pattern = chain of if condition
  *    1. Looking for a bloc that is connected to the EXIT bloc and that has exactly 2 incoming arcs
  *    2. If 1 -> Check if one of the 2 blocks contains an IF stmt and identify it.
- *    3. If 2 -> Check if the identified IF has exactly 2 succ and one is the bloc found in 1 and the other has only one pred and one succ and the succ is the bloc found in 1
+ *    3. If 2 -> Check if the identified IF has exactly 2 succ and one is the bloc found in 1 and the other has only one
+ *pred and one succ and the succ is the bloc found in 1
  *    4. If 3 -> Check if the "then" branch doesn't contain call or store statement
  *    5. If 4 -> pattern found and the bloc of the "then" branch is identified, also the "if" bloc is identified
  *    6. Compute how much lasts the "then" branch
@@ -118,7 +120,7 @@
 #include "schedule.hpp"
 #endif
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// STD include
@@ -141,37 +143,41 @@
 #include "tree_reindex.hpp"
 
 /// Constructor implementation
-RemoveEndingIf::RemoveEndingIf(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, REMOVE_ENDING_IF, _design_flow_manager, _parameters), sl(nullptr), schedule(ScheduleRef())
+RemoveEndingIf::RemoveEndingIf(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                               unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, REMOVE_ENDING_IF, _design_flow_manager, _parameters),
+      sl(nullptr),
+      schedule(ScheduleRef())
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 RemoveEndingIf::~RemoveEndingIf() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> RemoveEndingIf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+RemoveEndingIf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
       {
          if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS)
          {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+            relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          break;
       }
       default:
@@ -185,12 +191,13 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 void RemoveEndingIf::Initialize()
 {
    TM = AppM->get_tree_manager();
-   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    const auto temp = TM->get_tree_node_const(function_id);
    auto fd = GetPointer<function_decl>(temp);
    sl = GetPointer<statement_list>(GET_NODE(fd->body));
 #if HAVE_ILP_BUILT
-   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and
+      GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
       schedule = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
@@ -202,7 +209,8 @@ bool RemoveEndingIf::HasToBeExecuted() const
 {
    /// If no schedule exists, this step has NOT to be executed
 #if HAVE_ILP_BUILT
-   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and
+      GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
       return FunctionFrontendFlowStep::HasToBeExecuted();
@@ -222,14 +230,14 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Looking for feasible blocs");
    for(auto block : sl->list_of_bloc)
    {
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping remaining transformations because of reached limit of cfg transformations");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Skipping remaining transformations because of reached limit of cfg transformations");
          break;
       }
-#endif
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking if a bloc has just 2 incoming and 1 outcoming");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Checking if a bloc has just 2 incoming and 1 outcoming");
       // The block should have 2 inc arcs from if and then BB and one outgoing to EXIT
       if(block.second->list_of_succ.size() == 1 and block.second->list_of_pred.size() == 2)
       {
@@ -269,8 +277,10 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
                      {
                         return std::pair<blocRef, blocRef>(blocRef(), blocRef());
                      }
-                     const auto dep_block = block_pred1.first == if_block->number ? block_pred2.second : block_pred1.second;
-                     if(dep_block->list_of_pred.size() != 1 or dep_block->list_of_succ.size() != 1 or dep_block->list_of_pred.front() != if_block->number)
+                     const auto dep_block =
+                         block_pred1.first == if_block->number ? block_pred2.second : block_pred1.second;
+                     if(dep_block->list_of_pred.size() != 1 or dep_block->list_of_succ.size() != 1 or
+                        dep_block->list_of_pred.front() != if_block->number)
                      {
                         return std::pair<blocRef, blocRef>(blocRef(), blocRef());
                      }
@@ -297,8 +307,12 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
                            {
                               max = schedule->GetEndingTime(stmt->index);
                            }
-                           if(GET_NODE(stmt)->get_kind() == gimple_call_K or (GetPointer<const gimple_assign>(GET_NODE(stmt)) and (GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == call_expr_K ||
-                                                                                                                                   GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == aggr_init_expr_K)))
+                           if((GET_NODE(stmt)->get_kind() == gimple_call_K) ||
+                              ((GetPointer<const gimple_assign>(GET_NODE(stmt))) &&
+                               ((GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() ==
+                                 call_expr_K) ||
+                                (GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() ==
+                                 aggr_init_expr_K))))
                            {
                               return false;
                            }
@@ -319,14 +333,12 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
                         while(not dep_block->CGetStmtList().empty())
                         {
                            auto current_stmt = dep_block->CGetStmtList().front();
-                           dep_block->RemoveStmt(current_stmt);
-                           if_block->PushBack(current_stmt);
+                           dep_block->RemoveStmt(current_stmt, AppM);
+                           if_block->PushBack(current_stmt, AppM);
                         }
 
                         bb_modified = true;
-#ifndef NDEBUG
                         AppM->RegisterTransformation(GetName(), last_stmt);
-#endif
                      }
                   }
                   else
@@ -347,7 +359,8 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipped this bloc, because has more or less incoming/outcoming arcs than expected");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Skipped this bloc, because has more or less incoming/outcoming arcs than expected");
          continue;
       }
    }

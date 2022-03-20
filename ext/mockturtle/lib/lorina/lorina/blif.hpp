@@ -1,5 +1,5 @@
 /* lorina: C++ parsing library
- * Copyright (C) 2018  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -25,18 +25,20 @@
 
 /*!
   \file blif.hpp
-  \brief Implements blif parser
+  \brief Implements BLIF parser
 
   \author Heinz Riener
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
 
-#include <lorina/common.hpp>
-#include <lorina/diagnostics.hpp>
-#include <lorina/detail/utils.hpp>
+#include "common.hpp"
+#include "diagnostics.hpp"
+#include "detail/utils.hpp"
 #include <regex>
 #include <iostream>
+#include <optional>
 
 namespace lorina
 {
@@ -50,6 +52,70 @@ class blif_reader
 public:
   /*! \brief Type of the output cover as truth table. */
   using output_cover_t = std::vector<std::pair<std::string, std::string>>;
+
+  /*! Latch input values */
+  enum latch_init_value
+  {
+    ZERO = 0 /*!< Initialized with 0 */
+  , ONE /*!< Initialized with 1 */
+  , NONDETERMINISTIC /*!< Not initialized (non-deterministic value) */
+  , UNKNOWN
+  };
+
+  enum latch_type
+  {
+    FALLING = 0
+  , RISING
+  , ACTIVE_HIGH
+  , ACTIVE_LOW
+  , ASYNC
+  , NONE
+  };
+
+public:
+  static std::optional<latch_init_value> latch_init_value_from_string( std::string const& s )
+  {
+    if ( s == "0" )
+    {
+      return blif_reader::latch_init_value::ZERO;
+    }
+    else if ( s == "1" )
+    {
+      return blif_reader::latch_init_value::ONE;
+    }
+    else if ( s == "2" )
+    {
+      return blif_reader::latch_init_value::NONDETERMINISTIC;
+    }
+    else
+    {
+      return blif_reader::latch_init_value::UNKNOWN;
+    }
+  }
+
+  static std::optional<latch_type> latch_type_from_string( std::string const& s )
+  {
+    if ( s == "fe" )
+    {
+      return blif_reader::latch_type::FALLING;
+    }
+    else if ( s == "re" )
+    {
+      return blif_reader::latch_type::RISING;
+    }
+    else if ( s == "ah" )
+    {
+      return blif_reader::latch_type::ACTIVE_HIGH;
+    }
+    else if ( s == "al" )
+    {
+      return blif_reader::latch_type::ACTIVE_LOW;
+    }
+    else
+    {
+      return blif_reader::latch_type::ASYNC;
+    }
+  }
 
 public:
   /*! \brief Callback method for parsed model.
@@ -77,6 +143,23 @@ public:
   virtual void on_output( const std::string& name ) const
   {
     (void)name;
+  }
+
+  /*! \brief Callback method for parsed latch.
+   *
+   * \param input Input name
+   * \param output Output name
+   * \param type Optional type of the latch
+   * \param control Optional name of control signal
+   * \param reset Optional initial value of the latch
+   */
+  virtual void on_latch( const std::string& input, const std::string& output, const std::optional<latch_type>& type, const std::optional<std::string>& control, const std::optional<latch_init_value>& init_value ) const
+  {
+    (void)input;
+    (void)output;
+    (void)type;
+    (void)control;
+    (void)init_value;
   }
 
   /*! \brief Callback method for parsed gate.
@@ -143,6 +226,12 @@ public:
     first_output = false;
   }
 
+  virtual void on_latch( const std::string& input, const std::string& output, const std::optional<latch_type>& type, const std::optional<std::string>& control, const std::optional<latch_init_value>& init_value ) const
+  {
+    _os << fmt::format( "\n.latch {0} {1} {2} {3} {4}", input, output,
+                        ( type ? *type : latch_type::NONE ), ( control ? *control : "" ), ( init_value ? *init_value : latch_init_value::UNKNOWN ) ) << std::endl;
+  }
+
   virtual void on_gate( const std::vector<std::string>& inputs, const std::string& output, const output_cover_t& cover ) const
   {
     _os << std::endl << fmt::format( ".names {0} {1}", detail::join( inputs, "," ), output ) << std::endl;
@@ -170,8 +259,6 @@ public:
 namespace blif_regex
 {
 static std::regex model( R"(.model\s+(.*))" );
-static std::regex inputs( R"(.inputs\s+(.*))" );
-static std::regex outputs( R"(.outputs\s+(.*))" );
 static std::regex names( R"(.names\s+(.*))" );
 static std::regex line_of_truthtable( R"(([01\-]*)\s*([01\-]))" );
 static std::regex end( R"(.end)" );
@@ -185,7 +272,7 @@ static std::regex end( R"(.end)" );
  * \param in Input stream
  * \param reader A BLIF reader with callback methods invoked for parsed primitives
  * \param diag An optional diagnostic engine with callback methods for parse errors
- * \return Success if parsing have been successful, or parse error if parsing have failed
+ * \return Success if parsing has been successful, or parse error if parsing has failed
  */
 inline return_code read_blif( std::istream& in, const blif_reader& reader, diagnostic_engine* diag = nullptr )
 {
@@ -193,6 +280,13 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
 
   const auto dispatch_function = [&]( std::vector<std::string> inputs, std::string output, std::vector<std::pair<std::string, std::string>> tt )
     {
+      /* ignore latches */
+      if ( output == "" )
+      {
+        assert( inputs.size() == 0u );
+        return;
+      }
+
       reader.on_gate( inputs, output, tt );
     };
 
@@ -256,9 +350,10 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
       }
 
       /* .inputs <list of whitespace separated strings> */
-      if ( std::regex_search( line, m, blif_regex::inputs ) )
+      if ( detail::starts_with( line, ".inputs" ) )
       {
-        for ( const auto& input : detail::split( detail::trim_copy( m[1] ), " " ) )
+        std::string const input_declaration = line.substr( 7 );
+        for ( const auto& input : detail::split( detail::trim_copy( input_declaration ), " " ) )
         {
           auto const s = detail::trim_copy( input );
           on_action.declare_known( s );
@@ -267,10 +362,54 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
         return true;
       }
 
-      /* .outputs <list of whitespace separated strings> */
-      if ( std::regex_search( line, m, blif_regex::outputs ) )
+      /* .latch <list of whitespace separated strings> */
+      if ( detail::starts_with( line, ".latch" ) )
       {
-        for ( const auto& output : detail::split( detail::trim_copy( m[1] ), " " ) )
+        std::string const latch_declaration = line.substr( 6 );
+
+        std::vector<std::string> latch_elements = detail::split( detail::trim_copy( latch_declaration ), " " );
+        if ( latch_elements.size() >= 2 )
+        {
+          std::string const& input = latch_elements.at( 0 );
+          std::string const& output = latch_elements.at( 1 );
+          std::optional<blif_reader::latch_init_value> init_value;
+          std::optional<blif_reader::latch_type> type;
+          std::optional<std::string> control;
+
+          if ( latch_elements.size() == 3u )
+          {
+            init_value = blif_reader::latch_init_value_from_string( latch_elements.at( 2 ) );
+          }
+          else if ( latch_elements.size() == 4u )
+          {
+            type = blif_reader::latch_type_from_string( latch_elements.at( 2 ) );
+            control = latch_elements.at( 3 );
+          }
+          else if ( latch_elements.size() == 5u )
+          {
+            type = blif_reader::latch_type_from_string( latch_elements.at( 2 ) );
+            control = latch_elements.at( 3 );
+            init_value = blif_reader::latch_init_value_from_string( latch_elements.at( 4 ) );
+          }
+
+          on_action.declare_known( output );
+          reader.on_latch( input, output, type, control, init_value );
+          on_action.compute_dependencies( output );
+
+          return true;
+        }
+
+        diag->report( diagnostic_level::error,
+                      fmt::format( "latch format not supported `{0}`", line ) );
+
+        result = return_code::parse_error;
+      }
+
+      /* .outputs <list of whitespace separated strings> */
+      if ( detail::starts_with( line, ".outputs" ) )
+      {
+        std::string const output_declaration = line.substr( 8 );
+        for ( const auto& output : detail::split( detail::trim_copy( output_declaration ), " " ) )
         {
           reader.on_output( detail::trim_copy( output ) );
         }
@@ -292,7 +431,21 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
 
       result = return_code::parse_error;
       return true;
-  } );
+    } );
+
+  /* check dangling objects */
+  auto const& deps = on_action.unresolved_dependencies();
+  if ( deps.size() > 0 )
+    result = return_code::parse_error;
+
+  for ( const auto& r : deps )
+  {
+    if ( diag )
+    {
+      diag->report( diagnostic_level::warning,
+                    fmt::format( "unresolved dependencies: `{0}` requires `{1}`",  r.first, r.second ) );
+    }
+  }
 
   return result;
 }
@@ -305,12 +458,26 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
  * \param filename Name of the file
  * \param reader A BLIF reader with callback methods invoked for parsed primitives
  * \param diag An optional diagnostic engine with callback methods for parse errors
- * \return Success if parsing have been successful, or parse error if parsing have failed
+ * \return Success if parsing has been successful, or parse error if parsing has failed
  */
 inline return_code read_blif( const std::string& filename, const blif_reader& reader, diagnostic_engine* diag = nullptr )
 {
   std::ifstream in( detail::word_exp_filename( filename ), std::ifstream::in );
-  return read_blif( in, reader, diag );
+  if ( !in.is_open() )
+  {
+    if ( diag )
+    {
+      diag->report( diagnostic_level::fatal,
+                    fmt::format( "could not open file `{0}`", filename ) );
+    }
+    return return_code::parse_error;
+  }
+  else
+  {
+    auto const ret = read_blif( in, reader, diag );
+    in.close();
+    return ret;
+  }
 }
 
 } // namespace lorina

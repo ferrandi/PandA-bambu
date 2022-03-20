@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file gimple_writer.hpp
- * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the gimple format (i.e. the format used by gcc in plain text dump of gimple)
+ * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the gimple
+ * format (i.e. the format used by gcc in plain text dump of gimple)
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Revision$

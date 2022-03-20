@@ -1,0 +1,32 @@
+ARG BASE=ubuntu:xenial
+
+#---
+
+FROM $BASE AS base
+
+#---
+
+FROM base AS build
+
+RUN apt-get update \
+   && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+       autoconf bc bison build-essential ca-certificates ccache flex git \
+       libfl-dev libgoogle-perftools-dev perl python3 \
+   && apt-get autoclean && apt-get clean && apt-get -y autoremove \
+   && update-ca-certificates \
+   && rm -rf /var/lib/apt/lists
+
+RUN git clone --branch v4.028 https://github.com/verilator/verilator.git verilator \
+   && cd verilator \
+   && autoconf \
+   && ./configure --prefix=/opt/verilator \
+   && make -j4 \
+   && make install
+
+#---
+
+FROM base 
+
+COPY --from=build /opt/verilator /opt/verilator
+
+ENV PATH /opt/verilator/bin:$PATH
