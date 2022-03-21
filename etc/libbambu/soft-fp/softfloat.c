@@ -315,8 +315,8 @@ __float __float_mul(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
    return 0;
 }
 
-__float __float_divSRT4(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
-                        __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+__float __float_div(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias,
+                    __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __bits8 __bw = __exp_bits + __frac_bits + (__sign == -1);
    if(__bw == 32)
