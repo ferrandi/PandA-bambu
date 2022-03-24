@@ -3020,6 +3020,11 @@ void BambuParameter::CheckParameters()
       setOption(OPT_top_functions_names, "main");
       THROW_WARNING("Top function name was not specified: main will be set as top");
    }
+   if(isOption(OPT_top_functions_names) && getOption<std::string>(OPT_top_functions_names) == "main")
+   {
+      THROW_WARNING("Using 'main' as top function name is strongly discouraged.");
+      THROW_WARNING("   Please note that C simulation output may be truncated down to 8-bits.");
+   }
 
    const auto sorted_dirs = [](const std::string& parent_dir) {
       std::vector<boost::filesystem::path> sorted_paths;
