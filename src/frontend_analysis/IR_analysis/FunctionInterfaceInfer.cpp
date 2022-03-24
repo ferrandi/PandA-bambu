@@ -1177,7 +1177,7 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       const structural_type_descriptorRef lenType(new structural_type_descriptor("bool", 8));
       const structural_type_descriptorRef sizeType(new structural_type_descriptor("bool", 3));
       const structural_type_descriptorRef burstType(new structural_type_descriptor("bool", 2));
-      const structural_type_descriptorRef lockType(new structural_type_descriptor("bool", 2));
+      const structural_type_descriptorRef lockType(new structural_type_descriptor("bool", 1));
       const structural_type_descriptorRef cacheType(new structural_type_descriptor("bool", 4));
       const structural_type_descriptorRef protType(new structural_type_descriptor("bool", 3));
       const structural_type_descriptorRef qosType(new structural_type_descriptor("bool", 4));
@@ -1210,7 +1210,8 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
           CM->add_port("_m_axi_" + portNameSpecializer + "_WREADY", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(Port_wready)->set_port_interface(port_o::port_interface::M_AXI_WREADY);
 
-      const auto Port_bid = CM->add_port("_m_axi_" + portNameSpecializer + "_BID", port_o::IN, interface_top, idType);
+      const auto Port_bid =
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_BID", port_o::IN, 1, interface_top, idType);
       GetPointerS<port_o>(Port_bid)->set_port_interface(port_o::port_interface::M_AXI_BID);
 
       const auto Port_bresp =
@@ -1218,7 +1219,7 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       GetPointerS<port_o>(Port_bresp)->set_port_interface(port_o::port_interface::M_AXI_BRESP);
 
       const auto Port_buser =
-          CM->add_port("_m_axi_" + portNameSpecializer + "_BUSER", port_o::IN, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_BUSER", port_o::IN, 1, interface_top, userType);
       GetPointerS<port_o>(Port_buser)->set_port_interface(port_o::port_interface::M_AXI_BUSER);
 
       const auto Port_bvalid =
@@ -1229,7 +1230,8 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
           CM->add_port("_m_axi_" + portNameSpecializer + "_ARREADY", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(Port_arready)->set_port_interface(port_o::port_interface::M_AXI_ARREADY);
 
-      const auto Port_rid = CM->add_port("_m_axi_" + portNameSpecializer + "_RID", port_o::IN, interface_top, idType);
+      const auto Port_rid =
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_RID", port_o::IN, 1, interface_top, idType);
       GetPointerS<port_o>(Port_rid)->set_port_interface(port_o::port_interface::M_AXI_RID);
 
       const auto Port_rdata =
@@ -1246,7 +1248,7 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       GetPointerS<port_o>(Port_rlast)->set_port_interface(port_o::port_interface::M_AXI_RLAST);
 
       const auto Port_ruser =
-          CM->add_port("_m_axi_" + portNameSpecializer + "_RUSER", port_o::IN, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_RUSER", port_o::IN, 1, interface_top, userType);
       GetPointerS<port_o>(Port_ruser)->set_port_interface(port_o::port_interface::M_AXI_RUSER);
 
       const auto Port_rvalid =
@@ -1257,7 +1259,7 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       CM->add_port_vector("out1", port_o::OUT, n_resources, interface_top, rwtype);
 
       const auto Port_awid =
-          CM->add_port("_m_axi_" + portNameSpecializer + "_AWID", port_o::OUT, interface_top, idType);
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_AWID", port_o::OUT, 1, interface_top, idType);
       GetPointerS<port_o>(Port_awid)->set_port_interface(port_o::port_interface::M_AXI_AWID);
 
       const auto Port_awaddr =
@@ -1278,7 +1280,7 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       GetPointerS<port_o>(Port_awburst)->set_port_interface(port_o::port_interface::M_AXI_AWBURST);
 
       const auto Port_awlock =
-          CM->add_port("_m_axi_" + portNameSpecializer + "_AWLOCK", port_o::OUT, interface_top, lockType);
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_AWLOCK", port_o::OUT, 1, interface_top, lockType);
       GetPointerS<port_o>(Port_awlock)->set_port_interface(port_o::port_interface::M_AXI_AWLOCK);
 
       const auto Port_awcache =
@@ -1298,14 +1300,15 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       GetPointerS<port_o>(Port_awregion)->set_port_interface(port_o::port_interface::M_AXI_AWREGION);
 
       const auto Port_awuser =
-          CM->add_port("_m_axi_" + portNameSpecializer + "_AWUSER", port_o::OUT, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_AWUSER", port_o::OUT, 1, interface_top, userType);
       GetPointerS<port_o>(Port_awuser)->set_port_interface(port_o::port_interface::M_AXI_AWUSER);
 
       const auto Port_awvalid =
           CM->add_port("_m_axi_" + portNameSpecializer + "_AWVALID", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(Port_awvalid)->set_port_interface(port_o::port_interface::M_AXI_AWVALID);
 
-      const auto Port_wid = CM->add_port("_m_axi_" + portNameSpecializer + "_WID", port_o::OUT, interface_top, idType);
+      const auto Port_wid =
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_WID", port_o::OUT, 1, interface_top, idType);
       GetPointerS<port_o>(Port_wid)->set_port_interface(port_o::port_interface::M_AXI_WID);
 
       const auto Port_wdata =
@@ -1322,7 +1325,7 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       GetPointerS<port_o>(Port_wlast)->set_port_interface(port_o::port_interface::M_AXI_WLAST);
 
       const auto Port_wuser =
-          CM->add_port("_m_axi_" + portNameSpecializer + "_WUSER", port_o::OUT, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_WUSER", port_o::OUT, 1, interface_top, userType);
       GetPointerS<port_o>(Port_wuser)->set_port_interface(port_o::port_interface::M_AXI_WUSER);
 
       const auto Port_wvalid =
@@ -1334,7 +1337,7 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       GetPointerS<port_o>(Port_bready)->set_port_interface(port_o::port_interface::M_AXI_BREADY);
 
       const auto Port_arid =
-          CM->add_port("_m_axi_" + portNameSpecializer + "_ARID", port_o::OUT, interface_top, idType);
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_ARID", port_o::OUT, 1, interface_top, idType);
       GetPointerS<port_o>(Port_arid)->set_port_interface(port_o::port_interface::M_AXI_ARID);
 
       const auto Port_araddr =
@@ -1355,7 +1358,7 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       GetPointerS<port_o>(Port_arburst)->set_port_interface(port_o::port_interface::M_AXI_ARBURST);
 
       const auto Port_arlock =
-          CM->add_port("_m_axi_" + portNameSpecializer + "_ARLOCK", port_o::OUT, interface_top, lockType);
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_ARLOCK", port_o::OUT, 1, interface_top, lockType);
       GetPointerS<port_o>(Port_arlock)->set_port_interface(port_o::port_interface::M_AXI_ARLOCK);
 
       const auto Port_arcache =
@@ -1370,11 +1373,12 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
           CM->add_port("_m_axi_" + portNameSpecializer + "_ARQOS", port_o::OUT, interface_top, qosType);
       GetPointerS<port_o>(Port_arqos)->set_port_interface(port_o::port_interface::M_AXI_ARQOS);
 
-      CM->add_port("_m_axi_" + portNameSpecializer + "_ARREGION", port_o::OUT, interface_top, regionType);
-      GetPointerS<port_o>(Port_awlock)->set_port_interface(port_o::port_interface::M_AXI_ARREGION);
+      const auto Port_arregion =
+          CM->add_port("_m_axi_" + portNameSpecializer + "_ARREGION", port_o::OUT, interface_top, regionType);
+      GetPointerS<port_o>(Port_arregion)->set_port_interface(port_o::port_interface::M_AXI_ARREGION);
 
       const auto Port_aruser =
-          CM->add_port("_m_axi_" + portNameSpecializer + "_ARUSER", port_o::OUT, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + portNameSpecializer + "_ARUSER", port_o::OUT, 1, interface_top, userType);
       GetPointerS<port_o>(Port_aruser)->set_port_interface(port_o::port_interface::M_AXI_ARUSER);
 
       const auto Port_arvalid =
