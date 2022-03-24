@@ -11,8 +11,8 @@ concurrency:
 
 env:
   storage-url: ${{secrets.CI_STORAGE_URL}}
-  storage-user: '${{secrets.CI_STORAGE_USER}}'
-  storage-token: '${{secrets.CI_STORAGE_TOKEN}}'
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
   host_jobs: $J
 
 jobs:
@@ -87,46 +87,46 @@ jobs:
         with:
           name: gcc-4.9-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 5
         uses: ./.github/actions/storage-download
         with:
           name: gcc-5-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 6
         uses: ./.github/actions/storage-download
         with:
           name: gcc-6-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 7
         uses: ./.github/actions/storage-download
         with:
           name: gcc-7-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 8
         uses: ./.github/actions/storage-download
         with:
           name: gcc-8-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Scan build Bambu
         id: scanbuild
         uses: ./.github/actions/scanbuild
@@ -182,46 +182,46 @@ jobs:
         with:
           name: gcc-4.9-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 5
         uses: ./.github/actions/storage-download
         with:
           name: gcc-5-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 6
         uses: ./.github/actions/storage-download
         with:
           name: gcc-6-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 7
         uses: ./.github/actions/storage-download
         with:
           name: gcc-7-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Download gcc 8
         uses: ./.github/actions/storage-download
         with:
           name: gcc-8-bambu-Ubuntu_16.04
           path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
+          storage-url: "${{env.storage-url}}"
           storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
       - name: Make Dist
         uses: ./.github/actions/make-dist
         with:

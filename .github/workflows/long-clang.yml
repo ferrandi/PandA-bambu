@@ -1,17 +1,16 @@
-name: Long clang
+name: Full Regressions Clang
 
 on:
   pull_request:
-    types: [closed]
     branches:
       - main
 
   workflow_dispatch:
 
 env:
-  build-args: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release
-  dist-pkg: bambu-clang-dist
-  dist-dir: dist
+  compilers: gcc-7,clang-4,clang-5,clang-6,clang-7,clang-8,clang-9,clang-10,clang-11,clang-12
+  build-compiler: gcc-8
+  configure: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8
   report-dir: test-reports
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: "${{secrets.CI_STORAGE_USER}}"
@@ -20,72 +19,14 @@ env:
 
 jobs:
   build:
-    if: github.event.pull_request.merged == true
-    runs-on: [self-hosted, long, classA]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Env setup
-        id: host
-        shell: bash
-        run: |
-          echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
-      - name: Prepare ccache timestamp
-        id: ccache_cache_timestamp
-        shell: bash
-        run: |
-          echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
-      - name: ccache cache files
-        uses: actions/cache@v2
-        with:
-          path: .ccache
-          key: panda-build-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
-          restore-keys: |
-            panda-build-ccache-
-      - name: Download clang compilers
-        shell: bash
-        run: |
-          set -e
-          export XZ_OPT='-T0'
-          mkdir ${{env.dist-dir}}
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/clang+llvm-9.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wait
-      - name: Download gcc 7
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-7-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Build Bambu application
-        id: build
-        uses: ./.github/actions/generate-bin
-        with:
-          config-args: ${{env.build-args}} --enable-Werror CC=clang-12 CXX=clang++-12 --with-gcc5=/bin/false
-          jobs: ${{steps.host.outputs.jobs}}
-      - name: Upload Panda install directory
-        uses: ./.github/actions/storage-upload
-        with:
-          name: ${{env.dist-pkg}}
-          path: ${{steps.build.outputs.appimage}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-          storage-compression: false
+    uses: ./.github/workflows/build-appimage.yml
+    with:
+      package-name: bambu-clang-full
+      compilers: ${{env.compilers}}
+      build-compiler: ${{env.build-compiler}}
+      configure: ${{env.configure}}
 
   gcc_regression_simple:
-    if: github.event.pull_request.merged == true
     needs: [build]
     runs-on: [self-hosted, long]
     env:
@@ -142,7 +83,7 @@ jobs:
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
-          name: ${{env.dist-pkg}}
+          name: ${{needs.build.outputs.package-name}}
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
@@ -182,7 +123,6 @@ jobs:
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   gcc_regression_simple-vhdl:
-    if: github.event.pull_request.merged == true
     needs: [build, simulate-all]
     runs-on: [self-hosted, long, mentor]
     env:
@@ -216,7 +156,7 @@ jobs:
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
-          name: ${{env.dist-pkg}}
+          name: ${{needs.build.outputs.package-name}}
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
@@ -253,7 +193,6 @@ jobs:
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   simulate-all:
-    if: github.event.pull_request.merged == true
     needs: [build]
     runs-on: [self-hosted, long, mentor]
     env:
@@ -276,7 +215,7 @@ jobs:
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
-          name: ${{env.dist-pkg}}
+          name: ${{needs.build.outputs.package-name}}
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
@@ -305,7 +244,6 @@ jobs:
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   libm-all-vhdl:
-    if: github.event.pull_request.merged == true
     needs: [build, simulate-all, gcc_regression_simple-vhdl]
     runs-on: [self-hosted, long, mentor]
     strategy:
@@ -334,7 +272,7 @@ jobs:
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
-          name: ${{env.dist-pkg}}
+          name: ${{needs.build.outputs.package-name}}
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
@@ -370,7 +308,6 @@ jobs:
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   libm-all:
-    if: github.event.pull_request.merged == true
     needs: [build, simulate-all]
     runs-on: [self-hosted, long]
     strategy:
@@ -412,7 +349,7 @@ jobs:
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
-          name: ${{env.dist-pkg}}
+          name: ${{needs.build.outputs.package-name}}
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
@@ -450,3 +387,14 @@ jobs:
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
+
+  examples:
+    needs: [build]
+    uses: ./.github/workflows/examples.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      test-compiler: I386_CLANG12
+    secrets:
+      CI_STORAGE_URL: ${{env.storage-url}}
+      CI_STORAGE_USER: ${{env.storage-user}}
+      CI_STORAGE_TOKEN: ${{env.storage-token}}
