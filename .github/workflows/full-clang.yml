@@ -4,8 +4,14 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - "documentation/**"
 
   workflow_dispatch:
+
+concurrency:
+  group: full-clang-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   compilers: gcc-7,clang-4,clang-5,clang-6,clang-7,clang-8,clang-9,clang-10,clang-11,clang-12
@@ -25,172 +31,6 @@ jobs:
       compilers: ${{env.compilers}}
       build-compiler: ${{env.build-compiler}}
       configure: ${{env.configure}}
-
-  gcc_regression_simple:
-    needs: [build]
-    runs-on: [self-hosted, long]
-    env:
-      args: -c=--simulator=VERILATOR -t150m
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler:
-          [
-            I386_CLANG4,
-            I386_CLANG5,
-            I386_CLANG6,
-            I386_CLANG7,
-            I386_CLANG8,
-            I386_CLANG9,
-            I386_CLANG10,
-            I386_CLANG11,
-            I386_CLANG12,
-          ]
-        script:
-          [
-            generic_gcc_regression_simple_bambu_pretty_print.sh --skip_list 20071029-1,
-            generic_gcc_regression_simple_bambu.sh,
-            generic_gcc_regression_simple_eg_ext_pipelined.sh,
-            generic_gcc_regression_simple_eg.sh,
-          ]
-        args:
-          [
-            "",
-            "-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1",
-          ]
-        exclude:
-          - compiler: I386_CLANG4
-            script: generic_gcc_regression_simple_eg.sh
-            args: ""
-          - compiler: I386_CLANG5
-            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: ""
-          - compiler: I386_CLANG6
-            script: generic_gcc_regression_simple_bambu.sh
-            args: ""
-          - compiler: I386_CLANG7
-            script: generic_gcc_regression_simple_bambu.sh
-            args: ""
-          - compiler: I386_CLANG11
-            script: generic_gcc_regression_simple_bambu.sh
-            args: ""
-          - compiler: I386_CLANG12
-            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: ""
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
-      - name: Generate out name
-        id: get
-        shell: bash
-        run: |
-          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
-          SCRIPT="$(echo '${{matrix.script}}' | cut -d' ' -f1 | sed -r 's/(\.sh|generic_gcc_)//g')"
-          OUTNAME="${COMPILER}_${SCRIPT}"
-          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
-            OUTNAME+="_sdc"
-          fi
-          echo "::set-output name=outname::$OUTNAME"
-      - name: Launch test suite
-        id: suite
-        shell: bash
-        run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          out_dir="$PWD/${{env.report-dir}}"
-          echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
-      - name: Upload test reports
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{steps.get.outputs.outname}}
-          path: ${{steps.suite.outputs.test-reports-dir}}
-
-  gcc_regression_simple-vhdl:
-    needs: [build, simulate-all]
-    runs-on: [self-hosted, long, mentor]
-    env:
-      args: -c=--simulator=MODELSIM -c=-wH
-    strategy:
-      max-parallel: 2
-      fail-fast: false
-      matrix:
-        compiler:
-          [
-            I386_CLANG4,
-            I386_CLANG5,
-            I386_CLANG6,
-            I386_CLANG7,
-            I386_CLANG8,
-            I386_CLANG9,
-            I386_CLANG10,
-            I386_CLANG11,
-            I386_CLANG12,
-          ]
-        script:
-          [
-            generic_gcc_regression_simple_bambu_pretty_print.sh --skip_list 20071029-1,
-            generic_gcc_regression_simple_bambu.sh,
-            generic_gcc_regression_simple_eg_ext_pipelined.sh,
-            generic_gcc_regression_simple_eg.sh,
-          ]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
-      - name: Generate out name
-        id: get
-        shell: bash
-        run: |
-          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
-          SCRIPT="$(echo '${{matrix.script}}' | cut -d' ' -f1 | sed -r 's/(\.sh|generic_gcc_)//g')"
-          OUTNAME="${COMPILER}_${SCRIPT}_vhdl"
-          echo "::set-output name=outname::$OUTNAME"
-      - name: Launch test suite
-        id: suite
-        shell: bash
-        run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          out_dir="$PWD/${{env.report-dir}}"
-          echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
-      - name: Upload test reports
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{steps.get.outputs.outname}}
-          path: ${{steps.suite.outputs.test-reports-dir}}
 
   simulate-all:
     needs: [build]
@@ -243,153 +83,31 @@ jobs:
           name: ${{matrix.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
-  libm-all-vhdl:
-    needs: [build, simulate-all, gcc_regression_simple-vhdl]
-    runs-on: [self-hosted, long, mentor]
-    strategy:
-      fail-fast: false
-      max-parallel: 2
-      matrix:
-        compiler:
-          [
-            I386_CLANG4,
-            I386_CLANG5,
-            I386_CLANG6,
-            I386_CLANG7,
-            I386_CLANG8,
-            I386_CLANG9,
-            I386_CLANG10,
-            I386_CLANG11,
-            I386_CLANG12,
-          ]
-    env:
-      script: generic_libm-tests.sh
-      args: -c=--simulator=MODELSIM -c=-wH
-      basename: libm-vhdl
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
-      - name: Generate out name
-        id: get
-        shell: bash
-        run: |
-          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
-          OUTNAME="${COMPILER}_${{env.basename}}"
-          echo "::set-output name=outname::$OUTNAME"
-      - name: Launch test suite
-        id: suite
-        shell: bash
-        run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          out_dir="$PWD/${{env.report-dir}}"
-          echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
-      - name: Upload test reports
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{steps.get.outputs.outname}}
-          path: ${{steps.suite.outputs.test-reports-dir}}
-
-  libm-all:
+  gcc_regression_simple:
     needs: [build, simulate-all]
-    runs-on: [self-hosted, long]
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler:
-          [
-            I386_CLANG4,
-            I386_CLANG5,
-            I386_CLANG6,
-            I386_CLANG7,
-            I386_CLANG8,
-            I386_CLANG9,
-            I386_CLANG10,
-            I386_CLANG11,
-            I386_CLANG12,
-          ]
-        args: ["", "-c=--speculative-sdc-scheduling"]
-        exclude:
-          - compiler: I386_CLANG4
-            args: "-c=--speculatioe-sdc-scheduling"
-          - compiler: I386_CLANG5
-            args: "-c=--speculative-sdc-scheduling"
-          - compiler: I386_CLANG6
-            args: "-c=--speculative-sdc-scheduling"
-          - compiler: I386_CLANG7
-            args: "-c=--speculative-sdc-scheduling"
-          - compiler: I386_CLANG11
-            args: "-c=--speculative-sdc-scheduling"
-          - compiler: I386_CLANG12
-            args: "-c=--speculative-sdc-scheduling"
-    env:
-      script: generic_libm-tests.sh
-      args: -c=--simulator=VERILATOR -t150m
-      basename: libm
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
-      - name: Generate out name
-        id: get
-        shell: bash
-        run: |
-          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
-          OUTNAME="${COMPILER}"
-          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
-            OUTNAME+="_sdc"
-          fi
-          OUTNAME+="_${{env.basename}}"
-          echo "::set-output name=outname::$OUTNAME"
-      - name: Launch test suite
-        id: suite
-        shell: bash
-        run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          out_dir="$PWD/${{env.report-dir}}"
-          echo "::set-output name=test-reports-dir::$out_dir"
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
-      - name: Upload test reports
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{steps.get.outputs.outname}}
-          path: ${{steps.suite.outputs.test-reports-dir}}
+    uses: ./.github/workflows/gcc_regression_simple.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      test-compilers: "I386_CLANG4,I386_CLANG5,I386_CLANG6,I386_CLANG7,I386_CLANG8,I386_CLANG9,I386_CLANG10,I386_CLANG11,I386_CLANG12"
+      additional-args: \"\",\"-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1\"
+    secrets:
+      CI_STORAGE_URL: ${{env.storage-url}}
+      CI_STORAGE_USER: ${{env.storage-user}}
+      CI_STORAGE_TOKEN: ${{env.storage-token}}
+
+  gcc_regression_simple-vhdl:
+    needs: [build, simulate-all]
+    uses: ./.github/workflows/gcc_regression_simple-vhdl.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      test-compilers: "I386_CLANG4,I386_CLANG5,I386_CLANG6,I386_CLANG7,I386_CLANG8,I386_CLANG9,I386_CLANG10,I386_CLANG11,I386_CLANG12"
+    secrets:
+      CI_STORAGE_URL: ${{env.storage-url}}
+      CI_STORAGE_USER: ${{env.storage-user}}
+      CI_STORAGE_TOKEN: ${{env.storage-token}}
 
   examples:
-    needs: [build]
+    needs: [build, simulate-all]
     uses: ./.github/workflows/examples.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
