@@ -55,7 +55,7 @@ on:
     outputs:
       package-name:
         description: "Package name to download built AppImage"
-        value: ${{env.package-name}}
+        value: ${{inputs.package-name}}
 
 env:
   compilers: ${{inputs.compilers}}${{github.event.inputs.compilers}}
@@ -175,7 +175,7 @@ jobs:
           config-args: ${{env.configure}} --enable-Werror
           jobs: ${{steps.host.outputs.jobs}}
       - name: Upload PandA Bambu HLS AppImage for CI
-        if: ${{ inputs.package-name != "" }}
+        if: ${{ inputs.package-name != '' }}
         uses: ./.github/actions/storage-upload
         with:
           name: ${{env.package-name}}
@@ -185,7 +185,7 @@ jobs:
           password: "${{env.storage-token}}"
           storage-compression: false
       - name: Upload Panda Bambu HLS Release
-        if: ${{ github.event.inputs.package-name != "" }}
+        if: ${{ github.event.inputs.package-name != '' }}
         shell: bash
         run: |
           APP_FILE="${{env.package-name}}.AppImage"

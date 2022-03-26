@@ -53,7 +53,7 @@ env:
 
 jobs:
   build:
-    if: ${{ github.event.inputs.configure != "" }}
+    if: ${{ github.event.inputs.configure != '' }}
     uses: ./.github/workflows/build-appimage.yml
     with:
       version: ${{github.event.inputs.package-name}}
