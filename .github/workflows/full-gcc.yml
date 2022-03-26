@@ -31,6 +31,10 @@ jobs:
       compilers: ${{env.compilers}}
       build-compiler: ${{env.build-compiler}}
       configure: ${{env.configure}}
+    secrets:
+      CI_STORAGE_URL: ${{env.storage-url}}
+      CI_STORAGE_USER: ${{env.storage-user}}
+      CI_STORAGE_TOKEN: ${{env.storage-token}}
 
   simulate-all:
     needs: [build]

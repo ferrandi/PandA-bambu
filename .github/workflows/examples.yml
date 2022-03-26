@@ -60,6 +60,10 @@ jobs:
       compilers: ${{ github.event.inputs.compilers }}
       build-compiler: gcc-8
       configure: ${{ github.event.inputs.configure }} CC=gcc-8 CXX=g++-8
+    secrets:
+      CI_STORAGE_URL: ${{env.storage-url}}
+      CI_STORAGE_USER: ${{env.storage-user}}
+      CI_STORAGE_TOKEN: ${{env.storage-token}}
 
   example-altera:
     needs: [build]

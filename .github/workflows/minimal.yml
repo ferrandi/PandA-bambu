@@ -13,7 +13,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12
   report-dir: test-reports
   storage-url: "${{secrets.CI_STORAGE_URL}}"
   storage-user: "${{secrets.CI_STORAGE_USER}}"
@@ -25,7 +24,11 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       package-name: bambu-minimal
-      compilers: ${{env.compilers}}
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12
+    secrets:
+      CI_STORAGE_URL: ${{env.storage-url}}
+      CI_STORAGE_USER: ${{env.storage-user}}
+      CI_STORAGE_TOKEN: ${{env.storage-token}}
 
   ACMath-tests:
     runs-on: [self-hosted]
