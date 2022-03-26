@@ -53,7 +53,9 @@ on:
       CI_STORAGE_TOKEN:
         required: true
     outputs:
-      package-name: ${{inputs.package-name}}
+      package-name:
+        description: "Package name to download built AppImage"
+        value: ${{env.package-name}}
 
 env:
   compilers: ${{inputs.compilers}}${{github.event.inputs.compilers}}
