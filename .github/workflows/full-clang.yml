@@ -14,9 +14,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  compilers: gcc-7,clang-4,clang-5,clang-6,clang-7,clang-8,clang-9,clang-10,clang-11,clang-12
-  build-compiler: gcc-8
-  configure: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8
   report-dir: test-reports
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: "${{secrets.CI_STORAGE_USER}}"
@@ -28,13 +25,13 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       package-name: bambu-clang-full
-      compilers: ${{env.compilers}}
-      build-compiler: ${{env.build-compiler}}
-      configure: ${{env.configure}}
+      compilers: gcc-7,clang-4,clang-5,clang-6,clang-7,clang-8,clang-9,clang-10,clang-11,clang-12
+      build-compiler: gcc-8
+      configure: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8
     secrets:
-      CI_STORAGE_URL: ${{env.storage-url}}
-      CI_STORAGE_USER: ${{env.storage-user}}
-      CI_STORAGE_TOKEN: ${{env.storage-token}}
+      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
+      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
+      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
 
   simulate-all:
     needs: [build]
@@ -95,9 +92,9 @@ jobs:
       test-compilers: "I386_CLANG4,I386_CLANG5,I386_CLANG6,I386_CLANG7,I386_CLANG8,I386_CLANG9,I386_CLANG10,I386_CLANG11,I386_CLANG12"
       additional-args: \"\",\"-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1\"
     secrets:
-      CI_STORAGE_URL: ${{env.storage-url}}
-      CI_STORAGE_USER: ${{env.storage-user}}
-      CI_STORAGE_TOKEN: ${{env.storage-token}}
+      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
+      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
+      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
 
   gcc_regression_simple-vhdl:
     needs: [build, simulate-all]
@@ -106,9 +103,9 @@ jobs:
       package-name: ${{needs.build.outputs.package-name}}
       test-compilers: "I386_CLANG4,I386_CLANG5,I386_CLANG6,I386_CLANG7,I386_CLANG8,I386_CLANG9,I386_CLANG10,I386_CLANG11,I386_CLANG12"
     secrets:
-      CI_STORAGE_URL: ${{env.storage-url}}
-      CI_STORAGE_USER: ${{env.storage-user}}
-      CI_STORAGE_TOKEN: ${{env.storage-token}}
+      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
+      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
+      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
 
   examples:
     needs: [build, simulate-all]
@@ -117,6 +114,6 @@ jobs:
       package-name: ${{needs.build.outputs.package-name}}
       test-compiler: I386_CLANG12
     secrets:
-      CI_STORAGE_URL: ${{env.storage-url}}
-      CI_STORAGE_USER: ${{env.storage-user}}
-      CI_STORAGE_TOKEN: ${{env.storage-token}}
+      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
+      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
+      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}

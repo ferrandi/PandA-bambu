@@ -26,9 +26,9 @@ jobs:
       package-name: bambu-minimal
       compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12
     secrets:
-      CI_STORAGE_URL: ${{env.storage-url}}
-      CI_STORAGE_USER: ${{env.storage-user}}
-      CI_STORAGE_TOKEN: ${{env.storage-token}}
+      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
+      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
+      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
 
   ACMath-tests:
     runs-on: [self-hosted]
