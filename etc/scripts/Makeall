@@ -125,3 +125,6 @@ dist:
 	cd ..; \
 	cd ..
 
+clean:
+	rm -rf build panda_dist
+	make -f Makefile.init clean
