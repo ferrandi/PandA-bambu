@@ -53,7 +53,7 @@ on:
       CI_STORAGE_TOKEN:
         required: true
     outputs:
-      package-name: ${{env.package-name}}
+      package-name: ${{inputs.package-name}}
 
 env:
   compilers: ${{inputs.compilers}}${{github.event.inputs.compilers}}
