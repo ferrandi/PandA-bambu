@@ -55,7 +55,7 @@ on:
     outputs:
       package-name:
         description: "Package name to download built AppImage"
-        value: ${{inputs.package-name}}
+        value: ${{jobs.build.outputs.package-name}}
 
 env:
   compilers: ${{inputs.compilers}}${{github.event.inputs.compilers}}
@@ -74,6 +74,8 @@ env:
 jobs:
   build:
     runs-on: [self-hosted]
+    outputs:
+      package-name: ${{env.package-name}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
