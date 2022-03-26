@@ -56,10 +56,13 @@ runs:
         if [[ ! -z '${{inputs.username}}' ]]; then
           CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
         fi
-        CONTENT_SHA="$(find ${{inputs.path}} -type f -print0 | sort -z | xargs -0 sha1sum)"
         if [[ -f "${{inputs.path}}" || -d "${{inputs.path}}" ]]; then 
           tar -C "$(dirname ${{inputs.path}})" "$(basename ${{inputs.path}})" --mode="u+rwX,g+rwX,o+rX" $TAR_OPT - | $CURL_CMD "$PKG_URL"
-          echo "${{inputs.storage-compression}}\n$CONTENT_SHA" | $CURL_CMD "$PKG_URL.nfo"
+          TMP="$(mktemp /tmp/nfo_XXXXXX)"
+          echo "${{inputs.storage-compression}}" > $TMP
+          find ${{inputs.path}} -type f -print0 | sort -z | xargs -0 sha1sum >> $TMP
+          $CURL_CMD "$PKG_URL.nfo" < $TMP
+          rm -rf $TMP
           echo "Package successfully uploaded to $PKG_URL"
         else 
           echo "Path '${{inputs.path}}' does not name a file or directory"
