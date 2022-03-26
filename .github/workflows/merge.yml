@@ -23,7 +23,7 @@ jobs:
           fi
           curl -L --fail -X DELETE $AUTH "$PRDIR_URL"
   update-results:
-    if: github.event.pull_request.merged == true && github.base_ref == "main"
+    if: github.event.pull_request.merged == true && github.base_ref == 'main'
     runs-on: [self-hosted]
     steps:
       - name: Update main performance results

@@ -13,13 +13,6 @@ concurrency:
   group: full-clang-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  report-dir: test-reports
-  storage-url: ${{secrets.CI_STORAGE_URL}}
-  storage-user: "${{secrets.CI_STORAGE_USER}}"
-  storage-token: "${{secrets.CI_STORAGE_TOKEN}}"
-  host_jobs: $J
-
 jobs:
   build:
     uses: ./.github/workflows/build-appimage.yml
@@ -37,6 +30,7 @@ jobs:
     needs: [build]
     runs-on: [self-hosted, long, mentor]
     env:
+      report-dir: test-reports
       args: -c=--simulator=MODELSIM
     strategy:
       fail-fast: false
@@ -57,9 +51,9 @@ jobs:
         uses: ./.github/actions/storage-download
         with:
           name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
+          storage-url: "${{secrets.CI_STORAGE_URL}}"
+          username: "${{secrets.CI_STORAGE_USER}}"
+          password: "${{secrets.CI_STORAGE_TOKEN}}"
       - name: Setup binaries
         id: setup
         shell: bash
@@ -86,11 +80,11 @@ jobs:
 
   gcc_regression_simple:
     needs: [build, simulate-all]
-    uses: ./.github/workflows/gcc_regression_simple.yml
+    uses: ./.github/workflows/reusable-grs.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
       test-compilers: "I386_CLANG4,I386_CLANG5,I386_CLANG6,I386_CLANG7,I386_CLANG8,I386_CLANG9,I386_CLANG10,I386_CLANG11,I386_CLANG12"
-      additional-args: \"\",\"-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1\"
+      additional-args: '"","-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1"'
     secrets:
       CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
       CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
@@ -98,7 +92,7 @@ jobs:
 
   gcc_regression_simple-vhdl:
     needs: [build, simulate-all]
-    uses: ./.github/workflows/gcc_regression_simple-vhdl.yml
+    uses: ./.github/workflows/reusable-grs-vhdl.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
       test-compilers: "I386_CLANG4,I386_CLANG5,I386_CLANG6,I386_CLANG7,I386_CLANG8,I386_CLANG9,I386_CLANG10,I386_CLANG11,I386_CLANG12"
@@ -109,7 +103,7 @@ jobs:
 
   examples:
     needs: [build, simulate-all]
-    uses: ./.github/workflows/examples.yml
+    uses: ./.github/workflows/reusable-examples.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
       test-compiler: I386_CLANG12
