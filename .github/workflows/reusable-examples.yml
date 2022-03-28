@@ -29,7 +29,7 @@ env:
   host_jobs: $J
 
 jobs:
-  example-altera:
+  altera:
     runs-on: [self-hosted, long, altera, intelFPGA]
     timeout-minutes: 600
     env:
@@ -123,7 +123,7 @@ jobs:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}
 
-  example-xilinx:
+  xilinx:
     runs-on: [self-hosted, long, xilinx]
     timeout-minutes: 600
     env:
@@ -224,7 +224,7 @@ jobs:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}
 
-  example-lattice:
+  lattice:
     runs-on: [self-hosted, long, lattice]
     env:
       basename: lattice

@@ -26,7 +26,7 @@ on:
 
 env:
   package-name: ${{inputs.package-name}}
-  test-compiler: ${{inputs.test-compiler}}
+  test-compilers: ${{inputs.test-compilers}}
   additional-args: ${{inputs.additional-args}}
   report-dir: test-reports
   storage-url: ${{secrets.CI_STORAGE_URL}}
@@ -81,7 +81,7 @@ jobs:
           libm_array="$(to_json_obj_rec "" "args" "${args}" "compiler" "${{env.test-compilers}}")"
           echo "::set-output name=json::{\"include\":[${libm_array}]}"
 
-  gcc_regression_simple-vhdl:
+  grs-vhdl:
     needs: [setup]
     runs-on: [self-hosted, long]
     env:
@@ -135,7 +135,7 @@ jobs:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
-  libm-all-vhdl:
+  libm-vhdl:
     needs: [setup]
     runs-on: [self-hosted, long]
     strategy:
