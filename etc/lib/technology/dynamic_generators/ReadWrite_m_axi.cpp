@@ -160,6 +160,7 @@ std::cout << "reg [2:0] AWSIZE, next_AWSIZE;\n";
 std::cout << "reg [(BITSIZE_" + _ports_out[WDATA].name + "/8)+(-1):0] WSTRB, next_WSTRB;\n";
 std::cout << "reg [1:0] AWBURST, next_AWBURST;\n";
 std::cout << "reg [7:0] AWLEN, next_AWLEN;\n";
+std::cout << "reg AWREADY;\n";
 std::cout << "reg [2:0] ARSIZE, next_ARSIZE;\n";
 std::cout << "reg [1:0] ARBURST, next_ARBURST;\n";
 std::cout << "reg [7:0] ARLEN, next_ARLEN;\n";
@@ -258,6 +259,7 @@ always @(*) begin
       next_first_read = 'b0;
       read_mask = 'b0;
       next_acc_rdata = 'b0;
+      AWREADY = 'b0;
 )";
 std::cout << "      if (" << _ports_in[start_port].name << " && !" << _ports_in[in1].name << ") begin\n";
 std::cout << R"(        `ifdef _SIM_HAVE_CLOG2
@@ -319,8 +321,13 @@ std::cout << R"(        next_axi_arvalid = 1'b0;
         next_axi_araddr = 'b0;
         next_axi_arvalid = 1'b0;
       end
+      else begin
+        next_axi_arvalid = axi_arvalid;
+        next_axi_araddr = axi_araddr;
+      end
       _next_state = S_RD_BURST;
       next_axi_rready = 1'b1;
+      
 )";
 std::cout << "      if(" << _ports_in[RVALID].name << ") begin\n";
 std::cout << "        if(" << _ports_in[RLAST].name << ") begin\n";
@@ -342,28 +349,48 @@ std::cout << R"(          next_acc_done = 1'b0;
     S_WR_BURST : begin 
     _next_state = S_WR_BURST;
 )";
-std::cout << "      if(" << _ports_in[WREADY].name << ") begin";
+std::cout << "      if(!" << _ports_in[WREADY].name << ") begin\n";
+std::cout << "        next_axi_wvalid = axi_wvalid;\n";
+std::cout << "        next_axi_wlast = axi_wlast;\n";
+std::cout << "        next_axi_wdata = axi_wdata;\n";
+std::cout << "        next_WSTRB = WSTRB;";
+std::cout << "      end\n";
+std::cout << "      if(" << _ports_in[AWREADY].name << ") begin";
 std::cout << R"(
         next_AWSIZE = 'b0;
         next_AWBURST = 'b0;
         next_AWLEN = 'b0;
         next_axi_awvalid = 'b0;
         next_axi_awaddr = 'b0;
+        AWREADY = 1'b1;
+      end
 )";
 
-std::cout << "        if (!WSTRB[0]) begin";
+std::cout << "      if (AWREADY &&" << _ports_in[WREADY].name << " && !WSTRB[0]) begin";
 std::cout << R"(
-          /* If the last transfer was not aligned and the slave is ready, transfer the rest */
-          next_WSTRB = ~WSTRB;
-          next_axi_wdata = axi_wdata;
-          next_axi_wvalid = 1'b1;
-          next_axi_wlast = 1'b1;
-        end
+        /* If the last transfer was not aligned and the slave is ready, transfer the rest */
+        next_WSTRB = ~WSTRB;
+        next_axi_wdata = axi_wdata;
+        next_axi_wvalid = 1'b1;
+        next_axi_wlast = 1'b1;
+      end
+      else if (AWREADY && !WSTRB[0]) begin
+        /* If it's an aligned transfer but the slave is not ready, just keep the signals */
+        next_axi_wdata = axi_wdata;
+        next_axi_wvalid = axi_wvalid;
+        next_WSTRB = WSTRB;
+        next_axi_wlast = axi_wlast;
+      end
+      if(!AWREADY) begin
+        next_axi_awvalid = axi_awvalid;
+        next_axi_awaddr = axi_awaddr;
+        next_axi_wvalid = axi_wvalid;
+        next_axi_wdata = axi_wdata;
       end 
       /* If the last transfer was complete, deassert the validity bits and check if you can go back to
       IDLE */
 )";
-std::cout << "      if (" << _ports_in[BVALID].name << ") begin\n";
+std::cout << "      if (" << _ports_in[BVALID].name << ") begin";
 std::cout << R"(        next_acc_done = 1'b1;
         next_axi_wvalid = 1'b0;
         next_axi_wdata = 'b0;
