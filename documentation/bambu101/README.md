@@ -9,4 +9,4 @@ Learn only what you need and take the best from the tool.
 
 
 ## High-Level Synthesis 102
- - Integrate external IPs with HLS generated designs [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ferrandi/PandA-bambu/blob/doc/bambu101/documentation/bambu101/IP_integration/bambu.ipynb)
+ - Integrate external IPs with HLS generated designs [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ferrandi/PandA-bambu/blob/doc/bambu101/documentation/bambu101/IP_Integration/bambu.ipynb)
