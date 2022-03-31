@@ -1,4 +1,4 @@
-name: GCC Regression Simple
+name: GCC Regression Simple VHDL
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: GCC examples synthesis
+name: Examples synthesis
 
 on:
   workflow_dispatch:

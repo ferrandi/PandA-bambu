@@ -20,6 +20,8 @@
 set -e
 
 workspace_dir=$PWD
+ccache_dir="$workspace_dir/.ccache"
+autoconf_cache_dir="$workspace_dir/.autoconf"
 
 function cleanup {
    echo "::endgroup::"
@@ -36,7 +38,7 @@ export PATH=/usr/lib/ccache:$PATH
 mkdir -p ~/.ccache/
 cat > ~/.ccache/ccache.conf << EOF
 max_size = 5.0G
-cache_dir = $workspace_dir/.ccache
+cache_dir = $ccache_dir
 EOF
 if [[ -d "dist" ]]; then
    echo "Pre-initialized dist dir found. Installing system wide..."
@@ -102,7 +104,18 @@ echo "::endgroup::"
 echo "::group::Configure build environment"
 mkdir build
 cd build
-../configure --prefix=/usr $@
+if [[ -d "$autoconf_cache_dir" ]]; then
+   echo "Restoring autoconf cache"
+   mv $autoconf_cache_dir/* .
+fi
+../configure --prefix=/usr -C $@
+autoconf_caches=("`find . -type f -path '**/config.cache'`")
+for cache in $autoconf_caches
+do
+   mirror_dir="$autoconf_cache_dir/$(dirname $cache)"
+   mkdir -p $mirror_dir
+   cp $cache $mirror_dir
+done
 cd ..
 echo "::endgroup::"
 

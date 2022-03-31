@@ -1,4 +1,4 @@
-name: GCC examples synthesis
+name: Reusable examples synthesis
 
 on:
   workflow_call:

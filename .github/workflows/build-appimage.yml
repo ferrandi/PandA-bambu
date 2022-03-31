@@ -82,11 +82,31 @@ jobs:
         with:
           ref: ${{github.event.inputs.branch}}
       - name: Env setup
-        id: host
+        id: setup
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
           echo "::set-output name=jobs::${{env.host_jobs}}"
+          env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
+          if [[ ! -z "${{env.build-compiler}}" ]]; then
+            if [[ "$env_id" != *"${{env.build-compiler}}"* ]]; then
+              env_id+="${{env.build-compiler}}"
+            fi
+          fi
+          echo "::set-output name=env_id::$env_id"
+          echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
+      - name: CCache cache files
+        uses: actions/cache@v2
+        with:
+          path: .ccache
+          key: panda-build-ccache-${{ steps.setup.outputs.timestamp }}
+          restore-keys: |
+            panda-build-ccache-
+      - name: Autoconf cache files
+        uses: actions/cache@v2
+        with:
+          path: .autoconf
+          key: panda-build-autoconf-${{ steps.setup.outputs.env_id }}
       - name: Download compilers
         shell: bash
         run: |
@@ -164,8 +184,7 @@ jobs:
             inflate $compiler ${{env.dist-dir}}
           done
           wait
-          if [[ ! -z "${{env.build-compiler}}" ]]
-          then
+          if [[ ! -z "${{env.build-compiler}}" ]]; then
             mkdir ${{env.bcompiler-dir}}
             inflate ${{env.build-compiler}} ${{env.bcompiler-dir}}
           fi
@@ -175,7 +194,7 @@ jobs:
         uses: ./.github/actions/generate-bin
         with:
           config-args: ${{env.configure}} --enable-Werror
-          jobs: ${{steps.host.outputs.jobs}}
+          jobs: ${{steps.setup.outputs.jobs}}
       - name: Upload PandA Bambu HLS AppImage for CI
         if: ${{ inputs.package-name != '' }}
         uses: ./.github/actions/storage-upload

@@ -14,6 +14,7 @@ env:
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
+  compilers-dist-url: https://release.bambuhls.eu:8080/compiler
   host_jobs: $J
 
 jobs:
@@ -49,90 +50,118 @@ jobs:
     runs-on: [self-hosted]
     env:
       dist-dir: dist
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
       - name: Env setup
-        id: host
+        id: setup
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
           echo "::set-output name=jobs::${{env.host_jobs}}"
-      - name: Prepare ccache timestamp
-        id: ccache_cache_timestamp
-        shell: bash
-        run: |
+          env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
+          if [[ ! -z "${{env.build-compiler}}" ]]; then
+            if [[ "$env_id" != *"${{env.build-compiler}}"* ]]; then
+              env_id+="${{env.build-compiler}}"
+            fi
+          fi
+          echo "::set-output name=env_id::$env_id"
           echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
-      - name: ccache cache files
+      - name: CCache cache files
         uses: actions/cache@v2
         with:
           path: .ccache
-          key: scanbuild-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          key: scanbuild-ccache-${{ steps.setup.outputs.timestamp }}
           restore-keys: |
             scanbuild-ccache-
-      - name: Download clang compilers
+      - name: Autoconf cache files
+        uses: actions/cache@v2
+        with:
+          path: .autoconf
+          key: scanbuild-autoconf-${{ steps.setup.outputs.env_id }}
+      - name: Download compilers
         shell: bash
         run: |
           set -e
           export XZ_OPT='-T0'
+
+          inflate() {
+            echo "Installing $1"
+            case $1 in
+              clang-12 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-11 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-10 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-9 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/clang+llvm-9.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-8 )
+                wget https://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-7 )
+                wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-6 )
+                wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-5 )
+                wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-4 )
+                wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              gcc-4.5 )
+                wget ${{env.compilers-dist-url}}/gcc-4.5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-4.6 )
+                wget ${{env.compilers-dist-url}}/gcc-4.6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-4.7 )
+                wget ${{env.compilers-dist-url}}/gcc-4.7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-4.8 )
+                wget ${{env.compilers-dist-url}}/gcc-4.8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-4.9 )
+                wget ${{env.compilers-dist-url}}/gcc-4.9-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-5 )
+                wget ${{env.compilers-dist-url}}/gcc-5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-6 )
+                wget ${{env.compilers-dist-url}}/gcc-6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-7 )
+                wget ${{env.compilers-dist-url}}/gcc-7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-8 )
+                wget ${{env.compilers-dist-url}}/gcc-8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              * )
+                echo "Unknown compiler required"
+                exit 1
+                ;;
+            esac
+          } 
+          IFS=',' read -r -a compilers <<< "${{env.compilers}}"
+          compilers=( $(IFS=$'\n'; echo "${compilers[*]}" | sort -V) )
           mkdir ${{env.dist-dir}}
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          for compiler in "${compilers[@]}"
+          do
+            inflate $compiler ${{env.dist-dir}}
+          done
           wait
-      - name: Download gcc 4.9
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-4.9-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Download gcc 5
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-5-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Download gcc 6
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-6-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Download gcc 7
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-7-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Download gcc 8
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-8-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
       - name: Scan build Bambu
         id: scanbuild
         uses: ./.github/actions/scanbuild
         with:
-          jobs: ${{steps.host.outputs.jobs}}
+          jobs: ${{steps.setup.outputs.jobs}}
           config-args: CC=clang-11 CXX=clang++-11 --disable-release --enable-flopoco --enable-glpk
       - name: Upload scan-build report
         uses: actions/upload-artifact@v2
@@ -144,87 +173,115 @@ jobs:
     runs-on: [self-hosted, classA]
     env:
       dist-dir: dist
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
       - name: Env setup
-        id: host
+        id: setup
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
           echo "::set-output name=jobs::${{env.host_jobs}}"
-      - name: Prepare ccache timestamp
-        id: ccache_cache_timestamp
-        shell: bash
-        run: |
+          env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
+          if [[ ! -z "${{env.build-compiler}}" ]]; then
+            if [[ "$env_id" != *"${{env.build-compiler}}"* ]]; then
+              env_id+="${{env.build-compiler}}"
+            fi
+          fi
+          echo "::set-output name=env_id::$env_id"
           echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
-      - name: ccache cache files
+      - name: CCache cache files
         uses: actions/cache@v2
         with:
           path: .ccache
-          key: makedist-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          key: makedist-ccache-${{ steps.setup.outputs.timestamp }}
           restore-keys: |
             makedist-ccache-
-      - name: Download clang compilers
+      - name: Autoconf cache files
+        uses: actions/cache@v2
+        with:
+          path: .autoconf
+          key: makedist-autoconf-${{ steps.setup.outputs.env_id }}
+      - name: Download compilers
         shell: bash
         run: |
           set -e
           export XZ_OPT='-T0'
+
+          inflate() {
+            echo "Installing $1"
+            case $1 in
+              clang-12 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-11 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-10 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-9 )
+                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/clang+llvm-9.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-8 )
+                wget https://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-7 )
+                wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-6 )
+                wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-5 )
+                wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              clang-4 )
+                wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+                ;;
+              gcc-4.5 )
+                wget ${{env.compilers-dist-url}}/gcc-4.5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-4.6 )
+                wget ${{env.compilers-dist-url}}/gcc-4.6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-4.7 )
+                wget ${{env.compilers-dist-url}}/gcc-4.7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-4.8 )
+                wget ${{env.compilers-dist-url}}/gcc-4.8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-4.9 )
+                wget ${{env.compilers-dist-url}}/gcc-4.9-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-5 )
+                wget ${{env.compilers-dist-url}}/gcc-5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-6 )
+                wget ${{env.compilers-dist-url}}/gcc-6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-7 )
+                wget ${{env.compilers-dist-url}}/gcc-7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              gcc-8 )
+                wget ${{env.compilers-dist-url}}/gcc-8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+                ;;
+              * )
+                echo "Unknown compiler required"
+                exit 1
+                ;;
+            esac
+          } 
+          IFS=',' read -r -a compilers <<< "${{env.compilers}}"
+          compilers=( $(IFS=$'\n'; echo "${compilers[*]}" | sort -V) )
           mkdir ${{env.dist-dir}}
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          for compiler in "${compilers[@]}"
+          do
+            inflate $compiler ${{env.dist-dir}}
+          done
           wait
-      - name: Download gcc 4.9
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-4.9-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Download gcc 5
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-5-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Download gcc 6
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-6-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Download gcc 7
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-7-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Download gcc 8
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-8-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
       - name: Make Dist
         uses: ./.github/actions/make-dist
         with:
-          jobs: ${{steps.host.outputs.jobs}}
+          jobs: ${{steps.setup.outputs.jobs}}
           config-args: CC=gcc-8 CXX=g++-8 --enable-release --enable-opt --enable-flopoco

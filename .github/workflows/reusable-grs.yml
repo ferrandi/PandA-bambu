@@ -1,4 +1,4 @@
-name: GCC Regression Simple
+name: Reusable GCC Regression Simple
 
 on:
   workflow_call:
