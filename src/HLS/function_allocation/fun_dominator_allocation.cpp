@@ -208,7 +208,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    CustomOrderedSet<unsigned int> reached_from_all;
    for(const auto f_id : root_functions)
    {
-      for(const auto reached_f_id : CG->GetReachedBodyFunctionsFrom(f_id))
+      for(const auto reached_f_id : CG->GetReachedFunctionsFrom(f_id, false))
       {
          reached_from_all.insert(reached_f_id);
       }
@@ -265,7 +265,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                      "-->Allocation thread: " +
                          HLSMgr->CGetFunctionBehavior(top_fid)->CGetBehavioralHelper()->get_function_name());
       const auto top_vertex = CG->GetVertex(top_fid);
-      const auto reached_from_top = CG->GetReachedBodyFunctionsFrom(top_fid);
+      const auto reached_from_top = CG->GetReachedFunctionsFrom(top_fid, false);
 
       CallGraphConstRef subgraph;
       size_t vertex_count;

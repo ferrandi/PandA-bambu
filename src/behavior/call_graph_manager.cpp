@@ -568,12 +568,12 @@ const CustomOrderedSet<unsigned int>& CallGraphManager::GetReachedBodyFunctions(
    return reached_body_functions;
 }
 
-CustomOrderedSet<unsigned int> CallGraphManager::GetReachedBodyFunctionsFrom(unsigned int from) const
+CustomOrderedSet<unsigned int> CallGraphManager::GetReachedFunctionsFrom(unsigned int from, bool with_body) const
 {
    CustomOrderedSet<unsigned int> dummy;
    CustomOrderedSet<unsigned int> f_list;
 
-   CalledFunctionsVisitor vis(allow_recursive_functions, this, f_list, dummy);
+   CalledFunctionsVisitor vis(allow_recursive_functions, this, f_list, with_body ? dummy : f_list);
    std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
    const auto top_vertex = GetVertex(from);
    boost::depth_first_visit(*call_graph, top_vertex, vis,

@@ -478,7 +478,8 @@ unsigned long long memory::get_base_address(unsigned int var, unsigned int funId
 
 unsigned long long int memory::get_first_address(unsigned int funId) const
 {
-   const std::map<unsigned int, memory_symbolRef>& internalVars = (internal.find(funId)->second);
+   THROW_ASSERT(internal.count(funId), "");
+   const auto& internalVars = internal.at(funId);
    unsigned long long int minAddress = UINT_MAX;
    for(const auto& internalVar : internalVars)
    {

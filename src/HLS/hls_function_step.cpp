@@ -94,7 +94,7 @@ bool HLSFunctionStep::HasToBeExecuted() const
    std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
    THROW_ASSERT(funId, "unexpected case");
-   const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);
+   const auto called_functions = call_graph_manager->GetReachedFunctionsFrom(funId);
    for(auto const called_function : called_functions)
    {
       if(called_function == funId)
@@ -162,7 +162,7 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
       {
          case HLSFlowStep_Relationship::CALLED_FUNCTIONS:
          {
-            const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);
+            const auto called_functions = call_graph_manager->GetReachedFunctionsFrom(funId);
             for(auto const function : called_functions)
             {
                if(function != funId)
@@ -215,7 +215,7 @@ DesignFlowStep_Status HLSFunctionStep::Exec()
    bitvalue_version = FB->GetBitValueVersion();
    memory_version = HLSMgr->GetMemVersion();
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-   const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);
+   const auto called_functions = call_graph_manager->GetReachedFunctionsFrom(funId);
    for(auto const called_function : called_functions)
    {
       if(called_function == funId)

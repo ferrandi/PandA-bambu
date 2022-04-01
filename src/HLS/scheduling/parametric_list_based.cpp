@@ -1945,7 +1945,7 @@ void parametric_list_based::compute_function_topological_order()
    const CallGraphManagerConstRef CG = HLSMgr->CGetCallGraphManager();
    CG->CGetCallGraph()->TopologicalSort(topology_sorted_vertex);
 
-   CustomOrderedSet<unsigned> reachable_functions = CG->GetReachedBodyFunctionsFrom(funId);
+   CustomOrderedSet<unsigned> reachable_functions = CG->GetReachedFunctionsFrom(funId);
 
    std::list<unsigned int> topological_sorted_functions;
    for(auto v : topology_sorted_vertex)

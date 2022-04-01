@@ -113,8 +113,11 @@ static void Unfold(const HLS_managerRef& HLSMgr)
     * After the collection of the data on the call sites we can actually start
     * to unfold the call graph
     */
-   const auto FB = HLSMgr->CGetFunctionBehavior(root_function);
-   for(const auto fun_id : CGM->GetReachedBodyFunctionsFrom(root_function))
+   // get the id of the root function
+   const unsigned int root_fun_id = *(root_functions.begin());
+   const auto b = CG->CGetCallGraphInfo()->behaviors.find(root_fun_id);
+   THROW_ASSERT(b != CG->CGetCallGraphInfo()->behaviors.end(), "no behavior for root function " + STR(root_fun_id));
+   for(const auto fun_id : CGM->GetReachedFunctionsFrom(root_fun_id))
    {
       const auto op_graph = HLSMgr->CGetFunctionBehavior(fun_id)->CGetOpGraph(FunctionBehavior::FCFG);
       THROW_ASSERT(boost::num_vertices(*op_graph) >= 2,

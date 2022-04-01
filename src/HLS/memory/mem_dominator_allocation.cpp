@@ -413,7 +413,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    for(const auto top_function : top_functions)
    {
       vertex top_vertex = CG->GetVertex(top_function);
-      CustomOrderedSet<unsigned int> temp = CG->GetReachedBodyFunctionsFrom(top_function);
+      CustomOrderedSet<unsigned int> temp = CG->GetReachedFunctionsFrom(top_function);
       for(const auto temp_int : temp)
       {
          auto cVertex = CG->GetVertex(temp_int);
