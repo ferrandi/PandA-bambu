@@ -843,7 +843,20 @@ namespace llvm
       if(TREE_CODE(t) == GT(TRANSLATION_UNIT_DECL))
          return nullptr;
       if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
-         return nullptr;
+      {
+         const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
+         const llvm::Instruction* ti = av->alloc_inst;
+         if (MDNode* N = ti->getMetadata("annotation"))
+         {
+            std::string allocaname = std::string(cast<MDString>(N->getOperand(0))->getString());
+            if(identifierTable.find(allocaname) == identifierTable.end())
+              identifierTable.insert(allocaname);
+            const void* an = identifierTable.find(allocaname)->c_str();
+            return assignCode(an, GT(IDENTIFIER_NODE));
+         }
+         else
+            return nullptr;
+      }
       if(TREE_CODE(t) == GT(ORIGVAR_DECL))
          return nullptr;
       if(TREE_CODE(t) == GT(LABEL_DECL))
