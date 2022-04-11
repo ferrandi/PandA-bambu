@@ -1470,6 +1470,11 @@ tree_nodeRef tree_manipulation::GetPointerType(const tree_nodeConstRef& ptd, uns
    ///@12     integer_cst      type: @26      low : 32       @26 is bit_size_type
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_PTD)] = STR(ptd->index);
+   auto m64P = parameters->getOption<std::string>(OPT_gcc_m32_mx32).find("-m64") != std::string::npos;
+   if(!algn)
+   {
+      algn = m64P ? ALGN_POINTER_M64 : ALGN_POINTER_M32;
+   }
    IR_schema[TOK(TOK_ALGN)] = STR(algn);
 
    tree_nodeRef pointer_type_node;
@@ -1479,7 +1484,8 @@ tree_nodeRef tree_manipulation::GetPointerType(const tree_nodeConstRef& ptd, uns
    if(!pointer_type_nid)
    {
       pointer_type_nid = this->TreeM->new_tree_node_id();
-      const auto size_node = TreeM->CreateUniqueIntegerCst(SIZE_VALUE_POINTER, GetBitsizeType());
+      const auto size_node =
+          TreeM->CreateUniqueIntegerCst(m64P ? SIZE_VALUE_POINTER_M64 : SIZE_VALUE_POINTER_M32, GetBitsizeType());
 
       ///@12     integer_cst      type: @26      low : 32       @26 is
       /// bit_size_type
@@ -1719,7 +1725,7 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef& call
 
    const auto function_type = tree_helper::CGetType(called_function);
    ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
-   ae_IR_schema[TOK(TOK_TYPE)] = STR(GetPointerType(function_type, ALGN_POINTER)->index);
+   ae_IR_schema[TOK(TOK_TYPE)] = STR(GetPointerType(function_type)->index);
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
 
    std::string args_string;
@@ -2719,7 +2725,7 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef& called_f
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, ce_IR_schema;
    ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
    const auto ft = tree_helper::CGetType(called_function);
-   ae_IR_schema[TOK(TOK_TYPE)] = STR(GetPointerType(ft, ALGN_POINTER)->index);
+   ae_IR_schema[TOK(TOK_TYPE)] = STR(GetPointerType(ft)->index);
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
    const unsigned int ae_id = TreeM->new_tree_node_id();
    TreeM->create_tree_node(ae_id, addr_expr_K, ae_IR_schema);
