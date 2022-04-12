@@ -580,6 +580,8 @@ namespace llvm
                      return ci->use_empty() ? assignCode(t, GT(GIMPLE_CALL)) : assignCode(t, GT(GIMPLE_ASSIGN));
                   case llvm::Intrinsic::fabs:
                      return assignCode(t, GT(GIMPLE_ASSIGN));
+                  case llvm::Intrinsic::sqrt:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));   
                   case llvm::Intrinsic::rint:
                      return assignCode(t, GT(GIMPLE_ASSIGN));
                   case llvm::Intrinsic::fmuladd:
@@ -732,6 +734,15 @@ namespace llvm
                return "fabs";
             else if(fd->getReturnType()->isFP128Ty())
                return "fabsl";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         case llvm::Intrinsic::sqrt:
+            if(fd->getReturnType()->isFloatTy())
+               return "sqrtf";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "sqrt";
+            else if(fd->getReturnType()->isFP128Ty())
+               return "sqrtl";
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
          case llvm::Intrinsic::memcpy:
@@ -5033,7 +5044,7 @@ namespace llvm
             declname == "atan" or declname == "atanh" or declname == "atan2" or declname == "cbrt" or
             declname == "ceil" or declname == "copysign" or declname == "cos" or declname == "cosh" or
             declname == "erf" or declname == "erfc" or declname == "exp" or declname == "exp2" or declname == "expm1" or
-            declname == "fabs" or declname == "fdim" or declname == "floor" or declname == "fma" or
+            declname == "fabs" or declname == "sqrt" or declname == "fdim" or declname == "floor" or declname == "fma" or
             declname == "fmax" or declname == "fmin" or declname == "fmod" or declname == "frexp" or
             declname == "hypot" or declname == "ilogb" or declname == "ldexp" or declname == "lgamma" or
             declname == "llrint" or declname == "llround" or declname == "log" or declname == "log10" or
@@ -5601,6 +5612,7 @@ namespace llvm
       switch(id)
       {
          case llvm::Intrinsic::fabs:
+         case llvm::Intrinsic::sqrt:
          case llvm::Intrinsic::memcpy:
          case llvm::Intrinsic::memset:
          case llvm::Intrinsic::memmove:
