@@ -69,6 +69,8 @@ You may also download pre-compiled AppImage distributions and VMs at https://pan
 
 Dockerfiles are also available under *etc/containers* along with a VS Code devcontainer configuration which may be useful for development purposes. Pre-built docker images can be downloaded at [Docker Hub](https://hub.docker.com/u/bambuhls).
 
+A Google Colab notebook with many examples to play with Bambu is available. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ferrandi/PandA-bambu/blob/main/documentation/tutorial_date_2022/bambu.ipynb)
+
 
 <br>
 
