@@ -575,6 +575,8 @@ namespace llvm
                      return ci->use_empty() ? assignCode(t, GT(GIMPLE_CALL)) : assignCode(t, GT(GIMPLE_ASSIGN));
                   case llvm::Intrinsic::fabs:
                      return assignCode(t, GT(GIMPLE_ASSIGN));
+                  case llvm::Intrinsic::sqrt:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));
                   case llvm::Intrinsic::rint:
                      return assignCode(t, GT(GIMPLE_ASSIGN));
                   case llvm::Intrinsic::fmuladd:
@@ -727,6 +729,15 @@ namespace llvm
                return "fabs";
             else if(fd->getReturnType()->isFP128Ty())
                return "fabsl";
+            fd->print(llvm::errs());
+            report_fatal_error("Plugin Error");
+         case llvm::Intrinsic::sqrt:
+            if(fd->getReturnType()->isFloatTy())
+               return "sqrtf";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "sqrt";
+            else if(fd->getReturnType()->isFP128Ty())
+               return "sqrtl";
             fd->print(llvm::errs());
             report_fatal_error("Plugin Error");
          case llvm::Intrinsic::memcpy:
@@ -5518,6 +5529,7 @@ namespace llvm
       switch(id)
       {
          case llvm::Intrinsic::fabs:
+         case llvm::Intrinsic::sqrt:
          case llvm::Intrinsic::memcpy:
          case llvm::Intrinsic::memset:
          case llvm::Intrinsic::memmove:
