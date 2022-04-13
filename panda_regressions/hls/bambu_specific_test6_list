@@ -52,4 +52,5 @@ bambu_specific_test6/insert_extract_element.ll --benchmark-name=insert_extract3_
 bambu_specific_test6/insert_extract_element.ll --benchmark-name=insert_extract4 --top-fname=test3 --generate-tb="P0=1,P1=2,P2=3,P3=4,P4=5,P5=6,P6=7,P7=8"
 bambu_specific_test6/insert_extract_element.ll --benchmark-name=insert_extract4_output_c --top-fname=test3 --generate-tb="P0=1,P1=2,P2=3,P3=4,P4=5,P5=6,P6=7,P7=8" --pretty-print=output.c
 
+bambu_specific_test6/gramschmidt.ll --benchmark-name=gramschmidt_double --top-fname=kernel_gramschmidt --generate-tb=BENCHMARKS_ROOT/bambu_specific_test6/gramschmidt_test.xml -lm
 bambu_specific_test6/bin_testbench.c --top-fname=kernel --generate-tb=BENCHMARKS_ROOT/bambu_specific_test6/bin_test.xml --experimental-setup=BAMBU-BALANCED-MP --file-input-data=BENCHMARKS_ROOT/bambu_specific_test6/bin_test.dat
