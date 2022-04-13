@@ -392,6 +392,7 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
    const structural_objectRef& Datapath = HLS->datapath->get_circ();
    const std::list<unsigned int>& function_parameters = BH->get_parameters();
    const auto conn = HLS->Rconn;
+   const auto curr_address_bitsize = HLSMgr->get_address_bitsize();
    for(const auto function_parameter : function_parameters)
    {
       // generic_objRef input = conn.get_port(function_parameter, conn_binding::IN);
@@ -407,7 +408,7 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          !HLSMgr->Rmem->has_parameter_base_address(function_parameter, HLS->functionId) &&
          !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
       {
-         port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
+         port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", curr_address_bitsize));
       }
       else
       {
@@ -469,7 +470,7 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
             !HLSMgr->Rmem->has_parameter_base_address(return_type_index, HLS->functionId) &&
             !HLSMgr->Rmem->is_parm_decl_stored(return_type_index))
          {
-            port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
+            port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", curr_address_bitsize));
          }
          else
          {
