@@ -1067,7 +1067,7 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
    if(changed_type)
    {
       // Replace function type reference when modifications have been applied
-      f_decl->type = is_ptr_type ? tree_man->GetPointerType(f_type, ALGN_POINTER) : f_type;
+      f_decl->type = is_ptr_type ? tree_man->GetPointerType(f_type) : f_type;
    }
    return changed_parm || changed_type;
 }
@@ -1585,7 +1585,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          const auto called_fd = GetPointerS<const function_decl>(GET_CONST_NODE(fn));
          ae->type = GET_CONST_NODE(called_fd->type)->get_kind() == pointer_type_K ?
                         called_fd->type :
-                        tree_man->GetPointerType(called_fd->type, ALGN_POINTER);
+                        tree_man->GetPointerType(called_fd->type);
          modified = true;
       }
       if(tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn))) ==
