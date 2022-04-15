@@ -94,9 +94,6 @@ class application_manager
 
    unsigned int address_bitsize;
 
-   /// True if only one root function has to be considered
-   const bool single_root_function;
-
    /// store memory objects which can be written
    CustomOrderedSet<unsigned int> written_objects;
 
@@ -137,11 +134,10 @@ class application_manager
    /**
     * Constructor
     * @param function_expander is the expander used to determine if a called function has to be examinedi
-    * @param single_root_function specifies if only one root function has to be considered
     * @param allow_recursive_functions specifies if recursive functions are allowed
     * @param _Param is the reference to the class containing all the parameters
     */
-   application_manager(const FunctionExpanderConstRef function_expander, const bool single_root_function,
+   application_manager(const FunctionExpanderConstRef function_expander,
                        const bool allow_recursive_functions, const ParameterConstRef _Param);
 
    /**

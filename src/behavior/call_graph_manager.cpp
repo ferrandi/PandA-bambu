@@ -88,13 +88,12 @@
 #define FEEDBACK_SELECTOR 1 << 1
 //@}
 
-CallGraphManager::CallGraphManager(const FunctionExpanderConstRef _function_expander, const bool _single_root_function,
+CallGraphManager::CallGraphManager(const FunctionExpanderConstRef _function_expander,
                                    const bool _allow_recursive_functions, const tree_managerConstRef _tree_manager,
                                    const ParameterConstRef _Param)
     : call_graphs_collection(new CallGraphsCollection(CallGraphInfoRef(new CallGraphInfo()), _Param)),
       call_graph(new CallGraph(call_graphs_collection, STD_SELECTOR | FEEDBACK_SELECTOR)),
       tree_manager(_tree_manager),
-      single_root_function(_single_root_function),
       allow_recursive_functions(_allow_recursive_functions),
       Param(_Param),
       debug_level(_Param->get_class_debug_level(GET_CLASS(*this))),
