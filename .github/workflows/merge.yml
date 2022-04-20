@@ -1,14 +1,12 @@
-name: Merge PR
+name: Merge Pull Request
 on:
   pull_request:
     types: [closed]
-    branches:
-      - main
 
 env:
   storage-url: ${{secrets.CI_STORAGE_URL}}
-  storage-user: '${{secrets.CI_STORAGE_USER}}'
-  storage-token: '${{secrets.CI_STORAGE_TOKEN}}'
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
 
 jobs:
   remove-dist:
@@ -25,7 +23,7 @@ jobs:
           fi
           curl -L --fail -X DELETE $AUTH "$PRDIR_URL"
   update-results:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && github.base_ref == 'main'
     runs-on: [self-hosted]
     steps:
       - name: Update main performance results
