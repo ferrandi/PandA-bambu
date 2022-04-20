@@ -78,7 +78,7 @@ jobs:
       package-name: ${{env.package-name}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{github.event.inputs.branch}}
       - name: Env setup
@@ -96,14 +96,14 @@ jobs:
           echo "::set-output name=env_id::$env_id"
           echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
       - name: CCache cache files
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: .ccache
           key: panda-build-ccache-${{ steps.setup.outputs.timestamp }}
           restore-keys: |
             panda-build-ccache-
       - name: Autoconf cache files
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: .autoconf
           key: panda-build-autoconf-${{ steps.setup.outputs.env_id }}

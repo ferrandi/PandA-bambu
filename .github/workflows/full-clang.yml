@@ -46,7 +46,7 @@ jobs:
             script: all_clang_CHStone-frontend.sh -c=-wH
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -73,7 +73,7 @@ jobs:
           ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{matrix.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
