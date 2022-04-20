@@ -84,8 +84,8 @@ jobs:
     uses: ./.github/workflows/reusable-grs.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
-      test-compilers: '"I386_GCC45 --skip_list 20071202-1",I386_GCC46,I386_GCC47,I386_GCC48,I386_GCC49,I386_GCC5,I386_GCC6,I386_GCC7,I386_GCC8'
-      additional-args: '"","-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1,memset-3"'
+      test-compilers: \"I386_GCC45 --skip_list 20071202-1\",I386_GCC46,I386_GCC47,I386_GCC48,I386_GCC49,I386_GCC5,I386_GCC6,I386_GCC7,I386_GCC8
+      additional-args: \"\",\"-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1,memset-3\"
     secrets:
       CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
       CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
@@ -96,7 +96,7 @@ jobs:
     uses: ./.github/workflows/reusable-grs-vhdl.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
-      test-compilers: '"I386_GCC45 --skip_list 20071202-1",I386_GCC46,I386_GCC47,I386_GCC48,I386_GCC49,I386_GCC5,I386_GCC6,I386_GCC7,I386_GCC8'
+      test-compilers: \"I386_GCC45 --skip_list 20071202-1\",I386_GCC46,I386_GCC47,I386_GCC48,I386_GCC49,I386_GCC5,I386_GCC6,I386_GCC7,I386_GCC8
     secrets:
       CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
       CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
