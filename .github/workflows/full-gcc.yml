@@ -79,7 +79,7 @@ jobs:
           name: ${{matrix.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
-  gcc_regression_simple:
+  grs:
     needs: [build, simulate-all]
     uses: ./.github/workflows/reusable-grs.yml
     with:
@@ -91,7 +91,7 @@ jobs:
       CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
       CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
 
-  gcc_regression_simple-vhdl:
+  grs-vhdl:
     needs: [build, simulate-all]
     uses: ./.github/workflows/reusable-grs-vhdl.yml
     with:

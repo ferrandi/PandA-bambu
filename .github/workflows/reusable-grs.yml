@@ -81,7 +81,7 @@ jobs:
           libm_array="$(to_json_obj_rec "" "args" "${args}" "compiler" "${{env.test-compilers}}")"
           echo "::set-output name=json::{\"include\":[${libm_array}]}"
 
-  grs:
+  regressions:
     needs: [setup]
     runs-on: [self-hosted, long]
     env:
