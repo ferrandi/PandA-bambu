@@ -65,20 +65,23 @@ jobs:
               env_id+="${{env.build-compiler}}"
             fi
           fi
+          echo "::set-output name=version::$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')"
           echo "::set-output name=env_id::$env_id"
           echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
       - name: CCache cache files
         uses: actions/cache@v3
         with:
           path: .ccache
-          key: scanbuild-ccache-${{ steps.setup.outputs.timestamp }}
+          key: scanbuild-ccache-${{steps.setup.outputs.version}}-${{steps.setup.outputs.timestamp}}
           restore-keys: |
-            scanbuild-ccache-
+            scanbuild-ccache-${{steps.setup.outputs.version}}-
       - name: Autoconf cache files
         uses: actions/cache@v3
         with:
           path: .autoconf
-          key: scanbuild-autoconf-${{ steps.setup.outputs.env_id }}
+          key: scanbuild-autoconf-${{steps.setup.outputs.version}}-${{steps.setup.outputs.env_id}}-${{ steps.setup.outputs.timestamp }}
+          restore-keys: |
+            scanbuild-autoconf-${{steps.setup.outputs.version}}-${{steps.setup.outputs.env_id}}-
       - name: Download compilers
         shell: bash
         run: |
@@ -115,20 +118,23 @@ jobs:
               env_id+="${{env.build-compiler}}"
             fi
           fi
+          echo "::set-output name=version::$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')"
           echo "::set-output name=env_id::$env_id"
           echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
       - name: CCache cache files
         uses: actions/cache@v3
         with:
           path: .ccache
-          key: makedist-ccache-${{ steps.setup.outputs.timestamp }}
+          key: makedist-ccache-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.timestamp }}
           restore-keys: |
-            makedist-ccache-
+            makedist-ccache-${{steps.setup.outputs.version}}-
       - name: Autoconf cache files
         uses: actions/cache@v3
         with:
           path: .autoconf
-          key: makedist-autoconf-${{ steps.setup.outputs.env_id }}
+          key: makedist-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-${{ steps.setup.outputs.timestamp }}
+          restore-keys: |
+            makedist-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-
       - name: Download compilers
         shell: bash
         run: |

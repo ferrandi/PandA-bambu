@@ -92,20 +92,23 @@ jobs:
               env_id+="${{env.build-compiler}}"
             fi
           fi
+          echo "::set-output name=version::$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')"
           echo "::set-output name=env_id::$env_id"
           echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
       - name: CCache cache files
         uses: actions/cache@v3
         with:
           path: .ccache
-          key: panda-build-ccache-${{ steps.setup.outputs.timestamp }}
+          key: panda-build-ccache-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.timestamp }}
           restore-keys: |
-            panda-build-ccache-
+            panda-build-ccache-${{steps.setup.outputs.version}}-
       - name: Autoconf cache files
         uses: actions/cache@v3
         with:
           path: .autoconf
-          key: panda-build-autoconf-${{ steps.setup.outputs.env_id }}
+          key: panda-build-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-${{ steps.setup.outputs.timestamp }}
+          restore-keys: |
+            panda-build-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-
       - name: Download compilers
         shell: bash
         run: |
