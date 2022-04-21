@@ -1,5 +1,3 @@
-SHELL := /bin/bash
-
 default: all
 
 all:
@@ -9,7 +7,7 @@ all:
 	          mkdir src/logic_synthesis/2lev/m4; \
 	       fi \
 	 fi
-	 @if ! autoreconf -m -iv --warning=none |& tee autoreconf_log; then \
+	 @if ! autoreconf -m -iv --warning=none > autoreconf_log 2>&1; then \
 	     if `grep -q"required directory" autoreconf_log`; then \
 	        grep -h "required directory" autoreconf_log | awk -F'directory' {'print $$2'} | awk {'print $$1'} | sort | uniq | while read -r line; do mkdir -v $$line; done; \
 	        if ! autoreconf -m -iv --warning=none; then \
@@ -28,7 +26,7 @@ all:
 	 fi
 
 clean:
-	rm -rf autoreconf_log compile {,l}config.* configure.scan depcomp install-sh ltmain.sh missing mkinstalldirs autom4te.cache autoscan.log aclocal.m4 configure ylwrap
+	rm -rf config.* configure.scan depcomp install-sh ltmain.sh missing mkinstalldirs autom4te.cache auxdir autoscan.log aclocal.m4 configure ylwrap
 
 cleanIN:
 	for a in `find . -iname Makefile.in `; do rm -f "$$a"; done
