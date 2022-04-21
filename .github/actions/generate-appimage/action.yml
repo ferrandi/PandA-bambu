@@ -1,0 +1,23 @@
+name: "Panda build"
+description: "Configure, build, and generate Panda Bambu appimage"
+inputs:
+  config-args:
+    description: "Configure command line arguments"
+    required: false
+    default: ""
+  jobs:
+    description: "Parallel jobs"
+    required: false
+    default: "1"
+outputs:
+  appimage:
+    description: "Output appimage file"
+  dist-dir:
+    description: "Distribution directory with appimage contents"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  env:
+    J: ${{inputs.jobs}}
+  args:
+    - ${{inputs.config-args}}

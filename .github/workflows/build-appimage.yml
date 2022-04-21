@@ -191,7 +191,7 @@ jobs:
           wait
       - name: Build Bambu application
         id: build
-        uses: ./.github/actions/generate-bin
+        uses: ./.github/actions/generate-appimage
         with:
           config-args: ${{env.configure}} --enable-Werror
           jobs: ${{steps.setup.outputs.jobs}}
