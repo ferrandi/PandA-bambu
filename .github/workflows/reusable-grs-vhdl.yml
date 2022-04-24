@@ -88,7 +88,7 @@ jobs:
       args: -c=--simulator=MODELSIM -c=-wH
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 2
       matrix: ${{fromJson(needs.setup.outputs.grs-matrix)}}
     steps:
       - name: Checkout repository
@@ -136,11 +136,11 @@ jobs:
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   libm:
-    needs: [setup]
+    needs: [setup, regressions]
     runs-on: [self-hosted, long]
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 2
       matrix: ${{fromJson(needs.setup.outputs.libm-matrix)}}
     env:
       script: generic_libm-tests.sh
