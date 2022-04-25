@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <assert.h>
 extern int INPUT_SIZE;
-void run_benchmark( void *args );
+__attribute((noinline)) void run_benchmark( void *args );
 
 #ifdef BAMBU_PROFILING
 extern void __builtin_bambu_time_start();

@@ -49,7 +49,7 @@ struct bench_args_t {
 int INPUT_SIZE = sizeof(struct bench_args_t);
 
 
-void run_benchmark( void *vargs ) {
+__attribute((noinline)) void run_benchmark( void *vargs ) {
   struct bench_args_t *args = (struct bench_args_t *)vargs;
   kmp( args->pattern, args->input, args->kmpNext);
 }
