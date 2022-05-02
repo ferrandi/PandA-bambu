@@ -63,11 +63,11 @@ runs:
           CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
         fi
         mkdir -p main-reports
-        curl -s -L --fail $CURL_CMD $PKG_URL -o main-reports/${{inputs.test-id}}.csv
-        if [[ $? -eq 0 ]]; then
+        if curl -s -L --fail $CURL_CMD $PKG_URL -o main-reports/${{inputs.test-id}}.csv; then
           echo "::set-output name=found::1"
         else
           echo "::warning:: No previous benchmark result found to compare"
+          echo "::set-output name=found::0"
         fi
         exit 0
     - name: Compare performance results
