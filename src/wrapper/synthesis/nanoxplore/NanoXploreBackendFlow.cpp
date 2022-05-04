@@ -69,9 +69,6 @@
 #define NANOXPLORE_MEM "NANOXPLORE_MEM"
 #define NANOXPLORE_POWER "NANOXPLORE_POWER"
 
-#define NANOXPLORE_BYPASS_SET(NANOXPLORE_BYPASS) \
-   (std::string("export NANOXPLORE_BYPASS=") + STR(NANOXPLORE_BYPASS) + std::string(";"))
-
 NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
                                              const target_managerRef _target)
     : BackendFlow(_Param, _flow_name, _target)
@@ -84,10 +81,11 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
                     "through --nanoxplore-root option is preferred.");
    }
    const auto lic_path = std::getenv("LM_LICENSE_FILE");
-   if(!lic_path || std::string(lic_path) == "")
+   const auto nx_lic_path = std::getenv("NXLMD_LICENSE_FILE");
+   if((!lic_path || std::string(lic_path) == "") && (!nx_lic_path || std::string(nx_lic_path) == ""))
    {
-      THROW_WARNING("NanoXplore license file has not been specified. User must set LM_LICENSE_FILE variable to point "
-                    "to the license file location.");
+      THROW_WARNING("NanoXplore license file has not been specified. User must set LM_LICENSE_FILE or "
+                    "NXLMD_LICENSE_FILE variable to point to the license file location.");
    }
    const auto bypass_name = std::getenv("NANOXPLORE_BYPASS");
    if((!bypass_name || std::string(bypass_name) == "") && !Param->isOption(OPT_nanoxplore_bypass))
@@ -273,28 +271,21 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
 void NanoXploreBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing flow configuration");
-   std::string setupscr;
+   script << "#configuration" << std::endl;
    if(Param->isOption(OPT_nanoxplore_root))
    {
       const auto nxroot = Param->getOption<std::string>(OPT_nanoxplore_root);
-      setupscr += "export PATH=$PATH:" + nxroot + "/bin";
+      script << "export PATH=$PATH:" + nxroot + "/bin" << std::endl << std::endl;
    }
-   if(setupscr.size() && setupscr != "0")
-   {
-      script << "#configuration" << std::endl;
-      if(boost::algorithm::starts_with(setupscr, "export"))
-      {
-         script << setupscr + " >& /dev/null; ";
-      }
-      else
-      {
-         script << ". " << setupscr << " >& /dev/null; ";
-      }
-      script << std::endl << std::endl;
-   }
+   script << "if [ ! -z \"$NXLMD_LICENSE_FILE\" ]; then" << std::endl;
+   script << "  if [[ \"$NXLMD_LICENSE_FILE\" != \"$LM_LICENSE_FILE\" ]]; then" << std::endl;
+   script << "    export LM_LICENSE_FILE=\"$NXLMD_LICENSE_FILE\"" << std::endl;
+   script << "  fi" << std::endl;
+   script << "fi" << std::endl << std::endl;
    if(Param->isOption(OPT_nanoxplore_bypass))
    {
-      script << NANOXPLORE_BYPASS_SET(Param->getOption<std::string>(OPT_nanoxplore_bypass)) << std::endl;
+      script << "export NANOXPLORE_BYPASS=\"" << Param->getOption<std::string>(OPT_nanoxplore_bypass) << "\""
+             << std::endl;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written flow configuration");
 }
