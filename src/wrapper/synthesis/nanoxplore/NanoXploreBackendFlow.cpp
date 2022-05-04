@@ -78,7 +78,7 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating NanoXplore Backend Flow ::.");
-   if(!Param->isOption(OPT_nanoxplore_settings))
+   if(!Param->isOption(OPT_nanoxplore_root))
    {
       THROW_WARNING("NanoXplore install directory was not specified, fallback on path. Specifying NanoXplore root "
                     "through --nanoxplore-root option is preferred.");
@@ -274,9 +274,10 @@ void NanoXploreBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing flow configuration");
    std::string setupscr;
-   if(Param->isOption(OPT_nanoxplore_settings))
+   if(Param->isOption(OPT_nanoxplore_root))
    {
-      setupscr = Param->getOption<std::string>(OPT_nanoxplore_settings);
+      const auto nxroot = Param->getOption<std::string>(OPT_nanoxplore_root);
+      setupscr += "export PATH=$PATH:" + nxroot + "/bin";
    }
    if(setupscr.size() && setupscr != "0")
    {
