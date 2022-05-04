@@ -3030,7 +3030,7 @@ void BambuParameter::CheckParameters()
       std::vector<boost::filesystem::path> sorted_paths;
       std::copy(boost::filesystem::directory_iterator(parent_dir), boost::filesystem::directory_iterator(),
                 std::back_inserter(sorted_paths));
-      std::sort(sorted_paths.begin(), sorted_paths.end());
+      std::sort(sorted_paths.begin(), sorted_paths.end(), NaturalVersionOrder);
       return sorted_paths;
    };
 
