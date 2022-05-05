@@ -9,7 +9,7 @@ BATCH_ARGS=("--no-iob" "-s" "-fno-delete-null-pointer-checks" "--panda-parameter
 configuration="${device}_$(printf "%04.1f" $period)_$(echo $compiler | tr '[:upper:]' '[:lower:]')"
 OUT_SUFFIX="${configuration}_hls_study"
 
-python $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=${configuration} ${BATCH_ARGS[*]}"\
    -lhls_study_list \
    -o "out${OUT_SUFFIX}" -b$script_dir \

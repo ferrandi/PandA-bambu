@@ -5,7 +5,7 @@ script_dir="$(dirname $(readlink -e $0))"
 BATCH_ARGS=("--no-iob" "--simulate" "--experimental-setup=BAMBU")
 OUT_SUFFIX="output_arf"
 
-python $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=arf ${BATCH_ARGS[*]}"\
    -larf_list \
    -o "out${OUT_SUFFIX}" -b$script_dir \

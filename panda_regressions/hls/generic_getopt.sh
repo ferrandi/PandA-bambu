@@ -15,7 +15,7 @@ showHelp() {
         use_string+=" -c=--clock-period=<period>"
         legend+=$'   --clock-period Select target clock period\n'
     fi
-python     use_string+=" [test_panda.py args]"
+python3     use_string+=" [test_panda.py args]"
     
     echo $use_string
     echo $legend

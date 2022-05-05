@@ -1,6 +1,6 @@
 #!/bin/bash
 script_dir="$(dirname $(readlink -e $0))"
-python $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--simulator=MODELSIM --evaluation=AREA" \
    -ltaste_list -o output_taste -b$script_dir --table=TASTEoutput.tex --name="TASTE" "$@"
 return_value=$?

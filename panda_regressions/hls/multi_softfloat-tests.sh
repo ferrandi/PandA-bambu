@@ -5,7 +5,7 @@ script_dir="$(dirname $(readlink -e $0))"
 BATCH_ARGS=("--simulate" "--soft-float" "--max-ulp=0" "--experimental-setup=BAMBU-PERFORMANCE-MP")
 OUT_SUFFIX="multi_softfloat-tests"
 
-python $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=GCC49   --compiler=I386_GCC49   ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG4  --compiler=I386_CLANG4  ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG5  --compiler=I386_CLANG5  ${BATCH_ARGS[*]}" \
