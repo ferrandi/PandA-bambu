@@ -15,7 +15,7 @@ import threading
 try:
     from defusedxml import minidom
 except ImportError:
-    print>>sys.stderr, 'WARNING: pyhon-defusedxml not available, falling back to unsafe standard libraries...'
+    print>>sys.stderr, 'WARNING: python-defusedxml not available, falling back to unsafe standard libraries...'
     from xml.dom import minidom
 
 from collections import deque
