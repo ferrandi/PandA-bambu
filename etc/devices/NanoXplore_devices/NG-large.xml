@@ -62,7 +62,7 @@
       <cmd name="        fe_table = dict(zip(rows[2], rows[3]))" />
       <cmd name="        fe_num = first_num(fe_table['Count'])" />
       <cmd name="    elif NXMAPversion == 3:" />
-      <cmd name="        fe_num = first_num(next(filter(lambda x: 'Estimated FE occupancy is' in x, lines)))" />
+      <cmd name="        fe_num = first_num(next(iter(filter(lambda x: 'Estimated FE occupancy is' in x, lines))))" />
       <cmd name="    table_lines = first_table_after('The following table lists the number of registers for each instance type', lines)" />
       <cmd name="    rows = parse_ascii_table(table_lines)" />
       <cmd name="    reg_table = dict(zip(rows[2], rows[3]))" />
