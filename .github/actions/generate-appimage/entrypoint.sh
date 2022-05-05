@@ -148,6 +148,8 @@ EOF
 cat > $dist_dir/usr/bin/tool_select.sh << EOF
 #!/bin/bash
 export LC_ALL="C"
+unset PYTHONHOME  # Python is not bundled with this AppImage
+unset PYTHONPATH
 BINARY_NAME=\$(basename "\$ARGV0")
 BINARY_PATH="\$APPDIR/usr/bin/\$BINARY_NAME"
 if [ "\$BINARY_NAME" == "debug_terminal" ]; then
