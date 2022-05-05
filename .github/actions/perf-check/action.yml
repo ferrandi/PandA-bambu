@@ -79,7 +79,7 @@ runs:
           score="-s ${{ inputs.score }}"
         fi
         worse_count="0"
-        ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} $score -o $COMPARE_CSV --returnfail "main-reports/${{inputs.test-id}}.csv" "${{inputs.new-results}}" || worse_count=$?
+        python ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} $score -o $COMPARE_CSV --returnfail "main-reports/${{inputs.test-id}}.csv" "${{inputs.new-results}}" || worse_count=$?
         if [[ "$worse_count" != "0" ]]; then
           echo "::set-output name=out-csv::$COMPARE_CSV"
           echo "::warning:: Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"

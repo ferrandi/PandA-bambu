@@ -5,7 +5,7 @@ ARGS="--simulator=MODELSIM -DBAMBU_PROFILING -fno-inline -fno-inline-functions -
 
 NAME=$(basename $0 .sh)
 DIRNAME=${root_dir##*/}
-$root_dir/../../etc/scripts/test_panda.py --spider-style="$root_dir/latex_format_bambu_results_altera_synth.xml" --tool=bambu -l$root_dir/list -ooutput_$NAME --args="$ARGS" -t120m --benchmarks_root=$root_dir -ooutput_${DIRNAME}_$NAME --name=${DIRNAME}_$NAME --table=${DIRNAME}_$NAME.tex "$@"
+python $root_dir/../../etc/scripts/test_panda.py --spider-style="$root_dir/latex_format_bambu_results_altera_synth.xml" --tool=bambu -l$root_dir/list -ooutput_$NAME --args="$ARGS" -t120m --benchmarks_root=$root_dir -ooutput_${DIRNAME}_$NAME --name=${DIRNAME}_$NAME --table=${DIRNAME}_$NAME.tex "$@"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
