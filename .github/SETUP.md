@@ -26,7 +26,12 @@ Some environment variables are expected to be set by each runner host:
 ## Python support
 Current CI implementation requires Python 3.6.15 to be available in the runner environment. Pyenv is recommended to provide the support.
 
+Use the following to install the required Python version through PyEnv and set it as global default.
+
 ```
 CONFIGURE_OPTS="--enable-shared" pyenv install 3.6.15
 pyenv global 3.6.15
 ```
+
+Note that Github Runners are launched as systemd services, thus `~/.bashrc` or `~/.profile` are not loaded.
+A `.path` file should be added in the runner directory containing standard _PATH_ variable prepended with PyEnv shims and bin paths.
