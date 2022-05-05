@@ -30,9 +30,6 @@ outputs:
   compare-csv:
     description: "Compare output csv file"
     value: ${{ steps.cmp.outputs.out-csv }}
-  is-better:
-    description: "True if new results are better than main, false else"
-    value: ${{ steps.cmp.outputs.better }}
 runs:
   using: "composite"
   steps:
@@ -85,9 +82,6 @@ runs:
         ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} $score -o $COMPARE_CSV --returnfail "main-reports/${{inputs.test-id}}.csv" "${{inputs.new-results}}" || worse_count=$?
         if [[ "$worse_count" != "0" ]]; then
           echo "::set-output name=out-csv::$COMPARE_CSV"
-          echo "::set-output name=better::0"
           echo "::warning:: Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
-        else
-          echo "::set-output name=better::1"
         fi
         exit 0
