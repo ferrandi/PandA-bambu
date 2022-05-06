@@ -96,7 +96,7 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != "" }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
@@ -173,7 +173,7 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != "" }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
@@ -228,7 +228,7 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != "" }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
@@ -283,7 +283,7 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != "" }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
@@ -395,7 +395,7 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != "" }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
@@ -487,7 +487,7 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != "" }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
@@ -541,7 +541,7 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != "" }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
@@ -714,7 +714,7 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != "" }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
@@ -786,7 +786,7 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != "" }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
