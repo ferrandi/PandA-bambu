@@ -2794,7 +2794,7 @@ std::string FloatFormat::ToString() const
 FloatFormatRef FloatFormat::FromString(std::string ff_str)
 {
    std::replace(ff_str.begin(), ff_str.end(), '_', '-');
-   static boost::regex fp_format("^e(\\d+)m(\\d+)b([_-]?\\d+)(\\D)(\\D)(\\D*)(\\d?)$");
+   static const boost::regex fp_format("^e(\\d+)m(\\d+)b([_-]?\\d+)(\\D)(\\D)(\\D*)(\\d?)$");
    boost::cmatch what;
    if(boost::regex_search(ff_str.data(), what, fp_format))
    {
