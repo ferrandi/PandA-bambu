@@ -1285,9 +1285,9 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          {
             command += " -panda-topfname=" + fname;
          }
-         command +=
-             " -domfrontier -domtree -memdep -memoryssa -lazy-value-info -aa -assumption-cache-tracker -targetlibinfo "
-             "-loops -simplifycfg -mem2reg -globalopt -break-crit-edges -dse -adce -loop-load-elim";
+         command += " -vectorize-loops=false -vectorize-slp=false -domfrontier -domtree -memdep -memoryssa "
+                    "-lazy-value-info -aa -assumption-cache-tracker -targetlibinfo -loops -simplifycfg -mem2reg "
+                    "-globalopt -break-crit-edges -dse -adce -loop-load-elim";
          command += " " + temporary_file_o_bc;
          temporary_file_o_bc =
              boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
@@ -3813,6 +3813,7 @@ std::string CompilerWrapper::clang_recipes(
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
          )
+         {
             complex_recipe +=
                 "-" + GepiCanon_plugin_name +
                 "PS "
@@ -3828,11 +3829,13 @@ std::string CompilerWrapper::clang_recipes(
                 "FV "
                 "-ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
                 "-loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll -simplifycfg ";
+         }
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
          )
+         {
             complex_recipe += "-" + expandMemOps_plugin_name +
                               " "
                               "-" +
@@ -3846,6 +3849,7 @@ std::string CompilerWrapper::clang_recipes(
                               "BVR "
                               "-" +
                               CSROA_plugin_name + "D ";
+         }
          complex_recipe += "-ipsccp -globalopt -dse -loop-unroll "
                            "-instcombine "
                            "-libcalls-shrinkwrap "
@@ -3980,7 +3984,9 @@ std::string CompilerWrapper::clang_recipes(
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
          )
+         {
             complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI ";
+         }
          complex_recipe += "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp "
                            "-globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
                            "-loop-simplify -lcssa-verification -lcssa -basicaa -aa "
@@ -4133,7 +4139,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
+      recipe +=
+          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
             recipe += " -" + GepiCanon_plugin_name +
@@ -4154,7 +4161,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
+      recipe +=
+          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
             recipe += " -" + GepiCanon_plugin_name +
