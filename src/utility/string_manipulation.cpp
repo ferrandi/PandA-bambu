@@ -111,7 +111,7 @@ std::string string_demangle(const std::string& input)
    return status == 0 ? std::string(res.get()) : "";
 }
 
-static boost::regex fixed_def("a[cp]_(u)?fixed<\\s*(\\d+)\\s*,\\s*(\\d+),?\\s*(\\w+)?[^>]*>[^\\d-]*");
+static const boost::regex fixed_def("a[cp]_(u)?fixed<\\s*(\\d+)\\s*,\\s*(\\d+),?\\s*(\\w+)?[^>]*>[^\\d-]*");
 #define FD_GROUP_U 1
 #define FD_GROUP_W 2
 #define FD_GROUP_D 3
@@ -271,7 +271,7 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned int preci
    return trimmed_value;
 }
 
-static boost::regex fixp_val("(\\d+\\.?\\d*)");
+static const boost::regex fixp_val("(\\d+\\.?\\d*)");
 
 std::string FixedPointReinterpret(const std::string& FP_vector, const std::string& fp_typename)
 {
@@ -443,7 +443,7 @@ unsigned long long convert_fp_to_bits(std::string num, unsigned int precision)
    return 0;
 }
 
-static boost::regex ac_type_def("a[cp]_(u)?(\\w+)<\\s*(\\d+)\\s*,?\\s*(\\d+)?,?\\s*(\\w+)?[^>]*>");
+static const boost::regex ac_type_def("a[cp]_(u)?(\\w+)<\\s*(\\d+)\\s*,?\\s*(\\d+)?,?\\s*(\\w+)?[^>]*>");
 #define AC_GROUP_U 1
 #define AC_GROUP_T 2
 #define AC_GROUP_W 3

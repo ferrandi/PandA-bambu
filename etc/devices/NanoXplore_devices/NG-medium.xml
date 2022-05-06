@@ -1,158 +1,144 @@
 <?xml version="1.0"?>
 <synthesis>
    <flow name="Synthesis">
-      <step id="nxpython_flow" config="nxpython_flow"/>
+      <step id="nxpython_flow" config="nxpython_flow" />
    </flow>
    <flow name="Characterization">
-      <step id="nxpython_flow" config="nxpython_flow"/>
+      <step id="nxpython_flow" config="nxpython_flow" />
    </flow>
    <nxpython config="nxpython_flow">
-      <cmd name="import os"/>
-      <cmd name="import sys"/>
-      <cmd name="import math"/>
-      <cmd name="try:"/>
-      <cmd name="    from StringIO import StringIO ## for Python 2"/>
-      <cmd name="except ImportError:"/>
-      <cmd name="    from io import StringIO ## for Python 3"/>
-      <cmd name="from os import path"/>
-      <cmd name="NXMAPversion=2"/>
-      <cmd name="try:"/>
-      <cmd name="    from nanoxmap import * ## for nxMap 2.9.7"/>
-      <cmd name="except ImportError:"/>
-      <cmd name="    from nxmap import *"/>
-      <cmd name="    NXMAPversion=3"/>
-      <cmd name="print(NXMAPversion)"/>
-      <cmd name="prjEXT='.nxm'"/>
-      <cmd name="if NXMAPversion == 3:"/>
-      <cmd name="    prjEXT='.nym'"/>
+      <cmd name="from functools import reduce" />
+      <cmd name="import glob, math, os, re, sys" />
+      <cmd name="try:" />
+      <cmd name="    from StringIO import StringIO ## for Python 2" />
+      <cmd name="except ImportError:" />
+      <cmd name="    from io import StringIO ## for Python 3" />
+      <cmd name="from os import path" />
+      <cmd name="NXMAPversion=2" />
+      <cmd name="try:" />
+      <cmd name="    from nanoxmap import * ## for nxMap 2.9.7" />
+      <cmd name="except (ImportError, ModuleNotFoundError):" />
+      <cmd name="    from nxmap import *" />
+      <cmd name="    NXMAPversion=3" />
+      <cmd name="print('NXmap version: {}'.format(NXMAPversion))" />
+      <cmd name="prjEXT='.nxm'" />
+      <cmd name="if NXMAPversion == 3:" />
+      <cmd name="    prjEXT='.nym'" />
+      <cmd name="result = StringIO()" />
 
-      <cmd name="result = StringIO()"/>
-      <cmd name="dir = &quot;.&quot;"/>
-      <cmd name="if path.exists(dir + '/pads.py'):" condition="!${__connect_iob__}"/>
-      <cmd name="    os.remove(dir + '/pads.py')" condition="!${__connect_iob__}"/>
-      <cmd name="sys.path.append(dir)"/>
-      <cmd name="project = createProject(dir)"/>
-      <cmd name="project.setVariantName('NG-MEDIUM-EMBEDDED')" condition="!${__connect_iob__}"/>
-      <cmd name="project.setVariantName('NG-MEDIUM')" condition="${__connect_iob__}"/>
-      <cmd name="project.setTopCellName('${__top_id__}')"/>
-      <cmd name="project.addFiles('${__VHDL_library__}', [${__nxpython_sources_macro_list__}])" condition="${__has_VHDL_library__}"/>
-      <cmd name="project.addFiles([${__nxpython_sources_macro_list__}])" condition="!${__has_VHDL_library__}"/>
-      <cmd name="project.setOptions({'ManageAsynchronousReadPort': 'Yes', 'ManageUnconnectedOutputs': 'Ground', 'ManageUnconnectedSignals': 'Ground','DefaultRAMMapping': 'RAM', 'MaxRegisterCount': '12500'})"/>
-      <cmd name="project.createClock('getClockNet(${__clk_name__})', '${__clk_name__}', int(math.floor(float(${__clk_period__}) * float(1000))))"/>
-      <cmd name="from ${__backend_script_extensions__} import ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>
-      <cmd name="if path.exists(dir + '/pads.py'):"/>
-      <cmd name="    from pads import pads"/>
-      <cmd name="    project.addPads(pads)"/>
-      <cmd name="project.save('native'+prjEXT)"/>
-      <cmd name="if not project.synthesize():"/>
-      <cmd name="    sys.exit(1)"/>
-      <cmd name="project.save('synthesized'+prjEXT)"/>
-      <cmd name="if not project.place():"/>
-      <cmd name="    sys.exit(1)"/>
-      <cmd name="project.save('placed'+prjEXT)"/>
-      <cmd name="if NXMAPversion == 2 and not path.exists(dir + '/pads.py'):"/>
-      <cmd name="    project.savePorts('pads.py')"/>
-      <cmd name="if not project.route():"/>
-      <cmd name="    sys.exit(1)"/>
-      <cmd name="project.save('routed'+prjEXT)"/>
-      <cmd name="analyzer = project.createAnalyzer()"/>
-      <cmd name="analyzer.launch()"/>
-      <cmd name="project.generateBitstream('bitfile.nxb')"/>
-      <cmd name="#print 'Errors: ', getErrorCount()"/>
-      <cmd name="#print 'Warnings: ', getWarningCount()"/>
+      <cmd name="table_corner = '+'" />
+      <cmd name="table_edge = '|'" />
+      <cmd name="table_row = '+--'" />
+      <cmd name="def first_table_after(table_header, lines):" />
+      <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_header in x, lines)), None)):]" />
+      <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_row in x, lines)), None)):]" />
+      <cmd name="    ltrim = lines[0].find(table_corner)" />
+      <cmd name="    lines = lines[:lines.index(next(iter(filter(lambda x: all(t not in x[ltrim:] for t in [table_row, table_edge]), lines)), None))]" />
+      <cmd name="    return list(map(lambda x: x[ltrim:], filter(lambda x: any(t in x[ltrim:] for t in [table_row, table_edge]), lines)))" />
+      <cmd name="def parse_ascii_table(table_lines):" />
+      <cmd name="    rows = []" />
+      <cmd name="    for line in table_lines:" />
+      <cmd name="        if table_row in line:" />
+      <cmd name="            continue" />
+      <cmd name="        splitted_line = list(map(str.strip, filter(lambda x: x!=table_edge, line.split(table_edge))))[1:-1]" />
+      <cmd name="        rows.append(['']*len(splitted_line))" />
+      <cmd name="        for i in range(len(splitted_line)):" />
+      <cmd name="            rows[-1][i]=splitted_line[i]" />
+      <cmd name="    return rows" />
+      <cmd name="def get_res(log_lines):" />
+      <cmd name="    num_re = re.compile(r&quot;(\d+)&quot;)" />
+      <cmd name="    first_num = lambda str: num_re.search(str).group(1)" />
+      <cmd name="    table_lines = first_table_after('List of Pins:', log_lines)" />
+      <cmd name="    rows = parse_ascii_table(table_lines)" />
+      <cmd name="    pin_table = dict(zip(rows[1], rows[2]))" />
+      <cmd name="    lines = log_lines[log_lines.index(next(iter(filter(lambda x: 'Reporting routed project' in x, log_lines)), None)):]" />
+      <cmd name="    table_lines = first_table_after('Reporting instances', lines)" />
+      <cmd name="    rows = parse_ascii_table(table_lines)" />
+      <cmd name="    res_table = dict(zip([' '.join([a,b,c]).strip() for a,b,c in zip(rows[0],rows[1],rows[2])], rows[3]))" />
+      <cmd name="    fe_num = '0'" />
+      <cmd name="    if NXMAPversion == 2:" />
+      <cmd name="        table_lines = first_table_after('The following table details the use of FEs.', lines)" />
+      <cmd name="        rows = parse_ascii_table(table_lines)" />
+      <cmd name="        fe_table = dict(zip(rows[2], rows[3]))" />
+      <cmd name="        fe_num = first_num(fe_table['Count'])" />
+      <cmd name="    elif NXMAPversion == 3:" />
+      <cmd name="        fe_num = first_num(next(iter(filter(lambda x: 'Estimated FE occupancy is' in x, lines))))" />
+      <cmd name="    table_lines = first_table_after('The following table lists the number of registers for each instance type', lines)" />
+      <cmd name="    rows = parse_ascii_table(table_lines)" />
+      <cmd name="    reg_table = dict(zip(rows[2], rows[3]))" />
+      <cmd name="    return [fe_num, first_num(res_table['4-LUT']), reg_table['Count'], first_num(res_table['Memory block']), str(reduce(lambda a, b: a + b, map(int, pin_table.values()))), first_num(res_table['Digital signal processor'])]" />
+      <cmd name="def get_timing(log_lines):" />
+      <cmd name="    table_lines = first_table_after('Reporting timing constraints', log_lines)" />
+      <cmd name="    rows = parse_ascii_table(table_lines)" />
+      <cmd name="    timing_table = dict(zip(rows[1], rows[2]))" />
+      <cmd name="    return timing_table['Setup/Recovery'][:-2]" />
 
-      <cmd name="FunctionalElements=&quot;&quot;"/>
-      <cmd name="LUTs=&quot;&quot;"/>
-      <cmd name="TotalRegisters=&quot;&quot;"/>
-      <cmd name="TotalMemBlocks=&quot;&quot;"/>
-      <cmd name="TotalIOPins=0"/>
-      <cmd name="TotalDSPs=&quot;&quot;"/>
-      <cmd name="TotPower=&quot;0&quot;"/>
-      <cmd name="design_slack=&quot;0&quot;"/>
-      <cmd name="if NXMAPversion == 3:"/>
-      <cmd name="    if path.exists(dir + '/logsPython/progress.rpt'):"/>
-      <cmd name="        fr = open(dir + '/logsPython/progress.rpt', &quot;r&quot;)"/>
-      <cmd name="if NXMAPversion == 2:"/>
-      <cmd name="    if path.exists(dir + '/logs/resources.log'):"/>
-      <cmd name="        fr = open(dir + '/logs/resources.log', &quot;r&quot;)"/>
-      <cmd name="    elif path.exists(dir + '/logs/general.log'):"/>
-      <cmd name="        fr = open(dir + '/logs/general.log', &quot;r&quot;)"/>
+      <cmd name="dir = '.'" />
+      <cmd name="if path.exists(dir + '/pads.py'):" condition="!${__connect_iob__}" />
+      <cmd name="    os.remove(dir + '/pads.py')" condition="!${__connect_iob__}" />
+      <cmd name="sys.path.append(dir)" />
+      <cmd name="project = createProject(dir)" />
+      <cmd name="project.setVariantName('NG-MEDIUM-EMBEDDED')" condition="!${__connect_iob__}" />
+      <cmd name="project.setVariantName('NG-MEDIUM')" condition="${__connect_iob__}" />
+      <cmd name="project.setTopCellName('${__top_id__}')" />
+      <cmd name="project.addFiles('${__VHDL_library__}', [${__nxpython_sources_macro_list__}])" condition="${__has_VHDL_library__}" />
+      <cmd name="project.addFiles([${__nxpython_sources_macro_list__}])" condition="!${__has_VHDL_library__}" />
+      <cmd name="project.setOptions({'ManageAsynchronousReadPort': 'Yes', 'ManageUnconnectedOutputs': 'Ground', 'ManageUnconnectedSignals': 'Ground','DefaultRAMMapping': 'RAM', 'MaxRegisterCount': '12500'})" />
+      <cmd name="project.createClock('getClockNet(${__clk_name__})', '${__clk_name__}', int(math.floor(float(${__clk_period__}) * float(1000))))" />
+      <cmd name="from ${__backend_script_extensions__} import ${__backend_script_extensions__}" condition="${__has_script_extensions__}" />
+      <cmd name="if path.exists(dir + '/pads.py'):" />
+      <cmd name="    from pads import pads" />
+      <cmd name="    project.addPads(pads)" />
+      <cmd name="project.save('native'+prjEXT)" />
+      <cmd name="if not project.synthesize():" />
+      <cmd name="    sys.exit(1)" />
+      <cmd name="project.save('synthesized'+prjEXT)" />
+      <cmd name="if not project.place():" />
+      <cmd name="    sys.exit(1)" />
+      <cmd name="project.save('placed'+prjEXT)" />
+      <cmd name="if NXMAPversion == 2 and not path.exists(dir + '/pads.py'):" />
+      <cmd name="    project.savePorts('pads.py')" />
+      <cmd name="if not project.route():" />
+      <cmd name="    sys.exit(1)" />
+      <cmd name="project.save('routed'+prjEXT)" />
+      <cmd name="analyzer = project.createAnalyzer()" />
+      <cmd name="analyzer.launch()" />
+      <cmd name="project.generateBitstream('bitfile.nxb')" />
+      <cmd name="#print 'Errors: ', getErrorCount()" />
+      <cmd name="#print 'Warnings: ', getWarningCount()" />
 
-      <cmd name="resources_lines = fr.readlines()"/>
-      <cmd name="for i in range(len(resources_lines)):"/>
-      <cmd name="    if &quot;The following table details the use of FEs.&quot; in resources_lines[i]:"/>
-      <cmd name="        trimmed=resources_lines[i+6].lstrip()[1:].lstrip()[1:].lstrip()"/>
-      <cmd name="        trimmed=trimmed[:trimmed.index('/')]"/>
-      <cmd name="        FunctionalElements=trimmed"/>
-      <cmd name="    elif &quot;Estimated FE occupancy is &quot; in resources_lines[i]:"/>
-      <cmd name="        trimmed=resources_lines[i]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('is '):][3:]"/>
-      <cmd name="        trimmed=trimmed[:trimmed.index('/')]"/>
-      <cmd name="        FunctionalElements=trimmed"/>
-      <cmd name="    elif &quot;The following table lists the number of registers for each instance type&quot; in resources_lines[i]:"/>
-      <cmd name="        trimmed=resources_lines[i+6].lstrip()[1:].lstrip()[1:].lstrip()"/>
-      <cmd name="        trimmed=trimmed[:trimmed.index(' ')]"/>
-      <cmd name="        TotalRegisters=trimmed"/>
-      <cmd name="    elif &quot;Reporting routed project&quot; in resources_lines[i]:"/>
-      <cmd name="        trimmed=resources_lines[i+7].lstrip()[1:].lstrip()[1:].lstrip()"/>
-      <cmd name="        if NXMAPversion == 3:"/>
-      <cmd name="            LUTs=trimmed[:trimmed.index('/')]"/>
-      <cmd name="        if NXMAPversion == 2:"/>
-      <cmd name="            LUTs=trimmed[:trimmed.index(' ')]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        if NXMAPversion == 3:"/>
-      <cmd name="            trimmed=trimmed.lstrip()"/>
-      <cmd name="            TotalRegisters=trimmed[:trimmed.index('/')]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed.lstrip()"/>
-      <cmd name="        TotalDSPs=trimmed[:trimmed.index('/')]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed.lstrip()"/>
-      <cmd name="        TotalMemBlocks=trimmed.lstrip()[:trimmed.index('/')]"/>
-      <cmd name="    elif &quot;List of Pins&quot; in resources_lines[i]:"/>
-      <cmd name="        trimmed=resources_lines[i+5].lstrip()[1:].lstrip()[1:].lstrip()"/>
-      <cmd name="        TotalIOPins=int(trimmed[:trimmed.index(' ')])"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:].lstrip()"/>
-      <cmd name="        TotalIOPins=TotalIOPins+int(trimmed[:trimmed.index(' ')])"/>
-      <cmd name="fr.close()"/>
-      <cmd name="if NXMAPversion == 3:"/>
-      <cmd name="    fr = open(dir + '/logsPython/Timing_Constraints_Report_Routed_typical.timing', &quot;r&quot;)"/>
-      <cmd name="if NXMAPversion == 2:"/>
-      <cmd name="    fr = open(dir + '/logs/Timing_Constraints_Report.timing', &quot;r&quot;)"/>
-      <cmd name="timing_lines = fr.readlines()"/>
-      <cmd name="for i in range(len(timing_lines)):"/>
-      <cmd name="    if &quot;Reporting timing constraints&quot; in timing_lines[i]:"/>
-      <cmd name="        trimmed=timing_lines[i+8].lstrip()[1:].lstrip()[1:]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
-      <cmd name="        trimmed=trimmed.lstrip()"/>
-      <cmd name="        trimmed=trimmed[:trimmed.index('n')] if 'n' in trimmed else '-1.735'"/>
-      <cmd name="        design_slack=trimmed.replace(',', '.')"/>
-      <cmd name="fr.close()"/>
-      <cmd name="fw = open('/${__nxpython_report__}', &quot;w&quot;)"/>
-      <cmd name="fw.write('&lt;?xml version=\\&quot;1.0\\&quot;?&gt;\\n')"/>
-      <cmd name="fw.write('&lt;document&gt;\\n')"/>
-      <cmd name="fw.write('  &lt;application&gt;\\n')"/>
-      <cmd name="fw.write('    &lt;section stringID=\\&quot;NANOXPLORE_SYNTHESIS_SUMMARY\\&quot;&gt;\\n')"/>
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_FE\\&quot; value=\\&quot;'+FunctionalElements+'\\&quot;/&gt;\\n')"/>
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_LUTS\\&quot; value=\\&quot;'+LUTs+'\\&quot;/&gt;\\n')"/>
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_REGISTERS\\&quot; value=\\&quot;'+TotalRegisters+'\\&quot;/&gt;\\n')"/>
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_MEM\\&quot; value=\\&quot;'+TotalMemBlocks+'\\&quot;/&gt;\\n')"/>
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_IOPIN\\&quot; value=\\&quot;'+str(TotalIOPins)+'\\&quot;/&gt;&quot;\\n')"/>
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_DSPS\\&quot; value=\\&quot;'+TotalDSPs+'\\&quot;/&gt;&quot;\\n')"/>
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_POWER\\&quot; value=\\&quot;'+TotPower+'\\&quot;/&gt;&quot;\\n')"/>
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_SLACK\&quot; value=\\&quot;'+design_slack+'\\&quot;/&gt;\\n')"/>
-      <cmd name="fw.write('    &lt;/section&gt;\\n')"/>
-      <cmd name="fw.write('  &lt;/application&gt;\\n')"/>
-      <cmd name="fw.write('&lt;/document&gt;\\n')"/>
-      <cmd name="fw.close()"/>
+      <cmd name="if NXMAPversion == 2:" />
+      <cmd name="    fr = open(dir + '/logs/Timing_Constraints_Report.timing', &quot;r&quot;)" />
+      <cmd name="elif NXMAPversion == 3:" />
+      <cmd name="    fr = open(glob.glob(dir + '/logsPython/Timing_Constraints_Report_Routed_*.timing')[0], &quot;r&quot;)" />
+      <cmd name="lines = fr.readlines()" />
+      <cmd name="fr.close()" />
+      <cmd name="design_slack = get_timing(lines)" />
+      <cmd name="if NXMAPversion == 2:" />
+      <cmd name="    fr = open(dir + '/logs/general.log', &quot;r&quot;)" />
+      <cmd name="elif NXMAPversion == 3:" />
+      <cmd name="    fr = open(dir + '/logsPython/progress.rpt', &quot;r&quot;)" />
+      <cmd name="lines = fr.readlines()" />
+      <cmd name="fr.close()" />
+      <cmd name="FunctionalElements, LUTs, TotalRegisters, TotalMemBlocks, TotalIOPins, TotalDSPs = get_res(lines) " />
+
+      <cmd name="fr.close()" />
+      <cmd name="fw = open('/${__nxpython_report__}', &quot;w&quot;)" />
+      <cmd name="fw.write('&lt;?xml version=\\&quot;1.0\\&quot;?&gt;\\n')" />
+      <cmd name="fw.write('&lt;document&gt;\\n')" />
+      <cmd name="fw.write('  &lt;application&gt;\\n')" />
+      <cmd name="fw.write('    &lt;section stringID=\\&quot;NANOXPLORE_SYNTHESIS_SUMMARY\\&quot;&gt;\\n')" />
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_FE\\&quot; value=\\&quot;'+FunctionalElements+'\\&quot;/&gt;\\n')" />
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_LUTS\\&quot; value=\\&quot;'+LUTs+'\\&quot;/&gt;\\n')" />
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_REGISTERS\\&quot; value=\\&quot;'+TotalRegisters+'\\&quot;/&gt;\\n')" />
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_MEM\\&quot; value=\\&quot;'+TotalMemBlocks+'\\&quot;/&gt;\\n')" />
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_IOPIN\\&quot; value=\\&quot;'+TotalIOPins+'\\&quot;/&gt;&quot;\\n')" />
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_DSPS\\&quot; value=\\&quot;'+TotalDSPs+'\\&quot;/&gt;&quot;\\n')" />
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_POWER\\&quot; value=\\&quot;0\\&quot;/&gt;&quot;\\n')" />
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_SLACK\&quot; value=\\&quot;'+design_slack+'\\&quot;/&gt;\\n')" />
+      <cmd name="fw.write('    &lt;/section&gt;\\n')" />
+      <cmd name="fw.write('  &lt;/application&gt;\\n')" />
+      <cmd name="fw.write('&lt;/document&gt;\\n')" />
+      <cmd name="fw.close()" />
    </nxpython>
 </synthesis>

@@ -29,10 +29,7 @@ inputs:
 outputs:
   compare-csv:
     description: "Compare output csv file"
-    value: ${{ steps.cmp.outputs.out-csv }}
-  is-better:
-    description: "True if new results are better than main, false else"
-    value: ${{ steps.cmp.outputs.better }}
+    value: ${{ steps.cmp.outputs.outcsv }}
 runs:
   using: "composite"
   steps:
@@ -52,42 +49,33 @@ runs:
           echo "Path '${{inputs.new-results}}' does not name a file or directory"
           exit -1;
         fi
-    - name: Download test results from main
-      id: download
+    - name: Compare against main
+      id: cmp
       shell: bash
       run: |
         set -e
         PKG_URL="${{inputs.storage-url}}/results/main/${{inputs.test-id}}.csv"
+        COMMIT_SHA="${{github.sha}}"
+        COMPARE_CSV="${{inputs.test-id}}.$(echo '${{github.ref}}' | sed 's/\//_/g')_${COMMIT_SHA:0:7}.csv"
+        score=""
+        outcsv=""
         CURL_CMD=""
         if [[ ! -z '${{inputs.username}}' ]]; then
           CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
         fi
         mkdir -p main-reports
-        curl -s -L --fail $CURL_CMD $PKG_URL -o main-reports/${{inputs.test-id}}.csv
-        if [[ $? -eq 0 ]]; then
-          echo "::set-output name=found::1"
+        if curl -s -L --fail $CURL_CMD $PKG_URL -o main-reports/${{inputs.test-id}}.csv; then
+          if [[ ! -z "${{ inputs.score }}" ]]; then
+            score="-s ${{ inputs.score }}"
+          fi
+          worse_count="0"
+          python ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} $score -o $COMPARE_CSV --returnfail "main-reports/${{inputs.test-id}}.csv" "${{inputs.new-results}}" || worse_count=$?
+          if [[ "$worse_count" != "0" ]]; then
+            outcsv="$COMPARE_CSV"
+            echo "::warning:: Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
+          fi
         else
           echo "::warning:: No previous benchmark result found to compare"
         fi
-        exit 0
-    - name: Compare performance results
-      if: ${{steps.download.outputs.found}}
-      id: cmp
-      shell: bash
-      run: |
-        COMMIT_SHA="${{github.sha}}"
-        COMPARE_CSV="${{inputs.test-id}}.$(echo '${{github.ref}}' | sed 's/\//_/g')_${COMMIT_SHA:0:7}.csv"
-        score=""
-        if [[ ! -z "${{ inputs.score }}" ]]; then
-          score="-s ${{ inputs.score }}"
-        fi
-        worse_count="0"
-        ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} $score -o $COMPARE_CSV --returnfail "main-reports/${{inputs.test-id}}.csv" "${{inputs.new-results}}" || worse_count=$?
-        if [[ "$worse_count" != "0" ]]; then
-          echo "::set-output name=out-csv::$COMPARE_CSV"
-          echo "::set-output name=better::0"
-          echo "::warning:: Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
-        else
-          echo "::set-output name=better::1"
-        fi
+        echo "::set-output name=outcsv::$outcsv"
         exit 0

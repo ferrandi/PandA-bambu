@@ -1077,7 +1077,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        (default=/opt/mentor)\n\n"
       << "    --nanoxplore-root=<path>\n"
       << "        Define NanoXplore tools path. Given directory is searched for NXMap.\n"
-      << "        (default=/opt/NanoXplore/NXMap)\n\n"
+      << "        (default=/opt/NanoXplore/NXMap3)\n\n"
       << "    --xilinx-root=<path>\n"
       << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado\n"
       << "        (default=/opt/Xilinx)\n\n"
@@ -3030,7 +3030,7 @@ void BambuParameter::CheckParameters()
       std::vector<boost::filesystem::path> sorted_paths;
       std::copy(boost::filesystem::directory_iterator(parent_dir), boost::filesystem::directory_iterator(),
                 std::back_inserter(sorted_paths));
-      std::sort(sorted_paths.begin(), sorted_paths.end());
+      std::sort(sorted_paths.begin(), sorted_paths.end(), NaturalVersionOrder);
       return sorted_paths;
    };
 
@@ -3186,7 +3186,7 @@ void BambuParameter::CheckParameters()
    const auto search_xmap = [&](const std::string& dir) {
       if(boost::filesystem::exists(dir + "/bin/nxpython"))
       {
-         setOption(OPT_nanoxplore_settings, "export PATH=$PATH:" + dir + "/bin");
+         setOption(OPT_nanoxplore_root, dir);
       }
    };
    for(const auto& nanox_dir : nanox_dirs)
@@ -4341,7 +4341,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
-   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap");
+   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap3");
    setOption(OPT_verilator_parallel, false);
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
