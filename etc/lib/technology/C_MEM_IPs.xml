@@ -3488,7 +3488,7 @@ assign Mout_we_ram = int_sel_STORE ? 1&apos;b1 : Min_we_ram;
 assign out1 = M_Rdata_ram[BITSIZE_out1-1:0];
 assign Mout_Wdata_ram = int_sel_STORE ? in1 : Min_Wdata_ram;
 assign Mout_data_ram_size = int_sel_STORE || int_sel_LOAD ? in3[BITSIZE_in3-1:0] : Min_data_ram_size;
-assign done_port = (M_DataRdy &amp;&amp; (int_sel_STORE || int_sel_LOAD)) || (!in4 &amp;&amp; (sel_STORE || sel_LOAD));
+assign done_port = (M_DataRdy &amp;&amp; (in4 &amp;&amp; (sel_STORE || sel_LOAD))) || (!in4 &amp;&amp; (sel_STORE || sel_LOAD));
 // Add assertion here
 // psl default clock = (posedge clock);
 // psl ERROR_Min_we_ram_Min_oe_ram: assert never {Min_we_ram &amp;&amp; Min_oe_ram};
@@ -4009,8 +4009,8 @@ parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; start_port;
-assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; start_port;
+assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; {PORTSIZE_Mout_oe_ram{start_port}};
+assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; {PORTSIZE_Mout_we_ram{start_port}};
 
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 assign tmp_addr = in2;
@@ -4041,7 +4041,7 @@ generate
     assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; int_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; int_sel_STORE[i])) ? (in3[(i+1)*BITSIZE_in3-1:i*BITSIZE_in3]) : Min_data_ram_size[(i+1)*BITSIZE_Min_data_ram_size-1:i*BITSIZE_Min_data_ram_size];
   end
   endgenerate
-assign done_port = (M_DataRdy &amp; (int_sel_STORE | int_sel_LOAD)) | (~in4 &amp; (sel_STORE | sel_LOAD));" />
+assign done_port = (M_DataRdy &amp; (in4 &amp; (sel_STORE | sel_LOAD))) | (~in4 &amp; (sel_STORE | sel_LOAD));" />
         </component_o>
       </circuit>
     </cell>
