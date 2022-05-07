@@ -3602,19 +3602,24 @@ assign done_port = (M_DataRdy &amp;&amp; (in4 &amp;&amp; (sel_STORE || sel_LOAD)
           <NP_functionality LIBRARY="MEMORY_CTRL_D10 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire [BITSIZE_in2-1:0] tmp_addr;
 reg [BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
 reg delayed_M_DataRdy 1INIT_ZERO_VALUE;
+wire int_sel_LOAD;
+wire int_sel_STORE;
+
+assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; start_port;
+assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; start_port;
 
 assign tmp_addr = in2;
-assign Mout_addr_ram = (sel_LOAD || sel_STORE) ? tmp_addr : Min_addr_ram;
-assign Mout_oe_ram = sel_LOAD ? 1&apos;b1 : Min_oe_ram;
-assign Mout_we_ram = sel_STORE ? 1&apos;b1 : Min_we_ram;
+assign Mout_addr_ram = (int_sel_LOAD || int_sel_STORE) ? tmp_addr : Min_addr_ram;
+assign Mout_oe_ram = int_sel_LOAD ? 1&apos;b1 : Min_oe_ram;
+assign Mout_we_ram = int_sel_STORE ? 1&apos;b1 : Min_we_ram;
 always @(posedge clock)
   delayed_out1 &lt;= M_Rdata_ram;
 assign out1 = delayed_out1;
-assign Mout_Wdata_ram = sel_STORE ? in1 : Min_Wdata_ram;
-assign Mout_data_ram_size = sel_STORE || sel_LOAD ? in3[BITSIZE_in3-1:0] : Min_data_ram_size;
+assign Mout_Wdata_ram = int_sel_STORE ? in1 : Min_Wdata_ram;
+assign Mout_data_ram_size = int_sel_STORE || int_sel_LOAD ? in3[BITSIZE_in3-1:0] : Min_data_ram_size;
 always @(posedge clock)
   delayed_M_DataRdy &lt;= M_DataRdy;
-assign done_port = delayed_M_DataRdy &amp;&amp; (sel_STORE || sel_LOAD);
+assign done_port = (delayed_M_DataRdy &amp; (in4 &amp; (sel_STORE || sel_LOAD))) || (!in4 &amp; (sel_STORE || sel_LOAD));
 // Add assertion here
 // psl default clock = (posedge clock);
 // psl ERROR_Min_we_ram_Min_oe_ram: assert never {Min_we_ram &amp;&amp; Min_oe_ram};
@@ -3731,6 +3736,11 @@ reg delayed_sel_STORE 1INIT_ZERO_VALUE;
 reg [BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
 reg [BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
 reg [BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
+wire int_sel_LOAD;
+wire int_sel_STORE;
+
+assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; start_port;
+assign int_sel_STORE = (in4 &amp; delayed_sel_STORE)  &amp; start_port;
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD;
@@ -3744,13 +3754,13 @@ always @(posedge clock)
   delayed_in3 &lt;= in3;
 
 assign tmp_addr = delayed_in2;
-assign Mout_addr_ram = (delayed_sel_LOAD || delayed_sel_STORE) ? tmp_addr : Min_addr_ram;
-assign Mout_oe_ram = delayed_sel_LOAD ? 1&apos;b1 : Min_oe_ram;
-assign Mout_we_ram = delayed_sel_STORE ? 1&apos;b1 : Min_we_ram;
+assign Mout_addr_ram = (int_sel_LOAD || int_sel_STORE) ? tmp_addr : Min_addr_ram;
+assign Mout_oe_ram = int_sel_LOAD ? 1&apos;b1 : Min_oe_ram;
+assign Mout_we_ram = int_sel_STORE ? 1&apos;b1 : Min_we_ram;
 assign out1 = M_Rdata_ram;
-assign Mout_Wdata_ram = delayed_sel_STORE ? delayed_in1 : Min_Wdata_ram;
-assign Mout_data_ram_size = delayed_sel_STORE || delayed_sel_LOAD ? delayed_in3[BITSIZE_in3-1:0] : Min_data_ram_size;
-assign done_port = M_DataRdy &amp;&amp; (delayed_sel_STORE || delayed_sel_LOAD);
+assign Mout_Wdata_ram = int_sel_STORE ? delayed_in1 : Min_Wdata_ram;
+assign Mout_data_ram_size = int_sel_STORE || int_sel_LOAD ? delayed_in3[BITSIZE_in3-1:0] : Min_data_ram_size;
+assign done_port = (M_DataRdy &amp; (in4 &amp; (delayed_sel_STORE || delayed_sel_LOAD))) || (!in4 &amp; (delayed_sel_STORE || delayed_sel_LOAD));
 // Add assertion here
 // psl default clock = (posedge clock);
 // psl ERROR_Min_we_ram_Min_oe_ram: assert never {Min_we_ram &amp;&amp; Min_oe_ram};
@@ -3869,6 +3879,11 @@ reg delayed_sel_STORE 1INIT_ZERO_VALUE;
 reg [BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
 reg [BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
 reg [BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
+wire int_sel_LOAD;
+wire int_sel_STORE;
+
+assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; start_port;
+assign int_sel_STORE = (in4 &amp; delayed_sel_STORE)  &amp; start_port;
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD&amp;!M_DataRdy&amp;!delayed_M_DataRdy;
@@ -3882,16 +3897,16 @@ always @(posedge clock)
   delayed_in3 &lt;= in3;
 
 assign tmp_addr = delayed_in2;
-assign Mout_addr_ram = (delayed_sel_LOAD || delayed_sel_STORE) ? tmp_addr : Min_addr_ram;
-assign Mout_oe_ram = delayed_sel_LOAD ? 1&apos;b1 : Min_oe_ram;
-assign Mout_we_ram = delayed_sel_STORE ? 1&apos;b1 : Min_we_ram;
+assign Mout_addr_ram = (int_sel_LOAD || int_sel_STORE) ? tmp_addr : Min_addr_ram;
+assign Mout_oe_ram = int_sel_LOAD ? 1&apos;b1 : Min_oe_ram;
+assign Mout_we_ram = int_sel_STORE ? 1&apos;b1 : Min_we_ram;
 always @(posedge clock)
   delayed_out1 &lt;= M_Rdata_ram;
 assign out1 = delayed_out1;
-assign Mout_Wdata_ram = delayed_sel_STORE ? delayed_in1 : Min_Wdata_ram;
-assign Mout_data_ram_size = delayed_sel_STORE || delayed_sel_LOAD ? delayed_in3[BITSIZE_in3-1:0] : Min_data_ram_size;
+assign Mout_Wdata_ram = int_sel_STORE ? delayed_in1 : Min_Wdata_ram;
+assign Mout_data_ram_size = int_sel_STORE || int_sel_LOAD ? delayed_in3[BITSIZE_in3-1:0] : Min_data_ram_size;
 always @(posedge clock)
-  delayed_M_DataRdy &lt;= M_DataRdy &amp; (delayed_sel_STORE || delayed_sel_LOAD);
+  delayed_M_DataRdy &lt;= (M_DataRdy &amp; (in4 &amp; (delayed_sel_STORE || delayed_sel_LOAD))) || (!in4 &amp; (delayed_sel_STORE || delayed_sel_LOAD));
 assign done_port = delayed_M_DataRdy;
 // Add assertion here
 // psl default clock = (posedge clock);
@@ -4156,8 +4171,8 @@ reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
 reg [PORTSIZE_M_DataRdy-1:0] delayed_M_DataRdy 1INIT_ZERO_VALUE;
 
 assign tmp_addr = in2;
-assign int_sel_LOAD = sel_LOAD &amp;&amp; in4;
-assign int_sel_STORE = sel_STORE &amp;&amp; in4;
+assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; {PORTSIZE_Mout_oe_ram{start_port}};
+assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; {PORTSIZE_Mout_we_ram{start_port}};
 generate
 genvar i;
   for (i=0; i&lt;max_n_rw; i=i+1)
@@ -4188,8 +4203,8 @@ generate
   end
 endgenerate
 always @(posedge clock)
-  delayed_M_DataRdy &lt;= M_DataRdy &amp; (int_sel_STORE | (int_sel_LOAD &amp; !start_port));
-assign done_port = delayed_M_DataRdy &amp; (int_sel_STORE | (int_sel_LOAD &amp; !start_port));" />
+  delayed_M_DataRdy &lt;= (M_DataRdy &amp; (in4 &amp; (sel_STORE | sel_LOAD))) | (~in4 &amp; (sel_STORE | sel_LOAD));
+assign done_port = delayed_M_DataRdy;" />
         </component_o>
       </circuit>
     </cell>
@@ -4301,6 +4316,8 @@ parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD 1INIT_ZERO_VALUE;
 reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE 1INIT_ZERO_VALUE;
+wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
+wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
 reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
 reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
@@ -4318,17 +4335,20 @@ always @(posedge clock)
   delayed_in3 &lt;= in3;
 always @(posedge clock)
   delayed_in4 &lt;= in4;
+  
+assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; {PORTSIZE_Mout_oe_ram{start_port}};
+assign int_sel_STORE = (in4 &amp; delayed_sel_STORE)  &amp; {PORTSIZE_Mout_we_ram{start_port}};
 
 assign tmp_addr = delayed_in2;
 generate
 genvar i;
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L0
-    assign Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; delayed_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; delayed_sel_STORE[i])) ? (tmp_addr[(i+1)*BITSIZE_in2-1:i*BITSIZE_in2]) : Min_addr_ram[(i+1)*BITSIZE_Min_addr_ram-1:i*BITSIZE_Min_addr_ram];
+    assign Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; int_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; int_sel_STORE[i])) ? (tmp_addr[(i+1)*BITSIZE_in2-1:i*BITSIZE_in2]) : Min_addr_ram[(i+1)*BITSIZE_Min_addr_ram-1:i*BITSIZE_Min_addr_ram];
   end
   endgenerate
-assign Mout_oe_ram = (delayed_sel_LOAD &amp; delayed_in4)| Min_oe_ram;
-assign Mout_we_ram = (delayed_sel_STORE &amp; delayed_in4) | Min_we_ram;
+assign Mout_oe_ram = (int_sel_LOAD &amp; delayed_in4)| Min_oe_ram;
+assign Mout_we_ram = (int_sel_STORE &amp; delayed_in4) | Min_we_ram;
 generate
   for (i=0; i&lt;max_n_reads; i=i+1)
   begin : L1
@@ -4338,16 +4358,16 @@ endgenerate
 generate
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L2
-    assign Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram] = delayed_sel_STORE[i] ? delayed_in1[(i+1)*BITSIZE_in1-1:i*BITSIZE_in1] : Min_Wdata_ram[(i+1)*BITSIZE_Min_Wdata_ram-1:i*BITSIZE_Min_Wdata_ram];
+    assign Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram] = int_sel_STORE[i] ? delayed_in1[(i+1)*BITSIZE_in1-1:i*BITSIZE_in1] : Min_Wdata_ram[(i+1)*BITSIZE_Min_Wdata_ram-1:i*BITSIZE_Min_Wdata_ram];
 end
 endgenerate
 generate
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L3
-    assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; delayed_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; delayed_sel_STORE[i])) ? (delayed_in3[(i+1)*BITSIZE_in3-1:i*BITSIZE_in3]) : Min_data_ram_size[(i+1)*BITSIZE_Min_data_ram_size-1:i*BITSIZE_Min_data_ram_size];
+    assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; int_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; int_sel_STORE[i])) ? (delayed_in3[(i+1)*BITSIZE_in3-1:i*BITSIZE_in3]) : Min_data_ram_size[(i+1)*BITSIZE_Min_data_ram_size-1:i*BITSIZE_Min_data_ram_size];
   end
 endgenerate
-assign done_port = M_DataRdy &amp; (delayed_sel_STORE | delayed_sel_LOAD);" />
+assign done_port = (M_DataRdy &amp; (in4 &amp; (delayed_sel_LOAD | delayed_sel_STORE))) | (~in4 &amp; (delayed_sel_LOAD | delayed_sel_STORE));;" />
         </component_o>
       </circuit>
     </cell>
@@ -4460,6 +4480,8 @@ reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
 reg [PORTSIZE_M_DataRdy-1:0] delayed_M_DataRdy 1INIT_ZERO_VALUE;
 reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD 1INIT_ZERO_VALUE;
 reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE 1INIT_ZERO_VALUE;
+wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
+wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
 reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
 reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
@@ -4475,16 +4497,20 @@ always @(posedge clock)
 always @(posedge clock)
   delayed_in3 &lt;= in3;
 
+
+assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; {PORTSIZE_Mout_oe_ram{start_port}};
+assign int_sel_STORE = (in4 &amp; delayed_sel_STORE)  &amp; {PORTSIZE_Mout_we_ram{start_port}};
+
 assign tmp_addr = delayed_in2;
 generate
 genvar i;
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L0
-    assign Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; delayed_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; delayed_sel_STORE[i])) ? (tmp_addr[(i+1)*BITSIZE_in2-1:i*BITSIZE_in2]) : Min_addr_ram[(i+1)*BITSIZE_Min_addr_ram-1:i*BITSIZE_Min_addr_ram];
+    assign Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; int_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; int_sel_STORE[i])) ? (tmp_addr[(i+1)*BITSIZE_in2-1:i*BITSIZE_in2]) : Min_addr_ram[(i+1)*BITSIZE_Min_addr_ram-1:i*BITSIZE_Min_addr_ram];
   end
   endgenerate
-assign Mout_oe_ram = delayed_sel_LOAD | Min_oe_ram;
-assign Mout_we_ram = delayed_sel_STORE | Min_we_ram;
+assign Mout_oe_ram = int_sel_LOAD | Min_oe_ram;
+assign Mout_we_ram = int_sel_STORE | Min_we_ram;
 generate
   for (i=0; i&lt;max_n_reads; i=i+1)
   begin : L1
@@ -4496,17 +4522,17 @@ endgenerate
 generate
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L2
-    assign Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram] = delayed_sel_STORE[i] ? delayed_in1[(i+1)*BITSIZE_in1-1:i*BITSIZE_in1] : Min_Wdata_ram[(i+1)*BITSIZE_Min_Wdata_ram-1:i*BITSIZE_Min_Wdata_ram];
+    assign Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram] = int_sel_STORE[i] ? delayed_in1[(i+1)*BITSIZE_in1-1:i*BITSIZE_in1] : Min_Wdata_ram[(i+1)*BITSIZE_Min_Wdata_ram-1:i*BITSIZE_Min_Wdata_ram];
 end
 endgenerate
 generate
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L3
-    assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; delayed_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; delayed_sel_STORE[i])) ? (delayed_in3[(i+1)*BITSIZE_in3-1:i*BITSIZE_in3]) : Min_data_ram_size[(i+1)*BITSIZE_Min_data_ram_size-1:i*BITSIZE_Min_data_ram_size];
+    assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; int_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; int_sel_STORE[i])) ? (delayed_in3[(i+1)*BITSIZE_in3-1:i*BITSIZE_in3]) : Min_data_ram_size[(i+1)*BITSIZE_Min_data_ram_size-1:i*BITSIZE_Min_data_ram_size];
   end
 endgenerate
 always @(posedge clock)
-  delayed_M_DataRdy &lt;= M_DataRdy &amp; (delayed_sel_STORE | delayed_sel_LOAD);
+  delayed_M_DataRdy &lt;= (M_DataRdy &amp; (in4 &amp; (delayed_sel_STORE | delayed_sel_LOAD))) | (~in4 &amp; (delayed_sel_STORE | delayed_sel_LOAD));
 assign done_port = delayed_M_DataRdy;" />
         </component_o>
       </circuit>
