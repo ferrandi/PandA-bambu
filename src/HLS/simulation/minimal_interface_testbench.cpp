@@ -859,7 +859,8 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
             }
             else
             {
-               writer->write("reg [7:0] ex_" + port_obj->get_id() + ";\n");
+               long long int bitsize = tree_helper::Size(pt_node);
+               writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
             }
          }
       }
