@@ -365,49 +365,21 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          else
          {
             post_slice2 = "";
-         }
-         if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM or
-            memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
-         {
-            cond_load(Mout_addr_ram_bitsize, post_slice2, "M_Rdata_ram_delayed_temporary", i,
-                      STR(M_Rdata_ram_bitsize) + "'b0", mem_aggregate);
-            writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
-            writer->write("begin");
-            writer->write(STR(STD_OPENING_CHAR) + "\n");
-            writer->write("for (_i_=0; _i_<`MEM_DELAY_READ-1; _i_=_i_+1)");
-            writer->write(STR(STD_OPENING_CHAR) + "\n");
-            writer->write("if(_i_ == `MEM_DELAY_READ-2)");
-            writer->write(STR(STD_OPENING_CHAR) + "\n");
-            writer->write("M_Rdata_ram_delayed[_i_]" + post_slice2 + " <= M_Rdata_ram_delayed_temporary" + post_slice2 +
-                          ";");
-            writer->write(STR(STD_CLOSING_CHAR) + "\n");
-            writer->write("else");
-            writer->write(STR(STD_OPENING_CHAR) + "\n");
-            writer->write("M_Rdata_ram_delayed[_i_]" + post_slice2 + " <= M_Rdata_ram_delayed[_i_+1]" + post_slice2 +
-                          ";");
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write(STR(STD_CLOSING_CHAR) + "\n");
-            writer->write(STR(STD_CLOSING_CHAR) + "\n");
-            writer->write("end\n");
-            writer->write("assign M_Rdata_ram" + post_slice2 + " = M_Rdata_ram_delayed[0]" + post_slice2 + ";\n\n");
-         }
-         else
-         {            
-            writer->write("always @(*)\n");
-            writer->write("begin");
-            writer->write(STR(STD_OPENING_CHAR) + "\n");
-            writer->write("M_Rdata_ram_temp"+ post_slice2 + " = 0;\n");
-            writer->write("if(Mout_oe_ram_queue_curr[" + STR(Mout_oe_ram_bitsize * Mout_oe_ram_n_ports) + "*(`MEM_DELAY_READ-1) + "+ boost::lexical_cast<std::string>(i*Mout_oe_ram_bitsize) +"] === 1'b1)\n");
-            writer->write("begin");
-            writer->write(STR(STD_OPENING_CHAR) + "\n");
-            cond_load_from_queue(Mout_addr_ram_bitsize, Mout_addr_ram_n_ports, "`MEM_DELAY_READ", post_slice2, "M_Rdata_ram_temp", i, STR(M_Rdata_ram_bitsize) + "0",
-                        mem_aggregate); 
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-            writer->write("assign M_Rdata_ram" + post_slice2 + " = M_Rdata_ram_temp" + post_slice2 + ";\n\n");
-         }
+         }           
+         writer->write("always @(*)\n");
+         writer->write("begin");
+         writer->write(STR(STD_OPENING_CHAR) + "\n");
+         writer->write("M_Rdata_ram_temp"+ post_slice2 + " = 0;\n");
+         writer->write("if(Mout_oe_ram_queue_curr[" + STR(Mout_oe_ram_bitsize * Mout_oe_ram_n_ports) + "*(`MEM_DELAY_READ-1) + "+ boost::lexical_cast<std::string>(i*Mout_oe_ram_bitsize) +"] === 1'b1)\n");
+         writer->write("begin");
+         writer->write(STR(STD_OPENING_CHAR) + "\n");
+         cond_load_from_queue(Mout_addr_ram_bitsize, Mout_addr_ram_n_ports, "`MEM_DELAY_READ", post_slice2, "M_Rdata_ram_temp", i, STR(M_Rdata_ram_bitsize) + "0",
+                     mem_aggregate); 
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+         writer->write("assign M_Rdata_ram" + post_slice2 + " = M_Rdata_ram_temp" + post_slice2 + ";\n\n");
       }
    }
    structural_objectRef Sin_Wdata_ram_port = mod->find_member("S_Wdata_ram", port_o_K, cir);
@@ -986,7 +958,7 @@ void MinimalInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, 
       if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM or
          memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
       {
-         writer->write("wire [" + STR(M_Rdata_ram_bitsize * M_Rdata_ram_n_ports - 1) + ":0] M_Rdata_ram_delayed_temporary;\n\n");
+         writer->write("wire [" + STR(M_Rdata_ram_bitsize * M_Rdata_ram_n_ports - 1) + ":0] M_Rdata_ram_delayed_temporary;\n");
          writer->write("reg [" + STR(M_Rdata_ram_bitsize * M_Rdata_ram_n_ports - 1) + ":0] M_Rdata_ram_delayed [`MEM_DELAY_READ-2:0];\n\n");
       }
    }
