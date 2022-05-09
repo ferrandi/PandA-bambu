@@ -1417,82 +1417,55 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                "ReadWrite_" + interfaceType + ".cpp");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
-      for(const auto& fdName : operationsR)
-      {
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-      }
-      for(const auto& fdName : operationsW)
-      {
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-      }
+
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
       const auto device = HLS_T->get_target_device();
       fu->area_m = area_model::create_model(device->get_type(), parameters);
       fu->area_m->set_area_value(0);
 
-      for(const auto& fdName : operationsR)
-      {
-         const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-         op->time_m = time_model::create_model(device->get_type(), parameters);
-         op->bounded = false;
-         op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
-         op->time_m->set_synthesis_dependent(true);
-      }
-      for(const auto& fdName : operationsW)
-      {
-         const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-         op->time_m = time_model::create_model(device->get_type(), parameters);
-         op->bounded = false;
-         op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
-         op->time_m->set_synthesis_dependent(true);
-      }
       /// add constraint on resource
       HLSMgr->design_interface_constraints[function_id][INTERFACE_LIBRARY][ResourceName] = n_resources;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created: ");
    }
+
+   for(const auto& fdName : operationsR)
+   {
+      TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
+   }
+   for(const auto& fdName : operationsW)
+   {
+      TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
+   }
+   const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+   const auto device = HLS_T->get_target_device();
+
+   for(const auto& fdName : operationsR)
+   {
+      const auto op = GetPointerS<operation>(fu->get_operation(fdName));
+      op->time_m = time_model::create_model(device->get_type(), parameters);
+      op->bounded = false;
+      op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+      op->time_m->set_synthesis_dependent(true);
+   }
+   for(const auto& fdName : operationsW)
+   {
+      const auto op = GetPointer<operation>(fu->get_operation(fdName));
+      op->time_m = time_model::create_model(device->get_type(), parameters);
+      op->bounded = false;
+      op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+      op->time_m->set_synthesis_dependent(true);
+   }
+   const auto address_bitsize = HLSMgr->get_address_bitsize();
+   const structural_type_descriptorRef address_interface_type(new structural_type_descriptor("bool", address_bitsize));
+   const auto interface_top = fu->CM->get_circ();
+   const auto inPort_m_axi = fu->CM->add_port("_" + argName_string, port_o::IN, interface_top, address_interface_type);
+   if(mat == m_axi_type::none || mat == m_axi_type::axi_slave)
+   {
+      GetPointerS<port_o>(inPort_m_axi)->set_port_interface(port_o::port_interface::PI_M_AXI_OFF);
+   }
    else
    {
-      for(const auto& fdName : operationsR)
-      {
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-      }
-      for(const auto& fdName : operationsW)
-      {
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-      }
-      const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      const auto device = HLS_T->get_target_device();
-
-      for(const auto& fdName : operationsR)
-      {
-         const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-         op->time_m = time_model::create_model(device->get_type(), parameters);
-         op->bounded = false;
-         op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
-         op->time_m->set_synthesis_dependent(true);
-      }
-      for(const auto& fdName : operationsW)
-      {
-         const auto op = GetPointer<operation>(fu->get_operation(fdName));
-         op->time_m = time_model::create_model(device->get_type(), parameters);
-         op->bounded = false;
-         op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
-         op->time_m->set_synthesis_dependent(true);
-      }
-      const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const structural_type_descriptorRef address_interface_type(
-          new structural_type_descriptor("bool", address_bitsize));
-      const auto interface_top = fu->CM->get_circ();
-      const auto inPort_m_axi =
-          fu->CM->add_port("_" + argName_string, port_o::IN, interface_top, address_interface_type);
-      if(mat == m_axi_type::none || mat == m_axi_type::axi_slave)
-      {
-         GetPointerS<port_o>(inPort_m_axi)->set_port_interface(port_o::port_interface::PI_M_AXI_OFF);
-      }
-      else
-      {
-         GetPointerS<port_o>(inPort_m_axi)->set_port_interface(port_o::port_interface::PI_M_AXI_DIRECT);
-      }
+      GetPointerS<port_o>(inPort_m_axi)->set_port_interface(port_o::port_interface::PI_M_AXI_DIRECT);
    }
 }
 
