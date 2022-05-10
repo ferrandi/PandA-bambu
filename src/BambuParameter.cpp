@@ -205,8 +205,7 @@
 #define OPT_EVALUATION (1 + OPT_ENABLE_IOB)
 #define OPT_EVALUATION_MODE (1 + OPT_EVALUATION)
 #define OPT_EXPERIMENTAL_SETUP (1 + OPT_EVALUATION_MODE)
-#define OPT_FIXED_SCHED (1 + OPT_EXPERIMENTAL_SETUP)
-#define OPT_FLOPOCO (1 + OPT_FIXED_SCHED)
+#define OPT_FLOPOCO (1 + OPT_EXPERIMENTAL_SETUP)
 #define OPT_GENERATE_VCD (1 + OPT_FLOPOCO)
 #define OPT_GENERATION (1 + OPT_GENERATE_VCD)
 #define OPT_HLS_DIV (1 + OPT_GENERATION)
@@ -294,8 +293,6 @@
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
-/// constant correspond to the fixed scheduling option
-#define FIXED_SCHEDULING_OPT "fixed-scheduling"
 
 static bool is_evaluation_objective_string(const std::vector<std::string>& obj_vec, const std::string& s)
 {
@@ -1164,8 +1161,7 @@ int BambuParameter::Exec()
       {"explore-mux", optional_argument, nullptr, 0},
       {"explore-fu-reg", required_argument, nullptr, 0},
 #endif
-      /// Scheduling options
-      {FIXED_SCHEDULING_OPT, required_argument, nullptr, OPT_FIXED_SCHED},
+   /// Scheduling options
 #if HAVE_ILP_BUILT
       {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
 #endif
@@ -1560,21 +1556,6 @@ int BambuParameter::Exec()
          }
 #endif
 #endif
-         /// scheduling options
-         case OPT_FIXED_SCHED:
-         {
-            if(scheduling_set_p)
-            {
-               THROW_ERROR("BadParameters: only one scheduler can be specified");
-            }
-            scheduling_set_p = true;
-            setOption(OPT_scheduling_algorithm, HLSFlowStep_Type::FIXED_SCHEDULING);
-            if(optarg)
-            {
-               setOption("fixed_scheduling_file", optarg);
-            }
-            break;
-         }
          case OPT_LIST_BASED: // enable list based scheduling
          {
             if(scheduling_set_p)
@@ -3038,6 +3019,11 @@ void BambuParameter::CheckParameters()
    {
       setOption(OPT_top_functions_names, "main");
       THROW_WARNING("Top function name was not specified: main will be set as top");
+   }
+   if(isOption(OPT_top_functions_names) && getOption<std::string>(OPT_top_functions_names) == "main")
+   {
+      THROW_WARNING("Using 'main' as top function name is strongly discouraged.");
+      THROW_WARNING("   Please note that C simulation output may be truncated down to 8-bits.");
    }
 
    const auto sorted_dirs = [](const std::string& parent_dir) {

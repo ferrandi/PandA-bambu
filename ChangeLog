@@ -1,4 +1,5 @@
 =========== PANDA 0.9.7 ===========
+Sun 20 March 2022, PandA release 0.9.7
 Eighth public release of PandA framework.
 
 New features introduced:
@@ -9,7 +10,7 @@ New features introduced:
 - Example of integration between Soda-Opt (https://gitlab.pnnl.gov/sodalite/soda-opt) and Bambu: Reference paper: S. Curzel, N. Bohm Agostini, S. Song, I. Dagli, A. Limaye, C. Tan, M. Minutoli, V. G. Castellana, V. Amatya, J. Manzano, A. Das, F. Ferrandi, A. Tumeo, "Automated Generation of Integrated Digital and Spiking Neuromorphic Machine Learning Accelerators", 2021 40th International Conference on Computer-Aided Design (ICCAD).
 - Paper describing the PandA-bambu framework: F. Ferrandi, V.G. Castellana, S. Curzel, P. Fezzardi, M, Fiorito, M. Lattuada, M. Minutoli, C. Pilato, A. Tumeo, "Invited: Bambu: an Open-Source Research Framework for the High-Level Synthesis of Complex Applications," 2021 58th ACM/IEEE Design Automation Conference (DAC), pp. 1327-1330.
 - Improved support to discrepancy analysis. Reference paper: P. Fezzardi and F. Ferrandi, “Automated Bug Detection for High-Level Synthesis of Multi-Threaded Irregular Applications,” ACM Trans. Parallel Comput., vol. 7, iss. 4, 2020. 
-- Added initial support to ASIC flow based on Yosys+OpenROAD projects (see https://theopenroadproject.org/)
+- Added initial support to ASIC flow based on Yosys+OpenROAD projects (see https://theopenroadproject.org/). Nangate45 and ASAP7 PDKs supported.
 - Simplified the simulation/synthesis backends integration. In case the used simulator or synthesizer is in the system path, the configuration can be as simple as ../configure --prefix=/opt/panda
 - Added support to multi-thread simulation when Verilator version 4 is used (it is disabled by default).
 - Improved bambu memory consumption.
@@ -21,6 +22,7 @@ New features introduced:
 - Added a first support to axis interface.
 - Simulation and synthesis tools are now detected at runtime. Configure options have been removed, now vendor specific install directories may be specified using Bambu option --<vendor>-root=<path> (e.g. --xilinx-root=/opt/Xilinx).
 - PandA-bambu reference paper has been published at DAC: F. Ferrandi, V. G. Castellana, S. Curzel, P. Fezzardi, M. Fiorito, M. Lattuada, M. Minutoli, C. Pilato, and A. Tumeo, “Invited: Bambu: an Open-Source Research Framework for the High-Level Synthesis of Complex Applications,” in 2021 58th ACM/IEEE Design Automation Conference (DAC), 2021, pp. 1327-1330. 
+- Added a Google Colab notebook with many examples to play with Bambu. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ferrandi/PandA-bambu/blob/main/documentation/tutorial_date_2022/bambu.ipynb)
 
 =========== PANDA 0.9.6 ===========
 Sat 11 January 2020, PandA release 0.9.6

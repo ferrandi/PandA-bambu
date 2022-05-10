@@ -4,19 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       gcc_ref:
-        description: 'GCC branch reference to compile (e.g.: releases/gcc-5)'
+        description: "GCC branch reference to compile (e.g.: releases/gcc-5)"
         required: true
       version:
-        description: 'Compiled GCC version number (e.g.: 5)'
+        description: "Compiled GCC version number (e.g.: 5)"
         required: true
       configure:
-        description: 'GCC configuration options'
+        description: "GCC configuration options"
         required: false
-        default: '--enable-languages=c,c++,fortran --prefix=/usr --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --with-system-zlib --disable-browser-plugin --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu'
+        default: "--enable-languages=c,c++,fortran --prefix=/usr --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --with-system-zlib --disable-browser-plugin --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu"
       patch:
-        description: 'Patch to be applied (if necessary)'
+        description: "Patch to be applied (if necessary)"
         required: false
-        default: ''
+        default: ""
 
 concurrency:
   group: build-gcc-${{ github.event.inputs.version }}
@@ -58,7 +58,7 @@ jobs:
         uses: ./.github/actions/storage-upload
         with:
           path: ${{steps.build.outputs.dist-dir}}/.
-          storage-url: '${{env.storage-url}}'
-          storage-path: '${{env.storage-path}}'
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          storage-url: "${{env.storage-url}}"
+          storage-path: "${{env.storage-path}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"

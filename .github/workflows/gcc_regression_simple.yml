@@ -1,4 +1,4 @@
-name: Examples synthesis
+name: GCC Regression Simple
 
 on:
   workflow_dispatch:
@@ -18,11 +18,16 @@ on:
         required: false
         type: string
         default: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release --with-gcc8=/bin/false
-      test-compiler:
+      test-compilers:
         description: "Compiler used during tests"
         required: false
         type: string
         default: I386_GCC49
+      additional-args:
+        description: "Additional arguments to be used during tests"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   build:
@@ -38,10 +43,12 @@ jobs:
       CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
 
   test-suite:
-    uses: ./.github/workflows/reusable-examples.yml
+    needs: [build]
+    uses: ./.github/workflows/reusable-grs.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
-      test-compiler: ${{github.event.inputs.test-compiler}}
+      test-compilers: ${{github.event.inputs.test-compiler}}
+      additional-args: ${{github.event.inputs.additional-args}}
     secrets:
       CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
       CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
